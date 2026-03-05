@@ -7,7 +7,7 @@
 
 CREATE TABLE public.scenario_flags_junction (
     scenario_id uuid CONSTRAINT scenario_flags_scenario_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT scenario_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT scenario_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_flags_mcp_not_null NOT NULL,
@@ -38,7 +38,7 @@ CREATE TABLE public.scenario_scenarios_junction (
 CREATE TABLE public.scenario_departments_junction (
     active boolean DEFAULT true CONSTRAINT scenario_departments_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_departments_created_at_not_null NOT NULL,
-    department_id uuid CONSTRAINT scenario_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT scenario_departments_department_id_not_null NOT NULL,
     scenario_id uuid CONSTRAINT scenario_departments_scenario_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_departments_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_departments_mcp_not_null NOT NULL
@@ -52,7 +52,7 @@ CREATE TABLE public.scenario_departments_junction (
 
 CREATE TABLE public.scenario_descriptions_junction (
     scenario_id uuid CONSTRAINT scenario_descriptions_scenario_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT scenario_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT scenario_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_descriptions_mcp_not_null NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE public.scenario_descriptions_junction (
 CREATE TABLE public.scenario_documents_junction (
     active boolean DEFAULT true CONSTRAINT scenario_documents_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_documents_created_at_not_null NOT NULL,
-    document_id uuid CONSTRAINT scenario_documents_document_id_not_null NOT NULL,
+    documents_id uuid CONSTRAINT scenario_documents_document_id_not_null NOT NULL,
     scenario_id uuid CONSTRAINT scenario_documents_scenario_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_documents_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_documents_mcp_not_null NOT NULL
@@ -83,7 +83,7 @@ CREATE TABLE public.scenario_documents_junction (
 CREATE TABLE public.scenario_images_junction (
     active boolean DEFAULT true CONSTRAINT scenario_images_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_images_created_at_not_null NOT NULL,
-    image_id uuid CONSTRAINT scenario_images_image_id_not_null NOT NULL,
+    images_id uuid CONSTRAINT scenario_images_image_id_not_null NOT NULL,
     scenario_id uuid CONSTRAINT scenario_images_scenario_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_images_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_images_mcp_not_null NOT NULL
@@ -97,7 +97,7 @@ CREATE TABLE public.scenario_images_junction (
 
 CREATE TABLE public.scenario_names_junction (
     scenario_id uuid CONSTRAINT scenario_names_scenario_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT scenario_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT scenario_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_names_mcp_not_null NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE public.scenario_names_junction (
 
 CREATE TABLE public.scenario_objectives_junction (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_objectives_created_at_not_null NOT NULL,
-    objective_id uuid CONSTRAINT scenario_objectives_objective_id_not_null NOT NULL,
+    objectives_id uuid CONSTRAINT scenario_objectives_objective_id_not_null NOT NULL,
     scenario_id uuid CONSTRAINT scenario_objectives_scenario_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_objectives_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_objectives_mcp_not_null NOT NULL,
@@ -127,7 +127,7 @@ CREATE TABLE public.scenario_objectives_junction (
 
 CREATE TABLE public.scenario_options_junction (
     scenario_id uuid CONSTRAINT scenario_options_scenario_id_not_null NOT NULL,
-    option_id uuid CONSTRAINT scenario_options_option_id_not_null NOT NULL,
+    options_id uuid CONSTRAINT scenario_options_option_id_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT scenario_options_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_options_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_options_generated_not_null NOT NULL,
@@ -142,7 +142,7 @@ CREATE TABLE public.scenario_options_junction (
 
 CREATE TABLE public.scenario_parameter_fields_junction (
     scenario_id uuid CONSTRAINT scenario_parameter_fields_scenario_id_not_null NOT NULL,
-    parameter_field_id uuid CONSTRAINT scenario_parameter_fields_parameter_field_id_not_null NOT NULL,
+    parameter_fields_id uuid CONSTRAINT scenario_parameter_fields_parameter_field_id_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT scenario_parameter_fields_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_parameter_fields_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_parameter_fields_mcp_not_null NOT NULL,
@@ -158,7 +158,7 @@ CREATE TABLE public.scenario_parameter_fields_junction (
 CREATE TABLE public.scenario_personas_junction (
     active boolean DEFAULT true CONSTRAINT scenario_personas_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_personas_created_at_not_null NOT NULL,
-    persona_id uuid CONSTRAINT scenario_personas_persona_id_not_null NOT NULL,
+    personas_id uuid CONSTRAINT scenario_personas_persona_id_not_null NOT NULL,
     scenario_id uuid CONSTRAINT scenario_personas_scenario_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_personas_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_personas_mcp_not_null NOT NULL
@@ -173,7 +173,7 @@ CREATE TABLE public.scenario_personas_junction (
 CREATE TABLE public.scenario_problem_statements_junction (
     active boolean DEFAULT true CONSTRAINT scenario_problem_statements_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_problem_statements_created_at_not_null NOT NULL,
-    problem_statement_id uuid CONSTRAINT scenario_problem_statements_problem_statement_id_not_null NOT NULL,
+    problem_statements_id uuid CONSTRAINT scenario_problem_statements_problem_statement_id_not_null NOT NULL,
     scenario_id uuid CONSTRAINT scenario_problem_statements_scenario_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_problem_statements_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_problem_statements_mcp_not_null NOT NULL
@@ -188,7 +188,7 @@ CREATE TABLE public.scenario_problem_statements_junction (
 CREATE TABLE public.scenario_questions_junction (
     active boolean DEFAULT true CONSTRAINT scenario_questions_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_questions_created_at_not_null NOT NULL,
-    question_id uuid CONSTRAINT scenario_questions_question_id_not_null NOT NULL,
+    questions_id uuid CONSTRAINT scenario_questions_question_id_not_null NOT NULL,
     scenario_id uuid CONSTRAINT scenario_questions_scenario_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_questions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_questions_mcp_not_null NOT NULL
@@ -204,7 +204,7 @@ CREATE TABLE public.scenario_videos_junction (
     active boolean DEFAULT true CONSTRAINT scenario_videos_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_videos_created_at_not_null NOT NULL,
     scenario_id uuid CONSTRAINT scenario_videos_scenario_id_not_null NOT NULL,
-    video_id uuid CONSTRAINT scenario_videos_video_id_not_null NOT NULL,
+    videos_id uuid CONSTRAINT scenario_videos_video_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_videos_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_videos_mcp_not_null NOT NULL
 );
@@ -216,7 +216,7 @@ CREATE TABLE public.scenario_videos_junction (
 --
 
 ALTER TABLE ONLY public.scenario_departments_junction
-    ADD CONSTRAINT scenario_departments_pkey PRIMARY KEY (scenario_id, department_id);
+    ADD CONSTRAINT scenario_departments_pkey PRIMARY KEY (scenario_id, departments_id);
 
 
 --
@@ -225,7 +225,7 @@ ALTER TABLE ONLY public.scenario_departments_junction
 --
 
 ALTER TABLE ONLY public.scenario_descriptions_junction
-    ADD CONSTRAINT scenario_descriptions_pkey PRIMARY KEY (scenario_id, description_id);
+    ADD CONSTRAINT scenario_descriptions_pkey PRIMARY KEY (scenario_id, descriptions_id);
 
 
 --
@@ -234,7 +234,7 @@ ALTER TABLE ONLY public.scenario_descriptions_junction
 --
 
 ALTER TABLE ONLY public.scenario_documents_junction
-    ADD CONSTRAINT scenario_documents_pkey PRIMARY KEY (scenario_id, document_id);
+    ADD CONSTRAINT scenario_documents_pkey PRIMARY KEY (scenario_id, documents_id);
 
 
 --
@@ -243,7 +243,7 @@ ALTER TABLE ONLY public.scenario_documents_junction
 --
 
 ALTER TABLE ONLY public.scenario_flags_junction
-    ADD CONSTRAINT scenario_flags_pkey PRIMARY KEY (scenario_id, flag_id);
+    ADD CONSTRAINT scenario_flags_pkey PRIMARY KEY (scenario_id, flags_id);
 
 
 --
@@ -252,7 +252,7 @@ ALTER TABLE ONLY public.scenario_flags_junction
 --
 
 ALTER TABLE ONLY public.scenario_images_junction
-    ADD CONSTRAINT scenario_images_pkey PRIMARY KEY (scenario_id, image_id);
+    ADD CONSTRAINT scenario_images_pkey PRIMARY KEY (scenario_id, images_id);
 
 
 --
@@ -261,7 +261,7 @@ ALTER TABLE ONLY public.scenario_images_junction
 --
 
 ALTER TABLE ONLY public.scenario_names_junction
-    ADD CONSTRAINT scenario_names_pkey PRIMARY KEY (scenario_id, name_id);
+    ADD CONSTRAINT scenario_names_pkey PRIMARY KEY (scenario_id, names_id);
 
 
 --
@@ -270,7 +270,7 @@ ALTER TABLE ONLY public.scenario_names_junction
 --
 
 ALTER TABLE ONLY public.scenario_objectives_junction
-    ADD CONSTRAINT scenario_objectives_pkey PRIMARY KEY (scenario_id, objective_id);
+    ADD CONSTRAINT scenario_objectives_pkey PRIMARY KEY (scenario_id, objectives_id);
 
 
 --
@@ -279,7 +279,7 @@ ALTER TABLE ONLY public.scenario_objectives_junction
 --
 
 ALTER TABLE ONLY public.scenario_options_junction
-    ADD CONSTRAINT scenario_options_pkey PRIMARY KEY (scenario_id, option_id);
+    ADD CONSTRAINT scenario_options_pkey PRIMARY KEY (scenario_id, options_id);
 
 
 --
@@ -288,7 +288,7 @@ ALTER TABLE ONLY public.scenario_options_junction
 --
 
 ALTER TABLE ONLY public.scenario_parameter_fields_junction
-    ADD CONSTRAINT scenario_parameter_fields_pkey PRIMARY KEY (scenario_id, parameter_field_id);
+    ADD CONSTRAINT scenario_parameter_fields_pkey PRIMARY KEY (scenario_id, parameter_fields_id);
 
 
 --
@@ -297,7 +297,7 @@ ALTER TABLE ONLY public.scenario_parameter_fields_junction
 --
 
 ALTER TABLE ONLY public.scenario_personas_junction
-    ADD CONSTRAINT scenario_personas_pkey PRIMARY KEY (scenario_id, persona_id);
+    ADD CONSTRAINT scenario_personas_pkey PRIMARY KEY (scenario_id, personas_id);
 
 
 --
@@ -306,7 +306,7 @@ ALTER TABLE ONLY public.scenario_personas_junction
 --
 
 ALTER TABLE ONLY public.scenario_problem_statements_junction
-    ADD CONSTRAINT scenario_problem_statements_pkey PRIMARY KEY (scenario_id, problem_statement_id);
+    ADD CONSTRAINT scenario_problem_statements_pkey PRIMARY KEY (scenario_id, problem_statements_id);
 
 
 --
@@ -315,7 +315,7 @@ ALTER TABLE ONLY public.scenario_problem_statements_junction
 --
 
 ALTER TABLE ONLY public.scenario_questions_junction
-    ADD CONSTRAINT scenario_questions_pkey PRIMARY KEY (scenario_id, question_id);
+    ADD CONSTRAINT scenario_questions_pkey PRIMARY KEY (scenario_id, questions_id);
 
 
 --
@@ -333,7 +333,7 @@ ALTER TABLE ONLY public.scenario_scenarios_junction
 --
 
 ALTER TABLE ONLY public.scenario_videos_junction
-    ADD CONSTRAINT scenario_videos_pkey PRIMARY KEY (scenario_id, video_id);
+    ADD CONSTRAINT scenario_videos_pkey PRIMARY KEY (scenario_id, videos_id);
 
 
 --

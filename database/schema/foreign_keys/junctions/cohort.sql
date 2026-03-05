@@ -33,7 +33,7 @@ ALTER TABLE ONLY public.cohort_departments_junction
 --
 
 ALTER TABLE ONLY public.cohort_departments_junction
-    ADD CONSTRAINT cohort_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT cohort_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -51,7 +51,7 @@ ALTER TABLE ONLY public.cohort_descriptions_junction
 --
 
 ALTER TABLE ONLY public.cohort_descriptions_junction
-    ADD CONSTRAINT cohort_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT cohort_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -69,7 +69,7 @@ ALTER TABLE ONLY public.cohort_flags_junction
 --
 
 ALTER TABLE ONLY public.cohort_flags_junction
-    ADD CONSTRAINT cohort_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT cohort_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -87,7 +87,7 @@ ALTER TABLE ONLY public.cohort_names_junction
 --
 
 ALTER TABLE ONLY public.cohort_names_junction
-    ADD CONSTRAINT cohort_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT cohort_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -105,7 +105,7 @@ ALTER TABLE ONLY public.cohort_profile_personas_junction
 --
 
 ALTER TABLE ONLY public.cohort_profile_personas_junction
-    ADD CONSTRAINT cohort_profile_personas_junction_profile_persona_id_fkey FOREIGN KEY (profile_persona_id) REFERENCES public.profile_personas_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT cohort_profile_personas_junction_profile_persona_id_fkey FOREIGN KEY (profile_personas_id) REFERENCES public.profile_personas_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -159,7 +159,7 @@ ALTER TABLE ONLY public.cohort_simulation_positions_junction
 --
 
 ALTER TABLE ONLY public.cohort_simulation_positions_junction
-    ADD CONSTRAINT cohort_simulation_positions_simulation_position_id_fkey FOREIGN KEY (simulation_position_id) REFERENCES public.simulation_positions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT cohort_simulation_positions_simulation_position_id_fkey FOREIGN KEY (simulation_positions_id) REFERENCES public.simulation_positions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -177,7 +177,7 @@ ALTER TABLE ONLY public.cohort_simulations_junction
 --
 
 ALTER TABLE ONLY public.cohort_simulations_junction
-    ADD CONSTRAINT cohort_simulations_simulation_id_fkey FOREIGN KEY (simulation_id) REFERENCES public.simulations_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT cohort_simulations_simulation_id_fkey FOREIGN KEY (simulations_id) REFERENCES public.simulations_resource(id) ON DELETE CASCADE;
 
 
 --

@@ -85,7 +85,7 @@ CREATE INDEX idx_parameter_names_mcp ON public.parameter_names_junction USING bt
 -- Name: parameter_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX parameter_departments_department_id_v7_idx ON public.parameter_departments_junction USING btree (department_id);
+CREATE INDEX parameter_departments_department_id_v7_idx ON public.parameter_departments_junction USING btree (departments_id);
 
 
 --
@@ -101,7 +101,7 @@ CREATE INDEX parameter_departments_parameter_id_v7_idx ON public.parameter_depar
 -- Name: parameter_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX parameter_descriptions_description_id_idx ON public.parameter_descriptions_junction USING btree (description_id);
+CREATE INDEX parameter_descriptions_description_id_idx ON public.parameter_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -125,7 +125,7 @@ CREATE INDEX parameter_fields_field_id_idx ON public.parameter_fields_junction U
 -- Name: parameter_fields_field_resource_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX parameter_fields_field_resource_id_idx ON public.parameter_fields_junction USING btree (field_resource_id);
+CREATE INDEX parameter_fields_field_resource_id_idx ON public.parameter_fields_junction USING btree (fields_id);
 
 
 --
@@ -141,7 +141,7 @@ CREATE INDEX parameter_fields_parameter_id_idx ON public.parameter_fields_juncti
 -- Name: parameter_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX parameter_flags_flag_id_idx ON public.parameter_flags_junction USING btree (flag_id);
+CREATE INDEX parameter_flags_flag_id_idx ON public.parameter_flags_junction USING btree (flags_id);
 
 
 --
@@ -157,7 +157,7 @@ CREATE INDEX parameter_flags_parameter_id_idx ON public.parameter_flags_junction
 -- Name: parameter_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX parameter_names_name_id_idx ON public.parameter_names_junction USING btree (name_id);
+CREATE INDEX parameter_names_name_id_idx ON public.parameter_names_junction USING btree (names_id);
 
 
 --

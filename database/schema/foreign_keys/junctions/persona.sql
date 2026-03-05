@@ -6,7 +6,7 @@
 --
 
 ALTER TABLE ONLY public.persona_colors_junction
-    ADD CONSTRAINT persona_colors_color_id_fkey FOREIGN KEY (color_id) REFERENCES public.colors_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT persona_colors_color_id_fkey FOREIGN KEY (colors_id) REFERENCES public.colors_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -24,7 +24,7 @@ ALTER TABLE ONLY public.persona_colors_junction
 --
 
 ALTER TABLE ONLY public.persona_departments_junction
-    ADD CONSTRAINT persona_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT persona_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -42,7 +42,7 @@ ALTER TABLE ONLY public.persona_departments_junction
 --
 
 ALTER TABLE ONLY public.persona_descriptions_junction
-    ADD CONSTRAINT persona_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT persona_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -60,7 +60,7 @@ ALTER TABLE ONLY public.persona_descriptions_junction
 --
 
 ALTER TABLE ONLY public.persona_examples_junction
-    ADD CONSTRAINT persona_examples_example_id_fkey FOREIGN KEY (example_id) REFERENCES public.examples_resource(id);
+    ADD CONSTRAINT persona_examples_example_id_fkey FOREIGN KEY (examples_id) REFERENCES public.examples_resource(id);
 
 
 --
@@ -78,7 +78,7 @@ ALTER TABLE ONLY public.persona_examples_junction
 --
 
 ALTER TABLE ONLY public.persona_flags_junction
-    ADD CONSTRAINT persona_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT persona_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -96,7 +96,7 @@ ALTER TABLE ONLY public.persona_flags_junction
 --
 
 ALTER TABLE ONLY public.persona_icons_junction
-    ADD CONSTRAINT persona_icons_icon_id_fkey FOREIGN KEY (icon_id) REFERENCES public.icons_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT persona_icons_icon_id_fkey FOREIGN KEY (icons_id) REFERENCES public.icons_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -114,7 +114,7 @@ ALTER TABLE ONLY public.persona_icons_junction
 --
 
 ALTER TABLE ONLY public.persona_instructions_junction
-    ADD CONSTRAINT persona_instructions_instruction_id_fkey FOREIGN KEY (instruction_id) REFERENCES public.instructions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT persona_instructions_instruction_id_fkey FOREIGN KEY (instructions_id) REFERENCES public.instructions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -132,7 +132,7 @@ ALTER TABLE ONLY public.persona_instructions_junction
 --
 
 ALTER TABLE ONLY public.persona_names_junction
-    ADD CONSTRAINT persona_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT persona_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -150,7 +150,7 @@ ALTER TABLE ONLY public.persona_names_junction
 --
 
 ALTER TABLE ONLY public.persona_parameter_fields_junction
-    ADD CONSTRAINT persona_parameter_fields_junction_parameter_field_id_fkey FOREIGN KEY (parameter_field_id) REFERENCES public.parameter_fields_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT persona_parameter_fields_junction_parameter_field_id_fkey FOREIGN KEY (parameter_fields_id) REFERENCES public.parameter_fields_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -195,7 +195,7 @@ ALTER TABLE ONLY public.persona_voices_junction
 --
 
 ALTER TABLE ONLY public.persona_voices_junction
-    ADD CONSTRAINT persona_voices_junction_voice_id_fkey FOREIGN KEY (voice_id) REFERENCES public.voices_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT persona_voices_junction_voice_id_fkey FOREIGN KEY (voices_id) REFERENCES public.voices_resource(id) ON DELETE CASCADE;
 
 
 --

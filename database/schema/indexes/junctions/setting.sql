@@ -189,7 +189,7 @@ CREATE INDEX idx_setting_provider_keys_mcp ON public.setting_provider_keys_junct
 -- Name: idx_setting_provider_keys_provider_key_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_setting_provider_keys_provider_key_id ON public.setting_provider_keys_junction USING btree (provider_key_id);
+CREATE INDEX idx_setting_provider_keys_provider_key_id ON public.setting_provider_keys_junction USING btree (provider_keys_id);
 
 
 --
@@ -237,7 +237,7 @@ CREATE INDEX setting_auths_active_idx ON public.setting_auths_junction USING btr
 -- Name: setting_auths_auth_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX setting_auths_auth_id_v7_idx ON public.setting_auths_junction USING btree (auth_id);
+CREATE INDEX setting_auths_auth_id_v7_idx ON public.setting_auths_junction USING btree (auths_id);
 
 
 --
@@ -245,7 +245,7 @@ CREATE INDEX setting_auths_auth_id_v7_idx ON public.setting_auths_junction USING
 -- Name: setting_auths_settings_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX setting_auths_settings_id_v7_idx ON public.setting_auths_junction USING btree (settings_id);
+CREATE INDEX setting_auths_settings_id_v7_idx ON public.setting_auths_junction USING btree (setting_id);
 
 
 --
@@ -253,7 +253,7 @@ CREATE INDEX setting_auths_settings_id_v7_idx ON public.setting_auths_junction U
 -- Name: setting_colors_color_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX setting_colors_color_id_idx ON public.setting_colors_junction USING btree (color_id);
+CREATE INDEX setting_colors_color_id_idx ON public.setting_colors_junction USING btree (colors_id);
 
 
 --
@@ -269,7 +269,7 @@ CREATE INDEX setting_colors_setting_id_idx ON public.setting_colors_junction USI
 -- Name: setting_departments_department_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX setting_departments_department_id_idx ON public.setting_departments_junction USING btree (department_id);
+CREATE INDEX setting_departments_department_id_idx ON public.setting_departments_junction USING btree (departments_id);
 
 
 --
@@ -285,7 +285,7 @@ CREATE INDEX setting_departments_setting_id_idx ON public.setting_departments_ju
 -- Name: setting_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX setting_descriptions_description_id_idx ON public.setting_descriptions_junction USING btree (description_id);
+CREATE INDEX setting_descriptions_description_id_idx ON public.setting_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -301,7 +301,7 @@ CREATE INDEX setting_descriptions_setting_id_idx ON public.setting_descriptions_
 -- Name: setting_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX setting_flags_flag_id_idx ON public.setting_flags_junction USING btree (flag_id);
+CREATE INDEX setting_flags_flag_id_idx ON public.setting_flags_junction USING btree (flags_id);
 
 
 --
@@ -317,7 +317,7 @@ CREATE INDEX setting_flags_setting_id_idx ON public.setting_flags_junction USING
 -- Name: setting_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX setting_names_name_id_idx ON public.setting_names_junction USING btree (name_id);
+CREATE INDEX setting_names_name_id_idx ON public.setting_names_junction USING btree (names_id);
 
 
 --
@@ -397,7 +397,7 @@ CREATE INDEX setting_thresholds_setting_id_idx ON public.setting_thresholds_junc
 -- Name: setting_thresholds_threshold_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX setting_thresholds_threshold_id_idx ON public.setting_thresholds_junction USING btree (threshold_id);
+CREATE INDEX setting_thresholds_threshold_id_idx ON public.setting_thresholds_junction USING btree (thresholds_id);
 
 
 --

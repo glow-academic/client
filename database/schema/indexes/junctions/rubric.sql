@@ -117,7 +117,7 @@ CREATE INDEX idx_rubric_standards_mcp ON public.rubric_standards_junction USING 
 -- Name: rubric_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX rubric_departments_department_id_v7_idx ON public.rubric_departments_junction USING btree (department_id);
+CREATE INDEX rubric_departments_department_id_v7_idx ON public.rubric_departments_junction USING btree (departments_id);
 
 
 --
@@ -133,7 +133,7 @@ CREATE INDEX rubric_departments_rubric_id_v7_idx ON public.rubric_departments_ju
 -- Name: rubric_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX rubric_descriptions_description_id_idx ON public.rubric_descriptions_junction USING btree (description_id);
+CREATE INDEX rubric_descriptions_description_id_idx ON public.rubric_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -149,7 +149,7 @@ CREATE INDEX rubric_descriptions_rubric_id_idx ON public.rubric_descriptions_jun
 -- Name: rubric_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX rubric_flags_flag_id_idx ON public.rubric_flags_junction USING btree (flag_id);
+CREATE INDEX rubric_flags_flag_id_idx ON public.rubric_flags_junction USING btree (flags_id);
 
 
 --
@@ -165,7 +165,7 @@ CREATE INDEX rubric_flags_rubric_id_idx ON public.rubric_flags_junction USING bt
 -- Name: rubric_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX rubric_names_name_id_idx ON public.rubric_names_junction USING btree (name_id);
+CREATE INDEX rubric_names_name_id_idx ON public.rubric_names_junction USING btree (names_id);
 
 
 --
@@ -181,7 +181,7 @@ CREATE INDEX rubric_names_rubric_id_idx ON public.rubric_names_junction USING bt
 -- Name: rubric_points_point_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX rubric_points_point_id_idx ON public.rubric_points_junction USING btree (point_id);
+CREATE INDEX rubric_points_point_id_idx ON public.rubric_points_junction USING btree (points_id);
 
 
 --
@@ -229,7 +229,7 @@ CREATE INDEX rubric_standard_groups_rubric_idx ON public.rubric_standard_groups_
 -- Name: rubric_standard_groups_rubric_standard_group_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX rubric_standard_groups_rubric_standard_group_idx ON public.rubric_standard_groups_junction USING btree (rubric_id, standard_group_id);
+CREATE INDEX rubric_standard_groups_rubric_standard_group_idx ON public.rubric_standard_groups_junction USING btree (rubric_id, standard_groups_id);
 
 
 --
@@ -237,7 +237,7 @@ CREATE INDEX rubric_standard_groups_rubric_standard_group_idx ON public.rubric_s
 -- Name: rubric_standard_groups_standard_group_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX rubric_standard_groups_standard_group_id_idx ON public.rubric_standard_groups_junction USING btree (standard_group_id);
+CREATE INDEX rubric_standard_groups_standard_group_id_idx ON public.rubric_standard_groups_junction USING btree (standard_groups_id);
 
 
 --
@@ -245,7 +245,7 @@ CREATE INDEX rubric_standard_groups_standard_group_id_idx ON public.rubric_stand
 -- Name: rubric_standard_groups_standard_group_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX rubric_standard_groups_standard_group_idx ON public.rubric_standard_groups_junction USING btree (standard_group_id);
+CREATE INDEX rubric_standard_groups_standard_group_idx ON public.rubric_standard_groups_junction USING btree (standard_groups_id);
 
 
 --
@@ -261,7 +261,7 @@ CREATE INDEX rubric_standards_rubric_id_idx ON public.rubric_standards_junction 
 -- Name: rubric_standards_standard_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX rubric_standards_standard_id_idx ON public.rubric_standards_junction USING btree (standard_id);
+CREATE INDEX rubric_standards_standard_id_idx ON public.rubric_standards_junction USING btree (standards_id);
 
 
 --

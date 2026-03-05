@@ -138,7 +138,7 @@ CREATE MATERIALIZED VIEW public.chat_mv AS
            FROM (((scenario_single ss_1
              JOIN public.scenario_scenarios_junction ssj ON (((ssj.scenarios_id = ss_1.scenario_id) AND (ssj.active = true))))
              JOIN public.scenario_flags_junction sfj ON (((sfj.scenario_id = ssj.scenario_id) AND (sfj.active = true))))
-             JOIN public.flags_resource fr ON ((fr.id = sfj.flag_id)))
+             JOIN public.flags_resource fr ON ((fr.id = sfj.flags_id)))
           WHERE (fr.type = ANY (ARRAY['video_enabled'::public.flag_type, 'problem_statement_enabled'::public.flag_type, 'objectives_enabled'::public.flag_type, 'images_enabled'::public.flag_type, 'questions_enabled'::public.flag_type]))
           GROUP BY ss_1.chat_id
         )

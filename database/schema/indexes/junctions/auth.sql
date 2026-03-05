@@ -37,7 +37,7 @@ CREATE INDEX auth_departments_auth_id_v7_idx ON public.auth_departments_junction
 -- Name: auth_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_departments_department_id_v7_idx ON public.auth_departments_junction USING btree (department_id);
+CREATE INDEX auth_departments_department_id_v7_idx ON public.auth_departments_junction USING btree (departments_id);
 
 
 --
@@ -53,7 +53,7 @@ CREATE INDEX auth_descriptions_auth_id_idx ON public.auth_descriptions_junction 
 -- Name: auth_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_descriptions_description_id_idx ON public.auth_descriptions_junction USING btree (description_id);
+CREATE INDEX auth_descriptions_description_id_idx ON public.auth_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -69,7 +69,7 @@ CREATE INDEX auth_flags_auth_id_idx ON public.auth_flags_junction USING btree (a
 -- Name: auth_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_flags_flag_id_idx ON public.auth_flags_junction USING btree (flag_id);
+CREATE INDEX auth_flags_flag_id_idx ON public.auth_flags_junction USING btree (flags_id);
 
 
 --
@@ -85,7 +85,7 @@ CREATE INDEX auth_items_auth_id_idx ON public.auth_items_junction USING btree (a
 -- Name: auth_items_item_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_items_item_id_idx ON public.auth_items_junction USING btree (item_id);
+CREATE INDEX auth_items_item_id_idx ON public.auth_items_junction USING btree (items_id);
 
 
 --
@@ -101,7 +101,7 @@ CREATE INDEX auth_names_auth_id_idx ON public.auth_names_junction USING btree (a
 -- Name: auth_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_names_name_id_idx ON public.auth_names_junction USING btree (name_id);
+CREATE INDEX auth_names_name_id_idx ON public.auth_names_junction USING btree (names_id);
 
 
 --
@@ -117,7 +117,7 @@ CREATE INDEX auth_protocols_auth_id_idx ON public.auth_protocols_junction USING 
 -- Name: auth_protocols_protocol_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_protocols_protocol_id_idx ON public.auth_protocols_junction USING btree (protocol_id);
+CREATE INDEX auth_protocols_protocol_id_idx ON public.auth_protocols_junction USING btree (protocols_id);
 
 
 --
@@ -133,7 +133,7 @@ CREATE INDEX auth_slugs_auth_id_idx ON public.auth_slugs_junction USING btree (a
 -- Name: auth_slugs_slug_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX auth_slugs_slug_id_idx ON public.auth_slugs_junction USING btree (slug_id);
+CREATE INDEX auth_slugs_slug_id_idx ON public.auth_slugs_junction USING btree (slugs_id);
 
 
 --

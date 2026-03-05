@@ -8,7 +8,7 @@
 CREATE TABLE public.parameter_departments_junction (
     active boolean DEFAULT true CONSTRAINT parameter_departments_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT parameter_departments_created_at_not_null NOT NULL,
-    department_id uuid CONSTRAINT parameter_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT parameter_departments_department_id_not_null NOT NULL,
     parameter_id uuid CONSTRAINT parameter_departments_parameter_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT parameter_departments_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT parameter_departments_mcp_not_null NOT NULL
@@ -22,7 +22,7 @@ CREATE TABLE public.parameter_departments_junction (
 
 CREATE TABLE public.parameter_descriptions_junction (
     parameter_id uuid CONSTRAINT parameter_descriptions_parameter_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT parameter_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT parameter_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT parameter_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT parameter_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT parameter_descriptions_mcp_not_null NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE public.parameter_fields_junction (
     generated boolean DEFAULT false CONSTRAINT parameter_fields_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT parameter_fields_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT parameter_fields_active_not_null NOT NULL,
-    field_resource_id uuid CONSTRAINT parameter_fields_field_resource_id_not_null NOT NULL
+    fields_id uuid CONSTRAINT parameter_fields_field_resource_id_not_null NOT NULL
 );
 
 
@@ -53,7 +53,7 @@ CREATE TABLE public.parameter_fields_junction (
 
 CREATE TABLE public.parameter_flags_junction (
     parameter_id uuid CONSTRAINT parameter_flags_parameter_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT parameter_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT parameter_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT parameter_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT parameter_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT parameter_flags_mcp_not_null NOT NULL,
@@ -68,7 +68,7 @@ CREATE TABLE public.parameter_flags_junction (
 
 CREATE TABLE public.parameter_names_junction (
     parameter_id uuid CONSTRAINT parameter_names_parameter_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT parameter_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT parameter_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT parameter_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT parameter_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT parameter_names_mcp_not_null NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE public.parameter_parameters_junction (
 --
 
 ALTER TABLE ONLY public.parameter_departments_junction
-    ADD CONSTRAINT parameter_departments_pkey PRIMARY KEY (parameter_id, department_id);
+    ADD CONSTRAINT parameter_departments_pkey PRIMARY KEY (parameter_id, departments_id);
 
 
 --
@@ -106,7 +106,7 @@ ALTER TABLE ONLY public.parameter_departments_junction
 --
 
 ALTER TABLE ONLY public.parameter_descriptions_junction
-    ADD CONSTRAINT parameter_descriptions_pkey PRIMARY KEY (parameter_id, description_id);
+    ADD CONSTRAINT parameter_descriptions_pkey PRIMARY KEY (parameter_id, descriptions_id);
 
 
 --
@@ -124,7 +124,7 @@ ALTER TABLE ONLY public.parameter_fields_junction
 --
 
 ALTER TABLE ONLY public.parameter_flags_junction
-    ADD CONSTRAINT parameter_flags_pkey PRIMARY KEY (parameter_id, flag_id);
+    ADD CONSTRAINT parameter_flags_pkey PRIMARY KEY (parameter_id, flags_id);
 
 
 --
@@ -133,7 +133,7 @@ ALTER TABLE ONLY public.parameter_flags_junction
 --
 
 ALTER TABLE ONLY public.parameter_names_junction
-    ADD CONSTRAINT parameter_names_pkey PRIMARY KEY (parameter_id, name_id);
+    ADD CONSTRAINT parameter_names_pkey PRIMARY KEY (parameter_id, names_id);
 
 
 --

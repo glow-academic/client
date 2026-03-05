@@ -37,7 +37,7 @@ CREATE INDEX agent_departments_agent_id_v7_idx ON public.agent_departments_junct
 -- Name: agent_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX agent_departments_department_id_v7_idx ON public.agent_departments_junction USING btree (department_id);
+CREATE INDEX agent_departments_department_id_v7_idx ON public.agent_departments_junction USING btree (departments_id);
 
 
 --
@@ -53,7 +53,7 @@ CREATE INDEX agent_descriptions_agent_id_idx ON public.agent_descriptions_juncti
 -- Name: agent_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX agent_descriptions_description_id_idx ON public.agent_descriptions_junction USING btree (description_id);
+CREATE INDEX agent_descriptions_description_id_idx ON public.agent_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -69,7 +69,7 @@ CREATE INDEX agent_flags_agent_id_idx ON public.agent_flags_junction USING btree
 -- Name: agent_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX agent_flags_flag_id_idx ON public.agent_flags_junction USING btree (flag_id);
+CREATE INDEX agent_flags_flag_id_idx ON public.agent_flags_junction USING btree (flags_id);
 
 
 --
@@ -93,7 +93,7 @@ CREATE INDEX agent_models_agent_id_idx ON public.agent_models_junction USING btr
 -- Name: agent_models_model_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX agent_models_model_id_idx ON public.agent_models_junction USING btree (model_id);
+CREATE INDEX agent_models_model_id_idx ON public.agent_models_junction USING btree (models_id);
 
 
 --
@@ -109,7 +109,7 @@ CREATE INDEX agent_names_agent_id_idx ON public.agent_names_junction USING btree
 -- Name: agent_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX agent_names_name_id_idx ON public.agent_names_junction USING btree (name_id);
+CREATE INDEX agent_names_name_id_idx ON public.agent_names_junction USING btree (names_id);
 
 
 --
@@ -133,7 +133,7 @@ CREATE INDEX agent_reasoning_levels_agent_id_idx ON public.agent_reasoning_level
 -- Name: agent_reasoning_levels_resource_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX agent_reasoning_levels_resource_id_idx ON public.agent_reasoning_levels_junction USING btree (reasoning_level_id);
+CREATE INDEX agent_reasoning_levels_resource_id_idx ON public.agent_reasoning_levels_junction USING btree (reasoning_levels_id);
 
 
 --
@@ -157,7 +157,7 @@ CREATE INDEX agent_temperature_levels_agent_id_idx ON public.agent_temperature_l
 -- Name: agent_temperature_levels_resource_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX agent_temperature_levels_resource_id_idx ON public.agent_temperature_levels_junction USING btree (temperature_level_id);
+CREATE INDEX agent_temperature_levels_resource_id_idx ON public.agent_temperature_levels_junction USING btree (temperature_levels_id);
 
 
 --
@@ -189,7 +189,7 @@ CREATE INDEX agent_tools_agent_id_idx ON public.agent_tools_junction USING btree
 -- Name: agent_tools_tool_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX agent_tools_tool_id_idx ON public.agent_tools_junction USING btree (tool_id);
+CREATE INDEX agent_tools_tool_id_idx ON public.agent_tools_junction USING btree (tools_id);
 
 
 --
@@ -213,7 +213,7 @@ CREATE INDEX agent_voices_agent_id_idx ON public.agent_voices_junction USING btr
 -- Name: agent_voices_resource_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX agent_voices_resource_id_idx ON public.agent_voices_junction USING btree (voice_id);
+CREATE INDEX agent_voices_resource_id_idx ON public.agent_voices_junction USING btree (voices_id);
 
 
 --

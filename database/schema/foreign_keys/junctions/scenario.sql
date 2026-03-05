@@ -6,7 +6,7 @@
 --
 
 ALTER TABLE ONLY public.scenario_departments_junction
-    ADD CONSTRAINT scenario_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT scenario_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -24,7 +24,7 @@ ALTER TABLE ONLY public.scenario_departments_junction
 --
 
 ALTER TABLE ONLY public.scenario_descriptions_junction
-    ADD CONSTRAINT scenario_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT scenario_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -42,7 +42,7 @@ ALTER TABLE ONLY public.scenario_descriptions_junction
 --
 
 ALTER TABLE ONLY public.scenario_documents_junction
-    ADD CONSTRAINT scenario_documents_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.documents_resource(id);
+    ADD CONSTRAINT scenario_documents_document_id_fkey FOREIGN KEY (documents_id) REFERENCES public.documents_resource(id);
 
 
 --
@@ -60,7 +60,7 @@ ALTER TABLE ONLY public.scenario_documents_junction
 --
 
 ALTER TABLE ONLY public.scenario_flags_junction
-    ADD CONSTRAINT scenario_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT scenario_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -78,7 +78,7 @@ ALTER TABLE ONLY public.scenario_flags_junction
 --
 
 ALTER TABLE ONLY public.scenario_images_junction
-    ADD CONSTRAINT scenario_images_image_id_fkey FOREIGN KEY (image_id) REFERENCES public.images_resource(id);
+    ADD CONSTRAINT scenario_images_image_id_fkey FOREIGN KEY (images_id) REFERENCES public.images_resource(id);
 
 
 --
@@ -96,7 +96,7 @@ ALTER TABLE ONLY public.scenario_images_junction
 --
 
 ALTER TABLE ONLY public.scenario_names_junction
-    ADD CONSTRAINT scenario_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT scenario_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -114,7 +114,7 @@ ALTER TABLE ONLY public.scenario_names_junction
 --
 
 ALTER TABLE ONLY public.scenario_objectives_junction
-    ADD CONSTRAINT scenario_objectives_objective_id_fkey FOREIGN KEY (objective_id) REFERENCES public.objectives_resource(id);
+    ADD CONSTRAINT scenario_objectives_objective_id_fkey FOREIGN KEY (objectives_id) REFERENCES public.objectives_resource(id);
 
 
 --
@@ -132,7 +132,7 @@ ALTER TABLE ONLY public.scenario_objectives_junction
 --
 
 ALTER TABLE ONLY public.scenario_options_junction
-    ADD CONSTRAINT scenario_options_option_id_fkey FOREIGN KEY (option_id) REFERENCES public.options_resource(id) ON DELETE RESTRICT;
+    ADD CONSTRAINT scenario_options_option_id_fkey FOREIGN KEY (options_id) REFERENCES public.options_resource(id) ON DELETE RESTRICT;
 
 
 --
@@ -150,7 +150,7 @@ ALTER TABLE ONLY public.scenario_options_junction
 --
 
 ALTER TABLE ONLY public.scenario_parameter_fields_junction
-    ADD CONSTRAINT scenario_parameter_fields_parameter_field_id_fkey FOREIGN KEY (parameter_field_id) REFERENCES public.parameter_fields_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT scenario_parameter_fields_parameter_field_id_fkey FOREIGN KEY (parameter_fields_id) REFERENCES public.parameter_fields_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -168,7 +168,7 @@ ALTER TABLE ONLY public.scenario_parameter_fields_junction
 --
 
 ALTER TABLE ONLY public.scenario_personas_junction
-    ADD CONSTRAINT scenario_personas_persona_id_fkey FOREIGN KEY (persona_id) REFERENCES public.personas_resource(id);
+    ADD CONSTRAINT scenario_personas_persona_id_fkey FOREIGN KEY (personas_id) REFERENCES public.personas_resource(id);
 
 
 --
@@ -186,7 +186,7 @@ ALTER TABLE ONLY public.scenario_personas_junction
 --
 
 ALTER TABLE ONLY public.scenario_problem_statements_junction
-    ADD CONSTRAINT scenario_problem_statements_problem_statement_id_fkey FOREIGN KEY (problem_statement_id) REFERENCES public.problem_statements_resource(id);
+    ADD CONSTRAINT scenario_problem_statements_problem_statement_id_fkey FOREIGN KEY (problem_statements_id) REFERENCES public.problem_statements_resource(id);
 
 
 --
@@ -204,7 +204,7 @@ ALTER TABLE ONLY public.scenario_problem_statements_junction
 --
 
 ALTER TABLE ONLY public.scenario_questions_junction
-    ADD CONSTRAINT scenario_questions_question_id_fkey FOREIGN KEY (question_id) REFERENCES public.questions_resource(id);
+    ADD CONSTRAINT scenario_questions_question_id_fkey FOREIGN KEY (questions_id) REFERENCES public.questions_resource(id);
 
 
 --
@@ -249,7 +249,7 @@ ALTER TABLE ONLY public.scenario_videos_junction
 --
 
 ALTER TABLE ONLY public.scenario_videos_junction
-    ADD CONSTRAINT scenario_videos_video_id_fkey FOREIGN KEY (video_id) REFERENCES public.videos_resource(id);
+    ADD CONSTRAINT scenario_videos_video_id_fkey FOREIGN KEY (videos_id) REFERENCES public.videos_resource(id);
 
 
 --

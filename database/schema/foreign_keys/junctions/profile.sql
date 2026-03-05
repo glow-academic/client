@@ -6,7 +6,7 @@
 --
 
 ALTER TABLE ONLY public.profile_departments_junction
-    ADD CONSTRAINT profile_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT profile_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -24,7 +24,7 @@ ALTER TABLE ONLY public.profile_departments_junction
 --
 
 ALTER TABLE ONLY public.profile_emails_junction
-    ADD CONSTRAINT profile_emails_email_id_fkey FOREIGN KEY (email_id) REFERENCES public.emails_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT profile_emails_email_id_fkey FOREIGN KEY (emails_id) REFERENCES public.emails_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -42,7 +42,7 @@ ALTER TABLE ONLY public.profile_emails_junction
 --
 
 ALTER TABLE ONLY public.profile_flags_junction
-    ADD CONSTRAINT profile_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT profile_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -60,7 +60,7 @@ ALTER TABLE ONLY public.profile_flags_junction
 --
 
 ALTER TABLE ONLY public.profile_names_junction
-    ADD CONSTRAINT profile_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT profile_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -105,7 +105,7 @@ ALTER TABLE ONLY public.profile_request_limits_junction
 --
 
 ALTER TABLE ONLY public.profile_request_limits_junction
-    ADD CONSTRAINT profile_request_limits_request_limit_id_fkey FOREIGN KEY (request_limit_id) REFERENCES public.request_limits_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT profile_request_limits_request_limit_id_fkey FOREIGN KEY (request_limits_id) REFERENCES public.request_limits_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -123,7 +123,7 @@ ALTER TABLE ONLY public.profile_roles_junction
 --
 
 ALTER TABLE ONLY public.profile_roles_junction
-    ADD CONSTRAINT profile_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT profile_roles_role_id_fkey FOREIGN KEY (roles_id) REFERENCES public.roles_resource(id) ON DELETE CASCADE;
 
 
 --

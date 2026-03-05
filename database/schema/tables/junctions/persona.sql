@@ -7,7 +7,7 @@
 
 CREATE TABLE public.persona_colors_junction (
     persona_id uuid CONSTRAINT persona_colors_persona_id_not_null NOT NULL,
-    color_id uuid CONSTRAINT persona_colors_color_id_not_null NOT NULL,
+    colors_id uuid CONSTRAINT persona_colors_color_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT persona_colors_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT persona_colors_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT persona_colors_mcp_not_null NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE public.persona_colors_junction (
 CREATE TABLE public.persona_departments_junction (
     active boolean DEFAULT true CONSTRAINT persona_departments_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT persona_departments_created_at_not_null NOT NULL,
-    department_id uuid CONSTRAINT persona_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT persona_departments_department_id_not_null NOT NULL,
     persona_id uuid CONSTRAINT persona_departments_persona_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT persona_departments_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT persona_departments_mcp_not_null NOT NULL
@@ -37,7 +37,7 @@ CREATE TABLE public.persona_departments_junction (
 
 CREATE TABLE public.persona_descriptions_junction (
     persona_id uuid CONSTRAINT persona_descriptions_persona_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT persona_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT persona_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT persona_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT persona_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT persona_descriptions_mcp_not_null NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE public.persona_descriptions_junction (
 
 CREATE TABLE public.persona_examples_junction (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT persona_examples_created_at_not_null NOT NULL,
-    example_id uuid CONSTRAINT persona_examples_example_id_not_null NOT NULL,
+    examples_id uuid CONSTRAINT persona_examples_example_id_not_null NOT NULL,
     persona_id uuid CONSTRAINT persona_examples_persona_id_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT persona_examples_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT persona_examples_generated_not_null NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE public.persona_examples_junction (
 
 CREATE TABLE public.persona_flags_junction (
     persona_id uuid CONSTRAINT persona_flags_persona_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT persona_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT persona_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT persona_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT persona_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT persona_flags_mcp_not_null NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE public.persona_flags_junction (
 
 CREATE TABLE public.persona_icons_junction (
     persona_id uuid CONSTRAINT persona_icons_persona_id_not_null NOT NULL,
-    icon_id uuid CONSTRAINT persona_icons_icon_id_not_null NOT NULL,
+    icons_id uuid CONSTRAINT persona_icons_icon_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT persona_icons_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT persona_icons_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT persona_icons_mcp_not_null NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE public.persona_icons_junction (
 
 CREATE TABLE public.persona_instructions_junction (
     persona_id uuid CONSTRAINT persona_instructions_persona_id_not_null NOT NULL,
-    instruction_id uuid CONSTRAINT persona_instructions_instruction_id_not_null NOT NULL,
+    instructions_id uuid CONSTRAINT persona_instructions_instruction_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT persona_instructions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT persona_instructions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT persona_instructions_mcp_not_null NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE public.persona_instructions_junction (
 
 CREATE TABLE public.persona_names_junction (
     persona_id uuid CONSTRAINT persona_names_persona_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT persona_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT persona_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT persona_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT persona_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT persona_names_mcp_not_null NOT NULL,
@@ -127,7 +127,7 @@ CREATE TABLE public.persona_names_junction (
 
 CREATE TABLE public.persona_parameter_fields_junction (
     persona_id uuid NOT NULL,
-    parameter_field_id uuid NOT NULL,
+    parameter_fields_id uuid CONSTRAINT persona_parameter_fields_junction_parameter_field_id_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
@@ -157,7 +157,7 @@ CREATE TABLE public.persona_personas_junction (
 
 CREATE TABLE public.persona_voices_junction (
     persona_id uuid NOT NULL,
-    voice_id uuid NOT NULL,
+    voices_id uuid CONSTRAINT persona_voices_junction_voice_id_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -171,7 +171,7 @@ CREATE TABLE public.persona_voices_junction (
 --
 
 ALTER TABLE ONLY public.persona_colors_junction
-    ADD CONSTRAINT persona_colors_pkey PRIMARY KEY (persona_id, color_id);
+    ADD CONSTRAINT persona_colors_pkey PRIMARY KEY (persona_id, colors_id);
 
 
 --
@@ -180,7 +180,7 @@ ALTER TABLE ONLY public.persona_colors_junction
 --
 
 ALTER TABLE ONLY public.persona_departments_junction
-    ADD CONSTRAINT persona_departments_pkey PRIMARY KEY (persona_id, department_id);
+    ADD CONSTRAINT persona_departments_pkey PRIMARY KEY (persona_id, departments_id);
 
 
 --
@@ -189,7 +189,7 @@ ALTER TABLE ONLY public.persona_departments_junction
 --
 
 ALTER TABLE ONLY public.persona_descriptions_junction
-    ADD CONSTRAINT persona_descriptions_pkey PRIMARY KEY (persona_id, description_id);
+    ADD CONSTRAINT persona_descriptions_pkey PRIMARY KEY (persona_id, descriptions_id);
 
 
 --
@@ -198,7 +198,7 @@ ALTER TABLE ONLY public.persona_descriptions_junction
 --
 
 ALTER TABLE ONLY public.persona_examples_junction
-    ADD CONSTRAINT persona_examples_pkey PRIMARY KEY (persona_id, example_id);
+    ADD CONSTRAINT persona_examples_pkey PRIMARY KEY (persona_id, examples_id);
 
 
 --
@@ -207,7 +207,7 @@ ALTER TABLE ONLY public.persona_examples_junction
 --
 
 ALTER TABLE ONLY public.persona_flags_junction
-    ADD CONSTRAINT persona_flags_pkey PRIMARY KEY (persona_id, flag_id);
+    ADD CONSTRAINT persona_flags_pkey PRIMARY KEY (persona_id, flags_id);
 
 
 --
@@ -216,7 +216,7 @@ ALTER TABLE ONLY public.persona_flags_junction
 --
 
 ALTER TABLE ONLY public.persona_icons_junction
-    ADD CONSTRAINT persona_icons_pkey PRIMARY KEY (persona_id, icon_id);
+    ADD CONSTRAINT persona_icons_pkey PRIMARY KEY (persona_id, icons_id);
 
 
 --
@@ -225,7 +225,7 @@ ALTER TABLE ONLY public.persona_icons_junction
 --
 
 ALTER TABLE ONLY public.persona_instructions_junction
-    ADD CONSTRAINT persona_instructions_pkey PRIMARY KEY (persona_id, instruction_id);
+    ADD CONSTRAINT persona_instructions_pkey PRIMARY KEY (persona_id, instructions_id);
 
 
 --
@@ -234,7 +234,7 @@ ALTER TABLE ONLY public.persona_instructions_junction
 --
 
 ALTER TABLE ONLY public.persona_names_junction
-    ADD CONSTRAINT persona_names_pkey PRIMARY KEY (persona_id, name_id);
+    ADD CONSTRAINT persona_names_pkey PRIMARY KEY (persona_id, names_id);
 
 
 --
@@ -243,7 +243,7 @@ ALTER TABLE ONLY public.persona_names_junction
 --
 
 ALTER TABLE ONLY public.persona_parameter_fields_junction
-    ADD CONSTRAINT persona_parameter_fields_junction_pkey PRIMARY KEY (persona_id, parameter_field_id);
+    ADD CONSTRAINT persona_parameter_fields_junction_pkey PRIMARY KEY (persona_id, parameter_fields_id);
 
 
 --
@@ -261,7 +261,7 @@ ALTER TABLE ONLY public.persona_personas_junction
 --
 
 ALTER TABLE ONLY public.persona_voices_junction
-    ADD CONSTRAINT persona_voices_junction_pkey PRIMARY KEY (persona_id, voice_id);
+    ADD CONSTRAINT persona_voices_junction_pkey PRIMARY KEY (persona_id, voices_id);
 
 
 --

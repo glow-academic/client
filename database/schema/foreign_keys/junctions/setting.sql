@@ -42,7 +42,7 @@ ALTER TABLE ONLY public.setting_auth_item_keys_junction
 --
 
 ALTER TABLE ONLY public.setting_auths_junction
-    ADD CONSTRAINT setting_auths_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auths_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT setting_auths_auth_id_fkey FOREIGN KEY (auths_id) REFERENCES public.auths_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -51,7 +51,7 @@ ALTER TABLE ONLY public.setting_auths_junction
 --
 
 ALTER TABLE ONLY public.setting_auths_junction
-    ADD CONSTRAINT setting_auths_settings_id_fkey FOREIGN KEY (settings_id) REFERENCES public.setting_artifact(id) ON DELETE CASCADE;
+    ADD CONSTRAINT setting_auths_settings_id_fkey FOREIGN KEY (setting_id) REFERENCES public.setting_artifact(id) ON DELETE CASCADE;
 
 
 --
@@ -60,7 +60,7 @@ ALTER TABLE ONLY public.setting_auths_junction
 --
 
 ALTER TABLE ONLY public.setting_colors_junction
-    ADD CONSTRAINT setting_colors_color_id_fkey FOREIGN KEY (color_id) REFERENCES public.colors_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT setting_colors_color_id_fkey FOREIGN KEY (colors_id) REFERENCES public.colors_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -78,7 +78,7 @@ ALTER TABLE ONLY public.setting_colors_junction
 --
 
 ALTER TABLE ONLY public.setting_departments_junction
-    ADD CONSTRAINT setting_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT setting_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -96,7 +96,7 @@ ALTER TABLE ONLY public.setting_departments_junction
 --
 
 ALTER TABLE ONLY public.setting_descriptions_junction
-    ADD CONSTRAINT setting_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT setting_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -114,7 +114,7 @@ ALTER TABLE ONLY public.setting_descriptions_junction
 --
 
 ALTER TABLE ONLY public.setting_flags_junction
-    ADD CONSTRAINT setting_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT setting_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -132,7 +132,7 @@ ALTER TABLE ONLY public.setting_flags_junction
 --
 
 ALTER TABLE ONLY public.setting_names_junction
-    ADD CONSTRAINT setting_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT setting_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -150,7 +150,7 @@ ALTER TABLE ONLY public.setting_names_junction
 --
 
 ALTER TABLE ONLY public.setting_profiles_junction
-    ADD CONSTRAINT setting_profiles_profile_id_fkey FOREIGN KEY (profile_id) REFERENCES public.profiles_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT setting_profiles_profile_id_fkey FOREIGN KEY (profiles_id) REFERENCES public.profiles_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -168,7 +168,7 @@ ALTER TABLE ONLY public.setting_profiles_junction
 --
 
 ALTER TABLE ONLY public.setting_provider_keys_junction
-    ADD CONSTRAINT setting_provider_keys_junction_provider_key_id_fkey FOREIGN KEY (provider_key_id) REFERENCES public.provider_keys_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT setting_provider_keys_junction_provider_key_id_fkey FOREIGN KEY (provider_keys_id) REFERENCES public.provider_keys_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -231,7 +231,7 @@ ALTER TABLE ONLY public.setting_thresholds_junction
 --
 
 ALTER TABLE ONLY public.setting_thresholds_junction
-    ADD CONSTRAINT setting_thresholds_threshold_id_fkey FOREIGN KEY (threshold_id) REFERENCES public.thresholds_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT setting_thresholds_threshold_id_fkey FOREIGN KEY (thresholds_id) REFERENCES public.thresholds_resource(id) ON DELETE CASCADE;
 
 
 --

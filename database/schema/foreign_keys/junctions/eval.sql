@@ -6,7 +6,7 @@
 --
 
 ALTER TABLE ONLY public.eval_departments_junction
-    ADD CONSTRAINT eval_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT eval_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -24,7 +24,7 @@ ALTER TABLE ONLY public.eval_departments_junction
 --
 
 ALTER TABLE ONLY public.eval_descriptions_junction
-    ADD CONSTRAINT eval_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT eval_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -69,7 +69,7 @@ ALTER TABLE ONLY public.eval_flags_junction
 --
 
 ALTER TABLE ONLY public.eval_flags_junction
-    ADD CONSTRAINT eval_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT eval_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -87,7 +87,7 @@ ALTER TABLE ONLY public.eval_model_flags_junction
 --
 
 ALTER TABLE ONLY public.eval_model_flags_junction
-    ADD CONSTRAINT eval_model_flags_junction_model_flag_id_fkey FOREIGN KEY (model_flag_id) REFERENCES public.model_flags_resource(id);
+    ADD CONSTRAINT eval_model_flags_junction_model_flag_id_fkey FOREIGN KEY (model_flags_id) REFERENCES public.model_flags_resource(id);
 
 
 --
@@ -105,7 +105,7 @@ ALTER TABLE ONLY public.eval_model_positions_junction
 --
 
 ALTER TABLE ONLY public.eval_model_positions_junction
-    ADD CONSTRAINT eval_model_positions_junction_model_position_id_fkey FOREIGN KEY (model_position_id) REFERENCES public.model_positions_resource(id);
+    ADD CONSTRAINT eval_model_positions_junction_model_position_id_fkey FOREIGN KEY (model_positions_id) REFERENCES public.model_positions_resource(id);
 
 
 --
@@ -123,7 +123,7 @@ ALTER TABLE ONLY public.eval_model_rubrics_junction
 --
 
 ALTER TABLE ONLY public.eval_model_rubrics_junction
-    ADD CONSTRAINT eval_model_rubrics_junction_model_rubric_id_fkey FOREIGN KEY (model_rubric_id) REFERENCES public.model_rubrics_resource(id);
+    ADD CONSTRAINT eval_model_rubrics_junction_model_rubric_id_fkey FOREIGN KEY (model_rubrics_id) REFERENCES public.model_rubrics_resource(id);
 
 
 --
@@ -141,7 +141,7 @@ ALTER TABLE ONLY public.eval_models_junction
 --
 
 ALTER TABLE ONLY public.eval_models_junction
-    ADD CONSTRAINT eval_models_junction_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT eval_models_junction_model_id_fkey FOREIGN KEY (models_id) REFERENCES public.models_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -159,7 +159,7 @@ ALTER TABLE ONLY public.eval_names_junction
 --
 
 ALTER TABLE ONLY public.eval_names_junction
-    ADD CONSTRAINT eval_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT eval_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -177,7 +177,7 @@ ALTER TABLE ONLY public.eval_rubrics_junction
 --
 
 ALTER TABLE ONLY public.eval_rubrics_junction
-    ADD CONSTRAINT eval_rubrics_junction_rubric_id_fkey FOREIGN KEY (rubric_id) REFERENCES public.rubrics_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT eval_rubrics_junction_rubric_id_fkey FOREIGN KEY (rubrics_id) REFERENCES public.rubrics_resource(id) ON DELETE CASCADE;
 
 
 --

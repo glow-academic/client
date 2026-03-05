@@ -85,7 +85,7 @@ CREATE INDEX idx_profile_request_limits_mcp ON public.profile_request_limits_jun
 -- Name: profile_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX profile_departments_department_id_v7_idx ON public.profile_departments_junction USING btree (department_id);
+CREATE INDEX profile_departments_department_id_v7_idx ON public.profile_departments_junction USING btree (departments_id);
 
 
 --
@@ -101,7 +101,7 @@ CREATE INDEX profile_departments_profile_id_v7_idx ON public.profile_departments
 -- Name: profile_emails_email_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX profile_emails_email_id_idx ON public.profile_emails_junction USING btree (email_id);
+CREATE INDEX profile_emails_email_id_idx ON public.profile_emails_junction USING btree (emails_id);
 
 
 --
@@ -133,7 +133,7 @@ CREATE INDEX profile_emails_profile_id_v7_idx ON public.profile_emails_junction 
 -- Name: profile_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX profile_flags_flag_id_idx ON public.profile_flags_junction USING btree (flag_id);
+CREATE INDEX profile_flags_flag_id_idx ON public.profile_flags_junction USING btree (flags_id);
 
 
 --
@@ -149,7 +149,7 @@ CREATE INDEX profile_flags_profile_id_idx ON public.profile_flags_junction USING
 -- Name: profile_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX profile_names_name_id_idx ON public.profile_names_junction USING btree (name_id);
+CREATE INDEX profile_names_name_id_idx ON public.profile_names_junction USING btree (names_id);
 
 
 --
@@ -189,7 +189,7 @@ CREATE INDEX profile_request_limits_profile_id_v7_idx ON public.profile_request_
 -- Name: profile_request_limits_request_limit_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX profile_request_limits_request_limit_id_idx ON public.profile_request_limits_junction USING btree (request_limit_id);
+CREATE INDEX profile_request_limits_request_limit_id_idx ON public.profile_request_limits_junction USING btree (request_limits_id);
 
 
 --
@@ -205,7 +205,7 @@ CREATE INDEX profile_roles_profile_id_idx ON public.profile_roles_junction USING
 -- Name: profile_roles_role_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX profile_roles_role_id_idx ON public.profile_roles_junction USING btree (role_id);
+CREATE INDEX profile_roles_role_id_idx ON public.profile_roles_junction USING btree (roles_id);
 
 
 --

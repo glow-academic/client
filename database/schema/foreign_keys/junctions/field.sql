@@ -6,7 +6,7 @@
 --
 
 ALTER TABLE ONLY public.field_conditional_parameters_junction
-    ADD CONSTRAINT field_conditional_parameters_junc_conditional_parameter_id_fkey FOREIGN KEY (conditional_parameter_id) REFERENCES public.conditional_parameters_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT field_conditional_parameters_junc_conditional_parameter_id_fkey FOREIGN KEY (conditional_parameters_id) REFERENCES public.conditional_parameters_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -24,7 +24,7 @@ ALTER TABLE ONLY public.field_conditional_parameters_junction
 --
 
 ALTER TABLE ONLY public.field_departments_junction
-    ADD CONSTRAINT field_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT field_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -42,7 +42,7 @@ ALTER TABLE ONLY public.field_departments_junction
 --
 
 ALTER TABLE ONLY public.field_descriptions_junction
-    ADD CONSTRAINT field_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT field_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -87,7 +87,7 @@ ALTER TABLE ONLY public.field_flags_junction
 --
 
 ALTER TABLE ONLY public.field_flags_junction
-    ADD CONSTRAINT field_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT field_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -105,7 +105,7 @@ ALTER TABLE ONLY public.field_names_junction
 --
 
 ALTER TABLE ONLY public.field_names_junction
-    ADD CONSTRAINT field_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT field_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --

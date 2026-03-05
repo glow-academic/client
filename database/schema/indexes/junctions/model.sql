@@ -189,7 +189,7 @@ CREATE INDEX model_departments_active_idx ON public.model_departments_junction U
 -- Name: model_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX model_departments_department_id_v7_idx ON public.model_departments_junction USING btree (department_id);
+CREATE INDEX model_departments_department_id_v7_idx ON public.model_departments_junction USING btree (departments_id);
 
 
 --
@@ -205,7 +205,7 @@ CREATE INDEX model_departments_model_id_v7_idx ON public.model_departments_junct
 -- Name: model_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX model_descriptions_description_id_idx ON public.model_descriptions_junction USING btree (description_id);
+CREATE INDEX model_descriptions_description_id_idx ON public.model_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -221,7 +221,7 @@ CREATE INDEX model_descriptions_model_id_idx ON public.model_descriptions_juncti
 -- Name: model_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX model_flags_flag_id_idx ON public.model_flags_junction USING btree (flag_id);
+CREATE INDEX model_flags_flag_id_idx ON public.model_flags_junction USING btree (flags_id);
 
 
 --
@@ -245,7 +245,7 @@ CREATE INDEX model_modalities_active_idx ON public.model_modalities_junction USI
 -- Name: model_modalities_modality_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX model_modalities_modality_id_idx ON public.model_modalities_junction USING btree (modality_id);
+CREATE INDEX model_modalities_modality_id_idx ON public.model_modalities_junction USING btree (modalities_id);
 
 
 --
@@ -285,7 +285,7 @@ CREATE INDEX model_names_model_id_idx ON public.model_names_junction USING btree
 -- Name: model_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX model_names_name_id_idx ON public.model_names_junction USING btree (name_id);
+CREATE INDEX model_names_name_id_idx ON public.model_names_junction USING btree (names_id);
 
 
 --
@@ -333,7 +333,7 @@ CREATE INDEX model_qualities_model_id_v7_idx ON public.model_qualities_junction 
 -- Name: model_qualities_quality_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX model_qualities_quality_id_idx ON public.model_qualities_junction USING btree (quality_id);
+CREATE INDEX model_qualities_quality_id_idx ON public.model_qualities_junction USING btree (qualities_id);
 
 
 --
@@ -349,7 +349,7 @@ CREATE INDEX model_reasoning_levels_model_id_idx ON public.model_reasoning_level
 -- Name: model_reasoning_levels_reasoning_level_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX model_reasoning_levels_reasoning_level_id_idx ON public.model_reasoning_levels_junction USING btree (reasoning_level_id);
+CREATE INDEX model_reasoning_levels_reasoning_level_id_idx ON public.model_reasoning_levels_junction USING btree (reasoning_levels_id);
 
 
 --
@@ -365,7 +365,7 @@ CREATE INDEX model_temperature_levels_model_id_idx ON public.model_temperature_l
 -- Name: model_temperature_levels_temperature_level_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX model_temperature_levels_temperature_level_id_idx ON public.model_temperature_levels_junction USING btree (temperature_level_id);
+CREATE INDEX model_temperature_levels_temperature_level_id_idx ON public.model_temperature_levels_junction USING btree (temperature_levels_id);
 
 
 --
@@ -381,7 +381,7 @@ CREATE INDEX model_values_model_id_idx ON public.model_values_junction USING btr
 -- Name: model_values_value_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX model_values_value_id_idx ON public.model_values_junction USING btree (value_id);
+CREATE INDEX model_values_value_id_idx ON public.model_values_junction USING btree (values_id);
 
 
 --
@@ -397,7 +397,7 @@ CREATE INDEX model_voices_model_id_idx ON public.model_voices_junction USING btr
 -- Name: model_voices_voice_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX model_voices_voice_id_idx ON public.model_voices_junction USING btree (voice_id);
+CREATE INDEX model_voices_voice_id_idx ON public.model_voices_junction USING btree (voices_id);
 
 
 --

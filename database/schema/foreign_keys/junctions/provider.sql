@@ -6,7 +6,7 @@
 --
 
 ALTER TABLE ONLY public.provider_departments_junction
-    ADD CONSTRAINT provider_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT provider_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -24,7 +24,7 @@ ALTER TABLE ONLY public.provider_departments_junction
 --
 
 ALTER TABLE ONLY public.provider_descriptions_junction
-    ADD CONSTRAINT provider_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT provider_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -42,7 +42,7 @@ ALTER TABLE ONLY public.provider_descriptions_junction
 --
 
 ALTER TABLE ONLY public.provider_endpoints_junction
-    ADD CONSTRAINT provider_endpoints_junction_endpoint_id_fkey FOREIGN KEY (endpoint_id) REFERENCES public.endpoints_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT provider_endpoints_junction_endpoint_id_fkey FOREIGN KEY (endpoints_id) REFERENCES public.endpoints_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -60,7 +60,7 @@ ALTER TABLE ONLY public.provider_endpoints_junction
 --
 
 ALTER TABLE ONLY public.provider_flags_junction
-    ADD CONSTRAINT provider_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT provider_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -78,7 +78,7 @@ ALTER TABLE ONLY public.provider_flags_junction
 --
 
 ALTER TABLE ONLY public.provider_keys_junction
-    ADD CONSTRAINT provider_keys_junction_key_id_fkey FOREIGN KEY (key_id) REFERENCES public.keys_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT provider_keys_junction_key_id_fkey FOREIGN KEY (keys_id) REFERENCES public.keys_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -96,7 +96,7 @@ ALTER TABLE ONLY public.provider_keys_junction
 --
 
 ALTER TABLE ONLY public.provider_names_junction
-    ADD CONSTRAINT provider_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT provider_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --

@@ -6,7 +6,7 @@
 --
 
 ALTER TABLE ONLY public.model_departments_junction
-    ADD CONSTRAINT model_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT model_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -24,7 +24,7 @@ ALTER TABLE ONLY public.model_departments_junction
 --
 
 ALTER TABLE ONLY public.model_descriptions_junction
-    ADD CONSTRAINT model_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT model_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -42,7 +42,7 @@ ALTER TABLE ONLY public.model_descriptions_junction
 --
 
 ALTER TABLE ONLY public.model_flags_junction
-    ADD CONSTRAINT model_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT model_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -60,7 +60,7 @@ ALTER TABLE ONLY public.model_flags_junction
 --
 
 ALTER TABLE ONLY public.model_modalities_junction
-    ADD CONSTRAINT model_modalities_modality_id_fkey FOREIGN KEY (modality_id) REFERENCES public.modalities_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT model_modalities_modality_id_fkey FOREIGN KEY (modalities_id) REFERENCES public.modalities_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -105,7 +105,7 @@ ALTER TABLE ONLY public.model_names_junction
 --
 
 ALTER TABLE ONLY public.model_names_junction
-    ADD CONSTRAINT model_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT model_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -159,7 +159,7 @@ ALTER TABLE ONLY public.model_qualities_junction
 --
 
 ALTER TABLE ONLY public.model_qualities_junction
-    ADD CONSTRAINT model_qualities_quality_id_fkey FOREIGN KEY (quality_id) REFERENCES public.qualities_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT model_qualities_quality_id_fkey FOREIGN KEY (qualities_id) REFERENCES public.qualities_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -177,7 +177,7 @@ ALTER TABLE ONLY public.model_reasoning_levels_junction
 --
 
 ALTER TABLE ONLY public.model_reasoning_levels_junction
-    ADD CONSTRAINT model_reasoning_levels_reasoning_level_id_fkey FOREIGN KEY (reasoning_level_id) REFERENCES public.reasoning_levels_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT model_reasoning_levels_reasoning_level_id_fkey FOREIGN KEY (reasoning_levels_id) REFERENCES public.reasoning_levels_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -195,7 +195,7 @@ ALTER TABLE ONLY public.model_temperature_levels_junction
 --
 
 ALTER TABLE ONLY public.model_temperature_levels_junction
-    ADD CONSTRAINT model_temperature_levels_temperature_level_id_fkey FOREIGN KEY (temperature_level_id) REFERENCES public.temperature_levels_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT model_temperature_levels_temperature_level_id_fkey FOREIGN KEY (temperature_levels_id) REFERENCES public.temperature_levels_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -213,7 +213,7 @@ ALTER TABLE ONLY public.model_values_junction
 --
 
 ALTER TABLE ONLY public.model_values_junction
-    ADD CONSTRAINT model_values_value_id_fkey FOREIGN KEY (value_id) REFERENCES public.values_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT model_values_value_id_fkey FOREIGN KEY (values_id) REFERENCES public.values_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -231,7 +231,7 @@ ALTER TABLE ONLY public.model_voices_junction
 --
 
 ALTER TABLE ONLY public.model_voices_junction
-    ADD CONSTRAINT model_voices_voice_id_fkey FOREIGN KEY (voice_id) REFERENCES public.voices_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT model_voices_voice_id_fkey FOREIGN KEY (voices_id) REFERENCES public.voices_resource(id) ON DELETE CASCADE;
 
 
 --

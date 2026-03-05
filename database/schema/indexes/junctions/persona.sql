@@ -133,7 +133,7 @@ CREATE INDEX idx_persona_names_mcp ON public.persona_names_junction USING btree 
 -- Name: idx_persona_parameter_fields_parameter_field_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_persona_parameter_fields_parameter_field_id ON public.persona_parameter_fields_junction USING btree (parameter_field_id);
+CREATE INDEX idx_persona_parameter_fields_parameter_field_id ON public.persona_parameter_fields_junction USING btree (parameter_fields_id);
 
 
 --
@@ -149,7 +149,7 @@ CREATE INDEX idx_persona_parameter_fields_persona_id ON public.persona_parameter
 -- Name: persona_colors_color_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX persona_colors_color_id_idx ON public.persona_colors_junction USING btree (color_id);
+CREATE INDEX persona_colors_color_id_idx ON public.persona_colors_junction USING btree (colors_id);
 
 
 --
@@ -173,7 +173,7 @@ CREATE INDEX persona_departments_active_idx ON public.persona_departments_juncti
 -- Name: persona_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX persona_departments_department_id_v7_idx ON public.persona_departments_junction USING btree (department_id);
+CREATE INDEX persona_departments_department_id_v7_idx ON public.persona_departments_junction USING btree (departments_id);
 
 
 --
@@ -189,7 +189,7 @@ CREATE INDEX persona_departments_persona_id_v7_idx ON public.persona_departments
 -- Name: persona_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX persona_descriptions_description_id_idx ON public.persona_descriptions_junction USING btree (description_id);
+CREATE INDEX persona_descriptions_description_id_idx ON public.persona_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -213,7 +213,7 @@ CREATE INDEX persona_examples_active_idx ON public.persona_examples_junction USI
 -- Name: persona_examples_example_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX persona_examples_example_id_v7_idx ON public.persona_examples_junction USING btree (example_id);
+CREATE INDEX persona_examples_example_id_v7_idx ON public.persona_examples_junction USING btree (examples_id);
 
 
 --
@@ -229,7 +229,7 @@ CREATE INDEX persona_examples_persona_id_v7_idx ON public.persona_examples_junct
 -- Name: persona_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX persona_flags_flag_id_idx ON public.persona_flags_junction USING btree (flag_id);
+CREATE INDEX persona_flags_flag_id_idx ON public.persona_flags_junction USING btree (flags_id);
 
 
 --
@@ -245,7 +245,7 @@ CREATE INDEX persona_flags_persona_id_idx ON public.persona_flags_junction USING
 -- Name: persona_icons_icon_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX persona_icons_icon_id_idx ON public.persona_icons_junction USING btree (icon_id);
+CREATE INDEX persona_icons_icon_id_idx ON public.persona_icons_junction USING btree (icons_id);
 
 
 --
@@ -261,7 +261,7 @@ CREATE INDEX persona_icons_persona_id_idx ON public.persona_icons_junction USING
 -- Name: persona_instructions_instruction_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX persona_instructions_instruction_id_idx ON public.persona_instructions_junction USING btree (instruction_id);
+CREATE INDEX persona_instructions_instruction_id_idx ON public.persona_instructions_junction USING btree (instructions_id);
 
 
 --
@@ -277,7 +277,7 @@ CREATE INDEX persona_instructions_persona_id_idx ON public.persona_instructions_
 -- Name: persona_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX persona_names_name_id_idx ON public.persona_names_junction USING btree (name_id);
+CREATE INDEX persona_names_name_id_idx ON public.persona_names_junction USING btree (names_id);
 
 
 --
@@ -309,7 +309,7 @@ CREATE INDEX persona_personas_personas_id_idx ON public.persona_personas_junctio
 -- Name: persona_voices_junction_voice_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX persona_voices_junction_voice_id_idx ON public.persona_voices_junction USING btree (voice_id);
+CREATE INDEX persona_voices_junction_voice_id_idx ON public.persona_voices_junction USING btree (voices_id);
 
 
 --

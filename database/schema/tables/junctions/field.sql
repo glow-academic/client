@@ -7,7 +7,7 @@
 
 CREATE TABLE public.field_conditional_parameters_junction (
     field_id uuid NOT NULL,
-    conditional_parameter_id uuid CONSTRAINT field_conditional_parameters__conditional_parameter_id_not_null NOT NULL,
+    conditional_parameters_id uuid CONSTRAINT field_conditional_parameters__conditional_parameter_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -23,7 +23,7 @@ CREATE TABLE public.field_conditional_parameters_junction (
 CREATE TABLE public.field_departments_junction (
     active boolean DEFAULT true CONSTRAINT field_departments_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT field_departments_created_at_not_null NOT NULL,
-    department_id uuid CONSTRAINT field_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT field_departments_department_id_not_null NOT NULL,
     field_id uuid CONSTRAINT field_departments_field_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT field_departments_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT field_departments_mcp_not_null NOT NULL
@@ -37,7 +37,7 @@ CREATE TABLE public.field_departments_junction (
 
 CREATE TABLE public.field_descriptions_junction (
     field_id uuid CONSTRAINT field_descriptions_field_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT field_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT field_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT field_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT field_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT field_descriptions_mcp_not_null NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE public.field_fields_junction (
 
 CREATE TABLE public.field_flags_junction (
     field_id uuid CONSTRAINT field_flags_field_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT field_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT field_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT field_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT field_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT field_flags_mcp_not_null NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE public.field_flags_junction (
 
 CREATE TABLE public.field_names_junction (
     field_id uuid CONSTRAINT field_names_field_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT field_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT field_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT field_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT field_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT field_names_mcp_not_null NOT NULL,
@@ -96,7 +96,7 @@ CREATE TABLE public.field_names_junction (
 --
 
 ALTER TABLE ONLY public.field_conditional_parameters_junction
-    ADD CONSTRAINT field_conditional_parameters_junction_pkey PRIMARY KEY (field_id, conditional_parameter_id);
+    ADD CONSTRAINT field_conditional_parameters_junction_pkey PRIMARY KEY (field_id, conditional_parameters_id);
 
 
 --
@@ -105,7 +105,7 @@ ALTER TABLE ONLY public.field_conditional_parameters_junction
 --
 
 ALTER TABLE ONLY public.field_departments_junction
-    ADD CONSTRAINT field_departments_pkey PRIMARY KEY (field_id, department_id);
+    ADD CONSTRAINT field_departments_pkey PRIMARY KEY (field_id, departments_id);
 
 
 --
@@ -114,7 +114,7 @@ ALTER TABLE ONLY public.field_departments_junction
 --
 
 ALTER TABLE ONLY public.field_descriptions_junction
-    ADD CONSTRAINT field_descriptions_pkey PRIMARY KEY (field_id, description_id);
+    ADD CONSTRAINT field_descriptions_pkey PRIMARY KEY (field_id, descriptions_id);
 
 
 --
@@ -132,7 +132,7 @@ ALTER TABLE ONLY public.field_fields_junction
 --
 
 ALTER TABLE ONLY public.field_flags_junction
-    ADD CONSTRAINT field_flags_pkey PRIMARY KEY (field_id, flag_id);
+    ADD CONSTRAINT field_flags_pkey PRIMARY KEY (field_id, flags_id);
 
 
 --
@@ -141,7 +141,7 @@ ALTER TABLE ONLY public.field_flags_junction
 --
 
 ALTER TABLE ONLY public.field_names_junction
-    ADD CONSTRAINT field_names_pkey PRIMARY KEY (field_id, name_id);
+    ADD CONSTRAINT field_names_pkey PRIMARY KEY (field_id, names_id);
 
 
 --

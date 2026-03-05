@@ -7,7 +7,7 @@
 
 CREATE TABLE public.provider_departments_junction (
     provider_id uuid CONSTRAINT provider_departments_provider_id_not_null NOT NULL,
-    department_id uuid CONSTRAINT provider_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT provider_departments_department_id_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT provider_departments_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT provider_departments_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT provider_departments_generated_not_null NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE public.provider_departments_junction (
 
 CREATE TABLE public.provider_descriptions_junction (
     provider_id uuid CONSTRAINT provider_descriptions_provider_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT provider_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT provider_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT provider_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT provider_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT provider_descriptions_mcp_not_null NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE public.provider_descriptions_junction (
 
 CREATE TABLE public.provider_endpoints_junction (
     provider_id uuid NOT NULL,
-    endpoint_id uuid NOT NULL,
+    endpoints_id uuid CONSTRAINT provider_endpoints_junction_endpoint_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE public.provider_endpoints_junction (
 
 CREATE TABLE public.provider_flags_junction (
     provider_id uuid CONSTRAINT provider_flags_provider_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT provider_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT provider_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT provider_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT provider_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT provider_flags_mcp_not_null NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE public.provider_flags_junction (
 
 CREATE TABLE public.provider_keys_junction (
     provider_id uuid NOT NULL,
-    key_id uuid NOT NULL,
+    keys_id uuid CONSTRAINT provider_keys_junction_key_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE public.provider_keys_junction (
 
 CREATE TABLE public.provider_names_junction (
     provider_id uuid CONSTRAINT provider_names_provider_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT provider_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT provider_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT provider_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT provider_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT provider_names_mcp_not_null NOT NULL,
@@ -126,7 +126,7 @@ CREATE TABLE public.provider_values_junction (
 --
 
 ALTER TABLE ONLY public.provider_departments_junction
-    ADD CONSTRAINT provider_departments_pkey PRIMARY KEY (provider_id, department_id);
+    ADD CONSTRAINT provider_departments_pkey PRIMARY KEY (provider_id, departments_id);
 
 
 --
@@ -135,7 +135,7 @@ ALTER TABLE ONLY public.provider_departments_junction
 --
 
 ALTER TABLE ONLY public.provider_descriptions_junction
-    ADD CONSTRAINT provider_descriptions_pkey PRIMARY KEY (provider_id, description_id);
+    ADD CONSTRAINT provider_descriptions_pkey PRIMARY KEY (provider_id, descriptions_id);
 
 
 --
@@ -144,7 +144,7 @@ ALTER TABLE ONLY public.provider_descriptions_junction
 --
 
 ALTER TABLE ONLY public.provider_endpoints_junction
-    ADD CONSTRAINT provider_endpoints_junction_pkey PRIMARY KEY (provider_id, endpoint_id);
+    ADD CONSTRAINT provider_endpoints_junction_pkey PRIMARY KEY (provider_id, endpoints_id);
 
 
 --
@@ -153,7 +153,7 @@ ALTER TABLE ONLY public.provider_endpoints_junction
 --
 
 ALTER TABLE ONLY public.provider_flags_junction
-    ADD CONSTRAINT provider_flags_pkey PRIMARY KEY (provider_id, flag_id);
+    ADD CONSTRAINT provider_flags_pkey PRIMARY KEY (provider_id, flags_id);
 
 
 --
@@ -162,7 +162,7 @@ ALTER TABLE ONLY public.provider_flags_junction
 --
 
 ALTER TABLE ONLY public.provider_keys_junction
-    ADD CONSTRAINT provider_keys_junction_pkey PRIMARY KEY (provider_id, key_id);
+    ADD CONSTRAINT provider_keys_junction_pkey PRIMARY KEY (provider_id, keys_id);
 
 
 --
@@ -171,7 +171,7 @@ ALTER TABLE ONLY public.provider_keys_junction
 --
 
 ALTER TABLE ONLY public.provider_names_junction
-    ADD CONSTRAINT provider_names_pkey PRIMARY KEY (provider_id, name_id);
+    ADD CONSTRAINT provider_names_pkey PRIMARY KEY (provider_id, names_id);
 
 
 --

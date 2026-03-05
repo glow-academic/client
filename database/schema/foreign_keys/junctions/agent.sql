@@ -33,7 +33,7 @@ ALTER TABLE ONLY public.agent_departments_junction
 --
 
 ALTER TABLE ONLY public.agent_departments_junction
-    ADD CONSTRAINT agent_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT agent_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -51,7 +51,7 @@ ALTER TABLE ONLY public.agent_descriptions_junction
 --
 
 ALTER TABLE ONLY public.agent_descriptions_junction
-    ADD CONSTRAINT agent_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT agent_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -69,7 +69,7 @@ ALTER TABLE ONLY public.agent_flags_junction
 --
 
 ALTER TABLE ONLY public.agent_flags_junction
-    ADD CONSTRAINT agent_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT agent_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -87,7 +87,7 @@ ALTER TABLE ONLY public.agent_models_junction
 --
 
 ALTER TABLE ONLY public.agent_models_junction
-    ADD CONSTRAINT agent_models_junction_model_id_fkey FOREIGN KEY (model_id) REFERENCES public.models_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT agent_models_junction_model_id_fkey FOREIGN KEY (models_id) REFERENCES public.models_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -105,7 +105,7 @@ ALTER TABLE ONLY public.agent_names_junction
 --
 
 ALTER TABLE ONLY public.agent_names_junction
-    ADD CONSTRAINT agent_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT agent_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -123,7 +123,7 @@ ALTER TABLE ONLY public.agent_reasoning_levels_junction
 --
 
 ALTER TABLE ONLY public.agent_reasoning_levels_junction
-    ADD CONSTRAINT agent_reasoning_levels_junction_reasoning_level_id_fkey FOREIGN KEY (reasoning_level_id) REFERENCES public.reasoning_levels_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT agent_reasoning_levels_junction_reasoning_level_id_fkey FOREIGN KEY (reasoning_levels_id) REFERENCES public.reasoning_levels_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -141,7 +141,7 @@ ALTER TABLE ONLY public.agent_temperature_levels_junction
 --
 
 ALTER TABLE ONLY public.agent_temperature_levels_junction
-    ADD CONSTRAINT agent_temperature_levels_junction_temperature_level_id_fkey FOREIGN KEY (temperature_level_id) REFERENCES public.temperature_levels_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT agent_temperature_levels_junction_temperature_level_id_fkey FOREIGN KEY (temperature_levels_id) REFERENCES public.temperature_levels_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -159,7 +159,7 @@ ALTER TABLE ONLY public.agent_tools_junction
 --
 
 ALTER TABLE ONLY public.agent_tools_junction
-    ADD CONSTRAINT agent_tools_tool_id_fkey FOREIGN KEY (tool_id) REFERENCES public.tools_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT agent_tools_tool_id_fkey FOREIGN KEY (tools_id) REFERENCES public.tools_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -177,7 +177,7 @@ ALTER TABLE ONLY public.agent_voices_junction
 --
 
 ALTER TABLE ONLY public.agent_voices_junction
-    ADD CONSTRAINT agent_voices_junction_voice_id_fkey FOREIGN KEY (voice_id) REFERENCES public.voices_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT agent_voices_junction_voice_id_fkey FOREIGN KEY (voices_id) REFERENCES public.voices_resource(id) ON DELETE CASCADE;
 
 
 --

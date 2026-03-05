@@ -22,7 +22,7 @@ CREATE TABLE public.auth_auths_junction (
 
 CREATE TABLE public.auth_departments_junction (
     auth_id uuid CONSTRAINT auth_departments_auth_id_not_null NOT NULL,
-    department_id uuid CONSTRAINT auth_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT auth_departments_department_id_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT auth_departments_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT auth_departments_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT auth_departments_generated_not_null NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE public.auth_departments_junction (
 
 CREATE TABLE public.auth_descriptions_junction (
     auth_id uuid CONSTRAINT auth_descriptions_auth_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT auth_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT auth_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT auth_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT auth_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT auth_descriptions_mcp_not_null NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE public.auth_descriptions_junction (
 
 CREATE TABLE public.auth_flags_junction (
     auth_id uuid CONSTRAINT auth_flags_auth_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT auth_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT auth_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT auth_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT auth_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT auth_flags_mcp_not_null NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE public.auth_flags_junction (
 
 CREATE TABLE public.auth_items_junction (
     auth_id uuid CONSTRAINT auth_items_new_auth_id_not_null NOT NULL,
-    item_id uuid CONSTRAINT auth_items_new_item_id_not_null NOT NULL,
+    items_id uuid CONSTRAINT auth_items_new_item_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT auth_items_new_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT auth_items_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT auth_items_mcp_not_null NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE public.auth_items_junction (
 
 CREATE TABLE public.auth_names_junction (
     auth_id uuid CONSTRAINT auth_names_auth_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT auth_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT auth_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT auth_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT auth_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT auth_names_mcp_not_null NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE public.auth_names_junction (
 
 CREATE TABLE public.auth_protocols_junction (
     auth_id uuid CONSTRAINT auth_protocols_auth_id_not_null NOT NULL,
-    protocol_id uuid CONSTRAINT auth_protocols_protocol_id_not_null NOT NULL,
+    protocols_id uuid CONSTRAINT auth_protocols_protocol_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT auth_protocols_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT auth_protocols_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT auth_protocols_mcp_not_null NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE public.auth_protocols_junction (
 
 CREATE TABLE public.auth_slugs_junction (
     auth_id uuid CONSTRAINT auth_slugs_auth_id_not_null NOT NULL,
-    slug_id uuid CONSTRAINT auth_slugs_slug_id_not_null NOT NULL,
+    slugs_id uuid CONSTRAINT auth_slugs_slug_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT auth_slugs_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT auth_slugs_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT auth_slugs_mcp_not_null NOT NULL,
@@ -135,7 +135,7 @@ ALTER TABLE ONLY public.auth_auths_junction
 --
 
 ALTER TABLE ONLY public.auth_departments_junction
-    ADD CONSTRAINT auth_departments_pkey PRIMARY KEY (auth_id, department_id);
+    ADD CONSTRAINT auth_departments_pkey PRIMARY KEY (auth_id, departments_id);
 
 
 --
@@ -144,7 +144,7 @@ ALTER TABLE ONLY public.auth_departments_junction
 --
 
 ALTER TABLE ONLY public.auth_descriptions_junction
-    ADD CONSTRAINT auth_descriptions_pkey PRIMARY KEY (auth_id, description_id);
+    ADD CONSTRAINT auth_descriptions_pkey PRIMARY KEY (auth_id, descriptions_id);
 
 
 --
@@ -153,7 +153,7 @@ ALTER TABLE ONLY public.auth_descriptions_junction
 --
 
 ALTER TABLE ONLY public.auth_flags_junction
-    ADD CONSTRAINT auth_flags_pkey PRIMARY KEY (auth_id, flag_id);
+    ADD CONSTRAINT auth_flags_pkey PRIMARY KEY (auth_id, flags_id);
 
 
 --
@@ -162,7 +162,7 @@ ALTER TABLE ONLY public.auth_flags_junction
 --
 
 ALTER TABLE ONLY public.auth_items_junction
-    ADD CONSTRAINT auth_items_pkey PRIMARY KEY (auth_id, item_id);
+    ADD CONSTRAINT auth_items_pkey PRIMARY KEY (auth_id, items_id);
 
 
 --
@@ -171,7 +171,7 @@ ALTER TABLE ONLY public.auth_items_junction
 --
 
 ALTER TABLE ONLY public.auth_names_junction
-    ADD CONSTRAINT auth_names_pkey PRIMARY KEY (auth_id, name_id);
+    ADD CONSTRAINT auth_names_pkey PRIMARY KEY (auth_id, names_id);
 
 
 --
@@ -180,7 +180,7 @@ ALTER TABLE ONLY public.auth_names_junction
 --
 
 ALTER TABLE ONLY public.auth_protocols_junction
-    ADD CONSTRAINT auth_protocols_pkey PRIMARY KEY (auth_id, protocol_id);
+    ADD CONSTRAINT auth_protocols_pkey PRIMARY KEY (auth_id, protocols_id);
 
 
 --
@@ -189,7 +189,7 @@ ALTER TABLE ONLY public.auth_protocols_junction
 --
 
 ALTER TABLE ONLY public.auth_slugs_junction
-    ADD CONSTRAINT auth_slugs_pkey PRIMARY KEY (auth_id, slug_id);
+    ADD CONSTRAINT auth_slugs_pkey PRIMARY KEY (auth_id, slugs_id);
 
 
 --

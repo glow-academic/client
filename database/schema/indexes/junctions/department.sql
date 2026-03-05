@@ -29,7 +29,7 @@ CREATE INDEX department_descriptions_department_id_idx ON public.department_desc
 -- Name: department_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX department_descriptions_description_id_idx ON public.department_descriptions_junction USING btree (description_id);
+CREATE INDEX department_descriptions_description_id_idx ON public.department_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -45,7 +45,7 @@ CREATE INDEX department_flags_department_id_idx ON public.department_flags_junct
 -- Name: department_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX department_flags_flag_id_idx ON public.department_flags_junction USING btree (flag_id);
+CREATE INDEX department_flags_flag_id_idx ON public.department_flags_junction USING btree (flags_id);
 
 
 --
@@ -61,7 +61,7 @@ CREATE INDEX department_names_department_id_idx ON public.department_names_junct
 -- Name: department_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX department_names_name_id_idx ON public.department_names_junction USING btree (name_id);
+CREATE INDEX department_names_name_id_idx ON public.department_names_junction USING btree (names_id);
 
 
 --

@@ -85,7 +85,7 @@ CREATE INDEX idx_simulation_scenarios_mcp ON public.simulation_scenarios_junctio
 -- Name: simulation_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX simulation_departments_department_id_v7_idx ON public.simulation_departments_junction USING btree (department_id);
+CREATE INDEX simulation_departments_department_id_v7_idx ON public.simulation_departments_junction USING btree (departments_id);
 
 
 --
@@ -101,7 +101,7 @@ CREATE INDEX simulation_departments_simulation_id_v7_idx ON public.simulation_de
 -- Name: simulation_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX simulation_descriptions_description_id_idx ON public.simulation_descriptions_junction USING btree (description_id);
+CREATE INDEX simulation_descriptions_description_id_idx ON public.simulation_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -117,7 +117,7 @@ CREATE INDEX simulation_descriptions_simulation_id_idx ON public.simulation_desc
 -- Name: simulation_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX simulation_flags_flag_id_idx ON public.simulation_flags_junction USING btree (flag_id);
+CREATE INDEX simulation_flags_flag_id_idx ON public.simulation_flags_junction USING btree (flags_id);
 
 
 --
@@ -133,7 +133,7 @@ CREATE INDEX simulation_flags_simulation_id_idx ON public.simulation_flags_junct
 -- Name: simulation_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX simulation_names_name_id_idx ON public.simulation_names_junction USING btree (name_id);
+CREATE INDEX simulation_names_name_id_idx ON public.simulation_names_junction USING btree (names_id);
 
 
 --
@@ -149,7 +149,7 @@ CREATE INDEX simulation_names_simulation_id_idx ON public.simulation_names_junct
 -- Name: simulation_scenario_flags_new_scenario_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX simulation_scenario_flags_new_scenario_flag_id_idx ON public.simulation_scenario_flags_junction USING btree (scenario_flag_id);
+CREATE INDEX simulation_scenario_flags_new_scenario_flag_id_idx ON public.simulation_scenario_flags_junction USING btree (scenario_flags_id);
 
 
 --
@@ -165,7 +165,7 @@ CREATE INDEX simulation_scenario_flags_new_simulation_id_idx ON public.simulatio
 -- Name: simulation_scenario_positions_scenario_position_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX simulation_scenario_positions_scenario_position_id_idx ON public.simulation_scenario_positions_junction USING btree (scenario_position_id);
+CREATE INDEX simulation_scenario_positions_scenario_position_id_idx ON public.simulation_scenario_positions_junction USING btree (scenario_positions_id);
 
 
 --
@@ -181,7 +181,7 @@ CREATE INDEX simulation_scenario_positions_simulation_id_idx ON public.simulatio
 -- Name: simulation_scenario_rubrics_scenario_rubric_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX simulation_scenario_rubrics_scenario_rubric_id_idx ON public.simulation_scenario_rubrics_junction USING btree (scenario_rubric_id);
+CREATE INDEX simulation_scenario_rubrics_scenario_rubric_id_idx ON public.simulation_scenario_rubrics_junction USING btree (scenario_rubrics_id);
 
 
 --
@@ -197,7 +197,7 @@ CREATE INDEX simulation_scenario_rubrics_simulation_id_idx ON public.simulation_
 -- Name: simulation_scenario_time_limits_scenario_time_limit_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX simulation_scenario_time_limits_scenario_time_limit_id_idx ON public.simulation_scenario_time_limits_junction USING btree (scenario_time_limit_id);
+CREATE INDEX simulation_scenario_time_limits_scenario_time_limit_id_idx ON public.simulation_scenario_time_limits_junction USING btree (scenario_time_limits_id);
 
 
 --
@@ -213,7 +213,7 @@ CREATE INDEX simulation_scenario_time_limits_simulation_id_idx ON public.simulat
 -- Name: simulation_scenarios_scenario_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX simulation_scenarios_scenario_id_v7_idx ON public.simulation_scenarios_junction USING btree (scenario_id);
+CREATE INDEX simulation_scenarios_scenario_id_v7_idx ON public.simulation_scenarios_junction USING btree (scenarios_id);
 
 
 --

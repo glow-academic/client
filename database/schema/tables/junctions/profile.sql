@@ -9,7 +9,7 @@ CREATE TABLE public.profile_departments_junction (
     is_primary boolean DEFAULT false CONSTRAINT profile_departments_is_primary_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT profile_departments_created_at_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT profile_departments_active_not_null NOT NULL,
-    department_id uuid CONSTRAINT profile_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT profile_departments_department_id_not_null NOT NULL,
     profile_id uuid CONSTRAINT profile_departments_profile_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT profile_departments_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT profile_departments_mcp_not_null NOT NULL
@@ -27,7 +27,7 @@ CREATE TABLE public.profile_emails_junction (
     active boolean DEFAULT true CONSTRAINT profile_emails_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT profile_emails_created_at_not_null NOT NULL,
     profile_id uuid CONSTRAINT profile_emails_profile_id_not_null NOT NULL,
-    email_id uuid CONSTRAINT profile_emails_email_id_not_null NOT NULL,
+    emails_id uuid CONSTRAINT profile_emails_email_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT profile_emails_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT profile_emails_mcp_not_null NOT NULL
 );
@@ -40,7 +40,7 @@ CREATE TABLE public.profile_emails_junction (
 
 CREATE TABLE public.profile_flags_junction (
     profile_id uuid CONSTRAINT profile_flags_profile_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT profile_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT profile_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT profile_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT profile_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT profile_flags_mcp_not_null NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE public.profile_flags_junction (
 
 CREATE TABLE public.profile_names_junction (
     profile_id uuid CONSTRAINT profile_names_profile_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT profile_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT profile_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT profile_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT profile_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT profile_names_mcp_not_null NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE public.profile_request_limits_junction (
     active boolean DEFAULT true CONSTRAINT profile_request_limits_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT profile_request_limits_created_at_not_null NOT NULL,
     profile_id uuid,
-    request_limit_id uuid,
+    request_limits_id uuid,
     generated boolean DEFAULT false CONSTRAINT profile_request_limits_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT profile_request_limits_mcp_not_null NOT NULL,
     CONSTRAINT profile_request_limits_requests_per_day_check CHECK ((requests_per_day > 0))
@@ -110,7 +110,7 @@ COMMENT ON TABLE public.profile_request_limits_junction IS 'Stores daily request
 
 CREATE TABLE public.profile_roles_junction (
     profile_id uuid CONSTRAINT profile_roles_profile_id_not_null NOT NULL,
-    role_id uuid CONSTRAINT profile_roles_role_id_not_null NOT NULL,
+    roles_id uuid CONSTRAINT profile_roles_role_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT profile_roles_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT profile_roles_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT profile_roles_mcp_not_null NOT NULL,
@@ -124,7 +124,7 @@ CREATE TABLE public.profile_roles_junction (
 --
 
 ALTER TABLE ONLY public.profile_departments_junction
-    ADD CONSTRAINT profile_departments_pkey PRIMARY KEY (profile_id, department_id);
+    ADD CONSTRAINT profile_departments_pkey PRIMARY KEY (profile_id, departments_id);
 
 
 --
@@ -133,7 +133,7 @@ ALTER TABLE ONLY public.profile_departments_junction
 --
 
 ALTER TABLE ONLY public.profile_emails_junction
-    ADD CONSTRAINT profile_emails_pkey PRIMARY KEY (profile_id, email_id);
+    ADD CONSTRAINT profile_emails_pkey PRIMARY KEY (profile_id, emails_id);
 
 
 --
@@ -142,7 +142,7 @@ ALTER TABLE ONLY public.profile_emails_junction
 --
 
 ALTER TABLE ONLY public.profile_flags_junction
-    ADD CONSTRAINT profile_flags_pkey PRIMARY KEY (profile_id, flag_id);
+    ADD CONSTRAINT profile_flags_pkey PRIMARY KEY (profile_id, flags_id);
 
 
 --
@@ -169,7 +169,7 @@ ALTER TABLE ONLY public.profile_profiles_junction
 --
 
 ALTER TABLE ONLY public.profile_roles_junction
-    ADD CONSTRAINT profile_roles_pkey PRIMARY KEY (profile_id, role_id);
+    ADD CONSTRAINT profile_roles_pkey PRIMARY KEY (profile_id, roles_id);
 
 
 --

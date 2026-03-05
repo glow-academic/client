@@ -133,7 +133,7 @@ CREATE INDEX idx_scenario_options_mcp ON public.scenario_options_junction USING 
 -- Name: idx_scenario_parameter_fields_parameter_field_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_scenario_parameter_fields_parameter_field_id ON public.scenario_parameter_fields_junction USING btree (parameter_field_id);
+CREATE INDEX idx_scenario_parameter_fields_parameter_field_id ON public.scenario_parameter_fields_junction USING btree (parameter_fields_id);
 
 
 --
@@ -213,7 +213,7 @@ CREATE INDEX idx_scenario_videos_mcp ON public.scenario_videos_junction USING bt
 -- Name: scenario_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_departments_department_id_v7_idx ON public.scenario_departments_junction USING btree (department_id);
+CREATE INDEX scenario_departments_department_id_v7_idx ON public.scenario_departments_junction USING btree (departments_id);
 
 
 --
@@ -229,7 +229,7 @@ CREATE INDEX scenario_departments_scenario_id_v7_idx ON public.scenario_departme
 -- Name: scenario_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_descriptions_description_id_idx ON public.scenario_descriptions_junction USING btree (description_id);
+CREATE INDEX scenario_descriptions_description_id_idx ON public.scenario_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -245,7 +245,7 @@ CREATE INDEX scenario_descriptions_scenario_id_idx ON public.scenario_descriptio
 -- Name: scenario_documents_document_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_documents_document_id_v7_idx ON public.scenario_documents_junction USING btree (document_id);
+CREATE INDEX scenario_documents_document_id_v7_idx ON public.scenario_documents_junction USING btree (documents_id);
 
 
 --
@@ -261,7 +261,7 @@ CREATE INDEX scenario_documents_scenario_id_v7_idx ON public.scenario_documents_
 -- Name: scenario_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_flags_flag_id_idx ON public.scenario_flags_junction USING btree (flag_id);
+CREATE INDEX scenario_flags_flag_id_idx ON public.scenario_flags_junction USING btree (flags_id);
 
 
 --
@@ -277,7 +277,7 @@ CREATE INDEX scenario_flags_scenario_id_idx ON public.scenario_flags_junction US
 -- Name: scenario_images_image_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_images_image_id_v7_idx ON public.scenario_images_junction USING btree (image_id);
+CREATE INDEX scenario_images_image_id_v7_idx ON public.scenario_images_junction USING btree (images_id);
 
 
 --
@@ -293,7 +293,7 @@ CREATE INDEX scenario_images_scenario_id_v7_idx ON public.scenario_images_juncti
 -- Name: scenario_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_names_name_id_idx ON public.scenario_names_junction USING btree (name_id);
+CREATE INDEX scenario_names_name_id_idx ON public.scenario_names_junction USING btree (names_id);
 
 
 --
@@ -309,7 +309,7 @@ CREATE INDEX scenario_names_scenario_id_idx ON public.scenario_names_junction US
 -- Name: scenario_objectives_objective_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_objectives_objective_id_v7_idx ON public.scenario_objectives_junction USING btree (objective_id);
+CREATE INDEX scenario_objectives_objective_id_v7_idx ON public.scenario_objectives_junction USING btree (objectives_id);
 
 
 --
@@ -325,7 +325,7 @@ CREATE INDEX scenario_objectives_scenario_id_v7_idx ON public.scenario_objective
 -- Name: scenario_options_option_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_options_option_id_idx ON public.scenario_options_junction USING btree (option_id);
+CREATE INDEX scenario_options_option_id_idx ON public.scenario_options_junction USING btree (options_id);
 
 
 --
@@ -349,7 +349,7 @@ CREATE INDEX scenario_options_scenario_id_idx ON public.scenario_options_junctio
 -- Name: scenario_personas_persona_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_personas_persona_id_v7_idx ON public.scenario_personas_junction USING btree (persona_id);
+CREATE INDEX scenario_personas_persona_id_v7_idx ON public.scenario_personas_junction USING btree (personas_id);
 
 
 --
@@ -357,7 +357,7 @@ CREATE INDEX scenario_personas_persona_id_v7_idx ON public.scenario_personas_jun
 -- Name: scenario_personas_scenario_active_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_personas_scenario_active_idx ON public.scenario_personas_junction USING btree (scenario_id, persona_id) WHERE (active = true);
+CREATE INDEX scenario_personas_scenario_active_idx ON public.scenario_personas_junction USING btree (scenario_id, personas_id) WHERE (active = true);
 
 
 --
@@ -373,7 +373,7 @@ CREATE INDEX scenario_personas_scenario_id_v7_idx ON public.scenario_personas_ju
 -- Name: scenario_problem_statements_problem_statement_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_problem_statements_problem_statement_id_v7_idx ON public.scenario_problem_statements_junction USING btree (problem_statement_id);
+CREATE INDEX scenario_problem_statements_problem_statement_id_v7_idx ON public.scenario_problem_statements_junction USING btree (problem_statements_id);
 
 
 --
@@ -389,7 +389,7 @@ CREATE INDEX scenario_problem_statements_scenario_id_v7_idx ON public.scenario_p
 -- Name: scenario_questions_question_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_questions_question_id_idx ON public.scenario_questions_junction USING btree (question_id);
+CREATE INDEX scenario_questions_question_id_idx ON public.scenario_questions_junction USING btree (questions_id);
 
 
 --
@@ -397,7 +397,7 @@ CREATE INDEX scenario_questions_question_id_idx ON public.scenario_questions_jun
 -- Name: scenario_questions_question_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_questions_question_id_v7_idx ON public.scenario_questions_junction USING btree (question_id);
+CREATE INDEX scenario_questions_question_id_v7_idx ON public.scenario_questions_junction USING btree (questions_id);
 
 
 --
@@ -453,7 +453,7 @@ CREATE INDEX scenario_videos_scenario_id_v7_idx ON public.scenario_videos_juncti
 -- Name: scenario_videos_video_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX scenario_videos_video_id_v7_idx ON public.scenario_videos_junction USING btree (video_id);
+CREATE INDEX scenario_videos_video_id_v7_idx ON public.scenario_videos_junction USING btree (videos_id);
 
 
 --

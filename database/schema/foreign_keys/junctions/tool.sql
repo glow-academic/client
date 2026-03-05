@@ -60,7 +60,7 @@ ALTER TABLE ONLY public.tool_args_junction
 --
 
 ALTER TABLE ONLY public.tool_artifacts_junction
-    ADD CONSTRAINT tool_artifacts_junction_artifact_id_fkey FOREIGN KEY (artifact_id) REFERENCES public.artifacts_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT tool_artifacts_junction_artifact_id_fkey FOREIGN KEY (artifacts_id) REFERENCES public.artifacts_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -78,7 +78,7 @@ ALTER TABLE ONLY public.tool_artifacts_junction
 --
 
 ALTER TABLE ONLY public.tool_departments_junction
-    ADD CONSTRAINT tool_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT tool_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -96,7 +96,7 @@ ALTER TABLE ONLY public.tool_departments_junction
 --
 
 ALTER TABLE ONLY public.tool_descriptions_junction
-    ADD CONSTRAINT tool_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT tool_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -114,7 +114,7 @@ ALTER TABLE ONLY public.tool_descriptions_junction
 --
 
 ALTER TABLE ONLY public.tool_entries_junction
-    ADD CONSTRAINT tool_entries_junction_entry_id_fkey FOREIGN KEY (entry_id) REFERENCES public.entries_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT tool_entries_junction_entry_id_fkey FOREIGN KEY (entries_id) REFERENCES public.entries_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -132,7 +132,7 @@ ALTER TABLE ONLY public.tool_entries_junction
 --
 
 ALTER TABLE ONLY public.tool_flags_junction
-    ADD CONSTRAINT tool_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT tool_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -150,7 +150,7 @@ ALTER TABLE ONLY public.tool_flags_junction
 --
 
 ALTER TABLE ONLY public.tool_names_junction
-    ADD CONSTRAINT tool_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT tool_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -168,7 +168,7 @@ ALTER TABLE ONLY public.tool_names_junction
 --
 
 ALTER TABLE ONLY public.tool_operations_junction
-    ADD CONSTRAINT tool_operations_operation_id_fkey FOREIGN KEY (operation_id) REFERENCES public.operations_resource(id);
+    ADD CONSTRAINT tool_operations_operation_id_fkey FOREIGN KEY (operations_id) REFERENCES public.operations_resource(id);
 
 
 --
@@ -186,7 +186,7 @@ ALTER TABLE ONLY public.tool_operations_junction
 --
 
 ALTER TABLE ONLY public.tool_resources_junction
-    ADD CONSTRAINT tool_resources_resource_id_fkey FOREIGN KEY (resource_id) REFERENCES public.resources_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT tool_resources_resource_id_fkey FOREIGN KEY (resources_id) REFERENCES public.resources_resource(id) ON DELETE CASCADE;
 
 
 --

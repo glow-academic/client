@@ -55,224 +55,6 @@ def __getattr__(name: str) -> Any:
 # ============================================================================
 
 
-# Generated from: delete_agent
-
-class DeleteAgentSqlParams(BaseModel):
-
-    agent_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.profile_id,
-        )
-
-class DeleteAgentSqlRow(BaseModel):
-
-    usage_count: int | None = None
-    deleted: bool | None = None
-    name: str | None = None
-    actor_name: str | None = None
-
-class DeleteAgentApiRequest(BaseModel):
-
-    agent_id: UUID
-
-class DeleteAgentApiResponse(BaseModel):
-
-    usage_count: int | None = None
-    deleted: bool | None = None
-    name: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: duplicate_agent
-
-class DuplicateAgentSqlParams(BaseModel):
-
-    agent_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.profile_id,
-        )
-
-class DuplicateAgentSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    actor_name: str | None = None
-
-class DuplicateAgentApiRequest(BaseModel):
-
-    agent_id: UUID
-
-class DuplicateAgentApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: get_agent_access
-
-class GetAgentAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    agent_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.agent_id,
-            self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class GetAgentAccessSqlRow(BaseModel):
-
-    agent_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    agent_department_ids: list[UUID] | None = None
-    active_usage_count: int | None = None
-
-class GetAgentAccessApiRequest(BaseModel):
-
-    agent_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetAgentAccessApiResponse(BaseModel):
-
-    agent_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    agent_department_ids: list[UUID] | None = None
-    active_usage_count: int | None = None
-
-
-
-# Generated from: get_agent_docs
-
-class GetAgentDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetAgentDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetAgentDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetAgentDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_agent_ids
-
-class GetAgentIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    agent_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.agent_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetAgentIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    model_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    temperature_level_id: UUID | None = None
-    reasoning_level_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    tool_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-
-class GetAgentIdsApiRequest(BaseModel):
-
-    agent_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetAgentIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    model_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    temperature_level_id: UUID | None = None
-    reasoning_level_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    tool_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-
-
-
-# Generated from: get_agent_model_info
-
-class GetAgentModelInfoSqlParams(BaseModel):
-
-    agent_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_id,
-            self.profile_id,
-        )
-
-class GetAgentModelInfoSqlRow(BaseModel):
-
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-
-class GetAgentModelInfoApiRequest(BaseModel):
-
-    agent_id: UUID
-
-class GetAgentModelInfoApiResponse(BaseModel):
-
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-
-
-
 # Generated from: get_agent_resource_ids_by_group_id
 
 class GetAgentResourceIdsByGroupIdSqlParams(BaseModel):
@@ -318,122 +100,6 @@ class GetAgentResourceIdsByGroupIdApiResponse(BaseModel):
     instructions_id: UUID | None = None
     active_flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
-
-
-
-# Generated from: get_agents_list
-
-class GetAgentsListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_model_ids: list[UUID] | None = None
-    filter_tool_ids: list[UUID] | None = None
-    department_search: str | None = None
-    model_search: str | None = None
-    tool_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.filter_department_ids,
-            self.filter_model_ids,
-            self.filter_tool_ids,
-            self.department_search,
-            self.model_search,
-            self.tool_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListAgentsV4Agent(BaseModel):
-
-    agent_id: UUID | None
-    name: str | None
-    description: str | None
-    reasoning: str | None
-    temperature: float | None
-    model_id: UUID | None
-    role: str | None
-    updated_at: datetime | None
-    department_ids: list[str] | None
-    active_settings_count: int | None
-
-
-
-
-class QListAgentsV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-class GetAgentsListSqlRow(BaseModel):
-
-    agents: list[QListAgentsV4Agent] | None = None
-    department_options: list[QListAgentsV4Option] | None = None
-    model_options: list[QListAgentsV4Option] | None = None
-    tool_options: list[QListAgentsV4Option] | None = None
-    total_count: int | None = None
-
-class GetAgentsListApiRequest(BaseModel):
-
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_model_ids: list[UUID] | None = None
-    filter_tool_ids: list[UUID] | None = None
-    department_search: str | None = None
-    model_search: str | None = None
-    tool_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-class GetAgentsListApiResponse(BaseModel):
-
-    agents: list[QListAgentsV4Agent] | None = None
-    department_options: list[QListAgentsV4Option] | None = None
-    model_options: list[QListAgentsV4Option] | None = None
-    tool_options: list[QListAgentsV4Option] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_artifact_agent_ids
-
-class GetArtifactAgentIdsSqlParams(BaseModel):
-
-    profile_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    p_artifact_entries: Any | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.user_department_ids,
-            self.p_artifact_entries,
-        )
-
-class QGetArtifactAgentIdsV4Item(BaseModel):
-
-    artifact: str | None
-    general_agent_id: UUID | None
-
-class GetArtifactAgentIdsSqlRow(BaseModel):
-
-    items: list[QGetArtifactAgentIdsV4Item] | None = None
-
-class GetArtifactAgentIdsApiRequest(BaseModel):
-
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    p_artifact_entries: Any | None = None
-
-class GetArtifactAgentIdsApiResponse(BaseModel):
-
-    items: list[QGetArtifactAgentIdsV4Item] | None = None
 
 
 
@@ -1272,71 +938,6 @@ class UpdateChatCreatedAtApiResponse(BaseModel):
 
 
 
-# Generated from: get_voice_session_context
-
-class GetVoiceSessionContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_chat_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_chat_id,
-        )
-
-class GetVoiceSessionContextSqlRow(BaseModel):
-
-    chat_id: UUID | None = None
-    attempt_id: UUID | None = None
-    simulation_id: UUID | None = None
-    api_key: str | None = None
-    provider_name: str | None = None
-
-class GetVoiceSessionContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_chat_id: UUID
-
-class GetVoiceSessionContextApiResponse(BaseModel):
-
-    chat_id: UUID | None = None
-    attempt_id: UUID | None = None
-    simulation_id: UUID | None = None
-    api_key: str | None = None
-    provider_name: str | None = None
-
-
-
-# Generated from: check_auth_delete_access
-
-class CheckAuthDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    auth_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.auth_id,
-        )
-
-class CheckAuthDeleteAccessSqlRow(BaseModel):
-
-    auth_exists: bool | None = None
-    active_settings_count: int | None = None
-
-class CheckAuthDeleteAccessApiRequest(BaseModel):
-
-    auth_id: UUID
-
-class CheckAuthDeleteAccessApiResponse(BaseModel):
-
-    auth_exists: bool | None = None
-    active_settings_count: int | None = None
-
-
-
 # Generated from: check_auth_duplicate_access
 
 class CheckAuthDuplicateAccessSqlParams(BaseModel):
@@ -1422,180 +1023,6 @@ class ConsumeEmulationGrantApiResponse(BaseModel):
 
 
 
-# Generated from: create_emulation_grant
-
-class CreateEmulationGrantSqlParams(BaseModel):
-
-    requester_profile_id: UUID
-    target_profile_id: UUID
-    ttl_minutes: int | None = 120
-    signin_base_url: str | None = None
-    callback_url: str | None = None
-    idp_alias: str | None = None
-    return_url: str | None = None
-    keycloak_public_url: str | None = None
-    keycloak_client_id: str | None = None
-    origin: str | None = None
-    prefix: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.requester_profile_id,
-            self.target_profile_id,
-            self.ttl_minutes,
-            self.signin_base_url,
-            self.callback_url,
-            self.idp_alias,
-            self.return_url,
-            self.keycloak_public_url,
-            self.keycloak_client_id,
-            self.origin,
-            self.prefix,
-        )
-
-class CreateEmulationGrantSqlRow(BaseModel):
-
-    allowed: bool | None = None
-    reason: str | None = None
-    actor_name: str | None = None
-    grant_id: UUID | None = None
-    expires_at: datetime | None = None
-    target_profile_id: UUID | None = None
-    redirect_url: str | None = None
-    logout_url: str | None = None
-    emulate_page_url: str | None = None
-
-class CreateEmulationGrantApiRequest(BaseModel):
-
-    requester_profile_id: UUID
-    target_profile_id: UUID
-    ttl_minutes: int | None = 120
-    signin_base_url: str | None = None
-    callback_url: str | None = None
-    idp_alias: str | None = None
-    return_url: str | None = None
-    keycloak_public_url: str | None = None
-    keycloak_client_id: str | None = None
-    origin: str | None = None
-    prefix: str | None = None
-
-class CreateEmulationGrantApiResponse(BaseModel):
-
-    allowed: bool | None = None
-    reason: str | None = None
-    actor_name: str | None = None
-    grant_id: UUID | None = None
-    expires_at: datetime | None = None
-    target_profile_id: UUID | None = None
-    redirect_url: str | None = None
-    logout_url: str | None = None
-    emulate_page_url: str | None = None
-
-
-
-# Generated from: delete_auth
-
-class DeleteAuthSqlParams(BaseModel):
-
-    auth_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.auth_id,
-            self.profile_id,
-        )
-
-class DeleteAuthSqlRow(BaseModel):
-
-    auth_exists: bool | None = None
-    success: bool | None = None
-    name: str | None = None
-    message: str | None = None
-    actor_name: str | None = None
-
-class DeleteAuthApiRequest(BaseModel):
-
-    auth_id: UUID
-
-class DeleteAuthApiResponse(BaseModel):
-
-    auth_exists: bool | None = None
-    success: bool | None = None
-    name: str | None = None
-    message: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: duplicate_auth
-
-class DuplicateAuthSqlParams(BaseModel):
-
-    auth_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.auth_id,
-            self.profile_id,
-        )
-
-class DuplicateAuthSqlRow(BaseModel):
-
-    auth_exists: bool | None = None
-    success: bool | None = None
-    auth_id: UUID | None = None
-    original_name: str | None = None
-    message: str | None = None
-    actor_name: str | None = None
-
-class DuplicateAuthApiRequest(BaseModel):
-
-    auth_id: UUID
-
-class DuplicateAuthApiResponse(BaseModel):
-
-    auth_exists: bool | None = None
-    success: bool | None = None
-    auth_id: UUID | None = None
-    original_name: str | None = None
-    message: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: get_agent_tool_entries
-
-class GetAgentToolEntriesSqlParams(BaseModel):
-
-    agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.agent_ids,
-        )
-
-class GetAgentToolEntriesSqlRow(BaseModel):
-
-    agent_id: UUID | None = None
-    tool_id: UUID | None = None
-    resource: str | None = None
-    is_creatable: bool | None = None
-
-class GetAgentToolEntriesApiRequest(BaseModel):
-
-    agent_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetAgentToolEntriesApiResponse(BaseModel):
-
-    agent_id: UUID | None = None
-    tool_id: UUID | None = None
-    resource: str | None = None
-    is_creatable: bool | None = None
-
-
-
 # Generated from: get_auth_access
 
 class GetAuthAccessSqlParams(BaseModel):
@@ -1633,379 +1060,6 @@ class GetAuthAccessApiResponse(BaseModel):
     auth_exists: bool | None = None
     effective_draft_version: int | None = None
     group_id: UUID | None = None
-
-
-
-# Generated from: get_auth
-
-class GetAuthSqlParams(BaseModel):
-
-    profile_id: UUID
-    auth_id: UUID | None = None
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.auth_id,
-            self.draft_id,
-            self.mcp,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class QGetAuthV4AuthItem(BaseModel):
-
-    auth_item_id: UUID | None
-    name: str | None
-    description: str | None
-    position: int | None
-    active: bool | None
-    value_masked: str | None
-    key_id: str | None
-    encrypted: bool | None
-
-
-
-
-class QGetAuthV4DescriptionResource(BaseModel):
-
-    id: UUID | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetAuthV4FlagResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    icon: str | None
-    generated: bool | None
-
-
-
-
-class QGetAuthV4NameResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    generated: bool | None
-
-
-
-
-class QGetAuthV4Protocol(BaseModel):
-
-    id: UUID | None
-    value: str | None
-    generated: bool | None
-
-
-
-
-class QGetAuthV4Slug(BaseModel):
-
-    id: UUID | None
-    value: str | None
-    generated: bool | None
-
-class GetAuthSqlRow(BaseModel):
-
-    auth_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetAuthV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetAuthV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetAuthV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetAuthV4DescriptionResource] | None = None
-    active_flag_id: UUID | None = None
-    flag_resource: QGetAuthV4FlagResource | None = None
-    show_flag: bool | None = None
-    flag_agent_id: UUID | None = None
-    flag_required: bool | None = None
-    flag_suggestions: list[UUID] | None = None
-    protocol_ids: list[UUID] | None = None
-    protocol_resources: list[QGetAuthV4Protocol] | None = None
-    show_protocols: bool | None = None
-    protocols_agent_id: UUID | None = None
-    protocols_required: bool | None = None
-    protocol_suggestions: list[UUID] | None = None
-    protocols: list[QGetAuthV4Protocol] | None = None
-    slug_ids: list[UUID] | None = None
-    slug_resources: list[QGetAuthV4Slug] | None = None
-    show_slugs: bool | None = None
-    slugs_agent_id: UUID | None = None
-    slugs_required: bool | None = None
-    slug_suggestions: list[UUID] | None = None
-    slugs: list[QGetAuthV4Slug] | None = None
-    auth_items_junction: list[QGetAuthV4AuthItem] | None = None
-    auth_item_ids: Any | None = None
-    auth_item_active_states: Any | None = None
-    auth_item_encrypted_states: Any | None = None
-    draft_version: int | None = None
-
-class GetAuthApiRequest(BaseModel):
-
-    auth_id: UUID | None = None
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetAuthApiResponse(BaseModel):
-
-    auth_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetAuthV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetAuthV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetAuthV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetAuthV4DescriptionResource] | None = None
-    active_flag_id: UUID | None = None
-    flag_resource: QGetAuthV4FlagResource | None = None
-    show_flag: bool | None = None
-    flag_agent_id: UUID | None = None
-    flag_required: bool | None = None
-    flag_suggestions: list[UUID] | None = None
-    protocol_ids: list[UUID] | None = None
-    protocol_resources: list[QGetAuthV4Protocol] | None = None
-    show_protocols: bool | None = None
-    protocols_agent_id: UUID | None = None
-    protocols_required: bool | None = None
-    protocol_suggestions: list[UUID] | None = None
-    protocols: list[QGetAuthV4Protocol] | None = None
-    slug_ids: list[UUID] | None = None
-    slug_resources: list[QGetAuthV4Slug] | None = None
-    show_slugs: bool | None = None
-    slugs_agent_id: UUID | None = None
-    slugs_required: bool | None = None
-    slug_suggestions: list[UUID] | None = None
-    slugs: list[QGetAuthV4Slug] | None = None
-    auth_items_junction: list[QGetAuthV4AuthItem] | None = None
-    auth_item_ids: Any | None = None
-    auth_item_active_states: Any | None = None
-    auth_item_encrypted_states: Any | None = None
-    draft_version: int | None = None
-
-
-
-# Generated from: get_auth_docs
-
-class GetAuthDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetAuthDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetAuthDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetAuthDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_auth_ids
-
-class GetAuthIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    auth_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.auth_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetAuthIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    protocol_ids: list[UUID] | None = None
-    slug_ids: list[UUID] | None = None
-    auth_item_ids: list[UUID] | None = None
-
-class GetAuthIdsApiRequest(BaseModel):
-
-    auth_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetAuthIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    protocol_ids: list[UUID] | None = None
-    slug_ids: list[UUID] | None = None
-    auth_item_ids: list[UUID] | None = None
-
-
-
-# Generated from: get_auth_list
-
-class GetAuthListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    department_search: str | None = None
-    page_size: int | None = 1000
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.filter_department_ids,
-            self.department_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QGetAuthListV4AuthItem(BaseModel):
-
-    auth_item_id: UUID | None
-    name: str | None
-    description: str | None
-
-class QGetAuthListV4Auth(BaseModel):
-
-    auth_id: UUID | None
-    name: str | None
-    description: str | None
-    is_inactive: bool | None
-    updated_at: datetime | None
-    num_items: int | None
-    sample_items: list[QGetAuthListV4AuthItem] | None
-    department_ids: list[str] | None
-    active_settings_count: int | None
-
-
-
-
-class QGetAuthListV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-class GetAuthListSqlRow(BaseModel):
-
-    auths: list[QGetAuthListV4Auth] | None = None
-    department_options: list[QGetAuthListV4Option] | None = None
-    total_count: int | None = None
-
-class GetAuthListApiRequest(BaseModel):
-
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    department_search: str | None = None
-    page_size: int | None = 1000
-    page_offset: int | None = 0
-
-class GetAuthListApiResponse(BaseModel):
-
-    auths: list[QGetAuthListV4Auth] | None = None
-    department_options: list[QGetAuthListV4Option] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_login_data
-
-class GetLoginDataSqlParams(BaseModel):
-
-    department_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-        )
-
-class QGetLoginDataV4Department(BaseModel):
-
-    id: str | None
-    title: str | None
-    description: str | None
-
-
-
-
-class QGetLoginDataV4Provider(BaseModel):
-
-    id: str | None
-    name: str | None
-    icon: str | None
-    is_default: bool | None
-
-class GetLoginDataSqlRow(BaseModel):
-
-    providers: list[QGetLoginDataV4Provider] | None = None
-    departments: list[QGetLoginDataV4Department] | None = None
-    guest_login_enabled: bool | None = None
-    default_department_id: str | None = None
-    realm_name: str | None = None
-    organization_id: str | None = None
-
-class GetLoginDataApiRequest(BaseModel):
-
-    department_id: UUID | None = None
-
-class GetLoginDataApiResponse(BaseModel):
-
-    providers: list[QGetLoginDataV4Provider] | None = None
-    departments: list[QGetLoginDataV4Department] | None = None
-    guest_login_enabled: bool | None = None
-    default_department_id: str | None = None
-    realm_name: str | None = None
-    organization_id: str | None = None
 
 
 
@@ -2179,64 +1233,6 @@ class RecordProfileLoginApiResponse(BaseModel):
 
 
 
-# Generated from: resolve_callback_redirect
-
-class ResolveCallbackRedirectSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class ResolveCallbackRedirectSqlRow(BaseModel):
-
-    role: str | None = None
-    redirect_path: str | None = None
-
-class ResolveCallbackRedirectApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class ResolveCallbackRedirectApiResponse(BaseModel):
-
-    role: str | None = None
-    redirect_path: str | None = None
-
-
-
-# Generated from: resolve_default_idp_profile
-
-class ResolveDefaultIdpProfileSqlParams(BaseModel):
-
-    p_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-        )
-
-class ResolveDefaultIdpProfileSqlRow(BaseModel):
-
-    profile_id: UUID | None = None
-    primary_email: str | None = None
-    name: str | None = None
-    role: str | None = None
-
-class ResolveDefaultIdpProfileApiRequest(BaseModel):
-
-    p_profile_id: UUID
-
-class ResolveDefaultIdpProfileApiResponse(BaseModel):
-
-    profile_id: UUID | None = None
-    primary_email: str | None = None
-    name: str | None = None
-    role: str | None = None
-
-
-
 # Generated from: save_auth
 
 class SaveAuthSqlParams(BaseModel):
@@ -2352,410 +1348,6 @@ class PatchSuiteDraftApiResponse(BaseModel):
     draft_id: UUID | None = None
     new_version: int | None = None
     draft_exists: bool | None = None
-
-
-
-# Generated from: check_cohort_delete_access
-
-class CheckCohortDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    cohort_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.cohort_id,
-        )
-
-class CheckCohortDeleteAccessSqlRow(BaseModel):
-
-    cohort_exists: bool | None = None
-    cohort_department_ids: list[str] | None = None
-    usage_count: int | None = None
-
-class CheckCohortDeleteAccessApiRequest(BaseModel):
-
-    cohort_id: UUID
-
-class CheckCohortDeleteAccessApiResponse(BaseModel):
-
-    cohort_exists: bool | None = None
-    cohort_department_ids: list[str] | None = None
-    usage_count: int | None = None
-
-
-
-# Generated from: check_cohort_duplicate_access
-
-class CheckCohortDuplicateAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    cohort_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.cohort_id,
-        )
-
-class CheckCohortDuplicateAccessSqlRow(BaseModel):
-
-    cohort_exists: bool | None = None
-    original_name: str | None = None
-    cohort_department_ids: list[str] | None = None
-
-class CheckCohortDuplicateAccessApiRequest(BaseModel):
-
-    cohort_id: UUID
-
-class CheckCohortDuplicateAccessApiResponse(BaseModel):
-
-    cohort_exists: bool | None = None
-    original_name: str | None = None
-    cohort_department_ids: list[str] | None = None
-
-
-
-# Generated from: delete_cohort
-
-class DeleteCohortSqlParams(BaseModel):
-
-    cohort_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.cohort_id,
-            self.profile_id,
-        )
-
-class DeleteCohortSqlRow(BaseModel):
-
-    usage_count: int | None = None
-    deleted: bool | None = None
-    name: str | None = None
-    actor_name: str | None = None
-
-class DeleteCohortApiRequest(BaseModel):
-
-    cohort_id: UUID
-
-class DeleteCohortApiResponse(BaseModel):
-
-    usage_count: int | None = None
-    deleted: bool | None = None
-    name: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: duplicate_cohort
-
-class DuplicateCohortSqlParams(BaseModel):
-
-    cohort_id: UUID
-    profile_id: UUID
-    name_resource_id: UUID | None = None
-    session_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.cohort_id,
-            self.profile_id,
-            self.name_resource_id,
-            self.session_id,
-        )
-
-class DuplicateCohortSqlRow(BaseModel):
-
-    id: UUID | None = None
-    name: str | None = None
-    original_name: str | None = None
-    actor_name: str | None = None
-
-class DuplicateCohortApiRequest(BaseModel):
-
-    cohort_id: UUID
-    name_resource_id: UUID | None = None
-    session_id: UUID | None = None
-
-class DuplicateCohortApiResponse(BaseModel):
-
-    id: UUID | None = None
-    name: str | None = None
-    original_name: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: export_cohorts
-
-class ExportCohortsSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    filter_simulation_ids: list[UUID] | None = None
-    filter_profile_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.filter_simulation_ids,
-            self.filter_profile_ids,
-            self.filter_department_ids,
-        )
-
-class QExportCohortsV4Row(BaseModel):
-
-    cohort_id: UUID | None
-    name_id: UUID | None
-    name: str | None
-    description_id: UUID | None
-    description: str | None
-    is_inactive: bool | None
-    department_ids: list[UUID] | None
-    departments: list[str] | None
-    simulation_ids: list[UUID] | None
-    simulations: list[str] | None
-    simulation_position_ids: list[UUID] | None
-    simulation_positions: list[str] | None
-    simulation_availability_ids: list[UUID] | None
-    simulation_availability: list[str] | None
-    profile_ids: list[UUID] | None
-    profiles: list[str] | None
-    profile_persona_ids: list[UUID] | None
-    profile_personas: list[str] | None
-
-class ExportCohortsSqlRow(BaseModel):
-
-    rows: list[QExportCohortsV4Row] | None = None
-
-class ExportCohortsApiRequest(BaseModel):
-
-    search: str | None = None
-    filter_simulation_ids: list[UUID] | None = None
-    filter_profile_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-
-class ExportCohortsApiResponse(BaseModel):
-
-    rows: list[QExportCohortsV4Row] | None = None
-
-
-
-# Generated from: get_cohort_access
-
-class GetCohortAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    cohort_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.cohort_id,
-            self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class GetCohortAccessSqlRow(BaseModel):
-
-    cohort_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    cohort_department_ids: list[UUID] | None = None
-    usage_count: int | None = None
-
-class GetCohortAccessApiRequest(BaseModel):
-
-    cohort_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetCohortAccessApiResponse(BaseModel):
-
-    cohort_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    cohort_department_ids: list[UUID] | None = None
-    usage_count: int | None = None
-
-
-
-# Generated from: get_cohort_docs
-
-class GetCohortDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetCohortDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetCohortDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetCohortDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_cohort_ids
-
-class GetCohortIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    cohort_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.cohort_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetCohortIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    simulation_position_values: list[int] | None = None
-    simulation_availability_ids: list[UUID] | None = None
-    profile_ids: list[UUID] | None = None
-    profile_persona_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    simulation_suggestions: list[UUID] | None = None
-
-class GetCohortIdsApiRequest(BaseModel):
-
-    cohort_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetCohortIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    simulation_position_values: list[int] | None = None
-    simulation_availability_ids: list[UUID] | None = None
-    profile_ids: list[UUID] | None = None
-    profile_persona_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    simulation_suggestions: list[UUID] | None = None
-
-
-
-# Generated from: get_cohorts_list
-
-class GetCohortsListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    filter_simulation_ids: list[UUID] | None = None
-    filter_profile_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    simulation_search: str | None = None
-    profile_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.filter_simulation_ids,
-            self.filter_profile_ids,
-            self.filter_department_ids,
-            self.simulation_search,
-            self.profile_search,
-            self.department_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListCohortsV4Cohort(BaseModel):
-
-    cohort_id: UUID | None
-    name: str | None
-    description: str | None
-    is_inactive: bool | None
-    department_ids: list[str] | None
-    profile_ids: list[str] | None
-    simulation_ids: list[str] | None
-    usage_count: int | None
-    num_members: int | None
-    is_member: bool | None
-    generated: bool | None
-    mcp: bool | None
-    updated_at: datetime | None
-
-
-
-
-class QListCohortsV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-class GetCohortsListSqlRow(BaseModel):
-
-    cohorts: list[QListCohortsV4Cohort] | None = None
-    simulation_options: list[QListCohortsV4Option] | None = None
-    profile_options: list[QListCohortsV4Option] | None = None
-    department_options: list[QListCohortsV4Option] | None = None
-    total_count: int | None = None
-
-class GetCohortsListApiRequest(BaseModel):
-
-    search: str | None = None
-    filter_simulation_ids: list[UUID] | None = None
-    filter_profile_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    simulation_search: str | None = None
-    profile_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-class GetCohortsListApiResponse(BaseModel):
-
-    cohorts: list[QListCohortsV4Cohort] | None = None
-    simulation_options: list[QListCohortsV4Option] | None = None
-    profile_options: list[QListCohortsV4Option] | None = None
-    department_options: list[QListCohortsV4Option] | None = None
-    total_count: int | None = None
 
 
 
@@ -3043,72 +1635,6 @@ class CheckDepartmentSaveAccessApiResponse(BaseModel):
 
 
 
-# Generated from: delete_department
-
-class DeleteDepartmentSqlParams(BaseModel):
-
-    department_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.profile_id,
-        )
-
-class DeleteDepartmentSqlRow(BaseModel):
-
-    department_exists: bool | None = None
-    deleted: bool | None = None
-    total_usage: int | None = None
-    title: str | None = None
-    actor_name: str | None = None
-
-class DeleteDepartmentApiRequest(BaseModel):
-
-    department_id: UUID
-
-class DeleteDepartmentApiResponse(BaseModel):
-
-    department_exists: bool | None = None
-    deleted: bool | None = None
-    total_usage: int | None = None
-    title: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: duplicate_department
-
-class DuplicateDepartmentSqlParams(BaseModel):
-
-    department_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-            self.profile_id,
-        )
-
-class DuplicateDepartmentSqlRow(BaseModel):
-
-    new_department_id: UUID | None = None
-    original_title: str | None = None
-    actor_name: str | None = None
-
-class DuplicateDepartmentApiRequest(BaseModel):
-
-    department_id: UUID
-
-class DuplicateDepartmentApiResponse(BaseModel):
-
-    new_department_id: UUID | None = None
-    original_title: str | None = None
-    actor_name: str | None = None
-
-
-
 # Generated from: get_department_access
 
 class GetDepartmentAccessSqlParams(BaseModel):
@@ -3150,121 +1676,6 @@ class GetDepartmentAccessApiResponse(BaseModel):
     group_id: UUID | None = None
     department_department_ids: list[UUID] | None = None
     usage_count: int | None = None
-
-
-
-# Generated from: get_department_docs
-
-class GetDepartmentDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetDepartmentDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetDepartmentDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetDepartmentDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_department_ids
-
-class GetDepartmentIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    department_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.department_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetDepartmentIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    settings_ids: list[UUID] | None = None
-
-class GetDepartmentIdsApiRequest(BaseModel):
-
-    department_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetDepartmentIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    settings_ids: list[UUID] | None = None
-
-
-
-# Generated from: get_departments_list
-
-class GetDepartmentsListSqlParams(BaseModel):
-
-    profile_id: UUID
-    user_role: str | None = None
-    search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.user_role,
-            self.search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListDepartmentsV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-    is_inactive: bool | None
-    updated_at: datetime | None
-    staff_count: int | None
-    total_usage: int | None
-
-class GetDepartmentsListSqlRow(BaseModel):
-
-    departments: list[QListDepartmentsV4Department] | None = None
-    total_count: int | None = None
-
-class GetDepartmentsListApiRequest(BaseModel):
-
-    user_role: str | None = None
-    search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-class GetDepartmentsListApiResponse(BaseModel):
-
-    departments: list[QListDepartmentsV4Department] | None = None
-    total_count: int | None = None
 
 
 
@@ -3410,40 +1821,6 @@ class GetDeveloperInstructionApiResponse(BaseModel):
 
 
 
-# Generated from: get_developer_instruction_context
-
-class GetDeveloperInstructionContextSqlParams(BaseModel):
-
-    p_agent_id: UUID
-    p_scenario_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_agent_id,
-            self.p_scenario_id,
-        )
-
-class GetDeveloperInstructionContextSqlRow(BaseModel):
-
-    parameters: Any | None = None
-    fields: Any | None = None
-    documents: Any | None = None
-    times: Any | None = None
-
-class GetDeveloperInstructionContextApiRequest(BaseModel):
-
-    p_agent_id: UUID
-    p_scenario_id: UUID | None = None
-
-class GetDeveloperInstructionContextApiResponse(BaseModel):
-
-    parameters: Any | None = None
-    fields: Any | None = None
-    documents: Any | None = None
-    times: Any | None = None
-
-
-
 # Generated from: get_docs_columns
 
 class GetDocsColumnsSqlParams(BaseModel):
@@ -3562,60 +1939,6 @@ class GetDocumentAgentIdV4ApiResponse(BaseModel):
 
 
 
-# Generated from: get_document_department_v4
-
-class GetDocumentDepartmentV4SqlParams(BaseModel):
-
-    document_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.document_id,
-        )
-
-class GetDocumentDepartmentV4SqlRow(BaseModel):
-
-    department_id: UUID | None = None
-
-class GetDocumentDepartmentV4ApiRequest(BaseModel):
-
-    document_id: UUID
-
-class GetDocumentDepartmentV4ApiResponse(BaseModel):
-
-    department_id: UUID | None = None
-
-
-
-# Generated from: check_document_delete_access
-
-class CheckDocumentDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    document_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.document_id,
-        )
-
-class CheckDocumentDeleteAccessSqlRow(BaseModel):
-
-    document_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-class CheckDocumentDeleteAccessApiRequest(BaseModel):
-
-    document_id: UUID
-
-class CheckDocumentDeleteAccessApiResponse(BaseModel):
-
-    document_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-
-
 # Generated from: check_document_duplicate_access
 
 class CheckDocumentDuplicateAccessSqlParams(BaseModel):
@@ -3641,170 +1964,6 @@ class CheckDocumentDuplicateAccessApiResponse(BaseModel):
 
 
 
-# Generated from: check_document_save_access
-
-class CheckDocumentSaveAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    document_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.document_id,
-        )
-
-class CheckDocumentSaveAccessSqlRow(BaseModel):
-
-    document_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-class CheckDocumentSaveAccessApiRequest(BaseModel):
-
-    document_id: UUID | None = None
-
-class CheckDocumentSaveAccessApiResponse(BaseModel):
-
-    document_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-
-
-# Generated from: delete_document
-
-class DeleteDocumentSqlParams(BaseModel):
-
-    document_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.document_id,
-            self.profile_id,
-        )
-
-class DeleteDocumentSqlRow(BaseModel):
-
-    success: bool | None = None
-    message: str | None = None
-    document_id: UUID | None = None
-    document_name: str | None = None
-    actor_name: str | None = None
-
-class DeleteDocumentApiRequest(BaseModel):
-
-    document_id: UUID
-
-class DeleteDocumentApiResponse(BaseModel):
-
-    success: bool | None = None
-    message: str | None = None
-    document_id: UUID | None = None
-    document_name: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: duplicate_document
-
-class DuplicateDocumentSqlParams(BaseModel):
-
-    document_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.document_id,
-            self.profile_id,
-        )
-
-class DuplicateDocumentSqlRow(BaseModel):
-
-    new_document_id: UUID | None = None
-    original_name: str | None = None
-
-class DuplicateDocumentApiRequest(BaseModel):
-
-    document_id: UUID
-
-class DuplicateDocumentApiResponse(BaseModel):
-
-    new_document_id: UUID | None = None
-    original_name: str | None = None
-
-
-
-# Generated from: get_document_access
-
-class GetDocumentAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    document_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.document_id,
-            self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class GetDocumentAccessSqlRow(BaseModel):
-
-    document_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    document_department_ids: list[UUID] | None = None
-    active_scenario_count: int | None = None
-    total_scenario_links: int | None = None
-
-class GetDocumentAccessApiRequest(BaseModel):
-
-    document_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetDocumentAccessApiResponse(BaseModel):
-
-    document_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    document_department_ids: list[UUID] | None = None
-    active_scenario_count: int | None = None
-    total_scenario_links: int | None = None
-
-
-
-# Generated from: get_document_docs
-
-class GetDocumentDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetDocumentDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetDocumentDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetDocumentDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
 # Generated from: get_document_html_data
 
 class GetDocumentHtmlDataSqlParams(BaseModel):
@@ -3827,70 +1986,6 @@ class GetDocumentHtmlDataApiRequest(BaseModel):
 class GetDocumentHtmlDataApiResponse(BaseModel):
 
     file_path: str | None = None
-
-
-
-# Generated from: get_document_ids
-
-class GetDocumentIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    document_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.document_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetDocumentIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    upload_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    text_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    field_suggestions: list[UUID] | None = None
-    upload_suggestions: list[UUID] | None = None
-    image_suggestions: list[UUID] | None = None
-    text_suggestions: list[UUID] | None = None
-
-class GetDocumentIdsApiRequest(BaseModel):
-
-    document_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetDocumentIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    upload_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    text_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    field_suggestions: list[UUID] | None = None
-    upload_suggestions: list[UUID] | None = None
-    image_suggestions: list[UUID] | None = None
-    text_suggestions: list[UUID] | None = None
 
 
 
@@ -3927,129 +2022,6 @@ class GetDocumentResourceDataApiRequest(BaseModel):
 class GetDocumentResourceDataApiResponse(BaseModel):
 
     items: list[QGetDocumentResourceV4Item] | None = None
-
-
-
-# Generated from: get_documents_list
-
-class GetDocumentsListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    scenario_search: str | None = None
-    field_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.scenario_ids,
-            self.field_ids,
-            self.filter_department_ids,
-            self.scenario_search,
-            self.field_search,
-            self.department_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListDocumentsV4Document(BaseModel):
-
-    document_id: UUID | None
-    name: str | None
-    department_ids: list[str] | None
-    scenario_ids: list[UUID] | None
-    field_ids: list[UUID] | None
-    upload_ids: list[UUID] | None
-    is_inactive: bool | None
-    num_scenarios: int | None
-    active_scenario_count: int | None
-    updated_at: datetime | None
-
-
-
-
-class QListDocumentsV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-class GetDocumentsListSqlRow(BaseModel):
-
-    documents: list[QListDocumentsV4Document] | None = None
-    scenario_options: list[QListDocumentsV4Option] | None = None
-    field_options: list[QListDocumentsV4Option] | None = None
-    department_options: list[QListDocumentsV4Option] | None = None
-    total_count: int | None = None
-
-class GetDocumentsListApiRequest(BaseModel):
-
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    scenario_search: str | None = None
-    field_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-class GetDocumentsListApiResponse(BaseModel):
-
-    documents: list[QListDocumentsV4Document] | None = None
-    scenario_options: list[QListDocumentsV4Option] | None = None
-    field_options: list[QListDocumentsV4Option] | None = None
-    department_options: list[QListDocumentsV4Option] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: insert_document
-
-class InsertDocumentSqlParams(BaseModel):
-
-    document_id: UUID
-    name: str
-    profile_id: UUID
-    description: str | None = None
-    upload_id: UUID | None = None
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.document_id,
-            self.name,
-            self.profile_id,
-            self.description,
-            self.upload_id,
-            self.department_ids,
-            self.field_ids,
-        )
-
-class InsertDocumentSqlRow(BaseModel):
-
-    document_id: str | None = None
-
-class InsertDocumentApiRequest(BaseModel):
-
-    document_id: UUID
-    name: str
-    description: str | None = None
-    upload_id: UUID | None = None
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class InsertDocumentApiResponse(BaseModel):
-
-    document_id: str | None = None
 
 
 
@@ -12224,37 +10196,6 @@ class SearchVideosEntriesApiResponse(BaseModel):
 
 
 
-# Generated from: check_eval_delete_access
-
-class CheckEvalDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    eval_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.eval_id,
-        )
-
-class CheckEvalDeleteAccessSqlRow(BaseModel):
-
-    eval_department_ids: list[str] | None = None
-    total_usage_links: int | None = None
-    eval_name: str | None = None
-
-class CheckEvalDeleteAccessApiRequest(BaseModel):
-
-    eval_id: UUID
-
-class CheckEvalDeleteAccessApiResponse(BaseModel):
-
-    eval_department_ids: list[str] | None = None
-    total_usage_links: int | None = None
-    eval_name: str | None = None
-
-
-
 # Generated from: check_eval_duplicate_access
 
 class CheckEvalDuplicateAccessSqlParams(BaseModel):
@@ -12277,292 +10218,6 @@ class CheckEvalDuplicateAccessApiRequest(BaseModel):
 class CheckEvalDuplicateAccessApiResponse(BaseModel):
 
     access_check: bool | None = None
-
-
-
-# Generated from: check_eval_save_access
-
-class CheckEvalSaveAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    eval_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.eval_id,
-        )
-
-class CheckEvalSaveAccessSqlRow(BaseModel):
-
-    eval_department_ids: list[str] | None = None
-    active_usage_count: int | None = None
-
-class CheckEvalSaveAccessApiRequest(BaseModel):
-
-    eval_id: UUID | None = None
-
-class CheckEvalSaveAccessApiResponse(BaseModel):
-
-    eval_department_ids: list[str] | None = None
-    active_usage_count: int | None = None
-
-
-
-# Generated from: delete_eval
-
-class DeleteEvalSqlParams(BaseModel):
-
-    eval_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.eval_id,
-            self.profile_id,
-        )
-
-class DeleteEvalSqlRow(BaseModel):
-
-    eval_id: UUID | None = None
-    eval_name: str | None = None
-    deleted: bool | None = None
-    usage_count: int | None = None
-
-class DeleteEvalApiRequest(BaseModel):
-
-    eval_id: UUID
-
-class DeleteEvalApiResponse(BaseModel):
-
-    eval_id: UUID | None = None
-    eval_name: str | None = None
-    deleted: bool | None = None
-    usage_count: int | None = None
-
-
-
-# Generated from: duplicate_eval
-
-class DuplicateEvalSqlParams(BaseModel):
-
-    eval_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.eval_id,
-            self.profile_id,
-        )
-
-class DuplicateEvalSqlRow(BaseModel):
-
-    new_eval_id: UUID | None = None
-    original_name: str | None = None
-
-class DuplicateEvalApiRequest(BaseModel):
-
-    eval_id: UUID
-
-class DuplicateEvalApiResponse(BaseModel):
-
-    new_eval_id: UUID | None = None
-    original_name: str | None = None
-
-
-
-# Generated from: get_eval_access
-
-class GetEvalAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    eval_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.eval_id,
-            self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class GetEvalAccessSqlRow(BaseModel):
-
-    eval_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    eval_department_ids: list[UUID] | None = None
-    active_usage_count: int | None = None
-
-class GetEvalAccessApiRequest(BaseModel):
-
-    eval_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetEvalAccessApiResponse(BaseModel):
-
-    eval_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    eval_department_ids: list[UUID] | None = None
-    active_usage_count: int | None = None
-
-
-
-# Generated from: get_eval_docs
-
-class GetEvalDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetEvalDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetEvalDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetEvalDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_eval_ids
-
-class GetEvalIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    eval_id: UUID | None = None
-    draft_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.eval_id,
-            self.draft_id,
-            self.user_department_ids,
-        )
-
-class GetEvalIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    dynamic_flag_id: UUID | None = None
-    groups_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
-    model_flag_ids: list[UUID] | None = None
-    model_rubric_ids: list[UUID] | None = None
-    model_position_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    rubric_suggestions: list[UUID] | None = None
-
-class GetEvalIdsApiRequest(BaseModel):
-
-    eval_id: UUID | None = None
-    draft_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetEvalIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    dynamic_flag_id: UUID | None = None
-    groups_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
-    model_flag_ids: list[UUID] | None = None
-    model_rubric_ids: list[UUID] | None = None
-    model_position_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    rubric_suggestions: list[UUID] | None = None
-
-
-
-# Generated from: get_evals_list
-
-class GetEvalsListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    department_search: str | None = None
-    page_size: int | None = 50
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.filter_department_ids,
-            self.department_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListEvalsV4Eval(BaseModel):
-
-    eval_id: UUID | None
-    name: str | None
-    description: str | None
-    department_ids: list[str] | None
-    is_inactive: bool | None
-    is_dynamic: bool | None
-    use_groups: bool | None
-    num_runs: int | None
-    num_groups: int | None
-    updated_at: datetime | None
-
-
-
-
-class QListEvalsV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-class GetEvalsListSqlRow(BaseModel):
-
-    evals: list[QListEvalsV4Eval] | None = None
-    department_options: list[QListEvalsV4Option] | None = None
-    total_count: int | None = None
-
-class GetEvalsListApiRequest(BaseModel):
-
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    department_search: str | None = None
-    page_size: int | None = 50
-    page_offset: int | None = 0
-
-class GetEvalsListApiResponse(BaseModel):
-
-    evals: list[QListEvalsV4Eval] | None = None
-    department_options: list[QListEvalsV4Option] | None = None
-    total_count: int | None = None
 
 
 
@@ -12687,35 +10342,6 @@ class SaveEvalApiResponse(BaseModel):
 
 
 
-# Generated from: check_field_delete_access
-
-class CheckFieldDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    field_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.field_id,
-        )
-
-class CheckFieldDeleteAccessSqlRow(BaseModel):
-
-    field_department_ids: list[str] | None = None
-    active_parameter_count: int | None = None
-
-class CheckFieldDeleteAccessApiRequest(BaseModel):
-
-    field_id: UUID
-
-class CheckFieldDeleteAccessApiResponse(BaseModel):
-
-    field_department_ids: list[str] | None = None
-    active_parameter_count: int | None = None
-
-
-
 # Generated from: check_field_duplicate_access
 
 class CheckFieldDuplicateAccessSqlParams(BaseModel):
@@ -12738,463 +10364,6 @@ class CheckFieldDuplicateAccessApiRequest(BaseModel):
 class CheckFieldDuplicateAccessApiResponse(BaseModel):
 
     user_role: str | None = None
-
-
-
-# Generated from: check_field_save_access
-
-class CheckFieldSaveAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    field_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.field_id,
-        )
-
-class CheckFieldSaveAccessSqlRow(BaseModel):
-
-    field_department_ids: list[str] | None = None
-
-class CheckFieldSaveAccessApiRequest(BaseModel):
-
-    field_id: UUID | None = None
-
-class CheckFieldSaveAccessApiResponse(BaseModel):
-
-    field_department_ids: list[str] | None = None
-
-
-
-# Generated from: delete_field
-
-class DeleteFieldSqlParams(BaseModel):
-
-    field_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.field_id,
-            self.profile_id,
-        )
-
-class DeleteFieldSqlRow(BaseModel):
-
-    usage_count: int | None = None
-    name: str | None = None
-    deleted: bool | None = None
-
-class DeleteFieldApiRequest(BaseModel):
-
-    field_id: UUID
-
-class DeleteFieldApiResponse(BaseModel):
-
-    usage_count: int | None = None
-    name: str | None = None
-    deleted: bool | None = None
-
-
-
-# Generated from: duplicate_field
-
-class DuplicateFieldSqlParams(BaseModel):
-
-    field_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.field_id,
-            self.profile_id,
-        )
-
-class DuplicateFieldSqlRow(BaseModel):
-
-    new_field_id: UUID | None = None
-    original_name: str | None = None
-
-class DuplicateFieldApiRequest(BaseModel):
-
-    field_id: UUID
-
-class DuplicateFieldApiResponse(BaseModel):
-
-    new_field_id: UUID | None = None
-    original_name: str | None = None
-
-
-
-# Generated from: get_field_access
-
-class GetFieldAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    field_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.field_id,
-            self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class GetFieldAccessSqlRow(BaseModel):
-
-    field_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    field_department_ids: list[UUID] | None = None
-
-class GetFieldAccessApiRequest(BaseModel):
-
-    field_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetFieldAccessApiResponse(BaseModel):
-
-    field_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    field_department_ids: list[UUID] | None = None
-
-
-
-# Generated from: get_field
-
-class GetFieldSqlParams(BaseModel):
-
-    profile_id: UUID
-    field_id: UUID | None = None
-    description_search: str | None = None
-    parameter_search: str | None = None
-    parameter_show_selected: bool | None = None
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.field_id,
-            self.description_search,
-            self.parameter_search,
-            self.parameter_show_selected,
-            self.draft_id,
-            self.mcp,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class QGetFieldV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetFieldV4DescriptionResource(BaseModel):
-
-    description_id: UUID | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetFieldV4FlagResource(BaseModel):
-
-    flag_id: UUID | None
-    name: str | None
-    description: str | None
-    icon: str | None
-    generated: bool | None
-
-
-
-
-class QGetFieldV4NameResource(BaseModel):
-
-    name_id: UUID | None
-    name: str | None
-    generated: bool | None
-
-
-
-
-class QGetFieldV4Parameter(BaseModel):
-
-    parameter_id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-
-class GetFieldSqlRow(BaseModel):
-
-    field_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetFieldV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetFieldV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetFieldV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetFieldV4DescriptionResource] | None = None
-    active_flag_id: UUID | None = None
-    active_flag_resource: QGetFieldV4FlagResource | None = None
-    show_active_flag: bool | None = None
-    active_flag_agent_id: UUID | None = None
-    active_flag_required: bool | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetFieldV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetFieldV4Department] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_resources: list[QGetFieldV4Parameter] | None = None
-    show_parameters: bool | None = None
-    parameters_agent_id: UUID | None = None
-    parameters_required: bool | None = None
-    parameter_suggestions: list[UUID] | None = None
-    parameters: list[QGetFieldV4Parameter] | None = None
-
-class GetFieldApiRequest(BaseModel):
-
-    field_id: UUID | None = None
-    description_search: str | None = None
-    parameter_search: str | None = None
-    parameter_show_selected: bool | None = None
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetFieldApiResponse(BaseModel):
-
-    field_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetFieldV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetFieldV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetFieldV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetFieldV4DescriptionResource] | None = None
-    active_flag_id: UUID | None = None
-    active_flag_resource: QGetFieldV4FlagResource | None = None
-    show_active_flag: bool | None = None
-    active_flag_agent_id: UUID | None = None
-    active_flag_required: bool | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetFieldV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetFieldV4Department] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_resources: list[QGetFieldV4Parameter] | None = None
-    show_parameters: bool | None = None
-    parameters_agent_id: UUID | None = None
-    parameters_required: bool | None = None
-    parameter_suggestions: list[UUID] | None = None
-    parameters: list[QGetFieldV4Parameter] | None = None
-
-
-
-# Generated from: get_field_docs
-
-class GetFieldDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetFieldDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetFieldDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetFieldDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_field_ids
-
-class GetFieldIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    field_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.field_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetFieldIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    conditional_parameter_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    conditional_parameter_suggestions: list[UUID] | None = None
-
-class GetFieldIdsApiRequest(BaseModel):
-
-    field_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetFieldIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    conditional_parameter_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    conditional_parameter_suggestions: list[UUID] | None = None
-
-
-
-# Generated from: get_fields_list
-
-class GetFieldsListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    parameter_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    parameter_search: str | None = None
-    persona_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.parameter_ids,
-            self.persona_ids,
-            self.filter_department_ids,
-            self.parameter_search,
-            self.persona_search,
-            self.department_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListFieldsV4Field(BaseModel):
-
-    field_id: UUID | None
-    name: str | None
-    description: str | None
-    active: bool | None
-    created_at: datetime | None
-    updated_at: datetime | None
-    department_ids: list[str] | None
-    parameter_ids: list[str] | None
-    conditional_parameter_ids: list[str] | None
-    active_parameter_count: int | None
-    is_inactive: bool | None
-    persona_ids: list[UUID] | None
-
-
-
-
-class QListFieldsV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-class GetFieldsListSqlRow(BaseModel):
-
-    fields: list[QListFieldsV4Field] | None = None
-    parameter_options: list[QListFieldsV4Option] | None = None
-    persona_options: list[QListFieldsV4Option] | None = None
-    department_options: list[QListFieldsV4Option] | None = None
-    total_count: int | None = None
-
-class GetFieldsListApiRequest(BaseModel):
-
-    search: str | None = None
-    parameter_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    parameter_search: str | None = None
-    persona_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-class GetFieldsListApiResponse(BaseModel):
-
-    fields: list[QListFieldsV4Field] | None = None
-    parameter_options: list[QListFieldsV4Option] | None = None
-    persona_options: list[QListFieldsV4Option] | None = None
-    department_options: list[QListFieldsV4Option] | None = None
-    total_count: int | None = None
 
 
 
@@ -13466,49 +10635,6 @@ class CompleteAttemptMessageApiResponse(BaseModel):
 
 
 
-# Generated from: get_agent_entry_tools
-
-class GetAgentEntryToolsSqlParams(BaseModel):
-
-    p_agent_id: UUID
-    p_entry_types: list[str] | None = None
-    p_tool_entry_map: Any | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_agent_id,
-            self.p_entry_types,
-            self.p_tool_entry_map,
-        )
-
-class IGetTextRunContextAndCreateRunV4Tool(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    tool_type: str | None
-    agent_role: str | None
-    arguments: Any | None
-    argument_descriptions: Any | None
-    argument_defaults: Any | None
-    active: bool | None
-
-class GetAgentEntryToolsSqlRow(BaseModel):
-
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-
-class GetAgentEntryToolsApiRequest(BaseModel):
-
-    p_agent_id: UUID
-    p_entry_types: list[str] | None = None
-    p_tool_entry_map: Any | None = None
-
-class GetAgentEntryToolsApiResponse(BaseModel):
-
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-
-
-
 # Generated from: get_attempt_grade_completion_context
 
 class GetAttemptGradeCompletionContextSqlParams(BaseModel):
@@ -13540,57 +10666,6 @@ class GetAttemptGradeCompletionContextApiResponse(BaseModel):
 
 
 
-# Generated from: get_attempt_grade_context
-
-class GetAttemptGradeContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_simulation_id: UUID
-    p_attempt_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_simulation_id,
-            self.p_attempt_id,
-        )
-
-class GetAttemptGradeContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-    simulation_exists: bool | None = None
-    simulation_is_active: bool | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    profile_has_access: bool | None = None
-    attempt_exists: bool | None = None
-    attempt_id: UUID | None = None
-    group_id: UUID | None = None
-    chat_id: UUID | None = None
-
-class GetAttemptGradeContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_simulation_id: UUID
-    p_attempt_id: UUID
-
-class GetAttemptGradeContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-    simulation_exists: bool | None = None
-    simulation_is_active: bool | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    profile_has_access: bool | None = None
-    attempt_exists: bool | None = None
-    attempt_id: UUID | None = None
-    group_id: UUID | None = None
-    chat_id: UUID | None = None
-
-
-
 # Generated from: get_attempt_message_completion_context
 
 class GetAttemptMessageCompletionContextSqlParams(BaseModel):
@@ -13619,65 +10694,6 @@ class GetAttemptMessageCompletionContextApiResponse(BaseModel):
     chat_id: UUID | None = None
     attempt_id: UUID | None = None
     created_at: datetime | None = None
-
-
-
-# Generated from: get_attempt_message_context
-
-class GetAttemptMessageContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_simulation_id: UUID
-    p_chat_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_simulation_id,
-            self.p_chat_id,
-        )
-
-class GetAttemptMessageContextSqlRow(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-    simulation_exists: bool | None = None
-    simulation_is_active: bool | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    profile_has_access: bool | None = None
-    attempt_exists: bool | None = None
-    attempt_is_active: bool | None = None
-    attempt_id: UUID | None = None
-    chat_exists: bool | None = None
-    chat_is_completed: bool | None = None
-    chat_id: UUID | None = None
-    group_id: UUID | None = None
-    hints_enabled: bool | None = None
-
-class GetAttemptMessageContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_simulation_id: UUID
-    p_chat_id: UUID
-
-class GetAttemptMessageContextApiResponse(BaseModel):
-
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-    simulation_exists: bool | None = None
-    simulation_is_active: bool | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    profile_has_access: bool | None = None
-    attempt_exists: bool | None = None
-    attempt_is_active: bool | None = None
-    attempt_id: UUID | None = None
-    chat_exists: bool | None = None
-    chat_is_completed: bool | None = None
-    chat_id: UUID | None = None
-    group_id: UUID | None = None
-    hints_enabled: bool | None = None
 
 
 
@@ -13728,44 +10744,6 @@ class GetAttemptProceedContextApiRequest(BaseModel):
 class GetAttemptProceedContextApiResponse(BaseModel):
 
     items: list[QGetAttemptProceedContextV4Result] | None = None
-
-
-
-# Generated from: get_audio_start_context
-
-class GetAudioStartContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_chat_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_chat_id,
-        )
-
-class GetAudioStartContextSqlRow(BaseModel):
-
-    chat_exists: bool | None = None
-    chat_is_completed: bool | None = None
-    attempt_id: UUID | None = None
-    attempt_is_active: bool | None = None
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-
-class GetAudioStartContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_chat_id: UUID
-
-class GetAudioStartContextApiResponse(BaseModel):
-
-    chat_exists: bool | None = None
-    chat_is_completed: bool | None = None
-    attempt_id: UUID | None = None
-    attempt_is_active: bool | None = None
-    requests_per_day: int | None = None
-    runs_today: int | None = None
 
 
 
@@ -13911,38 +10889,6 @@ class PrepareAttemptMessageApiResponse(BaseModel):
 
 
 
-# Generated from: resolve_agent_by_entry_types
-
-class ResolveAgentByEntryTypesSqlParams(BaseModel):
-
-    p_agent_ids: list[UUID]
-    p_entry_types: list[str]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_agent_ids,
-            self.p_entry_types,
-        )
-
-class ResolveAgentByEntryTypesSqlRow(BaseModel):
-
-    resolved_agent_id: UUID | None = None
-    matching_count: int | None = None
-    error_code: str | None = None
-
-class ResolveAgentByEntryTypesApiRequest(BaseModel):
-
-    p_agent_ids: list[UUID]
-    p_entry_types: list[str]
-
-class ResolveAgentByEntryTypesApiResponse(BaseModel):
-
-    resolved_agent_id: UUID | None = None
-    matching_count: int | None = None
-    error_code: str | None = None
-
-
-
 # Generated from: resolve_attempt_chat
 
 class ResolveAttemptChatSqlParams(BaseModel):
@@ -14002,36 +10948,6 @@ class ResolveAttemptChatApiRequest(BaseModel):
 class ResolveAttemptChatApiResponse(BaseModel):
 
     items: list[QResolveAttemptChatV4Result] | None = None
-
-
-
-# Generated from: resolve_attempt_entries
-
-class ResolveAttemptEntriesSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_entry_types: list[str]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_entry_types,
-        )
-
-class ResolveAttemptEntriesSqlRow(BaseModel):
-
-    entry_type: str | None = None
-    agent_id: UUID | None = None
-
-class ResolveAttemptEntriesApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_entry_types: list[str]
-
-class ResolveAttemptEntriesApiResponse(BaseModel):
-
-    entry_type: str | None = None
-    agent_id: UUID | None = None
 
 
 
@@ -14635,34 +11551,6 @@ class PrepareParameterGenerationApiResponse(BaseModel):
 
 
 
-# Generated from: get_agent_tools
-
-class GetAgentToolsSqlParams(BaseModel):
-
-    p_agent_id: UUID
-    p_resource_types: list[str] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_agent_id,
-            self.p_resource_types,
-        )
-
-class GetAgentToolsSqlRow(BaseModel):
-
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-
-class GetAgentToolsApiRequest(BaseModel):
-
-    p_agent_id: UUID
-    p_resource_types: list[str] | None = None
-
-class GetAgentToolsApiResponse(BaseModel):
-
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-
-
-
 # Generated from: prepare_persona_generation
 
 class PreparePersonaGenerationSqlParams(BaseModel):
@@ -15114,67 +12002,6 @@ class PrepareSimulationGenerationApiResponse(BaseModel):
 
 
 
-# Generated from: get_generation_run_context_and_create_run
-
-class IPersonaResourceV4(BaseModel):
-
-    resource_type: str | None
-    resource_ids: list[UUID] | None
-
-class GetGenerationRunContextAndCreateRunSqlParams(BaseModel):
-
-    agent_id: UUID
-    profile_id: UUID
-    message_ids: list[UUID] | None = None
-    department_id: UUID | None = None
-    group_id: UUID | None = None
-    developer_instructions: list[str] | None = None
-    user_instructions: list[str] | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert resources composite array to tuples for asyncpg
-        resources_tuples = [
-            (conn.resource_type, conn.resource_ids)
-            for conn in (self.resources or [])
-        ]
-        return (
-            self.agent_id,
-            self.profile_id,
-            self.message_ids,
-            self.department_id,
-            self.group_id,
-            self.developer_instructions,
-            self.user_instructions,
-            resources_tuples,
-        )
-
-class GetGenerationRunContextAndCreateRunSqlRow(BaseModel):
-
-    run_id: str | None = None
-    group_id: UUID | None = None
-    message_ids: list[UUID] | None = None
-    output_modalities: list[str] | None = None
-
-class GetGenerationRunContextAndCreateRunApiRequest(BaseModel):
-
-    agent_id: UUID
-    message_ids: list[UUID] | None = None
-    department_id: UUID | None = None
-    group_id: UUID | None = None
-    developer_instructions: list[str] | None = None
-    user_instructions: list[str] | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-class GetGenerationRunContextAndCreateRunApiResponse(BaseModel):
-
-    run_id: str | None = None
-    group_id: UUID | None = None
-    message_ids: list[UUID] | None = None
-    output_modalities: list[str] | None = None
-
-
-
 # Generated from: prepare_suite_generation
 
 class PrepareSuiteGenerationSqlParams(BaseModel):
@@ -15315,31 +12142,6 @@ class GetTestProceedContextApiRequest(BaseModel):
 class GetTestProceedContextApiResponse(BaseModel):
 
     items: list[QGetTestProceedContextV4Result] | None = None
-
-
-
-# Generated from: get_tools_by_resource_ids
-
-class GetToolsByResourceIdsSqlParams(BaseModel):
-
-    p_tool_resource_ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_tool_resource_ids,
-        )
-
-class GetToolsByResourceIdsSqlRow(BaseModel):
-
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-
-class GetToolsByResourceIdsApiRequest(BaseModel):
-
-    p_tool_resource_ids: list[UUID]
-
-class GetToolsByResourceIdsApiResponse(BaseModel):
-
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
 
 
 
@@ -15497,92 +12299,6 @@ class StartTestApiResponse(BaseModel):
 
 
 
-# Generated from: get_text_run_context_for_existing_run
-
-class GetTextRunContextForExistingRunSqlParams(BaseModel):
-
-    run_id: UUID
-    agent_id: UUID
-    message_ids: list[UUID] | None = None
-    group_id: UUID | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert resources composite array to tuples for asyncpg
-        resources_tuples = [
-            (conn.resource_type, conn.resource_ids)
-            for conn in (self.resources or [])
-        ]
-        return (
-            self.run_id,
-            self.agent_id,
-            self.message_ids,
-            self.group_id,
-            resources_tuples,
-        )
-
-class GetTextRunContextForExistingRunSqlRow(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: datetime | None = None
-    group_id: UUID | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    context: Any | None = None
-    department_name: str | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-
-class GetTextRunContextForExistingRunApiRequest(BaseModel):
-
-    run_id: UUID
-    agent_id: UUID
-    message_ids: list[UUID] | None = None
-    group_id: UUID | None = None
-    resources: list[IPersonaResourceV4] | None = None
-
-class GetTextRunContextForExistingRunApiResponse(BaseModel):
-
-    agent_id: str | None = None
-    agent_name: str | None = None
-    agent_role: str | None = None
-    system_prompt: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    model_id: str | None = None
-    model_name: str | None = None
-    provider: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    profile_id: str | None = None
-    req_per_day: int | None = None
-    runs_today_count: int | None = None
-    earliest_run_created_at: datetime | None = None
-    group_id: UUID | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    context: Any | None = None
-    department_name: str | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-
-
-
 # Generated from: prepare_tool_generation
 
 class PrepareToolGenerationSqlParams(BaseModel):
@@ -15621,197 +12337,6 @@ class PrepareToolGenerationApiResponse(BaseModel):
     run_id: UUID | None = None
     group_id: UUID | None = None
     config_id: UUID | None = None
-
-
-
-# Generated from: get_training_simulations
-
-class GetTrainingSimulationsSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_practice: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_practice,
-        )
-
-class QGetTrainingSimulationsV4Item(BaseModel):
-
-    simulation_id: UUID | None
-    scenario_ids: list[UUID] | None
-    cohort_ids: list[UUID] | None
-    color: str | None
-    icon: str | None
-    attempt_count: int | None
-    highest_score_percent: float | None
-    has_passed: bool | None
-    standard_group_ids: list[UUID] | None
-    rubric_total_points: int | None
-    rubric_pass_points: int | None
-
-class GetTrainingSimulationsSqlRow(BaseModel):
-
-    items: list[QGetTrainingSimulationsV4Item] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
-
-class GetTrainingSimulationsApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_practice: bool | None = False
-
-class GetTrainingSimulationsApiResponse(BaseModel):
-
-    items: list[QGetTrainingSimulationsV4Item] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
-
-
-
-# Generated from: get_training_start_context
-
-class GetTrainingStartContextSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_chat_entry_id: UUID
-    p_department_id: UUID
-    p_draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_chat_entry_id,
-            self.p_department_id,
-            self.p_draft_id,
-        )
-
-class GetTrainingStartContextSqlRow(BaseModel):
-
-    agent_id: UUID | None = None
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-    simulation_exists: bool | None = None
-    simulation_is_active: bool | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    profile_has_access: bool | None = None
-    scenario_id: UUID | None = None
-    has_problem_statement: bool | None = None
-    has_persona: bool | None = None
-    problem_statement: str | None = None
-    objectives: Any | None = None
-    persona: Any | None = None
-    video_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    valid_entry_types: list[str] | None = None
-
-class GetTrainingStartContextApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_chat_entry_id: UUID
-    p_department_id: UUID
-    p_draft_id: UUID | None = None
-
-class GetTrainingStartContextApiResponse(BaseModel):
-
-    agent_id: UUID | None = None
-    agent_exists: bool | None = None
-    agent_name: str | None = None
-    agent_is_active: bool | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    provider_id: UUID | None = None
-    provider_name: str | None = None
-    has_api_key: bool | None = None
-    requests_per_day: int | None = None
-    runs_today: int | None = None
-    simulation_exists: bool | None = None
-    simulation_is_active: bool | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    profile_has_access: bool | None = None
-    scenario_id: UUID | None = None
-    has_problem_statement: bool | None = None
-    has_persona: bool | None = None
-    problem_statement: str | None = None
-    objectives: Any | None = None
-    persona: Any | None = None
-    video_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    valid_entry_types: list[str] | None = None
-
-
-
-# Generated from: prepare_training_generation
-
-class PrepareTrainingGenerationSqlParams(BaseModel):
-
-    p_profile_id: UUID
-    p_chat_entry_id: UUID
-    p_department_id: UUID
-    p_draft_id: UUID | None = None
-    p_resource_types: list[str] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_profile_id,
-            self.p_chat_entry_id,
-            self.p_department_id,
-            self.p_draft_id,
-            self.p_resource_types,
-        )
-
-class PrepareTrainingGenerationSqlRow(BaseModel):
-
-    run_id: UUID | None = None
-    group_id: UUID | None = None
-    scenario_id: UUID | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    model_name: str | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    jinja_context: Any | None = None
-
-class PrepareTrainingGenerationApiRequest(BaseModel):
-
-    p_profile_id: UUID
-    p_chat_entry_id: UUID
-    p_department_id: UUID
-    p_draft_id: UUID | None = None
-    p_resource_types: list[str] | None = None
-
-class PrepareTrainingGenerationApiResponse(BaseModel):
-
-    run_id: UUID | None = None
-    group_id: UUID | None = None
-    scenario_id: UUID | None = None
-    agent_name: str | None = None
-    system_prompt: str | None = None
-    model_name: str | None = None
-    provider_name: str | None = None
-    base_url: str | None = None
-    api_key: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    tools: list[IGetTextRunContextAndCreateRunV4Tool] | None = None
-    developer_instruction_templates: list[str] | None = None
-    jinja_context: Any | None = None
 
 
 
@@ -16022,31 +12547,6 @@ class GetSessionApiResponse(BaseModel):
 
 
 
-# Generated from: infra_activity_get_profile_name_for_logging
-
-class InfraActivityGetProfileNameForLoggingSqlParams(BaseModel):
-
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-        )
-
-class InfraActivityGetProfileNameForLoggingSqlRow(BaseModel):
-
-    actor_name: str | None = None
-
-class InfraActivityGetProfileNameForLoggingApiRequest(BaseModel):
-
-    pass
-
-class InfraActivityGetProfileNameForLoggingApiResponse(BaseModel):
-
-    actor_name: str | None = None
-
-
-
 # Generated from: infra_developer_instructions_get_domain_artifact
 
 class InfraDeveloperInstructionsGetDomainArtifactSqlParams(BaseModel):
@@ -16069,62 +12569,6 @@ class InfraDeveloperInstructionsGetDomainArtifactApiRequest(BaseModel):
 class InfraDeveloperInstructionsGetDomainArtifactApiResponse(BaseModel):
 
     artifact: str | None = None
-
-
-
-# Generated from: infra_documents_get_document_agents
-
-class InfraDocumentsGetDocumentAgentsSqlParams(BaseModel):
-
-    document_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.document_id,
-        )
-
-class InfraDocumentsGetDocumentAgentsSqlRow(BaseModel):
-
-    classify_agent_id: UUID | None = None
-    document_agent_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-
-class InfraDocumentsGetDocumentAgentsApiRequest(BaseModel):
-
-    document_id: UUID
-
-class InfraDocumentsGetDocumentAgentsApiResponse(BaseModel):
-
-    classify_agent_id: UUID | None = None
-    document_agent_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-
-
-
-# Generated from: infra_evals_get_department_from_run_v4
-
-class InfraEvalsGetDepartmentFromRunV4SqlParams(BaseModel):
-
-    run_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-        )
-
-class InfraEvalsGetDepartmentFromRunV4SqlRow(BaseModel):
-
-    department_id: str | None = None
-
-class InfraEvalsGetDepartmentFromRunV4ApiRequest(BaseModel):
-
-    run_id: UUID
-
-class InfraEvalsGetDepartmentFromRunV4ApiResponse(BaseModel):
-
-    department_id: str | None = None
 
 
 
@@ -16153,37 +12597,6 @@ class InfraEvalsGetEvalRunStatusV4ApiRequest(BaseModel):
 class InfraEvalsGetEvalRunStatusV4ApiResponse(BaseModel):
 
     completed: bool | None = None
-
-
-
-# Generated from: infra_evals_get_rubric_details_v4
-
-class InfraEvalsGetRubricDetailsV4SqlParams(BaseModel):
-
-    rubric_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.rubric_id,
-        )
-
-class InfraEvalsGetRubricDetailsV4SqlRow(BaseModel):
-
-    id: UUID | None = None
-    name: str | None = None
-    points: int | None = None
-    pass_points: int | None = None
-
-class InfraEvalsGetRubricDetailsV4ApiRequest(BaseModel):
-
-    rubric_id: UUID
-
-class InfraEvalsGetRubricDetailsV4ApiResponse(BaseModel):
-
-    id: UUID | None = None
-    name: str | None = None
-    points: int | None = None
-    pass_points: int | None = None
 
 
 
@@ -16509,31 +12922,6 @@ class InfraToolsGetToolCallResultV4ApiResponse(BaseModel):
 
 
 
-# Generated from: infra_tools_get_tool_id_by_name
-
-class InfraToolsGetToolIdByNameSqlParams(BaseModel):
-
-    tool_name: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.tool_name,
-        )
-
-class InfraToolsGetToolIdByNameSqlRow(BaseModel):
-
-    tool_id: UUID | None = None
-
-class InfraToolsGetToolIdByNameApiRequest(BaseModel):
-
-    tool_name: str
-
-class InfraToolsGetToolIdByNameApiResponse(BaseModel):
-
-    tool_id: UUID | None = None
-
-
-
 # Generated from: infra_tools_link_tool_call
 
 class InfraToolsLinkToolCallSqlParams(BaseModel):
@@ -16559,38 +12947,6 @@ class InfraToolsLinkToolCallApiRequest(BaseModel):
 class InfraToolsLinkToolCallApiResponse(BaseModel):
 
     success: bool | None = None
-
-
-
-# Generated from: get_auth_items
-
-class GetAuthItemsSqlParams(BaseModel):
-
-    auth_id: UUID
-    department_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.auth_id,
-            self.department_id,
-        )
-
-class GetAuthItemsSqlRow(BaseModel):
-
-    name: str | None = None
-    value: str | None = None
-    encrypted: bool | None = None
-
-class GetAuthItemsApiRequest(BaseModel):
-
-    auth_id: UUID
-    department_id: UUID
-
-class GetAuthItemsApiResponse(BaseModel):
-
-    name: str | None = None
-    value: str | None = None
-    encrypted: bool | None = None
 
 
 
@@ -16651,56 +13007,6 @@ class GetAuthsForRealmLevelApiResponse(BaseModel):
 
 
 
-# Generated from: get_departments_for_org_sync
-
-class GetDepartmentsForOrgSyncSqlParams(BaseModel):
-
-    pass
-
-class GetDepartmentsForOrgSyncSqlRow(BaseModel):
-
-    department_id: UUID | None = None
-    department_name: str | None = None
-
-class GetDepartmentsForOrgSyncApiRequest(BaseModel):
-
-    pass
-
-class GetDepartmentsForOrgSyncApiResponse(BaseModel):
-
-    department_id: UUID | None = None
-    department_name: str | None = None
-
-
-
-# Generated from: get_setting_profiles_for_idp
-
-class GetSettingProfilesForIdpSqlParams(BaseModel):
-
-    pass
-
-class GetSettingProfilesForIdpSqlRow(BaseModel):
-
-    profile_id: UUID | None = None
-    profile_name: str | None = None
-    role: str | None = None
-    setting_id: UUID | None = None
-    department_id: UUID | None = None
-
-class GetSettingProfilesForIdpApiRequest(BaseModel):
-
-    pass
-
-class GetSettingProfilesForIdpApiResponse(BaseModel):
-
-    profile_id: UUID | None = None
-    profile_name: str | None = None
-    role: str | None = None
-    setting_id: UUID | None = None
-    department_id: UUID | None = None
-
-
-
 # Generated from: update_master_realm_ssl
 
 class UpdateMasterRealmSslSqlParams(BaseModel):
@@ -16720,37 +13026,6 @@ class UpdateMasterRealmSslApiResponse(BaseModel):
 
     success: bool | None = None
     message: str | None = None
-
-
-
-# Generated from: get_key_for_decrypt
-
-class GetKeyForDecryptSqlParams(BaseModel):
-
-    key_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.key_id,
-            self.profile_id,
-        )
-
-class GetKeyForDecryptSqlRow(BaseModel):
-
-    key: str | None = None
-    name: str | None = None
-    actor_name: str | None = None
-
-class GetKeyForDecryptApiRequest(BaseModel):
-
-    key_id: UUID
-
-class GetKeyForDecryptApiResponse(BaseModel):
-
-    key: str | None = None
-    name: str | None = None
-    actor_name: str | None = None
 
 
 
@@ -16880,385 +13155,6 @@ class CreateModelRunApiRequest(BaseModel):
 class CreateModelRunApiResponse(BaseModel):
 
     run_id: str | None = None
-
-
-
-# Generated from: check_model_delete_access
-
-class CheckModelDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    model_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.model_id,
-        )
-
-class CheckModelDeleteAccessSqlRow(BaseModel):
-
-    model_department_ids: list[str] | None = None
-    active_agent_count: int | None = None
-
-class CheckModelDeleteAccessApiRequest(BaseModel):
-
-    model_id: UUID
-
-class CheckModelDeleteAccessApiResponse(BaseModel):
-
-    model_department_ids: list[str] | None = None
-    active_agent_count: int | None = None
-
-
-
-# Generated from: check_model_duplicate_access
-
-class CheckModelDuplicateAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    model_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.model_id,
-        )
-
-class CheckModelDuplicateAccessSqlRow(BaseModel):
-
-    user_role: str | None = None
-    original_name: str | None = None
-
-class CheckModelDuplicateAccessApiRequest(BaseModel):
-
-    model_id: UUID | None = None
-
-class CheckModelDuplicateAccessApiResponse(BaseModel):
-
-    user_role: str | None = None
-    original_name: str | None = None
-
-
-
-# Generated from: check_model_save_access
-
-class CheckModelSaveAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    model_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.model_id,
-        )
-
-class CheckModelSaveAccessSqlRow(BaseModel):
-
-    model_department_ids: list[str] | None = None
-    active_persona_count: int | None = None
-
-class CheckModelSaveAccessApiRequest(BaseModel):
-
-    model_id: UUID | None = None
-
-class CheckModelSaveAccessApiResponse(BaseModel):
-
-    model_department_ids: list[str] | None = None
-    active_persona_count: int | None = None
-
-
-
-# Generated from: delete_model
-
-class DeleteModelSqlParams(BaseModel):
-
-    model_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.model_id,
-            self.profile_id,
-        )
-
-class DeleteModelSqlRow(BaseModel):
-
-    model_exists: bool | None = None
-    deleted: bool | None = None
-    name: str | None = None
-    actor_name: str | None = None
-    personas_usage_count: int | None = None
-    agents_usage_count: int | None = None
-
-class DeleteModelApiRequest(BaseModel):
-
-    model_id: UUID
-
-class DeleteModelApiResponse(BaseModel):
-
-    model_exists: bool | None = None
-    deleted: bool | None = None
-    name: str | None = None
-    actor_name: str | None = None
-    personas_usage_count: int | None = None
-    agents_usage_count: int | None = None
-
-
-
-# Generated from: duplicate_model
-
-class DuplicateModelSqlParams(BaseModel):
-
-    model_id: UUID
-    profile_id: UUID
-    name_resource_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.model_id,
-            self.profile_id,
-            self.name_resource_id,
-        )
-
-class DuplicateModelSqlRow(BaseModel):
-
-    model_exists: bool | None = None
-    model_id: UUID | None = None
-    original_name: str | None = None
-    actor_name: str | None = None
-
-class DuplicateModelApiRequest(BaseModel):
-
-    model_id: UUID
-    name_resource_id: UUID | None = None
-
-class DuplicateModelApiResponse(BaseModel):
-
-    model_exists: bool | None = None
-    model_id: UUID | None = None
-    original_name: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: get_model_access
-
-class GetModelAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    model_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.model_id,
-            self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class GetModelAccessSqlRow(BaseModel):
-
-    model_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    model_department_ids: list[UUID] | None = None
-    active_persona_count: int | None = None
-
-class GetModelAccessApiRequest(BaseModel):
-
-    model_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetModelAccessApiResponse(BaseModel):
-
-    model_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    model_department_ids: list[UUID] | None = None
-    active_persona_count: int | None = None
-
-
-
-# Generated from: get_model_docs
-
-class GetModelDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetModelDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetModelDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetModelDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_model_ids
-
-class GetModelIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    model_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.model_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetModelIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    value_id: UUID | None = None
-    provider_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    modalities_enabled_flag_id: UUID | None = None
-    temperature_enabled_flag_id: UUID | None = None
-    pricing_enabled_flag_id: UUID | None = None
-    voices_enabled_flag_id: UUID | None = None
-    reasoning_levels_enabled_flag_id: UUID | None = None
-    qualities_enabled_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    modality_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    pricing_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    quality_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-
-class GetModelIdsApiRequest(BaseModel):
-
-    model_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetModelIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    value_id: UUID | None = None
-    provider_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    modalities_enabled_flag_id: UUID | None = None
-    temperature_enabled_flag_id: UUID | None = None
-    pricing_enabled_flag_id: UUID | None = None
-    voices_enabled_flag_id: UUID | None = None
-    reasoning_levels_enabled_flag_id: UUID | None = None
-    qualities_enabled_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    modality_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    pricing_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    quality_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-
-
-
-# Generated from: list_models
-
-class ListModelsSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    filter_provider_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_agent_ids: list[UUID] | None = None
-    provider_search: str | None = None
-    department_search: str | None = None
-    agent_search: str | None = None
-    page_size: int | None = 1000
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.filter_provider_ids,
-            self.filter_department_ids,
-            self.filter_agent_ids,
-            self.provider_search,
-            self.department_search,
-            self.agent_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListModelsV4Model(BaseModel):
-
-    model_id: UUID | None
-    name: str | None
-    description: str | None
-    is_inactive: bool | None
-    image_model: bool | None
-    updated_at: datetime | None
-    provider_id: UUID | None
-    department_ids: list[str] | None
-    active_agent_count: int | None
-
-
-
-
-class QListModelsV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-class ListModelsSqlRow(BaseModel):
-
-    models: list[QListModelsV4Model] | None = None
-    provider_options: list[QListModelsV4Option] | None = None
-    department_options: list[QListModelsV4Option] | None = None
-    agent_options: list[QListModelsV4Option] | None = None
-    total_count: int | None = None
-
-class ListModelsApiRequest(BaseModel):
-
-    search: str | None = None
-    filter_provider_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_agent_ids: list[UUID] | None = None
-    provider_search: str | None = None
-    department_search: str | None = None
-    agent_search: str | None = None
-    page_size: int | None = 1000
-    page_offset: int | None = 0
-
-class ListModelsApiResponse(BaseModel):
-
-    models: list[QListModelsV4Model] | None = None
-    provider_options: list[QListModelsV4Option] | None = None
-    department_options: list[QListModelsV4Option] | None = None
-    agent_options: list[QListModelsV4Option] | None = None
-    total_count: int | None = None
 
 
 
@@ -17416,35 +13312,6 @@ class SaveModelApiResponse(BaseModel):
 
 
 
-# Generated from: check_parameter_delete_access
-
-class CheckParameterDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    parameter_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.parameter_id,
-        )
-
-class CheckParameterDeleteAccessSqlRow(BaseModel):
-
-    parameter_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-class CheckParameterDeleteAccessApiRequest(BaseModel):
-
-    parameter_id: UUID
-
-class CheckParameterDeleteAccessApiResponse(BaseModel):
-
-    parameter_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-
-
 # Generated from: check_parameter_duplicate_access
 
 class CheckParameterDuplicateAccessSqlParams(BaseModel):
@@ -17467,488 +13334,6 @@ class CheckParameterDuplicateAccessApiRequest(BaseModel):
 class CheckParameterDuplicateAccessApiResponse(BaseModel):
 
     access_check: bool | None = None
-
-
-
-# Generated from: check_parameter_save_access
-
-class CheckParameterSaveAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    parameter_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.parameter_id,
-        )
-
-class CheckParameterSaveAccessSqlRow(BaseModel):
-
-    parameter_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-class CheckParameterSaveAccessApiRequest(BaseModel):
-
-    parameter_id: UUID | None = None
-
-class CheckParameterSaveAccessApiResponse(BaseModel):
-
-    parameter_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-
-
-# Generated from: delete_parameter
-
-class DeleteParameterSqlParams(BaseModel):
-
-    parameter_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.parameter_id,
-            self.profile_id,
-        )
-
-class DeleteParameterSqlRow(BaseModel):
-
-    parameter_exists: bool | None = None
-    usage_count: int | None = None
-    name: str | None = None
-    actor_name: str | None = None
-
-class DeleteParameterApiRequest(BaseModel):
-
-    parameter_id: UUID
-
-class DeleteParameterApiResponse(BaseModel):
-
-    parameter_exists: bool | None = None
-    usage_count: int | None = None
-    name: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: duplicate_parameter
-
-class DuplicateParameterSqlParams(BaseModel):
-
-    parameter_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.parameter_id,
-            self.profile_id,
-        )
-
-class DuplicateParameterSqlRow(BaseModel):
-
-    parameter_id: UUID | None = None
-    original_name: str | None = None
-    actor_name: str | None = None
-
-class DuplicateParameterApiRequest(BaseModel):
-
-    parameter_id: UUID
-
-class DuplicateParameterApiResponse(BaseModel):
-
-    parameter_id: UUID | None = None
-    original_name: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: get_parameter_access
-
-class GetParameterAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    parameter_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.parameter_id,
-            self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class GetParameterAccessSqlRow(BaseModel):
-
-    parameter_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    parameter_department_ids: list[UUID] | None = None
-    active_scenario_count: int | None = None
-
-class GetParameterAccessApiRequest(BaseModel):
-
-    parameter_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetParameterAccessApiResponse(BaseModel):
-
-    parameter_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    parameter_department_ids: list[UUID] | None = None
-    active_scenario_count: int | None = None
-
-
-
-# Generated from: get_parameter
-
-class GetParameterSqlParams(BaseModel):
-
-    profile_id: UUID
-    parameter_id: UUID | None = None
-    field_search: str | None = None
-    field_show_selected: bool | None = None
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.parameter_id,
-            self.field_search,
-            self.field_show_selected,
-            self.draft_id,
-            self.mcp,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class QGetParameterV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetParameterV4DescriptionResource(BaseModel):
-
-    description_id: UUID | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetParameterV4Field(BaseModel):
-
-    field_id: UUID | None
-    name: str | None
-    description: str | None
-    usage_count: int | None
-    department_ids: list[str] | None
-    generated: bool | None
-
-
-
-
-class QGetParameterV4FlagResource(BaseModel):
-
-    flag_id: UUID | None
-    name: str | None
-    description: str | None
-    icon: str | None
-    generated: bool | None
-
-
-
-
-class QGetParameterV4NameResource(BaseModel):
-
-    name_id: UUID | None
-    name: str | None
-    generated: bool | None
-
-class GetParameterSqlRow(BaseModel):
-
-    parameter_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetParameterV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetParameterV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetParameterV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetParameterV4DescriptionResource] | None = None
-    active_flag_id: UUID | None = None
-    active_flag_resource: QGetParameterV4FlagResource | None = None
-    show_active_flag: bool | None = None
-    active_flag_agent_id: UUID | None = None
-    active_flag_required: bool | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    simulation_parameter: bool | None = None
-    document_parameter: bool | None = None
-    persona_parameter: bool | None = None
-    scenario_parameter: bool | None = None
-    video_parameter: bool | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetParameterV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetParameterV4Department] | None = None
-    field_ids: list[UUID] | None = None
-    field_resources: list[QGetParameterV4Field] | None = None
-    show_fields: bool | None = None
-    fields_agent_id: UUID | None = None
-    fields_required: bool | None = None
-    field_suggestions: list[UUID] | None = None
-    fields: list[QGetParameterV4Field] | None = None
-
-class GetParameterApiRequest(BaseModel):
-
-    parameter_id: UUID | None = None
-    field_search: str | None = None
-    field_show_selected: bool | None = None
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetParameterApiResponse(BaseModel):
-
-    parameter_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetParameterV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetParameterV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetParameterV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetParameterV4DescriptionResource] | None = None
-    active_flag_id: UUID | None = None
-    active_flag_resource: QGetParameterV4FlagResource | None = None
-    show_active_flag: bool | None = None
-    active_flag_agent_id: UUID | None = None
-    active_flag_required: bool | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    simulation_parameter: bool | None = None
-    document_parameter: bool | None = None
-    persona_parameter: bool | None = None
-    scenario_parameter: bool | None = None
-    video_parameter: bool | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetParameterV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetParameterV4Department] | None = None
-    field_ids: list[UUID] | None = None
-    field_resources: list[QGetParameterV4Field] | None = None
-    show_fields: bool | None = None
-    fields_agent_id: UUID | None = None
-    fields_required: bool | None = None
-    field_suggestions: list[UUID] | None = None
-    fields: list[QGetParameterV4Field] | None = None
-
-
-
-# Generated from: get_parameter_docs
-
-class GetParameterDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetParameterDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetParameterDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetParameterDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_parameter_ids
-
-class GetParameterIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    parameter_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.parameter_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetParameterIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    flag_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-
-class GetParameterIdsApiRequest(BaseModel):
-
-    parameter_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetParameterIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    flag_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-
-
-
-# Generated from: get_parameters_list
-
-class GetParametersListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    scenario_search: str | None = None
-    field_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.scenario_ids,
-            self.filter_department_ids,
-            self.field_ids,
-            self.scenario_search,
-            self.field_search,
-            self.department_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListParametersV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-
-
-
-class QListParametersV4SampleItem(BaseModel):
-
-    parameter_item_id: UUID | None
-    name: str | None
-    description: str | None
-
-class QListParametersV4Parameter(BaseModel):
-
-    parameter_id: UUID | None
-    name: str | None
-    description: str | None
-    active: bool | None
-    updated_at: datetime | None
-    department_ids: list[str] | None
-    scenario_ids: list[UUID] | None
-    num_items: int | None
-    sample_items: list[QListParametersV4SampleItem] | None
-    active_scenario_count: int | None
-
-class GetParametersListSqlRow(BaseModel):
-
-    parameters: list[QListParametersV4Parameter] | None = None
-    scenario_options: list[QListParametersV4Option] | None = None
-    field_options: list[QListParametersV4Option] | None = None
-    department_options: list[QListParametersV4Option] | None = None
-    total_count: int | None = None
-
-class GetParametersListApiRequest(BaseModel):
-
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    scenario_search: str | None = None
-    field_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-class GetParametersListApiResponse(BaseModel):
-
-    parameters: list[QListParametersV4Parameter] | None = None
-    scenario_options: list[QListParametersV4Option] | None = None
-    field_options: list[QListParametersV4Option] | None = None
-    department_options: list[QListParametersV4Option] | None = None
-    total_count: int | None = None
 
 
 
@@ -18064,93 +13449,6 @@ class SaveParameterApiResponse(BaseModel):
 
 
 
-# Generated from: check_persona_delete_access
-
-class CheckPersonaDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    persona_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.persona_id,
-        )
-
-class CheckPersonaDeleteAccessSqlRow(BaseModel):
-
-    persona_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-class CheckPersonaDeleteAccessApiRequest(BaseModel):
-
-    persona_id: UUID
-
-class CheckPersonaDeleteAccessApiResponse(BaseModel):
-
-    persona_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-
-
-# Generated from: check_persona_duplicate_access
-
-class CheckPersonaDuplicateAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    persona_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.persona_id,
-        )
-
-class CheckPersonaDuplicateAccessSqlRow(BaseModel):
-
-    user_role: str | None = None
-    original_name: str | None = None
-
-class CheckPersonaDuplicateAccessApiRequest(BaseModel):
-
-    persona_id: UUID | None = None
-
-class CheckPersonaDuplicateAccessApiResponse(BaseModel):
-
-    user_role: str | None = None
-    original_name: str | None = None
-
-
-
-# Generated from: check_persona_save_access
-
-class CheckPersonaSaveAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    persona_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.persona_id,
-        )
-
-class CheckPersonaSaveAccessSqlRow(BaseModel):
-
-    persona_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-class CheckPersonaSaveAccessApiRequest(BaseModel):
-
-    persona_id: UUID | None = None
-
-class CheckPersonaSaveAccessApiResponse(BaseModel):
-
-    persona_department_ids: list[str] | None = None
-    active_scenario_count: int | None = None
-
-
-
 # Generated from: delete_persona
 
 class DeletePersonaSqlParams(BaseModel):
@@ -18185,134 +13483,6 @@ class DeletePersonaApiResponse(BaseModel):
 
 
 
-# Generated from: duplicate_persona
-
-class DuplicatePersonaSqlParams(BaseModel):
-
-    persona_id: UUID
-    profile_id: UUID
-    name_resource_id: UUID | None = None
-    active_value: bool | None = True
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.persona_id,
-            self.profile_id,
-            self.name_resource_id,
-            self.active_value,
-        )
-
-class DuplicatePersonaSqlRow(BaseModel):
-
-    new_persona_id: UUID | None = None
-    original_name: str | None = None
-
-class DuplicatePersonaApiRequest(BaseModel):
-
-    persona_id: UUID
-    name_resource_id: UUID | None = None
-    active_value: bool | None = True
-
-class DuplicatePersonaApiResponse(BaseModel):
-
-    new_persona_id: UUID | None = None
-    original_name: str | None = None
-
-
-
-# Generated from: export_personas
-
-class ExportPersonasSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.scenario_ids,
-            self.field_ids,
-            self.filter_department_ids,
-        )
-
-class QExportPersonasV4Row(BaseModel):
-
-    persona_id: UUID | None
-    name_id: UUID | None
-    name: str | None
-    description_id: UUID | None
-    description: str | None
-    color_id: UUID | None
-    color: str | None
-    icon_id: UUID | None
-    icon: str | None
-    instructions_id: UUID | None
-    instructions: str | None
-    is_inactive: bool | None
-    department_ids: list[UUID] | None
-    departments: list[str] | None
-    example_ids: list[UUID] | None
-    examples: list[str] | None
-    parameter_field_ids: list[UUID] | None
-    parameter_fields: list[str] | None
-    voice_ids: list[UUID] | None
-    voices: list[str] | None
-
-class ExportPersonasSqlRow(BaseModel):
-
-    rows: list[QExportPersonasV4Row] | None = None
-
-class ExportPersonasApiRequest(BaseModel):
-
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-
-class ExportPersonasApiResponse(BaseModel):
-
-    rows: list[QExportPersonasV4Row] | None = None
-
-
-
-# Generated from: get_persona_access
-
-class GetPersonaAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.persona_id,
-            self.draft_id,
-        )
-
-class GetPersonaAccessSqlRow(BaseModel):
-
-    persona_exists: bool | None = None
-    persona_department_ids: list[UUID] | None = None
-    active_scenario_count: int | None = None
-
-class GetPersonaAccessApiRequest(BaseModel):
-
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-
-class GetPersonaAccessApiResponse(BaseModel):
-
-    persona_exists: bool | None = None
-    persona_department_ids: list[UUID] | None = None
-    active_scenario_count: int | None = None
-
-
-
 # Generated from: get_persona_docs_columns
 
 class GetPersonaDocsColumnsSqlParams(BaseModel):
@@ -18342,31 +13512,6 @@ class GetPersonaDocsColumnsApiRequest(BaseModel):
 class GetPersonaDocsColumnsApiResponse(BaseModel):
 
     columns: list[QPersonaDocsColumnsV4Column] | None = None
-
-
-
-# Generated from: get_persona_docs
-
-class GetPersonaDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetPersonaDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetPersonaDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetPersonaDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
 
 
 
@@ -18431,82 +13576,6 @@ class GetPersonaDocsJunctionsApiResponse(BaseModel):
 
 
 
-# Generated from: get_persona_ids
-
-class GetPersonaIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.persona_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetPersonaIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    color_id: UUID | None = None
-    icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    color_suggestions: list[UUID] | None = None
-    icon_suggestions: list[UUID] | None = None
-    instructions_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    parameter_field_suggestions: list[UUID] | None = None
-    example_suggestions: list[UUID] | None = None
-    parameter_suggestions: list[UUID] | None = None
-    voice_suggestions: list[UUID] | None = None
-
-class GetPersonaIdsApiRequest(BaseModel):
-
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetPersonaIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    color_id: UUID | None = None
-    icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    color_suggestions: list[UUID] | None = None
-    icon_suggestions: list[UUID] | None = None
-    instructions_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    parameter_field_suggestions: list[UUID] | None = None
-    example_suggestions: list[UUID] | None = None
-    parameter_suggestions: list[UUID] | None = None
-    voice_suggestions: list[UUID] | None = None
-
-
-
 # Generated from: get_persona_resource_data
 
 class GetPersonaResourceDataSqlParams(BaseModel):
@@ -18525,7 +13594,6 @@ class QGetPersonaResourceV4Item(BaseModel):
     description: str | None
     color: str | None
     icon: str | None
-    image_model: bool | None
     instructions: str | None
     examples: list[str] | None
     generated: bool | None
@@ -18593,91 +13661,6 @@ class GetPersonaResourceIdsByGroupIdApiResponse(BaseModel):
     field_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     example_ids: list[UUID] | None = None
-
-
-
-# Generated from: get_personas_list
-
-class GetPersonasListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    scenario_search: str | None = None
-    field_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.scenario_ids,
-            self.field_ids,
-            self.filter_department_ids,
-            self.scenario_search,
-            self.field_search,
-            self.department_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListPersonasV4OptionId(BaseModel):
-
-    id: UUID | None
-    count: int | None
-
-
-
-
-class QListPersonasV4Persona(BaseModel):
-
-    persona_id: UUID | None
-    name: str | None
-    description: str | None
-    color: str | None
-    icon: str | None
-    department_ids: list[str] | None
-    scenario_ids: list[UUID] | None
-    field_ids: list[UUID] | None
-    is_inactive: bool | None
-    generated: bool | None
-    mcp: bool | None
-    num_scenarios: int | None
-    num_profiles: int | None
-    active_scenario_count: int | None
-    updated_at: datetime | None
-
-class GetPersonasListSqlRow(BaseModel):
-
-    personas: list[QListPersonasV4Persona] | None = None
-    scenario_option_ids: list[QListPersonasV4OptionId] | None = None
-    field_option_ids: list[QListPersonasV4OptionId] | None = None
-    department_option_ids: list[QListPersonasV4OptionId] | None = None
-    total_count: int | None = None
-
-class GetPersonasListApiRequest(BaseModel):
-
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    scenario_search: str | None = None
-    field_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-class GetPersonasListApiResponse(BaseModel):
-
-    personas: list[QListPersonasV4Persona] | None = None
-    scenario_option_ids: list[QListPersonasV4OptionId] | None = None
-    field_option_ids: list[QListPersonasV4OptionId] | None = None
-    department_option_ids: list[QListPersonasV4OptionId] | None = None
-    total_count: int | None = None
 
 
 
@@ -18863,266 +13846,6 @@ class ToolsDeletePersonaApiResponse(BaseModel):
     usage_count: int | None = None
     name: str | None = None
     deleted: bool | None = None
-
-
-
-# Generated from: tools_duplicate_persona
-
-class ToolsDuplicatePersonaSqlParams(BaseModel):
-
-    persona_id: UUID
-    profile_id: UUID
-    name_resource_id: UUID | None = None
-    active_value: bool | None = True
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.persona_id,
-            self.profile_id,
-            self.name_resource_id,
-            self.active_value,
-        )
-
-class ToolsDuplicatePersonaSqlRow(BaseModel):
-
-    new_persona_id: UUID | None = None
-    original_name: str | None = None
-
-class ToolsDuplicatePersonaApiRequest(BaseModel):
-
-    persona_id: UUID
-    name_resource_id: UUID | None = None
-    active_value: bool | None = True
-
-class ToolsDuplicatePersonaApiResponse(BaseModel):
-
-    new_persona_id: UUID | None = None
-    original_name: str | None = None
-
-
-
-# Generated from: tools_export_personas
-
-class ToolsExportPersonasSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.scenario_ids,
-            self.field_ids,
-            self.filter_department_ids,
-        )
-
-class QToolsExportPersonasV4Row(BaseModel):
-
-    persona_id: UUID | None
-    name_id: UUID | None
-    name: str | None
-    description_id: UUID | None
-    description: str | None
-    color_id: UUID | None
-    color: str | None
-    icon_id: UUID | None
-    icon: str | None
-    instructions_id: UUID | None
-    instructions: str | None
-    is_inactive: bool | None
-    department_ids: list[UUID] | None
-    departments: list[str] | None
-    example_ids: list[UUID] | None
-    examples: list[str] | None
-    parameter_field_ids: list[UUID] | None
-    parameter_fields: list[str] | None
-    voice_ids: list[UUID] | None
-    voices: list[str] | None
-
-class ToolsExportPersonasSqlRow(BaseModel):
-
-    rows: list[QToolsExportPersonasV4Row] | None = None
-
-class ToolsExportPersonasApiRequest(BaseModel):
-
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-
-class ToolsExportPersonasApiResponse(BaseModel):
-
-    rows: list[QToolsExportPersonasV4Row] | None = None
-
-
-
-# Generated from: tools_get_persona
-
-class ToolsGetPersonaSqlParams(BaseModel):
-
-    profile_id: UUID
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.persona_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class ToolsGetPersonaSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    color_id: UUID | None = None
-    icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-
-class ToolsGetPersonaApiRequest(BaseModel):
-
-    persona_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class ToolsGetPersonaApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    color_id: UUID | None = None
-    icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-
-
-
-# Generated from: tools_get_persona_docs
-
-class ToolsGetPersonaDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class ToolsGetPersonaDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class ToolsGetPersonaDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class ToolsGetPersonaDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: tools_get_personas_list
-
-class ToolsGetPersonasListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    scenario_search: str | None = None
-    field_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.scenario_ids,
-            self.field_ids,
-            self.filter_department_ids,
-            self.scenario_search,
-            self.field_search,
-            self.department_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QToolsListPersonasV4OptionId(BaseModel):
-
-    id: UUID | None
-    count: int | None
-
-
-
-
-class QToolsListPersonasV4Persona(BaseModel):
-
-    persona_id: UUID | None
-    name: str | None
-    description: str | None
-    color: str | None
-    icon: str | None
-    department_ids: list[str] | None
-    scenario_ids: list[UUID] | None
-    field_ids: list[UUID] | None
-    is_inactive: bool | None
-    generated: bool | None
-    mcp: bool | None
-    num_scenarios: int | None
-    num_profiles: int | None
-    active_scenario_count: int | None
-    updated_at: datetime | None
-
-class ToolsGetPersonasListSqlRow(BaseModel):
-
-    personas: list[QToolsListPersonasV4Persona] | None = None
-    scenario_option_ids: list[QToolsListPersonasV4OptionId] | None = None
-    field_option_ids: list[QToolsListPersonasV4OptionId] | None = None
-    department_option_ids: list[QToolsListPersonasV4OptionId] | None = None
-    total_count: int | None = None
-
-class ToolsGetPersonasListApiRequest(BaseModel):
-
-    search: str | None = None
-    scenario_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    scenario_search: str | None = None
-    field_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-class ToolsGetPersonasListApiResponse(BaseModel):
-
-    personas: list[QToolsListPersonasV4Persona] | None = None
-    scenario_option_ids: list[QToolsListPersonasV4OptionId] | None = None
-    field_option_ids: list[QToolsListPersonasV4OptionId] | None = None
-    department_option_ids: list[QToolsListPersonasV4OptionId] | None = None
-    total_count: int | None = None
 
 
 
@@ -19331,106 +14054,6 @@ class ValidatePersonaResourceProgressApiResponse(BaseModel):
 
 
 
-# Generated from: authorize_emulation
-
-class AuthorizeEmulationSqlParams(BaseModel):
-
-    requester_profile_id: UUID
-    target_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.requester_profile_id,
-            self.target_profile_id,
-        )
-
-class AuthorizeEmulationSqlRow(BaseModel):
-
-    allowed: bool | None = None
-    reason: str | None = None
-    actor_name: str | None = None
-
-class AuthorizeEmulationApiRequest(BaseModel):
-
-    requester_profile_id: UUID
-    target_profile_id: UUID
-
-class AuthorizeEmulationApiResponse(BaseModel):
-
-    allowed: bool | None = None
-    reason: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: check_login_authorization
-
-class CheckLoginAuthorizationSqlParams(BaseModel):
-
-    department_id: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.department_id,
-        )
-
-class CheckLoginAuthorizationSqlRow(BaseModel):
-
-    guest_login_enabled: bool | None = None
-    active_departments_count: int | None = None
-    department_auth_providers_count: int | None = None
-    default_settings_auth_providers_count: int | None = None
-    departments_without_auth_providers_count: int | None = None
-    department_exists: bool | None = None
-
-class CheckLoginAuthorizationApiRequest(BaseModel):
-
-    department_id: str | None = None
-
-class CheckLoginAuthorizationApiResponse(BaseModel):
-
-    guest_login_enabled: bool | None = None
-    active_departments_count: int | None = None
-    department_auth_providers_count: int | None = None
-    default_settings_auth_providers_count: int | None = None
-    departments_without_auth_providers_count: int | None = None
-    department_exists: bool | None = None
-
-
-
-# Generated from: check_profile_delete_access
-
-class CheckProfileDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    target_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.target_profile_id,
-        )
-
-class CheckProfileDeleteAccessSqlRow(BaseModel):
-
-    target_department_ids: list[str] | None = None
-    target_is_self: bool | None = None
-    profile_name: str | None = None
-    target_role: str | None = None
-
-class CheckProfileDeleteAccessApiRequest(BaseModel):
-
-    target_profile_id: UUID
-
-class CheckProfileDeleteAccessApiResponse(BaseModel):
-
-    target_department_ids: list[str] | None = None
-    target_is_self: bool | None = None
-    profile_name: str | None = None
-    target_role: str | None = None
-
-
-
 # Generated from: check_profile_duplicate_access
 
 class CheckProfileDuplicateAccessSqlParams(BaseModel):
@@ -19453,819 +14076,6 @@ class CheckProfileDuplicateAccessApiRequest(BaseModel):
 class CheckProfileDuplicateAccessApiResponse(BaseModel):
 
     user_role: str | None = None
-
-
-
-# Generated from: check_profile_save_access
-
-class CheckProfileSaveAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    input_profile_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.input_profile_id,
-        )
-
-class CheckProfileSaveAccessSqlRow(BaseModel):
-
-    target_department_ids: list[str] | None = None
-    target_is_self: bool | None = None
-
-class CheckProfileSaveAccessApiRequest(BaseModel):
-
-    input_profile_id: UUID | None = None
-
-class CheckProfileSaveAccessApiResponse(BaseModel):
-
-    target_department_ids: list[str] | None = None
-    target_is_self: bool | None = None
-
-
-
-# Generated from: create_or_update_profile
-
-class CreateOrUpdateProfileSqlParams(BaseModel):
-
-    name: str
-    emails: list[str]
-    role: str
-    current_profile_id: UUID | None = None
-    primary_email_index: int | None = 0
-    active: bool | None = True
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    profile_id_new: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.name,
-            self.emails,
-            self.role,
-            self.current_profile_id,
-            self.primary_email_index,
-            self.active,
-            self.department_ids,
-            self.profile_id_new,
-        )
-
-class CreateOrUpdateProfileSqlRow(BaseModel):
-
-    profile_id: UUID | None = None
-    created: bool | None = None
-    session_id: UUID | None = None
-
-class CreateOrUpdateProfileApiRequest(BaseModel):
-
-    name: str
-    emails: list[str]
-    role: str
-    current_profile_id: UUID | None = None
-    primary_email_index: int | None = 0
-    active: bool | None = True
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    profile_id_new: UUID | None = None
-
-class CreateOrUpdateProfileApiResponse(BaseModel):
-
-    profile_id: UUID | None = None
-    created: bool | None = None
-    session_id: UUID | None = None
-
-
-
-# Generated from: create_profile_if_not_exists
-
-class CreateProfileIfNotExistsSqlParams(BaseModel):
-
-    name: str
-    email: str
-    role: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.name,
-            self.email,
-            self.role,
-        )
-
-class CreateProfileIfNotExistsSqlRow(BaseModel):
-
-    profile_id: UUID | None = None
-    created: bool | None = None
-    actor_name: str | None = None
-
-class CreateProfileIfNotExistsApiRequest(BaseModel):
-
-    name: str
-    email: str
-    role: str | None = None
-
-class CreateProfileIfNotExistsApiResponse(BaseModel):
-
-    profile_id: UUID | None = None
-    created: bool | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: delete_profile
-
-class DeleteProfileSqlParams(BaseModel):
-
-    target_profile_id: UUID
-    current_profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.target_profile_id,
-            self.current_profile_id,
-        )
-
-class DeleteProfileSqlRow(BaseModel):
-
-    profile_exists: bool | None = None
-    profile_id: UUID | None = None
-    name: str | None = None
-    deleted: bool | None = None
-    actor_name: str | None = None
-
-class DeleteProfileApiRequest(BaseModel):
-
-    target_profile_id: UUID
-    current_profile_id: UUID
-
-class DeleteProfileApiResponse(BaseModel):
-
-    profile_exists: bool | None = None
-    profile_id: UUID | None = None
-    name: str | None = None
-    deleted: bool | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: duplicate_profile
-
-class DuplicateProfileSqlParams(BaseModel):
-
-    target_profile_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.target_profile_id,
-            self.profile_id,
-        )
-
-class DuplicateProfileSqlRow(BaseModel):
-
-    new_profile_id: UUID | None = None
-    original_name: str | None = None
-
-class DuplicateProfileApiRequest(BaseModel):
-
-    target_profile_id: UUID
-
-class DuplicateProfileApiResponse(BaseModel):
-
-    new_profile_id: UUID | None = None
-    original_name: str | None = None
-
-
-
-# Generated from: get_profile_access
-
-class GetProfileAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    target_profile_id: UUID | None = None
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.target_profile_id,
-            self.draft_id,
-        )
-
-class QGetProfileV4RoleResource(BaseModel):
-
-    role: str | None
-    name: str | None
-    description: str | None
-    icon_value: str | None
-    color_hex: str | None
-
-class GetProfileAccessSqlRow(BaseModel):
-
-    profile_exists: bool | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    resolved_target_profile_id: UUID | None = None
-    target_role: str | None = None
-    target_department_ids: list[UUID] | None = None
-    target_is_self: bool | None = None
-    role_options: list[str] | None = None
-    roles: list[QGetProfileV4RoleResource] | None = None
-
-class GetProfileAccessApiRequest(BaseModel):
-
-    target_profile_id: UUID | None = None
-    draft_id: UUID | None = None
-
-class GetProfileAccessApiResponse(BaseModel):
-
-    profile_exists: bool | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    resolved_target_profile_id: UUID | None = None
-    target_role: str | None = None
-    target_department_ids: list[UUID] | None = None
-    target_is_self: bool | None = None
-    role_options: list[str] | None = None
-    roles: list[QGetProfileV4RoleResource] | None = None
-
-
-
-# Generated from: get_profile_by_email
-
-class GetProfileByEmailSqlParams(BaseModel):
-
-    email: str
-    profile_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.email,
-            self.profile_id,
-        )
-
-class GetProfileByEmailSqlRow(BaseModel):
-
-    profile_id: UUID | None = None
-    name: str | None = None
-    emails: list[str] | None = None
-    primary_email: str | None = None
-    role: str | None = None
-    active: bool | None = None
-    req_per_day: int | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    primary_department_id: UUID | None = None
-    actor_name: str | None = None
-
-class GetProfileByEmailApiRequest(BaseModel):
-
-    email: str
-
-class GetProfileByEmailApiResponse(BaseModel):
-
-    profile_id: UUID | None = None
-    name: str | None = None
-    emails: list[str] | None = None
-    primary_email: str | None = None
-    role: str | None = None
-    active: bool | None = None
-    req_per_day: int | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    primary_department_id: UUID | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: get_profile
-
-class GetProfileSqlParams(BaseModel):
-
-    profile_id: UUID
-    target_profile_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.target_profile_id,
-            self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class QGetProfileV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetProfileV4EmailResource(BaseModel):
-
-    id: UUID | None
-    email: str | None
-    generated: bool | None
-
-
-
-
-class QGetProfileV4FlagResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    icon: str | None
-    generated: bool | None
-
-
-
-
-class QGetProfileV4NameResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    generated: bool | None
-
-
-
-
-class QGetProfileV4RequestLimitResource(BaseModel):
-
-    id: UUID | None
-    requests_per_day: int | None
-    generated: bool | None
-
-
-
-
-class GetProfileSqlRow(BaseModel):
-
-    profile_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    profile_id: UUID | None = None
-    role: str | None = None
-    role_options: list[str] | None = None
-    roles: list[QGetProfileV4RoleResource] | None = None
-    name_id: UUID | None = None
-    name_resource: QGetProfileV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetProfileV4NameResource] | None = None
-    email_ids: list[UUID] | None = None
-    email_resources: list[QGetProfileV4EmailResource] | None = None
-    show_emails: bool | None = None
-    emails_agent_id: UUID | None = None
-    emails_required: bool | None = None
-    email_suggestions: list[UUID] | None = None
-    emails: list[QGetProfileV4EmailResource] | None = None
-    request_limit_id: UUID | None = None
-    request_limit_resource: QGetProfileV4RequestLimitResource | None = None
-    show_request_limit: bool | None = None
-    request_limit_agent_id: UUID | None = None
-    request_limit_required: bool | None = None
-    request_limit_suggestions: list[UUID] | None = None
-    request_limits: list[QGetProfileV4RequestLimitResource] | None = None
-    active_flag_id: UUID | None = None
-    flag_resource: QGetProfileV4FlagResource | None = None
-    show_flag: bool | None = None
-    flag_agent_id: UUID | None = None
-    flag_required: bool | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetProfileV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetProfileV4Department] | None = None
-    basic_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
-
-class GetProfileApiRequest(BaseModel):
-
-    target_profile_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetProfileApiResponse(BaseModel):
-
-    profile_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    profile_id: UUID | None = None
-    role: str | None = None
-    role_options: list[str] | None = None
-    roles: list[QGetProfileV4RoleResource] | None = None
-    name_id: UUID | None = None
-    name_resource: QGetProfileV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetProfileV4NameResource] | None = None
-    email_ids: list[UUID] | None = None
-    email_resources: list[QGetProfileV4EmailResource] | None = None
-    show_emails: bool | None = None
-    emails_agent_id: UUID | None = None
-    emails_required: bool | None = None
-    email_suggestions: list[UUID] | None = None
-    emails: list[QGetProfileV4EmailResource] | None = None
-    request_limit_id: UUID | None = None
-    request_limit_resource: QGetProfileV4RequestLimitResource | None = None
-    show_request_limit: bool | None = None
-    request_limit_agent_id: UUID | None = None
-    request_limit_required: bool | None = None
-    request_limit_suggestions: list[UUID] | None = None
-    request_limits: list[QGetProfileV4RequestLimitResource] | None = None
-    active_flag_id: UUID | None = None
-    flag_resource: QGetProfileV4FlagResource | None = None
-    show_flag: bool | None = None
-    flag_agent_id: UUID | None = None
-    flag_required: bool | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetProfileV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetProfileV4Department] | None = None
-    basic_agent_id: UUID | None = None
-    general_agent_id: UUID | None = None
-
-
-
-# Generated from: get_profile_context_access
-
-class GetProfileContextAccessSqlParams(BaseModel):
-
-    profile_id: UUID | None = None
-    department_id: str | None = None
-    p_artifact_entries: Any | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.department_id,
-            self.p_artifact_entries,
-        )
-
-class QGetProfileContextAccessV4ArtifactAgent(BaseModel):
-
-    artifact: str | None
-    has_generation: bool | None
-
-class GetProfileContextAccessSqlRow(BaseModel):
-
-    is_authorized: bool | None = None
-    id: UUID | None = None
-    name: str | None = None
-    role: str | None = None
-    active: bool | None = None
-    primary_department_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
-    settings_id: UUID | None = None
-    settings_system_ids: list[UUID] | None = None
-    settings_agent_ids: list[UUID] | None = None
-    draft_ids: list[UUID] | None = None
-    scoped_roles: list[str] | None = None
-    available_sections: list[str] | None = None
-    artifacts: list[str] | None = None
-    actor_name: str | None = None
-    profiles_id: UUID | None = None
-    artifact_agent_ids: list[QGetProfileContextAccessV4ArtifactAgent] | None = None
-
-class GetProfileContextAccessApiRequest(BaseModel):
-
-    department_id: str | None = None
-    p_artifact_entries: Any | None = None
-
-class GetProfileContextAccessApiResponse(BaseModel):
-
-    is_authorized: bool | None = None
-    id: UUID | None = None
-    name: str | None = None
-    role: str | None = None
-    active: bool | None = None
-    primary_department_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    cohort_ids: list[UUID] | None = None
-    settings_id: UUID | None = None
-    settings_system_ids: list[UUID] | None = None
-    settings_agent_ids: list[UUID] | None = None
-    draft_ids: list[UUID] | None = None
-    scoped_roles: list[str] | None = None
-    available_sections: list[str] | None = None
-    artifacts: list[str] | None = None
-    actor_name: str | None = None
-    profiles_id: UUID | None = None
-    artifact_agent_ids: list[QGetProfileContextAccessV4ArtifactAgent] | None = None
-
-
-
-# Generated from: get_profile_context
-
-class GetProfileContextSqlParams(BaseModel):
-
-    profile_id: UUID | None = None
-    department_id: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.department_id,
-        )
-
-class QGetProfileContextV4Auth(BaseModel):
-
-    auth_id: UUID | None
-    name: str | None
-    description: str | None
-    slug: str | None
-
-
-
-
-class QGetProfileContextV4Department(BaseModel):
-
-    department_id: UUID | None
-    title: str | None
-    description: str | None
-    active: bool | None
-    is_primary: bool | None
-
-
-
-
-class QGetProfileContextV4Draft(BaseModel):
-
-    id: UUID | None
-    artifact_type: str | None
-    payload: Any | None
-    version: int | None
-    updated_at: datetime | None
-
-
-
-
-class QGetProfileContextV4RoleResource(BaseModel):
-
-    role: str | None
-    name: str | None
-    description: str | None
-    icon_value: str | None
-    color_hex: str | None
-
-
-
-
-class QGetProfileContextV4Simulation(BaseModel):
-
-    simulation_id: UUID | None
-    title: str | None
-    description: str | None
-    department_ids: list[str] | None
-    time_limit: int | None
-    active: bool | None
-    practice_simulation: bool | None
-
-
-
-
-class QGetProfileContextV4ThemeTokens(BaseModel):
-
-    background: str | None
-    foreground: str | None
-    card: str | None
-    card_foreground: str | None
-    popover: str | None
-    popover_foreground: str | None
-    primary_color: str | None
-    primary_foreground: str | None
-    secondary: str | None
-    secondary_foreground: str | None
-    muted: str | None
-    muted_foreground: str | None
-    accent: str | None
-    accent_foreground: str | None
-    destructive: str | None
-    border: str | None
-    input: str | None
-    ring: str | None
-    success: str | None
-    success_foreground: str | None
-    warning: str | None
-    warning_foreground: str | None
-    info: str | None
-    info_foreground: str | None
-    chart1: str | None
-    chart2: str | None
-    chart3: str | None
-    chart4: str | None
-    chart5: str | None
-    sidebar: str | None
-    sidebar_foreground: str | None
-    sidebar_primary: str | None
-    sidebar_primary_foreground: str | None
-    sidebar_accent: str | None
-    sidebar_accent_foreground: str | None
-    sidebar_border: str | None
-    sidebar_ring: str | None
-
-class GetProfileContextSqlRow(BaseModel):
-
-    is_authorized: bool | None = None
-    id: UUID | None = None
-    name: str | None = None
-    emails: list[str] | None = None
-    primary_email: str | None = None
-    role: str | None = None
-    active: bool | None = None
-    req_per_day: int | None = None
-    last_login: datetime | None = None
-    last_active: datetime | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    primary_department_id: UUID | None = None
-    departments: list[QGetProfileContextV4Department] | None = None
-    simulations: list[QGetProfileContextV4Simulation] | None = None
-    earliest_attempt_date: datetime | None = None
-    scoped_roles: list[str] | None = None
-    role_resources: list[QGetProfileContextV4RoleResource] | None = None
-    settings_id: str | None = None
-    settings_created_at: datetime | None = None
-    settings_active: bool | None = None
-    settings_name: str | None = None
-    settings_description: str | None = None
-    settings_primary_color: str | None = None
-    settings_accent: str | None = None
-    settings_background: str | None = None
-    settings_surface: str | None = None
-    settings_success: str | None = None
-    settings_warning: str | None = None
-    settings_error: str | None = None
-    settings_sidebar_background: str | None = None
-    settings_sidebar_primary: str | None = None
-    settings_chart1: str | None = None
-    settings_chart2: str | None = None
-    settings_chart3: str | None = None
-    settings_chart4: str | None = None
-    settings_chart5: str | None = None
-    settings_guest_login_enabled: bool | None = None
-    settings_success_threshold: int | None = None
-    settings_warning_threshold: int | None = None
-    settings_danger_threshold: int | None = None
-    settings_auth_ids: list[str] | None = None
-    settings_auths: list[QGetProfileContextV4Auth] | None = None
-    settings_provider_key_ids: list[UUID] | None = None
-    redirect_path: str | None = None
-    department_ids: list[str] | None = None
-    simulation_ids: list[str] | None = None
-    drafts: list[QGetProfileContextV4Draft] | None = None
-    settings_tokens: QGetProfileContextV4ThemeTokens | None = None
-    actor_name: str | None = None
-    session_id: UUID | None = None
-
-class GetProfileContextApiRequest(BaseModel):
-
-    department_id: str | None = None
-
-class GetProfileContextApiResponse(BaseModel):
-
-    is_authorized: bool | None = None
-    id: UUID | None = None
-    name: str | None = None
-    emails: list[str] | None = None
-    primary_email: str | None = None
-    role: str | None = None
-    active: bool | None = None
-    req_per_day: int | None = None
-    last_login: datetime | None = None
-    last_active: datetime | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    primary_department_id: UUID | None = None
-    departments: list[QGetProfileContextV4Department] | None = None
-    simulations: list[QGetProfileContextV4Simulation] | None = None
-    earliest_attempt_date: datetime | None = None
-    scoped_roles: list[str] | None = None
-    role_resources: list[QGetProfileContextV4RoleResource] | None = None
-    settings_id: str | None = None
-    settings_created_at: datetime | None = None
-    settings_active: bool | None = None
-    settings_name: str | None = None
-    settings_description: str | None = None
-    settings_primary_color: str | None = None
-    settings_accent: str | None = None
-    settings_background: str | None = None
-    settings_surface: str | None = None
-    settings_success: str | None = None
-    settings_warning: str | None = None
-    settings_error: str | None = None
-    settings_sidebar_background: str | None = None
-    settings_sidebar_primary: str | None = None
-    settings_chart1: str | None = None
-    settings_chart2: str | None = None
-    settings_chart3: str | None = None
-    settings_chart4: str | None = None
-    settings_chart5: str | None = None
-    settings_guest_login_enabled: bool | None = None
-    settings_success_threshold: int | None = None
-    settings_warning_threshold: int | None = None
-    settings_danger_threshold: int | None = None
-    settings_auth_ids: list[str] | None = None
-    settings_auths: list[QGetProfileContextV4Auth] | None = None
-    settings_provider_key_ids: list[UUID] | None = None
-    redirect_path: str | None = None
-    department_ids: list[str] | None = None
-    simulation_ids: list[str] | None = None
-    drafts: list[QGetProfileContextV4Draft] | None = None
-    settings_tokens: QGetProfileContextV4ThemeTokens | None = None
-    actor_name: str | None = None
-    session_id: UUID | None = None
-
-
-
-# Generated from: get_profile_docs
-
-class GetProfileDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetProfileDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetProfileDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetProfileDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_profile_ids
-
-class GetProfileIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    target_profile_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.target_profile_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetProfileIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    request_limit_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    email_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    role: str | None = None
-
-class GetProfileIdsApiRequest(BaseModel):
-
-    target_profile_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetProfileIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    request_limit_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    email_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    role: str | None = None
 
 
 
@@ -20433,105 +14243,6 @@ class SaveProfileApiResponse(BaseModel):
 
 
 
-# Generated from: search_simulatable_profiles
-
-class SearchSimulatableProfilesSqlParams(BaseModel):
-
-    profile_id: UUID
-    limit_count: int
-    query: str
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.limit_count,
-            self.query,
-        )
-
-class QSearchSimulatableProfilesV4Profile(BaseModel):
-
-    profile_id: UUID | None
-    name: str | None
-    emails: list[str] | None
-    primary_email: str | None
-    role: str | None
-    active: bool | None
-    req_per_day: int | None
-    created_at: datetime | None
-    updated_at: datetime | None
-    primary_department_id: UUID | None
-
-class SearchSimulatableProfilesSqlRow(BaseModel):
-
-    actor_name: str | None = None
-    profiles: list[QSearchSimulatableProfilesV4Profile] | None = None
-
-class SearchSimulatableProfilesApiRequest(BaseModel):
-
-    limit_count: int
-    query: str
-
-class SearchSimulatableProfilesApiResponse(BaseModel):
-
-    actor_name: str | None = None
-    profiles: list[QSearchSimulatableProfilesV4Profile] | None = None
-
-
-
-# Generated from: update_profile_to_active
-
-class UpdateProfileToActiveSqlParams(BaseModel):
-
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-        )
-
-class UpdateProfileToActiveSqlRow(BaseModel):
-
-    profile_exists: bool | None = None
-    profile_id: UUID | None = None
-
-class UpdateProfileToActiveApiRequest(BaseModel):
-
-    pass
-
-class UpdateProfileToActiveApiResponse(BaseModel):
-
-    profile_exists: bool | None = None
-    profile_id: UUID | None = None
-
-
-
-# Generated from: update_profile_to_inactive
-
-class UpdateProfileToInactiveSqlParams(BaseModel):
-
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-        )
-
-class UpdateProfileToInactiveSqlRow(BaseModel):
-
-    profile_exists: bool | None = None
-    profile_id: UUID | None = None
-
-class UpdateProfileToInactiveApiRequest(BaseModel):
-
-    pass
-
-class UpdateProfileToInactiveApiResponse(BaseModel):
-
-    profile_exists: bool | None = None
-    profile_id: UUID | None = None
-
-
-
 # Generated from: validate_profile_resource_error
 
 class ValidateProfileResourceErrorSqlParams(BaseModel):
@@ -20628,141 +14339,6 @@ class BulkDeleteProfilesApiResponse(BaseModel):
 
 
 
-# Generated from: get_profiles_list
-
-class GetProfilesListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    role_filter: str | None = None
-    department_search: str | None = None
-    role_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.filter_department_ids,
-            self.role_filter,
-            self.department_search,
-            self.role_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListProfilesV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-
-
-
-class QListProfilesV4Profile(BaseModel):
-
-    profile_id: UUID | None
-    emails: list[str] | None
-    primary_email: str | None
-    name: str | None
-    role: str | None
-    initials: str | None
-    department_ids: list[str] | None
-    primary_department_id: str | None
-    requests_per_day: int | None
-    target_is_self: bool | None
-
-class GetProfilesListSqlRow(BaseModel):
-
-    profiles: list[QListProfilesV4Profile] | None = None
-    department_options: list[QListProfilesV4Option] | None = None
-    role_options: list[QListProfilesV4Option] | None = None
-    total_count: int | None = None
-
-class GetProfilesListApiRequest(BaseModel):
-
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    role_filter: str | None = None
-    department_search: str | None = None
-    role_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-class GetProfilesListApiResponse(BaseModel):
-
-    profiles: list[QListProfilesV4Profile] | None = None
-    department_options: list[QListProfilesV4Option] | None = None
-    role_options: list[QListProfilesV4Option] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: get_profiles_search
-
-class GetProfilesSearchSqlParams(BaseModel):
-
-    query: str
-    profile_id: UUID
-    department_ids: list[UUID]
-    limit_count: int | None = 200
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.query,
-            self.profile_id,
-            self.department_ids,
-            self.limit_count,
-        )
-
-class QBulkSearchProfilesV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-
-
-
-
-class QBulkSearchProfilesV4Profile(BaseModel):
-
-    profile_id: UUID | None
-    emails: list[str] | None
-    primary_email: str | None
-    name: str | None
-    role: str | None
-    initials: str | None
-    active: bool | None
-    last_active: datetime | None
-    department_ids: list[str] | None
-    primary_department_id: str | None
-    requests_per_day: int | None
-    total_requests: int | None
-    requests_in_last_day: int | None
-    can_edit: bool | None
-    can_delete: bool | None
-
-class GetProfilesSearchSqlRow(BaseModel):
-
-    profiles: list[QBulkSearchProfilesV4Profile] | None = None
-    departments: list[QBulkSearchProfilesV4Department] | None = None
-
-class GetProfilesSearchApiRequest(BaseModel):
-
-    query: str
-    department_ids: list[UUID]
-    limit_count: int | None = 200
-
-class GetProfilesSearchApiResponse(BaseModel):
-
-    profiles: list[QBulkSearchProfilesV4Profile] | None = None
-    departments: list[QBulkSearchProfilesV4Department] | None = None
-
-
-
 # Generated from: process_csv
 
 class IProcessCsvV4ColumnMapping(BaseModel):
@@ -20823,86 +14399,6 @@ class ProcessCsvApiResponse(BaseModel):
 
 
 
-# Generated from: upsert_profiles
-
-class IUpsertProfilesV4Profile(BaseModel):
-
-    name: str | None
-    emails: list[str] | None
-    primary_email_index: int | None
-    role: str | None
-    active: bool | None
-    department_ids: list[UUID] | None
-
-class UpsertProfilesSqlParams(BaseModel):
-
-    profiles: list[IUpsertProfilesV4Profile]
-    current_profile_id: UUID
-    session_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        # Convert profiles composite array to tuples for asyncpg
-        profiles_tuples = [
-            (conn.name, conn.emails, conn.primary_email_index, conn.role, conn.active, conn.department_ids)
-            for conn in (self.profiles or [])
-        ]
-        return (
-            profiles_tuples,
-            self.current_profile_id,
-            self.session_id,
-        )
-
-class UpsertProfilesSqlRow(BaseModel):
-
-    profile_ids: list[UUID] | None = None
-    created_count: int | None = None
-    updated_count: int | None = None
-
-class UpsertProfilesApiRequest(BaseModel):
-
-    profiles: list[IUpsertProfilesV4Profile]
-    current_profile_id: UUID
-    session_id: UUID | None = None
-
-class UpsertProfilesApiResponse(BaseModel):
-
-    profile_ids: list[UUID] | None = None
-    created_count: int | None = None
-    updated_count: int | None = None
-
-
-
-# Generated from: check_provider_delete_access
-
-class CheckProviderDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    provider_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.provider_id,
-        )
-
-class CheckProviderDeleteAccessSqlRow(BaseModel):
-
-    provider_department_ids: list[UUID] | None = None
-    active_model_count: int | None = None
-    provider_name: str | None = None
-
-class CheckProviderDeleteAccessApiRequest(BaseModel):
-
-    provider_id: UUID
-
-class CheckProviderDeleteAccessApiResponse(BaseModel):
-
-    provider_department_ids: list[UUID] | None = None
-    active_model_count: int | None = None
-    provider_name: str | None = None
-
-
-
 # Generated from: check_provider_duplicate_access
 
 class CheckProviderDuplicateAccessSqlParams(BaseModel):
@@ -20925,295 +14421,6 @@ class CheckProviderDuplicateAccessApiRequest(BaseModel):
 class CheckProviderDuplicateAccessApiResponse(BaseModel):
 
     access_check: bool | None = None
-
-
-
-# Generated from: check_provider_save_access
-
-class CheckProviderSaveAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    provider_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.provider_id,
-        )
-
-class CheckProviderSaveAccessSqlRow(BaseModel):
-
-    provider_department_ids: list[UUID] | None = None
-    model_usage_count: int | None = None
-
-class CheckProviderSaveAccessApiRequest(BaseModel):
-
-    provider_id: UUID | None = None
-
-class CheckProviderSaveAccessApiResponse(BaseModel):
-
-    provider_department_ids: list[UUID] | None = None
-    model_usage_count: int | None = None
-
-
-
-# Generated from: delete_provider
-
-class DeleteProviderSqlParams(BaseModel):
-
-    provider_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.provider_id,
-            self.profile_id,
-        )
-
-class DeleteProviderSqlRow(BaseModel):
-
-    usage_count: int | None = None
-    name: str | None = None
-    deleted: bool | None = None
-
-class DeleteProviderApiRequest(BaseModel):
-
-    provider_id: UUID
-
-class DeleteProviderApiResponse(BaseModel):
-
-    usage_count: int | None = None
-    name: str | None = None
-    deleted: bool | None = None
-
-
-
-# Generated from: duplicate_provider
-
-class DuplicateProviderSqlParams(BaseModel):
-
-    provider_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.provider_id,
-            self.profile_id,
-        )
-
-class DuplicateProviderSqlRow(BaseModel):
-
-    new_provider_id: UUID | None = None
-    original_name: str | None = None
-
-class DuplicateProviderApiRequest(BaseModel):
-
-    provider_id: UUID
-
-class DuplicateProviderApiResponse(BaseModel):
-
-    new_provider_id: UUID | None = None
-    original_name: str | None = None
-
-
-
-# Generated from: get_provider_access
-
-class GetProviderAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    provider_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.provider_id,
-            self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class GetProviderAccessSqlRow(BaseModel):
-
-    provider_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    provider_department_ids: list[UUID] | None = None
-    model_usage_count: int | None = None
-
-class GetProviderAccessApiRequest(BaseModel):
-
-    provider_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetProviderAccessApiResponse(BaseModel):
-
-    provider_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    provider_department_ids: list[UUID] | None = None
-    model_usage_count: int | None = None
-
-
-
-# Generated from: get_provider_docs
-
-class GetProviderDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetProviderDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetProviderDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetProviderDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_provider_ids
-
-class GetProviderIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    provider_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.provider_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetProviderIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
-    key_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    providers_id: UUID | None = None
-    endpoint_suggestion_ids: list[UUID] | None = None
-    key_suggestion_ids: list[UUID] | None = None
-
-class GetProviderIdsApiRequest(BaseModel):
-
-    provider_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetProviderIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
-    key_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    providers_id: UUID | None = None
-    endpoint_suggestion_ids: list[UUID] | None = None
-    key_suggestion_ids: list[UUID] | None = None
-
-
-
-# Generated from: get_providers_list
-
-class GetProvidersListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_model_ids: list[UUID] | None = None
-    filter_status: list[str] | None = None
-    department_search: str | None = None
-    model_search: str | None = None
-    page_size: int | None = 1000
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.filter_department_ids,
-            self.filter_model_ids,
-            self.filter_status,
-            self.department_search,
-            self.model_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListProvidersV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-
-
-
-class QListProvidersV4Provider(BaseModel):
-
-    provider_id: UUID | None
-    name: str | None
-    description: str | None
-    value: str | None
-    active: bool | None
-    updated_at: datetime | None
-    department_ids: list[UUID] | None
-    active_model_count: int | None
-    model_ids: list[UUID] | None
-
-class GetProvidersListSqlRow(BaseModel):
-
-    providers: list[QListProvidersV4Provider] | None = None
-    department_options: list[QListProvidersV4Option] | None = None
-    model_options: list[QListProvidersV4Option] | None = None
-    status_options: list[QListProvidersV4Option] | None = None
-    total_count: int | None = None
-
-class GetProvidersListApiRequest(BaseModel):
-
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_model_ids: list[UUID] | None = None
-    filter_status: list[str] | None = None
-    department_search: str | None = None
-    model_search: str | None = None
-    page_size: int | None = 1000
-    page_offset: int | None = 0
-
-class GetProvidersListApiResponse(BaseModel):
-
-    providers: list[QListProvidersV4Provider] | None = None
-    department_options: list[QListProvidersV4Option] | None = None
-    model_options: list[QListProvidersV4Option] | None = None
-    status_options: list[QListProvidersV4Option] | None = None
-    total_count: int | None = None
 
 
 
@@ -21950,49 +15157,6 @@ class GetAuthsApiResponse(BaseModel):
 
 
 
-# Generated from: search_auths
-
-class SearchAuthsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth: bool | None = False
-    setting: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.department_ids,
-            self.auth,
-            self.setting,
-        )
-
-class SearchAuthsSqlRow(BaseModel):
-
-    items: list[QGetAuthsV4Item] | None = None
-
-class SearchAuthsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth: bool | None = False
-    setting: bool | None = False
-
-class SearchAuthsApiResponse(BaseModel):
-
-    items: list[QGetAuthsV4Item] | None = None
-
-
-
 # Generated from: create_cohorts
 
 class CreateCohortsSqlParams(BaseModel):
@@ -22164,52 +15328,6 @@ class GetColorsApiResponse(BaseModel):
 
 
 
-# Generated from: search_colors
-
-class SearchColorsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona: bool | None = False
-    setting: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids,
-            self.persona,
-            self.setting,
-        )
-
-class SearchColorsSqlRow(BaseModel):
-
-    items: list[QGetColorsV4Item] | None = None
-
-class SearchColorsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona: bool | None = False
-    setting: bool | None = False
-
-class SearchColorsApiResponse(BaseModel):
-
-    items: list[QGetColorsV4Item] | None = None
-
-
-
 # Generated from: colors
 
 class ColorsSqlParams(BaseModel):
@@ -22281,45 +15399,6 @@ class GetConditionalParametersApiResponse(BaseModel):
 
 
 
-# Generated from: search_conditional_parameters
-
-class SearchConditionalParametersSqlParams(BaseModel):
-
-    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.parameter_ids,
-        )
-
-class QGetParametersV4Item(BaseModel):
-
-    parameter_id: UUID | None
-    name: str | None
-    description: str | None
-    value: str | None
-    generated: bool | None
-    persona_parameter: bool | None
-    document_parameter: bool | None
-    scenario_parameter: bool | None
-    video_parameter: bool | None
-    conditional: bool | None
-    field_ids: list[UUID] | None
-
-class SearchConditionalParametersSqlRow(BaseModel):
-
-    items: list[QGetParametersV4Item] | None = None
-
-class SearchConditionalParametersApiRequest(BaseModel):
-
-    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class SearchConditionalParametersApiResponse(BaseModel):
-
-    items: list[QGetParametersV4Item] | None = None
-
-
-
 # Generated from: get_departments
 
 class GetDepartmentsSqlParams(BaseModel):
@@ -22352,103 +15431,6 @@ class GetDepartmentsApiResponse(BaseModel):
 
 
 
-# Generated from: search_departments
-
-class SearchDepartmentsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    setting_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    auth: bool | None = False
-    cohort: bool | None = False
-    department: bool | None = False
-    document: bool | None = False
-    eval: bool | None = False
-    field: bool | None = False
-    model: bool | None = False
-    parameter: bool | None = False
-    persona: bool | None = False
-    profile: bool | None = False
-    provider: bool | None = False
-    rubric: bool | None = False
-    scenario: bool | None = False
-    setting: bool | None = False
-    simulation: bool | None = False
-    tool: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.department_ids,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids,
-            self.setting_ids,
-            self.agent,
-            self.auth,
-            self.cohort,
-            self.department,
-            self.document,
-            self.eval,
-            self.field,
-            self.model,
-            self.parameter,
-            self.persona,
-            self.profile,
-            self.provider,
-            self.rubric,
-            self.scenario,
-            self.setting,
-            self.simulation,
-            self.tool,
-        )
-
-class SearchDepartmentsSqlRow(BaseModel):
-
-    items: list[QGetDepartmentsV4Item] | None = None
-
-class SearchDepartmentsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    setting_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    auth: bool | None = False
-    cohort: bool | None = False
-    department: bool | None = False
-    document: bool | None = False
-    eval: bool | None = False
-    field: bool | None = False
-    model: bool | None = False
-    parameter: bool | None = False
-    persona: bool | None = False
-    profile: bool | None = False
-    provider: bool | None = False
-    rubric: bool | None = False
-    scenario: bool | None = False
-    setting: bool | None = False
-    simulation: bool | None = False
-    tool: bool | None = False
-
-class SearchDepartmentsApiResponse(BaseModel):
-
-    items: list[QGetDepartmentsV4Item] | None = None
-
-
-
 # Generated from: get_descriptions
 
 class GetDescriptionsSqlParams(BaseModel):
@@ -22475,94 +15457,6 @@ class GetDescriptionsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetDescriptionsApiResponse(BaseModel):
-
-    items: list[QGetDescriptionsV4Item] | None = None
-
-
-
-# Generated from: search_descriptions
-
-class SearchDescriptionsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    auth: bool | None = False
-    cohort: bool | None = False
-    department: bool | None = False
-    document: bool | None = False
-    eval: bool | None = False
-    field: bool | None = False
-    model: bool | None = False
-    parameter: bool | None = False
-    persona: bool | None = False
-    provider: bool | None = False
-    rubric: bool | None = False
-    scenario: bool | None = False
-    setting: bool | None = False
-    simulation: bool | None = False
-    tool: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids,
-            self.agent,
-            self.auth,
-            self.cohort,
-            self.department,
-            self.document,
-            self.eval,
-            self.field,
-            self.model,
-            self.parameter,
-            self.persona,
-            self.provider,
-            self.rubric,
-            self.scenario,
-            self.setting,
-            self.simulation,
-            self.tool,
-        )
-
-class SearchDescriptionsSqlRow(BaseModel):
-
-    items: list[QGetDescriptionsV4Item] | None = None
-
-class SearchDescriptionsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    auth: bool | None = False
-    cohort: bool | None = False
-    department: bool | None = False
-    document: bool | None = False
-    eval: bool | None = False
-    field: bool | None = False
-    model: bool | None = False
-    parameter: bool | None = False
-    persona: bool | None = False
-    provider: bool | None = False
-    rubric: bool | None = False
-    scenario: bool | None = False
-    setting: bool | None = False
-    simulation: bool | None = False
-    tool: bool | None = False
-
-class SearchDescriptionsApiResponse(BaseModel):
 
     items: list[QGetDescriptionsV4Item] | None = None
 
@@ -22667,67 +15561,6 @@ class GetDocumentsApiResponse(BaseModel):
 
 
 
-# Generated from: search_documents
-
-class SearchDocumentsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    text_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    image_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    template: bool | None = None
-    document: bool | None = False
-    scenario: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.department_ids,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids,
-            self.upload_ids,
-            self.text_ids,
-            self.image_ids,
-            self.template,
-            self.document,
-            self.scenario,
-        )
-
-class SearchDocumentsSqlRow(BaseModel):
-
-    items: list[QGetDocumentsV4Item] | None = None
-
-class SearchDocumentsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    text_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    image_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    template: bool | None = None
-    document: bool | None = False
-    scenario: bool | None = False
-
-class SearchDocumentsApiResponse(BaseModel):
-
-    items: list[QGetDocumentsV4Item] | None = None
-
-
-
 # Generated from: get_emails
 
 class GetEmailsSqlParams(BaseModel):
@@ -22754,43 +15587,6 @@ class GetEmailsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetEmailsApiResponse(BaseModel):
-
-    items: list[QGetEmailsV4Item] | None = None
-
-
-
-# Generated from: search_emails
-
-class SearchEmailsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    profile: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.profile,
-        )
-
-class SearchEmailsSqlRow(BaseModel):
-
-    items: list[QGetEmailsV4Item] | None = None
-
-class SearchEmailsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    profile: bool | None = False
-
-class SearchEmailsApiResponse(BaseModel):
 
     items: list[QGetEmailsV4Item] | None = None
 
@@ -22861,43 +15657,6 @@ class GetEndpointsApiResponse(BaseModel):
 
 
 
-# Generated from: search_endpoints
-
-class SearchEndpointsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    provider: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.provider,
-        )
-
-class SearchEndpointsSqlRow(BaseModel):
-
-    items: list[QGetEndpointsV4Item] | None = None
-
-class SearchEndpointsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    provider: bool | None = False
-
-class SearchEndpointsApiResponse(BaseModel):
-
-    items: list[QGetEndpointsV4Item] | None = None
-
-
-
 # Generated from: endpoints
 
 class EndpointsSqlParams(BaseModel):
@@ -22960,43 +15719,6 @@ class GetEntriesApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetEntriesApiResponse(BaseModel):
-
-    items: list[QGetEntriesV4Item] | None = None
-
-
-
-# Generated from: search_entries
-
-class SearchEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    tool: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.tool,
-        )
-
-class SearchEntriesSqlRow(BaseModel):
-
-    items: list[QGetEntriesV4Item] | None = None
-
-class SearchEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    tool: bool | None = False
-
-class SearchEntriesApiResponse(BaseModel):
 
     items: list[QGetEntriesV4Item] | None = None
 
@@ -23101,55 +15823,6 @@ class GetExamplesApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetExamplesApiResponse(BaseModel):
-
-    items: list[QGetExamplesV4Item] | None = None
-
-
-
-# Generated from: search_examples
-
-class SearchExamplesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    persona_id: UUID | None = None
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.persona_id,
-            self.department_ids,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids,
-            self.persona,
-        )
-
-class SearchExamplesSqlRow(BaseModel):
-
-    items: list[QGetExamplesV4Item] | None = None
-
-class SearchExamplesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    persona_id: UUID | None = None
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona: bool | None = False
-
-class SearchExamplesApiResponse(BaseModel):
 
     items: list[QGetExamplesV4Item] | None = None
 
@@ -23311,94 +15984,6 @@ class GetFlagsApiResponse(BaseModel):
 
 
 
-# Generated from: search_flags
-
-class SearchFlagsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    flag_type: str | None = None
-    agent: bool | None = False
-    auth: bool | None = False
-    cohort: bool | None = False
-    department: bool | None = False
-    document: bool | None = False
-    eval: bool | None = False
-    field: bool | None = False
-    model: bool | None = False
-    parameter: bool | None = False
-    persona: bool | None = False
-    profile: bool | None = False
-    provider: bool | None = False
-    rubric: bool | None = False
-    scenario: bool | None = False
-    setting: bool | None = False
-    simulation: bool | None = False
-    tool: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.flag_type,
-            self.agent,
-            self.auth,
-            self.cohort,
-            self.department,
-            self.document,
-            self.eval,
-            self.field,
-            self.model,
-            self.parameter,
-            self.persona,
-            self.profile,
-            self.provider,
-            self.rubric,
-            self.scenario,
-            self.setting,
-            self.simulation,
-            self.tool,
-        )
-
-class SearchFlagsSqlRow(BaseModel):
-
-    items: list[QGetFlagsV4Item] | None = None
-
-class SearchFlagsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    flag_type: str | None = None
-    agent: bool | None = False
-    auth: bool | None = False
-    cohort: bool | None = False
-    department: bool | None = False
-    document: bool | None = False
-    eval: bool | None = False
-    field: bool | None = False
-    model: bool | None = False
-    parameter: bool | None = False
-    persona: bool | None = False
-    profile: bool | None = False
-    provider: bool | None = False
-    rubric: bool | None = False
-    scenario: bool | None = False
-    setting: bool | None = False
-    simulation: bool | None = False
-    tool: bool | None = False
-
-class SearchFlagsApiResponse(BaseModel):
-
-    items: list[QGetFlagsV4Item] | None = None
-
-
-
 # Generated from: group_positions
 
 class GroupPositionsSqlParams(BaseModel):
@@ -23511,49 +16096,6 @@ class GetIconsApiResponse(BaseModel):
 
 
 
-# Generated from: search_icons
-
-class SearchIconsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids,
-            self.persona,
-        )
-
-class SearchIconsSqlRow(BaseModel):
-
-    items: list[QGetIconsV4Item] | None = None
-
-class SearchIconsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona: bool | None = False
-
-class SearchIconsApiResponse(BaseModel):
-
-    items: list[QGetIconsV4Item] | None = None
-
-
-
 # Generated from: get_image
 
 class GetImageSqlParams(BaseModel):
@@ -23615,46 +16157,6 @@ class GetImagesApiRequest(BaseModel):
     p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetImagesApiResponse(BaseModel):
-
-    items: list[QGetImagesV4Item] | None = None
-
-
-
-# Generated from: search_images
-
-class SearchImagesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.upload_ids,
-            self.scenario,
-        )
-
-class SearchImagesSqlRow(BaseModel):
-
-    items: list[QGetImagesV4Item] | None = None
-
-class SearchImagesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario: bool | None = False
-
-class SearchImagesApiResponse(BaseModel):
 
     items: list[QGetImagesV4Item] | None = None
 
@@ -23723,52 +16225,6 @@ class GetInstructionsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetInstructionsApiResponse(BaseModel):
-
-    items: list[QGetInstructionsV4Item] | None = None
-
-
-
-# Generated from: search_instructions
-
-class SearchInstructionsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    persona: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids,
-            self.agent,
-            self.persona,
-        )
-
-class SearchInstructionsSqlRow(BaseModel):
-
-    items: list[QGetInstructionsV4Item] | None = None
-
-class SearchInstructionsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    persona: bool | None = False
-
-class SearchInstructionsApiResponse(BaseModel):
 
     items: list[QGetInstructionsV4Item] | None = None
 
@@ -23844,46 +16300,6 @@ class GetItemsApiResponse(BaseModel):
 
 
 
-# Generated from: search_items
-
-class SearchItemsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    encrypted: bool | None = None
-    auth: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.encrypted,
-            self.auth,
-        )
-
-class SearchItemsSqlRow(BaseModel):
-
-    items: list[QGetItemsV4Item] | None = None
-
-class SearchItemsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    encrypted: bool | None = None
-    auth: bool | None = False
-
-class SearchItemsApiResponse(BaseModel):
-
-    items: list[QGetItemsV4Item] | None = None
-
-
-
 # Generated from: items
 
 class ItemsSqlParams(BaseModel):
@@ -23943,46 +16359,6 @@ class GetKeysApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetKeysApiResponse(BaseModel):
-
-    items: list[QGetKeysV4Item] | None = None
-
-
-
-# Generated from: search_keys
-
-class SearchKeysSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    key_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    provider: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.key_ids,
-            self.provider,
-        )
-
-class SearchKeysSqlRow(BaseModel):
-
-    items: list[QGetKeysV4Item] | None = None
-
-class SearchKeysApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    key_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    provider: bool | None = False
-
-class SearchKeysApiResponse(BaseModel):
 
     items: list[QGetKeysV4Item] | None = None
 
@@ -24953,49 +17329,6 @@ class GetModalitiesApiResponse(BaseModel):
 
 
 
-# Generated from: search_modalities
-
-class SearchModalitiesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    modality: str | None = None
-    is_input: bool | None = None
-    model: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.modality,
-            self.is_input,
-            self.model,
-        )
-
-class SearchModalitiesSqlRow(BaseModel):
-
-    items: list[QGetModalitiesV4Item] | None = None
-
-class SearchModalitiesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    modality: str | None = None
-    is_input: bool | None = None
-    model: bool | None = False
-
-class SearchModalitiesApiResponse(BaseModel):
-
-    items: list[QGetModalitiesV4Item] | None = None
-
-
-
 # Generated from: get_model_flags
 
 class GetModelFlagsSqlParams(BaseModel):
@@ -25026,49 +17359,6 @@ class GetModelFlagsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetModelFlagsApiResponse(BaseModel):
-
-    items: list[QGetModelFlagsV4Item] | None = None
-
-
-
-# Generated from: search_model_flags
-
-class SearchModelFlagsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.model_ids,
-            self.flag_ids,
-            self.eval,
-        )
-
-class SearchModelFlagsSqlRow(BaseModel):
-
-    items: list[QGetModelFlagsV4Item] | None = None
-
-class SearchModelFlagsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-class SearchModelFlagsApiResponse(BaseModel):
 
     items: list[QGetModelFlagsV4Item] | None = None
 
@@ -25106,34 +17396,6 @@ class GetModelPositionsApiResponse(BaseModel):
 
 
 
-# Generated from: search_model_positions
-
-class SearchModelPositionsSqlParams(BaseModel):
-
-    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.model_ids,
-            self.eval,
-        )
-
-class SearchModelPositionsSqlRow(BaseModel):
-
-    items: list[QGetModelPositionsV4Item] | None = None
-
-class SearchModelPositionsApiRequest(BaseModel):
-
-    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-class SearchModelPositionsApiResponse(BaseModel):
-
-    items: list[QGetModelPositionsV4Item] | None = None
-
-
-
 # Generated from: get_model_rubrics
 
 class GetModelRubricsSqlParams(BaseModel):
@@ -25161,37 +17423,6 @@ class GetModelRubricsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetModelRubricsApiResponse(BaseModel):
-
-    items: list[QGetModelRubricsV4Item] | None = None
-
-
-
-# Generated from: search_model_rubrics
-
-class SearchModelRubricsSqlParams(BaseModel):
-
-    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.model_ids,
-            self.rubric_ids,
-            self.eval,
-        )
-
-class SearchModelRubricsSqlRow(BaseModel):
-
-    items: list[QGetModelRubricsV4Item] | None = None
-
-class SearchModelRubricsApiRequest(BaseModel):
-
-    model_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    eval: bool | None = False
-
-class SearchModelRubricsApiResponse(BaseModel):
 
     items: list[QGetModelRubricsV4Item] | None = None
 
@@ -25237,67 +17468,6 @@ class GetModelsApiResponse(BaseModel):
 
 
 
-# Generated from: search_models
-
-class SearchModelsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    provider_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    temperature_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    reasoning_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    quality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    voice_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    modality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    model: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.department_ids,
-            self.provider_ids,
-            self.temperature_level_ids,
-            self.reasoning_level_ids,
-            self.quality_ids,
-            self.voice_ids,
-            self.modality_ids,
-            self.agent,
-            self.model,
-        )
-
-class SearchModelsSqlRow(BaseModel):
-
-    items: list[QGetModelsV4Item] | None = None
-
-class SearchModelsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    provider_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    temperature_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    reasoning_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    quality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    voice_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    modality_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    model: bool | None = False
-
-class SearchModelsApiResponse(BaseModel):
-
-    items: list[QGetModelsV4Item] | None = None
-
-
-
 # Generated from: get_names
 
 class GetNamesSqlParams(BaseModel):
@@ -25324,97 +17494,6 @@ class GetNamesApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetNamesApiResponse(BaseModel):
-
-    items: list[QGetNamesV4Item] | None = None
-
-
-
-# Generated from: search_names
-
-class SearchNamesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    auth: bool | None = False
-    cohort: bool | None = False
-    department: bool | None = False
-    document: bool | None = False
-    eval: bool | None = False
-    field: bool | None = False
-    model: bool | None = False
-    parameter: bool | None = False
-    persona: bool | None = False
-    profile: bool | None = False
-    provider: bool | None = False
-    rubric: bool | None = False
-    scenario: bool | None = False
-    setting: bool | None = False
-    simulation: bool | None = False
-    tool: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids,
-            self.agent,
-            self.auth,
-            self.cohort,
-            self.department,
-            self.document,
-            self.eval,
-            self.field,
-            self.model,
-            self.parameter,
-            self.persona,
-            self.profile,
-            self.provider,
-            self.rubric,
-            self.scenario,
-            self.setting,
-            self.simulation,
-            self.tool,
-        )
-
-class SearchNamesSqlRow(BaseModel):
-
-    items: list[QGetNamesV4Item] | None = None
-
-class SearchNamesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    auth: bool | None = False
-    cohort: bool | None = False
-    department: bool | None = False
-    document: bool | None = False
-    eval: bool | None = False
-    field: bool | None = False
-    model: bool | None = False
-    parameter: bool | None = False
-    persona: bool | None = False
-    profile: bool | None = False
-    provider: bool | None = False
-    rubric: bool | None = False
-    scenario: bool | None = False
-    setting: bool | None = False
-    simulation: bool | None = False
-    tool: bool | None = False
-
-class SearchNamesApiResponse(BaseModel):
 
     items: list[QGetNamesV4Item] | None = None
 
@@ -25518,43 +17597,6 @@ class GetObjectivesApiResponse(BaseModel):
 
 
 
-# Generated from: search_objectives
-
-class SearchObjectivesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.scenario,
-        )
-
-class SearchObjectivesSqlRow(BaseModel):
-
-    items: list[QGetObjectivesV4Item] | None = None
-
-class SearchObjectivesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario: bool | None = False
-
-class SearchObjectivesApiResponse(BaseModel):
-
-    items: list[QGetObjectivesV4Item] | None = None
-
-
-
 # Generated from: objectives
 
 class ObjectivesSqlParams(BaseModel):
@@ -25617,49 +17659,6 @@ class GetOptionsApiRequest(BaseModel):
     p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetOptionsApiResponse(BaseModel):
-
-    items: list[QGetOptionsV4Item] | None = None
-
-
-
-# Generated from: search_options
-
-class SearchOptionsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    question_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    is_correct: bool | None = None
-    scenario: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.question_ids,
-            self.is_correct,
-            self.scenario,
-        )
-
-class SearchOptionsSqlRow(BaseModel):
-
-    items: list[QGetOptionsV4Item] | None = None
-
-class SearchOptionsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    question_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    is_correct: bool | None = None
-    scenario: bool | None = False
-
-class SearchOptionsApiResponse(BaseModel):
 
     items: list[QGetOptionsV4Item] | None = None
 
@@ -25776,46 +17775,6 @@ class ParameterFieldsApiResponse(BaseModel):
 
 
 
-# Generated from: search_parameter_fields
-
-class SearchParameterFieldsSqlParams(BaseModel):
-
-    p_parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    p_field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    p_conditional_parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    document: bool | None = False
-    persona: bool | None = False
-    scenario: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_parameter_ids,
-            self.p_field_ids,
-            self.p_conditional_parameter_ids,
-            self.document,
-            self.persona,
-            self.scenario,
-        )
-
-class SearchParameterFieldsSqlRow(BaseModel):
-
-    items: list[QGetParameterFieldsV4Item] | None = None
-
-class SearchParameterFieldsApiRequest(BaseModel):
-
-    p_parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    p_field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    p_conditional_parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    document: bool | None = False
-    persona: bool | None = False
-    scenario: bool | None = False
-
-class SearchParameterFieldsApiResponse(BaseModel):
-
-    items: list[QGetParameterFieldsV4Item] | None = None
-
-
-
 # Generated from: get_parameters
 
 class GetParametersSqlParams(BaseModel):
@@ -25835,6 +17794,20 @@ class GetParametersSqlParams(BaseModel):
             self.p_video_parameter,
         )
 
+class QGetParametersV4Item(BaseModel):
+
+    parameter_id: UUID | None
+    name: str | None
+    description: str | None
+    value: str | None
+    generated: bool | None
+    persona_parameter: bool | None
+    document_parameter: bool | None
+    scenario_parameter: bool | None
+    video_parameter: bool | None
+    conditional: bool | None
+    field_ids: list[UUID] | None
+
 class GetParametersSqlRow(BaseModel):
 
     items: list[QGetParametersV4Item] | None = None
@@ -25848,76 +17821,6 @@ class GetParametersApiRequest(BaseModel):
     p_video_parameter: bool | None = None
 
 class GetParametersApiResponse(BaseModel):
-
-    items: list[QGetParametersV4Item] | None = None
-
-
-
-# Generated from: search_conditional_parameters
-
-
-# Generated from: search_parameters
-
-class SearchParametersSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    p_persona_parameter: bool | None = None
-    p_document_parameter: bool | None = None
-    p_scenario_parameter: bool | None = None
-    p_video_parameter: bool | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    document: bool | None = False
-    parameter: bool | None = False
-    persona: bool | None = False
-    scenario: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.p_persona_parameter,
-            self.p_document_parameter,
-            self.p_scenario_parameter,
-            self.p_video_parameter,
-            self.suggest_source,
-            self.exclude_ids,
-            self.department_ids,
-            self.field_ids,
-            self.document,
-            self.parameter,
-            self.persona,
-            self.scenario,
-        )
-
-class SearchParametersSqlRow(BaseModel):
-
-    items: list[QGetParametersV4Item] | None = None
-
-class SearchParametersApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    p_persona_parameter: bool | None = None
-    p_document_parameter: bool | None = None
-    p_scenario_parameter: bool | None = None
-    p_video_parameter: bool | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    field_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    document: bool | None = False
-    parameter: bool | None = False
-    persona: bool | None = False
-    scenario: bool | None = False
-
-class SearchParametersApiResponse(BaseModel):
 
     items: list[QGetParametersV4Item] | None = None
 
@@ -25972,31 +17875,6 @@ class CreatePersonasApiResponse(BaseModel):
 
 
 
-# Generated from: get_persona_resource
-
-class GetPersonaResourceSqlParams(BaseModel):
-
-    id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.id,
-        )
-
-class GetPersonaResourceSqlRow(BaseModel):
-
-    items: list[QGetPersonaResourceV4Item] | None = None
-
-class GetPersonaResourceApiRequest(BaseModel):
-
-    id: UUID
-
-class GetPersonaResourceApiResponse(BaseModel):
-
-    items: list[QGetPersonaResourceV4Item] | None = None
-
-
-
 # Generated from: get_personas
 
 class GetPersonasSqlParams(BaseModel):
@@ -26036,55 +17914,6 @@ class GetPersonasApiResponse(BaseModel):
 
 
 
-# Generated from: search_personas
-
-class SearchPersonasSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona: bool | None = False
-    scenario: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.department_ids,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids,
-            self.persona,
-            self.scenario,
-        )
-
-class SearchPersonasSqlRow(BaseModel):
-
-    items: list[QGetPersonasV4Item] | None = None
-
-class SearchPersonasApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona: bool | None = False
-    scenario: bool | None = False
-
-class SearchPersonasApiResponse(BaseModel):
-
-    items: list[QGetPersonasV4Item] | None = None
-
-
-
 # Generated from: get_points
 
 class GetPointsSqlParams(BaseModel):
@@ -26111,43 +17940,6 @@ class GetPointsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetPointsApiResponse(BaseModel):
-
-    items: list[QGetPointsV4Item] | None = None
-
-
-
-# Generated from: search_points
-
-class SearchPointsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.rubric,
-        )
-
-class SearchPointsSqlRow(BaseModel):
-
-    items: list[QGetPointsV4Item] | None = None
-
-class SearchPointsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric: bool | None = False
-
-class SearchPointsApiResponse(BaseModel):
 
     items: list[QGetPointsV4Item] | None = None
 
@@ -26360,43 +18152,6 @@ class GetProblemStatementsApiResponse(BaseModel):
 
 
 
-# Generated from: search_problem_statements
-
-class SearchProblemStatementsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.scenario,
-        )
-
-class SearchProblemStatementsSqlRow(BaseModel):
-
-    items: list[QGetProblemStatementsV4Item] | None = None
-
-class SearchProblemStatementsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario: bool | None = False
-
-class SearchProblemStatementsApiResponse(BaseModel):
-
-    items: list[QGetProblemStatementsV4Item] | None = None
-
-
-
 # Generated from: problem_statements
 
 class ProblemStatementsSqlParams(BaseModel):
@@ -26463,37 +18218,6 @@ class GetProfilePersonasApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetProfilePersonasApiResponse(BaseModel):
-
-    items: list[QGetProfilePersonasV4Item] | None = None
-
-
-
-# Generated from: search_profile_personas
-
-class SearchProfilePersonasSqlParams(BaseModel):
-
-    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    cohort: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_ids,
-            self.persona_ids,
-            self.cohort,
-        )
-
-class SearchProfilePersonasSqlRow(BaseModel):
-
-    items: list[QGetProfilePersonasV4Item] | None = None
-
-class SearchProfilePersonasApiRequest(BaseModel):
-
-    profile_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    cohort: bool | None = False
-
-class SearchProfilePersonasApiResponse(BaseModel):
 
     items: list[QGetProfilePersonasV4Item] | None = None
 
@@ -26567,58 +18291,6 @@ class GetProfilesApiRequest(BaseModel):
     p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetProfilesApiResponse(BaseModel):
-
-    items: list[QGetProfilesV4Item] | None = None
-
-
-
-# Generated from: search_profiles
-
-class SearchProfilesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    role_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    role: str | None = None
-    profile: bool | None = False
-    setting: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.department_ids,
-            self.cohort_ids,
-            self.role_ids,
-            self.role,
-            self.profile,
-            self.setting,
-        )
-
-class SearchProfilesSqlRow(BaseModel):
-
-    items: list[QGetProfilesV4Item] | None = None
-
-class SearchProfilesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    role_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    role: str | None = None
-    profile: bool | None = False
-    setting: bool | None = False
-
-class SearchProfilesApiResponse(BaseModel):
 
     items: list[QGetProfilesV4Item] | None = None
 
@@ -26765,49 +18437,6 @@ class GetProtocolsApiResponse(BaseModel):
 
 
 
-# Generated from: search_protocols
-
-class SearchProtocolsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids,
-            self.auth,
-        )
-
-class SearchProtocolsSqlRow(BaseModel):
-
-    items: list[QGetProtocolsV4Item] | None = None
-
-class SearchProtocolsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth: bool | None = False
-
-class SearchProtocolsApiResponse(BaseModel):
-
-    items: list[QGetProtocolsV4Item] | None = None
-
-
-
 # Generated from: protocols
 
 class ProtocolsSqlParams(BaseModel):
@@ -26870,49 +18499,6 @@ class GetProviderKeysApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetProviderKeysApiResponse(BaseModel):
-
-    items: list[QGetProviderKeysV4Item] | None = None
-
-
-
-# Generated from: search_provider_keys
-
-class SearchProviderKeysSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    provider_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    key_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    setting: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.provider_ids,
-            self.key_ids,
-            self.setting,
-        )
-
-class SearchProviderKeysSqlRow(BaseModel):
-
-    items: list[QGetProviderKeysV4Item] | None = None
-
-class SearchProviderKeysApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    provider_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    key_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    setting: bool | None = False
-
-class SearchProviderKeysApiResponse(BaseModel):
 
     items: list[QGetProviderKeysV4Item] | None = None
 
@@ -27065,43 +18651,6 @@ class GetQualitiesApiResponse(BaseModel):
 
 
 
-# Generated from: search_qualities
-
-class SearchQualitiesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    model: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.model,
-        )
-
-class SearchQualitiesSqlRow(BaseModel):
-
-    items: list[QGetQualitiesV4Item] | None = None
-
-class SearchQualitiesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    model: bool | None = False
-
-class SearchQualitiesApiResponse(BaseModel):
-
-    items: list[QGetQualitiesV4Item] | None = None
-
-
-
 # Generated from: get_question
 
 class GetQuestionSqlParams(BaseModel):
@@ -27162,46 +18711,6 @@ class GetQuestionsApiRequest(BaseModel):
     p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetQuestionsApiResponse(BaseModel):
-
-    items: list[QGetQuestionsV4Item] | None = None
-
-
-
-# Generated from: search_questions
-
-class SearchQuestionsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    allow_multiple: bool | None = None
-    scenario: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.allow_multiple,
-            self.scenario,
-        )
-
-class SearchQuestionsSqlRow(BaseModel):
-
-    items: list[QGetQuestionsV4Item] | None = None
-
-class SearchQuestionsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    allow_multiple: bool | None = None
-    scenario: bool | None = False
-
-class SearchQuestionsApiResponse(BaseModel):
 
     items: list[QGetQuestionsV4Item] | None = None
 
@@ -27278,49 +18787,6 @@ class GetReasoningLevelsApiResponse(BaseModel):
 
 
 
-# Generated from: search_reasoning_levels
-
-class SearchReasoningLevelsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    reasoning_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    model: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.reasoning_level_ids,
-            self.agent,
-            self.model,
-        )
-
-class SearchReasoningLevelsSqlRow(BaseModel):
-
-    items: list[QGetReasoningLevelsV4Item] | None = None
-
-class SearchReasoningLevelsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    reasoning_level_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    model: bool | None = False
-
-class SearchReasoningLevelsApiResponse(BaseModel):
-
-    items: list[QGetReasoningLevelsV4Item] | None = None
-
-
-
 # Generated from: get_request_limits
 
 class GetRequestLimitsSqlParams(BaseModel):
@@ -27347,43 +18813,6 @@ class GetRequestLimitsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetRequestLimitsApiResponse(BaseModel):
-
-    items: list[QGetRequestLimitsV4Item] | None = None
-
-
-
-# Generated from: search_request_limits
-
-class SearchRequestLimitsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    profile: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.profile,
-        )
-
-class SearchRequestLimitsSqlRow(BaseModel):
-
-    items: list[QGetRequestLimitsV4Item] | None = None
-
-class SearchRequestLimitsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    profile: bool | None = False
-
-class SearchRequestLimitsApiResponse(BaseModel):
 
     items: list[QGetRequestLimitsV4Item] | None = None
 
@@ -27454,46 +18883,6 @@ class GetResourcesApiResponse(BaseModel):
 
 
 
-# Generated from: search_resources
-
-class SearchResourcesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    resource: str | None = None
-    tool: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.resource,
-            self.tool,
-        )
-
-class SearchResourcesSqlRow(BaseModel):
-
-    items: list[QGetResourcesV4Item] | None = None
-
-class SearchResourcesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    resource: str | None = None
-    tool: bool | None = False
-
-class SearchResourcesApiResponse(BaseModel):
-
-    items: list[QGetResourcesV4Item] | None = None
-
-
-
 # Generated from: get_roles
 
 class GetRolesSqlParams(BaseModel):
@@ -27523,55 +18912,6 @@ class GetRolesApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetRolesApiResponse(BaseModel):
-
-    items: list[QGetRolesV4Item] | None = None
-
-
-
-# Generated from: search_roles
-
-class SearchRolesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    role: str | None = None
-    icon_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    color_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    profile: bool | None = False
-    setting: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.role,
-            self.icon_ids,
-            self.color_ids,
-            self.profile,
-            self.setting,
-        )
-
-class SearchRolesSqlRow(BaseModel):
-
-    items: list[QGetRolesV4Item] | None = None
-
-class SearchRolesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    role: str | None = None
-    icon_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    color_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    profile: bool | None = False
-    setting: bool | None = False
-
-class SearchRolesApiResponse(BaseModel):
 
     items: list[QGetRolesV4Item] | None = None
 
@@ -27806,49 +19146,6 @@ class GetScenarioFlagsApiResponse(BaseModel):
 
 
 
-# Generated from: search_scenario_flags
-
-class SearchScenarioFlagsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    simulation: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.scenario_ids,
-            self.flag_ids,
-            self.simulation,
-        )
-
-class SearchScenarioFlagsSqlRow(BaseModel):
-
-    items: list[QGetScenarioFlagsV4Item] | None = None
-
-class SearchScenarioFlagsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    flag_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    simulation: bool | None = False
-
-class SearchScenarioFlagsApiResponse(BaseModel):
-
-    items: list[QGetScenarioFlagsV4Item] | None = None
-
-
-
 # Generated from: get_scenario_positions
 
 class GetScenarioPositionsSqlParams(BaseModel):
@@ -27876,34 +19173,6 @@ class GetScenarioPositionsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetScenarioPositionsApiResponse(BaseModel):
-
-    items: list[QGetScenarioPositionsV4Item] | None = None
-
-
-
-# Generated from: search_scenario_positions
-
-class SearchScenarioPositionsSqlParams(BaseModel):
-
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    simulation: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.scenario_ids,
-            self.simulation,
-        )
-
-class SearchScenarioPositionsSqlRow(BaseModel):
-
-    items: list[QGetScenarioPositionsV4Item] | None = None
-
-class SearchScenarioPositionsApiRequest(BaseModel):
-
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    simulation: bool | None = False
-
-class SearchScenarioPositionsApiResponse(BaseModel):
 
     items: list[QGetScenarioPositionsV4Item] | None = None
 
@@ -27981,37 +19250,6 @@ class GetScenarioRubricsApiResponse(BaseModel):
 
 
 
-# Generated from: search_scenario_rubrics
-
-class SearchScenarioRubricsSqlParams(BaseModel):
-
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    simulation: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.scenario_ids,
-            self.rubric_ids,
-            self.simulation,
-        )
-
-class SearchScenarioRubricsSqlRow(BaseModel):
-
-    items: list[QGetScenarioRubricsV4Item] | None = None
-
-class SearchScenarioRubricsApiRequest(BaseModel):
-
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    simulation: bool | None = False
-
-class SearchScenarioRubricsApiResponse(BaseModel):
-
-    items: list[QGetScenarioRubricsV4Item] | None = None
-
-
-
 # Generated from: scenario_rubrics
 
 class ScenarioRubricsSqlParams(BaseModel):
@@ -28077,37 +19315,6 @@ class GetScenarioTimeLimitsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetScenarioTimeLimitsApiResponse(BaseModel):
-
-    items: list[QGetScenarioTimeLimitsV4Item] | None = None
-
-
-
-# Generated from: search_scenario_time_limits
-
-class SearchScenarioTimeLimitsSqlParams(BaseModel):
-
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    negative: bool | None = None
-    simulation: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.scenario_ids,
-            self.negative,
-            self.simulation,
-        )
-
-class SearchScenarioTimeLimitsSqlRow(BaseModel):
-
-    items: list[QGetScenarioTimeLimitsV4Item] | None = None
-
-class SearchScenarioTimeLimitsApiRequest(BaseModel):
-
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    negative: bool | None = None
-    simulation: bool | None = False
-
-class SearchScenarioTimeLimitsApiResponse(BaseModel):
 
     items: list[QGetScenarioTimeLimitsV4Item] | None = None
 
@@ -28270,73 +19477,6 @@ class GetScenariosApiRequest(BaseModel):
     ids: list[UUID]
 
 class GetScenariosApiResponse(BaseModel):
-
-    items: list[QGetScenariosV4Item] | None = None
-
-
-
-# Generated from: search_scenarios
-
-class SearchScenariosSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    department_ids: list[UUID] | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    problem_statement_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    video_enabled: bool | None = None
-    images_enabled: bool | None = None
-    questions_enabled: bool | None = None
-    scenario: bool | None = False
-    simulation: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.department_ids,
-            self.suggest_source,
-            self.exclude_ids,
-            self.persona_ids,
-            self.parameter_ids,
-            self.problem_statement_enabled,
-            self.objectives_enabled,
-            self.video_enabled,
-            self.images_enabled,
-            self.questions_enabled,
-            self.scenario,
-            self.simulation,
-        )
-
-class SearchScenariosSqlRow(BaseModel):
-
-    items: list[QGetScenariosV4Item] | None = None
-
-class SearchScenariosApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    department_ids: list[UUID] | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    persona_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    parameter_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    problem_statement_enabled: bool | None = None
-    objectives_enabled: bool | None = None
-    video_enabled: bool | None = None
-    images_enabled: bool | None = None
-    questions_enabled: bool | None = None
-    scenario: bool | None = False
-    simulation: bool | None = False
-
-class SearchScenariosApiResponse(BaseModel):
 
     items: list[QGetScenariosV4Item] | None = None
 
@@ -28602,51 +19742,6 @@ class GetSimulationPositionsApiResponse(BaseModel):
 
 
 
-# Generated from: search_simulation_positions
-
-class SearchSimulationPositionsSqlParams(BaseModel):
-
-    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    cohort: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.simulation_ids,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.cohort,
-        )
-
-class QSearchSimulationPositionsV4Item(BaseModel):
-
-    id: UUID | None
-    simulation_id: UUID | None
-    value: int | None
-    generated: bool | None
-    mcp: bool | None
-
-class SearchSimulationPositionsSqlRow(BaseModel):
-
-    items: list[QSearchSimulationPositionsV4Item] | None = None
-
-class SearchSimulationPositionsApiRequest(BaseModel):
-
-    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    cohort: bool | None = False
-
-class SearchSimulationPositionsApiResponse(BaseModel):
-
-    items: list[QSearchSimulationPositionsV4Item] | None = None
-
-
-
 # Generated from: simulation_positions
 
 class SimulationPositionsSqlParams(BaseModel):
@@ -28776,58 +19871,6 @@ class GetSimulationsApiResponse(BaseModel):
 
 
 
-# Generated from: search_simulations
-
-class SearchSimulationsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    cohort: bool | None = False
-    simulation: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids,
-            self.department_ids,
-            self.scenario_ids,
-            self.cohort,
-            self.simulation,
-        )
-
-class SearchSimulationsSqlRow(BaseModel):
-
-    items: list[QGetSimulationsV4Item] | None = None
-
-class SearchSimulationsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    cohort: bool | None = False
-    simulation: bool | None = False
-
-class SearchSimulationsApiResponse(BaseModel):
-
-    items: list[QGetSimulationsV4Item] | None = None
-
-
-
 # Generated from: get_slugs
 
 class GetSlugsSqlParams(BaseModel):
@@ -28854,49 +19897,6 @@ class GetSlugsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetSlugsApiResponse(BaseModel):
-
-    items: list[QGetSlugsV4Item] | None = None
-
-
-
-# Generated from: search_slugs
-
-class SearchSlugsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.draft_id,
-            self.suggest_source,
-            self.exclude_ids,
-            self.auth,
-        )
-
-class SearchSlugsSqlRow(BaseModel):
-
-    items: list[QGetSlugsV4Item] | None = None
-
-class SearchSlugsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    draft_id: UUID | None = None
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    auth: bool | None = False
-
-class SearchSlugsApiResponse(BaseModel):
 
     items: list[QGetSlugsV4Item] | None = None
 
@@ -28961,43 +19961,6 @@ class GetStandardGroupsApiRequest(BaseModel):
     p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetStandardGroupsApiResponse(BaseModel):
-
-    items: list[QGetStandardGroupsV4Item] | None = None
-
-
-
-# Generated from: search_standard_groups
-
-class SearchStandardGroupsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.rubric,
-        )
-
-class SearchStandardGroupsSqlRow(BaseModel):
-
-    items: list[QGetStandardGroupsV4Item] | None = None
-
-class SearchStandardGroupsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric: bool | None = False
-
-class SearchStandardGroupsApiResponse(BaseModel):
 
     items: list[QGetStandardGroupsV4Item] | None = None
 
@@ -29077,46 +20040,6 @@ class GetStandardsApiRequest(BaseModel):
     p_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetStandardsApiResponse(BaseModel):
-
-    items: list[QGetStandardsV4Item] | None = None
-
-
-
-# Generated from: search_standards
-
-class SearchStandardsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    standard_group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.standard_group_ids,
-            self.rubric,
-        )
-
-class SearchStandardsSqlRow(BaseModel):
-
-    items: list[QGetStandardsV4Item] | None = None
-
-class SearchStandardsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    standard_group_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    rubric: bool | None = False
-
-class SearchStandardsApiResponse(BaseModel):
 
     items: list[QGetStandardsV4Item] | None = None
 
@@ -29222,46 +20145,6 @@ class GetTemperatureLevelsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetTemperatureLevelsApiResponse(BaseModel):
-
-    items: list[QGetTemperatureLevelsV4Item] | None = None
-
-
-
-# Generated from: search_temperature_levels
-
-class SearchTemperatureLevelsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    model: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.agent,
-            self.model,
-        )
-
-class SearchTemperatureLevelsSqlRow(BaseModel):
-
-    items: list[QGetTemperatureLevelsV4Item] | None = None
-
-class SearchTemperatureLevelsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    model: bool | None = False
-
-class SearchTemperatureLevelsApiResponse(BaseModel):
 
     items: list[QGetTemperatureLevelsV4Item] | None = None
 
@@ -29400,43 +20283,6 @@ class GetThresholdsApiResponse(BaseModel):
 
 
 
-# Generated from: search_thresholds
-
-class SearchThresholdsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    setting: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.setting,
-        )
-
-class SearchThresholdsSqlRow(BaseModel):
-
-    items: list[QGetThresholdsV4Item] | None = None
-
-class SearchThresholdsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    setting: bool | None = False
-
-class SearchThresholdsApiResponse(BaseModel):
-
-    items: list[QGetThresholdsV4Item] | None = None
-
-
-
 # Generated from: get_tools
 
 class GetToolsSqlParams(BaseModel):
@@ -29470,52 +20316,6 @@ class GetToolsApiRequest(BaseModel):
     ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
 
 class GetToolsApiResponse(BaseModel):
-
-    items: list[QGetToolsV4Item] | None = None
-
-
-
-# Generated from: search_tools
-
-class SearchToolsSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    operation: str | None = None
-    agent: bool | None = False
-    tool: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.department_ids,
-            self.operation,
-            self.agent,
-            self.tool,
-        )
-
-class SearchToolsSqlRow(BaseModel):
-
-    items: list[QGetToolsV4Item] | None = None
-
-class SearchToolsApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    operation: str | None = None
-    agent: bool | None = False
-    tool: bool | None = False
-
-class SearchToolsApiResponse(BaseModel):
 
     items: list[QGetToolsV4Item] | None = None
 
@@ -29697,49 +20497,6 @@ class GetValuesApiResponse(BaseModel):
 
 
 
-# Generated from: search_values
-
-class SearchValuesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    model: bool | None = False
-    provider: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.suggest_source,
-            self.exclude_ids,
-            self.model,
-            self.provider,
-        )
-
-class SearchValuesSqlRow(BaseModel):
-
-    items: list[QGetValuesV4Item] | None = None
-
-class SearchValuesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    suggest_source: str | None = None
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    model: bool | None = False
-    provider: bool | None = False
-
-class SearchValuesApiResponse(BaseModel):
-
-    items: list[QGetValuesV4Item] | None = None
-
-
-
 # Generated from: values
 
 class ValuesSqlParams(BaseModel):
@@ -29842,46 +20599,6 @@ class GetVideosApiResponse(BaseModel):
 
 
 
-# Generated from: search_videos
-
-class SearchVideosSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.upload_ids,
-            self.scenario,
-        )
-
-class SearchVideosSqlRow(BaseModel):
-
-    items: list[QGetVideosV4Item] | None = None
-
-class SearchVideosApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    scenario: bool | None = False
-
-class SearchVideosApiResponse(BaseModel):
-
-    items: list[QGetVideosV4Item] | None = None
-
-
-
 # Generated from: videos
 
 class VideosSqlParams(BaseModel):
@@ -29950,49 +20667,6 @@ class GetVoicesApiResponse(BaseModel):
 
 
 
-# Generated from: search_voices
-
-class SearchVoicesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    model: bool | None = False
-    persona: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.exclude_ids,
-            self.agent,
-            self.model,
-            self.persona,
-        )
-
-class SearchVoicesSqlRow(BaseModel):
-
-    items: list[QGetVoicesV4Item] | None = None
-
-class SearchVoicesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    agent: bool | None = False
-    model: bool | None = False
-    persona: bool | None = False
-
-class SearchVoicesApiResponse(BaseModel):
-
-    items: list[QGetVoicesV4Item] | None = None
-
-
-
 # Generated from: voices
 
 class VoicesSqlParams(BaseModel):
@@ -30029,72 +20703,6 @@ class VoicesApiResponse(BaseModel):
 
 
 
-# Generated from: delete_rubric
-
-class DeleteRubricSqlParams(BaseModel):
-
-    rubric_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.rubric_id,
-            self.profile_id,
-        )
-
-class DeleteRubricSqlRow(BaseModel):
-
-    rubric_id: UUID | None = None
-    name: str | None = None
-    usage_count: int | None = None
-    deleted: bool | None = None
-    actor_name: str | None = None
-
-class DeleteRubricApiRequest(BaseModel):
-
-    rubric_id: UUID
-
-class DeleteRubricApiResponse(BaseModel):
-
-    rubric_id: UUID | None = None
-    name: str | None = None
-    usage_count: int | None = None
-    deleted: bool | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: duplicate_rubric
-
-class DuplicateRubricSqlParams(BaseModel):
-
-    original_rubric_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.original_rubric_id,
-            self.profile_id,
-        )
-
-class DuplicateRubricSqlRow(BaseModel):
-
-    rubric_id: UUID | None = None
-    original_name: str | None = None
-    actor_name: str | None = None
-
-class DuplicateRubricApiRequest(BaseModel):
-
-    original_rubric_id: UUID
-
-class DuplicateRubricApiResponse(BaseModel):
-
-    rubric_id: UUID | None = None
-    original_name: str | None = None
-    actor_name: str | None = None
-
-
-
 # Generated from: get_rubric_tool_call_results
 
 class GetRubricToolCallResultsSqlParams(BaseModel):
@@ -30117,135 +20725,6 @@ class GetRubricToolCallResultsApiRequest(BaseModel):
 class GetRubricToolCallResultsApiResponse(BaseModel):
 
     descriptions: Any | None = None
-
-
-
-# Generated from: get_rubrics_list
-
-class GetRubricsListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_simulation_ids: list[UUID] | None = None
-    department_search: str | None = None
-    simulation_search: str | None = None
-    page_size: int | None = 1000
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.filter_department_ids,
-            self.filter_simulation_ids,
-            self.department_search,
-            self.simulation_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QGetRubricsListV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-
-
-
-class QGetRubricsListV4Rubric(BaseModel):
-
-    rubric_id: UUID | None
-    name: str | None
-    description: str | None
-    points: int | None
-    pass_points: int | None
-    pass_percentage: int | None
-    department_ids: list[str] | None
-    simulation_ids: list[str] | None
-    active_simulation_count: int | None
-    standard_group_ids: list[UUID] | None
-
-
-
-
-class QGetRubricsListV4Standard(BaseModel):
-
-    standard_id: UUID | None
-    standard_group_id: UUID | None
-    name: str | None
-    description: str | None
-    points: int | None
-
-
-
-
-class QGetRubricsListV4StandardGroup(BaseModel):
-
-    standard_group_id: UUID | None
-    rubric_id: UUID | None
-    name: str | None
-    description: str | None
-    points: int | None
-    pass_points: int | None
-
-class GetRubricsListSqlRow(BaseModel):
-
-    rubrics: list[QGetRubricsListV4Rubric] | None = None
-    standard_groups: list[QGetRubricsListV4StandardGroup] | None = None
-    standards: list[QGetRubricsListV4Standard] | None = None
-    department_options: list[QGetRubricsListV4Option] | None = None
-    simulation_options: list[QGetRubricsListV4Option] | None = None
-    total_count: int | None = None
-
-class GetRubricsListApiRequest(BaseModel):
-
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_simulation_ids: list[UUID] | None = None
-    department_search: str | None = None
-    simulation_search: str | None = None
-    page_size: int | None = 1000
-    page_offset: int | None = 0
-
-class GetRubricsListApiResponse(BaseModel):
-
-    rubrics: list[QGetRubricsListV4Rubric] | None = None
-    standard_groups: list[QGetRubricsListV4StandardGroup] | None = None
-    standards: list[QGetRubricsListV4Standard] | None = None
-    department_options: list[QGetRubricsListV4Option] | None = None
-    simulation_options: list[QGetRubricsListV4Option] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: check_rubric_delete_access
-
-class CheckRubricDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    rubric_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.rubric_id,
-        )
-
-class CheckRubricDeleteAccessSqlRow(BaseModel):
-
-    rubric_department_ids: list[str] | None = None
-    active_simulation_count: int | None = None
-
-class CheckRubricDeleteAccessApiRequest(BaseModel):
-
-    rubric_id: UUID
-
-class CheckRubricDeleteAccessApiResponse(BaseModel):
-
-    rubric_department_ids: list[str] | None = None
-    active_simulation_count: int | None = None
 
 
 
@@ -30273,397 +20752,6 @@ class CheckRubricDuplicateAccessApiRequest(BaseModel):
 class CheckRubricDuplicateAccessApiResponse(BaseModel):
 
     rubric_exists: bool | None = None
-
-
-
-# Generated from: check_rubric_save_access
-
-class CheckRubricSaveAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    rubric_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.rubric_id,
-        )
-
-class CheckRubricSaveAccessSqlRow(BaseModel):
-
-    rubric_department_ids: list[str] | None = None
-    active_simulation_count: int | None = None
-
-class CheckRubricSaveAccessApiRequest(BaseModel):
-
-    rubric_id: UUID | None = None
-
-class CheckRubricSaveAccessApiResponse(BaseModel):
-
-    rubric_department_ids: list[str] | None = None
-    active_simulation_count: int | None = None
-
-
-
-# Generated from: get_rubric_access
-
-class GetRubricAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    rubric_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.rubric_id,
-            self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class GetRubricAccessSqlRow(BaseModel):
-
-    rubric_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    rubric_department_ids: list[UUID] | None = None
-    active_simulation_count: int | None = None
-
-class GetRubricAccessApiRequest(BaseModel):
-
-    rubric_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetRubricAccessApiResponse(BaseModel):
-
-    rubric_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    rubric_department_ids: list[UUID] | None = None
-    active_simulation_count: int | None = None
-
-
-
-# Generated from: get_rubric
-
-class GetRubricSqlParams(BaseModel):
-
-    profile_id: UUID
-    rubric_id: UUID | None = None
-    draft_id: UUID | None = None
-    description_search: str | None = None
-    standard_group_search: str | None = None
-    mcp: bool | None = False
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.rubric_id,
-            self.draft_id,
-            self.description_search,
-            self.standard_group_search,
-            self.mcp,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class QGetRubricV4Department(BaseModel):
-
-    department_id: UUID | None
-    name: str | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetRubricV4DescriptionResource(BaseModel):
-
-    id: UUID | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetRubricV4FlagResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    icon: str | None
-    generated: bool | None
-
-
-
-
-class QGetRubricV4NameResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    generated: bool | None
-
-
-
-
-class QGetRubricV4PointsOption(BaseModel):
-
-    id: UUID | None
-    value: int | None
-    generated: bool | None
-
-
-
-
-class QGetRubricV4PointsResource(BaseModel):
-
-    id: UUID | None
-    value: int | None
-    generated: bool | None
-
-
-
-
-class QGetRubricV4StandardGroupResource(BaseModel):
-
-    standard_group_id: UUID | None
-    name: str | None
-    description: str | None
-    points: int | None
-    pass_points: int | None
-    active: bool | None
-    standard_ids: list[UUID] | None
-    generated: bool | None
-
-
-
-
-class QGetRubricV4StandardResource(BaseModel):
-
-    standard_id: UUID | None
-    standard_group_id: UUID | None
-    name: str | None
-    description: str | None
-    points: int | None
-    generated: bool | None
-
-class GetRubricSqlRow(BaseModel):
-
-    rubric_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetRubricV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetRubricV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetRubricV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetRubricV4DescriptionResource] | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetRubricV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetRubricV4Department] | None = None
-    active_flag_id: UUID | None = None
-    flag_resource: QGetRubricV4FlagResource | None = None
-    show_flag: bool | None = None
-    flag_agent_id: UUID | None = None
-    flag_required: bool | None = None
-    flags: list[QGetRubricV4FlagResource] | None = None
-    total_points_id: UUID | None = None
-    total_points_resource: QGetRubricV4PointsResource | None = None
-    show_points: bool | None = None
-    points_agent_id: UUID | None = None
-    points_required: bool | None = None
-    points_suggestions: list[UUID] | None = None
-    points: list[QGetRubricV4PointsOption] | None = None
-    pass_points_id: UUID | None = None
-    pass_points_resource: QGetRubricV4PointsResource | None = None
-    show_pass_points: bool | None = None
-    pass_points_agent_id: UUID | None = None
-    pass_points_required: bool | None = None
-    pass_points_suggestions: list[UUID] | None = None
-    pass_points: list[QGetRubricV4PointsOption] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_group_resources: list[QGetRubricV4StandardGroupResource] | None = None
-    show_standard_groups: bool | None = None
-    standard_groups_agent_id: UUID | None = None
-    standard_groups_required: bool | None = None
-    standard_group_suggestions: list[UUID] | None = None
-    standard_groups: list[QGetRubricV4StandardGroupResource] | None = None
-    standard_ids: list[UUID] | None = None
-    standard_resources: list[QGetRubricV4StandardResource] | None = None
-    show_standards: bool | None = None
-    standards_agent_id: UUID | None = None
-    standards_required: bool | None = None
-    standard_suggestions: list[UUID] | None = None
-    standards: list[QGetRubricV4StandardResource] | None = None
-
-class GetRubricApiRequest(BaseModel):
-
-    rubric_id: UUID | None = None
-    draft_id: UUID | None = None
-    description_search: str | None = None
-    standard_group_search: str | None = None
-    mcp: bool | None = False
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetRubricApiResponse(BaseModel):
-
-    rubric_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    name_resource: QGetRubricV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetRubricV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetRubricV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetRubricV4DescriptionResource] | None = None
-    department_ids: list[UUID] | None = None
-    department_resources: list[QGetRubricV4Department] | None = None
-    show_departments: bool | None = None
-    departments_agent_id: UUID | None = None
-    departments_required: bool | None = None
-    department_suggestions: list[UUID] | None = None
-    departments: list[QGetRubricV4Department] | None = None
-    active_flag_id: UUID | None = None
-    flag_resource: QGetRubricV4FlagResource | None = None
-    show_flag: bool | None = None
-    flag_agent_id: UUID | None = None
-    flag_required: bool | None = None
-    flags: list[QGetRubricV4FlagResource] | None = None
-    total_points_id: UUID | None = None
-    total_points_resource: QGetRubricV4PointsResource | None = None
-    show_points: bool | None = None
-    points_agent_id: UUID | None = None
-    points_required: bool | None = None
-    points_suggestions: list[UUID] | None = None
-    points: list[QGetRubricV4PointsOption] | None = None
-    pass_points_id: UUID | None = None
-    pass_points_resource: QGetRubricV4PointsResource | None = None
-    show_pass_points: bool | None = None
-    pass_points_agent_id: UUID | None = None
-    pass_points_required: bool | None = None
-    pass_points_suggestions: list[UUID] | None = None
-    pass_points: list[QGetRubricV4PointsOption] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_group_resources: list[QGetRubricV4StandardGroupResource] | None = None
-    show_standard_groups: bool | None = None
-    standard_groups_agent_id: UUID | None = None
-    standard_groups_required: bool | None = None
-    standard_group_suggestions: list[UUID] | None = None
-    standard_groups: list[QGetRubricV4StandardGroupResource] | None = None
-    standard_ids: list[UUID] | None = None
-    standard_resources: list[QGetRubricV4StandardResource] | None = None
-    show_standards: bool | None = None
-    standards_agent_id: UUID | None = None
-    standards_required: bool | None = None
-    standard_suggestions: list[UUID] | None = None
-    standards: list[QGetRubricV4StandardResource] | None = None
-
-
-
-# Generated from: get_rubric_docs
-
-class GetRubricDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetRubricDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetRubricDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetRubricDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_rubric_ids
-
-class GetRubricIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    rubric_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.rubric_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetRubricIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    total_points_id: UUID | None = None
-    pass_points_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
-
-class GetRubricIdsApiRequest(BaseModel):
-
-    rubric_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetRubricIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    total_points_id: UUID | None = None
-    pass_points_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
 
 
 
@@ -30794,551 +20882,6 @@ class SaveRubricApiRequest(BaseModel):
 class SaveRubricApiResponse(BaseModel):
 
     rubric_id: UUID | None = None
-
-
-
-# Generated from: check_scenario_delete_access
-
-class CheckScenarioDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    scenario_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.scenario_id,
-        )
-
-class CheckScenarioDeleteAccessSqlRow(BaseModel):
-
-    scenario_exists: bool | None = None
-    scenario_name: str | None = None
-    usage_count: int | None = None
-    scenario_department_ids: list[UUID] | None = None
-
-class CheckScenarioDeleteAccessApiRequest(BaseModel):
-
-    scenario_id: UUID
-
-class CheckScenarioDeleteAccessApiResponse(BaseModel):
-
-    scenario_exists: bool | None = None
-    scenario_name: str | None = None
-    usage_count: int | None = None
-    scenario_department_ids: list[UUID] | None = None
-
-
-
-# Generated from: check_scenario_duplicate_access
-
-class CheckScenarioDuplicateAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    scenario_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.scenario_id,
-        )
-
-class CheckScenarioDuplicateAccessSqlRow(BaseModel):
-
-    scenario_exists: bool | None = None
-    scenario_name: str | None = None
-    scenario_department_ids: list[UUID] | None = None
-
-class CheckScenarioDuplicateAccessApiRequest(BaseModel):
-
-    scenario_id: UUID
-
-class CheckScenarioDuplicateAccessApiResponse(BaseModel):
-
-    scenario_exists: bool | None = None
-    scenario_name: str | None = None
-    scenario_department_ids: list[UUID] | None = None
-
-
-
-# Generated from: delete_scenario
-
-class DeleteScenarioSqlParams(BaseModel):
-
-    scenario_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.scenario_id,
-            self.profile_id,
-        )
-
-class DeleteScenarioSqlRow(BaseModel):
-
-    scenario_exists: bool | None = None
-    scenario_id: UUID | None = None
-    name: str | None = None
-    usage_count: int | None = None
-    deleted: bool | None = None
-    actor_name: str | None = None
-
-class DeleteScenarioApiRequest(BaseModel):
-
-    scenario_id: UUID
-
-class DeleteScenarioApiResponse(BaseModel):
-
-    scenario_exists: bool | None = None
-    scenario_id: UUID | None = None
-    name: str | None = None
-    usage_count: int | None = None
-    deleted: bool | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: duplicate_scenario
-
-class DuplicateScenarioSqlParams(BaseModel):
-
-    scenario_id: UUID
-    profile_id: UUID
-    name_resource_id: UUID | None = None
-    group_id: UUID | None = None
-    session_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.scenario_id,
-            self.profile_id,
-            self.name_resource_id,
-            self.group_id,
-            self.session_id,
-        )
-
-class DuplicateScenarioSqlRow(BaseModel):
-
-    scenario_id: UUID | None = None
-    scenario_name: str | None = None
-    actor_name: str | None = None
-
-class DuplicateScenarioApiRequest(BaseModel):
-
-    scenario_id: UUID
-    name_resource_id: UUID | None = None
-    group_id: UUID | None = None
-    session_id: UUID | None = None
-
-class DuplicateScenarioApiResponse(BaseModel):
-
-    scenario_id: UUID | None = None
-    scenario_name: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: get_scenario_by_id
-
-class GetScenarioByIdSqlParams(BaseModel):
-
-    scenario_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.scenario_id,
-        )
-
-class GetScenarioByIdSqlRow(BaseModel):
-
-    id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    active: bool | None = None
-    profile_id: UUID | None = None
-    department_id: UUID | None = None
-
-class GetScenarioByIdApiRequest(BaseModel):
-
-    scenario_id: UUID
-
-class GetScenarioByIdApiResponse(BaseModel):
-
-    id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    active: bool | None = None
-    profile_id: UUID | None = None
-    department_id: UUID | None = None
-
-
-
-# Generated from: get_scenarios_list
-
-class GetScenariosListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    persona_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    persona_search: str | None = None
-    simulation_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 10
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.persona_ids,
-            self.simulation_ids,
-            self.filter_department_ids,
-            self.persona_search,
-            self.simulation_search,
-            self.department_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListScenariosV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-
-
-
-class QListScenariosV4Scenario(BaseModel):
-
-    scenario_id: UUID | None
-    name: str | None
-    problem_statement: str | None
-    is_inactive: bool | None
-    generated: bool | None
-    mcp: bool | None
-    department_ids: list[str] | None
-    objective_ids: list[str] | None
-    persona_ids: list[str] | None
-    field_ids: list[str] | None
-    simulation_ids: list[str] | None
-    num_simulations: int | None
-    active_simulation_count: int | None
-    cohort_ids: list[str] | None
-    updated_at: datetime | None
-
-class GetScenariosListSqlRow(BaseModel):
-
-    scenarios: list[QListScenariosV4Scenario] | None = None
-    persona_options: list[QListScenariosV4Option] | None = None
-    simulation_options: list[QListScenariosV4Option] | None = None
-    department_options: list[QListScenariosV4Option] | None = None
-    total_count: int | None = None
-
-class GetScenariosListApiRequest(BaseModel):
-
-    search: str | None = None
-    persona_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    persona_search: str | None = None
-    simulation_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 10
-    page_offset: int | None = 0
-
-class GetScenariosListApiResponse(BaseModel):
-
-    scenarios: list[QListScenariosV4Scenario] | None = None
-    persona_options: list[QListScenariosV4Option] | None = None
-    simulation_options: list[QListScenariosV4Option] | None = None
-    department_options: list[QListScenariosV4Option] | None = None
-    total_count: int | None = None
-
-
-
-# Generated from: insert_scenario_variant
-
-class InsertScenarioVariantSqlParams(BaseModel):
-
-    name: str
-    generated: bool
-    active: bool
-    objectives_enabled: bool
-    images_enabled: bool
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.name,
-            self.generated,
-            self.active,
-            self.objectives_enabled,
-            self.images_enabled,
-        )
-
-class InsertScenarioVariantSqlRow(BaseModel):
-
-    id: UUID | None = None
-    name: str | None = None
-    generated: bool | None = None
-    active: bool | None = None
-    objectives_enabled: bool | None = None
-    images_enabled: bool | None = None
-    description: str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    profile_id: UUID | None = None
-    department_id: UUID | None = None
-
-class InsertScenarioVariantApiRequest(BaseModel):
-
-    name: str
-    generated: bool
-    active: bool
-    objectives_enabled: bool
-    images_enabled: bool
-
-class InsertScenarioVariantApiResponse(BaseModel):
-
-    id: UUID | None = None
-    name: str | None = None
-    generated: bool | None = None
-    active: bool | None = None
-    objectives_enabled: bool | None = None
-    images_enabled: bool | None = None
-    description: str | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    profile_id: UUID | None = None
-    department_id: UUID | None = None
-
-
-
-# Generated from: export_scenarios
-
-class ExportScenariosSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    persona_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.persona_ids,
-            self.simulation_ids,
-            self.filter_department_ids,
-        )
-
-class QExportScenariosV4Row(BaseModel):
-
-    scenario_id: UUID | None
-    name_id: UUID | None
-    name: str | None
-    description_id: UUID | None
-    description: str | None
-    problem_statement_id: UUID | None
-    problem_statement: str | None
-    is_inactive: bool | None
-    flag_ids: list[UUID] | None
-    flags: list[str] | None
-    department_ids: list[UUID] | None
-    departments: list[str] | None
-    persona_ids: list[UUID] | None
-    personas: list[str] | None
-    document_ids: list[UUID] | None
-    documents: list[str] | None
-    parameter_field_ids: list[UUID] | None
-    parameter_fields: list[str] | None
-    objective_ids: list[UUID] | None
-    objectives: list[str] | None
-    image_ids: list[UUID] | None
-    images: list[str] | None
-    video_ids: list[UUID] | None
-    videos: list[str] | None
-    question_ids: list[UUID] | None
-    questions: list[str] | None
-    option_ids: list[UUID] | None
-    options: list[str] | None
-
-class ExportScenariosSqlRow(BaseModel):
-
-    rows: list[QExportScenariosV4Row] | None = None
-
-class ExportScenariosApiRequest(BaseModel):
-
-    search: str | None = None
-    persona_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-
-class ExportScenariosApiResponse(BaseModel):
-
-    rows: list[QExportScenariosV4Row] | None = None
-
-
-
-# Generated from: get_scenario_access
-
-class GetScenarioAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    scenario_id: UUID | None = None
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.scenario_id,
-            self.draft_id,
-        )
-
-class GetScenarioAccessSqlRow(BaseModel):
-
-    scenario_exists: bool | None = None
-    scenario_department_ids: list[UUID] | None = None
-    active_simulation_count: int | None = None
-
-class GetScenarioAccessApiRequest(BaseModel):
-
-    scenario_id: UUID | None = None
-    draft_id: UUID | None = None
-
-class GetScenarioAccessApiResponse(BaseModel):
-
-    scenario_exists: bool | None = None
-    scenario_department_ids: list[UUID] | None = None
-    active_simulation_count: int | None = None
-
-
-
-# Generated from: get_scenario_docs
-
-class GetScenarioDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetScenarioDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetScenarioDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetScenarioDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_scenario_ids
-
-class GetScenarioIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    scenario_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.scenario_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetScenarioIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    problem_statement_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    images_enabled_flag_id: UUID | None = None
-    video_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    option_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    problem_statement_suggestions: list[UUID] | None = None
-    persona_suggestions: list[UUID] | None = None
-    document_suggestions: list[UUID] | None = None
-    parameter_suggestions: list[UUID] | None = None
-    objective_suggestions: list[UUID] | None = None
-    image_suggestions: list[UUID] | None = None
-    video_suggestions: list[UUID] | None = None
-    question_suggestions: list[UUID] | None = None
-    option_suggestions: list[UUID] | None = None
-    video_enabled_value: bool | None = None
-
-class GetScenarioIdsApiRequest(BaseModel):
-
-    scenario_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetScenarioIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    problem_statement_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    images_enabled_flag_id: UUID | None = None
-    video_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    option_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    problem_statement_suggestions: list[UUID] | None = None
-    persona_suggestions: list[UUID] | None = None
-    document_suggestions: list[UUID] | None = None
-    parameter_suggestions: list[UUID] | None = None
-    objective_suggestions: list[UUID] | None = None
-    image_suggestions: list[UUID] | None = None
-    video_suggestions: list[UUID] | None = None
-    question_suggestions: list[UUID] | None = None
-    option_suggestions: list[UUID] | None = None
-    video_enabled_value: bool | None = None
 
 
 
@@ -31672,35 +21215,6 @@ class GetSchemaWithFieldsApiResponse(BaseModel):
 
 
 
-# Generated from: check_setting_delete_access
-
-class CheckSettingDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    setting_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.setting_id,
-        )
-
-class CheckSettingDeleteAccessSqlRow(BaseModel):
-
-    setting_department_ids: list[UUID] | None = None
-    setting_name: str | None = None
-
-class CheckSettingDeleteAccessApiRequest(BaseModel):
-
-    setting_id: UUID
-
-class CheckSettingDeleteAccessApiResponse(BaseModel):
-
-    setting_department_ids: list[UUID] | None = None
-    setting_name: str | None = None
-
-
-
 # Generated from: check_setting_duplicate_access
 
 class CheckSettingDuplicateAccessSqlParams(BaseModel):
@@ -31750,369 +21264,6 @@ class CheckSettingSaveAccessApiRequest(BaseModel):
 class CheckSettingSaveAccessApiResponse(BaseModel):
 
     setting_department_ids: list[UUID] | None = None
-
-
-
-# Generated from: delete_setting
-
-class DeleteSettingSqlParams(BaseModel):
-
-    setting_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.setting_id,
-            self.profile_id,
-        )
-
-class DeleteSettingSqlRow(BaseModel):
-
-    setting_exists: bool | None = None
-    setting_id: UUID | None = None
-    name: str | None = None
-    deleted: bool | None = None
-
-class DeleteSettingApiRequest(BaseModel):
-
-    setting_id: UUID
-
-class DeleteSettingApiResponse(BaseModel):
-
-    setting_exists: bool | None = None
-    setting_id: UUID | None = None
-    name: str | None = None
-    deleted: bool | None = None
-
-
-
-# Generated from: duplicate_setting
-
-class DuplicateSettingSqlParams(BaseModel):
-
-    setting_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.setting_id,
-            self.profile_id,
-        )
-
-class DuplicateSettingSqlRow(BaseModel):
-
-    new_setting_id: UUID | None = None
-    original_name: str | None = None
-
-class DuplicateSettingApiRequest(BaseModel):
-
-    setting_id: UUID
-
-class DuplicateSettingApiResponse(BaseModel):
-
-    new_setting_id: UUID | None = None
-    original_name: str | None = None
-
-
-
-# Generated from: get_active_settings
-
-class GetActiveSettingsSqlParams(BaseModel):
-
-    profile_id: str
-    department_id: str | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.department_id,
-        )
-
-class QGetSettingsDetailV4AuthItem(BaseModel):
-
-    auth_item_id: UUID | None
-    name: str | None
-    description: str | None
-    encrypted: bool | None
-
-class QGetSettingsDetailV4Auth(BaseModel):
-
-    auth_id: UUID | None
-    name: str | None
-    description: str | None
-    slug: str | None
-    active: bool | None
-    auth_items: list[QGetSettingsDetailV4AuthItem] | None
-
-class GetActiveSettingsSqlRow(BaseModel):
-
-    settings_id: UUID | None = None
-    created_at: datetime | None = None
-    active: bool | None = None
-    name: str | None = None
-    description: str | None = None
-    primary_color: str | None = None
-    accent: str | None = None
-    background: str | None = None
-    surface: str | None = None
-    success: str | None = None
-    warning: str | None = None
-    error: str | None = None
-    sidebar_background: str | None = None
-    sidebar_primary: str | None = None
-    chart1: str | None = None
-    chart2: str | None = None
-    chart3: str | None = None
-    chart4: str | None = None
-    chart5: str | None = None
-    guest_login_enabled: bool | None = None
-    success_threshold: int | None = None
-    warning_threshold: int | None = None
-    danger_threshold: int | None = None
-    auth_ids: list[str] | None = None
-    auths: list[QGetSettingsDetailV4Auth] | None = None
-    provider_key_ids: list[UUID] | None = None
-
-class GetActiveSettingsApiRequest(BaseModel):
-
-    department_id: str | None = None
-
-class GetActiveSettingsApiResponse(BaseModel):
-
-    settings_id: UUID | None = None
-    created_at: datetime | None = None
-    active: bool | None = None
-    name: str | None = None
-    description: str | None = None
-    primary_color: str | None = None
-    accent: str | None = None
-    background: str | None = None
-    surface: str | None = None
-    success: str | None = None
-    warning: str | None = None
-    error: str | None = None
-    sidebar_background: str | None = None
-    sidebar_primary: str | None = None
-    chart1: str | None = None
-    chart2: str | None = None
-    chart3: str | None = None
-    chart4: str | None = None
-    chart5: str | None = None
-    guest_login_enabled: bool | None = None
-    success_threshold: int | None = None
-    warning_threshold: int | None = None
-    danger_threshold: int | None = None
-    auth_ids: list[str] | None = None
-    auths: list[QGetSettingsDetailV4Auth] | None = None
-    provider_key_ids: list[UUID] | None = None
-
-
-
-# Generated from: get_setting_access
-
-class GetSettingAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    setting_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.setting_id,
-            self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class GetSettingAccessSqlRow(BaseModel):
-
-    setting_department_ids: list[UUID] | None = None
-    setting_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-
-class GetSettingAccessApiRequest(BaseModel):
-
-    setting_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetSettingAccessApiResponse(BaseModel):
-
-    setting_department_ids: list[UUID] | None = None
-    setting_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-
-
-
-# Generated from: get_setting_ids
-
-class GetSettingIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    setting_id: UUID | None = None
-    draft_id: UUID | None = None
-    color_search: str | None = None
-    mcp: bool | None = False
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.setting_id,
-            self.draft_id,
-            self.color_search,
-            self.mcp,
-            self.user_department_ids,
-        )
-
-class GetSettingIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    color_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    profile_ids: list[UUID] | None = None
-    auth_ids: list[UUID] | None = None
-    provider_key_ids: list[UUID] | None = None
-    auth_item_key_ids: list[UUID] | None = None
-    config_agent_resource_ids: list[UUID] | None = None
-    config_model_resource_ids: list[UUID] | None = None
-    config_provider_resource_ids: list[UUID] | None = None
-
-class GetSettingIdsApiRequest(BaseModel):
-
-    setting_id: UUID | None = None
-    draft_id: UUID | None = None
-    color_search: str | None = None
-    mcp: bool | None = False
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetSettingIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    color_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    profile_ids: list[UUID] | None = None
-    auth_ids: list[UUID] | None = None
-    provider_key_ids: list[UUID] | None = None
-    auth_item_key_ids: list[UUID] | None = None
-    config_agent_resource_ids: list[UUID] | None = None
-    config_model_resource_ids: list[UUID] | None = None
-    config_provider_resource_ids: list[UUID] | None = None
-
-
-
-# Generated from: get_settings_list
-
-class GetSettingsListSqlParams(BaseModel):
-
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-        )
-
-class QGetSettingsListV4Key(BaseModel):
-
-    key_id: UUID | None
-    name: str | None
-    key_masked: str | None
-    description: str | None
-    active: bool | None
-    department_ids: list[str] | None
-
-
-
-
-class QGetSettingsListV4Setting(BaseModel):
-
-    settings_id: UUID | None
-    created_at: datetime | None
-    active: bool | None
-    name: str | None
-    description: str | None
-    department_ids: list[str] | None
-
-class GetSettingsListSqlRow(BaseModel):
-
-    settings: list[QGetSettingsListV4Setting] | None = None
-    keys: list[QGetSettingsListV4Key] | None = None
-
-class GetSettingsListApiRequest(BaseModel):
-
-    pass
-
-class GetSettingsListApiResponse(BaseModel):
-
-    settings: list[QGetSettingsListV4Setting] | None = None
-    keys: list[QGetSettingsListV4Key] | None = None
-
-
-
-# Generated from: get_settings_theme_data
-
-class GetSettingsThemeDataSqlParams(BaseModel):
-
-    settings_id_param: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.settings_id_param,
-        )
-
-class GetSettingsThemeDataSqlRow(BaseModel):
-
-    primary_color: str | None = None
-    accent: str | None = None
-    background: str | None = None
-    surface: str | None = None
-    success: str | None = None
-    warning: str | None = None
-    error: str | None = None
-    sidebar_background: str | None = None
-    sidebar_primary: str | None = None
-    chart1: str | None = None
-    chart2: str | None = None
-    chart3: str | None = None
-    chart4: str | None = None
-    chart5: str | None = None
-    success_threshold: int | None = None
-    warning_threshold: int | None = None
-    danger_threshold: int | None = None
-
-class GetSettingsThemeDataApiRequest(BaseModel):
-
-    settings_id_param: UUID | None = None
-
-class GetSettingsThemeDataApiResponse(BaseModel):
-
-    primary_color: str | None = None
-    accent: str | None = None
-    background: str | None = None
-    surface: str | None = None
-    success: str | None = None
-    warning: str | None = None
-    error: str | None = None
-    sidebar_background: str | None = None
-    sidebar_primary: str | None = None
-    chart1: str | None = None
-    chart2: str | None = None
-    chart3: str | None = None
-    chart4: str | None = None
-    chart5: str | None = None
-    success_threshold: int | None = None
-    warning_threshold: int | None = None
-    danger_threshold: int | None = None
 
 
 
@@ -32258,239 +21409,6 @@ class SaveSettingApiResponse(BaseModel):
 
 
 
-# Generated from: check_simulation_delete_access
-
-class CheckSimulationDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    simulation_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.simulation_id,
-        )
-
-class CheckSimulationDeleteAccessSqlRow(BaseModel):
-
-    simulation_exists: bool | None = None
-    simulation_name: str | None = None
-    simulation_department_ids: list[UUID] | None = None
-    cohort_usage_count: int | None = None
-    user_role: str | None = None
-    user_department_ids: list[UUID] | None = None
-
-class CheckSimulationDeleteAccessApiRequest(BaseModel):
-
-    simulation_id: UUID
-
-class CheckSimulationDeleteAccessApiResponse(BaseModel):
-
-    simulation_exists: bool | None = None
-    simulation_name: str | None = None
-    simulation_department_ids: list[UUID] | None = None
-    cohort_usage_count: int | None = None
-    user_role: str | None = None
-    user_department_ids: list[UUID] | None = None
-
-
-
-# Generated from: check_simulation_duplicate_access
-
-class CheckSimulationDuplicateAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    simulation_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.simulation_id,
-        )
-
-class CheckSimulationDuplicateAccessSqlRow(BaseModel):
-
-    simulation_exists: bool | None = None
-    simulation_name: str | None = None
-    simulation_department_ids: list[UUID] | None = None
-    user_role: str | None = None
-    user_department_ids: list[UUID] | None = None
-
-class CheckSimulationDuplicateAccessApiRequest(BaseModel):
-
-    simulation_id: UUID
-
-class CheckSimulationDuplicateAccessApiResponse(BaseModel):
-
-    simulation_exists: bool | None = None
-    simulation_name: str | None = None
-    simulation_department_ids: list[UUID] | None = None
-    user_role: str | None = None
-    user_department_ids: list[UUID] | None = None
-
-
-
-# Generated from: check_simulation_save_access
-
-class CheckSimulationSaveAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    simulation_id: UUID | None = None
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.simulation_id,
-            self.draft_id,
-        )
-
-class CheckSimulationSaveAccessSqlRow(BaseModel):
-
-    simulation_exists: bool | None = None
-    simulation_department_ids: list[UUID] | None = None
-    cohort_usage_count: int | None = None
-    draft_department_ids: list[UUID] | None = None
-
-class CheckSimulationSaveAccessApiRequest(BaseModel):
-
-    simulation_id: UUID | None = None
-    draft_id: UUID | None = None
-
-class CheckSimulationSaveAccessApiResponse(BaseModel):
-
-    simulation_exists: bool | None = None
-    simulation_department_ids: list[UUID] | None = None
-    cohort_usage_count: int | None = None
-    draft_department_ids: list[UUID] | None = None
-
-
-
-# Generated from: delete_simulation
-
-class DeleteSimulationSqlParams(BaseModel):
-
-    simulation_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.simulation_id,
-            self.profile_id,
-        )
-
-class DeleteSimulationSqlRow(BaseModel):
-
-    deleted: bool | None = None
-    usage_count: int | None = None
-    title: str | None = None
-    actor_name: str | None = None
-
-class DeleteSimulationApiRequest(BaseModel):
-
-    simulation_id: UUID
-
-class DeleteSimulationApiResponse(BaseModel):
-
-    deleted: bool | None = None
-    usage_count: int | None = None
-    title: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: duplicate_simulation
-
-class DuplicateSimulationSqlParams(BaseModel):
-
-    simulation_id: UUID
-    profile_id: UUID
-    name_resource_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.simulation_id,
-            self.profile_id,
-            self.name_resource_id,
-        )
-
-class DuplicateSimulationSqlRow(BaseModel):
-
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    actor_name: str | None = None
-
-class DuplicateSimulationApiRequest(BaseModel):
-
-    simulation_id: UUID
-    name_resource_id: UUID | None = None
-
-class DuplicateSimulationApiResponse(BaseModel):
-
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    actor_name: str | None = None
-
-
-
-# Generated from: export_simulations
-
-class ExportSimulationsSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    filter_scenario_ids: list[UUID] | None = None
-    filter_cohort_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.filter_scenario_ids,
-            self.filter_cohort_ids,
-            self.filter_department_ids,
-        )
-
-class QExportSimulationsV4Row(BaseModel):
-
-    simulation_id: UUID | None
-    name_id: UUID | None
-    name: str | None
-    description_id: UUID | None
-    description: str | None
-    is_inactive: bool | None
-    is_practice: bool | None
-    department_ids: list[UUID] | None
-    departments: list[str] | None
-    scenario_ids: list[UUID] | None
-    scenarios: list[str] | None
-    scenario_flag_ids: list[UUID] | None
-    scenario_flags: list[str] | None
-    scenario_position_ids: list[UUID] | None
-    scenario_positions: list[str] | None
-    scenario_rubric_ids: list[UUID] | None
-    scenario_rubrics: list[str] | None
-    scenario_time_limit_ids: list[UUID] | None
-    scenario_time_limits: list[str] | None
-
-class ExportSimulationsSqlRow(BaseModel):
-
-    rows: list[QExportSimulationsV4Row] | None = None
-
-class ExportSimulationsApiRequest(BaseModel):
-
-    search: str | None = None
-    filter_scenario_ids: list[UUID] | None = None
-    filter_cohort_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-
-class ExportSimulationsApiResponse(BaseModel):
-
-    rows: list[QExportSimulationsV4Row] | None = None
-
-
-
 # Generated from: get_name_by_id
 
 class GetNameByIdSqlParams(BaseModel):
@@ -32513,123 +21431,6 @@ class GetNameByIdApiRequest(BaseModel):
 class GetNameByIdApiResponse(BaseModel):
 
     name: str | None = None
-
-
-
-# Generated from: get_simulation_access
-
-class GetSimulationAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    simulation_id: UUID | None = None
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.simulation_id,
-            self.draft_id,
-        )
-
-class GetSimulationAccessSqlRow(BaseModel):
-
-    simulation_department_ids: list[UUID] | None = None
-    simulation_exists: bool | None = None
-    group_id: UUID | None = None
-    draft_version: int | None = None
-    cohort_usage_count: int | None = None
-    effective_draft_version: int | None = None
-
-class GetSimulationAccessApiRequest(BaseModel):
-
-    simulation_id: UUID | None = None
-    draft_id: UUID | None = None
-
-class GetSimulationAccessApiResponse(BaseModel):
-
-    simulation_department_ids: list[UUID] | None = None
-    simulation_exists: bool | None = None
-    group_id: UUID | None = None
-    draft_version: int | None = None
-    cohort_usage_count: int | None = None
-    effective_draft_version: int | None = None
-
-
-
-# Generated from: get_simulation_docs
-
-class GetSimulationDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetSimulationDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetSimulationDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetSimulationDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_simulation_ids
-
-class GetSimulationIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    simulation_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.simulation_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetSimulationIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_flag_ids: list[UUID] | None = None
-    scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_ids: list[UUID] | None = None
-    scenario_time_limit_ids: list[UUID] | None = None
-
-class GetSimulationIdsApiRequest(BaseModel):
-
-    simulation_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetSimulationIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    scenario_ids: list[UUID] | None = None
-    scenario_flag_ids: list[UUID] | None = None
-    scenario_position_ids: list[UUID] | None = None
-    scenario_rubric_ids: list[UUID] | None = None
-    scenario_time_limit_ids: list[UUID] | None = None
 
 
 
@@ -32682,90 +21483,6 @@ class GetSimulationResourceIdsByGroupIdApiResponse(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
-
-
-
-# Generated from: get_simulations_list
-
-class GetSimulationsListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    filter_scenario_ids: list[UUID] | None = None
-    filter_cohort_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    scenario_search: str | None = None
-    cohort_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.filter_scenario_ids,
-            self.filter_cohort_ids,
-            self.filter_department_ids,
-            self.scenario_search,
-            self.cohort_search,
-            self.department_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QListSimulationsV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-
-
-
-class QListSimulationsV4Simulation(BaseModel):
-
-    simulation_id: UUID | None
-    name: str | None
-    description: str | None
-    department_ids: list[str] | None
-    is_inactive: bool | None
-    practice_simulation: bool | None
-    scenario_ids: list[str] | None
-    num_cohorts: int | None
-    cohort_usage_count: int | None
-    cohort_ids: list[str] | None
-    generated: bool | None
-    mcp: bool | None
-    updated_at: datetime | None
-
-class GetSimulationsListSqlRow(BaseModel):
-
-    simulations: list[QListSimulationsV4Simulation] | None = None
-    scenario_options: list[QListSimulationsV4Option] | None = None
-    cohort_options: list[QListSimulationsV4Option] | None = None
-    department_options: list[QListSimulationsV4Option] | None = None
-    total_count: int | None = None
-
-class GetSimulationsListApiRequest(BaseModel):
-
-    search: str | None = None
-    filter_scenario_ids: list[UUID] | None = None
-    filter_cohort_ids: list[UUID] | None = None
-    filter_department_ids: list[UUID] | None = None
-    scenario_search: str | None = None
-    cohort_search: str | None = None
-    department_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-class GetSimulationsListApiResponse(BaseModel):
-
-    simulations: list[QListSimulationsV4Simulation] | None = None
-    scenario_options: list[QListSimulationsV4Option] | None = None
-    cohort_options: list[QListSimulationsV4Option] | None = None
-    department_options: list[QListSimulationsV4Option] | None = None
-    total_count: int | None = None
 
 
 
@@ -33003,33 +21720,6 @@ class ValidateSimulationResourceProgressApiResponse(BaseModel):
 
 
 
-# Generated from: check_tool_delete_access
-
-class CheckToolDeleteAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    tool_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.tool_id,
-        )
-
-class CheckToolDeleteAccessSqlRow(BaseModel):
-
-    active_agent_count: int | None = None
-
-class CheckToolDeleteAccessApiRequest(BaseModel):
-
-    tool_id: UUID
-
-class CheckToolDeleteAccessApiResponse(BaseModel):
-
-    active_agent_count: int | None = None
-
-
-
 # Generated from: check_tool_duplicate_access
 
 class CheckToolDuplicateAccessSqlParams(BaseModel):
@@ -33052,476 +21742,6 @@ class CheckToolDuplicateAccessApiRequest(BaseModel):
 class CheckToolDuplicateAccessApiResponse(BaseModel):
 
     user_role: str | None = None
-
-
-
-# Generated from: check_tool_save_access
-
-class CheckToolSaveAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    tool_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.tool_id,
-        )
-
-class CheckToolSaveAccessSqlRow(BaseModel):
-
-    active_usage_count: int | None = None
-
-class CheckToolSaveAccessApiRequest(BaseModel):
-
-    tool_id: UUID | None = None
-
-class CheckToolSaveAccessApiResponse(BaseModel):
-
-    active_usage_count: int | None = None
-
-
-
-# Generated from: delete_tool
-
-class DeleteToolSqlParams(BaseModel):
-
-    tool_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.tool_id,
-            self.profile_id,
-        )
-
-class DeleteToolSqlRow(BaseModel):
-
-    usage_count: int | None = None
-    name: str | None = None
-    deleted: bool | None = None
-
-class DeleteToolApiRequest(BaseModel):
-
-    tool_id: UUID
-
-class DeleteToolApiResponse(BaseModel):
-
-    usage_count: int | None = None
-    name: str | None = None
-    deleted: bool | None = None
-
-
-
-# Generated from: duplicate_tool
-
-class DuplicateToolSqlParams(BaseModel):
-
-    tool_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.tool_id,
-            self.profile_id,
-        )
-
-class DuplicateToolSqlRow(BaseModel):
-
-    new_tool_id: UUID | None = None
-    original_name: str | None = None
-
-class DuplicateToolApiRequest(BaseModel):
-
-    tool_id: UUID
-
-class DuplicateToolApiResponse(BaseModel):
-
-    new_tool_id: UUID | None = None
-    original_name: str | None = None
-
-
-
-# Generated from: get_tool_access
-
-class GetToolAccessSqlParams(BaseModel):
-
-    profile_id: UUID
-    tool_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.tool_id,
-            self.draft_id,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class GetToolAccessSqlRow(BaseModel):
-
-    tool_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    active_usage_count: int | None = None
-
-class GetToolAccessApiRequest(BaseModel):
-
-    tool_id: UUID | None = None
-    draft_id: UUID | None = None
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetToolAccessApiResponse(BaseModel):
-
-    tool_exists: bool | None = None
-    effective_draft_version: int | None = None
-    group_id: UUID | None = None
-    active_usage_count: int | None = None
-
-
-
-# Generated from: get_tool
-
-class GetToolSqlParams(BaseModel):
-
-    profile_id: UUID
-    tool_id: UUID | None = None
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.tool_id,
-            self.draft_id,
-            self.mcp,
-            self.draft_group_id,
-            self.draft_version,
-        )
-
-class QGetToolV4ArgsFieldDetail(BaseModel):
-
-    args_id: UUID | None
-    name: str | None
-    description: str | None
-    field_type: str | None
-    required: bool | None
-    default_value: str | None
-    position: int | None
-    generated: bool | None
-
-
-
-
-class QGetToolV4ArgsOutputsDetail(BaseModel):
-
-    args_outputs_id: UUID | None
-    args_id: UUID | None
-    name: str | None
-    template: str | None
-    generated: bool | None
-
-
-
-
-class QGetToolV4ArgsOutputsResource(BaseModel):
-
-    id: UUID | None
-    args_id: UUID | None
-    name: str | None
-    template: str | None
-    generated: bool | None
-    group_id: UUID | None
-
-
-
-
-class QGetToolV4ArgsResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    description: str | None
-    field_type: str | None
-    required: bool | None
-    default_value: str | None
-    position: int | None
-    generated: bool | None
-    group_id: UUID | None
-
-
-
-
-class QGetToolV4DescriptionResource(BaseModel):
-
-    id: UUID | None
-    description: str | None
-    generated: bool | None
-
-
-
-
-class QGetToolV4Domain(BaseModel):
-
-    domain_id: UUID | None
-    resource: str | None
-    generated: bool | None
-
-
-
-
-class QGetToolV4NameResource(BaseModel):
-
-    id: UUID | None
-    name: str | None
-    generated: bool | None
-
-class GetToolSqlRow(BaseModel):
-
-    tool_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    updated_at: datetime | None = None
-    name_id: UUID | None = None
-    name_resource: QGetToolV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetToolV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetToolV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetToolV4DescriptionResource] | None = None
-    domain_ids: list[UUID] | None = None
-    domain_resources: list[QGetToolV4Domain] | None = None
-    args_ids: list[UUID] | None = None
-    args_resources: list[QGetToolV4ArgsResource] | None = None
-    show_args: bool | None = None
-    args_agent_id: UUID | None = None
-    args_required: bool | None = None
-    args_suggestions: list[UUID] | None = None
-    args: list[QGetToolV4ArgsResource] | None = None
-    args_outputs_ids: list[UUID] | None = None
-    args_outputs_resources: list[QGetToolV4ArgsOutputsResource] | None = None
-    show_args_outputs: bool | None = None
-    args_outputs_agent_id: UUID | None = None
-    args_outputs_required: bool | None = None
-    args_outputs_suggestions: list[UUID] | None = None
-    args_outputs: list[QGetToolV4ArgsOutputsResource] | None = None
-    input_args_fields: list[QGetToolV4ArgsFieldDetail] | None = None
-    output_args_outputs: list[QGetToolV4ArgsOutputsDetail] | None = None
-
-class GetToolApiRequest(BaseModel):
-
-    tool_id: UUID | None = None
-    draft_id: UUID | None = None
-    mcp: bool | None = False
-    draft_group_id: UUID | None = None
-    draft_version: int | None = None
-
-class GetToolApiResponse(BaseModel):
-
-    tool_exists: bool | None = None
-    can_edit: bool | None = None
-    disabled_reason: str | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    name: str | None = None
-    description: str | None = None
-    active: bool | None = None
-    updated_at: datetime | None = None
-    name_id: UUID | None = None
-    name_resource: QGetToolV4NameResource | None = None
-    show_name: bool | None = None
-    name_agent_id: UUID | None = None
-    name_required: bool | None = None
-    name_suggestions: list[UUID] | None = None
-    names: list[QGetToolV4NameResource] | None = None
-    description_id: UUID | None = None
-    description_resource: QGetToolV4DescriptionResource | None = None
-    show_description: bool | None = None
-    description_agent_id: UUID | None = None
-    description_required: bool | None = None
-    description_suggestions: list[UUID] | None = None
-    descriptions: list[QGetToolV4DescriptionResource] | None = None
-    domain_ids: list[UUID] | None = None
-    domain_resources: list[QGetToolV4Domain] | None = None
-    args_ids: list[UUID] | None = None
-    args_resources: list[QGetToolV4ArgsResource] | None = None
-    show_args: bool | None = None
-    args_agent_id: UUID | None = None
-    args_required: bool | None = None
-    args_suggestions: list[UUID] | None = None
-    args: list[QGetToolV4ArgsResource] | None = None
-    args_outputs_ids: list[UUID] | None = None
-    args_outputs_resources: list[QGetToolV4ArgsOutputsResource] | None = None
-    show_args_outputs: bool | None = None
-    args_outputs_agent_id: UUID | None = None
-    args_outputs_required: bool | None = None
-    args_outputs_suggestions: list[UUID] | None = None
-    args_outputs: list[QGetToolV4ArgsOutputsResource] | None = None
-    input_args_fields: list[QGetToolV4ArgsFieldDetail] | None = None
-    output_args_outputs: list[QGetToolV4ArgsOutputsDetail] | None = None
-
-
-
-# Generated from: get_tool_docs
-
-class GetToolDocsSqlParams(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.p_entity_id,
-        )
-
-class GetToolDocsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-
-class GetToolDocsApiRequest(BaseModel):
-
-    p_entity_id: UUID | None = None
-
-class GetToolDocsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-
-
-
-# Generated from: get_tool_ids
-
-class GetToolIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    tool_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.tool_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-class GetToolIdsSqlRow(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    args_ids: list[UUID] | None = None
-    arg_position_ids: list[UUID] | None = None
-    args_outputs_ids: list[UUID] | None = None
-
-class GetToolIdsApiRequest(BaseModel):
-
-    tool_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetToolIdsApiResponse(BaseModel):
-
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    args_ids: list[UUID] | None = None
-    arg_position_ids: list[UUID] | None = None
-    args_outputs_ids: list[UUID] | None = None
-
-
-
-# Generated from: get_tools_list
-
-class GetToolsListSqlParams(BaseModel):
-
-    profile_id: UUID
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_agent_ids: list[UUID] | None = None
-    filter_creatable: list[str] | None = None
-    department_search: str | None = None
-    agent_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.search,
-            self.filter_department_ids,
-            self.filter_agent_ids,
-            self.filter_creatable,
-            self.department_search,
-            self.agent_search,
-            self.page_size,
-            self.page_offset,
-        )
-
-class QGetToolsListV4Option(BaseModel):
-
-    value: str | None
-    label: str | None
-    count: int | None
-
-
-
-
-class QGetToolsListV4Tool(BaseModel):
-
-    tool_id: UUID | None
-    name: str | None
-    description: str | None
-    active: bool | None
-    active_agent_count: int | None
-    updated_at: datetime | None
-    department_ids: list[str] | None
-
-class GetToolsListSqlRow(BaseModel):
-
-    tools: list[QGetToolsListV4Tool] | None = None
-    department_options: list[QGetToolsListV4Option] | None = None
-    agent_options: list[QGetToolsListV4Option] | None = None
-    creatable_options: list[QGetToolsListV4Option] | None = None
-    total_count: int | None = None
-
-class GetToolsListApiRequest(BaseModel):
-
-    search: str | None = None
-    filter_department_ids: list[UUID] | None = None
-    filter_agent_ids: list[UUID] | None = None
-    filter_creatable: list[str] | None = None
-    department_search: str | None = None
-    agent_search: str | None = None
-    page_size: int | None = 12
-    page_offset: int | None = 0
-
-class GetToolsListApiResponse(BaseModel):
-
-    tools: list[QGetToolsListV4Tool] | None = None
-    department_options: list[QGetToolsListV4Option] | None = None
-    agent_options: list[QGetToolsListV4Option] | None = None
-    creatable_options: list[QGetToolsListV4Option] | None = None
-    total_count: int | None = None
 
 
 
@@ -33719,84 +21939,6 @@ class PatchTrainingDraftApiResponse(BaseModel):
     draft_id: UUID | None = None
     new_version: int | None = None
     draft_exists: bool | None = None
-
-
-
-# Generated from: finalize_upload
-
-class FinalizeUploadSqlParams(BaseModel):
-
-    upload_file_path: str
-    content_type: str
-    file_size: int
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.upload_file_path,
-            self.content_type,
-            self.file_size,
-            self.profile_id,
-        )
-
-class FinalizeUploadSqlRow(BaseModel):
-
-    upload_id: UUID | None = None
-    actor_name: str | None = None
-    success: bool | None = None
-    message: str | None = None
-    status: str | None = None
-
-class FinalizeUploadApiRequest(BaseModel):
-
-    upload_file_path: str
-    content_type: str
-    file_size: int
-
-class FinalizeUploadApiResponse(BaseModel):
-
-    upload_id: UUID | None = None
-    actor_name: str | None = None
-    success: bool | None = None
-    message: str | None = None
-    status: str | None = None
-
-
-
-# Generated from: get_upload_file_info
-
-class GetUploadFileInfoSqlParams(BaseModel):
-
-    upload_id: UUID
-    profile_id: UUID
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.upload_id,
-            self.profile_id,
-        )
-
-class GetUploadFileInfoSqlRow(BaseModel):
-
-    upload_exists: bool | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-    size: int | None = None
-    actor_name: str | None = None
-
-class GetUploadFileInfoApiRequest(BaseModel):
-
-    upload_id: UUID
-
-class GetUploadFileInfoApiResponse(BaseModel):
-
-    upload_exists: bool | None = None
-    upload_id: UUID | None = None
-    file_path: str | None = None
-    mime_type: str | None = None
-    size: int | None = None
-    actor_name: str | None = None
 
 
 
@@ -34163,59 +22305,11 @@ class CreateGenerationAndLinkApiResponse(BaseModel):
 # ============================================================================
 
 _registry: dict[str, tuple[str, str, str, str]] = {
-    "app/sql/queries/agents/delete_agent_complete.sql": (
-        "DeleteAgentSqlParams",
-        "DeleteAgentSqlRow",
-        "DeleteAgentApiRequest",
-        "DeleteAgentApiResponse",
-    ),
-    "app/sql/queries/agents/duplicate_agent_complete.sql": (
-        "DuplicateAgentSqlParams",
-        "DuplicateAgentSqlRow",
-        "DuplicateAgentApiRequest",
-        "DuplicateAgentApiResponse",
-    ),
-    "app/sql/queries/agents/get_agent_access_complete.sql": (
-        "GetAgentAccessSqlParams",
-        "GetAgentAccessSqlRow",
-        "GetAgentAccessApiRequest",
-        "GetAgentAccessApiResponse",
-    ),
-    "app/sql/queries/agents/get_agent_docs_complete.sql": (
-        "GetAgentDocsSqlParams",
-        "GetAgentDocsSqlRow",
-        "GetAgentDocsApiRequest",
-        "GetAgentDocsApiResponse",
-    ),
-    "app/sql/queries/agents/get_agent_ids_complete.sql": (
-        "GetAgentIdsSqlParams",
-        "GetAgentIdsSqlRow",
-        "GetAgentIdsApiRequest",
-        "GetAgentIdsApiResponse",
-    ),
-    "app/sql/queries/agents/get_agent_model_info_complete.sql": (
-        "GetAgentModelInfoSqlParams",
-        "GetAgentModelInfoSqlRow",
-        "GetAgentModelInfoApiRequest",
-        "GetAgentModelInfoApiResponse",
-    ),
     "app/sql/queries/agents/get_agent_resource_ids_by_group_id_complete.sql": (
         "GetAgentResourceIdsByGroupIdSqlParams",
         "GetAgentResourceIdsByGroupIdSqlRow",
         "GetAgentResourceIdsByGroupIdApiRequest",
         "GetAgentResourceIdsByGroupIdApiResponse",
-    ),
-    "app/sql/queries/agents/get_agents_list_complete.sql": (
-        "GetAgentsListSqlParams",
-        "GetAgentsListSqlRow",
-        "GetAgentsListApiRequest",
-        "GetAgentsListApiResponse",
-    ),
-    "app/sql/queries/agents/get_artifact_agent_ids_complete.sql": (
-        "GetArtifactAgentIdsSqlParams",
-        "GetArtifactAgentIdsSqlRow",
-        "GetArtifactAgentIdsApiRequest",
-        "GetArtifactAgentIdsApiResponse",
     ),
     "app/sql/queries/agents/patch_agent_draft_complete.sql": (
         "PatchAgentDraftSqlParams",
@@ -34355,18 +22449,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "UpdateChatCreatedAtApiRequest",
         "UpdateChatCreatedAtApiResponse",
     ),
-    "app/sql/queries/audio/get_voice_session_context_complete.sql": (
-        "GetVoiceSessionContextSqlParams",
-        "GetVoiceSessionContextSqlRow",
-        "GetVoiceSessionContextApiRequest",
-        "GetVoiceSessionContextApiResponse",
-    ),
-    "app/sql/queries/auth/check_auth_delete_access_complete.sql": (
-        "CheckAuthDeleteAccessSqlParams",
-        "CheckAuthDeleteAccessSqlRow",
-        "CheckAuthDeleteAccessApiRequest",
-        "CheckAuthDeleteAccessApiResponse",
-    ),
     "app/sql/queries/auth/check_auth_duplicate_access_complete.sql": (
         "CheckAuthDuplicateAccessSqlParams",
         "CheckAuthDuplicateAccessSqlRow",
@@ -34385,65 +22467,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ConsumeEmulationGrantApiRequest",
         "ConsumeEmulationGrantApiResponse",
     ),
-    "app/sql/queries/auth/create_emulation_grant_complete.sql": (
-        "CreateEmulationGrantSqlParams",
-        "CreateEmulationGrantSqlRow",
-        "CreateEmulationGrantApiRequest",
-        "CreateEmulationGrantApiResponse",
-    ),
-    "app/sql/queries/auth/delete_auth_complete.sql": (
-        "DeleteAuthSqlParams",
-        "DeleteAuthSqlRow",
-        "DeleteAuthApiRequest",
-        "DeleteAuthApiResponse",
-    ),
-    "app/sql/queries/auth/duplicate_auth_complete.sql": (
-        "DuplicateAuthSqlParams",
-        "DuplicateAuthSqlRow",
-        "DuplicateAuthApiRequest",
-        "DuplicateAuthApiResponse",
-    ),
-    "app/sql/queries/auth/get_agent_tool_entries_complete.sql": (
-        "GetAgentToolEntriesSqlParams",
-        "GetAgentToolEntriesSqlRow",
-        "GetAgentToolEntriesApiRequest",
-        "GetAgentToolEntriesApiResponse",
-    ),
     "app/sql/queries/auth/get_auth_access_complete.sql": (
         "GetAuthAccessSqlParams",
         "GetAuthAccessSqlRow",
         "GetAuthAccessApiRequest",
         "GetAuthAccessApiResponse",
-    ),
-    "app/sql/queries/auth/get_auth_complete.sql": (
-        "GetAuthSqlParams",
-        "GetAuthSqlRow",
-        "GetAuthApiRequest",
-        "GetAuthApiResponse",
-    ),
-    "app/sql/queries/auth/get_auth_docs_complete.sql": (
-        "GetAuthDocsSqlParams",
-        "GetAuthDocsSqlRow",
-        "GetAuthDocsApiRequest",
-        "GetAuthDocsApiResponse",
-    ),
-    "app/sql/queries/auth/get_auth_ids_complete.sql": (
-        "GetAuthIdsSqlParams",
-        "GetAuthIdsSqlRow",
-        "GetAuthIdsApiRequest",
-        "GetAuthIdsApiResponse",
-    ),
-    "app/sql/queries/auth/get_auth_list_complete.sql": (
-        "GetAuthListSqlParams",
-        "GetAuthListSqlRow",
-        "GetAuthListApiRequest",
-        "GetAuthListApiResponse",
-    ),
-    "app/sql/queries/auth/get_login_data_complete.sql": (
-        "GetLoginDataSqlParams",
-        "GetLoginDataSqlRow",
-        "GetLoginDataApiRequest",
-        "GetLoginDataApiResponse",
     ),
     "app/sql/queries/auth/group/get_auth_group_messages_complete.sql": (
         "GetAuthGroupMessagesSqlParams",
@@ -34463,18 +22491,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "RecordProfileLoginApiRequest",
         "RecordProfileLoginApiResponse",
     ),
-    "app/sql/queries/auth/resolve_callback_redirect_complete.sql": (
-        "ResolveCallbackRedirectSqlParams",
-        "ResolveCallbackRedirectSqlRow",
-        "ResolveCallbackRedirectApiRequest",
-        "ResolveCallbackRedirectApiResponse",
-    ),
-    "app/sql/queries/auth/resolve_default_idp_profile_complete.sql": (
-        "ResolveDefaultIdpProfileSqlParams",
-        "ResolveDefaultIdpProfileSqlRow",
-        "ResolveDefaultIdpProfileApiRequest",
-        "ResolveDefaultIdpProfileApiResponse",
-    ),
     "app/sql/queries/auth/save_auth_complete.sql": (
         "SaveAuthSqlParams",
         "SaveAuthSqlRow",
@@ -34486,60 +22502,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PatchSuiteDraftSqlRow",
         "PatchSuiteDraftApiRequest",
         "PatchSuiteDraftApiResponse",
-    ),
-    "app/sql/queries/cohorts/check_cohort_delete_access_complete.sql": (
-        "CheckCohortDeleteAccessSqlParams",
-        "CheckCohortDeleteAccessSqlRow",
-        "CheckCohortDeleteAccessApiRequest",
-        "CheckCohortDeleteAccessApiResponse",
-    ),
-    "app/sql/queries/cohorts/check_cohort_duplicate_access_complete.sql": (
-        "CheckCohortDuplicateAccessSqlParams",
-        "CheckCohortDuplicateAccessSqlRow",
-        "CheckCohortDuplicateAccessApiRequest",
-        "CheckCohortDuplicateAccessApiResponse",
-    ),
-    "app/sql/queries/cohorts/delete_cohort_complete.sql": (
-        "DeleteCohortSqlParams",
-        "DeleteCohortSqlRow",
-        "DeleteCohortApiRequest",
-        "DeleteCohortApiResponse",
-    ),
-    "app/sql/queries/cohorts/duplicate_cohort_complete.sql": (
-        "DuplicateCohortSqlParams",
-        "DuplicateCohortSqlRow",
-        "DuplicateCohortApiRequest",
-        "DuplicateCohortApiResponse",
-    ),
-    "app/sql/queries/cohorts/export_cohorts_complete.sql": (
-        "ExportCohortsSqlParams",
-        "ExportCohortsSqlRow",
-        "ExportCohortsApiRequest",
-        "ExportCohortsApiResponse",
-    ),
-    "app/sql/queries/cohorts/get_cohort_access_complete.sql": (
-        "GetCohortAccessSqlParams",
-        "GetCohortAccessSqlRow",
-        "GetCohortAccessApiRequest",
-        "GetCohortAccessApiResponse",
-    ),
-    "app/sql/queries/cohorts/get_cohort_docs_complete.sql": (
-        "GetCohortDocsSqlParams",
-        "GetCohortDocsSqlRow",
-        "GetCohortDocsApiRequest",
-        "GetCohortDocsApiResponse",
-    ),
-    "app/sql/queries/cohorts/get_cohort_ids_complete.sql": (
-        "GetCohortIdsSqlParams",
-        "GetCohortIdsSqlRow",
-        "GetCohortIdsApiRequest",
-        "GetCohortIdsApiResponse",
-    ),
-    "app/sql/queries/cohorts/get_cohorts_list_complete.sql": (
-        "GetCohortsListSqlParams",
-        "GetCohortsListSqlRow",
-        "GetCohortsListApiRequest",
-        "GetCohortsListApiResponse",
     ),
     "app/sql/queries/cohorts/patch_cohort_draft_complete.sql": (
         "PatchCohortDraftSqlParams",
@@ -34583,41 +22545,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CheckDepartmentSaveAccessApiRequest",
         "CheckDepartmentSaveAccessApiResponse",
     ),
-    "app/sql/queries/departments/delete_department_complete.sql": (
-        "DeleteDepartmentSqlParams",
-        "DeleteDepartmentSqlRow",
-        "DeleteDepartmentApiRequest",
-        "DeleteDepartmentApiResponse",
-    ),
-    "app/sql/queries/departments/duplicate_department_complete.sql": (
-        "DuplicateDepartmentSqlParams",
-        "DuplicateDepartmentSqlRow",
-        "DuplicateDepartmentApiRequest",
-        "DuplicateDepartmentApiResponse",
-    ),
     "app/sql/queries/departments/get_department_access_complete.sql": (
         "GetDepartmentAccessSqlParams",
         "GetDepartmentAccessSqlRow",
         "GetDepartmentAccessApiRequest",
         "GetDepartmentAccessApiResponse",
-    ),
-    "app/sql/queries/departments/get_department_docs_complete.sql": (
-        "GetDepartmentDocsSqlParams",
-        "GetDepartmentDocsSqlRow",
-        "GetDepartmentDocsApiRequest",
-        "GetDepartmentDocsApiResponse",
-    ),
-    "app/sql/queries/departments/get_department_ids_complete.sql": (
-        "GetDepartmentIdsSqlParams",
-        "GetDepartmentIdsSqlRow",
-        "GetDepartmentIdsApiRequest",
-        "GetDepartmentIdsApiResponse",
-    ),
-    "app/sql/queries/departments/get_departments_list_complete.sql": (
-        "GetDepartmentsListSqlParams",
-        "GetDepartmentsListSqlRow",
-        "GetDepartmentsListApiRequest",
-        "GetDepartmentsListApiResponse",
     ),
     "app/sql/queries/departments/patch_department_draft_complete.sql": (
         "PatchDepartmentDraftSqlParams",
@@ -34636,12 +22568,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDeveloperInstructionSqlRow",
         "GetDeveloperInstructionApiRequest",
         "GetDeveloperInstructionApiResponse",
-    ),
-    "app/sql/queries/developer_instructions/get_developer_instruction_context_complete.sql": (
-        "GetDeveloperInstructionContextSqlParams",
-        "GetDeveloperInstructionContextSqlRow",
-        "GetDeveloperInstructionContextApiRequest",
-        "GetDeveloperInstructionContextApiResponse",
     ),
     "app/sql/queries/docs/get_docs_columns_complete.sql": (
         "GetDocsColumnsSqlParams",
@@ -34667,53 +22593,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentAgentIdV4ApiRequest",
         "GetDocumentAgentIdV4ApiResponse",
     ),
-    "app/sql/queries/document/get_document_department_v4_complete.sql": (
-        "GetDocumentDepartmentV4SqlParams",
-        "GetDocumentDepartmentV4SqlRow",
-        "GetDocumentDepartmentV4ApiRequest",
-        "GetDocumentDepartmentV4ApiResponse",
-    ),
-    "app/sql/queries/documents/check_document_delete_access_complete.sql": (
-        "CheckDocumentDeleteAccessSqlParams",
-        "CheckDocumentDeleteAccessSqlRow",
-        "CheckDocumentDeleteAccessApiRequest",
-        "CheckDocumentDeleteAccessApiResponse",
-    ),
     "app/sql/queries/documents/check_document_duplicate_access_complete.sql": (
         "CheckDocumentDuplicateAccessSqlParams",
         "CheckDocumentDuplicateAccessSqlRow",
         "CheckDocumentDuplicateAccessApiRequest",
         "CheckDocumentDuplicateAccessApiResponse",
-    ),
-    "app/sql/queries/documents/check_document_save_access_complete.sql": (
-        "CheckDocumentSaveAccessSqlParams",
-        "CheckDocumentSaveAccessSqlRow",
-        "CheckDocumentSaveAccessApiRequest",
-        "CheckDocumentSaveAccessApiResponse",
-    ),
-    "app/sql/queries/documents/delete_document_complete.sql": (
-        "DeleteDocumentSqlParams",
-        "DeleteDocumentSqlRow",
-        "DeleteDocumentApiRequest",
-        "DeleteDocumentApiResponse",
-    ),
-    "app/sql/queries/documents/duplicate_document_complete.sql": (
-        "DuplicateDocumentSqlParams",
-        "DuplicateDocumentSqlRow",
-        "DuplicateDocumentApiRequest",
-        "DuplicateDocumentApiResponse",
-    ),
-    "app/sql/queries/documents/get_document_access_complete.sql": (
-        "GetDocumentAccessSqlParams",
-        "GetDocumentAccessSqlRow",
-        "GetDocumentAccessApiRequest",
-        "GetDocumentAccessApiResponse",
-    ),
-    "app/sql/queries/documents/get_document_docs_complete.sql": (
-        "GetDocumentDocsSqlParams",
-        "GetDocumentDocsSqlRow",
-        "GetDocumentDocsApiRequest",
-        "GetDocumentDocsApiResponse",
     ),
     "app/sql/queries/documents/get_document_html_data_complete.sql": (
         "GetDocumentHtmlDataSqlParams",
@@ -34721,29 +22605,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentHtmlDataApiRequest",
         "GetDocumentHtmlDataApiResponse",
     ),
-    "app/sql/queries/documents/get_document_ids_complete.sql": (
-        "GetDocumentIdsSqlParams",
-        "GetDocumentIdsSqlRow",
-        "GetDocumentIdsApiRequest",
-        "GetDocumentIdsApiResponse",
-    ),
     "app/sql/queries/documents/get_document_resource_data_complete.sql": (
         "GetDocumentResourceDataSqlParams",
         "GetDocumentResourceDataSqlRow",
         "GetDocumentResourceDataApiRequest",
         "GetDocumentResourceDataApiResponse",
-    ),
-    "app/sql/queries/documents/get_documents_list_complete.sql": (
-        "GetDocumentsListSqlParams",
-        "GetDocumentsListSqlRow",
-        "GetDocumentsListApiRequest",
-        "GetDocumentsListApiResponse",
-    ),
-    "app/sql/queries/documents/insert_document_complete.sql": (
-        "InsertDocumentSqlParams",
-        "InsertDocumentSqlRow",
-        "InsertDocumentApiRequest",
-        "InsertDocumentApiResponse",
     ),
     "app/sql/queries/documents/patch_document_draft_complete.sql": (
         "PatchDocumentDraftSqlParams",
@@ -36125,59 +23991,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchVideosEntriesApiRequest",
         "SearchVideosEntriesApiResponse",
     ),
-    "app/sql/queries/evals/check_eval_delete_access_complete.sql": (
-        "CheckEvalDeleteAccessSqlParams",
-        "CheckEvalDeleteAccessSqlRow",
-        "CheckEvalDeleteAccessApiRequest",
-        "CheckEvalDeleteAccessApiResponse",
-    ),
     "app/sql/queries/evals/check_eval_duplicate_access_complete.sql": (
         "CheckEvalDuplicateAccessSqlParams",
         "CheckEvalDuplicateAccessSqlRow",
         "CheckEvalDuplicateAccessApiRequest",
         "CheckEvalDuplicateAccessApiResponse",
-    ),
-    "app/sql/queries/evals/check_eval_save_access_complete.sql": (
-        "CheckEvalSaveAccessSqlParams",
-        "CheckEvalSaveAccessSqlRow",
-        "CheckEvalSaveAccessApiRequest",
-        "CheckEvalSaveAccessApiResponse",
-    ),
-    "app/sql/queries/evals/delete_eval_complete.sql": (
-        "DeleteEvalSqlParams",
-        "DeleteEvalSqlRow",
-        "DeleteEvalApiRequest",
-        "DeleteEvalApiResponse",
-    ),
-    "app/sql/queries/evals/duplicate_eval_complete.sql": (
-        "DuplicateEvalSqlParams",
-        "DuplicateEvalSqlRow",
-        "DuplicateEvalApiRequest",
-        "DuplicateEvalApiResponse",
-    ),
-    "app/sql/queries/evals/get_eval_access_complete.sql": (
-        "GetEvalAccessSqlParams",
-        "GetEvalAccessSqlRow",
-        "GetEvalAccessApiRequest",
-        "GetEvalAccessApiResponse",
-    ),
-    "app/sql/queries/evals/get_eval_docs_complete.sql": (
-        "GetEvalDocsSqlParams",
-        "GetEvalDocsSqlRow",
-        "GetEvalDocsApiRequest",
-        "GetEvalDocsApiResponse",
-    ),
-    "app/sql/queries/evals/get_eval_ids_complete.sql": (
-        "GetEvalIdsSqlParams",
-        "GetEvalIdsSqlRow",
-        "GetEvalIdsApiRequest",
-        "GetEvalIdsApiResponse",
-    ),
-    "app/sql/queries/evals/get_evals_list_complete.sql": (
-        "GetEvalsListSqlParams",
-        "GetEvalsListSqlRow",
-        "GetEvalsListApiRequest",
-        "GetEvalsListApiResponse",
     ),
     "app/sql/queries/evals/patch_eval_draft_complete.sql": (
         "PatchEvalDraftSqlParams",
@@ -36191,65 +24009,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveEvalApiRequest",
         "SaveEvalApiResponse",
     ),
-    "app/sql/queries/fields/check_field_delete_access_complete.sql": (
-        "CheckFieldDeleteAccessSqlParams",
-        "CheckFieldDeleteAccessSqlRow",
-        "CheckFieldDeleteAccessApiRequest",
-        "CheckFieldDeleteAccessApiResponse",
-    ),
     "app/sql/queries/fields/check_field_duplicate_access_complete.sql": (
         "CheckFieldDuplicateAccessSqlParams",
         "CheckFieldDuplicateAccessSqlRow",
         "CheckFieldDuplicateAccessApiRequest",
         "CheckFieldDuplicateAccessApiResponse",
-    ),
-    "app/sql/queries/fields/check_field_save_access_complete.sql": (
-        "CheckFieldSaveAccessSqlParams",
-        "CheckFieldSaveAccessSqlRow",
-        "CheckFieldSaveAccessApiRequest",
-        "CheckFieldSaveAccessApiResponse",
-    ),
-    "app/sql/queries/fields/delete_field_complete.sql": (
-        "DeleteFieldSqlParams",
-        "DeleteFieldSqlRow",
-        "DeleteFieldApiRequest",
-        "DeleteFieldApiResponse",
-    ),
-    "app/sql/queries/fields/duplicate_field_complete.sql": (
-        "DuplicateFieldSqlParams",
-        "DuplicateFieldSqlRow",
-        "DuplicateFieldApiRequest",
-        "DuplicateFieldApiResponse",
-    ),
-    "app/sql/queries/fields/get_field_access_complete.sql": (
-        "GetFieldAccessSqlParams",
-        "GetFieldAccessSqlRow",
-        "GetFieldAccessApiRequest",
-        "GetFieldAccessApiResponse",
-    ),
-    "app/sql/queries/fields/get_field_complete.sql": (
-        "GetFieldSqlParams",
-        "GetFieldSqlRow",
-        "GetFieldApiRequest",
-        "GetFieldApiResponse",
-    ),
-    "app/sql/queries/fields/get_field_docs_complete.sql": (
-        "GetFieldDocsSqlParams",
-        "GetFieldDocsSqlRow",
-        "GetFieldDocsApiRequest",
-        "GetFieldDocsApiResponse",
-    ),
-    "app/sql/queries/fields/get_field_ids_complete.sql": (
-        "GetFieldIdsSqlParams",
-        "GetFieldIdsSqlRow",
-        "GetFieldIdsApiRequest",
-        "GetFieldIdsApiResponse",
-    ),
-    "app/sql/queries/fields/get_fields_list_complete.sql": (
-        "GetFieldsListSqlParams",
-        "GetFieldsListSqlRow",
-        "GetFieldsListApiRequest",
-        "GetFieldsListApiResponse",
     ),
     "app/sql/queries/fields/patch_field_draft_complete.sql": (
         "PatchFieldDraftSqlParams",
@@ -36287,23 +24051,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CompleteAttemptMessageApiRequest",
         "CompleteAttemptMessageApiResponse",
     ),
-    "app/sql/queries/generate/attempt/get_agent_entry_tools_complete.sql": (
-        "GetAgentEntryToolsSqlParams",
-        "GetAgentEntryToolsSqlRow",
-        "GetAgentEntryToolsApiRequest",
-        "GetAgentEntryToolsApiResponse",
-    ),
     "app/sql/queries/generate/attempt/get_attempt_grade_completion_context_complete.sql": (
         "GetAttemptGradeCompletionContextSqlParams",
         "GetAttemptGradeCompletionContextSqlRow",
         "GetAttemptGradeCompletionContextApiRequest",
         "GetAttemptGradeCompletionContextApiResponse",
-    ),
-    "app/sql/queries/generate/attempt/get_attempt_grade_context_complete.sql": (
-        "GetAttemptGradeContextSqlParams",
-        "GetAttemptGradeContextSqlRow",
-        "GetAttemptGradeContextApiRequest",
-        "GetAttemptGradeContextApiResponse",
     ),
     "app/sql/queries/generate/attempt/get_attempt_message_completion_context_complete.sql": (
         "GetAttemptMessageCompletionContextSqlParams",
@@ -36311,23 +24063,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAttemptMessageCompletionContextApiRequest",
         "GetAttemptMessageCompletionContextApiResponse",
     ),
-    "app/sql/queries/generate/attempt/get_attempt_message_context_complete.sql": (
-        "GetAttemptMessageContextSqlParams",
-        "GetAttemptMessageContextSqlRow",
-        "GetAttemptMessageContextApiRequest",
-        "GetAttemptMessageContextApiResponse",
-    ),
     "app/sql/queries/generate/attempt/get_attempt_proceed_context_complete.sql": (
         "GetAttemptProceedContextSqlParams",
         "GetAttemptProceedContextSqlRow",
         "GetAttemptProceedContextApiRequest",
         "GetAttemptProceedContextApiResponse",
-    ),
-    "app/sql/queries/generate/attempt/get_audio_start_context_complete.sql": (
-        "GetAudioStartContextSqlParams",
-        "GetAudioStartContextSqlRow",
-        "GetAudioStartContextApiRequest",
-        "GetAudioStartContextApiResponse",
     ),
     "app/sql/queries/generate/attempt/prepare_attempt_audio_complete.sql": (
         "PrepareAttemptAudioSqlParams",
@@ -36347,23 +24087,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareAttemptMessageApiRequest",
         "PrepareAttemptMessageApiResponse",
     ),
-    "app/sql/queries/generate/attempt/resolve_agent_by_entry_types_complete.sql": (
-        "ResolveAgentByEntryTypesSqlParams",
-        "ResolveAgentByEntryTypesSqlRow",
-        "ResolveAgentByEntryTypesApiRequest",
-        "ResolveAgentByEntryTypesApiResponse",
-    ),
     "app/sql/queries/generate/attempt/resolve_attempt_chat_complete.sql": (
         "ResolveAttemptChatSqlParams",
         "ResolveAttemptChatSqlRow",
         "ResolveAttemptChatApiRequest",
         "ResolveAttemptChatApiResponse",
-    ),
-    "app/sql/queries/generate/attempt/resolve_attempt_entries_complete.sql": (
-        "ResolveAttemptEntriesSqlParams",
-        "ResolveAttemptEntriesSqlRow",
-        "ResolveAttemptEntriesApiRequest",
-        "ResolveAttemptEntriesApiResponse",
     ),
     "app/sql/queries/generate/attempt/save_attempt_message_content_complete.sql": (
         "SaveAttemptMessageContentSqlParams",
@@ -36455,12 +24183,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareParameterGenerationApiRequest",
         "PrepareParameterGenerationApiResponse",
     ),
-    "app/sql/queries/generate/persona/get_agent_tools_complete.sql": (
-        "GetAgentToolsSqlParams",
-        "GetAgentToolsSqlRow",
-        "GetAgentToolsApiRequest",
-        "GetAgentToolsApiResponse",
-    ),
     "app/sql/queries/generate/persona/prepare_persona_generation_complete.sql": (
         "PreparePersonaGenerationSqlParams",
         "PreparePersonaGenerationSqlRow",
@@ -36527,12 +24249,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PrepareSimulationGenerationApiRequest",
         "PrepareSimulationGenerationApiResponse",
     ),
-    "app/sql/queries/generate/start/get_generation_run_context_and_create_run_complete.sql": (
-        "GetGenerationRunContextAndCreateRunSqlParams",
-        "GetGenerationRunContextAndCreateRunSqlRow",
-        "GetGenerationRunContextAndCreateRunApiRequest",
-        "GetGenerationRunContextAndCreateRunApiResponse",
-    ),
     "app/sql/queries/generate/suite/prepare_suite_generation_complete.sql": (
         "PrepareSuiteGenerationSqlParams",
         "PrepareSuiteGenerationSqlRow",
@@ -36556,12 +24272,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetTestProceedContextSqlRow",
         "GetTestProceedContextApiRequest",
         "GetTestProceedContextApiResponse",
-    ),
-    "app/sql/queries/generate/test/get_tools_by_resource_ids_complete.sql": (
-        "GetToolsByResourceIdsSqlParams",
-        "GetToolsByResourceIdsSqlRow",
-        "GetToolsByResourceIdsApiRequest",
-        "GetToolsByResourceIdsApiResponse",
     ),
     "app/sql/queries/generate/test/prepare_test_grade_complete.sql": (
         "PrepareTestGradeSqlParams",
@@ -36587,35 +24297,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "StartTestApiRequest",
         "StartTestApiResponse",
     ),
-    "app/sql/queries/generate/text/get_text_run_context_for_existing_run_complete.sql": (
-        "GetTextRunContextForExistingRunSqlParams",
-        "GetTextRunContextForExistingRunSqlRow",
-        "GetTextRunContextForExistingRunApiRequest",
-        "GetTextRunContextForExistingRunApiResponse",
-    ),
     "app/sql/queries/generate/tool/prepare_tool_generation_complete.sql": (
         "PrepareToolGenerationSqlParams",
         "PrepareToolGenerationSqlRow",
         "PrepareToolGenerationApiRequest",
         "PrepareToolGenerationApiResponse",
-    ),
-    "app/sql/queries/generate/training/get_training_simulations_complete.sql": (
-        "GetTrainingSimulationsSqlParams",
-        "GetTrainingSimulationsSqlRow",
-        "GetTrainingSimulationsApiRequest",
-        "GetTrainingSimulationsApiResponse",
-    ),
-    "app/sql/queries/generate/training/get_training_start_context_complete.sql": (
-        "GetTrainingStartContextSqlParams",
-        "GetTrainingStartContextSqlRow",
-        "GetTrainingStartContextApiRequest",
-        "GetTrainingStartContextApiResponse",
-    ),
-    "app/sql/queries/generate/training/prepare_training_generation_complete.sql": (
-        "PrepareTrainingGenerationSqlParams",
-        "PrepareTrainingGenerationSqlRow",
-        "PrepareTrainingGenerationApiRequest",
-        "PrepareTrainingGenerationApiResponse",
     ),
     "app/sql/queries/generate/training/prepare_training_start_complete.sql": (
         "PrepareTrainingStartSqlParams",
@@ -36659,41 +24345,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSessionApiRequest",
         "GetSessionApiResponse",
     ),
-    "app/sql/queries/infrastructure/activity/get_profile_name_for_logging_complete.sql": (
-        "InfraActivityGetProfileNameForLoggingSqlParams",
-        "InfraActivityGetProfileNameForLoggingSqlRow",
-        "InfraActivityGetProfileNameForLoggingApiRequest",
-        "InfraActivityGetProfileNameForLoggingApiResponse",
-    ),
     "app/sql/queries/infrastructure/developer_instructions/get_domain_artifact_complete.sql": (
         "InfraDeveloperInstructionsGetDomainArtifactSqlParams",
         "InfraDeveloperInstructionsGetDomainArtifactSqlRow",
         "InfraDeveloperInstructionsGetDomainArtifactApiRequest",
         "InfraDeveloperInstructionsGetDomainArtifactApiResponse",
     ),
-    "app/sql/queries/infrastructure/documents/get_document_agents_complete.sql": (
-        "InfraDocumentsGetDocumentAgentsSqlParams",
-        "InfraDocumentsGetDocumentAgentsSqlRow",
-        "InfraDocumentsGetDocumentAgentsApiRequest",
-        "InfraDocumentsGetDocumentAgentsApiResponse",
-    ),
-    "app/sql/queries/infrastructure/evals/get_department_from_run_v4_complete.sql": (
-        "InfraEvalsGetDepartmentFromRunV4SqlParams",
-        "InfraEvalsGetDepartmentFromRunV4SqlRow",
-        "InfraEvalsGetDepartmentFromRunV4ApiRequest",
-        "InfraEvalsGetDepartmentFromRunV4ApiResponse",
-    ),
     "app/sql/queries/infrastructure/evals/get_eval_run_status_v4_complete.sql": (
         "InfraEvalsGetEvalRunStatusV4SqlParams",
         "InfraEvalsGetEvalRunStatusV4SqlRow",
         "InfraEvalsGetEvalRunStatusV4ApiRequest",
         "InfraEvalsGetEvalRunStatusV4ApiResponse",
-    ),
-    "app/sql/queries/infrastructure/evals/get_rubric_details_v4_complete.sql": (
-        "InfraEvalsGetRubricDetailsV4SqlParams",
-        "InfraEvalsGetRubricDetailsV4SqlRow",
-        "InfraEvalsGetRubricDetailsV4ApiRequest",
-        "InfraEvalsGetRubricDetailsV4ApiResponse",
     ),
     "app/sql/queries/infrastructure/evals/get_rubric_grade_agent_v4_complete.sql": (
         "InfraEvalsGetRubricGradeAgentV4SqlParams",
@@ -36761,23 +24423,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "InfraToolsGetToolCallResultV4ApiRequest",
         "InfraToolsGetToolCallResultV4ApiResponse",
     ),
-    "app/sql/queries/infrastructure/tools/get_tool_id_by_name_complete.sql": (
-        "InfraToolsGetToolIdByNameSqlParams",
-        "InfraToolsGetToolIdByNameSqlRow",
-        "InfraToolsGetToolIdByNameApiRequest",
-        "InfraToolsGetToolIdByNameApiResponse",
-    ),
     "app/sql/queries/infrastructure/tools/link_tool_call_complete.sql": (
         "InfraToolsLinkToolCallSqlParams",
         "InfraToolsLinkToolCallSqlRow",
         "InfraToolsLinkToolCallApiRequest",
         "InfraToolsLinkToolCallApiResponse",
-    ),
-    "app/sql/queries/keycloak/get_auth_items_complete.sql": (
-        "GetAuthItemsSqlParams",
-        "GetAuthItemsSqlRow",
-        "GetAuthItemsApiRequest",
-        "GetAuthItemsApiResponse",
     ),
     "app/sql/queries/keycloak/get_auths_for_org_complete.sql": (
         "GetAuthsForOrgSqlParams",
@@ -36791,29 +24441,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAuthsForRealmLevelApiRequest",
         "GetAuthsForRealmLevelApiResponse",
     ),
-    "app/sql/queries/keycloak/get_departments_for_org_sync_complete.sql": (
-        "GetDepartmentsForOrgSyncSqlParams",
-        "GetDepartmentsForOrgSyncSqlRow",
-        "GetDepartmentsForOrgSyncApiRequest",
-        "GetDepartmentsForOrgSyncApiResponse",
-    ),
-    "app/sql/queries/keycloak/get_setting_profiles_for_idp_complete.sql": (
-        "GetSettingProfilesForIdpSqlParams",
-        "GetSettingProfilesForIdpSqlRow",
-        "GetSettingProfilesForIdpApiRequest",
-        "GetSettingProfilesForIdpApiResponse",
-    ),
     "app/sql/queries/keycloak/update_master_realm_ssl_complete.sql": (
         "UpdateMasterRealmSslSqlParams",
         "UpdateMasterRealmSslSqlRow",
         "UpdateMasterRealmSslApiRequest",
         "UpdateMasterRealmSslApiResponse",
-    ),
-    "app/sql/queries/keys/get_key_for_decrypt_complete.sql": (
-        "GetKeyForDecryptSqlParams",
-        "GetKeyForDecryptSqlRow",
-        "GetKeyForDecryptApiRequest",
-        "GetKeyForDecryptApiResponse",
     ),
     "app/sql/queries/messages/create_assistant_message_for_run_complete.sql": (
         "CreateAssistantMessageForRunSqlParams",
@@ -36839,60 +24471,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreateModelRunApiRequest",
         "CreateModelRunApiResponse",
     ),
-    "app/sql/queries/models/check_model_delete_access_complete.sql": (
-        "CheckModelDeleteAccessSqlParams",
-        "CheckModelDeleteAccessSqlRow",
-        "CheckModelDeleteAccessApiRequest",
-        "CheckModelDeleteAccessApiResponse",
-    ),
-    "app/sql/queries/models/check_model_duplicate_access_complete.sql": (
-        "CheckModelDuplicateAccessSqlParams",
-        "CheckModelDuplicateAccessSqlRow",
-        "CheckModelDuplicateAccessApiRequest",
-        "CheckModelDuplicateAccessApiResponse",
-    ),
-    "app/sql/queries/models/check_model_save_access_complete.sql": (
-        "CheckModelSaveAccessSqlParams",
-        "CheckModelSaveAccessSqlRow",
-        "CheckModelSaveAccessApiRequest",
-        "CheckModelSaveAccessApiResponse",
-    ),
-    "app/sql/queries/models/delete_model_complete.sql": (
-        "DeleteModelSqlParams",
-        "DeleteModelSqlRow",
-        "DeleteModelApiRequest",
-        "DeleteModelApiResponse",
-    ),
-    "app/sql/queries/models/duplicate_model_complete.sql": (
-        "DuplicateModelSqlParams",
-        "DuplicateModelSqlRow",
-        "DuplicateModelApiRequest",
-        "DuplicateModelApiResponse",
-    ),
-    "app/sql/queries/models/get_model_access_complete.sql": (
-        "GetModelAccessSqlParams",
-        "GetModelAccessSqlRow",
-        "GetModelAccessApiRequest",
-        "GetModelAccessApiResponse",
-    ),
-    "app/sql/queries/models/get_model_docs_complete.sql": (
-        "GetModelDocsSqlParams",
-        "GetModelDocsSqlRow",
-        "GetModelDocsApiRequest",
-        "GetModelDocsApiResponse",
-    ),
-    "app/sql/queries/models/get_model_ids_complete.sql": (
-        "GetModelIdsSqlParams",
-        "GetModelIdsSqlRow",
-        "GetModelIdsApiRequest",
-        "GetModelIdsApiResponse",
-    ),
-    "app/sql/queries/models/list_models_complete.sql": (
-        "ListModelsSqlParams",
-        "ListModelsSqlRow",
-        "ListModelsApiRequest",
-        "ListModelsApiResponse",
-    ),
     "app/sql/queries/models/patch_model_draft_complete.sql": (
         "PatchModelDraftSqlParams",
         "PatchModelDraftSqlRow",
@@ -36905,65 +24483,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveModelApiRequest",
         "SaveModelApiResponse",
     ),
-    "app/sql/queries/parameters/check_parameter_delete_access_complete.sql": (
-        "CheckParameterDeleteAccessSqlParams",
-        "CheckParameterDeleteAccessSqlRow",
-        "CheckParameterDeleteAccessApiRequest",
-        "CheckParameterDeleteAccessApiResponse",
-    ),
     "app/sql/queries/parameters/check_parameter_duplicate_access_complete.sql": (
         "CheckParameterDuplicateAccessSqlParams",
         "CheckParameterDuplicateAccessSqlRow",
         "CheckParameterDuplicateAccessApiRequest",
         "CheckParameterDuplicateAccessApiResponse",
-    ),
-    "app/sql/queries/parameters/check_parameter_save_access_complete.sql": (
-        "CheckParameterSaveAccessSqlParams",
-        "CheckParameterSaveAccessSqlRow",
-        "CheckParameterSaveAccessApiRequest",
-        "CheckParameterSaveAccessApiResponse",
-    ),
-    "app/sql/queries/parameters/delete_parameter_complete.sql": (
-        "DeleteParameterSqlParams",
-        "DeleteParameterSqlRow",
-        "DeleteParameterApiRequest",
-        "DeleteParameterApiResponse",
-    ),
-    "app/sql/queries/parameters/duplicate_parameter_complete.sql": (
-        "DuplicateParameterSqlParams",
-        "DuplicateParameterSqlRow",
-        "DuplicateParameterApiRequest",
-        "DuplicateParameterApiResponse",
-    ),
-    "app/sql/queries/parameters/get_parameter_access_complete.sql": (
-        "GetParameterAccessSqlParams",
-        "GetParameterAccessSqlRow",
-        "GetParameterAccessApiRequest",
-        "GetParameterAccessApiResponse",
-    ),
-    "app/sql/queries/parameters/get_parameter_complete.sql": (
-        "GetParameterSqlParams",
-        "GetParameterSqlRow",
-        "GetParameterApiRequest",
-        "GetParameterApiResponse",
-    ),
-    "app/sql/queries/parameters/get_parameter_docs_complete.sql": (
-        "GetParameterDocsSqlParams",
-        "GetParameterDocsSqlRow",
-        "GetParameterDocsApiRequest",
-        "GetParameterDocsApiResponse",
-    ),
-    "app/sql/queries/parameters/get_parameter_ids_complete.sql": (
-        "GetParameterIdsSqlParams",
-        "GetParameterIdsSqlRow",
-        "GetParameterIdsApiRequest",
-        "GetParameterIdsApiResponse",
-    ),
-    "app/sql/queries/parameters/get_parameters_list_complete.sql": (
-        "GetParametersListSqlParams",
-        "GetParametersListSqlRow",
-        "GetParametersListApiRequest",
-        "GetParametersListApiResponse",
     ),
     "app/sql/queries/parameters/patch_parameter_draft_complete.sql": (
         "PatchParameterDraftSqlParams",
@@ -36977,59 +24501,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveParameterApiRequest",
         "SaveParameterApiResponse",
     ),
-    "app/sql/queries/personas/check_persona_delete_access_complete.sql": (
-        "CheckPersonaDeleteAccessSqlParams",
-        "CheckPersonaDeleteAccessSqlRow",
-        "CheckPersonaDeleteAccessApiRequest",
-        "CheckPersonaDeleteAccessApiResponse",
-    ),
-    "app/sql/queries/personas/check_persona_duplicate_access_complete.sql": (
-        "CheckPersonaDuplicateAccessSqlParams",
-        "CheckPersonaDuplicateAccessSqlRow",
-        "CheckPersonaDuplicateAccessApiRequest",
-        "CheckPersonaDuplicateAccessApiResponse",
-    ),
-    "app/sql/queries/personas/check_persona_save_access_complete.sql": (
-        "CheckPersonaSaveAccessSqlParams",
-        "CheckPersonaSaveAccessSqlRow",
-        "CheckPersonaSaveAccessApiRequest",
-        "CheckPersonaSaveAccessApiResponse",
-    ),
     "app/sql/queries/personas/delete_persona_complete.sql": (
         "DeletePersonaSqlParams",
         "DeletePersonaSqlRow",
         "DeletePersonaApiRequest",
         "DeletePersonaApiResponse",
     ),
-    "app/sql/queries/personas/duplicate_persona_complete.sql": (
-        "DuplicatePersonaSqlParams",
-        "DuplicatePersonaSqlRow",
-        "DuplicatePersonaApiRequest",
-        "DuplicatePersonaApiResponse",
-    ),
-    "app/sql/queries/personas/export_personas_complete.sql": (
-        "ExportPersonasSqlParams",
-        "ExportPersonasSqlRow",
-        "ExportPersonasApiRequest",
-        "ExportPersonasApiResponse",
-    ),
-    "app/sql/queries/personas/get_persona_access_complete.sql": (
-        "GetPersonaAccessSqlParams",
-        "GetPersonaAccessSqlRow",
-        "GetPersonaAccessApiRequest",
-        "GetPersonaAccessApiResponse",
-    ),
     "app/sql/queries/personas/get_persona_docs_columns_complete.sql": (
         "GetPersonaDocsColumnsSqlParams",
         "GetPersonaDocsColumnsSqlRow",
         "GetPersonaDocsColumnsApiRequest",
         "GetPersonaDocsColumnsApiResponse",
-    ),
-    "app/sql/queries/personas/get_persona_docs_complete.sql": (
-        "GetPersonaDocsSqlParams",
-        "GetPersonaDocsSqlRow",
-        "GetPersonaDocsApiRequest",
-        "GetPersonaDocsApiResponse",
     ),
     "app/sql/queries/personas/get_persona_docs_foreign_keys_complete.sql": (
         "GetPersonaDocsForeignKeysSqlParams",
@@ -37043,12 +24525,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaDocsJunctionsApiRequest",
         "GetPersonaDocsJunctionsApiResponse",
     ),
-    "app/sql/queries/personas/get_persona_ids_complete.sql": (
-        "GetPersonaIdsSqlParams",
-        "GetPersonaIdsSqlRow",
-        "GetPersonaIdsApiRequest",
-        "GetPersonaIdsApiResponse",
-    ),
     "app/sql/queries/personas/get_persona_resource_data_complete.sql": (
         "GetPersonaResourceDataSqlParams",
         "GetPersonaResourceDataSqlRow",
@@ -37060,12 +24536,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetPersonaResourceIdsByGroupIdSqlRow",
         "GetPersonaResourceIdsByGroupIdApiRequest",
         "GetPersonaResourceIdsByGroupIdApiResponse",
-    ),
-    "app/sql/queries/personas/get_personas_list_complete.sql": (
-        "GetPersonasListSqlParams",
-        "GetPersonasListSqlRow",
-        "GetPersonasListApiRequest",
-        "GetPersonasListApiResponse",
     ),
     "app/sql/queries/personas/patch_persona_draft_complete.sql": (
         "PatchPersonaDraftSqlParams",
@@ -37084,36 +24554,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ToolsDeletePersonaSqlRow",
         "ToolsDeletePersonaApiRequest",
         "ToolsDeletePersonaApiResponse",
-    ),
-    "app/sql/queries/personas/tools_duplicate_persona_complete.sql": (
-        "ToolsDuplicatePersonaSqlParams",
-        "ToolsDuplicatePersonaSqlRow",
-        "ToolsDuplicatePersonaApiRequest",
-        "ToolsDuplicatePersonaApiResponse",
-    ),
-    "app/sql/queries/personas/tools_export_personas_complete.sql": (
-        "ToolsExportPersonasSqlParams",
-        "ToolsExportPersonasSqlRow",
-        "ToolsExportPersonasApiRequest",
-        "ToolsExportPersonasApiResponse",
-    ),
-    "app/sql/queries/personas/tools_get_persona_complete.sql": (
-        "ToolsGetPersonaSqlParams",
-        "ToolsGetPersonaSqlRow",
-        "ToolsGetPersonaApiRequest",
-        "ToolsGetPersonaApiResponse",
-    ),
-    "app/sql/queries/personas/tools_get_persona_docs_complete.sql": (
-        "ToolsGetPersonaDocsSqlParams",
-        "ToolsGetPersonaDocsSqlRow",
-        "ToolsGetPersonaDocsApiRequest",
-        "ToolsGetPersonaDocsApiResponse",
-    ),
-    "app/sql/queries/personas/tools_get_personas_list_complete.sql": (
-        "ToolsGetPersonasListSqlParams",
-        "ToolsGetPersonasListSqlRow",
-        "ToolsGetPersonasListApiRequest",
-        "ToolsGetPersonasListApiResponse",
     ),
     "app/sql/queries/personas/tools_patch_persona_draft_complete.sql": (
         "ToolsPatchPersonaDraftSqlParams",
@@ -37139,101 +24579,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ValidatePersonaResourceProgressApiRequest",
         "ValidatePersonaResourceProgressApiResponse",
     ),
-    "app/sql/queries/profile/authorize_emulation_complete.sql": (
-        "AuthorizeEmulationSqlParams",
-        "AuthorizeEmulationSqlRow",
-        "AuthorizeEmulationApiRequest",
-        "AuthorizeEmulationApiResponse",
-    ),
-    "app/sql/queries/profile/check_login_authorization_complete.sql": (
-        "CheckLoginAuthorizationSqlParams",
-        "CheckLoginAuthorizationSqlRow",
-        "CheckLoginAuthorizationApiRequest",
-        "CheckLoginAuthorizationApiResponse",
-    ),
-    "app/sql/queries/profile/check_profile_delete_access_complete.sql": (
-        "CheckProfileDeleteAccessSqlParams",
-        "CheckProfileDeleteAccessSqlRow",
-        "CheckProfileDeleteAccessApiRequest",
-        "CheckProfileDeleteAccessApiResponse",
-    ),
     "app/sql/queries/profile/check_profile_duplicate_access_complete.sql": (
         "CheckProfileDuplicateAccessSqlParams",
         "CheckProfileDuplicateAccessSqlRow",
         "CheckProfileDuplicateAccessApiRequest",
         "CheckProfileDuplicateAccessApiResponse",
-    ),
-    "app/sql/queries/profile/check_profile_save_access_complete.sql": (
-        "CheckProfileSaveAccessSqlParams",
-        "CheckProfileSaveAccessSqlRow",
-        "CheckProfileSaveAccessApiRequest",
-        "CheckProfileSaveAccessApiResponse",
-    ),
-    "app/sql/queries/profile/create_or_update_profile_complete.sql": (
-        "CreateOrUpdateProfileSqlParams",
-        "CreateOrUpdateProfileSqlRow",
-        "CreateOrUpdateProfileApiRequest",
-        "CreateOrUpdateProfileApiResponse",
-    ),
-    "app/sql/queries/profile/create_profile_if_not_exists_complete.sql": (
-        "CreateProfileIfNotExistsSqlParams",
-        "CreateProfileIfNotExistsSqlRow",
-        "CreateProfileIfNotExistsApiRequest",
-        "CreateProfileIfNotExistsApiResponse",
-    ),
-    "app/sql/queries/profile/delete_profile_complete.sql": (
-        "DeleteProfileSqlParams",
-        "DeleteProfileSqlRow",
-        "DeleteProfileApiRequest",
-        "DeleteProfileApiResponse",
-    ),
-    "app/sql/queries/profile/duplicate_profile_complete.sql": (
-        "DuplicateProfileSqlParams",
-        "DuplicateProfileSqlRow",
-        "DuplicateProfileApiRequest",
-        "DuplicateProfileApiResponse",
-    ),
-    "app/sql/queries/profile/get_profile_access_complete.sql": (
-        "GetProfileAccessSqlParams",
-        "GetProfileAccessSqlRow",
-        "GetProfileAccessApiRequest",
-        "GetProfileAccessApiResponse",
-    ),
-    "app/sql/queries/profile/get_profile_by_email_complete.sql": (
-        "GetProfileByEmailSqlParams",
-        "GetProfileByEmailSqlRow",
-        "GetProfileByEmailApiRequest",
-        "GetProfileByEmailApiResponse",
-    ),
-    "app/sql/queries/profile/get_profile_complete.sql": (
-        "GetProfileSqlParams",
-        "GetProfileSqlRow",
-        "GetProfileApiRequest",
-        "GetProfileApiResponse",
-    ),
-    "app/sql/queries/profile/get_profile_context_access_complete.sql": (
-        "GetProfileContextAccessSqlParams",
-        "GetProfileContextAccessSqlRow",
-        "GetProfileContextAccessApiRequest",
-        "GetProfileContextAccessApiResponse",
-    ),
-    "app/sql/queries/profile/get_profile_context_complete.sql": (
-        "GetProfileContextSqlParams",
-        "GetProfileContextSqlRow",
-        "GetProfileContextApiRequest",
-        "GetProfileContextApiResponse",
-    ),
-    "app/sql/queries/profile/get_profile_docs_complete.sql": (
-        "GetProfileDocsSqlParams",
-        "GetProfileDocsSqlRow",
-        "GetProfileDocsApiRequest",
-        "GetProfileDocsApiResponse",
-    ),
-    "app/sql/queries/profile/get_profile_ids_complete.sql": (
-        "GetProfileIdsSqlParams",
-        "GetProfileIdsSqlRow",
-        "GetProfileIdsApiRequest",
-        "GetProfileIdsApiResponse",
     ),
     "app/sql/queries/profile/get_profile_resource_ids_by_group_id_complete.sql": (
         "GetProfileResourceIdsByGroupIdSqlParams",
@@ -37253,24 +24603,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveProfileApiRequest",
         "SaveProfileApiResponse",
     ),
-    "app/sql/queries/profile/search_simulatable_profiles_complete.sql": (
-        "SearchSimulatableProfilesSqlParams",
-        "SearchSimulatableProfilesSqlRow",
-        "SearchSimulatableProfilesApiRequest",
-        "SearchSimulatableProfilesApiResponse",
-    ),
-    "app/sql/queries/profile/update_profile_to_active_complete.sql": (
-        "UpdateProfileToActiveSqlParams",
-        "UpdateProfileToActiveSqlRow",
-        "UpdateProfileToActiveApiRequest",
-        "UpdateProfileToActiveApiResponse",
-    ),
-    "app/sql/queries/profile/update_profile_to_inactive_complete.sql": (
-        "UpdateProfileToInactiveSqlParams",
-        "UpdateProfileToInactiveSqlRow",
-        "UpdateProfileToInactiveApiRequest",
-        "UpdateProfileToInactiveApiResponse",
-    ),
     "app/sql/queries/profile/validate_profile_resource_error_complete.sql": (
         "ValidateProfileResourceErrorSqlParams",
         "ValidateProfileResourceErrorSqlRow",
@@ -37289,83 +24621,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "BulkDeleteProfilesApiRequest",
         "BulkDeleteProfilesApiResponse",
     ),
-    "app/sql/queries/profiles/get_profiles_list_complete.sql": (
-        "GetProfilesListSqlParams",
-        "GetProfilesListSqlRow",
-        "GetProfilesListApiRequest",
-        "GetProfilesListApiResponse",
-    ),
-    "app/sql/queries/profiles/get_profiles_search_complete.sql": (
-        "GetProfilesSearchSqlParams",
-        "GetProfilesSearchSqlRow",
-        "GetProfilesSearchApiRequest",
-        "GetProfilesSearchApiResponse",
-    ),
     "app/sql/queries/profiles/process_csv_complete.sql": (
         "ProcessCsvSqlParams",
         "ProcessCsvSqlRow",
         "ProcessCsvApiRequest",
         "ProcessCsvApiResponse",
     ),
-    "app/sql/queries/profiles/upsert_profiles_complete.sql": (
-        "UpsertProfilesSqlParams",
-        "UpsertProfilesSqlRow",
-        "UpsertProfilesApiRequest",
-        "UpsertProfilesApiResponse",
-    ),
-    "app/sql/queries/providers/check_provider_delete_access_complete.sql": (
-        "CheckProviderDeleteAccessSqlParams",
-        "CheckProviderDeleteAccessSqlRow",
-        "CheckProviderDeleteAccessApiRequest",
-        "CheckProviderDeleteAccessApiResponse",
-    ),
     "app/sql/queries/providers/check_provider_duplicate_access_complete.sql": (
         "CheckProviderDuplicateAccessSqlParams",
         "CheckProviderDuplicateAccessSqlRow",
         "CheckProviderDuplicateAccessApiRequest",
         "CheckProviderDuplicateAccessApiResponse",
-    ),
-    "app/sql/queries/providers/check_provider_save_access_complete.sql": (
-        "CheckProviderSaveAccessSqlParams",
-        "CheckProviderSaveAccessSqlRow",
-        "CheckProviderSaveAccessApiRequest",
-        "CheckProviderSaveAccessApiResponse",
-    ),
-    "app/sql/queries/providers/delete_provider_complete.sql": (
-        "DeleteProviderSqlParams",
-        "DeleteProviderSqlRow",
-        "DeleteProviderApiRequest",
-        "DeleteProviderApiResponse",
-    ),
-    "app/sql/queries/providers/duplicate_provider_complete.sql": (
-        "DuplicateProviderSqlParams",
-        "DuplicateProviderSqlRow",
-        "DuplicateProviderApiRequest",
-        "DuplicateProviderApiResponse",
-    ),
-    "app/sql/queries/providers/get_provider_access_complete.sql": (
-        "GetProviderAccessSqlParams",
-        "GetProviderAccessSqlRow",
-        "GetProviderAccessApiRequest",
-        "GetProviderAccessApiResponse",
-    ),
-    "app/sql/queries/providers/get_provider_docs_complete.sql": (
-        "GetProviderDocsSqlParams",
-        "GetProviderDocsSqlRow",
-        "GetProviderDocsApiRequest",
-        "GetProviderDocsApiResponse",
-    ),
-    "app/sql/queries/providers/get_provider_ids_complete.sql": (
-        "GetProviderIdsSqlParams",
-        "GetProviderIdsSqlRow",
-        "GetProviderIdsApiRequest",
-        "GetProviderIdsApiResponse",
-    ),
-    "app/sql/queries/providers/get_providers_list_complete.sql": (
-        "GetProvidersListSqlParams",
-        "GetProvidersListSqlRow",
-        "GetProvidersListApiRequest",
-        "GetProvidersListApiResponse",
     ),
     "app/sql/queries/providers/patch_provider_draft_complete.sql": (
         "PatchProviderDraftSqlParams",
@@ -37469,12 +24735,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetAuthsApiRequest",
         "GetAuthsApiResponse",
     ),
-    "app/sql/queries/resources/auths/search_auths_complete.sql": (
-        "SearchAuthsSqlParams",
-        "SearchAuthsSqlRow",
-        "SearchAuthsApiRequest",
-        "SearchAuthsApiResponse",
-    ),
     "app/sql/queries/resources/cohorts/create_cohorts_complete.sql": (
         "CreateCohortsSqlParams",
         "CreateCohortsSqlRow",
@@ -37499,12 +24759,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetColorsApiRequest",
         "GetColorsApiResponse",
     ),
-    "app/sql/queries/resources/colors/search_colors_complete.sql": (
-        "SearchColorsSqlParams",
-        "SearchColorsSqlRow",
-        "SearchColorsApiRequest",
-        "SearchColorsApiResponse",
-    ),
     "app/sql/queries/resources/colors_complete.sql": (
         "ColorsSqlParams",
         "ColorsSqlRow",
@@ -37517,35 +24771,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetConditionalParametersApiRequest",
         "GetConditionalParametersApiResponse",
     ),
-    "app/sql/queries/resources/conditional_parameters/search_conditional_parameters_complete.sql": (
-        "SearchConditionalParametersSqlParams",
-        "SearchConditionalParametersSqlRow",
-        "SearchConditionalParametersApiRequest",
-        "SearchConditionalParametersApiResponse",
-    ),
     "app/sql/queries/resources/departments/get_departments_complete.sql": (
         "GetDepartmentsSqlParams",
         "GetDepartmentsSqlRow",
         "GetDepartmentsApiRequest",
         "GetDepartmentsApiResponse",
     ),
-    "app/sql/queries/resources/departments/search_departments_complete.sql": (
-        "SearchDepartmentsSqlParams",
-        "SearchDepartmentsSqlRow",
-        "SearchDepartmentsApiRequest",
-        "SearchDepartmentsApiResponse",
-    ),
     "app/sql/queries/resources/descriptions/get_descriptions_complete.sql": (
         "GetDescriptionsSqlParams",
         "GetDescriptionsSqlRow",
         "GetDescriptionsApiRequest",
         "GetDescriptionsApiResponse",
-    ),
-    "app/sql/queries/resources/descriptions/search_descriptions_complete.sql": (
-        "SearchDescriptionsSqlParams",
-        "SearchDescriptionsSqlRow",
-        "SearchDescriptionsApiRequest",
-        "SearchDescriptionsApiResponse",
     ),
     "app/sql/queries/resources/descriptions_complete.sql": (
         "DescriptionsSqlParams",
@@ -37565,23 +24801,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetDocumentsApiRequest",
         "GetDocumentsApiResponse",
     ),
-    "app/sql/queries/resources/documents/search_documents_complete.sql": (
-        "SearchDocumentsSqlParams",
-        "SearchDocumentsSqlRow",
-        "SearchDocumentsApiRequest",
-        "SearchDocumentsApiResponse",
-    ),
     "app/sql/queries/resources/emails/get_emails_complete.sql": (
         "GetEmailsSqlParams",
         "GetEmailsSqlRow",
         "GetEmailsApiRequest",
         "GetEmailsApiResponse",
-    ),
-    "app/sql/queries/resources/emails/search_emails_complete.sql": (
-        "SearchEmailsSqlParams",
-        "SearchEmailsSqlRow",
-        "SearchEmailsApiRequest",
-        "SearchEmailsApiResponse",
     ),
     "app/sql/queries/resources/emails_complete.sql": (
         "EmailsSqlParams",
@@ -37595,12 +24819,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetEndpointsApiRequest",
         "GetEndpointsApiResponse",
     ),
-    "app/sql/queries/resources/endpoints/search_endpoints_complete.sql": (
-        "SearchEndpointsSqlParams",
-        "SearchEndpointsSqlRow",
-        "SearchEndpointsApiRequest",
-        "SearchEndpointsApiResponse",
-    ),
     "app/sql/queries/resources/endpoints_complete.sql": (
         "EndpointsSqlParams",
         "EndpointsSqlRow",
@@ -37612,12 +24830,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetEntriesSqlRow",
         "GetEntriesApiRequest",
         "GetEntriesApiResponse",
-    ),
-    "app/sql/queries/resources/entries/search_entries_complete.sql": (
-        "SearchEntriesSqlParams",
-        "SearchEntriesSqlRow",
-        "SearchEntriesApiRequest",
-        "SearchEntriesApiResponse",
     ),
     "app/sql/queries/resources/evals/get_evals_complete.sql": (
         "GetEvalsSqlParams",
@@ -37636,12 +24848,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetExamplesSqlRow",
         "GetExamplesApiRequest",
         "GetExamplesApiResponse",
-    ),
-    "app/sql/queries/resources/examples/search_examples_complete.sql": (
-        "SearchExamplesSqlParams",
-        "SearchExamplesSqlRow",
-        "SearchExamplesApiRequest",
-        "SearchExamplesApiResponse",
     ),
     "app/sql/queries/resources/examples_complete.sql": (
         "ExamplesSqlParams",
@@ -37667,12 +24873,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetFlagsApiRequest",
         "GetFlagsApiResponse",
     ),
-    "app/sql/queries/resources/flags/search_flags_complete.sql": (
-        "SearchFlagsSqlParams",
-        "SearchFlagsSqlRow",
-        "SearchFlagsApiRequest",
-        "SearchFlagsApiResponse",
-    ),
     "app/sql/queries/resources/group_positions_complete.sql": (
         "GroupPositionsSqlParams",
         "GroupPositionsSqlRow",
@@ -37691,12 +24891,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetIconsApiRequest",
         "GetIconsApiResponse",
     ),
-    "app/sql/queries/resources/icons/search_icons_complete.sql": (
-        "SearchIconsSqlParams",
-        "SearchIconsSqlRow",
-        "SearchIconsApiRequest",
-        "SearchIconsApiResponse",
-    ),
     "app/sql/queries/resources/images/get_image_complete.sql": (
         "GetImageSqlParams",
         "GetImageSqlRow",
@@ -37708,12 +24902,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetImagesSqlRow",
         "GetImagesApiRequest",
         "GetImagesApiResponse",
-    ),
-    "app/sql/queries/resources/images/search_images_complete.sql": (
-        "SearchImagesSqlParams",
-        "SearchImagesSqlRow",
-        "SearchImagesApiRequest",
-        "SearchImagesApiResponse",
     ),
     "app/sql/queries/resources/images_complete.sql": (
         "ImagesSqlParams",
@@ -37727,12 +24915,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetInstructionsApiRequest",
         "GetInstructionsApiResponse",
     ),
-    "app/sql/queries/resources/instructions/search_instructions_complete.sql": (
-        "SearchInstructionsSqlParams",
-        "SearchInstructionsSqlRow",
-        "SearchInstructionsApiRequest",
-        "SearchInstructionsApiResponse",
-    ),
     "app/sql/queries/resources/instructions_complete.sql": (
         "InstructionsSqlParams",
         "InstructionsSqlRow",
@@ -37745,12 +24927,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetItemsApiRequest",
         "GetItemsApiResponse",
     ),
-    "app/sql/queries/resources/items/search_items_complete.sql": (
-        "SearchItemsSqlParams",
-        "SearchItemsSqlRow",
-        "SearchItemsApiRequest",
-        "SearchItemsApiResponse",
-    ),
     "app/sql/queries/resources/items_complete.sql": (
         "ItemsSqlParams",
         "ItemsSqlRow",
@@ -37762,12 +24938,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetKeysSqlRow",
         "GetKeysApiRequest",
         "GetKeysApiResponse",
-    ),
-    "app/sql/queries/resources/keys/search_keys_complete.sql": (
-        "SearchKeysSqlParams",
-        "SearchKeysSqlRow",
-        "SearchKeysApiRequest",
-        "SearchKeysApiResponse",
     ),
     "app/sql/queries/resources/keys_complete.sql": (
         "KeysSqlParams",
@@ -37955,23 +25125,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetModalitiesApiRequest",
         "GetModalitiesApiResponse",
     ),
-    "app/sql/queries/resources/modalities/search_modalities_complete.sql": (
-        "SearchModalitiesSqlParams",
-        "SearchModalitiesSqlRow",
-        "SearchModalitiesApiRequest",
-        "SearchModalitiesApiResponse",
-    ),
     "app/sql/queries/resources/model_flags/get_model_flags_complete.sql": (
         "GetModelFlagsSqlParams",
         "GetModelFlagsSqlRow",
         "GetModelFlagsApiRequest",
         "GetModelFlagsApiResponse",
-    ),
-    "app/sql/queries/resources/model_flags/search_model_flags_complete.sql": (
-        "SearchModelFlagsSqlParams",
-        "SearchModelFlagsSqlRow",
-        "SearchModelFlagsApiRequest",
-        "SearchModelFlagsApiResponse",
     ),
     "app/sql/queries/resources/model_positions/get_model_positions_complete.sql": (
         "GetModelPositionsSqlParams",
@@ -37979,23 +25137,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetModelPositionsApiRequest",
         "GetModelPositionsApiResponse",
     ),
-    "app/sql/queries/resources/model_positions/search_model_positions_complete.sql": (
-        "SearchModelPositionsSqlParams",
-        "SearchModelPositionsSqlRow",
-        "SearchModelPositionsApiRequest",
-        "SearchModelPositionsApiResponse",
-    ),
     "app/sql/queries/resources/model_rubrics/get_model_rubrics_complete.sql": (
         "GetModelRubricsSqlParams",
         "GetModelRubricsSqlRow",
         "GetModelRubricsApiRequest",
         "GetModelRubricsApiResponse",
-    ),
-    "app/sql/queries/resources/model_rubrics/search_model_rubrics_complete.sql": (
-        "SearchModelRubricsSqlParams",
-        "SearchModelRubricsSqlRow",
-        "SearchModelRubricsApiRequest",
-        "SearchModelRubricsApiResponse",
     ),
     "app/sql/queries/resources/models/get_models_complete.sql": (
         "GetModelsSqlParams",
@@ -38003,23 +25149,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetModelsApiRequest",
         "GetModelsApiResponse",
     ),
-    "app/sql/queries/resources/models/search_models_complete.sql": (
-        "SearchModelsSqlParams",
-        "SearchModelsSqlRow",
-        "SearchModelsApiRequest",
-        "SearchModelsApiResponse",
-    ),
     "app/sql/queries/resources/names/get_names_complete.sql": (
         "GetNamesSqlParams",
         "GetNamesSqlRow",
         "GetNamesApiRequest",
         "GetNamesApiResponse",
-    ),
-    "app/sql/queries/resources/names/search_names_complete.sql": (
-        "SearchNamesSqlParams",
-        "SearchNamesSqlRow",
-        "SearchNamesApiRequest",
-        "SearchNamesApiResponse",
     ),
     "app/sql/queries/resources/names_complete.sql": (
         "NamesSqlParams",
@@ -38039,12 +25173,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetObjectivesApiRequest",
         "GetObjectivesApiResponse",
     ),
-    "app/sql/queries/resources/objectives/search_objectives_complete.sql": (
-        "SearchObjectivesSqlParams",
-        "SearchObjectivesSqlRow",
-        "SearchObjectivesApiRequest",
-        "SearchObjectivesApiResponse",
-    ),
     "app/sql/queries/resources/objectives_complete.sql": (
         "ObjectivesSqlParams",
         "ObjectivesSqlRow",
@@ -38056,12 +25184,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetOptionsSqlRow",
         "GetOptionsApiRequest",
         "GetOptionsApiResponse",
-    ),
-    "app/sql/queries/resources/options/search_options_complete.sql": (
-        "SearchOptionsSqlParams",
-        "SearchOptionsSqlRow",
-        "SearchOptionsApiRequest",
-        "SearchOptionsApiResponse",
     ),
     "app/sql/queries/resources/options_complete.sql": (
         "OptionsSqlParams",
@@ -38081,29 +25203,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ParameterFieldsApiRequest",
         "ParameterFieldsApiResponse",
     ),
-    "app/sql/queries/resources/parameter_fields/search_parameter_fields_complete.sql": (
-        "SearchParameterFieldsSqlParams",
-        "SearchParameterFieldsSqlRow",
-        "SearchParameterFieldsApiRequest",
-        "SearchParameterFieldsApiResponse",
-    ),
     "app/sql/queries/resources/parameters/get_parameters_complete.sql": (
         "GetParametersSqlParams",
         "GetParametersSqlRow",
         "GetParametersApiRequest",
         "GetParametersApiResponse",
-    ),
-    "app/sql/queries/resources/parameters/search_conditional_parameters_complete.sql": (
-        "SearchConditionalParametersSqlParams",
-        "SearchConditionalParametersSqlRow",
-        "SearchConditionalParametersApiRequest",
-        "SearchConditionalParametersApiResponse",
-    ),
-    "app/sql/queries/resources/parameters/search_parameters_complete.sql": (
-        "SearchParametersSqlParams",
-        "SearchParametersSqlRow",
-        "SearchParametersApiRequest",
-        "SearchParametersApiResponse",
     ),
     "app/sql/queries/resources/personas/create_personas_complete.sql": (
         "CreatePersonasSqlParams",
@@ -38111,35 +25215,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CreatePersonasApiRequest",
         "CreatePersonasApiResponse",
     ),
-    "app/sql/queries/resources/personas/get_persona_resource_complete.sql": (
-        "GetPersonaResourceSqlParams",
-        "GetPersonaResourceSqlRow",
-        "GetPersonaResourceApiRequest",
-        "GetPersonaResourceApiResponse",
-    ),
     "app/sql/queries/resources/personas/get_personas_complete.sql": (
         "GetPersonasSqlParams",
         "GetPersonasSqlRow",
         "GetPersonasApiRequest",
         "GetPersonasApiResponse",
     ),
-    "app/sql/queries/resources/personas/search_personas_complete.sql": (
-        "SearchPersonasSqlParams",
-        "SearchPersonasSqlRow",
-        "SearchPersonasApiRequest",
-        "SearchPersonasApiResponse",
-    ),
     "app/sql/queries/resources/points/get_points_complete.sql": (
         "GetPointsSqlParams",
         "GetPointsSqlRow",
         "GetPointsApiRequest",
         "GetPointsApiResponse",
-    ),
-    "app/sql/queries/resources/points/search_points_complete.sql": (
-        "SearchPointsSqlParams",
-        "SearchPointsSqlRow",
-        "SearchPointsApiRequest",
-        "SearchPointsApiResponse",
     ),
     "app/sql/queries/resources/points_complete.sql": (
         "PointsSqlParams",
@@ -38177,12 +25263,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProblemStatementsApiRequest",
         "GetProblemStatementsApiResponse",
     ),
-    "app/sql/queries/resources/problem_statements/search_problem_statements_complete.sql": (
-        "SearchProblemStatementsSqlParams",
-        "SearchProblemStatementsSqlRow",
-        "SearchProblemStatementsApiRequest",
-        "SearchProblemStatementsApiResponse",
-    ),
     "app/sql/queries/resources/problem_statements_complete.sql": (
         "ProblemStatementsSqlParams",
         "ProblemStatementsSqlRow",
@@ -38195,12 +25275,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfilePersonasApiRequest",
         "GetProfilePersonasApiResponse",
     ),
-    "app/sql/queries/resources/profile_personas/search_profile_personas_complete.sql": (
-        "SearchProfilePersonasSqlParams",
-        "SearchProfilePersonasSqlRow",
-        "SearchProfilePersonasApiRequest",
-        "SearchProfilePersonasApiResponse",
-    ),
     "app/sql/queries/resources/profile_personas_complete.sql": (
         "ProfilePersonasSqlParams",
         "ProfilePersonasSqlRow",
@@ -38212,12 +25286,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProfilesSqlRow",
         "GetProfilesApiRequest",
         "GetProfilesApiResponse",
-    ),
-    "app/sql/queries/resources/profiles/search_profiles_complete.sql": (
-        "SearchProfilesSqlParams",
-        "SearchProfilesSqlRow",
-        "SearchProfilesApiRequest",
-        "SearchProfilesApiResponse",
     ),
     "app/sql/queries/resources/prompts/get_prompts_complete.sql": (
         "GetPromptsSqlParams",
@@ -38243,12 +25311,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProtocolsApiRequest",
         "GetProtocolsApiResponse",
     ),
-    "app/sql/queries/resources/protocols/search_protocols_complete.sql": (
-        "SearchProtocolsSqlParams",
-        "SearchProtocolsSqlRow",
-        "SearchProtocolsApiRequest",
-        "SearchProtocolsApiResponse",
-    ),
     "app/sql/queries/resources/protocols_complete.sql": (
         "ProtocolsSqlParams",
         "ProtocolsSqlRow",
@@ -38260,12 +25322,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetProviderKeysSqlRow",
         "GetProviderKeysApiRequest",
         "GetProviderKeysApiResponse",
-    ),
-    "app/sql/queries/resources/provider_keys/search_provider_keys_complete.sql": (
-        "SearchProviderKeysSqlParams",
-        "SearchProviderKeysSqlRow",
-        "SearchProviderKeysApiRequest",
-        "SearchProviderKeysApiResponse",
     ),
     "app/sql/queries/resources/provider_keys_complete.sql": (
         "ProviderKeysSqlParams",
@@ -38291,12 +25347,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetQualitiesApiRequest",
         "GetQualitiesApiResponse",
     ),
-    "app/sql/queries/resources/qualities/search_qualities_complete.sql": (
-        "SearchQualitiesSqlParams",
-        "SearchQualitiesSqlRow",
-        "SearchQualitiesApiRequest",
-        "SearchQualitiesApiResponse",
-    ),
     "app/sql/queries/resources/questions/get_question_complete.sql": (
         "GetQuestionSqlParams",
         "GetQuestionSqlRow",
@@ -38308,12 +25358,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetQuestionsSqlRow",
         "GetQuestionsApiRequest",
         "GetQuestionsApiResponse",
-    ),
-    "app/sql/queries/resources/questions/search_questions_complete.sql": (
-        "SearchQuestionsSqlParams",
-        "SearchQuestionsSqlRow",
-        "SearchQuestionsApiRequest",
-        "SearchQuestionsApiResponse",
     ),
     "app/sql/queries/resources/questions_complete.sql": (
         "QuestionsSqlParams",
@@ -38327,23 +25371,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetReasoningLevelsApiRequest",
         "GetReasoningLevelsApiResponse",
     ),
-    "app/sql/queries/resources/reasoning_levels/search_reasoning_levels_complete.sql": (
-        "SearchReasoningLevelsSqlParams",
-        "SearchReasoningLevelsSqlRow",
-        "SearchReasoningLevelsApiRequest",
-        "SearchReasoningLevelsApiResponse",
-    ),
     "app/sql/queries/resources/request_limits/get_request_limits_complete.sql": (
         "GetRequestLimitsSqlParams",
         "GetRequestLimitsSqlRow",
         "GetRequestLimitsApiRequest",
         "GetRequestLimitsApiResponse",
-    ),
-    "app/sql/queries/resources/request_limits/search_request_limits_complete.sql": (
-        "SearchRequestLimitsSqlParams",
-        "SearchRequestLimitsSqlRow",
-        "SearchRequestLimitsApiRequest",
-        "SearchRequestLimitsApiResponse",
     ),
     "app/sql/queries/resources/request_limits_complete.sql": (
         "RequestLimitsSqlParams",
@@ -38357,23 +25389,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetResourcesApiRequest",
         "GetResourcesApiResponse",
     ),
-    "app/sql/queries/resources/resources/search_resources_complete.sql": (
-        "SearchResourcesSqlParams",
-        "SearchResourcesSqlRow",
-        "SearchResourcesApiRequest",
-        "SearchResourcesApiResponse",
-    ),
     "app/sql/queries/resources/roles/get_roles_complete.sql": (
         "GetRolesSqlParams",
         "GetRolesSqlRow",
         "GetRolesApiRequest",
         "GetRolesApiResponse",
-    ),
-    "app/sql/queries/resources/roles/search_roles_complete.sql": (
-        "SearchRolesSqlParams",
-        "SearchRolesSqlRow",
-        "SearchRolesApiRequest",
-        "SearchRolesApiResponse",
     ),
     "app/sql/queries/resources/rubrics/get_rubrics_batch_complete.sql": (
         "GetRubricsBatchSqlParams",
@@ -38411,23 +25431,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioFlagsApiRequest",
         "GetScenarioFlagsApiResponse",
     ),
-    "app/sql/queries/resources/scenario_flags/search_scenario_flags_complete.sql": (
-        "SearchScenarioFlagsSqlParams",
-        "SearchScenarioFlagsSqlRow",
-        "SearchScenarioFlagsApiRequest",
-        "SearchScenarioFlagsApiResponse",
-    ),
     "app/sql/queries/resources/scenario_positions/get_scenario_positions_complete.sql": (
         "GetScenarioPositionsSqlParams",
         "GetScenarioPositionsSqlRow",
         "GetScenarioPositionsApiRequest",
         "GetScenarioPositionsApiResponse",
-    ),
-    "app/sql/queries/resources/scenario_positions/search_scenario_positions_complete.sql": (
-        "SearchScenarioPositionsSqlParams",
-        "SearchScenarioPositionsSqlRow",
-        "SearchScenarioPositionsApiRequest",
-        "SearchScenarioPositionsApiResponse",
     ),
     "app/sql/queries/resources/scenario_positions_complete.sql": (
         "ScenarioPositionsSqlParams",
@@ -38441,12 +25449,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioRubricsApiRequest",
         "GetScenarioRubricsApiResponse",
     ),
-    "app/sql/queries/resources/scenario_rubrics/search_scenario_rubrics_complete.sql": (
-        "SearchScenarioRubricsSqlParams",
-        "SearchScenarioRubricsSqlRow",
-        "SearchScenarioRubricsApiRequest",
-        "SearchScenarioRubricsApiResponse",
-    ),
     "app/sql/queries/resources/scenario_rubrics_complete.sql": (
         "ScenarioRubricsSqlParams",
         "ScenarioRubricsSqlRow",
@@ -38458,12 +25460,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenarioTimeLimitsSqlRow",
         "GetScenarioTimeLimitsApiRequest",
         "GetScenarioTimeLimitsApiResponse",
-    ),
-    "app/sql/queries/resources/scenario_time_limits/search_scenario_time_limits_complete.sql": (
-        "SearchScenarioTimeLimitsSqlParams",
-        "SearchScenarioTimeLimitsSqlRow",
-        "SearchScenarioTimeLimitsApiRequest",
-        "SearchScenarioTimeLimitsApiResponse",
     ),
     "app/sql/queries/resources/scenario_time_limits_complete.sql": (
         "ScenarioTimeLimitsSqlParams",
@@ -38482,12 +25478,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetScenariosSqlRow",
         "GetScenariosApiRequest",
         "GetScenariosApiResponse",
-    ),
-    "app/sql/queries/resources/scenarios/search_scenarios_complete.sql": (
-        "SearchScenariosSqlParams",
-        "SearchScenariosSqlRow",
-        "SearchScenariosApiRequest",
-        "SearchScenariosApiResponse",
     ),
     "app/sql/queries/resources/settings/get_settings_complete.sql": (
         "GetSettingsSqlParams",
@@ -38525,12 +25515,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationPositionsApiRequest",
         "GetSimulationPositionsApiResponse",
     ),
-    "app/sql/queries/resources/simulation_positions/search_simulation_positions_complete.sql": (
-        "SearchSimulationPositionsSqlParams",
-        "SearchSimulationPositionsSqlRow",
-        "SearchSimulationPositionsApiRequest",
-        "SearchSimulationPositionsApiResponse",
-    ),
     "app/sql/queries/resources/simulation_positions_complete.sql": (
         "SimulationPositionsSqlParams",
         "SimulationPositionsSqlRow",
@@ -38549,23 +25533,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSimulationsApiRequest",
         "GetSimulationsApiResponse",
     ),
-    "app/sql/queries/resources/simulations/search_simulations_complete.sql": (
-        "SearchSimulationsSqlParams",
-        "SearchSimulationsSqlRow",
-        "SearchSimulationsApiRequest",
-        "SearchSimulationsApiResponse",
-    ),
     "app/sql/queries/resources/slugs/get_slugs_complete.sql": (
         "GetSlugsSqlParams",
         "GetSlugsSqlRow",
         "GetSlugsApiRequest",
         "GetSlugsApiResponse",
-    ),
-    "app/sql/queries/resources/slugs/search_slugs_complete.sql": (
-        "SearchSlugsSqlParams",
-        "SearchSlugsSqlRow",
-        "SearchSlugsApiRequest",
-        "SearchSlugsApiResponse",
     ),
     "app/sql/queries/resources/slugs_complete.sql": (
         "SlugsSqlParams",
@@ -38579,12 +25551,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetStandardGroupsApiRequest",
         "GetStandardGroupsApiResponse",
     ),
-    "app/sql/queries/resources/standard_groups/search_standard_groups_complete.sql": (
-        "SearchStandardGroupsSqlParams",
-        "SearchStandardGroupsSqlRow",
-        "SearchStandardGroupsApiRequest",
-        "SearchStandardGroupsApiResponse",
-    ),
     "app/sql/queries/resources/standard_groups_complete.sql": (
         "StandardGroupsSqlParams",
         "StandardGroupsSqlRow",
@@ -38596,12 +25562,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetStandardsSqlRow",
         "GetStandardsApiRequest",
         "GetStandardsApiResponse",
-    ),
-    "app/sql/queries/resources/standards/search_standards_complete.sql": (
-        "SearchStandardsSqlParams",
-        "SearchStandardsSqlRow",
-        "SearchStandardsApiRequest",
-        "SearchStandardsApiResponse",
     ),
     "app/sql/queries/resources/systems/get_systems_complete.sql": (
         "GetSystemsSqlParams",
@@ -38620,12 +25580,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetTemperatureLevelsSqlRow",
         "GetTemperatureLevelsApiRequest",
         "GetTemperatureLevelsApiResponse",
-    ),
-    "app/sql/queries/resources/temperature_levels/search_temperature_levels_complete.sql": (
-        "SearchTemperatureLevelsSqlParams",
-        "SearchTemperatureLevelsSqlRow",
-        "SearchTemperatureLevelsApiRequest",
-        "SearchTemperatureLevelsApiResponse",
     ),
     "app/sql/queries/resources/texts/get_texts_complete.sql": (
         "GetTextsSqlParams",
@@ -38651,23 +25605,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetThresholdsApiRequest",
         "GetThresholdsApiResponse",
     ),
-    "app/sql/queries/resources/thresholds/search_thresholds_complete.sql": (
-        "SearchThresholdsSqlParams",
-        "SearchThresholdsSqlRow",
-        "SearchThresholdsApiRequest",
-        "SearchThresholdsApiResponse",
-    ),
     "app/sql/queries/resources/tools/get_tools_complete.sql": (
         "GetToolsSqlParams",
         "GetToolsSqlRow",
         "GetToolsApiRequest",
         "GetToolsApiResponse",
-    ),
-    "app/sql/queries/resources/tools/search_tools_complete.sql": (
-        "SearchToolsSqlParams",
-        "SearchToolsSqlRow",
-        "SearchToolsApiRequest",
-        "SearchToolsApiResponse",
     ),
     "app/sql/queries/resources/training/get_training_attempt_context_complete.sql": (
         "GetTrainingAttemptContextSqlParams",
@@ -38699,12 +25641,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetValuesApiRequest",
         "GetValuesApiResponse",
     ),
-    "app/sql/queries/resources/values/search_values_complete.sql": (
-        "SearchValuesSqlParams",
-        "SearchValuesSqlRow",
-        "SearchValuesApiRequest",
-        "SearchValuesApiResponse",
-    ),
     "app/sql/queries/resources/values_complete.sql": (
         "ValuesSqlParams",
         "ValuesSqlRow",
@@ -38723,12 +25659,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetVideosApiRequest",
         "GetVideosApiResponse",
     ),
-    "app/sql/queries/resources/videos/search_videos_complete.sql": (
-        "SearchVideosSqlParams",
-        "SearchVideosSqlRow",
-        "SearchVideosApiRequest",
-        "SearchVideosApiResponse",
-    ),
     "app/sql/queries/resources/videos_complete.sql": (
         "VideosSqlParams",
         "VideosSqlRow",
@@ -38741,29 +25671,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetVoicesApiRequest",
         "GetVoicesApiResponse",
     ),
-    "app/sql/queries/resources/voices/search_voices_complete.sql": (
-        "SearchVoicesSqlParams",
-        "SearchVoicesSqlRow",
-        "SearchVoicesApiRequest",
-        "SearchVoicesApiResponse",
-    ),
     "app/sql/queries/resources/voices_complete.sql": (
         "VoicesSqlParams",
         "VoicesSqlRow",
         "VoicesApiRequest",
         "VoicesApiResponse",
-    ),
-    "app/sql/queries/rubric/delete_rubric_complete.sql": (
-        "DeleteRubricSqlParams",
-        "DeleteRubricSqlRow",
-        "DeleteRubricApiRequest",
-        "DeleteRubricApiResponse",
-    ),
-    "app/sql/queries/rubric/duplicate_rubric_complete.sql": (
-        "DuplicateRubricSqlParams",
-        "DuplicateRubricSqlRow",
-        "DuplicateRubricApiRequest",
-        "DuplicateRubricApiResponse",
     ),
     "app/sql/queries/rubric/get_rubric_tool_call_results_complete.sql": (
         "GetRubricToolCallResultsSqlParams",
@@ -38771,53 +25683,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetRubricToolCallResultsApiRequest",
         "GetRubricToolCallResultsApiResponse",
     ),
-    "app/sql/queries/rubric/get_rubrics_list_complete.sql": (
-        "GetRubricsListSqlParams",
-        "GetRubricsListSqlRow",
-        "GetRubricsListApiRequest",
-        "GetRubricsListApiResponse",
-    ),
-    "app/sql/queries/rubrics/check_rubric_delete_access_complete.sql": (
-        "CheckRubricDeleteAccessSqlParams",
-        "CheckRubricDeleteAccessSqlRow",
-        "CheckRubricDeleteAccessApiRequest",
-        "CheckRubricDeleteAccessApiResponse",
-    ),
     "app/sql/queries/rubrics/check_rubric_duplicate_access_complete.sql": (
         "CheckRubricDuplicateAccessSqlParams",
         "CheckRubricDuplicateAccessSqlRow",
         "CheckRubricDuplicateAccessApiRequest",
         "CheckRubricDuplicateAccessApiResponse",
-    ),
-    "app/sql/queries/rubrics/check_rubric_save_access_complete.sql": (
-        "CheckRubricSaveAccessSqlParams",
-        "CheckRubricSaveAccessSqlRow",
-        "CheckRubricSaveAccessApiRequest",
-        "CheckRubricSaveAccessApiResponse",
-    ),
-    "app/sql/queries/rubrics/get_rubric_access_complete.sql": (
-        "GetRubricAccessSqlParams",
-        "GetRubricAccessSqlRow",
-        "GetRubricAccessApiRequest",
-        "GetRubricAccessApiResponse",
-    ),
-    "app/sql/queries/rubrics/get_rubric_complete.sql": (
-        "GetRubricSqlParams",
-        "GetRubricSqlRow",
-        "GetRubricApiRequest",
-        "GetRubricApiResponse",
-    ),
-    "app/sql/queries/rubrics/get_rubric_docs_complete.sql": (
-        "GetRubricDocsSqlParams",
-        "GetRubricDocsSqlRow",
-        "GetRubricDocsApiRequest",
-        "GetRubricDocsApiResponse",
-    ),
-    "app/sql/queries/rubrics/get_rubric_ids_complete.sql": (
-        "GetRubricIdsSqlParams",
-        "GetRubricIdsSqlRow",
-        "GetRubricIdsApiRequest",
-        "GetRubricIdsApiResponse",
     ),
     "app/sql/queries/rubrics/patch_rubric_draft_complete.sql": (
         "PatchRubricDraftSqlParams",
@@ -38830,72 +25700,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveRubricSqlRow",
         "SaveRubricApiRequest",
         "SaveRubricApiResponse",
-    ),
-    "app/sql/queries/scenario/check_scenario_delete_access_complete.sql": (
-        "CheckScenarioDeleteAccessSqlParams",
-        "CheckScenarioDeleteAccessSqlRow",
-        "CheckScenarioDeleteAccessApiRequest",
-        "CheckScenarioDeleteAccessApiResponse",
-    ),
-    "app/sql/queries/scenario/check_scenario_duplicate_access_complete.sql": (
-        "CheckScenarioDuplicateAccessSqlParams",
-        "CheckScenarioDuplicateAccessSqlRow",
-        "CheckScenarioDuplicateAccessApiRequest",
-        "CheckScenarioDuplicateAccessApiResponse",
-    ),
-    "app/sql/queries/scenario/delete_scenario_complete.sql": (
-        "DeleteScenarioSqlParams",
-        "DeleteScenarioSqlRow",
-        "DeleteScenarioApiRequest",
-        "DeleteScenarioApiResponse",
-    ),
-    "app/sql/queries/scenario/duplicate_scenario_complete.sql": (
-        "DuplicateScenarioSqlParams",
-        "DuplicateScenarioSqlRow",
-        "DuplicateScenarioApiRequest",
-        "DuplicateScenarioApiResponse",
-    ),
-    "app/sql/queries/scenario/get_scenario_by_id_complete.sql": (
-        "GetScenarioByIdSqlParams",
-        "GetScenarioByIdSqlRow",
-        "GetScenarioByIdApiRequest",
-        "GetScenarioByIdApiResponse",
-    ),
-    "app/sql/queries/scenario/get_scenarios_list_complete.sql": (
-        "GetScenariosListSqlParams",
-        "GetScenariosListSqlRow",
-        "GetScenariosListApiRequest",
-        "GetScenariosListApiResponse",
-    ),
-    "app/sql/queries/scenario/insert_scenario_variant_complete.sql": (
-        "InsertScenarioVariantSqlParams",
-        "InsertScenarioVariantSqlRow",
-        "InsertScenarioVariantApiRequest",
-        "InsertScenarioVariantApiResponse",
-    ),
-    "app/sql/queries/scenarios/export_scenarios_complete.sql": (
-        "ExportScenariosSqlParams",
-        "ExportScenariosSqlRow",
-        "ExportScenariosApiRequest",
-        "ExportScenariosApiResponse",
-    ),
-    "app/sql/queries/scenarios/get_scenario_access_complete.sql": (
-        "GetScenarioAccessSqlParams",
-        "GetScenarioAccessSqlRow",
-        "GetScenarioAccessApiRequest",
-        "GetScenarioAccessApiResponse",
-    ),
-    "app/sql/queries/scenarios/get_scenario_docs_complete.sql": (
-        "GetScenarioDocsSqlParams",
-        "GetScenarioDocsSqlRow",
-        "GetScenarioDocsApiRequest",
-        "GetScenarioDocsApiResponse",
-    ),
-    "app/sql/queries/scenarios/get_scenario_ids_complete.sql": (
-        "GetScenarioIdsSqlParams",
-        "GetScenarioIdsSqlRow",
-        "GetScenarioIdsApiRequest",
-        "GetScenarioIdsApiResponse",
     ),
     "app/sql/queries/scenarios/get_scenario_resource_ids_by_group_id_complete.sql": (
         "GetScenarioResourceIdsByGroupIdSqlParams",
@@ -38933,12 +25737,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetSchemaWithFieldsApiRequest",
         "GetSchemaWithFieldsApiResponse",
     ),
-    "app/sql/queries/settings/check_setting_delete_access_complete.sql": (
-        "CheckSettingDeleteAccessSqlParams",
-        "CheckSettingDeleteAccessSqlRow",
-        "CheckSettingDeleteAccessApiRequest",
-        "CheckSettingDeleteAccessApiResponse",
-    ),
     "app/sql/queries/settings/check_setting_duplicate_access_complete.sql": (
         "CheckSettingDuplicateAccessSqlParams",
         "CheckSettingDuplicateAccessSqlRow",
@@ -38950,48 +25748,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "CheckSettingSaveAccessSqlRow",
         "CheckSettingSaveAccessApiRequest",
         "CheckSettingSaveAccessApiResponse",
-    ),
-    "app/sql/queries/settings/delete_setting_complete.sql": (
-        "DeleteSettingSqlParams",
-        "DeleteSettingSqlRow",
-        "DeleteSettingApiRequest",
-        "DeleteSettingApiResponse",
-    ),
-    "app/sql/queries/settings/duplicate_setting_complete.sql": (
-        "DuplicateSettingSqlParams",
-        "DuplicateSettingSqlRow",
-        "DuplicateSettingApiRequest",
-        "DuplicateSettingApiResponse",
-    ),
-    "app/sql/queries/settings/get_active_settings_complete.sql": (
-        "GetActiveSettingsSqlParams",
-        "GetActiveSettingsSqlRow",
-        "GetActiveSettingsApiRequest",
-        "GetActiveSettingsApiResponse",
-    ),
-    "app/sql/queries/settings/get_setting_access_complete.sql": (
-        "GetSettingAccessSqlParams",
-        "GetSettingAccessSqlRow",
-        "GetSettingAccessApiRequest",
-        "GetSettingAccessApiResponse",
-    ),
-    "app/sql/queries/settings/get_setting_ids_complete.sql": (
-        "GetSettingIdsSqlParams",
-        "GetSettingIdsSqlRow",
-        "GetSettingIdsApiRequest",
-        "GetSettingIdsApiResponse",
-    ),
-    "app/sql/queries/settings/get_settings_list_complete.sql": (
-        "GetSettingsListSqlParams",
-        "GetSettingsListSqlRow",
-        "GetSettingsListApiRequest",
-        "GetSettingsListApiResponse",
-    ),
-    "app/sql/queries/settings/get_settings_theme_data_complete.sql": (
-        "GetSettingsThemeDataSqlParams",
-        "GetSettingsThemeDataSqlRow",
-        "GetSettingsThemeDataApiRequest",
-        "GetSettingsThemeDataApiResponse",
     ),
     "app/sql/queries/settings/patch_setting_draft_complete.sql": (
         "PatchSettingDraftSqlParams",
@@ -39005,77 +25761,17 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveSettingApiRequest",
         "SaveSettingApiResponse",
     ),
-    "app/sql/queries/simulations/check_simulation_delete_access_complete.sql": (
-        "CheckSimulationDeleteAccessSqlParams",
-        "CheckSimulationDeleteAccessSqlRow",
-        "CheckSimulationDeleteAccessApiRequest",
-        "CheckSimulationDeleteAccessApiResponse",
-    ),
-    "app/sql/queries/simulations/check_simulation_duplicate_access_complete.sql": (
-        "CheckSimulationDuplicateAccessSqlParams",
-        "CheckSimulationDuplicateAccessSqlRow",
-        "CheckSimulationDuplicateAccessApiRequest",
-        "CheckSimulationDuplicateAccessApiResponse",
-    ),
-    "app/sql/queries/simulations/check_simulation_save_access_complete.sql": (
-        "CheckSimulationSaveAccessSqlParams",
-        "CheckSimulationSaveAccessSqlRow",
-        "CheckSimulationSaveAccessApiRequest",
-        "CheckSimulationSaveAccessApiResponse",
-    ),
-    "app/sql/queries/simulations/delete_simulation_complete.sql": (
-        "DeleteSimulationSqlParams",
-        "DeleteSimulationSqlRow",
-        "DeleteSimulationApiRequest",
-        "DeleteSimulationApiResponse",
-    ),
-    "app/sql/queries/simulations/duplicate_simulation_complete.sql": (
-        "DuplicateSimulationSqlParams",
-        "DuplicateSimulationSqlRow",
-        "DuplicateSimulationApiRequest",
-        "DuplicateSimulationApiResponse",
-    ),
-    "app/sql/queries/simulations/export_simulations_complete.sql": (
-        "ExportSimulationsSqlParams",
-        "ExportSimulationsSqlRow",
-        "ExportSimulationsApiRequest",
-        "ExportSimulationsApiResponse",
-    ),
     "app/sql/queries/simulations/get_name_by_id_complete.sql": (
         "GetNameByIdSqlParams",
         "GetNameByIdSqlRow",
         "GetNameByIdApiRequest",
         "GetNameByIdApiResponse",
     ),
-    "app/sql/queries/simulations/get_simulation_access_complete.sql": (
-        "GetSimulationAccessSqlParams",
-        "GetSimulationAccessSqlRow",
-        "GetSimulationAccessApiRequest",
-        "GetSimulationAccessApiResponse",
-    ),
-    "app/sql/queries/simulations/get_simulation_docs_complete.sql": (
-        "GetSimulationDocsSqlParams",
-        "GetSimulationDocsSqlRow",
-        "GetSimulationDocsApiRequest",
-        "GetSimulationDocsApiResponse",
-    ),
-    "app/sql/queries/simulations/get_simulation_ids_complete.sql": (
-        "GetSimulationIdsSqlParams",
-        "GetSimulationIdsSqlRow",
-        "GetSimulationIdsApiRequest",
-        "GetSimulationIdsApiResponse",
-    ),
     "app/sql/queries/simulations/get_simulation_resource_ids_by_group_id_complete.sql": (
         "GetSimulationResourceIdsByGroupIdSqlParams",
         "GetSimulationResourceIdsByGroupIdSqlRow",
         "GetSimulationResourceIdsByGroupIdApiRequest",
         "GetSimulationResourceIdsByGroupIdApiResponse",
-    ),
-    "app/sql/queries/simulations/get_simulations_list_complete.sql": (
-        "GetSimulationsListSqlParams",
-        "GetSimulationsListSqlRow",
-        "GetSimulationsListApiRequest",
-        "GetSimulationsListApiResponse",
     ),
     "app/sql/queries/simulations/patch_simulation_draft_complete.sql": (
         "PatchSimulationDraftSqlParams",
@@ -39107,65 +25803,11 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "ValidateSimulationResourceProgressApiRequest",
         "ValidateSimulationResourceProgressApiResponse",
     ),
-    "app/sql/queries/tools/check_tool_delete_access_complete.sql": (
-        "CheckToolDeleteAccessSqlParams",
-        "CheckToolDeleteAccessSqlRow",
-        "CheckToolDeleteAccessApiRequest",
-        "CheckToolDeleteAccessApiResponse",
-    ),
     "app/sql/queries/tools/check_tool_duplicate_access_complete.sql": (
         "CheckToolDuplicateAccessSqlParams",
         "CheckToolDuplicateAccessSqlRow",
         "CheckToolDuplicateAccessApiRequest",
         "CheckToolDuplicateAccessApiResponse",
-    ),
-    "app/sql/queries/tools/check_tool_save_access_complete.sql": (
-        "CheckToolSaveAccessSqlParams",
-        "CheckToolSaveAccessSqlRow",
-        "CheckToolSaveAccessApiRequest",
-        "CheckToolSaveAccessApiResponse",
-    ),
-    "app/sql/queries/tools/delete_tool_complete.sql": (
-        "DeleteToolSqlParams",
-        "DeleteToolSqlRow",
-        "DeleteToolApiRequest",
-        "DeleteToolApiResponse",
-    ),
-    "app/sql/queries/tools/duplicate_tool_complete.sql": (
-        "DuplicateToolSqlParams",
-        "DuplicateToolSqlRow",
-        "DuplicateToolApiRequest",
-        "DuplicateToolApiResponse",
-    ),
-    "app/sql/queries/tools/get_tool_access_complete.sql": (
-        "GetToolAccessSqlParams",
-        "GetToolAccessSqlRow",
-        "GetToolAccessApiRequest",
-        "GetToolAccessApiResponse",
-    ),
-    "app/sql/queries/tools/get_tool_complete.sql": (
-        "GetToolSqlParams",
-        "GetToolSqlRow",
-        "GetToolApiRequest",
-        "GetToolApiResponse",
-    ),
-    "app/sql/queries/tools/get_tool_docs_complete.sql": (
-        "GetToolDocsSqlParams",
-        "GetToolDocsSqlRow",
-        "GetToolDocsApiRequest",
-        "GetToolDocsApiResponse",
-    ),
-    "app/sql/queries/tools/get_tool_ids_complete.sql": (
-        "GetToolIdsSqlParams",
-        "GetToolIdsSqlRow",
-        "GetToolIdsApiRequest",
-        "GetToolIdsApiResponse",
-    ),
-    "app/sql/queries/tools/get_tools_list_complete.sql": (
-        "GetToolsListSqlParams",
-        "GetToolsListSqlRow",
-        "GetToolsListApiRequest",
-        "GetToolsListApiResponse",
     ),
     "app/sql/queries/tools/patch_tool_draft_complete.sql": (
         "PatchToolDraftSqlParams",
@@ -39184,18 +25826,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "PatchTrainingDraftSqlRow",
         "PatchTrainingDraftApiRequest",
         "PatchTrainingDraftApiResponse",
-    ),
-    "app/sql/queries/uploads/finalize_upload_complete.sql": (
-        "FinalizeUploadSqlParams",
-        "FinalizeUploadSqlRow",
-        "FinalizeUploadApiRequest",
-        "FinalizeUploadApiResponse",
-    ),
-    "app/sql/queries/uploads/get_upload_file_info_complete.sql": (
-        "GetUploadFileInfoSqlParams",
-        "GetUploadFileInfoSqlRow",
-        "GetUploadFileInfoApiRequest",
-        "GetUploadFileInfoApiResponse",
     ),
     "app/sql/queries/uploads/insert_upload_complete.sql": (
         "InsertUploadSqlParams",
@@ -39327,47 +25957,7 @@ def get_api_types(sql_path: str) -> tuple[Type[BaseModel], Type[BaseModel]]:
 if TYPE_CHECKING:
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/agents/delete_agent_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/agents/duplicate_agent_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/agents/get_agent_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/agents/get_agent_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/agents/get_agent_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/agents/get_agent_model_info_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/agents/get_agent_resource_ids_by_group_id_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/agents/get_agents_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/agents/get_artifact_agent_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -39487,16 +26077,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/audio/get_voice_session_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/auth/check_auth_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/auth/check_auth_duplicate_access_complete.sql"]
     ) -> SqlString: ...
 
@@ -39512,52 +26092,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/auth/create_emulation_grant_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/auth/delete_auth_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/auth/duplicate_auth_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/auth/get_agent_tool_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/auth/get_auth_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/auth/get_auth_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/auth/get_auth_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/auth/get_auth_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/auth/get_auth_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/auth/get_login_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -39577,67 +26112,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/auth/resolve_callback_redirect_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/auth/resolve_default_idp_profile_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/auth/save_auth_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/benchmark/patch_suite_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/cohorts/check_cohort_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/cohorts/check_cohort_duplicate_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/cohorts/delete_cohort_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/cohorts/duplicate_cohort_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/cohorts/export_cohorts_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/cohorts/get_cohort_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/cohorts/get_cohort_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/cohorts/get_cohort_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/cohorts/get_cohorts_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -39677,32 +26157,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/departments/delete_department_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/departments/duplicate_department_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/departments/get_department_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/departments/get_department_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/departments/get_department_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/departments/get_departments_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -39718,11 +26173,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/developer_instructions/get_developer_instruction_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/developer_instructions/get_developer_instruction_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -39747,42 +26197,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/document/get_document_department_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/documents/check_document_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/documents/check_document_duplicate_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/documents/check_document_save_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/documents/delete_document_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/documents/duplicate_document_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/documents/get_document_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/documents/get_document_docs_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -39792,22 +26207,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/documents/get_document_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/documents/get_document_resource_data_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/documents/get_documents_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/documents/insert_document_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -40962,47 +27362,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/evals/check_eval_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/evals/check_eval_duplicate_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/evals/check_eval_save_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/evals/delete_eval_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/evals/duplicate_eval_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/evals/get_eval_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/evals/get_eval_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/evals/get_eval_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/evals/get_evals_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41017,52 +27377,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/fields/check_field_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/fields/check_field_duplicate_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/fields/check_field_save_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/fields/delete_field_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/fields/duplicate_field_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/fields/get_field_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/fields/get_field_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/fields/get_field_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/fields/get_field_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/fields/get_fields_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41097,17 +27412,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/attempt/get_agent_entry_tools_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/generate/attempt/get_attempt_grade_completion_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/attempt/get_attempt_grade_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41117,17 +27422,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/attempt/get_attempt_message_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/generate/attempt/get_attempt_proceed_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/attempt/get_audio_start_context_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41147,17 +27442,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/attempt/resolve_agent_by_entry_types_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/generate/attempt/resolve_attempt_chat_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/attempt/resolve_attempt_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41237,11 +27522,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/persona/get_agent_tools_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/generate/persona/prepare_persona_generation_complete.sql"]
     ) -> SqlString: ...
 
@@ -41297,11 +27577,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/start/get_generation_run_context_and_create_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/generate/suite/prepare_suite_generation_complete.sql"]
     ) -> SqlString: ...
 
@@ -41318,11 +27593,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/generate/test/get_test_proceed_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/test/get_tools_by_resource_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41347,27 +27617,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/text/get_text_run_context_for_existing_run_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/generate/tool/prepare_tool_generation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/training/get_training_simulations_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/training/get_training_start_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/generate/training/prepare_training_generation_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41407,32 +27657,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/infrastructure/activity/get_profile_name_for_logging_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/infrastructure/developer_instructions/get_domain_artifact_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/infrastructure/documents/get_document_agents_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/infrastructure/evals/get_department_from_run_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/infrastructure/evals/get_eval_run_status_v4_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/infrastructure/evals/get_rubric_details_v4_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41492,17 +27722,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/infrastructure/tools/get_tool_id_by_name_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/infrastructure/tools/link_tool_call_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/keycloak/get_auth_items_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41517,22 +27737,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/keycloak/get_departments_for_org_sync_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/keycloak/get_setting_profiles_for_idp_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/keycloak/update_master_realm_ssl_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/keys/get_key_for_decrypt_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41557,51 +27762,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/models/check_model_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/models/check_model_duplicate_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/models/check_model_save_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/models/delete_model_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/models/duplicate_model_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/models/get_model_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/models/get_model_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/models/get_model_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/models/list_models_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/models/patch_model_draft_complete.sql"]
     ) -> SqlString: ...
 
@@ -41612,52 +27772,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/parameters/check_parameter_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/parameters/check_parameter_duplicate_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/parameters/check_parameter_save_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/parameters/delete_parameter_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/parameters/duplicate_parameter_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/parameters/get_parameter_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/parameters/get_parameter_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/parameters/get_parameter_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/parameters/get_parameter_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/parameters/get_parameters_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41672,47 +27787,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/check_persona_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/check_persona_duplicate_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/check_persona_save_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/personas/delete_persona_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/duplicate_persona_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/export_personas_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/get_persona_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/personas/get_persona_docs_columns_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/get_persona_docs_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41727,22 +27807,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/get_persona_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/personas/get_persona_resource_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/personas/get_persona_resource_ids_by_group_id_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/get_personas_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41758,31 +27828,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/personas/tools_delete_persona_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/tools_duplicate_persona_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/tools_export_personas_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/tools_get_persona_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/tools_get_persona_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/personas/tools_get_personas_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41807,82 +27852,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/authorize_emulation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/check_login_authorization_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/check_profile_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/profile/check_profile_duplicate_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/check_profile_save_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/create_or_update_profile_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/create_profile_if_not_exists_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/delete_profile_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/duplicate_profile_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/get_profile_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/get_profile_by_email_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/get_profile_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/get_profile_context_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/get_profile_context_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/get_profile_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/get_profile_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -41902,21 +27872,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/search_simulatable_profiles_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/update_profile_to_active_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profile/update_profile_to_inactive_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/profile/validate_profile_resource_error_complete.sql"]
     ) -> SqlString: ...
 
@@ -41932,67 +27887,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/profiles/get_profiles_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/profiles/get_profiles_search_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/profiles/process_csv_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/profiles/upsert_profiles_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/providers/check_provider_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/providers/check_provider_duplicate_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/providers/check_provider_save_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/providers/delete_provider_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/providers/duplicate_provider_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/providers/get_provider_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/providers/get_provider_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/providers/get_provider_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/providers/get_providers_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42082,11 +27982,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/auths/search_auths_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/cohorts/create_cohorts_complete.sql"]
     ) -> SqlString: ...
 
@@ -42107,11 +28002,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/colors/search_colors_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/colors_complete.sql"]
     ) -> SqlString: ...
 
@@ -42122,27 +28012,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/conditional_parameters/search_conditional_parameters_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/departments/get_departments_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/departments/search_departments_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/descriptions/get_descriptions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/descriptions/search_descriptions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42162,17 +28037,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/documents/search_documents_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/emails/get_emails_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/emails/search_emails_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42187,22 +28052,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/endpoints/search_endpoints_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/endpoints_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/resources/entries/get_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/entries/search_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42218,11 +28073,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/resources/examples/get_examples_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/examples/search_examples_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42247,11 +28097,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/flags/search_flags_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/group_positions_complete.sql"]
     ) -> SqlString: ...
 
@@ -42267,22 +28112,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/icons/search_icons_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/images/get_image_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/resources/images/get_images_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/images/search_images_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42297,11 +28132,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/instructions/search_instructions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/instructions_complete.sql"]
     ) -> SqlString: ...
 
@@ -42312,22 +28142,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/items/search_items_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/items_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/resources/keys/get_keys_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/keys/search_keys_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42487,17 +28307,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/modalities/search_modalities_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/model_flags/get_model_flags_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/model_flags/search_model_flags_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42507,17 +28317,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/model_positions/search_model_positions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/model_rubrics/get_model_rubrics_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/model_rubrics/search_model_rubrics_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42527,17 +28327,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/models/search_models_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/names/get_names_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/names/search_names_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42557,22 +28347,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/objectives/search_objectives_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/objectives_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/resources/options/get_options_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/options/search_options_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42592,22 +28372,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/parameter_fields/search_parameter_fields_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/parameters/get_parameters_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/parameters/search_conditional_parameters_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/parameters/search_parameters_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42617,27 +28382,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/personas/get_persona_resource_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/personas/get_personas_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/personas/search_personas_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/points/get_points_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/points/search_points_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42672,11 +28422,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/problem_statements/search_problem_statements_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/problem_statements_complete.sql"]
     ) -> SqlString: ...
 
@@ -42687,22 +28432,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/profile_personas/search_profile_personas_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/profile_personas_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/resources/profiles/get_profiles_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/profiles/search_profiles_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42727,22 +28462,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/protocols/search_protocols_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/protocols_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/resources/provider_keys/get_provider_keys_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/provider_keys/search_provider_keys_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42767,22 +28492,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/qualities/search_qualities_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/questions/get_question_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/resources/questions/get_questions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/questions/search_questions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42797,17 +28512,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/reasoning_levels/search_reasoning_levels_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/request_limits/get_request_limits_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/request_limits/search_request_limits_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42822,17 +28527,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/resources/search_resources_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/roles/get_roles_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/roles/search_roles_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42867,17 +28562,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/scenario_flags/search_scenario_flags_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/scenario_positions/get_scenario_positions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/scenario_positions/search_scenario_positions_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42892,22 +28577,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/scenario_rubrics/search_scenario_rubrics_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/scenario_rubrics_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/resources/scenario_time_limits/get_scenario_time_limits_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/scenario_time_limits/search_scenario_time_limits_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42923,11 +28598,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/resources/scenarios/get_scenarios_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/scenarios/search_scenarios_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -42962,11 +28632,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/simulation_positions/search_simulation_positions_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/simulation_positions_complete.sql"]
     ) -> SqlString: ...
 
@@ -42982,17 +28647,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/simulations/search_simulations_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/slugs/get_slugs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/slugs/search_slugs_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43007,22 +28662,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/standard_groups/search_standard_groups_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/standard_groups_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/resources/standards/get_standards_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/standards/search_standards_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43038,11 +28683,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/resources/temperature_levels/get_temperature_levels_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/temperature_levels/search_temperature_levels_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43067,17 +28707,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/thresholds/search_thresholds_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/tools/get_tools_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/tools/search_tools_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43107,11 +28737,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/values/search_values_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/values_complete.sql"]
     ) -> SqlString: ...
 
@@ -43127,11 +28752,6 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/videos/search_videos_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/videos_complete.sql"]
     ) -> SqlString: ...
 
@@ -43142,22 +28762,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/resources/voices/search_voices_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/resources/voices_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/rubric/delete_rubric_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/rubric/duplicate_rubric_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43167,42 +28772,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/rubric/get_rubrics_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/rubrics/check_rubric_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/rubrics/check_rubric_duplicate_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/rubrics/check_rubric_save_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/rubrics/get_rubric_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/rubrics/get_rubric_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/rubrics/get_rubric_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/rubrics/get_rubric_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43213,61 +28783,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/rubrics/save_rubric_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/scenario/check_scenario_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/scenario/check_scenario_duplicate_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/scenario/delete_scenario_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/scenario/duplicate_scenario_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/scenario/get_scenario_by_id_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/scenario/get_scenarios_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/scenario/insert_scenario_variant_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/scenarios/export_scenarios_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/scenarios/get_scenario_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/scenarios/get_scenario_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/scenarios/get_scenario_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43302,52 +28817,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/settings/check_setting_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/settings/check_setting_duplicate_access_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/settings/check_setting_save_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/settings/delete_setting_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/settings/duplicate_setting_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/settings/get_active_settings_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/settings/get_setting_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/settings/get_setting_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/settings/get_settings_list_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/settings/get_settings_theme_data_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43362,62 +28837,12 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/simulations/check_simulation_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/simulations/check_simulation_duplicate_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/simulations/check_simulation_save_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/simulations/delete_simulation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/simulations/duplicate_simulation_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/simulations/export_simulations_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/simulations/get_name_by_id_complete.sql"]
     ) -> SqlString: ...
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/simulations/get_simulation_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/simulations/get_simulation_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/simulations/get_simulation_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/simulations/get_simulation_resource_ids_by_group_id_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/simulations/get_simulations_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43447,52 +28872,7 @@ if TYPE_CHECKING:
 
     @overload
     def load_sql_query(
-        file_path: Literal["app/sql/queries/tools/check_tool_delete_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
         file_path: Literal["app/sql/queries/tools/check_tool_duplicate_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/tools/check_tool_save_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/tools/delete_tool_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/tools/duplicate_tool_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/tools/get_tool_access_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/tools/get_tool_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/tools/get_tool_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/tools/get_tool_ids_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/tools/get_tools_list_complete.sql"]
     ) -> SqlString: ...
 
     @overload
@@ -43508,16 +28888,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/training/patch_training_draft_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/uploads/finalize_upload_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/uploads/get_upload_file_info_complete.sql"]
     ) -> SqlString: ...
 
     @overload

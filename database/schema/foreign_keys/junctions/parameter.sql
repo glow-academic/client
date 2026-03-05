@@ -6,7 +6,7 @@
 --
 
 ALTER TABLE ONLY public.parameter_departments_junction
-    ADD CONSTRAINT parameter_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT parameter_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -24,7 +24,7 @@ ALTER TABLE ONLY public.parameter_departments_junction
 --
 
 ALTER TABLE ONLY public.parameter_descriptions_junction
-    ADD CONSTRAINT parameter_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT parameter_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -51,7 +51,7 @@ ALTER TABLE ONLY public.parameter_fields_junction
 --
 
 ALTER TABLE ONLY public.parameter_fields_junction
-    ADD CONSTRAINT parameter_fields_field_resource_id_fkey FOREIGN KEY (field_resource_id) REFERENCES public.fields_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT parameter_fields_field_resource_id_fkey FOREIGN KEY (fields_id) REFERENCES public.fields_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -69,7 +69,7 @@ ALTER TABLE ONLY public.parameter_fields_junction
 --
 
 ALTER TABLE ONLY public.parameter_flags_junction
-    ADD CONSTRAINT parameter_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT parameter_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -87,7 +87,7 @@ ALTER TABLE ONLY public.parameter_flags_junction
 --
 
 ALTER TABLE ONLY public.parameter_names_junction
-    ADD CONSTRAINT parameter_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT parameter_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --

@@ -53,7 +53,7 @@ CREATE INDEX idx_tool_departments_mcp ON public.tool_departments_junction USING 
 -- Name: idx_tool_entries_entry_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_tool_entries_entry_id ON public.tool_entries_junction USING btree (entry_id);
+CREATE INDEX idx_tool_entries_entry_id ON public.tool_entries_junction USING btree (entries_id);
 
 
 --
@@ -85,7 +85,7 @@ CREATE INDEX idx_tool_entries_tool_id ON public.tool_entries_junction USING btre
 -- Name: idx_tool_operations_operation_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_tool_operations_operation_id ON public.tool_operations_junction USING btree (operation_id);
+CREATE INDEX idx_tool_operations_operation_id ON public.tool_operations_junction USING btree (operations_id);
 
 
 --
@@ -173,7 +173,7 @@ CREATE INDEX tool_departments_active_idx ON public.tool_departments_junction USI
 -- Name: tool_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX tool_departments_department_id_v7_idx ON public.tool_departments_junction USING btree (department_id);
+CREATE INDEX tool_departments_department_id_v7_idx ON public.tool_departments_junction USING btree (departments_id);
 
 
 --
@@ -189,7 +189,7 @@ CREATE INDEX tool_departments_tool_id_v7_idx ON public.tool_departments_junction
 -- Name: tool_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX tool_descriptions_description_id_idx ON public.tool_descriptions_junction USING btree (description_id);
+CREATE INDEX tool_descriptions_description_id_idx ON public.tool_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -205,7 +205,7 @@ CREATE INDEX tool_descriptions_tool_id_idx ON public.tool_descriptions_junction 
 -- Name: tool_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX tool_flags_flag_id_idx ON public.tool_flags_junction USING btree (flag_id);
+CREATE INDEX tool_flags_flag_id_idx ON public.tool_flags_junction USING btree (flags_id);
 
 
 --
@@ -221,7 +221,7 @@ CREATE INDEX tool_flags_tool_id_idx ON public.tool_flags_junction USING btree (t
 -- Name: tool_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX tool_names_name_id_idx ON public.tool_names_junction USING btree (name_id);
+CREATE INDEX tool_names_name_id_idx ON public.tool_names_junction USING btree (names_id);
 
 
 --
@@ -237,7 +237,7 @@ CREATE INDEX tool_names_tool_id_idx ON public.tool_names_junction USING btree (t
 -- Name: tool_resources_resource_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX tool_resources_resource_id_idx ON public.tool_resources_junction USING btree (resource_id);
+CREATE INDEX tool_resources_resource_id_idx ON public.tool_resources_junction USING btree (resources_id);
 
 
 --

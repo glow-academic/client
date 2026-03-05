@@ -21,7 +21,7 @@ CREATE INDEX idx_provider_departments_mcp ON public.provider_departments_junctio
 -- Name: idx_provider_endpoints_junction_endpoint_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_provider_endpoints_junction_endpoint_id ON public.provider_endpoints_junction USING btree (endpoint_id);
+CREATE INDEX idx_provider_endpoints_junction_endpoint_id ON public.provider_endpoints_junction USING btree (endpoints_id);
 
 
 --
@@ -37,7 +37,7 @@ CREATE INDEX idx_provider_endpoints_junction_provider_id ON public.provider_endp
 -- Name: idx_provider_keys_junction_key_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_provider_keys_junction_key_id ON public.provider_keys_junction USING btree (key_id);
+CREATE INDEX idx_provider_keys_junction_key_id ON public.provider_keys_junction USING btree (keys_id);
 
 
 --
@@ -77,7 +77,7 @@ CREATE INDEX provider_departments_active_idx ON public.provider_departments_junc
 -- Name: provider_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX provider_departments_department_id_v7_idx ON public.provider_departments_junction USING btree (department_id);
+CREATE INDEX provider_departments_department_id_v7_idx ON public.provider_departments_junction USING btree (departments_id);
 
 
 --
@@ -93,7 +93,7 @@ CREATE INDEX provider_departments_provider_id_v7_idx ON public.provider_departme
 -- Name: provider_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX provider_descriptions_description_id_idx ON public.provider_descriptions_junction USING btree (description_id);
+CREATE INDEX provider_descriptions_description_id_idx ON public.provider_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -109,7 +109,7 @@ CREATE INDEX provider_descriptions_provider_id_idx ON public.provider_descriptio
 -- Name: provider_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX provider_flags_flag_id_idx ON public.provider_flags_junction USING btree (flag_id);
+CREATE INDEX provider_flags_flag_id_idx ON public.provider_flags_junction USING btree (flags_id);
 
 
 --
@@ -125,7 +125,7 @@ CREATE INDEX provider_flags_provider_id_idx ON public.provider_flags_junction US
 -- Name: provider_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX provider_names_name_id_idx ON public.provider_names_junction USING btree (name_id);
+CREATE INDEX provider_names_name_id_idx ON public.provider_names_junction USING btree (names_id);
 
 
 --

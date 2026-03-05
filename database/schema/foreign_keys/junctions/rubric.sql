@@ -6,7 +6,7 @@
 --
 
 ALTER TABLE ONLY public.rubric_departments_junction
-    ADD CONSTRAINT rubric_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT rubric_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -24,7 +24,7 @@ ALTER TABLE ONLY public.rubric_departments_junction
 --
 
 ALTER TABLE ONLY public.rubric_descriptions_junction
-    ADD CONSTRAINT rubric_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT rubric_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -42,7 +42,7 @@ ALTER TABLE ONLY public.rubric_descriptions_junction
 --
 
 ALTER TABLE ONLY public.rubric_flags_junction
-    ADD CONSTRAINT rubric_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT rubric_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -60,7 +60,7 @@ ALTER TABLE ONLY public.rubric_flags_junction
 --
 
 ALTER TABLE ONLY public.rubric_names_junction
-    ADD CONSTRAINT rubric_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT rubric_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -78,7 +78,7 @@ ALTER TABLE ONLY public.rubric_names_junction
 --
 
 ALTER TABLE ONLY public.rubric_points_junction
-    ADD CONSTRAINT rubric_points_point_id_fkey FOREIGN KEY (point_id) REFERENCES public.points_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT rubric_points_point_id_fkey FOREIGN KEY (points_id) REFERENCES public.points_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -123,7 +123,7 @@ ALTER TABLE ONLY public.rubric_standard_groups_junction
 --
 
 ALTER TABLE ONLY public.rubric_standard_groups_junction
-    ADD CONSTRAINT rubric_standard_groups_standard_group_id_fkey FOREIGN KEY (standard_group_id) REFERENCES public.standard_groups_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT rubric_standard_groups_standard_group_id_fkey FOREIGN KEY (standard_groups_id) REFERENCES public.standard_groups_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -141,7 +141,7 @@ ALTER TABLE ONLY public.rubric_standards_junction
 --
 
 ALTER TABLE ONLY public.rubric_standards_junction
-    ADD CONSTRAINT rubric_standards_standard_id_fkey FOREIGN KEY (standard_id) REFERENCES public.standards_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT rubric_standards_standard_id_fkey FOREIGN KEY (standards_id) REFERENCES public.standards_resource(id) ON DELETE CASCADE;
 
 
 --

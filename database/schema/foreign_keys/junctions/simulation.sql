@@ -6,7 +6,7 @@
 --
 
 ALTER TABLE ONLY public.simulation_departments_junction
-    ADD CONSTRAINT simulation_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT simulation_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -24,7 +24,7 @@ ALTER TABLE ONLY public.simulation_departments_junction
 --
 
 ALTER TABLE ONLY public.simulation_descriptions_junction
-    ADD CONSTRAINT simulation_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT simulation_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -42,7 +42,7 @@ ALTER TABLE ONLY public.simulation_descriptions_junction
 --
 
 ALTER TABLE ONLY public.simulation_flags_junction
-    ADD CONSTRAINT simulation_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT simulation_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -60,7 +60,7 @@ ALTER TABLE ONLY public.simulation_flags_junction
 --
 
 ALTER TABLE ONLY public.simulation_names_junction
-    ADD CONSTRAINT simulation_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT simulation_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -78,7 +78,7 @@ ALTER TABLE ONLY public.simulation_names_junction
 --
 
 ALTER TABLE ONLY public.simulation_scenario_flags_junction
-    ADD CONSTRAINT simulation_scenario_flags_new_scenario_flag_id_fkey FOREIGN KEY (scenario_flag_id) REFERENCES public.scenario_flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT simulation_scenario_flags_new_scenario_flag_id_fkey FOREIGN KEY (scenario_flags_id) REFERENCES public.scenario_flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -96,7 +96,7 @@ ALTER TABLE ONLY public.simulation_scenario_flags_junction
 --
 
 ALTER TABLE ONLY public.simulation_scenario_positions_junction
-    ADD CONSTRAINT simulation_scenario_positions_scenario_position_id_fkey FOREIGN KEY (scenario_position_id) REFERENCES public.scenario_positions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT simulation_scenario_positions_scenario_position_id_fkey FOREIGN KEY (scenario_positions_id) REFERENCES public.scenario_positions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -114,7 +114,7 @@ ALTER TABLE ONLY public.simulation_scenario_positions_junction
 --
 
 ALTER TABLE ONLY public.simulation_scenario_rubrics_junction
-    ADD CONSTRAINT simulation_scenario_rubrics_scenario_rubric_id_fkey FOREIGN KEY (scenario_rubric_id) REFERENCES public.scenario_rubrics_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT simulation_scenario_rubrics_scenario_rubric_id_fkey FOREIGN KEY (scenario_rubrics_id) REFERENCES public.scenario_rubrics_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -132,7 +132,7 @@ ALTER TABLE ONLY public.simulation_scenario_rubrics_junction
 --
 
 ALTER TABLE ONLY public.simulation_scenario_time_limits_junction
-    ADD CONSTRAINT simulation_scenario_time_limits_scenario_time_limit_id_fkey FOREIGN KEY (scenario_time_limit_id) REFERENCES public.scenario_time_limits_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT simulation_scenario_time_limits_scenario_time_limit_id_fkey FOREIGN KEY (scenario_time_limits_id) REFERENCES public.scenario_time_limits_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -150,7 +150,7 @@ ALTER TABLE ONLY public.simulation_scenario_time_limits_junction
 --
 
 ALTER TABLE ONLY public.simulation_scenarios_junction
-    ADD CONSTRAINT simulation_scenarios_scenario_id_fkey FOREIGN KEY (scenario_id) REFERENCES public.scenarios_resource(id);
+    ADD CONSTRAINT simulation_scenarios_scenario_id_fkey FOREIGN KEY (scenarios_id) REFERENCES public.scenarios_resource(id);
 
 
 --

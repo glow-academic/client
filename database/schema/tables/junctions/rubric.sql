@@ -8,7 +8,7 @@
 CREATE TABLE public.rubric_departments_junction (
     active boolean DEFAULT true CONSTRAINT rubric_departments_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT rubric_departments_created_at_not_null NOT NULL,
-    department_id uuid CONSTRAINT rubric_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT rubric_departments_department_id_not_null NOT NULL,
     rubric_id uuid CONSTRAINT rubric_departments_rubric_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT rubric_departments_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT rubric_departments_mcp_not_null NOT NULL
@@ -22,7 +22,7 @@ CREATE TABLE public.rubric_departments_junction (
 
 CREATE TABLE public.rubric_descriptions_junction (
     rubric_id uuid CONSTRAINT rubric_descriptions_rubric_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT rubric_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT rubric_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT rubric_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT rubric_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT rubric_descriptions_mcp_not_null NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE public.rubric_descriptions_junction (
 
 CREATE TABLE public.rubric_flags_junction (
     rubric_id uuid CONSTRAINT rubric_flags_rubric_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT rubric_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT rubric_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT rubric_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT rubric_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT rubric_flags_mcp_not_null NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE public.rubric_flags_junction (
 
 CREATE TABLE public.rubric_names_junction (
     rubric_id uuid CONSTRAINT rubric_names_rubric_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT rubric_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT rubric_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT rubric_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT rubric_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT rubric_names_mcp_not_null NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE public.rubric_names_junction (
 
 CREATE TABLE public.rubric_points_junction (
     rubric_id uuid CONSTRAINT rubric_points_rubric_id_not_null NOT NULL,
-    point_id uuid CONSTRAINT rubric_points_point_id_not_null NOT NULL,
+    points_id uuid CONSTRAINT rubric_points_point_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT rubric_points_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT rubric_points_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT rubric_points_mcp_not_null NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE public.rubric_rubrics_junction (
 
 CREATE TABLE public.rubric_standard_groups_junction (
     rubric_id uuid CONSTRAINT rubric_standard_groups_rubric_id_not_null NOT NULL,
-    standard_group_id uuid CONSTRAINT rubric_standard_groups_standard_group_id_not_null NOT NULL,
+    standard_groups_id uuid CONSTRAINT rubric_standard_groups_standard_group_id_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT rubric_standard_groups_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT rubric_standard_groups_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT rubric_standard_groups_generated_not_null NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE public.rubric_standard_groups_junction (
 
 CREATE TABLE public.rubric_standards_junction (
     rubric_id uuid CONSTRAINT rubric_standards_rubric_id_not_null NOT NULL,
-    standard_id uuid CONSTRAINT rubric_standards_standard_id_not_null NOT NULL,
+    standards_id uuid CONSTRAINT rubric_standards_standard_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT rubric_standards_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT rubric_standards_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT rubric_standards_mcp_not_null NOT NULL,
@@ -126,7 +126,7 @@ CREATE TABLE public.rubric_standards_junction (
 --
 
 ALTER TABLE ONLY public.rubric_departments_junction
-    ADD CONSTRAINT rubric_departments_pkey PRIMARY KEY (rubric_id, department_id);
+    ADD CONSTRAINT rubric_departments_pkey PRIMARY KEY (rubric_id, departments_id);
 
 
 --
@@ -135,7 +135,7 @@ ALTER TABLE ONLY public.rubric_departments_junction
 --
 
 ALTER TABLE ONLY public.rubric_descriptions_junction
-    ADD CONSTRAINT rubric_descriptions_pkey PRIMARY KEY (rubric_id, description_id);
+    ADD CONSTRAINT rubric_descriptions_pkey PRIMARY KEY (rubric_id, descriptions_id);
 
 
 --
@@ -144,7 +144,7 @@ ALTER TABLE ONLY public.rubric_descriptions_junction
 --
 
 ALTER TABLE ONLY public.rubric_flags_junction
-    ADD CONSTRAINT rubric_flags_pkey PRIMARY KEY (rubric_id, flag_id);
+    ADD CONSTRAINT rubric_flags_pkey PRIMARY KEY (rubric_id, flags_id);
 
 
 --
@@ -153,7 +153,7 @@ ALTER TABLE ONLY public.rubric_flags_junction
 --
 
 ALTER TABLE ONLY public.rubric_names_junction
-    ADD CONSTRAINT rubric_names_pkey PRIMARY KEY (rubric_id, name_id);
+    ADD CONSTRAINT rubric_names_pkey PRIMARY KEY (rubric_id, names_id);
 
 
 --
@@ -162,7 +162,7 @@ ALTER TABLE ONLY public.rubric_names_junction
 --
 
 ALTER TABLE ONLY public.rubric_points_junction
-    ADD CONSTRAINT rubric_points_pkey PRIMARY KEY (rubric_id, point_id);
+    ADD CONSTRAINT rubric_points_pkey PRIMARY KEY (rubric_id, points_id);
 
 
 --
@@ -180,7 +180,7 @@ ALTER TABLE ONLY public.rubric_rubrics_junction
 --
 
 ALTER TABLE ONLY public.rubric_standard_groups_junction
-    ADD CONSTRAINT rubric_standard_groups_pkey PRIMARY KEY (rubric_id, standard_group_id);
+    ADD CONSTRAINT rubric_standard_groups_pkey PRIMARY KEY (rubric_id, standard_groups_id);
 
 
 --
@@ -189,7 +189,7 @@ ALTER TABLE ONLY public.rubric_standard_groups_junction
 --
 
 ALTER TABLE ONLY public.rubric_standards_junction
-    ADD CONSTRAINT rubric_standards_pkey PRIMARY KEY (rubric_id, standard_id);
+    ADD CONSTRAINT rubric_standards_pkey PRIMARY KEY (rubric_id, standards_id);
 
 
 --

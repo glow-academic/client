@@ -38,8 +38,8 @@ CREATE TABLE public.setting_auth_item_values_junction (
 CREATE TABLE public.setting_auths_junction (
     active boolean DEFAULT true CONSTRAINT setting_auths_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT setting_auths_created_at_not_null NOT NULL,
-    auth_id uuid CONSTRAINT setting_auths_auth_id_not_null NOT NULL,
-    settings_id uuid CONSTRAINT setting_auths_settings_id_not_null NOT NULL,
+    auths_id uuid CONSTRAINT setting_auths_auth_id_not_null NOT NULL,
+    setting_id uuid CONSTRAINT setting_auths_settings_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT setting_auths_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT setting_auths_mcp_not_null NOT NULL
 );
@@ -52,7 +52,7 @@ CREATE TABLE public.setting_auths_junction (
 
 CREATE TABLE public.setting_colors_junction (
     setting_id uuid CONSTRAINT setting_colors_setting_id_not_null NOT NULL,
-    color_id uuid CONSTRAINT setting_colors_color_id_not_null NOT NULL,
+    colors_id uuid CONSTRAINT setting_colors_color_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT setting_colors_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT setting_colors_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT setting_colors_mcp_not_null NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE public.setting_colors_junction (
 
 CREATE TABLE public.setting_departments_junction (
     setting_id uuid CONSTRAINT setting_departments_setting_id_not_null NOT NULL,
-    department_id uuid CONSTRAINT setting_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT setting_departments_department_id_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT setting_departments_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT setting_departments_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT setting_departments_generated_not_null NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE public.setting_departments_junction (
 
 CREATE TABLE public.setting_descriptions_junction (
     setting_id uuid CONSTRAINT setting_descriptions_setting_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT setting_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT setting_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT setting_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT setting_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT setting_descriptions_mcp_not_null NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE public.setting_descriptions_junction (
 
 CREATE TABLE public.setting_flags_junction (
     setting_id uuid CONSTRAINT setting_flags_setting_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT setting_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT setting_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT setting_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT setting_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT setting_flags_mcp_not_null NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE public.setting_flags_junction (
 
 CREATE TABLE public.setting_names_junction (
     setting_id uuid CONSTRAINT setting_names_setting_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT setting_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT setting_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT setting_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT setting_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT setting_names_mcp_not_null NOT NULL,
@@ -131,7 +131,7 @@ CREATE TABLE public.setting_profiles_junction (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT setting_profiles_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT setting_profiles_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT setting_profiles_mcp_not_null NOT NULL,
-    profile_id uuid NOT NULL
+    profiles_id uuid CONSTRAINT setting_profiles_junction_profile_id_not_null NOT NULL
 );
 
 
@@ -142,7 +142,7 @@ CREATE TABLE public.setting_profiles_junction (
 
 CREATE TABLE public.setting_provider_keys_junction (
     setting_id uuid NOT NULL,
-    provider_key_id uuid NOT NULL,
+    provider_keys_id uuid CONSTRAINT setting_provider_keys_junction_provider_key_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -187,7 +187,7 @@ CREATE TABLE public.setting_systems_junction (
 
 CREATE TABLE public.setting_thresholds_junction (
     setting_id uuid CONSTRAINT setting_thresholds_setting_id_not_null NOT NULL,
-    threshold_id uuid CONSTRAINT setting_thresholds_threshold_id_not_null NOT NULL,
+    thresholds_id uuid CONSTRAINT setting_thresholds_threshold_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT setting_thresholds_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT setting_thresholds_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT setting_thresholds_mcp_not_null NOT NULL,
@@ -219,7 +219,7 @@ ALTER TABLE ONLY public.setting_auth_item_values_junction
 --
 
 ALTER TABLE ONLY public.setting_auths_junction
-    ADD CONSTRAINT setting_auths_pkey PRIMARY KEY (settings_id, auth_id);
+    ADD CONSTRAINT setting_auths_pkey PRIMARY KEY (setting_id, auths_id);
 
 
 --
@@ -228,7 +228,7 @@ ALTER TABLE ONLY public.setting_auths_junction
 --
 
 ALTER TABLE ONLY public.setting_colors_junction
-    ADD CONSTRAINT setting_colors_pkey PRIMARY KEY (setting_id, color_id);
+    ADD CONSTRAINT setting_colors_pkey PRIMARY KEY (setting_id, colors_id);
 
 
 --
@@ -237,7 +237,7 @@ ALTER TABLE ONLY public.setting_colors_junction
 --
 
 ALTER TABLE ONLY public.setting_departments_junction
-    ADD CONSTRAINT setting_departments_pkey PRIMARY KEY (setting_id, department_id);
+    ADD CONSTRAINT setting_departments_pkey PRIMARY KEY (setting_id, departments_id);
 
 
 --
@@ -246,7 +246,7 @@ ALTER TABLE ONLY public.setting_departments_junction
 --
 
 ALTER TABLE ONLY public.setting_descriptions_junction
-    ADD CONSTRAINT setting_descriptions_pkey PRIMARY KEY (setting_id, description_id);
+    ADD CONSTRAINT setting_descriptions_pkey PRIMARY KEY (setting_id, descriptions_id);
 
 
 --
@@ -255,7 +255,7 @@ ALTER TABLE ONLY public.setting_descriptions_junction
 --
 
 ALTER TABLE ONLY public.setting_flags_junction
-    ADD CONSTRAINT setting_flags_pkey PRIMARY KEY (setting_id, flag_id);
+    ADD CONSTRAINT setting_flags_pkey PRIMARY KEY (setting_id, flags_id);
 
 
 --
@@ -264,7 +264,7 @@ ALTER TABLE ONLY public.setting_flags_junction
 --
 
 ALTER TABLE ONLY public.setting_names_junction
-    ADD CONSTRAINT setting_names_pkey PRIMARY KEY (setting_id, name_id);
+    ADD CONSTRAINT setting_names_pkey PRIMARY KEY (setting_id, names_id);
 
 
 --
@@ -273,7 +273,7 @@ ALTER TABLE ONLY public.setting_names_junction
 --
 
 ALTER TABLE ONLY public.setting_profiles_junction
-    ADD CONSTRAINT setting_profiles_pkey PRIMARY KEY (setting_id, profile_id);
+    ADD CONSTRAINT setting_profiles_pkey PRIMARY KEY (setting_id, profiles_id);
 
 
 --
@@ -282,7 +282,7 @@ ALTER TABLE ONLY public.setting_profiles_junction
 --
 
 ALTER TABLE ONLY public.setting_provider_keys_junction
-    ADD CONSTRAINT setting_provider_keys_junction_pkey PRIMARY KEY (setting_id, provider_key_id);
+    ADD CONSTRAINT setting_provider_keys_junction_pkey PRIMARY KEY (setting_id, provider_keys_id);
 
 
 --
@@ -309,7 +309,7 @@ ALTER TABLE ONLY public.setting_systems_junction
 --
 
 ALTER TABLE ONLY public.setting_thresholds_junction
-    ADD CONSTRAINT setting_thresholds_pkey PRIMARY KEY (setting_id, threshold_id);
+    ADD CONSTRAINT setting_thresholds_pkey PRIMARY KEY (setting_id, thresholds_id);
 
 
 --

@@ -22,7 +22,7 @@ CREATE TABLE public.department_departments_junction (
 
 CREATE TABLE public.department_descriptions_junction (
     department_id uuid CONSTRAINT department_descriptions_department_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT department_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT department_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT department_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT department_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT department_descriptions_mcp_not_null NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE public.department_descriptions_junction (
 
 CREATE TABLE public.department_flags_junction (
     department_id uuid CONSTRAINT department_flags_department_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT department_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT department_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT department_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT department_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT department_flags_mcp_not_null NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE public.department_flags_junction (
 
 CREATE TABLE public.department_names_junction (
     department_id uuid CONSTRAINT department_names_department_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT department_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT department_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT department_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT department_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT department_names_mcp_not_null NOT NULL,
@@ -90,7 +90,7 @@ ALTER TABLE ONLY public.department_departments_junction
 --
 
 ALTER TABLE ONLY public.department_descriptions_junction
-    ADD CONSTRAINT department_descriptions_pkey PRIMARY KEY (department_id, description_id);
+    ADD CONSTRAINT department_descriptions_pkey PRIMARY KEY (department_id, descriptions_id);
 
 
 --
@@ -99,7 +99,7 @@ ALTER TABLE ONLY public.department_descriptions_junction
 --
 
 ALTER TABLE ONLY public.department_flags_junction
-    ADD CONSTRAINT department_flags_pkey PRIMARY KEY (department_id, flag_id);
+    ADD CONSTRAINT department_flags_pkey PRIMARY KEY (department_id, flags_id);
 
 
 --
@@ -108,7 +108,7 @@ ALTER TABLE ONLY public.department_flags_junction
 --
 
 ALTER TABLE ONLY public.department_names_junction
-    ADD CONSTRAINT department_names_pkey PRIMARY KEY (department_id, name_id);
+    ADD CONSTRAINT department_names_pkey PRIMARY KEY (department_id, names_id);
 
 
 --

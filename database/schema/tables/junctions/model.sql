@@ -8,7 +8,7 @@
 CREATE TABLE public.model_departments_junction (
     active boolean DEFAULT true CONSTRAINT model_departments_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT model_departments_created_at_not_null NOT NULL,
-    department_id uuid CONSTRAINT model_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT model_departments_department_id_not_null NOT NULL,
     model_id uuid CONSTRAINT model_departments_model_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT model_departments_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT model_departments_mcp_not_null NOT NULL
@@ -22,7 +22,7 @@ CREATE TABLE public.model_departments_junction (
 
 CREATE TABLE public.model_descriptions_junction (
     model_id uuid CONSTRAINT model_descriptions_model_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT model_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT model_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT model_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT model_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT model_descriptions_mcp_not_null NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE public.model_descriptions_junction (
 
 CREATE TABLE public.model_flags_junction (
     model_id uuid CONSTRAINT model_flags_model_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT model_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT model_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT model_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT model_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT model_flags_mcp_not_null NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE public.model_modalities_junction (
     model_id uuid CONSTRAINT model_modalities_model_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT model_modalities_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT model_modalities_mcp_not_null NOT NULL,
-    modality_id uuid CONSTRAINT model_modalities_modality_id_not_null NOT NULL
+    modalities_id uuid CONSTRAINT model_modalities_modality_id_not_null NOT NULL
 );
 
 
@@ -82,7 +82,7 @@ CREATE TABLE public.model_models_junction (
 
 CREATE TABLE public.model_names_junction (
     model_id uuid CONSTRAINT model_names_model_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT model_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT model_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT model_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT model_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT model_names_mcp_not_null NOT NULL,
@@ -131,7 +131,7 @@ CREATE TABLE public.model_qualities_junction (
     model_id uuid CONSTRAINT model_qualities_model_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT model_qualities_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT model_qualities_mcp_not_null NOT NULL,
-    quality_id uuid CONSTRAINT model_qualities_quality_id_not_null NOT NULL
+    qualities_id uuid CONSTRAINT model_qualities_quality_id_not_null NOT NULL
 );
 
 
@@ -142,7 +142,7 @@ CREATE TABLE public.model_qualities_junction (
 
 CREATE TABLE public.model_reasoning_levels_junction (
     model_id uuid CONSTRAINT model_reasoning_levels_model_id_not_null NOT NULL,
-    reasoning_level_id uuid CONSTRAINT model_reasoning_levels_reasoning_level_id_not_null NOT NULL,
+    reasoning_levels_id uuid CONSTRAINT model_reasoning_levels_reasoning_level_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT model_reasoning_levels_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT model_reasoning_levels_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT model_reasoning_levels_mcp_not_null NOT NULL,
@@ -157,7 +157,7 @@ CREATE TABLE public.model_reasoning_levels_junction (
 
 CREATE TABLE public.model_temperature_levels_junction (
     model_id uuid CONSTRAINT model_temperature_levels_model_id_not_null NOT NULL,
-    temperature_level_id uuid CONSTRAINT model_temperature_levels_temperature_level_id_not_null NOT NULL,
+    temperature_levels_id uuid CONSTRAINT model_temperature_levels_temperature_level_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT model_temperature_levels_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT model_temperature_levels_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT model_temperature_levels_mcp_not_null NOT NULL,
@@ -172,7 +172,7 @@ CREATE TABLE public.model_temperature_levels_junction (
 
 CREATE TABLE public.model_values_junction (
     model_id uuid CONSTRAINT model_values_model_id_not_null NOT NULL,
-    value_id uuid CONSTRAINT model_values_value_id_not_null NOT NULL,
+    values_id uuid CONSTRAINT model_values_value_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT model_values_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT model_values_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT model_values_mcp_not_null NOT NULL,
@@ -187,7 +187,7 @@ CREATE TABLE public.model_values_junction (
 
 CREATE TABLE public.model_voices_junction (
     model_id uuid CONSTRAINT model_voices_model_id_not_null NOT NULL,
-    voice_id uuid CONSTRAINT model_voices_voice_id_not_null NOT NULL,
+    voices_id uuid CONSTRAINT model_voices_voice_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT model_voices_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT model_voices_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT model_voices_mcp_not_null NOT NULL,
@@ -201,7 +201,7 @@ CREATE TABLE public.model_voices_junction (
 --
 
 ALTER TABLE ONLY public.model_departments_junction
-    ADD CONSTRAINT model_departments_pkey PRIMARY KEY (model_id, department_id);
+    ADD CONSTRAINT model_departments_pkey PRIMARY KEY (model_id, departments_id);
 
 
 --
@@ -210,7 +210,7 @@ ALTER TABLE ONLY public.model_departments_junction
 --
 
 ALTER TABLE ONLY public.model_descriptions_junction
-    ADD CONSTRAINT model_descriptions_pkey PRIMARY KEY (model_id, description_id);
+    ADD CONSTRAINT model_descriptions_pkey PRIMARY KEY (model_id, descriptions_id);
 
 
 --
@@ -219,7 +219,7 @@ ALTER TABLE ONLY public.model_descriptions_junction
 --
 
 ALTER TABLE ONLY public.model_flags_junction
-    ADD CONSTRAINT model_flags_pkey PRIMARY KEY (model_id, flag_id);
+    ADD CONSTRAINT model_flags_pkey PRIMARY KEY (model_id, flags_id);
 
 
 --
@@ -228,7 +228,7 @@ ALTER TABLE ONLY public.model_flags_junction
 --
 
 ALTER TABLE ONLY public.model_modalities_junction
-    ADD CONSTRAINT model_modalities_pkey PRIMARY KEY (model_id, modality_id);
+    ADD CONSTRAINT model_modalities_pkey PRIMARY KEY (model_id, modalities_id);
 
 
 --
@@ -246,7 +246,7 @@ ALTER TABLE ONLY public.model_models_junction
 --
 
 ALTER TABLE ONLY public.model_names_junction
-    ADD CONSTRAINT model_names_pkey PRIMARY KEY (model_id, name_id);
+    ADD CONSTRAINT model_names_pkey PRIMARY KEY (model_id, names_id);
 
 
 --
@@ -273,7 +273,7 @@ ALTER TABLE ONLY public.model_providers_junction
 --
 
 ALTER TABLE ONLY public.model_qualities_junction
-    ADD CONSTRAINT model_qualities_pkey PRIMARY KEY (model_id, quality_id);
+    ADD CONSTRAINT model_qualities_pkey PRIMARY KEY (model_id, qualities_id);
 
 
 --
@@ -282,7 +282,7 @@ ALTER TABLE ONLY public.model_qualities_junction
 --
 
 ALTER TABLE ONLY public.model_reasoning_levels_junction
-    ADD CONSTRAINT model_reasoning_levels_pkey PRIMARY KEY (model_id, reasoning_level_id);
+    ADD CONSTRAINT model_reasoning_levels_pkey PRIMARY KEY (model_id, reasoning_levels_id);
 
 
 --
@@ -291,7 +291,7 @@ ALTER TABLE ONLY public.model_reasoning_levels_junction
 --
 
 ALTER TABLE ONLY public.model_temperature_levels_junction
-    ADD CONSTRAINT model_temperature_levels_pkey PRIMARY KEY (model_id, temperature_level_id);
+    ADD CONSTRAINT model_temperature_levels_pkey PRIMARY KEY (model_id, temperature_levels_id);
 
 
 --
@@ -300,7 +300,7 @@ ALTER TABLE ONLY public.model_temperature_levels_junction
 --
 
 ALTER TABLE ONLY public.model_values_junction
-    ADD CONSTRAINT model_values_pkey PRIMARY KEY (model_id, value_id);
+    ADD CONSTRAINT model_values_pkey PRIMARY KEY (model_id, values_id);
 
 
 --
@@ -309,7 +309,7 @@ ALTER TABLE ONLY public.model_values_junction
 --
 
 ALTER TABLE ONLY public.model_voices_junction
-    ADD CONSTRAINT model_voices_pkey PRIMARY KEY (model_id, voice_id);
+    ADD CONSTRAINT model_voices_pkey PRIMARY KEY (model_id, voices_id);
 
 
 --

@@ -24,7 +24,7 @@ CREATE TABLE public.agent_departments_junction (
     active boolean DEFAULT true CONSTRAINT agent_departments_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT agent_departments_created_at_not_null NOT NULL,
     agent_id uuid CONSTRAINT agent_departments_agent_id_not_null NOT NULL,
-    department_id uuid CONSTRAINT agent_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT agent_departments_department_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT agent_departments_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT agent_departments_mcp_not_null NOT NULL
 );
@@ -37,7 +37,7 @@ CREATE TABLE public.agent_departments_junction (
 
 CREATE TABLE public.agent_descriptions_junction (
     agent_id uuid CONSTRAINT agent_descriptions_agent_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT agent_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT agent_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT agent_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT agent_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT agent_descriptions_mcp_not_null NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE public.agent_descriptions_junction (
 
 CREATE TABLE public.agent_flags_junction (
     agent_id uuid CONSTRAINT agent_flags_agent_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT agent_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT agent_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT agent_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT agent_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT agent_flags_mcp_not_null NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE public.agent_flags_junction (
 
 CREATE TABLE public.agent_models_junction (
     agent_id uuid NOT NULL,
-    model_id uuid NOT NULL,
+    models_id uuid CONSTRAINT agent_models_junction_model_id_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE public.agent_models_junction (
 
 CREATE TABLE public.agent_names_junction (
     agent_id uuid CONSTRAINT agent_names_agent_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT agent_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT agent_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT agent_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT agent_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT agent_names_mcp_not_null NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE public.agent_names_junction (
 
 CREATE TABLE public.agent_reasoning_levels_junction (
     agent_id uuid NOT NULL,
-    reasoning_level_id uuid NOT NULL,
+    reasoning_levels_id uuid CONSTRAINT agent_reasoning_levels_junction_reasoning_level_id_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE public.agent_reasoning_levels_junction (
 
 CREATE TABLE public.agent_temperature_levels_junction (
     agent_id uuid NOT NULL,
-    temperature_level_id uuid NOT NULL,
+    temperature_levels_id uuid CONSTRAINT agent_temperature_levels_junction_temperature_level_id_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -127,7 +127,7 @@ CREATE TABLE public.agent_temperature_levels_junction (
 
 CREATE TABLE public.agent_tools_junction (
     agent_id uuid CONSTRAINT agent_tools_agent_id_not_null NOT NULL,
-    tool_id uuid CONSTRAINT agent_tools_tool_id_not_null NOT NULL,
+    tools_id uuid CONSTRAINT agent_tools_tool_id_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT agent_tools_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT agent_tools_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT agent_tools_generated_not_null NOT NULL,
@@ -142,7 +142,7 @@ CREATE TABLE public.agent_tools_junction (
 
 CREATE TABLE public.agent_voices_junction (
     agent_id uuid NOT NULL,
-    voice_id uuid NOT NULL,
+    voices_id uuid CONSTRAINT agent_voices_junction_voice_id_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -165,7 +165,7 @@ ALTER TABLE ONLY public.agent_agents_junction
 --
 
 ALTER TABLE ONLY public.agent_departments_junction
-    ADD CONSTRAINT agent_departments_pkey PRIMARY KEY (agent_id, department_id);
+    ADD CONSTRAINT agent_departments_pkey PRIMARY KEY (agent_id, departments_id);
 
 
 --
@@ -174,7 +174,7 @@ ALTER TABLE ONLY public.agent_departments_junction
 --
 
 ALTER TABLE ONLY public.agent_descriptions_junction
-    ADD CONSTRAINT agent_descriptions_pkey PRIMARY KEY (agent_id, description_id);
+    ADD CONSTRAINT agent_descriptions_pkey PRIMARY KEY (agent_id, descriptions_id);
 
 
 --
@@ -183,7 +183,7 @@ ALTER TABLE ONLY public.agent_descriptions_junction
 --
 
 ALTER TABLE ONLY public.agent_flags_junction
-    ADD CONSTRAINT agent_flags_pkey PRIMARY KEY (agent_id, flag_id);
+    ADD CONSTRAINT agent_flags_pkey PRIMARY KEY (agent_id, flags_id);
 
 
 --
@@ -192,7 +192,7 @@ ALTER TABLE ONLY public.agent_flags_junction
 --
 
 ALTER TABLE ONLY public.agent_models_junction
-    ADD CONSTRAINT agent_models_junction_pkey PRIMARY KEY (agent_id, model_id);
+    ADD CONSTRAINT agent_models_junction_pkey PRIMARY KEY (agent_id, models_id);
 
 
 --
@@ -201,7 +201,7 @@ ALTER TABLE ONLY public.agent_models_junction
 --
 
 ALTER TABLE ONLY public.agent_names_junction
-    ADD CONSTRAINT agent_names_pkey PRIMARY KEY (agent_id, name_id);
+    ADD CONSTRAINT agent_names_pkey PRIMARY KEY (agent_id, names_id);
 
 
 --
@@ -210,7 +210,7 @@ ALTER TABLE ONLY public.agent_names_junction
 --
 
 ALTER TABLE ONLY public.agent_reasoning_levels_junction
-    ADD CONSTRAINT agent_reasoning_levels_junction_pkey PRIMARY KEY (agent_id, reasoning_level_id);
+    ADD CONSTRAINT agent_reasoning_levels_junction_pkey PRIMARY KEY (agent_id, reasoning_levels_id);
 
 
 --
@@ -219,7 +219,7 @@ ALTER TABLE ONLY public.agent_reasoning_levels_junction
 --
 
 ALTER TABLE ONLY public.agent_temperature_levels_junction
-    ADD CONSTRAINT agent_temperature_levels_junction_pkey PRIMARY KEY (agent_id, temperature_level_id);
+    ADD CONSTRAINT agent_temperature_levels_junction_pkey PRIMARY KEY (agent_id, temperature_levels_id);
 
 
 --
@@ -228,7 +228,7 @@ ALTER TABLE ONLY public.agent_temperature_levels_junction
 --
 
 ALTER TABLE ONLY public.agent_tools_junction
-    ADD CONSTRAINT agent_tools_pkey PRIMARY KEY (agent_id, tool_id);
+    ADD CONSTRAINT agent_tools_pkey PRIMARY KEY (agent_id, tools_id);
 
 
 --
@@ -237,7 +237,7 @@ ALTER TABLE ONLY public.agent_tools_junction
 --
 
 ALTER TABLE ONLY public.agent_voices_junction
-    ADD CONSTRAINT agent_voices_junction_pkey PRIMARY KEY (agent_id, voice_id);
+    ADD CONSTRAINT agent_voices_junction_pkey PRIMARY KEY (agent_id, voices_id);
 
 
 --

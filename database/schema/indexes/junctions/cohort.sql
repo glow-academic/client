@@ -29,7 +29,7 @@ CREATE INDEX cohort_departments_cohort_id_v7_idx ON public.cohort_departments_ju
 -- Name: cohort_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX cohort_departments_department_id_v7_idx ON public.cohort_departments_junction USING btree (department_id);
+CREATE INDEX cohort_departments_department_id_v7_idx ON public.cohort_departments_junction USING btree (departments_id);
 
 
 --
@@ -45,7 +45,7 @@ CREATE INDEX cohort_descriptions_cohort_id_idx ON public.cohort_descriptions_jun
 -- Name: cohort_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX cohort_descriptions_description_id_idx ON public.cohort_descriptions_junction USING btree (description_id);
+CREATE INDEX cohort_descriptions_description_id_idx ON public.cohort_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -61,7 +61,7 @@ CREATE INDEX cohort_flags_cohort_id_idx ON public.cohort_flags_junction USING bt
 -- Name: cohort_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX cohort_flags_flag_id_idx ON public.cohort_flags_junction USING btree (flag_id);
+CREATE INDEX cohort_flags_flag_id_idx ON public.cohort_flags_junction USING btree (flags_id);
 
 
 --
@@ -77,7 +77,7 @@ CREATE INDEX cohort_names_cohort_id_idx ON public.cohort_names_junction USING bt
 -- Name: cohort_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX cohort_names_name_id_idx ON public.cohort_names_junction USING btree (name_id);
+CREATE INDEX cohort_names_name_id_idx ON public.cohort_names_junction USING btree (names_id);
 
 
 --
@@ -93,7 +93,7 @@ CREATE INDEX cohort_profile_personas_junction_cohort_id_idx ON public.cohort_pro
 -- Name: cohort_profile_personas_junction_profile_persona_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX cohort_profile_personas_junction_profile_persona_id_idx ON public.cohort_profile_personas_junction USING btree (profile_persona_id);
+CREATE INDEX cohort_profile_personas_junction_profile_persona_id_idx ON public.cohort_profile_personas_junction USING btree (profile_personas_id);
 
 
 --
@@ -141,7 +141,7 @@ CREATE INDEX cohort_simulation_positions_cohort_id_idx ON public.cohort_simulati
 -- Name: cohort_simulation_positions_simulation_position_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX cohort_simulation_positions_simulation_position_id_idx ON public.cohort_simulation_positions_junction USING btree (simulation_position_id);
+CREATE INDEX cohort_simulation_positions_simulation_position_id_idx ON public.cohort_simulation_positions_junction USING btree (simulation_positions_id);
 
 
 --
@@ -157,7 +157,7 @@ CREATE INDEX cohort_simulations_cohort_id_v7_idx ON public.cohort_simulations_ju
 -- Name: cohort_simulations_junction_simulation_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX cohort_simulations_junction_simulation_id_idx ON public.cohort_simulations_junction USING btree (simulation_id);
+CREATE INDEX cohort_simulations_junction_simulation_id_idx ON public.cohort_simulations_junction USING btree (simulations_id);
 
 
 --
@@ -165,7 +165,7 @@ CREATE INDEX cohort_simulations_junction_simulation_id_idx ON public.cohort_simu
 -- Name: cohort_simulations_simulation_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX cohort_simulations_simulation_id_v7_idx ON public.cohort_simulations_junction USING btree (simulation_id);
+CREATE INDEX cohort_simulations_simulation_id_v7_idx ON public.cohort_simulations_junction USING btree (simulations_id);
 
 
 --

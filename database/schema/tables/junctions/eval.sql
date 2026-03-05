@@ -8,7 +8,7 @@
 CREATE TABLE public.eval_departments_junction (
     active boolean DEFAULT true CONSTRAINT eval_departments_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT eval_departments_created_at_not_null NOT NULL,
-    department_id uuid CONSTRAINT eval_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT eval_departments_department_id_not_null NOT NULL,
     eval_id uuid CONSTRAINT eval_departments_eval_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT eval_departments_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT eval_departments_mcp_not_null NOT NULL
@@ -22,7 +22,7 @@ CREATE TABLE public.eval_departments_junction (
 
 CREATE TABLE public.eval_descriptions_junction (
     eval_id uuid CONSTRAINT eval_descriptions_eval_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT eval_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT eval_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT eval_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT eval_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT eval_descriptions_mcp_not_null NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE public.eval_evals_junction (
 
 CREATE TABLE public.eval_flags_junction (
     eval_id uuid CONSTRAINT eval_flags_eval_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT eval_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT eval_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT eval_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT eval_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT eval_flags_mcp_not_null NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE public.eval_flags_junction (
 
 CREATE TABLE public.eval_model_flags_junction (
     eval_id uuid NOT NULL,
-    model_flag_id uuid NOT NULL,
+    model_flags_id uuid CONSTRAINT eval_model_flags_junction_model_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE public.eval_model_flags_junction (
 
 CREATE TABLE public.eval_model_positions_junction (
     eval_id uuid NOT NULL,
-    model_position_id uuid NOT NULL,
+    model_positions_id uuid CONSTRAINT eval_model_positions_junction_model_position_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
@@ -97,7 +97,7 @@ CREATE TABLE public.eval_model_positions_junction (
 
 CREATE TABLE public.eval_model_rubrics_junction (
     eval_id uuid NOT NULL,
-    model_rubric_id uuid NOT NULL,
+    model_rubrics_id uuid CONSTRAINT eval_model_rubrics_junction_model_rubric_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE public.eval_model_rubrics_junction (
 
 CREATE TABLE public.eval_models_junction (
     eval_id uuid NOT NULL,
-    model_id uuid NOT NULL,
+    models_id uuid CONSTRAINT eval_models_junction_model_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -127,7 +127,7 @@ CREATE TABLE public.eval_models_junction (
 
 CREATE TABLE public.eval_names_junction (
     eval_id uuid CONSTRAINT eval_names_eval_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT eval_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT eval_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT eval_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT eval_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT eval_names_mcp_not_null NOT NULL,
@@ -142,7 +142,7 @@ CREATE TABLE public.eval_names_junction (
 
 CREATE TABLE public.eval_rubrics_junction (
     eval_id uuid NOT NULL,
-    rubric_id uuid NOT NULL,
+    rubrics_id uuid CONSTRAINT eval_rubrics_junction_rubric_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -156,7 +156,7 @@ CREATE TABLE public.eval_rubrics_junction (
 --
 
 ALTER TABLE ONLY public.eval_departments_junction
-    ADD CONSTRAINT eval_departments_pkey PRIMARY KEY (eval_id, department_id);
+    ADD CONSTRAINT eval_departments_pkey PRIMARY KEY (eval_id, departments_id);
 
 
 --
@@ -165,7 +165,7 @@ ALTER TABLE ONLY public.eval_departments_junction
 --
 
 ALTER TABLE ONLY public.eval_descriptions_junction
-    ADD CONSTRAINT eval_descriptions_pkey PRIMARY KEY (eval_id, description_id);
+    ADD CONSTRAINT eval_descriptions_pkey PRIMARY KEY (eval_id, descriptions_id);
 
 
 --
@@ -183,7 +183,7 @@ ALTER TABLE ONLY public.eval_evals_junction
 --
 
 ALTER TABLE ONLY public.eval_flags_junction
-    ADD CONSTRAINT eval_flags_pkey PRIMARY KEY (eval_id, flag_id);
+    ADD CONSTRAINT eval_flags_pkey PRIMARY KEY (eval_id, flags_id);
 
 
 --
@@ -192,7 +192,7 @@ ALTER TABLE ONLY public.eval_flags_junction
 --
 
 ALTER TABLE ONLY public.eval_model_flags_junction
-    ADD CONSTRAINT eval_model_flags_junction_pkey PRIMARY KEY (eval_id, model_flag_id);
+    ADD CONSTRAINT eval_model_flags_junction_pkey PRIMARY KEY (eval_id, model_flags_id);
 
 
 --
@@ -201,7 +201,7 @@ ALTER TABLE ONLY public.eval_model_flags_junction
 --
 
 ALTER TABLE ONLY public.eval_model_positions_junction
-    ADD CONSTRAINT eval_model_positions_junction_pkey PRIMARY KEY (eval_id, model_position_id);
+    ADD CONSTRAINT eval_model_positions_junction_pkey PRIMARY KEY (eval_id, model_positions_id);
 
 
 --
@@ -210,7 +210,7 @@ ALTER TABLE ONLY public.eval_model_positions_junction
 --
 
 ALTER TABLE ONLY public.eval_model_rubrics_junction
-    ADD CONSTRAINT eval_model_rubrics_junction_pkey PRIMARY KEY (eval_id, model_rubric_id);
+    ADD CONSTRAINT eval_model_rubrics_junction_pkey PRIMARY KEY (eval_id, model_rubrics_id);
 
 
 --
@@ -219,7 +219,7 @@ ALTER TABLE ONLY public.eval_model_rubrics_junction
 --
 
 ALTER TABLE ONLY public.eval_models_junction
-    ADD CONSTRAINT eval_models_junction_pkey PRIMARY KEY (eval_id, model_id);
+    ADD CONSTRAINT eval_models_junction_pkey PRIMARY KEY (eval_id, models_id);
 
 
 --
@@ -228,7 +228,7 @@ ALTER TABLE ONLY public.eval_models_junction
 --
 
 ALTER TABLE ONLY public.eval_names_junction
-    ADD CONSTRAINT eval_names_pkey PRIMARY KEY (eval_id, name_id);
+    ADD CONSTRAINT eval_names_pkey PRIMARY KEY (eval_id, names_id);
 
 
 --
@@ -237,7 +237,7 @@ ALTER TABLE ONLY public.eval_names_junction
 --
 
 ALTER TABLE ONLY public.eval_rubrics_junction
-    ADD CONSTRAINT eval_rubrics_junction_pkey PRIMARY KEY (eval_id, rubric_id);
+    ADD CONSTRAINT eval_rubrics_junction_pkey PRIMARY KEY (eval_id, rubrics_id);
 
 
 --

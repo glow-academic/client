@@ -5,7 +5,7 @@
 -- Name: field_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX field_departments_department_id_v7_idx ON public.field_departments_junction USING btree (department_id);
+CREATE INDEX field_departments_department_id_v7_idx ON public.field_departments_junction USING btree (departments_id);
 
 
 --
@@ -21,7 +21,7 @@ CREATE INDEX field_departments_field_id_v7_idx ON public.field_departments_junct
 -- Name: field_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX field_descriptions_description_id_idx ON public.field_descriptions_junction USING btree (description_id);
+CREATE INDEX field_descriptions_description_id_idx ON public.field_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -61,7 +61,7 @@ CREATE INDEX field_flags_field_id_idx ON public.field_flags_junction USING btree
 -- Name: field_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX field_flags_flag_id_idx ON public.field_flags_junction USING btree (flag_id);
+CREATE INDEX field_flags_flag_id_idx ON public.field_flags_junction USING btree (flags_id);
 
 
 --
@@ -77,7 +77,7 @@ CREATE INDEX field_names_field_id_idx ON public.field_names_junction USING btree
 -- Name: field_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX field_names_name_id_idx ON public.field_names_junction USING btree (name_id);
+CREATE INDEX field_names_name_id_idx ON public.field_names_junction USING btree (names_id);
 
 
 --
@@ -85,7 +85,7 @@ CREATE INDEX field_names_name_id_idx ON public.field_names_junction USING btree 
 -- Name: idx_field_conditional_parameters_conditional_parameter_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_field_conditional_parameters_conditional_parameter_id ON public.field_conditional_parameters_junction USING btree (conditional_parameter_id);
+CREATE INDEX idx_field_conditional_parameters_conditional_parameter_id ON public.field_conditional_parameters_junction USING btree (conditional_parameters_id);
 
 
 --

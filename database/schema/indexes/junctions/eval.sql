@@ -5,7 +5,7 @@
 -- Name: eval_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX eval_departments_department_id_v7_idx ON public.eval_departments_junction USING btree (department_id);
+CREATE INDEX eval_departments_department_id_v7_idx ON public.eval_departments_junction USING btree (departments_id);
 
 
 --
@@ -21,7 +21,7 @@ CREATE INDEX eval_departments_eval_id_v7_idx ON public.eval_departments_junction
 -- Name: eval_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX eval_descriptions_description_id_idx ON public.eval_descriptions_junction USING btree (description_id);
+CREATE INDEX eval_descriptions_description_id_idx ON public.eval_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -61,7 +61,7 @@ CREATE INDEX eval_flags_eval_id_idx ON public.eval_flags_junction USING btree (e
 -- Name: eval_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX eval_flags_flag_id_idx ON public.eval_flags_junction USING btree (flag_id);
+CREATE INDEX eval_flags_flag_id_idx ON public.eval_flags_junction USING btree (flags_id);
 
 
 --
@@ -77,7 +77,7 @@ CREATE INDEX eval_names_eval_id_idx ON public.eval_names_junction USING btree (e
 -- Name: eval_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX eval_names_name_id_idx ON public.eval_names_junction USING btree (name_id);
+CREATE INDEX eval_names_name_id_idx ON public.eval_names_junction USING btree (names_id);
 
 
 --
@@ -141,7 +141,7 @@ CREATE INDEX idx_eval_models_eval_id ON public.eval_models_junction USING btree 
 -- Name: idx_eval_models_model_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_eval_models_model_id ON public.eval_models_junction USING btree (model_id);
+CREATE INDEX idx_eval_models_model_id ON public.eval_models_junction USING btree (models_id);
 
 
 --
@@ -173,7 +173,7 @@ CREATE INDEX idx_eval_rubrics_eval_id ON public.eval_rubrics_junction USING btre
 -- Name: idx_eval_rubrics_rubric_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_eval_rubrics_rubric_id ON public.eval_rubrics_junction USING btree (rubric_id);
+CREATE INDEX idx_eval_rubrics_rubric_id ON public.eval_rubrics_junction USING btree (rubrics_id);
 
 
 --

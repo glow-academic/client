@@ -5,7 +5,7 @@
 -- Name: document_departments_department_id_v7_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX document_departments_department_id_v7_idx ON public.document_departments_junction USING btree (department_id);
+CREATE INDEX document_departments_department_id_v7_idx ON public.document_departments_junction USING btree (departments_id);
 
 
 --
@@ -21,7 +21,7 @@ CREATE INDEX document_departments_document_id_v7_idx ON public.document_departme
 -- Name: document_descriptions_description_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX document_descriptions_description_id_idx ON public.document_descriptions_junction USING btree (description_id);
+CREATE INDEX document_descriptions_description_id_idx ON public.document_descriptions_junction USING btree (descriptions_id);
 
 
 --
@@ -61,7 +61,7 @@ CREATE INDEX document_flags_document_id_idx ON public.document_flags_junction US
 -- Name: document_flags_flag_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX document_flags_flag_id_idx ON public.document_flags_junction USING btree (flag_id);
+CREATE INDEX document_flags_flag_id_idx ON public.document_flags_junction USING btree (flags_id);
 
 
 --
@@ -77,7 +77,7 @@ CREATE INDEX document_names_document_id_idx ON public.document_names_junction US
 -- Name: document_names_name_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX document_names_name_id_idx ON public.document_names_junction USING btree (name_id);
+CREATE INDEX document_names_name_id_idx ON public.document_names_junction USING btree (names_id);
 
 
 --
@@ -189,7 +189,7 @@ CREATE INDEX idx_document_parameter_fields_document_id ON public.document_parame
 -- Name: idx_document_parameter_fields_parameter_field_id; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_document_parameter_fields_parameter_field_id ON public.document_parameter_fields_junction USING btree (parameter_field_id);
+CREATE INDEX idx_document_parameter_fields_parameter_field_id ON public.document_parameter_fields_junction USING btree (parameter_fields_id);
 
 
 --

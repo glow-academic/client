@@ -24,7 +24,7 @@ CREATE TABLE public.cohort_departments_junction (
     active boolean DEFAULT true CONSTRAINT cohort_departments_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT cohort_departments_created_at_not_null NOT NULL,
     cohort_id uuid CONSTRAINT cohort_departments_cohort_id_not_null NOT NULL,
-    department_id uuid CONSTRAINT cohort_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT cohort_departments_department_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT cohort_departments_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT cohort_departments_mcp_not_null NOT NULL
 );
@@ -37,7 +37,7 @@ CREATE TABLE public.cohort_departments_junction (
 
 CREATE TABLE public.cohort_descriptions_junction (
     cohort_id uuid CONSTRAINT cohort_descriptions_cohort_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT cohort_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT cohort_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT cohort_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT cohort_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT cohort_descriptions_mcp_not_null NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE public.cohort_descriptions_junction (
 
 CREATE TABLE public.cohort_flags_junction (
     cohort_id uuid CONSTRAINT cohort_flags_cohort_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT cohort_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT cohort_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT cohort_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT cohort_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT cohort_flags_mcp_not_null NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE public.cohort_flags_junction (
 
 CREATE TABLE public.cohort_names_junction (
     cohort_id uuid CONSTRAINT cohort_names_cohort_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT cohort_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT cohort_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT cohort_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT cohort_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT cohort_names_mcp_not_null NOT NULL,
@@ -82,7 +82,7 @@ CREATE TABLE public.cohort_names_junction (
 
 CREATE TABLE public.cohort_profile_personas_junction (
     cohort_id uuid NOT NULL,
-    profile_persona_id uuid NOT NULL,
+    profile_personas_id uuid CONSTRAINT cohort_profile_personas_junction_profile_persona_id_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -127,7 +127,7 @@ CREATE TABLE public.cohort_simulation_availability_junction (
 
 CREATE TABLE public.cohort_simulation_positions_junction (
     cohort_id uuid CONSTRAINT cohort_simulation_positions_cohort_id_not_null NOT NULL,
-    simulation_position_id uuid CONSTRAINT cohort_simulation_positions_simulation_position_id_not_null NOT NULL,
+    simulation_positions_id uuid CONSTRAINT cohort_simulation_positions_simulation_position_id_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT cohort_simulation_positions_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT cohort_simulation_positions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT cohort_simulation_positions_generated_not_null NOT NULL,
@@ -144,7 +144,7 @@ CREATE TABLE public.cohort_simulations_junction (
     active boolean DEFAULT true CONSTRAINT cohort_simulations_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT cohort_simulations_created_at_not_null NOT NULL,
     cohort_id uuid CONSTRAINT cohort_simulations_cohort_id_not_null NOT NULL,
-    simulation_id uuid CONSTRAINT cohort_simulations_simulation_id_not_null NOT NULL,
+    simulations_id uuid CONSTRAINT cohort_simulations_simulation_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT cohort_simulations_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT cohort_simulations_mcp_not_null NOT NULL
 );
@@ -165,7 +165,7 @@ ALTER TABLE ONLY public.cohort_cohorts_junction
 --
 
 ALTER TABLE ONLY public.cohort_departments_junction
-    ADD CONSTRAINT cohort_departments_pkey PRIMARY KEY (cohort_id, department_id);
+    ADD CONSTRAINT cohort_departments_pkey PRIMARY KEY (cohort_id, departments_id);
 
 
 --
@@ -174,7 +174,7 @@ ALTER TABLE ONLY public.cohort_departments_junction
 --
 
 ALTER TABLE ONLY public.cohort_descriptions_junction
-    ADD CONSTRAINT cohort_descriptions_pkey PRIMARY KEY (cohort_id, description_id);
+    ADD CONSTRAINT cohort_descriptions_pkey PRIMARY KEY (cohort_id, descriptions_id);
 
 
 --
@@ -183,7 +183,7 @@ ALTER TABLE ONLY public.cohort_descriptions_junction
 --
 
 ALTER TABLE ONLY public.cohort_flags_junction
-    ADD CONSTRAINT cohort_flags_pkey PRIMARY KEY (cohort_id, flag_id);
+    ADD CONSTRAINT cohort_flags_pkey PRIMARY KEY (cohort_id, flags_id);
 
 
 --
@@ -192,7 +192,7 @@ ALTER TABLE ONLY public.cohort_flags_junction
 --
 
 ALTER TABLE ONLY public.cohort_names_junction
-    ADD CONSTRAINT cohort_names_pkey PRIMARY KEY (cohort_id, name_id);
+    ADD CONSTRAINT cohort_names_pkey PRIMARY KEY (cohort_id, names_id);
 
 
 --
@@ -201,7 +201,7 @@ ALTER TABLE ONLY public.cohort_names_junction
 --
 
 ALTER TABLE ONLY public.cohort_profile_personas_junction
-    ADD CONSTRAINT cohort_profile_personas_junction_pkey PRIMARY KEY (cohort_id, profile_persona_id);
+    ADD CONSTRAINT cohort_profile_personas_junction_pkey PRIMARY KEY (cohort_id, profile_personas_id);
 
 
 --
@@ -228,7 +228,7 @@ ALTER TABLE ONLY public.cohort_simulation_availability_junction
 --
 
 ALTER TABLE ONLY public.cohort_simulation_positions_junction
-    ADD CONSTRAINT cohort_simulation_positions_pkey PRIMARY KEY (cohort_id, simulation_position_id);
+    ADD CONSTRAINT cohort_simulation_positions_pkey PRIMARY KEY (cohort_id, simulation_positions_id);
 
 
 --
@@ -237,7 +237,7 @@ ALTER TABLE ONLY public.cohort_simulation_positions_junction
 --
 
 ALTER TABLE ONLY public.cohort_simulations_junction
-    ADD CONSTRAINT cohort_simulations_pkey PRIMARY KEY (cohort_id, simulation_id);
+    ADD CONSTRAINT cohort_simulations_pkey PRIMARY KEY (cohort_id, simulations_id);
 
 
 --

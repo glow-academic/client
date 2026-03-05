@@ -8,7 +8,7 @@
 CREATE TABLE public.document_departments_junction (
     active boolean DEFAULT true CONSTRAINT document_departments_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT document_departments_created_at_not_null NOT NULL,
-    department_id uuid CONSTRAINT document_departments_department_id_not_null NOT NULL,
+    departments_id uuid CONSTRAINT document_departments_department_id_not_null NOT NULL,
     document_id uuid CONSTRAINT document_departments_document_id_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT document_departments_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT document_departments_mcp_not_null NOT NULL
@@ -22,7 +22,7 @@ CREATE TABLE public.document_departments_junction (
 
 CREATE TABLE public.document_descriptions_junction (
     document_id uuid CONSTRAINT document_descriptions_document_id_not_null NOT NULL,
-    description_id uuid CONSTRAINT document_descriptions_description_id_not_null NOT NULL,
+    descriptions_id uuid CONSTRAINT document_descriptions_description_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT document_descriptions_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT document_descriptions_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT document_descriptions_mcp_not_null NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE public.document_files_junction (
 
 CREATE TABLE public.document_flags_junction (
     document_id uuid CONSTRAINT document_flags_document_id_not_null NOT NULL,
-    flag_id uuid CONSTRAINT document_flags_flag_id_not_null NOT NULL,
+    flags_id uuid CONSTRAINT document_flags_flag_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT document_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT document_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT document_flags_mcp_not_null NOT NULL,
@@ -95,7 +95,7 @@ CREATE TABLE public.document_images_junction (
 
 CREATE TABLE public.document_names_junction (
     document_id uuid CONSTRAINT document_names_document_id_not_null NOT NULL,
-    name_id uuid CONSTRAINT document_names_name_id_not_null NOT NULL,
+    names_id uuid CONSTRAINT document_names_name_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT document_names_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT document_names_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT document_names_mcp_not_null NOT NULL,
@@ -110,7 +110,7 @@ CREATE TABLE public.document_names_junction (
 
 CREATE TABLE public.document_parameter_fields_junction (
     document_id uuid NOT NULL,
-    parameter_field_id uuid NOT NULL,
+    parameter_fields_id uuid CONSTRAINT document_parameter_fields_junction_parameter_field_id_not_null NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
@@ -137,7 +137,7 @@ CREATE TABLE public.document_texts_junction (
 --
 
 ALTER TABLE ONLY public.document_departments_junction
-    ADD CONSTRAINT document_departments_pkey PRIMARY KEY (document_id, department_id);
+    ADD CONSTRAINT document_departments_pkey PRIMARY KEY (document_id, departments_id);
 
 
 --
@@ -146,7 +146,7 @@ ALTER TABLE ONLY public.document_departments_junction
 --
 
 ALTER TABLE ONLY public.document_descriptions_junction
-    ADD CONSTRAINT document_descriptions_pkey PRIMARY KEY (document_id, description_id);
+    ADD CONSTRAINT document_descriptions_pkey PRIMARY KEY (document_id, descriptions_id);
 
 
 --
@@ -173,7 +173,7 @@ ALTER TABLE ONLY public.document_files_junction
 --
 
 ALTER TABLE ONLY public.document_flags_junction
-    ADD CONSTRAINT document_flags_pkey PRIMARY KEY (document_id, flag_id);
+    ADD CONSTRAINT document_flags_pkey PRIMARY KEY (document_id, flags_id);
 
 
 --
@@ -191,7 +191,7 @@ ALTER TABLE ONLY public.document_images_junction
 --
 
 ALTER TABLE ONLY public.document_names_junction
-    ADD CONSTRAINT document_names_pkey PRIMARY KEY (document_id, name_id);
+    ADD CONSTRAINT document_names_pkey PRIMARY KEY (document_id, names_id);
 
 
 --
@@ -200,7 +200,7 @@ ALTER TABLE ONLY public.document_names_junction
 --
 
 ALTER TABLE ONLY public.document_parameter_fields_junction
-    ADD CONSTRAINT document_parameter_fields_junction_pkey PRIMARY KEY (document_id, parameter_field_id);
+    ADD CONSTRAINT document_parameter_fields_junction_pkey PRIMARY KEY (document_id, parameter_fields_id);
 
 
 --

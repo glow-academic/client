@@ -33,7 +33,7 @@ ALTER TABLE ONLY public.auth_departments_junction
 --
 
 ALTER TABLE ONLY public.auth_departments_junction
-    ADD CONSTRAINT auth_departments_department_id_fkey FOREIGN KEY (department_id) REFERENCES public.departments_resource(id);
+    ADD CONSTRAINT auth_departments_department_id_fkey FOREIGN KEY (departments_id) REFERENCES public.departments_resource(id);
 
 
 --
@@ -51,7 +51,7 @@ ALTER TABLE ONLY public.auth_descriptions_junction
 --
 
 ALTER TABLE ONLY public.auth_descriptions_junction
-    ADD CONSTRAINT auth_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT auth_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -69,7 +69,7 @@ ALTER TABLE ONLY public.auth_flags_junction
 --
 
 ALTER TABLE ONLY public.auth_flags_junction
-    ADD CONSTRAINT auth_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT auth_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -87,7 +87,7 @@ ALTER TABLE ONLY public.auth_items_junction
 --
 
 ALTER TABLE ONLY public.auth_items_junction
-    ADD CONSTRAINT auth_items_new_item_id_fkey FOREIGN KEY (item_id) REFERENCES public.items_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT auth_items_new_item_id_fkey FOREIGN KEY (items_id) REFERENCES public.items_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -105,7 +105,7 @@ ALTER TABLE ONLY public.auth_names_junction
 --
 
 ALTER TABLE ONLY public.auth_names_junction
-    ADD CONSTRAINT auth_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT auth_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -123,7 +123,7 @@ ALTER TABLE ONLY public.auth_protocols_junction
 --
 
 ALTER TABLE ONLY public.auth_protocols_junction
-    ADD CONSTRAINT auth_protocols_protocol_id_fkey FOREIGN KEY (protocol_id) REFERENCES public.protocols_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT auth_protocols_protocol_id_fkey FOREIGN KEY (protocols_id) REFERENCES public.protocols_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -141,7 +141,7 @@ ALTER TABLE ONLY public.auth_slugs_junction
 --
 
 ALTER TABLE ONLY public.auth_slugs_junction
-    ADD CONSTRAINT auth_slugs_slug_id_fkey FOREIGN KEY (slug_id) REFERENCES public.slugs_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT auth_slugs_slug_id_fkey FOREIGN KEY (slugs_id) REFERENCES public.slugs_resource(id) ON DELETE CASCADE;
 
 
 --

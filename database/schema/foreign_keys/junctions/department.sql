@@ -33,7 +33,7 @@ ALTER TABLE ONLY public.department_descriptions_junction
 --
 
 ALTER TABLE ONLY public.department_descriptions_junction
-    ADD CONSTRAINT department_descriptions_description_id_fkey FOREIGN KEY (description_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT department_descriptions_description_id_fkey FOREIGN KEY (descriptions_id) REFERENCES public.descriptions_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -51,7 +51,7 @@ ALTER TABLE ONLY public.department_flags_junction
 --
 
 ALTER TABLE ONLY public.department_flags_junction
-    ADD CONSTRAINT department_flags_flag_id_fkey FOREIGN KEY (flag_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT department_flags_flag_id_fkey FOREIGN KEY (flags_id) REFERENCES public.flags_resource(id) ON DELETE CASCADE;
 
 
 --
@@ -69,7 +69,7 @@ ALTER TABLE ONLY public.department_names_junction
 --
 
 ALTER TABLE ONLY public.department_names_junction
-    ADD CONSTRAINT department_names_name_id_fkey FOREIGN KEY (name_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
+    ADD CONSTRAINT department_names_name_id_fkey FOREIGN KEY (names_id) REFERENCES public.names_resource(id) ON DELETE CASCADE;
 
 
 --
