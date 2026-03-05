@@ -126,7 +126,7 @@ eval_rubric_ids_data AS (
         CASE
             WHEN (SELECT eval_id FROM params) IS NULL THEN
                 COALESCE(
-                    (SELECT ARRAY_AGG(dr.rubric_id ORDER BY dr.created_at)
+                    (SELECT ARRAY_AGG(dr.rubrics_id ORDER BY dr.created_at)
                      FROM eval_drafts_rubrics_connection dr
                      WHERE dr.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x)),
                     ARRAY[]::uuid[]
@@ -147,7 +147,7 @@ eval_model_ids_data AS (
         CASE
             WHEN (SELECT eval_id FROM params) IS NULL THEN
                 COALESCE(
-                    (SELECT ARRAY_AGG(dm.model_id ORDER BY dm.created_at)
+                    (SELECT ARRAY_AGG(dm.models_id ORDER BY dm.created_at)
                      FROM eval_drafts_models_connection dm
                      WHERE dm.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x)),
                     ARRAY[]::uuid[]

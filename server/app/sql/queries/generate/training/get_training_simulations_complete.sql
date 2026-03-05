@@ -135,7 +135,7 @@ first_scenario_persona AS (
         (
             SELECT sp.personas_id
             FROM unnest(COALESCE(sd.scenario_ids, ARRAY[]::uuid[])) WITH ORDINALITY sid(scenarios_id, ord)
-            JOIN scenario_scenarios_junction ssj ON ssj.scenario_id = sid.scenario_id AND ssj.active = true
+            JOIN scenario_scenarios_junction ssj ON ssj.scenario_id = sid.scenarios_id AND ssj.active = true
             JOIN scenario_personas_junction sp ON sp.scenario_id = ssj.scenario_id AND sp.active = true
             ORDER BY sid.ord
             LIMIT 1
@@ -148,12 +148,12 @@ persona_display AS (
         (SELECT c.hex_code
          FROM persona_colors_junction pc
          JOIN colors_resource c ON c.id = pc.colors_id
-         WHERE pc.persona_id = fsp.personas_id
+         WHERE pc.persona_id = fsp.persona_id
          LIMIT 1) AS color,
         (SELECT i.name
          FROM persona_icons_junction pi
          JOIN icons_resource i ON i.id = pi.icons_id
-         WHERE pi.persona_id = fsp.personas_id
+         WHERE pi.persona_id = fsp.persona_id
          LIMIT 1) AS icon
     FROM first_scenario_persona fsp
 ),

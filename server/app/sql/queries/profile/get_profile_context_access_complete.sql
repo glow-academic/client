@@ -525,7 +525,7 @@ SELECT
     pd.artifacts as artifacts,
     (SELECT actor_name FROM actor_name_computed) as actor_name,
     -- Profiles resource ID
-    (SELECT profiles_id FROM profiles_id_data) as profiles_id,
+    (SELECT profile_id FROM profiles_id_data) as profiles_id,
     -- Artifact agent IDs
     (SELECT artifact_agent_ids FROM artifact_agent_ids_data) as artifact_agent_ids
 FROM params

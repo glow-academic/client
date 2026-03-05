@@ -75,7 +75,7 @@ draft_departments_data AS (
     LIMIT 1
 ),
 draft_simulations_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(ds.simulation_id ORDER BY ds.created_at), NULL), ARRAY[]::uuid[]) as simulation_ids
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(ds.simulations_id ORDER BY ds.created_at), NULL), ARRAY[]::uuid[]) as simulation_ids
     FROM params x
     LEFT JOIN cohort_drafts_simulations_connection ds ON ds.draft_id = x.draft_id
     LIMIT 1
@@ -235,9 +235,9 @@ simulation_availability_combined_data AS (
 ),
 -- Profiles (from draft or cohort junction)
 draft_profiles_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.profile_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as profile_ids
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.profiles_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as profile_ids
     FROM params x
-    LEFT JOIN cohort_drafts_profiles_connection dp ON dp.draft_id = x.draft_id AND dp.active = true AND dp.profile_id != (
+    LEFT JOIN cohort_drafts_profiles_connection dp ON dp.draft_id = x.draft_id AND dp.active = true AND dp.profiles_id != (
         SELECT pp.profile_id FROM profile_profiles_junction pp WHERE pp.profile_id = x.profile_id LIMIT 1
     )
     LIMIT 1

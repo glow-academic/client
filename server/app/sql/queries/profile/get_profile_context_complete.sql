@@ -311,7 +311,7 @@ sim_data AS (
              FROM simulation_scenario_time_limits_junction sstl
              JOIN scenario_time_limits_resource stlr ON stlr.id = sstl.scenario_time_limits_id
              JOIN simulation_scenarios_junction ss ON ss.simulation_id = sstl.simulation_id AND ss.scenarios_id = stlr.scenario_id
-             WHERE sstl.simulation_id = s.id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flags_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.type = 'scenario_active' AND f.value = true)),
+             WHERE sstl.simulation_id = s.id AND sstl.active = true AND stlr.active = true AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flags_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenarios_id AND f.type = 'scenario_active' AND f.value = true)),
             0
         ) as time_limit,
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.simulation_id = s.id AND f.name = 'simulation_active' AND f.value = TRUE),
@@ -364,7 +364,7 @@ earliest_attempt AS (
         SELECT id, created_at FROM attempt_entry
     ),
     all_attempt_profiles AS (
-        SELECT apc.attempt_id, apc.profile_id
+        SELECT apc.attempt_id, apc.profiles_id AS profile_id
         FROM attempt_profiles_connection apc
         WHERE apc.active = true
     )

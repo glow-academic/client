@@ -87,13 +87,13 @@ draft_departments_data AS (
     LIMIT 1
 ),
 draft_personas_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.persona_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as persona_ids
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.personas_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as persona_ids
     FROM params x
     LEFT JOIN scenario_drafts_personas_connection dp ON dp.draft_id = x.draft_id
     LIMIT 1
 ),
 draft_documents_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.document_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as document_ids
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.documents_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as document_ids
     FROM params x
     LEFT JOIN scenario_drafts_documents_connection dd ON dd.draft_id = x.draft_id
     LIMIT 1

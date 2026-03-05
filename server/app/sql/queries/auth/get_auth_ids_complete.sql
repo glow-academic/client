@@ -170,9 +170,9 @@ auth_item_ids_data AS (
             )
                 THEN COALESCE(
                     (
-                        SELECT ARRAY_AGG(idc.item_id ORDER BY i.position)
+                        SELECT ARRAY_AGG(idc.items_id ORDER BY i.position)
                         FROM auth_drafts_items_connection idc
-                        JOIN items_resource i ON i.id = idc.item_id
+                        JOIN items_resource i ON i.id = idc.items_id
                         WHERE idc.draft_id = (SELECT draft_id FROM params)
                     ),
                     ARRAY[]::uuid[]

@@ -187,7 +187,7 @@ rate_limit_data AS (
 runs_today_data AS (
     SELECT COUNT(*)::bigint AS runs_today
     FROM params p
-    JOIN profiles_runs_connection prj ON prj.profile_id = p.profile_id
+    JOIN profiles_runs_connection prj ON prj.profiles_id = p.profile_id
     JOIN runs_entry vr ON vr.id = prj.run_id
     WHERE vr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
@@ -208,7 +208,7 @@ access_data AS (
           ON ppj.profile_id = p.profile_id
          AND ppj.active = true
         JOIN cohort_profiles_junction cpj
-          ON cpj.profile_id = ppj.profile_id
+          ON cpj.profiles_id = ppj.profile_id
          AND cpj.active = true
         JOIN cohort_cohorts_junction ccj
           ON ccj.cohort_id = cpj.cohort_id

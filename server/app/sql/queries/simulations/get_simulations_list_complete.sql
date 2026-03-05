@@ -113,9 +113,9 @@ attempt_counts AS (
         ssj.simulation_id,
         COUNT(DISTINCT a.id) as attempt_count
     FROM simulation_simulations_junction ssj
-    LEFT JOIN home_simulations_connection hsc ON hsc.simulation_id = ssj.simulation_id AND hsc.active = true
+    LEFT JOIN home_simulations_connection hsc ON hsc.simulations_id = ssj.simulation_id AND hsc.active = true
     LEFT JOIN attempt_home_entry ahe ON ahe.home_id = hsc.home_id AND ahe.active = true
-    LEFT JOIN practice_simulations_connection psc ON psc.simulation_id = ssj.simulation_id AND psc.active = true
+    LEFT JOIN practice_simulations_connection psc ON psc.simulations_id = ssj.simulation_id AND psc.active = true
     LEFT JOIN attempt_practice_entry ape ON ape.practice_id = psc.practice_id AND ape.active = true
     LEFT JOIN attempt_entry a ON (a.id = ahe.attempt_id OR a.id = ape.attempt_id) AND a.active = true
     GROUP BY ssj.simulation_id

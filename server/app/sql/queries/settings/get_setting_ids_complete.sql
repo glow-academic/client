@@ -150,7 +150,7 @@ draft_flag AS (
 ),
 draft_colors AS (
     SELECT COALESCE(
-        ARRAY_AGG(cdc.color_id),
+        ARRAY_AGG(cdc.colors_id),
         ARRAY[]::uuid[]
     ) as color_ids
     FROM setting_drafts_colors_connection cdc
@@ -158,7 +158,7 @@ draft_colors AS (
 ),
 draft_departments AS (
     SELECT COALESCE(
-        ARRAY_AGG(ddc.department_id),
+        ARRAY_AGG(ddc.departments_id),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM setting_drafts_departments_connection ddc

@@ -129,7 +129,7 @@ reasoning_level_resource_data AS (
 department_ids_data AS (
     SELECT
         COALESCE(
-            (SELECT ARRAY_AGG(dd.department_id ORDER BY dd.created_at)
+            (SELECT ARRAY_AGG(dd.departments_id ORDER BY dd.created_at)
              FROM agent_drafts_departments_connection dd
              WHERE dd.draft_id = (SELECT draft_id FROM params)
                AND dd.active = true),

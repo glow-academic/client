@@ -79,7 +79,7 @@ flag_data AS (
 -- Get department_ids (from draft first, then simulation)
 department_data AS (
     SELECT COALESCE(
-        (SELECT ARRAY_AGG(dd.department_id) FROM simulation_drafts_departments_connection dd WHERE dd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(dd.departments_id) FROM simulation_drafts_departments_connection dd WHERE dd.draft_id = (SELECT p_draft_id FROM params)),
         (SELECT ARRAY_AGG(sd.departments_id) FROM simulation_departments_junction sd WHERE sd.simulation_id = (SELECT p_simulation_id FROM params) AND sd.active = true),
         ARRAY[]::uuid[]
     ) as department_ids
@@ -87,7 +87,7 @@ department_data AS (
 -- Get scenario_ids (from draft first, then simulation)
 scenario_data AS (
     SELECT COALESCE(
-        (SELECT ARRAY_AGG(sd.scenario_id) FROM simulation_drafts_scenarios_connection sd WHERE sd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(sd.scenarios_id) FROM simulation_drafts_scenarios_connection sd WHERE sd.draft_id = (SELECT p_draft_id FROM params)),
         (SELECT ARRAY_AGG(ss.scenarios_id) FROM simulation_scenarios_junction ss WHERE ss.simulation_id = (SELECT p_simulation_id FROM params) AND ss.active = true),
         ARRAY[]::uuid[]
     ) as scenario_ids

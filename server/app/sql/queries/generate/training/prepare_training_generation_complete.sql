@@ -181,7 +181,7 @@ create_group AS (
     SELECT NOW(), (
         SELECT s.id FROM sessions_entry s
         JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-        WHERE psc.profile_id = p_profile_id
+        WHERE psc.profiles_id = p_profile_id
           AND s.active = true
         ORDER BY s.created_at DESC
         LIMIT 1
@@ -207,7 +207,7 @@ create_run AS (
 ),
 link_run_to_profile AS (
     INSERT INTO profiles_runs_connection (profiles_id, run_id)
-    SELECT ppj.profile_id, cr.run_id
+    SELECT ppj.profiles_id, cr.run_id
     FROM params p
     JOIN profile_profiles_junction ppj ON ppj.profile_id = p.profile_id
     CROSS JOIN create_run cr
@@ -372,7 +372,7 @@ current_content AS (
             FROM persona_artifact pa
             WHERE pa.id = COALESCE(
                 (
-                    SELECT pdc.persona_id
+                    SELECT pdc.personas_id
                     FROM chat_drafts_personas_connection pdc
                     WHERE p_draft_id IS NOT NULL
                       AND pdc.draft_id = p_draft_id
