@@ -62,11 +62,11 @@ source_scenario AS (
 source_flags AS (
     SELECT
         ss.source_id,
-        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'objectives_enabled' LIMIT 1) as objectives_enabled,
-        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'images_enabled' LIMIT 1) as images_enabled,
-        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'video_enabled' LIMIT 1) as video_enabled,
-        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'questions_enabled' LIMIT 1) as questions_enabled,
-        (SELECT sf.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'problem_statement_enabled' LIMIT 1) as problem_statement_enabled
+        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'objectives_enabled' LIMIT 1) as objectives_enabled,
+        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'images_enabled' LIMIT 1) as images_enabled,
+        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'video_enabled' LIMIT 1) as video_enabled,
+        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'questions_enabled' LIMIT 1) as questions_enabled,
+        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'problem_statement_enabled' LIMIT 1) as problem_statement_enabled
     FROM source_scenario ss
 ),
 -- Get multi-select resource IDs from source
@@ -188,15 +188,15 @@ link_problem_statement AS (
 ),
 -- Link active flag (set to false for duplicate)
 link_active_flag AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at)
-    SELECT ns.id, gaf.flag_id, false, NOW()
+    INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at)
+    SELECT ns.id, gaf.flag_id, NOW()
     FROM new_scenario ns
     CROSS JOIN get_active_flag gaf
 ),
 -- Link objectives_enabled flag (copy value from source)
 link_objectives_enabled_flag AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at)
-    SELECT ns.id, goef.flag_id, sf.objectives_enabled, NOW()
+    INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at)
+    SELECT ns.id, goef.flag_id, NOW()
     FROM new_scenario ns
     CROSS JOIN source_flags sf
     CROSS JOIN get_objectives_enabled_flag goef
@@ -204,8 +204,8 @@ link_objectives_enabled_flag AS (
 ),
 -- Link images_enabled flag (copy value from source)
 link_images_enabled_flag AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at)
-    SELECT ns.id, gief.flag_id, sf.images_enabled, NOW()
+    INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at)
+    SELECT ns.id, gief.flag_id, NOW()
     FROM new_scenario ns
     CROSS JOIN source_flags sf
     CROSS JOIN get_images_enabled_flag gief
@@ -213,8 +213,8 @@ link_images_enabled_flag AS (
 ),
 -- Link video_enabled flag (copy value from source)
 link_video_enabled_flag AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at)
-    SELECT ns.id, gvef.flag_id, sf.video_enabled, NOW()
+    INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at)
+    SELECT ns.id, gvef.flag_id, NOW()
     FROM new_scenario ns
     CROSS JOIN source_flags sf
     CROSS JOIN get_video_enabled_flag gvef
@@ -222,8 +222,8 @@ link_video_enabled_flag AS (
 ),
 -- Link questions_enabled flag (copy value from source)
 link_questions_enabled_flag AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at)
-    SELECT ns.id, gqef.flag_id, sf.questions_enabled, NOW()
+    INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at)
+    SELECT ns.id, gqef.flag_id, NOW()
     FROM new_scenario ns
     CROSS JOIN source_flags sf
     CROSS JOIN get_questions_enabled_flag gqef

@@ -74,7 +74,7 @@ flag_resource_data AS (
              WHERE tf.tool_id = (SELECT tool_id FROM params)
                AND tf.active = true
                AND f.name = 'tool_active'
-               AND tf.value = TRUE
+               AND f.value = TRUE
              LIMIT 1)
         ) as active_flag_id
     FROM params

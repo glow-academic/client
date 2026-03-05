@@ -121,7 +121,7 @@ flag_resource_data AS (
              JOIN flags_resource f ON af.flag_id = f.id
              WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup)
                AND f.name = 'auth_active'
-               AND af.value = TRUE
+               AND f.value = TRUE
              LIMIT 1)
         ) as active_flag_id
     FROM params

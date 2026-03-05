@@ -103,7 +103,7 @@ provider_data AS (
         n.name as name,
         COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), '') as description,
         COALESCE((SELECT v.value FROM provider_values_junction pvj JOIN values_resource v ON pvj.values_id = v.id WHERE pvj.provider_id = pr.id AND pvj.active = true LIMIT 1), '') as value,
-        EXISTS (SELECT 1 FROM provider_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = pr.id AND f.name = 'provider_active' AND pf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM provider_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = pr.id AND f.name = 'provider_active' AND f.value = TRUE) as active,
         pr.updated_at,
         COALESCE(
             (SELECT ARRAY_AGG(pdj.department_id ORDER BY pdj.created_at)

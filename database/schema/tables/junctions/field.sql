@@ -68,7 +68,6 @@ CREATE TABLE public.field_fields_junction (
 CREATE TABLE public.field_flags_junction (
     field_id uuid CONSTRAINT field_flags_field_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT field_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT field_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT field_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT field_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT field_flags_mcp_not_null NOT NULL,

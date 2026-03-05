@@ -113,9 +113,8 @@ link_cohort_description AS (
 ),
 -- Link cohort active flag (set to false for duplicate)
 link_cohort_active_flag AS (
-    INSERT INTO cohort_flags_junction (cohort_id, flag_id, value, created_at) SELECT nc.id,
+    INSERT INTO cohort_flags_junction (cohort_id, flag_id, created_at) SELECT nc.id,
         f.id,
-        FALSE,
         NOW()
     FROM new_cohort nc
     CROSS JOIN flags_resource f

@@ -80,7 +80,7 @@ active_flag_id_data AS (
     SELECT
         COALESCE(
             (SELECT df.flags_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'active' LIMIT 1),
-            (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'eval_active' AND ef.value = TRUE LIMIT 1)
+            (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'eval_active' AND f.value = TRUE LIMIT 1)
         ) as active_flag_id
     FROM params
     LIMIT 1
@@ -90,7 +90,7 @@ dynamic_flag_id_data AS (
     SELECT
         COALESCE(
             (SELECT df.flags_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'dynamic' LIMIT 1),
-            (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'dynamic' AND ef.value = TRUE LIMIT 1)
+            (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'dynamic' AND f.value = TRUE LIMIT 1)
         ) as dynamic_flag_id
     FROM params
     LIMIT 1
@@ -100,7 +100,7 @@ groups_flag_id_data AS (
     SELECT
         COALESCE(
             (SELECT df.flags_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = '' LIMIT 1),
-            (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = '' AND ef.value = TRUE LIMIT 1)
+            (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = '' AND f.value = TRUE LIMIT 1)
         ) as groups_flag_id
     FROM params
     LIMIT 1
@@ -272,7 +272,7 @@ rubric_suggestions_data AS (
              FROM rubrics_resource r
              WHERE EXISTS (
                  SELECT 1 FROM rubric_flags_junction rf JOIN flags_resource f ON rf.flag_id = f.id
-                 WHERE rf.rubric_id = r.id AND f.name = 'rubric_active' AND rf.value = true
+                 WHERE rf.rubric_id = r.id AND f.name = 'rubric_active' AND f.value = true
              )
              AND (
                  EXISTS (

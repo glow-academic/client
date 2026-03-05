@@ -75,7 +75,7 @@ selected_agent AS (
           JOIN flags_resource f ON af.flag_id = f.id
           WHERE af.agent_id = a.id
             AND f.name = 'agent_active'
-            AND af.value = true
+            AND f.value = true
       )
     LIMIT 1
 ),

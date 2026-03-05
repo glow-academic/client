@@ -98,7 +98,7 @@ BEGIN
 
         -- Flag: preserve existing active flag if not provided
         IF active_flag_id IS NULL THEN
-            active_flag_id := (SELECT j.flag_id FROM cohort_flags_junction j WHERE j.cohort_id = v_cohort_id AND j.value = true LIMIT 1);
+            active_flag_id := (SELECT j.flag_id FROM cohort_flags_junction j JOIN flags_resource fr ON j.flag_id = fr.id WHERE j.cohort_id = v_cohort_id AND fr.value = true LIMIT 1);
         END IF;
     END IF;
 
@@ -170,10 +170,9 @@ BEGIN
     ),
     -- Upsert active flag
     upsert_flag AS (
-        INSERT INTO cohort_flags_junction (cohort_id, flag_id, value, created_at, active)
+        INSERT INTO cohort_flags_junction (cohort_id, flag_id, created_at, active)
         SELECT x.cohort_id,
             COALESCE(x.active_flag_id, f.id),
-            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW(),
             true
         FROM params x
@@ -181,7 +180,6 @@ BEGIN
         WHERE f.type = 'cohort_active'
         ON CONFLICT ON CONSTRAINT cohort_flags_pkey DO UPDATE SET
             flag_id = COALESCE(EXCLUDED.flag_id, cohort_flags_junction.flag_id),
-            value = EXCLUDED.value,
             active = true
     ),
     -- Link departments

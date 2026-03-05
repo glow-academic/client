@@ -64,7 +64,7 @@ SELECT COALESCE(
             COALESCE((SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1), ''),
             COALESCE((SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1), ''),
             COALESCE((SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1), ''),
-            COALESCE((SELECT pf.value FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'image_model' LIMIT 1), false),
+            COALESCE((SELECT f.value FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.name = 'image_model' LIMIT 1), false),
             COALESCE(pr.instructions, ''),
             COALESCE(pr.examples, ARRAY[]::text[]),
             COALESCE(pr.generated, false)
@@ -81,6 +81,6 @@ WHERE pr.id = $1
       JOIN flags_resource f ON pf.flag_id = f.id
       WHERE pf.persona_id = p.id
         AND f.type = 'persona_active'
-        AND pf.value = true
+        AND f.value = true
   );
 $$;

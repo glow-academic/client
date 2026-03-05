@@ -53,7 +53,6 @@ CREATE TABLE public.cohort_descriptions_junction (
 CREATE TABLE public.cohort_flags_junction (
     cohort_id uuid CONSTRAINT cohort_flags_cohort_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT cohort_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT cohort_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT cohort_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT cohort_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT cohort_flags_mcp_not_null NOT NULL,
@@ -117,8 +116,7 @@ CREATE TABLE public.cohort_simulation_availability_junction (
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 

@@ -38,7 +38,6 @@ CREATE TABLE public.rubric_descriptions_junction (
 CREATE TABLE public.rubric_flags_junction (
     rubric_id uuid CONSTRAINT rubric_flags_rubric_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT rubric_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT rubric_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT rubric_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT rubric_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT rubric_flags_mcp_not_null NOT NULL,

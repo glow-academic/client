@@ -45,7 +45,7 @@ original_parameters AS (
     SELECT pf.parameter_id
     FROM params x
     JOIN parameter_fields_junction pf ON pf.field_id = x.field_id
-    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'field_active' AND ff.value = true)
+    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'field_active' AND f.value = true)
     LIMIT 1
 ),
 original_departments AS (
@@ -120,15 +120,13 @@ link_field_parameter AS (
 ),
 -- Link field active flag (set to false for duplicate)
 link_field_active_flag AS (
-    INSERT INTO field_flags_junction (field_id, flag_id, value, created_at) SELECT nf.field_id,
+    INSERT INTO field_flags_junction (field_id, flag_id, created_at) SELECT nf.field_id,
         f.id,
-        FALSE,
         NOW()
     FROM new_field nf
     CROSS JOIN flags_resource f
     WHERE f.name = 'field_active'
-    ON CONFLICT (field_id, flag_id) DO UPDATE SET
-        value = FALSE
+    ON CONFLICT (field_id, flag_id) DO NOTHING
 ),
 link_departments AS (
     -- Link new field to same departments as original

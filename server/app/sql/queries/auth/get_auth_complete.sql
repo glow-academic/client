@@ -246,7 +246,7 @@ flag_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT df.flags_id FROM auth_drafts_flags_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT af.flag_id FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) AND f.name = 'auth_active' AND af.value = TRUE LIMIT 1)
+            (SELECT af.flag_id FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) AND f.name = 'auth_active' AND f.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
             SELECT ROW(f.id, f.name, f.description, f.icon, COALESCE(f.generated, false))::types.q_get_auth_v4_flag_resource 
@@ -260,7 +260,7 @@ flag_resource_data AS (
                 FROM auth_flags_junction af 
                 JOIN flags_resource f ON af.flag_id = f.id 
                 JOIN flags_resource fl ON af.flag_id = fl.id 
-                WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) AND fl.name = 'active' AND f.name = 'auth_active' AND af.value = TRUE
+                WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) AND fl.name = 'active' AND f.name = 'auth_active' AND f.value = TRUE
             ) f
             ORDER BY priority
             LIMIT 1
@@ -609,7 +609,7 @@ name_agent_data AS (
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
-              AND af.value = true
+              AND f.value = true
         )
         AND (
             EXISTS (
@@ -684,7 +684,7 @@ description_agent_data AS (
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
-              AND af.value = true
+              AND f.value = true
         )
         AND (
             EXISTS (
@@ -759,7 +759,7 @@ flag_agent_data AS (
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
-              AND af.value = true
+              AND f.value = true
         )
         AND (
             EXISTS (
@@ -834,7 +834,7 @@ protocols_agent_data AS (
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
-              AND af.value = true
+              AND f.value = true
         )
         AND (
             EXISTS (
@@ -909,7 +909,7 @@ slugs_agent_data AS (
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
-              AND af.value = true
+              AND f.value = true
         )
         AND (
             EXISTS (

@@ -92,28 +92,24 @@ link_setting_description AS (
 ),
 -- Link setting active flag (set to false for duplicate)
 link_setting_active_flag AS (
-    INSERT INTO setting_flags_junction (setting_id, flag_id, value, created_at) SELECT ns.id,
+    INSERT INTO setting_flags_junction (setting_id, flag_id, created_at) SELECT ns.id,
         f.id,
-        FALSE,
         NOW()
     FROM new_setting ns
     CROSS JOIN flags_resource f
     WHERE f.name = 'setting_active'
-    ON CONFLICT (setting_id, flag_id) DO UPDATE SET 
-        value = FALSE
+    ON CONFLICT (setting_id, flag_id) DO NOTHING
 ),
 -- Copy other flags from original setting
 copy_setting_flags AS (
-    INSERT INTO setting_flags_junction (setting_id, flag_id, value, created_at)
-    SELECT 
+    INSERT INTO setting_flags_junction (setting_id, flag_id, created_at)
+    SELECT
         ns.id,
         of.flag_id,
-        FALSE,
         NOW()
     FROM new_setting ns
     CROSS JOIN original_flags of
-    ON CONFLICT (setting_id, flag_id) DO UPDATE SET 
-        value = FALSE
+    ON CONFLICT (setting_id, flag_id) DO NOTHING
 )
 SELECT 
     (SELECT id FROM new_setting LIMIT 1) as new_setting_id,

@@ -135,7 +135,7 @@ model_data_base AS (
         m.id as model_id,
         (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
         (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND f.value = TRUE) as active,
         COALESCE(imc.image_model, false) as image_model,
         m.updated_at,
         mpd.provider_id,
@@ -152,7 +152,7 @@ model_data_base AS (
     GROUP BY m.id,
         (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
         (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
-        EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND mf.value = TRUE),
+        EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND f.value = TRUE),
         imc.image_model, m.updated_at, mpd.provider_id, mdd.department_ids, au.active_agent_count, mad.agent_ids
     HAVING COUNT(md.model_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM model_departments_junction md2 WHERE md2.model_id = m.id

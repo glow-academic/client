@@ -53,7 +53,6 @@ CREATE TABLE public.agent_descriptions_junction (
 CREATE TABLE public.agent_flags_junction (
     agent_id uuid CONSTRAINT agent_flags_agent_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT agent_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT agent_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT agent_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT agent_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT agent_flags_mcp_not_null NOT NULL,

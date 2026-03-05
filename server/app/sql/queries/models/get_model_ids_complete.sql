@@ -89,37 +89,37 @@ provider_resource_data AS (
 -- Flag IDs
 flag_active_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'model_active' AND mf.value = TRUE LIMIT 1) as active_flag_id
+        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'model_active' AND f.value = TRUE LIMIT 1) as active_flag_id
     FROM params
 ),
 flag_modalities_enabled_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as modalities_enabled_flag_id
+        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND f.value = TRUE LIMIT 1) as modalities_enabled_flag_id
     FROM params
 ),
 flag_temperature_enabled_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as temperature_enabled_flag_id
+        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND f.value = TRUE LIMIT 1) as temperature_enabled_flag_id
     FROM params
 ),
 flag_pricing_enabled_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as pricing_enabled_flag_id
+        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND f.value = TRUE LIMIT 1) as pricing_enabled_flag_id
     FROM params
 ),
 flag_voices_enabled_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as voices_enabled_flag_id
+        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND f.value = TRUE LIMIT 1) as voices_enabled_flag_id
     FROM params
 ),
 flag_reasoning_levels_enabled_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as reasoning_levels_enabled_flag_id
+        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND f.value = TRUE LIMIT 1) as reasoning_levels_enabled_flag_id
     FROM params
 ),
 flag_qualities_enabled_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND mf.value = TRUE LIMIT 1) as qualities_enabled_flag_id
+        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND f.value = TRUE LIMIT 1) as qualities_enabled_flag_id
     FROM params
 ),
 -- Multi-select resource IDs

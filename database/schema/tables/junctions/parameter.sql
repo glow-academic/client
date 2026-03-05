@@ -54,7 +54,6 @@ CREATE TABLE public.parameter_fields_junction (
 CREATE TABLE public.parameter_flags_junction (
     parameter_id uuid CONSTRAINT parameter_flags_parameter_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT parameter_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT parameter_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT parameter_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT parameter_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT parameter_flags_mcp_not_null NOT NULL,

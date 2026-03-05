@@ -494,11 +494,11 @@ BEGIN
     END IF;
 
     -- Upsert active links: multi-select resources
-    INSERT INTO model_flags_junction (model_id, flag_id, value, created_at, generated, mcp)
-    SELECT v_model_id, fid, true, NOW(), false, false
+    INSERT INTO model_flags_junction (model_id, flag_id, created_at, generated, mcp)
+    SELECT v_model_id, fid, NOW(), false, false
     FROM UNNEST(v_flag_ids) fid
     ON CONFLICT ON CONSTRAINT model_flags_pkey DO UPDATE
-    SET value = true, generated = false, mcp = false;
+    SET generated = false, mcp = false;
 
     INSERT INTO model_departments_junction (model_id, department_id, active, created_at)
     SELECT v_model_id, did, true, NOW()

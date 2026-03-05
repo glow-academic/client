@@ -33,11 +33,11 @@ original_parameter AS (
     SELECT
         (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = pa.id LIMIT 1) as name,
         (SELECT pd.description_id FROM parameter_descriptions_junction pd WHERE pd.parameter_id = pa.id LIMIT 1) as description_id,
-        COALESCE((SELECT pf.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = pa.id AND f.name = 'parameter_simulation' LIMIT 1), false) as simulation_parameter,
-        COALESCE((SELECT pf.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = pa.id AND f.name = 'parameter_document' LIMIT 1), false) as document_parameter,
-        COALESCE((SELECT pf.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = pa.id AND f.name = 'parameter_persona' LIMIT 1), false) as persona_parameter,
-        COALESCE((SELECT pf.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = pa.id AND f.name = 'parameter_scenario' LIMIT 1), false) as scenario_parameter,
-        COALESCE((SELECT pf.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = pa.id AND f.name = 'parameter_video' LIMIT 1), false) as video_parameter
+        COALESCE((SELECT f.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = pa.id AND f.name = 'parameter_simulation' LIMIT 1), false) as simulation_parameter,
+        COALESCE((SELECT f.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = pa.id AND f.name = 'parameter_document' LIMIT 1), false) as document_parameter,
+        COALESCE((SELECT f.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = pa.id AND f.name = 'parameter_persona' LIMIT 1), false) as persona_parameter,
+        COALESCE((SELECT f.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = pa.id AND f.name = 'parameter_scenario' LIMIT 1), false) as scenario_parameter,
+        COALESCE((SELECT f.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = pa.id AND f.name = 'parameter_video' LIMIT 1), false) as video_parameter
     FROM params x
     JOIN parameter_artifact pa ON pa.id = x.parameter_id
 ),
@@ -76,58 +76,50 @@ link_parameter_description AS (
 ),
 -- Link parameter active flag (set to false for duplicate)
 link_parameter_active_flag AS (
-    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at) SELECT np.parameter_id,
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, created_at) SELECT np.parameter_id,
         f.id,
-        FALSE,
         NOW()
     FROM new_parameter np
     CROSS JOIN flags_resource f
     WHERE f.name = 'parameter_active'
-    ON CONFLICT (parameter_id, flag_id) DO UPDATE SET
-        value = FALSE
+    ON CONFLICT (parameter_id, flag_id) DO NOTHING
 ),
 -- Link parameter type flags (parameter_simulation, parameter_document, etc.)
 link_parameter_type_flags AS (
-    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, created_at)
     SELECT
         np.parameter_id,
         f.id,
-        op.simulation_parameter,
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
     CROSS JOIN flags_resource f
     WHERE f.name = 'parameter_simulation' AND op.simulation_parameter = TRUE
-    ON CONFLICT (parameter_id, flag_id) DO UPDATE SET
-        value = EXCLUDED.value
+    ON CONFLICT (parameter_id, flag_id) DO NOTHING
 ),
 link_parameter_document_flag AS (
-    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, created_at)
     SELECT
         np.parameter_id,
         f.id,
-        op.document_parameter,
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
     CROSS JOIN flags_resource f
     WHERE f.name = 'parameter_document' AND op.document_parameter = TRUE
-    ON CONFLICT (parameter_id, flag_id) DO UPDATE SET
-        value = EXCLUDED.value
+    ON CONFLICT (parameter_id, flag_id) DO NOTHING
 ),
 link_parameter_persona_flag AS (
-    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, created_at)
     SELECT
         np.parameter_id,
         f.id,
-        op.persona_parameter,
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
     CROSS JOIN flags_resource f
     WHERE f.name = 'parameter_persona' AND op.persona_parameter = TRUE
-    ON CONFLICT (parameter_id, flag_id) DO UPDATE SET
-        value = EXCLUDED.value
+    ON CONFLICT (parameter_id, flag_id) DO NOTHING
 ),
 link_parameter_scenario_flag AS (
     INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)

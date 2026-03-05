@@ -136,7 +136,7 @@ auth_data_base AS (
         a.id as auth_id,
         (SELECT n.name FROM auth_auths_junction aaj_n JOIN auth_names_junction an ON an.auth_id = aaj_n.auth_id JOIN names_resource n ON an.name_id = n.id WHERE aaj_n.auths_id = a.id LIMIT 1) as auth_name,
         (SELECT d.description FROM auth_auths_junction aaj_d JOIN auth_descriptions_junction ad ON ad.auth_id = aaj_d.auth_id JOIN descriptions_resource d ON ad.description_id = d.id WHERE aaj_d.auths_id = a.id LIMIT 1) as description,
-        NOT EXISTS (SELECT 1 FROM auth_auths_junction aaj_f JOIN auth_flags_junction af ON af.auth_id = aaj_f.auth_id JOIN flags_resource f ON af.flag_id = f.id WHERE aaj_f.auths_id = a.id AND f.name = 'auth_active' AND af.value = TRUE) as is_inactive,
+        NOT EXISTS (SELECT 1 FROM auth_auths_junction aaj_f JOIN auth_flags_junction af ON af.auth_id = aaj_f.auth_id JOIN flags_resource f ON af.flag_id = f.id WHERE aaj_f.auths_id = a.id AND f.name = 'auth_active' AND f.value = TRUE) as is_inactive,
         a.created_at as updated_at,
         COALESCE(aic.num_items, 0) as num_items,
         COALESCE(asi.sample_items, '{}'::types.q_get_auth_list_v4_auth_item[]) as sample_items,
@@ -154,7 +154,7 @@ auth_data_base AS (
     GROUP BY a.id,
         (SELECT n.name FROM auth_auths_junction aaj_n JOIN auth_names_junction an ON an.auth_id = aaj_n.auth_id JOIN names_resource n ON an.name_id = n.id WHERE aaj_n.auths_id = a.id LIMIT 1),
         (SELECT d.description FROM auth_auths_junction aaj_d JOIN auth_descriptions_junction ad ON ad.auth_id = aaj_d.auth_id JOIN descriptions_resource d ON ad.description_id = d.id WHERE aaj_d.auths_id = a.id LIMIT 1),
-        NOT EXISTS (SELECT 1 FROM auth_auths_junction aaj_f JOIN auth_flags_junction af ON af.auth_id = aaj_f.auth_id JOIN flags_resource f ON af.flag_id = f.id WHERE aaj_f.auths_id = a.id AND f.name = 'auth_active' AND af.value = TRUE),
+        NOT EXISTS (SELECT 1 FROM auth_auths_junction aaj_f JOIN auth_flags_junction af ON af.auth_id = aaj_f.auth_id JOIN flags_resource f ON af.flag_id = f.id WHERE aaj_f.auths_id = a.id AND f.name = 'auth_active' AND f.value = TRUE),
         a.created_at, aic.num_items, asi.sample_items, add_data.department_ids, asc_data.active_settings_count
     HAVING COUNT(adv.auth_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM auth_auths_junction aaj2 JOIN auth_departments_junction ad2 ON ad2.auth_id = aaj2.auth_id WHERE aaj2.auths_id = a.id

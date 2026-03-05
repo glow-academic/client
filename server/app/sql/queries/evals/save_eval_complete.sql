@@ -100,18 +100,17 @@ BEGIN
         SET active = TRUE;
     END IF;
 
-    -- Persist all known eval flags with explicit boolean values.
-    INSERT INTO eval_flags_junction (eval_id, flag_id, value, created_at)
+    -- Persist all known eval flags.
+    INSERT INTO eval_flags_junction (eval_id, flag_id, created_at)
     SELECT
         v_eval_id,
         f.id,
-        f.id = ANY(COALESCE(flag_ids, ARRAY[]::uuid[])),
         NOW()
     FROM flags_resource f
     WHERE f.name IN ('eval_active', 'dynamic', '')
+      AND f.id = ANY(COALESCE(flag_ids, ARRAY[]::uuid[]))
     ON CONFLICT ON CONSTRAINT eval_flags_pkey DO UPDATE
-    SET value = EXCLUDED.value,
-        active = TRUE;
+    SET active = TRUE;
 
     INSERT INTO eval_departments_junction (eval_id, department_id, active, created_at)
     SELECT v_eval_id, dept_id, TRUE, NOW()
@@ -134,11 +133,11 @@ BEGIN
     SET active = TRUE;
 
     -- Model flag junctions
-    INSERT INTO eval_model_flags_junction (eval_id, model_flag_id, value, active, created_at)
-    SELECT v_eval_id, mf_id, TRUE, TRUE, NOW()
+    INSERT INTO eval_model_flags_junction (eval_id, model_flag_id, active, created_at)
+    SELECT v_eval_id, mf_id, TRUE, NOW()
     FROM UNNEST(COALESCE(model_flag_ids, ARRAY[]::uuid[])) AS mf_id
     ON CONFLICT ON CONSTRAINT eval_model_flags_junction_pkey DO UPDATE
-    SET value = TRUE, active = TRUE;
+    SET active = TRUE;
 
     -- Model rubric junctions
     INSERT INTO eval_model_rubrics_junction (eval_id, model_rubric_id, active, created_at)

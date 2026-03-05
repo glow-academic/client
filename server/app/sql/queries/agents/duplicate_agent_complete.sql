@@ -256,15 +256,13 @@ link_agent_description AS (
 ),
 -- Link agent active flag (defaults to false)
 link_agent_active_flag AS (
-    INSERT INTO agent_flags_junction (agent_id, flag_id, value, created_at) SELECT na.agent_id::uuid,
+    INSERT INTO agent_flags_junction (agent_id, flag_id, created_at) SELECT na.agent_id::uuid,
         f.id,
-        false,
         NOW()
     FROM new_agent na
     CROSS JOIN flags_resource f
     WHERE f.name = 'agent_active'
-    ON CONFLICT (agent_id, flag_id) DO UPDATE SET
-        value = false
+    ON CONFLICT (agent_id, flag_id) DO NOTHING
 ),
 copy_departments AS (
     INSERT INTO agent_departments_junction (agent_id, department_id, active, created_at)

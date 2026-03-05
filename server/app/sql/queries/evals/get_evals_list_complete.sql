@@ -159,9 +159,9 @@ eval_objects AS (
                 (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = pe.id LIMIT 1),
                 COALESCE((SELECT d.description FROM eval_descriptions_junction ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = pe.id LIMIT 1), ''),
                 COALESCE((SELECT ARRAY_AGG(ed.department_id::text) FROM eval_departments_junction ed WHERE ed.eval_id = pe.id AND ed.active = true), ARRAY[]::text[]),
-                NOT COALESCE((SELECT ef.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'eval_active' LIMIT 1), false),
-                COALESCE((SELECT ef.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'dynamic' LIMIT 1), false),
-                COALESCE((SELECT ef.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'use_groups' LIMIT 1), false),
+                NOT COALESCE((SELECT f.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'eval_active' LIMIT 1), false),
+                COALESCE((SELECT f.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'dynamic' LIMIT 1), false),
+                COALESCE((SELECT f.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'use_groups' LIMIT 1), false),
                 0,  -- num_runs: eval_runs_junction dropped, runs are runtime-only
                 0,  -- num_groups: eval_groups_junction dropped, groups are runtime-only
                 pe.updated_at

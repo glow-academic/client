@@ -164,8 +164,7 @@ BEGIN
         DELETE FROM agent_tools_junction WHERE agent_id = v_agent_id;
         -- Update existing active flag if it exists
         UPDATE agent_flags_junction SET
-            flag_id = COALESCE(v_active_flag_id, agent_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
+            flag_id = COALESCE(v_active_flag_id, agent_flags_junction.flag_id)
         WHERE agent_id = v_agent_id;
         -- Deactivate existing temperature/reasoning/voice links
         UPDATE agent_temperature_levels_junction SET active = false WHERE agent_id = v_agent_id;
@@ -471,16 +470,14 @@ BEGIN
     ),
     -- Insert or UPDATE agent_artifact active flag
     insert_agent_active_flag AS (
-        INSERT INTO agent_flags_junction (agent_id, flag_id, value, created_at) SELECT x.agent_id,
+        INSERT INTO agent_flags_junction (agent_id, flag_id, created_at) SELECT x.agent_id,
             COALESCE(x.active_flag_id, f.id),
-            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'agent_active'
         ON CONFLICT (agent_id, flag_id, type) DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, agent_flags_junction.flag_id),
-            value = EXCLUDED.value
+            flag_id = COALESCE(EXCLUDED.flag_id, agent_flags_junction.flag_id)
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (

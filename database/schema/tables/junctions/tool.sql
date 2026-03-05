@@ -113,7 +113,6 @@ CREATE TABLE public.tool_entries_junction (
 CREATE TABLE public.tool_flags_junction (
     tool_id uuid CONSTRAINT tool_flags_tool_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT tool_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT tool_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT tool_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT tool_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT tool_flags_mcp_not_null NOT NULL,

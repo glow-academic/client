@@ -69,7 +69,6 @@ CREATE TABLE public.persona_examples_junction (
 CREATE TABLE public.persona_flags_junction (
     persona_id uuid CONSTRAINT persona_flags_persona_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT persona_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT persona_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT persona_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT persona_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT persona_flags_mcp_not_null NOT NULL,

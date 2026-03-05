@@ -38,7 +38,6 @@ CREATE TABLE public.model_descriptions_junction (
 CREATE TABLE public.model_flags_junction (
     model_id uuid CONSTRAINT model_flags_model_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT model_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT model_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT model_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT model_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT model_flags_mcp_not_null NOT NULL,

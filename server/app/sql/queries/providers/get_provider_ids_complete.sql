@@ -86,7 +86,7 @@ flag_resource_data AS (
             JOIN flags_resource f ON pf.flag_id = f.id
             WHERE pf.provider_id = (SELECT provider_id FROM params)
               AND f.name = 'provider_active'
-              AND pf.value = true
+              AND f.value = true
               AND pf.active = true
             LIMIT 1
         ) AS active_flag_id

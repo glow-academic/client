@@ -162,17 +162,15 @@ BEGIN
         SET active = true, created_at = NOW();
     END IF;
 
-    INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at, active)
+    INSERT INTO provider_flags_junction (provider_id, flag_id, created_at, active)
     VALUES (
         v_provider_id,
         COALESCE(v_active_flag_id, v_default_provider_active_flag_id),
-        CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
         NOW(),
         true
     )
     ON CONFLICT ON CONSTRAINT provider_flags_pkey DO UPDATE
     SET flag_id = EXCLUDED.flag_id,
-        value = EXCLUDED.value,
         active = true,
         created_at = NOW();
 

@@ -38,7 +38,6 @@ CREATE TABLE public.department_descriptions_junction (
 CREATE TABLE public.department_flags_junction (
     department_id uuid CONSTRAINT department_flags_department_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT department_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT department_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT department_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT department_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT department_flags_mcp_not_null NOT NULL,

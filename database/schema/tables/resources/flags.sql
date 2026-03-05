@@ -14,7 +14,8 @@ CREATE TABLE public.flags_resource (
     generated boolean DEFAULT false CONSTRAINT flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT flags_mcp_not_null NOT NULL,
     type public.flag_type DEFAULT 'active'::public.flag_type NOT NULL,
-    icon text NOT NULL
+    icon text NOT NULL,
+    value boolean DEFAULT true NOT NULL
 );
 
 

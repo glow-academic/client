@@ -94,16 +94,14 @@ link_provider_description AS (
 ),
 -- Link provider active flag (set to false for duplicate)
 link_provider_active_flag AS (
-    INSERT INTO provider_flags_junction (provider_id, flag_id, value, created_at)
+    INSERT INTO provider_flags_junction (provider_id, flag_id, created_at)
     SELECT np.id,
         f.id,
-        FALSE,
         NOW()
     FROM new_provider np
     CROSS JOIN flags_resource f
     WHERE f.name = 'provider_active'
-    ON CONFLICT (provider_id, flag_id) DO UPDATE SET
-        value = FALSE
+    ON CONFLICT (provider_id, flag_id) DO NOTHING
 ),
 -- Link provider to existing value
 link_provider_value AS (

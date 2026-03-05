@@ -49,6 +49,6 @@ LEFT JOIN flags_resource f_active ON f_active.id = tf_active.flag_id AND f_activ
 LEFT JOIN agent_flags_junction af_agent ON af_agent.agent_id = a.id
 LEFT JOIN flags_resource f_agent ON f_agent.id = af_agent.flag_id AND f_agent.name = 'agent_active'
 WHERE aaj.agents_id = ANY(agent_ids)
-  AND COALESCE(af_agent.value, false) = true
-  AND (tf_active.tool_id IS NULL OR COALESCE(f_active.id, NULL) IS NULL OR COALESCE(tf_active.value, false) = true);
+  AND COALESCE(f_agent.value, false) = true
+  AND (tf_active.tool_id IS NULL OR COALESCE(f_active.id, NULL) IS NULL OR COALESCE(f_active.value, false) = true);
 $$;

@@ -38,7 +38,6 @@ CREATE TABLE public.simulation_descriptions_junction (
 CREATE TABLE public.simulation_flags_junction (
     simulation_id uuid CONSTRAINT simulation_flags_simulation_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT simulation_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT simulation_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT simulation_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_flags_mcp_not_null NOT NULL,
@@ -69,7 +68,6 @@ CREATE TABLE public.simulation_names_junction (
 CREATE TABLE public.simulation_scenario_flags_junction (
     simulation_id uuid CONSTRAINT simulation_scenario_flags_new_simulation_id_not_null NOT NULL,
     scenario_flag_id uuid CONSTRAINT simulation_scenario_flags_new_scenario_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT simulation_scenario_flags_new_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT simulation_scenario_flags_new_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT simulation_scenario_flags_new_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT simulation_scenario_flags_new_mcp_not_null NOT NULL,

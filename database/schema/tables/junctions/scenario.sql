@@ -8,7 +8,6 @@
 CREATE TABLE public.scenario_flags_junction (
     scenario_id uuid CONSTRAINT scenario_flags_scenario_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT scenario_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT scenario_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT scenario_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT scenario_flags_mcp_not_null NOT NULL,

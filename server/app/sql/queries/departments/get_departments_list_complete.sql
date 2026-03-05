@@ -120,7 +120,7 @@ departments_data AS (
         d.id as department_id,
         (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT desc_r.description FROM department_descriptions_junction dd JOIN descriptions_resource desc_r ON dd.description_id = desc_r.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
-        NOT EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND df.value = true) as is_inactive,
+        NOT EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true) as is_inactive,
         d.updated_at,
         COALESCE(dsc.staff_count, 0) as staff_count,
         COALESCE(du.total_usage, 0) as total_usage

@@ -101,7 +101,6 @@ CREATE TABLE public.setting_descriptions_junction (
 CREATE TABLE public.setting_flags_junction (
     setting_id uuid CONSTRAINT setting_flags_setting_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT setting_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT setting_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT setting_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT setting_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT setting_flags_mcp_not_null NOT NULL,

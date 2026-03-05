@@ -112,27 +112,27 @@ CREATE MATERIALIZED VIEW public.chat_mv AS
          SELECT ss_1.chat_id,
             COALESCE(bool_or(
                 CASE
-                    WHEN (fr.type = 'video_enabled'::public.flag_type) THEN sfj.value
+                    WHEN (fr.type = 'video_enabled'::public.flag_type) THEN fr.value
                     ELSE NULL::boolean
                 END), false) AS video_enabled,
             COALESCE(bool_or(
                 CASE
-                    WHEN (fr.type = 'problem_statement_enabled'::public.flag_type) THEN sfj.value
+                    WHEN (fr.type = 'problem_statement_enabled'::public.flag_type) THEN fr.value
                     ELSE NULL::boolean
                 END), false) AS problem_statement_enabled,
             COALESCE(bool_or(
                 CASE
-                    WHEN (fr.type = 'objectives_enabled'::public.flag_type) THEN sfj.value
+                    WHEN (fr.type = 'objectives_enabled'::public.flag_type) THEN fr.value
                     ELSE NULL::boolean
                 END), false) AS objectives_enabled,
             COALESCE(bool_or(
                 CASE
-                    WHEN (fr.type = 'images_enabled'::public.flag_type) THEN sfj.value
+                    WHEN (fr.type = 'images_enabled'::public.flag_type) THEN fr.value
                     ELSE NULL::boolean
                 END), false) AS images_enabled,
             COALESCE(bool_or(
                 CASE
-                    WHEN (fr.type = 'questions_enabled'::public.flag_type) THEN sfj.value
+                    WHEN (fr.type = 'questions_enabled'::public.flag_type) THEN fr.value
                     ELSE NULL::boolean
                 END), false) AS questions_enabled
            FROM (((scenario_single ss_1

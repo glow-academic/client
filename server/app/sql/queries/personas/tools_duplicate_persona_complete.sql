@@ -132,11 +132,10 @@ link_persona_instruction AS (
 ),
 -- Link persona active flag (set to false for duplicate)
 link_persona_active_flag AS (
-    INSERT INTO persona_flags_junction (persona_id, flag_id, value, created_at)
+    INSERT INTO persona_flags_junction (persona_id, flag_id, created_at)
     SELECT
         np.id,
         f.id,
-        FALSE,
         NOW()
     FROM new_persona np
     CROSS JOIN flags_resource f

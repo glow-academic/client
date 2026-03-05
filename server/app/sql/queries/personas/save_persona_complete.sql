@@ -111,7 +111,7 @@ BEGIN
 
         -- Flag: preserve existing active flag if not provided
         IF active_flag_id IS NULL THEN
-            active_flag_id := (SELECT j.flag_id FROM persona_flags_junction j WHERE j.persona_id = v_persona_id AND j.value = true LIMIT 1);
+            active_flag_id := (SELECT j.flag_id FROM persona_flags_junction j JOIN flags_resource fr ON j.flag_id = fr.id WHERE j.persona_id = v_persona_id AND fr.value = true LIMIT 1);
         END IF;
     END IF;
 
@@ -218,17 +218,15 @@ BEGIN
     ),
     -- Upsert active flag
     upsert_flag AS (
-        INSERT INTO persona_flags_junction (persona_id, flag_id, value, created_at)
+        INSERT INTO persona_flags_junction (persona_id, flag_id, created_at)
         SELECT x.persona_id,
             COALESCE(x.active_flag_id, f.id),
-            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.type = 'persona_active'
         ON CONFLICT ON CONSTRAINT persona_flags_pkey DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, persona_flags_junction.flag_id),
-            value = EXCLUDED.value
+            flag_id = COALESCE(EXCLUDED.flag_id, persona_flags_junction.flag_id)
     ),
     -- Link departments
     link_departments AS (

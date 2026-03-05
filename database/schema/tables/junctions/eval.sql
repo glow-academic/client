@@ -53,7 +53,6 @@ CREATE TABLE public.eval_evals_junction (
 CREATE TABLE public.eval_flags_junction (
     eval_id uuid CONSTRAINT eval_flags_eval_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT eval_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT eval_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT eval_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT eval_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT eval_flags_mcp_not_null NOT NULL,
@@ -69,7 +68,6 @@ CREATE TABLE public.eval_flags_junction (
 CREATE TABLE public.eval_model_flags_junction (
     eval_id uuid NOT NULL,
     model_flag_id uuid NOT NULL,
-    value boolean NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,

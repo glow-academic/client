@@ -177,7 +177,7 @@ cohort_data AS (
         (SELECT cd.description_id FROM cohort_descriptions_junction cd WHERE cd.cohort_id = c.id LIMIT 1) as description_id,
         (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description,
         -- Flag
-        NOT EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.type = 'cohort_active' AND cf.value = TRUE) as is_inactive,
+        NOT EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.type = 'cohort_active' AND f.value = TRUE) as is_inactive,
         -- Multi-select
         cdd.department_ids,
         cdd.department_names as departments,

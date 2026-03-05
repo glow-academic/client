@@ -80,7 +80,7 @@ usage_check AS (
               WHERE ssf.simulation_id = ssj_bridge.simulation_id
                 AND sfr.scenario_id = (SELECT scenarios_id FROM scenario_resource)
                 AND f.type = 'scenario_active'
-                AND ssf.value = true
+                AND f.value = true
           )
     ) + (
         SELECT COUNT(*) FROM attempt_chat_mv msc

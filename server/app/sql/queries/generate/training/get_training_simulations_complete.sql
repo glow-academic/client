@@ -111,7 +111,7 @@ active_simulations AS (
         JOIN flags_resource f ON f.id = sf.flag_id
         WHERE sf.simulation_id = sa.id
           AND f.name = 'simulation_active'
-          AND sf.value = true
+          AND f.value = true
     )
 ),
 -- Group by simulation: aggregate IDs from all training rows that contain this simulation

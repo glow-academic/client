@@ -65,7 +65,7 @@ flag_resource_data AS (
          JOIN flags_resource f ON df.flag_id = f.id
          WHERE df.department_id = (SELECT department_id FROM params)
            AND f.name = 'department_active'
-           AND df.value = TRUE
+           AND f.value = TRUE
          LIMIT 1) as active_flag_id
     FROM params
 ),

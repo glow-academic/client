@@ -41,7 +41,6 @@ CREATE TABLE public.profile_emails_junction (
 CREATE TABLE public.profile_flags_junction (
     profile_id uuid CONSTRAINT profile_flags_profile_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT profile_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT profile_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT profile_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT profile_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT profile_flags_mcp_not_null NOT NULL,

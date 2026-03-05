@@ -162,7 +162,7 @@ persona_data AS (
         (SELECT pij.instruction_id FROM persona_instructions_junction pij WHERE pij.persona_id = p.id LIMIT 1) as instructions_id,
         (SELECT ir.template FROM persona_instructions_junction pij JOIN instructions_resource ir ON pij.instruction_id = ir.id WHERE pij.persona_id = p.id LIMIT 1) as instructions,
         -- Flag
-        NOT EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.type = 'persona_active' AND pf.value = TRUE) as is_inactive,
+        NOT EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.type = 'persona_active' AND f.value = TRUE) as is_inactive,
         -- Multi-select
         pdd.department_ids,
         pdd.department_names as departments,

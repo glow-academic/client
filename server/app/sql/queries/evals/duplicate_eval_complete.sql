@@ -107,28 +107,24 @@ link_eval_description AS (
 ),
 -- Link eval active flag (set to false for duplicate)
 link_eval_active_flag AS (
-    INSERT INTO eval_flags_junction (eval_id, flag_id, value, created_at) SELECT ne.id,
+    INSERT INTO eval_flags_junction (eval_id, flag_id, created_at) SELECT ne.id,
         f.id,
-        FALSE,
         NOW()
     FROM new_eval ne
     CROSS JOIN flags_resource f
     WHERE f.name = 'eval_active'
-    ON CONFLICT (eval_id, flag_id) DO UPDATE SET 
-        value = FALSE
+    ON CONFLICT (eval_id, flag_id) DO NOTHING
 ),
 -- Copy other flags from original eval
 copy_eval_flags AS (
-    INSERT INTO eval_flags_junction (eval_id, flag_id, value, created_at)
-    SELECT 
+    INSERT INTO eval_flags_junction (eval_id, flag_id, created_at)
+    SELECT
         ne.id,
         of.flag_id,
-        FALSE,
         NOW()
     FROM new_eval ne
     CROSS JOIN original_flags of
-    ON CONFLICT (eval_id, flag_id) DO UPDATE SET 
-        value = FALSE
+    ON CONFLICT (eval_id, flag_id) DO NOTHING
 ),
 copy_departments AS (
     -- Copy department links from original eval

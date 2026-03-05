@@ -82,7 +82,7 @@ simulation_data AS (
         EXISTS (
             SELECT 1 FROM simulation_flags_junction sf
             JOIN flags_resource f ON sf.flag_id = f.id
-            WHERE sf.simulation_id = sa.id AND f.name = 'simulation_active' AND sf.value = true
+            WHERE sf.simulation_id = sa.id AND f.name = 'simulation_active' AND f.value = true
         ) as simulation_is_active
     FROM params p
     JOIN simulations_resource sr ON sr.id = p.simulation_id

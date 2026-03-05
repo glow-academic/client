@@ -45,6 +45,6 @@ LEFT JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id
 LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = ppj.provider_id
 LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
 WHERE a.id = agent_id
-  AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND af.value = true)
+  AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND f.value = true)
 LIMIT 1
 $$;

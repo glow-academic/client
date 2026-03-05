@@ -53,7 +53,6 @@ CREATE TABLE public.auth_descriptions_junction (
 CREATE TABLE public.auth_flags_junction (
     auth_id uuid CONSTRAINT auth_flags_auth_id_not_null NOT NULL,
     flag_id uuid CONSTRAINT auth_flags_flag_id_not_null NOT NULL,
-    value boolean CONSTRAINT auth_flags_value_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT auth_flags_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT auth_flags_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT auth_flags_mcp_not_null NOT NULL,

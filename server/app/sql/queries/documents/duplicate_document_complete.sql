@@ -111,28 +111,24 @@ link_document_description AS (
 ),
 -- Link document active flag (set to false for duplicate)
 link_document_active_flag AS (
-    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at) SELECT nd.id,
+    INSERT INTO document_flags_junction (document_id, flag_id, created_at) SELECT nd.id,
         f.id,
-        FALSE,
         NOW()
     FROM new_document nd
     CROSS JOIN flags_resource f
     WHERE f.name = 'document_active'
-    ON CONFLICT (document_id, flag_id) DO UPDATE SET 
-        value = FALSE
+    ON CONFLICT (document_id, flag_id) DO NOTHING
 ),
 -- Copy other flags from original document
 copy_document_flags AS (
-    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at)
-    SELECT 
+    INSERT INTO document_flags_junction (document_id, flag_id, created_at)
+    SELECT
         nd.id,
         of.flag_id,
-        FALSE,
         NOW()
     FROM new_document nd
     CROSS JOIN original_flags of
-    ON CONFLICT (document_id, flag_id) DO UPDATE SET 
-        value = FALSE
+    ON CONFLICT (document_id, flag_id) DO NOTHING
 ),
 copy_departments AS (
     -- Copy department links from original document
