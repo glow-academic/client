@@ -34,3 +34,7 @@ class CreateToolResponse(BaseModel):
 
 class UpdateToolResponse(BaseModel):
     id: UUID
+
+
+class DeleteToolsResponse(BaseModel):
+    deleted_ids: list[UUID]

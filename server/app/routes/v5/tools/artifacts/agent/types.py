@@ -32,3 +32,7 @@ class CreateAgentResponse(BaseModel):
 
 class UpdateAgentResponse(BaseModel):
     id: UUID
+
+
+class DeleteAgentsResponse(BaseModel):
+    deleted_ids: list[UUID]

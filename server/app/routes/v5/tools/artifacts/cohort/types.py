@@ -32,3 +32,7 @@ class CreateCohortResponse(BaseModel):
 
 class UpdateCohortResponse(BaseModel):
     id: UUID
+
+
+class DeleteCohortsResponse(BaseModel):
+    deleted_ids: list[UUID]

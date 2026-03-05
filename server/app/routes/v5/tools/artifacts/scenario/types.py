@@ -36,3 +36,7 @@ class CreateScenarioResponse(BaseModel):
 
 class UpdateScenarioResponse(BaseModel):
     id: UUID
+
+
+class DeleteScenariosResponse(BaseModel):
+    deleted_ids: list[UUID]

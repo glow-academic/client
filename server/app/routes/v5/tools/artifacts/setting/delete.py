@@ -1,25 +1,25 @@
-"""Persona artifact DELETE — tool layer."""
+"""Setting artifact DELETE — tool layer."""
 
 from uuid import UUID
 
 import asyncpg
 
 from app.infra.delete.delete_artifact import delete_artifacts
-from app.routes.v5.tools.artifacts.persona.types import DeletePersonasResponse
+from app.routes.v5.tools.artifacts.setting.types import DeleteSettingsResponse
 
-TABLE = "persona_artifact"
+TABLE = "setting_artifact"
 
 
-async def delete_personas(
+async def delete_settings(
     conn: asyncpg.Connection,
     ids: list[UUID],
     *,
     soft: bool = False,
-) -> DeletePersonasResponse:
-    """Delete persona artifacts by IDs.
+) -> DeleteSettingsResponse:
+    """Delete setting artifacts by IDs.
 
     soft=False (default): hard DELETE — junctions cascade.
     soft=True: sets active=false — data is recoverable.
     """
     deleted_ids = await delete_artifacts(conn, table=TABLE, ids=ids, soft=soft)
-    return DeletePersonasResponse(deleted_ids=deleted_ids)
+    return DeleteSettingsResponse(deleted_ids=deleted_ids)

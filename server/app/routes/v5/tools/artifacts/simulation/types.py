@@ -32,3 +32,7 @@ class CreateSimulationResponse(BaseModel):
 
 class UpdateSimulationResponse(BaseModel):
     id: UUID
+
+
+class DeleteSimulationsResponse(BaseModel):
+    deleted_ids: list[UUID]

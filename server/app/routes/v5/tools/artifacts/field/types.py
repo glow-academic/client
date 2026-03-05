@@ -28,3 +28,7 @@ class CreateFieldResponse(BaseModel):
 
 class UpdateFieldResponse(BaseModel):
     id: UUID
+
+
+class DeleteFieldsResponse(BaseModel):
+    deleted_ids: list[UUID]

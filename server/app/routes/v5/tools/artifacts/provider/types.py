@@ -30,3 +30,7 @@ class CreateProviderResponse(BaseModel):
 
 class UpdateProviderResponse(BaseModel):
     id: UUID
+
+
+class DeleteProvidersResponse(BaseModel):
+    deleted_ids: list[UUID]

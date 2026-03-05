@@ -27,3 +27,7 @@ class CreateDepartmentResponse(BaseModel):
 
 class UpdateDepartmentResponse(BaseModel):
     id: UUID
+
+
+class DeleteDepartmentsResponse(BaseModel):
+    deleted_ids: list[UUID]

@@ -29,3 +29,7 @@ class CreateProfileResponse(BaseModel):
 
 class UpdateProfileResponse(BaseModel):
     id: UUID
+
+
+class DeleteProfilesResponse(BaseModel):
+    deleted_ids: list[UUID]

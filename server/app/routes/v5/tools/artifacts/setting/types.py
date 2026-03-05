@@ -35,3 +35,7 @@ class CreateSettingResponse(BaseModel):
 
 class UpdateSettingResponse(BaseModel):
     id: UUID
+
+
+class DeleteSettingsResponse(BaseModel):
+    deleted_ids: list[UUID]

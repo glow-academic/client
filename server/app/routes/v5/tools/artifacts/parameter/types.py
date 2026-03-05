@@ -28,3 +28,7 @@ class CreateParameterResponse(BaseModel):
 
 class UpdateParameterResponse(BaseModel):
     id: UUID
+
+
+class DeleteParametersResponse(BaseModel):
+    deleted_ids: list[UUID]

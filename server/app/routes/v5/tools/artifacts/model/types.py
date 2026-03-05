@@ -35,3 +35,7 @@ class CreateModelResponse(BaseModel):
 
 class UpdateModelResponse(BaseModel):
     id: UUID
+
+
+class DeleteModelsResponse(BaseModel):
+    deleted_ids: list[UUID]

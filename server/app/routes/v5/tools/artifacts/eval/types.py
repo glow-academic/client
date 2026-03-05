@@ -32,3 +32,7 @@ class CreateEvalResponse(BaseModel):
 
 class UpdateEvalResponse(BaseModel):
     id: UUID
+
+
+class DeleteEvalsResponse(BaseModel):
+    deleted_ids: list[UUID]

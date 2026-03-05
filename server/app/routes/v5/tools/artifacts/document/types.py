@@ -32,3 +32,7 @@ class CreateDocumentResponse(BaseModel):
 
 class UpdateDocumentResponse(BaseModel):
     id: UUID
+
+
+class DeleteDocumentsResponse(BaseModel):
+    deleted_ids: list[UUID]

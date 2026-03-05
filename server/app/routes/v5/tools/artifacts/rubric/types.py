@@ -30,3 +30,7 @@ class CreateRubricResponse(BaseModel):
 
 class UpdateRubricResponse(BaseModel):
     id: UUID
+
+
+class DeleteRubricsResponse(BaseModel):
+    deleted_ids: list[UUID]
