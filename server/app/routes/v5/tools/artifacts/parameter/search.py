@@ -1,4 +1,4 @@
-"""Persona artifact SEARCH — returns matching persona IDs."""
+"""Parameter artifact SEARCH — returns matching parameter IDs."""
 
 from uuid import UUID
 
@@ -9,25 +9,23 @@ from app.infra.search.search_artifact import (
     execute_artifact_search,
 )
 
-TABLE = "persona_artifact"
-OWNER_COL = "persona_id"
+TABLE = "parameter_artifact"
+OWNER_COL = "parameter_id"
 
 
-async def search_personas(
+async def search_parameters(
     conn: asyncpg.Connection,
     *,
     search: str | None = None,
     department_ids: list[UUID] | None = None,
-    flag_ids: list[UUID] | None = None,
-    voice_ids: list[UUID] | None = None,
-    color_ids: list[UUID] | None = None,
-    icon_ids: list[UUID] | None = None,
+    scenario_ids: list[UUID] | None = None,
+    field_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
     limit_count: int = 20,
     offset_count: int = 0,
 ) -> list[UUID]:
-    """Search persona artifacts by filters. Returns IDs only."""
+    """Search parameter artifacts by filters. Returns IDs only."""
     conditions: list[str] = []
     params: list[object] = []
     idx = 1
@@ -41,12 +39,12 @@ async def search_personas(
         conditions.append(
             f"("
             f"EXISTS ("
-            f"SELECT 1 FROM persona_names_junction nj "
+            f"SELECT 1 FROM parameter_names_junction nj "
             f"JOIN names_resource nr ON nr.id = nj.names_id "
             f"WHERE nj.{OWNER_COL} = a.id AND nj.active = true "
             f"AND LOWER(nr.name) LIKE '%%' || LOWER(${idx}) || '%%'"
             f") OR EXISTS ("
-            f"SELECT 1 FROM persona_descriptions_junction dj "
+            f"SELECT 1 FROM parameter_descriptions_junction dj "
             f"JOIN descriptions_resource dr ON dr.id = dj.descriptions_id "
             f"WHERE dj.{OWNER_COL} = a.id AND dj.active = true "
             f"AND LOWER(dr.description) LIKE '%%' || LOWER(${idx}) || '%%'"
@@ -60,41 +58,34 @@ async def search_personas(
     if department_ids:
         idx = add_junction_filter(
             conditions, params, idx,
-            junction_table="persona_departments_junction",
+            junction_table="parameter_departments_junction",
             owner_col=OWNER_COL, resource_col="departments_id",
             ids=department_ids,
         )
 
-    if flag_ids:
-        idx = add_junction_filter(
-            conditions, params, idx,
-            junction_table="persona_flags_junction",
-            owner_col=OWNER_COL, resource_col="flags_id",
-            ids=flag_ids,
+    # Scenario filter: scenario_ids are scenario_artifact IDs
+    # Path: parameter_artifact → parameter_parameters_junction → parameters_resource
+    #        → parameter_fields_resource → scenario_parameter_fields_junction → scenario_id
+    if scenario_ids:
+        conditions.append(
+            f"EXISTS ("
+            f"SELECT 1 FROM parameter_parameters_junction ppj "
+            f"JOIN parameter_fields_resource pfr ON pfr.parameter_id = ppj.parameters_id "
+            f"JOIN scenario_parameter_fields_junction spfj ON spfj.parameter_fields_id = pfr.id AND spfj.active = true "
+            f"WHERE ppj.{OWNER_COL} = a.id AND ppj.active = true "
+            f"AND spfj.scenario_id = ANY(${idx})"
+            f")"
         )
+        params.append(scenario_ids)
+        idx += 1
 
-    if voice_ids:
+    # Field filter: field_ids are fields_resource IDs — direct junction lookup
+    if field_ids:
         idx = add_junction_filter(
             conditions, params, idx,
-            junction_table="persona_voices_junction",
-            owner_col=OWNER_COL, resource_col="voices_id",
-            ids=voice_ids,
-        )
-
-    if color_ids:
-        idx = add_junction_filter(
-            conditions, params, idx,
-            junction_table="persona_colors_junction",
-            owner_col=OWNER_COL, resource_col="colors_id",
-            ids=color_ids,
-        )
-
-    if icon_ids:
-        idx = add_junction_filter(
-            conditions, params, idx,
-            junction_table="persona_icons_junction",
-            owner_col=OWNER_COL, resource_col="icons_id",
-            ids=icon_ids,
+            junction_table="parameter_fields_junction",
+            owner_col=OWNER_COL, resource_col="fields_id",
+            ids=field_ids,
         )
 
     # Exclude
@@ -105,7 +96,7 @@ async def search_personas(
 
     # Order by name (LEFT JOIN for sorting)
     order_join = (
-        f"LEFT JOIN persona_names_junction pnj ON pnj.{OWNER_COL} = a.id AND pnj.active = true "
+        f"LEFT JOIN parameter_names_junction pnj ON pnj.{OWNER_COL} = a.id AND pnj.active = true "
         f"LEFT JOIN names_resource nr_sort ON nr_sort.id = pnj.names_id"
     )
 
