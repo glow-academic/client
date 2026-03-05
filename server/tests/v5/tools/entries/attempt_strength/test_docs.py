@@ -36,9 +36,9 @@ async def test_includes_all_operations(conn):
 
     op_names = [op.name for op in result.operations]
     assert "create_attempt_strength" in op_names
-    assert "refresh_attempt_strengths" in op_names
+    assert "refresh_attempt_strength" in op_names
     assert "get_attempt_strengths" in op_names
-    assert "search_attempt_strengths" in op_names
+    assert "search_attempt_strength_entries_internal" in op_names
 
 
 async def test_create_operation_has_params(conn):

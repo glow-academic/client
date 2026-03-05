@@ -46,6 +46,6 @@ async def test_create_operation_has_params(conn):
     create_op = next(op for op in result.operations if op.name == "create_attempt_practice")
     param_names = [p.name for p in create_op.params]
     assert "attempt_id" in param_names
-    assert "attempt_practice_id" in param_names
+    assert "practice_id" in param_names
     assert "session_id" in param_names
     assert "mcp" in param_names

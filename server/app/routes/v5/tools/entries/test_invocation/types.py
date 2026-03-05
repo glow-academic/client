@@ -25,8 +25,6 @@ class GetTestInvocationResponse(BaseModel):
     grade_time_taken: float | None
     rubric_id: UUID | None
     department_ids: list[UUID]
-    run_ids: list[UUID]
-    group_ids: list[UUID]
     run_agent_ids: list[UUID]
     group_agent_ids: list[UUID]
     model_id: UUID | None
@@ -34,4 +32,3 @@ class GetTestInvocationResponse(BaseModel):
     temperature_level_id: UUID | None
     reasoning_level_id: UUID | None
     key_id: UUID | None
-    historical_run_ids: list[UUID]

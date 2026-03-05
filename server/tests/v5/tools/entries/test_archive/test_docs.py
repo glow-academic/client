@@ -38,7 +38,7 @@ async def test_includes_all_operations(conn):
     assert "create_test_archive" in op_names
     assert "refresh_test_archive" in op_names
     assert "get_test_archives" in op_names
-    assert "search_test_archives_internal" in op_names
+    assert "search_test_archive_entries_internal" in op_names
 
 
 async def test_create_operation_has_params(conn):

@@ -5,6 +5,8 @@ import pytest
 from app.routes.v5.tools.entries.call_uploads.create import create_call_upload
 from app.routes.v5.tools.entries.call_uploads.refresh import refresh_call_uploads
 from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.uploads.create import create_upload
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
@@ -14,7 +16,9 @@ pytestmark = pytest.mark.asyncio
 
 async def _setup(conn):
     session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
-    parent = await create_call(conn, session_id=session.id)
+    group = await create_group(conn, session_id=session.id)
+    run = await create_run(conn, group_id=group.id, session_id=session.id)
+    parent = await create_call(conn, run_id=run.id, session_id=session.id)
     upload = await create_upload(
         conn, session_id=session.id, file_path="test/file.bin", mime_type="application/octet-stream", size=1024
     )

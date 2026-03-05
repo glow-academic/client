@@ -29,7 +29,7 @@ async def get_attempt_messages(
     rows = await conn.fetch(
         f"""
         SELECT message_id, chat_id, attempt_id, type,
-               created_at, completed, runs_id, text_id,
+               created_at, completed, text_id,
                history_file_path, audio_id
         FROM {MV_NAME}
         WHERE message_id = ANY($1)
@@ -45,7 +45,6 @@ async def get_attempt_messages(
             type=r["type"],
             created_at=r["created_at"],
             completed=r["completed"],
-            runs_id=r["runs_id"],
             text_id=r["text_id"],
             history_file_path=r["history_file_path"],
             audio_id=r["audio_id"],

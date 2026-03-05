@@ -39,7 +39,7 @@ async def test_includes_all_operations(conn):
     assert "refresh_test_invocation" in op_names
     assert "get_test_invocations" in op_names
     assert "get_test_invocation_internal" in op_names
-    assert "search_test_invocations_internal" in op_names
+    assert "search_test_invocation_entries_internal" in op_names
 
 
 async def test_create_operation_has_params(conn):
