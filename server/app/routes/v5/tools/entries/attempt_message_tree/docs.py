@@ -13,10 +13,10 @@ from app.routes.v5.tools.entries.attempt_message_tree.get import (
     get_attempt_message_trees,
 )
 from app.routes.v5.tools.entries.attempt_message_tree.refresh import (
-    refresh_attempt_message_trees,
+    refresh_attempt_message_tree,
 )
 from app.routes.v5.tools.entries.attempt_message_tree.search import (
-    search_attempt_message_trees,
+    search_attempt_message_tree_entries_internal,
 )
 
 
@@ -48,7 +48,7 @@ async def get_attempt_message_tree_docs(conn: asyncpg.Connection) -> DocsRespons
                 ),
             ),
             get_operation_info(
-                refresh_attempt_message_trees,
+                refresh_attempt_message_tree,
                 description="Refreshes attempt_message_tree_mv concurrently.",
             ),
             get_operation_info(
@@ -56,7 +56,7 @@ async def get_attempt_message_tree_docs(conn: asyncpg.Connection) -> DocsRespons
                 description="Batch retrieves message trees by IDs from attempt_message_tree_mv.",
             ),
             get_operation_info(
-                search_attempt_message_trees,
+                search_attempt_message_tree_entries_internal,
                 description="Filtered paginated search against attempt_message_tree_mv.",
             ),
         ],

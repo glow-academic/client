@@ -36,8 +36,8 @@ async def test_includes_all_operations(conn):
 
     op_names = [op.name for op in result.operations]
     assert "create_video" in op_names
-    assert "refresh_videos" in op_names
-    assert "get_videos" in op_names
+    assert "refresh_videos_internal" in op_names
+    assert "get_video" in op_names
     assert "search_videos_entries_internal" in op_names
 
 

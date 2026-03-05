@@ -11,10 +11,10 @@ from app.routes.v5.tools.entries.attempt_improvement.create import (
 )
 from app.routes.v5.tools.entries.attempt_improvement.get import get_attempt_improvements
 from app.routes.v5.tools.entries.attempt_improvement.refresh import (
-    refresh_attempt_improvements,
+    refresh_attempt_improvement,
 )
 from app.routes.v5.tools.entries.attempt_improvement.search import (
-    search_attempt_improvements,
+    search_attempt_improvement_entries_internal,
 )
 
 
@@ -42,7 +42,7 @@ async def get_attempt_improvement_docs(conn: asyncpg.Connection) -> DocsResponse
                 description="Creates a new attempt_improvement entry for a grade and message.",
             ),
             get_operation_info(
-                refresh_attempt_improvements,
+                refresh_attempt_improvement,
                 description="Refreshes attempt_improvement_mv concurrently.",
             ),
             get_operation_info(
@@ -50,7 +50,7 @@ async def get_attempt_improvement_docs(conn: asyncpg.Connection) -> DocsResponse
                 description="Batch retrieves improvements by IDs from attempt_improvement_mv.",
             ),
             get_operation_info(
-                search_attempt_improvements,
+                search_attempt_improvement_entries_internal,
                 description="Filtered paginated search against attempt_improvement_mv.",
             ),
         ],

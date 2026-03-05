@@ -8,8 +8,8 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_content.create import create_attempt_content
 from app.routes.v5.tools.entries.attempt_content.get import get_attempt_contents
-from app.routes.v5.tools.entries.attempt_content.refresh import refresh_attempt_contents
-from app.routes.v5.tools.entries.attempt_content.search import search_attempt_contents
+from app.routes.v5.tools.entries.attempt_content.refresh import refresh_attempt_content
+from app.routes.v5.tools.entries.attempt_content.search import search_attempt_content_entries_internal
 
 
 async def get_attempt_content_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -36,7 +36,7 @@ async def get_attempt_content_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Creates a new attempt_content entry for a message.",
             ),
             get_operation_info(
-                refresh_attempt_contents,
+                refresh_attempt_content,
                 description="Refreshes attempt_content_mv concurrently.",
             ),
             get_operation_info(
@@ -44,7 +44,7 @@ async def get_attempt_content_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves contents by IDs from attempt_content_mv.",
             ),
             get_operation_info(
-                search_attempt_contents,
+                search_attempt_content_entries_internal,
                 description="Filtered paginated search against attempt_content_mv.",
             ),
         ],

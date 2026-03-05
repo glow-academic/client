@@ -8,7 +8,7 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.chat.create import create_chat
 from app.routes.v5.tools.entries.chat.get import get_chats
-from app.routes.v5.tools.entries.chat.refresh import refresh_chat_internal
+from app.routes.v5.tools.entries.chat.refresh import refresh_chat
 from app.routes.v5.tools.entries.chat.search import search_chat_entries_internal
 
 
@@ -44,7 +44,7 @@ async def get_chat_docs(conn: asyncpg.Connection) -> DocsResponse:
                 ),
             ),
             get_operation_info(
-                refresh_chat_internal,
+                refresh_chat,
                 description="Refreshes chat_mv concurrently to reflect latest writes.",
             ),
             get_operation_info(

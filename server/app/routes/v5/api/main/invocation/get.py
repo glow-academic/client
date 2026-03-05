@@ -36,7 +36,7 @@ from app.routes.v5.api.main.invocation.types import (
 )
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.entries.suite.get import get_suite_view_internal
+from app.routes.v5.tools.entries.invocation.get import get_invocation_view_internal
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
@@ -153,14 +153,16 @@ async def get_invocation_internal(
     bypass_cache: bool = False,
 ) -> SuiteInternalData:
     """Shared IDs-first + hydration internal fetch for benchmark bundle artifact."""
-    from app.routes.v5.tools.entries.suite_drafts.get import (
-        get_suite_drafts_entries_internal,
+    from app.routes.v5.tools.entries.invocation_drafts.get import (
+        get_invocation_drafts_entries_internal,
     )
-    from app.sql.types import QGetSuiteDraftsEntriesV4Item
+    from app.routes.v5.tools.entries.invocation_drafts.types import (
+        GetInvocationDraftResponse,
+    )
 
     # 1. Fetch MV view data (all 9 ID arrays)
     async with pool.acquire() as conn:
-        view_data = await get_suite_view_internal(
+        view_data = await get_invocation_view_internal(
             conn=conn,
             profile_id=profile_id,
             suite_entry_id=suite_entry_id,
@@ -176,10 +178,10 @@ async def get_invocation_internal(
         )
 
     # 2. Fetch draft if provided
-    draft_item: QGetSuiteDraftsEntriesV4Item | None = None
+    draft_item: GetInvocationDraftResponse | None = None
     if draft_id is not None:
         async with pool.acquire() as conn:
-            draft_items = await get_suite_drafts_entries_internal(
+            draft_items = await get_invocation_drafts_entries_internal(
                 conn=conn,
                 ids=[draft_id],
                 bypass_cache=bypass_cache,
@@ -475,7 +477,6 @@ async def invocation_get(
             )
 
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
 
         pool = get_pool()
         if not pool:
@@ -499,5 +500,3 @@ async def invocation_get(
             sql_params=None,
             request=http_request,
         )
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached

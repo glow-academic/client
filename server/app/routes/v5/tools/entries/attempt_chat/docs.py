@@ -8,8 +8,8 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
 from app.routes.v5.tools.entries.attempt_chat.get import get_attempt_chats
-from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_chats
-from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
+from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_chat
+from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chat_entries_internal
 
 
 async def get_attempt_chat_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -58,7 +58,7 @@ async def get_attempt_chat_docs(conn: asyncpg.Connection) -> DocsResponse:
                 ),
             ),
             get_operation_info(
-                refresh_attempt_chats,
+                refresh_attempt_chat,
                 description="Refreshes attempt_chat_mv concurrently.",
             ),
             get_operation_info(
@@ -66,7 +66,7 @@ async def get_attempt_chat_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves chats by IDs from attempt_chat_mv.",
             ),
             get_operation_info(
-                search_attempt_chats,
+                search_attempt_chat_entries_internal,
                 description="Filtered paginated search against attempt_chat_mv.",
             ),
         ],

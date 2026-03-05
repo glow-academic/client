@@ -13,7 +13,7 @@ from app.routes.v5.tools.entries.test_invocation.get import (
 )
 from app.routes.v5.tools.entries.test_invocation.refresh import refresh_test_invocation
 from app.routes.v5.tools.entries.test_invocation.search import (
-    search_test_invocations_internal,
+    search_test_invocation_entries_internal,
 )
 
 
@@ -62,7 +62,7 @@ async def get_test_invocation_docs(conn: asyncpg.Connection) -> DocsResponse:
                 ),
             ),
             get_operation_info(
-                search_test_invocations_internal,
+                search_test_invocation_entries_internal,
                 description=(
                     "Filtered paginated search against test_invocation entries by search text "
                     "and profile_id. Results cached for 60 seconds."

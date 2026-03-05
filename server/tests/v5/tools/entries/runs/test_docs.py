@@ -38,8 +38,8 @@ async def test_includes_all_operations(conn):
 
     op_names = [op.name for op in result.operations]
     assert "create_run" in op_names
-    assert "refresh_runs" in op_names
-    assert "get_runs" in op_names
+    assert "refresh_runs_internal" in op_names
+    assert "get_run" in op_names
     assert "search_runs_entries_internal" in op_names
 
 

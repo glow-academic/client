@@ -47,10 +47,6 @@ from app.routes.v5.api.main.chat.types import (
 )
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.entries.training.get import get_training_view_internal
-from app.routes.v5.tools.entries.training_drafts.get import (
-    get_training_drafts_entries_internal,
-)
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
@@ -72,10 +68,14 @@ from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.questions.get import get_questions
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 from app.routes.v5.tools.resources.videos.get import get_videos
+from app.routes.v5.tools.entries.chat.get import get_chat_view_internal
+from app.routes.v5.tools.entries.chat_drafts.get import (
+    get_chat_drafts_entries_internal,
+)
+from app.routes.v5.tools.entries.chat_drafts.types import GetChatDraftResponse
 from app.sql.types import (
     GetTrainingStartContextSqlParams,
     GetTrainingStartContextSqlRow,
-    QGetTrainingDraftsEntriesV4Item,
 )
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
@@ -174,7 +174,7 @@ class ChatInternalData:
     config_providers: list[Any] = field(default_factory=list)
     config_tools: list[Any] = field(default_factory=list)
     # Draft view
-    draft_item: QGetTrainingDraftsEntriesV4Item | None = None
+    draft_item: GetChatDraftResponse | None = None
 
 
 # =============================================================================
@@ -280,7 +280,7 @@ async def get_chat_internal(
     """Shared IDs-first + hydration internal fetch for chat bundle artifact."""
     # 1. Fetch MV view data (all 14 ID arrays + 6 flags)
     async with pool.acquire() as conn:
-        view_data = await get_training_view_internal(
+        view_data = await get_chat_view_internal(
             conn=conn,
             profile_id=profile_id,
             chat_entry_id=chat_entry_id,
@@ -312,10 +312,10 @@ async def get_chat_internal(
         )
 
     # 2. Fetch draft if provided
-    draft_item: QGetTrainingDraftsEntriesV4Item | None = None
+    draft_item: GetChatDraftResponse | None = None
     if draft_id is not None:
         async with pool.acquire() as conn:
-            draft_items = await get_training_drafts_entries_internal(
+            draft_items = await get_chat_drafts_entries_internal(
                 conn=conn,
                 ids=[draft_id],
                 bypass_cache=bypass_cache,
@@ -692,7 +692,6 @@ async def chat_get(
             raise RuntimeError("Database pool not initialized")
 
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
 
         return await get_chat_client(
             pool=pool,
@@ -713,5 +712,3 @@ async def chat_get(
             sql_params=None,
             request=http_request,
         )
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached

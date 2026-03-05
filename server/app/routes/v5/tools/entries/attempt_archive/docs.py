@@ -8,8 +8,8 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_archive.create import create_attempt_archive
 from app.routes.v5.tools.entries.attempt_archive.get import get_attempt_archives
-from app.routes.v5.tools.entries.attempt_archive.refresh import refresh_attempt_archives
-from app.routes.v5.tools.entries.attempt_archive.search import search_attempt_archives
+from app.routes.v5.tools.entries.attempt_archive.refresh import refresh_attempt_archive
+from app.routes.v5.tools.entries.attempt_archive.search import search_attempt_archive_entries_internal
 
 
 async def get_attempt_archive_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -35,7 +35,7 @@ async def get_attempt_archive_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Creates a new attempt_archive entry for an attempt.",
             ),
             get_operation_info(
-                refresh_attempt_archives,
+                refresh_attempt_archive,
                 description="Refreshes attempt_archive_mv concurrently.",
             ),
             get_operation_info(
@@ -43,7 +43,7 @@ async def get_attempt_archive_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves archives by IDs from attempt_archive_mv.",
             ),
             get_operation_info(
-                search_attempt_archives,
+                search_attempt_archive_entries_internal,
                 description="Filtered paginated search against attempt_archive_mv.",
             ),
         ],

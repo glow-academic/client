@@ -16,7 +16,7 @@ from app.routes.v5.tools.entries.attempt_conversation_completions.refresh import
     refresh_attempt_conversation_completions,
 )
 from app.routes.v5.tools.entries.attempt_conversation_completions.search import (
-    search_attempt_conversation_completions,
+    search_conversations_completions_entries_internal,
 )
 
 
@@ -53,7 +53,7 @@ async def get_attempt_conversation_completions_docs(
                 description="Batch retrieves completions by IDs from the materialized view.",
             ),
             get_operation_info(
-                search_attempt_conversation_completions,
+                search_conversations_completions_entries_internal,
                 description="Filtered paginated search against attempt_conversation_completions_mv.",
             ),
         ],

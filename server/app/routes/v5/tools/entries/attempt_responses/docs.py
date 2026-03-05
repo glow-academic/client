@@ -11,7 +11,7 @@ from app.routes.v5.tools.entries.attempt_responses.get import get_attempt_respon
 from app.routes.v5.tools.entries.attempt_responses.refresh import (
     refresh_attempt_responses,
 )
-from app.routes.v5.tools.entries.attempt_responses.search import search_attempt_responses
+from app.routes.v5.tools.entries.attempt_responses.search import search_responses_entries_internal
 
 
 async def get_attempt_responses_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -52,7 +52,7 @@ async def get_attempt_responses_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves responses by IDs from attempt_responses_mv.",
             ),
             get_operation_info(
-                search_attempt_responses,
+                search_responses_entries_internal,
                 description="Filtered paginated search against attempt_responses_mv.",
             ),
         ],

@@ -38,7 +38,6 @@ from app.routes.v5.api.entries.audios import router as audios_router
 from app.routes.v5.api.entries.auth_drafts import router as auth_drafts_router
 from app.routes.v5.api.entries.benchmark import router as benchmark_router
 from app.routes.v5.api.entries.calls import router as calls_router
-from app.routes.v5.api.entries.certificates import router as certificates_router
 from app.routes.v5.api.entries.cohort_drafts import router as cohort_drafts_router
 from app.routes.v5.api.entries.attempt_conversations import (
     router as attempt_conversations_router,
@@ -60,7 +59,6 @@ from app.routes.v5.api.entries.groups import router as groups_router
 from app.routes.v5.api.entries.health import router as health_router
 from app.routes.v5.api.entries.home import router as home_router
 from app.routes.v5.api.entries.home_chat import router as home_chat_router
-from app.routes.v5.api.entries.home_training import router as home_training_router
 from app.routes.v5.api.entries.images import router as images_router
 from app.routes.v5.api.entries.logins import router as logins_router
 from app.routes.v5.api.entries.messages import router as messages_router
@@ -75,13 +73,9 @@ from app.routes.v5.api.entries.persona import router as persona_router
 from app.routes.v5.api.entries.persona_drafts import router as persona_drafts_router
 from app.routes.v5.api.entries.practice import router as practice_router
 from app.routes.v5.api.entries.practice_chat import router as practice_chat_router
-from app.routes.v5.api.entries.practice_training import (
-    router as practice_training_router,
-)
 from app.routes.v5.api.entries.problems import router as problems_router
 from app.routes.v5.api.entries.profile_drafts import router as profile_drafts_router
 from app.routes.v5.api.entries.provider_drafts import router as provider_drafts_router
-from app.routes.v5.api.entries.reports import router as reports_router
 from app.routes.v5.api.entries.resolves import router as resolves_router
 from app.routes.v5.api.entries.attempt_responses import router as attempt_responses_router
 from app.routes.v5.api.entries.rubric_drafts import router as rubric_drafts_router
@@ -93,9 +87,6 @@ from app.routes.v5.api.entries.setting_drafts import router as setting_drafts_ro
 from app.routes.v5.api.entries.simulation_drafts import (
     router as simulation_drafts_router,
 )
-from app.routes.v5.api.entries.suite import router as suite_router
-from app.routes.v5.api.entries.suite_department import router as suite_department_router
-from app.routes.v5.api.entries.suite_drafts import router as suite_drafts_router
 from app.routes.v5.api.entries.test import router as test_router
 from app.routes.v5.api.entries.test_archive import router as test_archive_router
 from app.routes.v5.api.entries.test_completion import router as test_completion_router
@@ -106,11 +97,6 @@ from app.routes.v5.api.entries.test_stop import router as test_stop_router
 from app.routes.v5.api.entries.texts import router as texts_router
 from app.routes.v5.api.entries.tokens import router as tokens_router
 from app.routes.v5.api.entries.tool_drafts import router as tool_drafts_router
-from app.routes.v5.api.entries.training import router as training_router
-from app.routes.v5.api.entries.training_department import (
-    router as training_department_router,
-)
-from app.routes.v5.api.entries.training_drafts import router as training_drafts_router
 from app.routes.v5.api.entries.uploads import router as uploads_router
 from app.routes.v5.api.entries.uploads_completions import (
     router as uploads_completions_router,
@@ -143,7 +129,6 @@ router.include_router(audios_router)
 router.include_router(auth_drafts_router)
 router.include_router(benchmark_router)
 router.include_router(calls_router)
-router.include_router(certificates_router)
 router.include_router(cohort_drafts_router)
 router.include_router(attempt_conversations_router)
 router.include_router(attempt_conversation_completions_router)
@@ -159,7 +144,6 @@ router.include_router(groups_router)
 router.include_router(health_router)
 router.include_router(home_router)
 router.include_router(home_chat_router)
-router.include_router(home_training_router)
 router.include_router(images_router)
 router.include_router(logins_router)
 router.include_router(messages_router)
@@ -172,11 +156,9 @@ router.include_router(persona_router)
 router.include_router(persona_drafts_router)
 router.include_router(practice_router)
 router.include_router(practice_chat_router)
-router.include_router(practice_training_router)
 router.include_router(problems_router)
 router.include_router(profile_drafts_router)
 router.include_router(provider_drafts_router)
-router.include_router(reports_router)
 router.include_router(resolves_router)
 router.include_router(attempt_responses_router)
 router.include_router(rubric_drafts_router)
@@ -186,9 +168,6 @@ router.include_router(scenario_drafts_router)
 router.include_router(sessions_router)
 router.include_router(setting_drafts_router)
 router.include_router(simulation_drafts_router)
-router.include_router(suite_router)
-router.include_router(suite_department_router)
-router.include_router(suite_drafts_router)
 router.include_router(test_router)
 router.include_router(test_archive_router)
 router.include_router(test_completion_router)
@@ -199,9 +178,6 @@ router.include_router(test_stop_router)
 router.include_router(texts_router)
 router.include_router(tokens_router)
 router.include_router(tool_drafts_router)
-router.include_router(training_router)
-router.include_router(training_department_router)
-router.include_router(training_drafts_router)
 router.include_router(uploads_router)
 router.include_router(uploads_completions_router)
 router.include_router(videos_router)

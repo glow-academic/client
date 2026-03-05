@@ -1,10 +1,12 @@
 """chat/get — reusable data-access layer."""
 
+from dataclasses import dataclass, field
 from typing import cast
 from uuid import UUID
 
 import asyncpg
 
+from app.infra.globals import get_redis_client
 from app.routes.v5.tools.entries.chat.types import GetChatResponse
 from app.sql.types import (
     GetChatEntriesSqlParams,
@@ -116,3 +118,131 @@ async def get_chat_entries_internal(
     )
 
     return items
+
+
+# =============================================================================
+# Chat View (for artifact bundle endpoint)
+# =============================================================================
+
+
+@dataclass
+class ChatViewData:
+    """Thin view data returned by get_chat_view_internal."""
+
+    profile_has_access: bool = False
+    chat_entry_id: UUID | None = None
+    parent_id: UUID | None = None
+    scenario_id: UUID | None = None
+    department_ids: list[UUID] = field(default_factory=list)
+    persona_ids: list[UUID] = field(default_factory=list)
+    document_ids: list[UUID] = field(default_factory=list)
+    parameter_field_ids: list[UUID] = field(default_factory=list)
+    question_ids: list[UUID] = field(default_factory=list)
+    option_ids: list[UUID] = field(default_factory=list)
+    video_ids: list[UUID] = field(default_factory=list)
+    image_ids: list[UUID] = field(default_factory=list)
+    problem_statement_ids: list[UUID] = field(default_factory=list)
+    objective_ids: list[UUID] = field(default_factory=list)
+    flag_ids: list[UUID] = field(default_factory=list)
+    name_ids: list[UUID] = field(default_factory=list)
+    description_ids: list[UUID] = field(default_factory=list)
+    video_enabled: bool = False
+    problem_statement_enabled: bool = False
+    objectives_enabled: bool = False
+    images_enabled: bool = False
+    questions_enabled: bool = False
+
+
+async def get_chat_view_internal(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    chat_entry_id: UUID,
+) -> ChatViewData:
+    """Query chat_mv with profile access check for bundle artifact endpoint."""
+    row = await conn.fetchrow(
+        """
+        WITH bundle AS (
+            SELECT cm.*
+            FROM chat_mv cm
+            WHERE cm.chat_entry_id = $2
+            LIMIT 1
+        ),
+        parent_cohorts AS (
+            SELECT COALESCE(mh.cohort_ids, mp.cohort_ids, ARRAY[]::uuid[]) AS cohort_ids
+            FROM bundle b
+            LEFT JOIN home_mv mh ON mh.home_id = b.parent_id
+            LEFT JOIN practice_mv mp ON mp.practice_id = b.parent_id
+            LIMIT 1
+        ),
+        access_check AS (
+            SELECT EXISTS (
+                SELECT 1
+                FROM parent_cohorts pc
+                JOIN profile_profiles_junction ppj
+                  ON ppj.profile_id = $1 AND ppj.active = true
+                JOIN cohort_profiles_junction cpj
+                  ON cpj.profiles_id = ppj.profiles_id AND cpj.active = true
+                JOIN cohort_cohorts_junction ccj
+                  ON ccj.cohort_id = cpj.cohort_id AND ccj.active = true
+                JOIN cohorts_resource cr
+                  ON cr.id = ccj.cohorts_id AND cr.active = true
+                WHERE ccj.cohorts_id = ANY(pc.cohort_ids)
+            ) AS profile_has_access
+        )
+        SELECT
+            COALESCE(ac.profile_has_access, false) AS profile_has_access,
+            b.chat_entry_id,
+            b.parent_id,
+            b.scenario_id,
+            b.department_ids,
+            b.persona_ids,
+            b.document_ids,
+            b.parameter_field_ids,
+            b.question_ids,
+            b.option_ids,
+            b.video_ids,
+            b.image_ids,
+            b.problem_statement_ids,
+            b.objective_ids,
+            b.flag_ids,
+            b.name_ids,
+            b.description_ids,
+            b.video_enabled,
+            b.problem_statement_enabled,
+            b.objectives_enabled,
+            b.images_enabled,
+            b.questions_enabled
+        FROM bundle b
+        LEFT JOIN access_check ac ON TRUE
+        """,
+        profile_id,
+        chat_entry_id,
+    )
+
+    if not row:
+        return ChatViewData()
+
+    return ChatViewData(
+        profile_has_access=row["profile_has_access"] or False,
+        chat_entry_id=row["chat_entry_id"],
+        parent_id=row["parent_id"],
+        scenario_id=row["scenario_id"],
+        department_ids=list(row["department_ids"] or []),
+        persona_ids=list(row["persona_ids"] or []),
+        document_ids=list(row["document_ids"] or []),
+        parameter_field_ids=list(row["parameter_field_ids"] or []),
+        question_ids=list(row["question_ids"] or []),
+        option_ids=list(row["option_ids"] or []),
+        video_ids=list(row["video_ids"] or []),
+        image_ids=list(row["image_ids"] or []),
+        problem_statement_ids=list(row["problem_statement_ids"] or []),
+        objective_ids=list(row["objective_ids"] or []),
+        flag_ids=list(row["flag_ids"] or []),
+        name_ids=list(row["name_ids"] or []),
+        description_ids=list(row["description_ids"] or []),
+        video_enabled=row["video_enabled"] or False,
+        problem_statement_enabled=row["problem_statement_enabled"] or False,
+        objectives_enabled=row["objectives_enabled"] or False,
+        images_enabled=row["images_enabled"] or False,
+        questions_enabled=row["questions_enabled"] or False,
+    )

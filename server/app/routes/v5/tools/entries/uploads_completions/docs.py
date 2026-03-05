@@ -14,7 +14,7 @@ from app.routes.v5.tools.entries.uploads_completions.refresh import (
     refresh_uploads_completions_internal,
 )
 from app.routes.v5.tools.entries.uploads_completions.search import (
-    search_uploads_completions,
+    search_uploads_completions_entries_internal,
 )
 
 
@@ -52,7 +52,7 @@ async def get_uploads_completions_docs(conn: asyncpg.Connection) -> DocsResponse
                 description="Batch retrieves uploads_completions entries by ID from uploads_completions_mv.",
             ),
             get_operation_info(
-                search_uploads_completions,
+                search_uploads_completions_entries_internal,
                 description="Filtered paginated search against uploads_completions_mv.",
             ),
         ],

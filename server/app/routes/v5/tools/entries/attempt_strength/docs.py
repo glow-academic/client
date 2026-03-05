@@ -8,8 +8,8 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_strength.create import create_attempt_strength
 from app.routes.v5.tools.entries.attempt_strength.get import get_attempt_strengths
-from app.routes.v5.tools.entries.attempt_strength.refresh import refresh_attempt_strengths
-from app.routes.v5.tools.entries.attempt_strength.search import search_attempt_strengths
+from app.routes.v5.tools.entries.attempt_strength.refresh import refresh_attempt_strength
+from app.routes.v5.tools.entries.attempt_strength.search import search_attempt_strength_entries_internal
 
 
 async def get_attempt_strength_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -36,7 +36,7 @@ async def get_attempt_strength_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Creates a new attempt_strength entry for a grade and message.",
             ),
             get_operation_info(
-                refresh_attempt_strengths,
+                refresh_attempt_strength,
                 description="Refreshes attempt_strength_mv concurrently.",
             ),
             get_operation_info(
@@ -44,7 +44,7 @@ async def get_attempt_strength_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves strengths by IDs from attempt_strength_mv.",
             ),
             get_operation_info(
-                search_attempt_strengths,
+                search_attempt_strength_entries_internal,
                 description="Filtered paginated search against attempt_strength_mv.",
             ),
         ],

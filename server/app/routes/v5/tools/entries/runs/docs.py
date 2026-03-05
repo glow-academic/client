@@ -7,8 +7,8 @@ from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.runs.create import create_run
-from app.routes.v5.tools.entries.runs.get import get_runs
-from app.routes.v5.tools.entries.runs.refresh import refresh_runs
+from app.routes.v5.tools.entries.runs.get import get_run
+from app.routes.v5.tools.entries.runs.refresh import refresh_runs_internal
 from app.routes.v5.tools.entries.runs.search import search_runs_entries_internal
 
 
@@ -41,11 +41,11 @@ async def get_runs_docs(conn: asyncpg.Connection) -> DocsResponse:
                 ),
             ),
             get_operation_info(
-                refresh_runs,
+                refresh_runs_internal,
                 description="Refreshes runs_mv concurrently to reflect latest writes.",
             ),
             get_operation_info(
-                get_runs,
+                get_run,
                 description="Batch retrieves runs entries by IDs from runs_mv.",
             ),
             get_operation_info(

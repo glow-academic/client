@@ -7,8 +7,8 @@ from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.texts.create import create_text
-from app.routes.v5.tools.entries.texts.get import get_texts
-from app.routes.v5.tools.entries.texts.refresh import refresh_texts
+from app.routes.v5.tools.entries.texts.get import get_text
+from app.routes.v5.tools.entries.texts.refresh import refresh_texts_internal
 from app.routes.v5.tools.entries.texts.search import search_texts_entries_internal
 
 
@@ -35,11 +35,11 @@ async def get_texts_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Creates a new texts entry for a session.",
             ),
             get_operation_info(
-                refresh_texts,
+                refresh_texts_internal,
                 description="Refreshes texts_mv concurrently to reflect latest writes.",
             ),
             get_operation_info(
-                get_texts,
+                get_text,
                 description="Batch retrieves texts entries by IDs from texts_mv.",
             ),
             get_operation_info(

@@ -7,8 +7,8 @@ from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.videos.create import create_video
-from app.routes.v5.tools.entries.videos.get import get_videos
-from app.routes.v5.tools.entries.videos.refresh import refresh_videos
+from app.routes.v5.tools.entries.videos.get import get_video
+from app.routes.v5.tools.entries.videos.refresh import refresh_videos_internal
 from app.routes.v5.tools.entries.videos.search import search_videos_entries_internal
 
 
@@ -35,11 +35,11 @@ async def get_videos_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Creates a new videos entry with optional length specification.",
             ),
             get_operation_info(
-                refresh_videos,
+                refresh_videos_internal,
                 description="Refreshes videos_mv concurrently to reflect latest writes.",
             ),
             get_operation_info(
-                get_videos,
+                get_video,
                 description="Batch retrieves videos entries by IDs from videos_mv.",
             ),
             get_operation_info(

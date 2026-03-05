@@ -8,8 +8,8 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_highlight.create import create_attempt_highlight
 from app.routes.v5.tools.entries.attempt_highlight.get import get_attempt_highlights
-from app.routes.v5.tools.entries.attempt_highlight.refresh import refresh_attempt_highlights
-from app.routes.v5.tools.entries.attempt_highlight.search import search_attempt_highlights
+from app.routes.v5.tools.entries.attempt_highlight.refresh import refresh_attempt_highlight
+from app.routes.v5.tools.entries.attempt_highlight.search import search_attempt_highlight_entries_internal
 
 
 async def get_attempt_highlight_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -36,7 +36,7 @@ async def get_attempt_highlight_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Creates a new attempt_highlight entry within a strength.",
             ),
             get_operation_info(
-                refresh_attempt_highlights,
+                refresh_attempt_highlight,
                 description="Refreshes attempt_highlight_mv concurrently.",
             ),
             get_operation_info(
@@ -44,7 +44,7 @@ async def get_attempt_highlight_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves highlights by IDs from attempt_highlight_mv.",
             ),
             get_operation_info(
-                search_attempt_highlights,
+                search_attempt_highlight_entries_internal,
                 description="Filtered paginated search against attempt_highlight_mv.",
             ),
         ],

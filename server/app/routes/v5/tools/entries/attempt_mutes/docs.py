@@ -9,7 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_mutes.create import create_attempt_mutes
 from app.routes.v5.tools.entries.attempt_mutes.get import get_attempt_mutes
 from app.routes.v5.tools.entries.attempt_mutes.refresh import refresh_attempt_mutes
-from app.routes.v5.tools.entries.attempt_mutes.search import search_attempt_mutes
+from app.routes.v5.tools.entries.attempt_mutes.search import search_attempt_mutes_entries_internal
 
 
 async def get_attempt_mutes_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -43,7 +43,7 @@ async def get_attempt_mutes_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves mutes by IDs from attempt_mutes_mv.",
             ),
             get_operation_info(
-                search_attempt_mutes,
+                search_attempt_mutes_entries_internal,
                 description="Filtered paginated search against attempt_mutes_mv.",
             ),
         ],

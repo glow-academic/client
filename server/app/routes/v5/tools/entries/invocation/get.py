@@ -1,10 +1,15 @@
 """Invocation GET — read from base table + connection tables."""
 
+from dataclasses import dataclass, field
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.infra.globals import get_redis_client
 from app.routes.v5.tools.entries.invocation.types import GetInvocationResponse
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
 
 
 async def get_invocations(
@@ -85,3 +90,127 @@ async def get_invocations(
         )
         for r in rows
     ]
+
+
+async def get_invocation_entries_internal(
+    conn: asyncpg.Connection,
+    ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[GetInvocationResponse]:
+    """Cached wrapper for get_invocations."""
+    if not ids:
+        return []
+
+    tags = ["entries", "invocation"]
+    cache_key_val = cache_key(
+        "/api/v5/entries/invocation/get",
+        {"ids": [str(id) for id in ids]},
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        if cached:
+            return [GetInvocationResponse.model_validate(i) for i in cached.get("items", [])]
+
+    items = await get_invocations(conn, ids)
+
+    await set_cached(
+        cache_key_val,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        ttl=60,
+        tags=tags,
+        redis=get_redis_client(),
+    )
+
+    return items
+
+
+# =============================================================================
+# Invocation View (for artifact bundle endpoint)
+# =============================================================================
+
+
+@dataclass
+class InvocationViewData:
+    """Thin view data returned by get_invocation_view_internal."""
+
+    profile_has_access: bool = False
+    suite_entry_id: UUID | None = None
+    benchmark_id: UUID | None = None
+    department_ids: list[UUID] = field(default_factory=list)
+    model_ids: list[UUID] = field(default_factory=list)
+    prompt_ids: list[UUID] = field(default_factory=list)
+    instruction_ids: list[UUID] = field(default_factory=list)
+    voice_ids: list[UUID] = field(default_factory=list)
+    temperature_level_ids: list[UUID] = field(default_factory=list)
+    reasoning_level_ids: list[UUID] = field(default_factory=list)
+    tool_ids: list[UUID] = field(default_factory=list)
+    key_ids: list[UUID] = field(default_factory=list)
+
+
+async def get_invocation_view_internal(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    suite_entry_id: UUID,
+) -> InvocationViewData:
+    """Query invocation_mv with profile access check for bundle artifact endpoint."""
+    row = await conn.fetchrow(
+        """
+        WITH bundle AS (
+            SELECT im.*
+            FROM invocation_mv im
+            WHERE im.invocation_entry_id = $2
+            LIMIT 1
+        ),
+        benchmark_cohorts AS (
+            SELECT COALESCE(bm.cohort_ids, ARRAY[]::uuid[]) AS cohort_ids
+            FROM bundle b
+            LEFT JOIN benchmark_mv bm ON bm.benchmark_id = b.benchmark_id
+            LIMIT 1
+        ),
+        access_check AS (
+            SELECT EXISTS (
+                SELECT 1
+                FROM benchmark_cohorts bc
+                JOIN profile_profiles_junction ppj
+                  ON ppj.profile_id = $1 AND ppj.active = true
+                JOIN cohort_profiles_junction cpj
+                  ON cpj.profiles_id = ppj.profiles_id AND cpj.active = true
+                JOIN cohort_cohorts_junction ccj
+                  ON ccj.cohort_id = cpj.cohort_id AND ccj.active = true
+                JOIN cohorts_resource cr
+                  ON cr.id = ccj.cohorts_id AND cr.active = true
+                WHERE ccj.cohorts_id = ANY(bc.cohort_ids)
+            ) AS profile_has_access
+        )
+        SELECT
+            COALESCE(ac.profile_has_access, false) AS profile_has_access,
+            b.invocation_entry_id,
+            b.benchmark_id,
+            b.department_ids,
+            b.model_ids,
+            b.voice_ids,
+            b.temperature_level_ids,
+            b.reasoning_level_ids,
+            b.key_ids
+        FROM bundle b
+        LEFT JOIN access_check ac ON TRUE
+        """,
+        profile_id,
+        suite_entry_id,
+    )
+
+    if not row:
+        return InvocationViewData()
+
+    return InvocationViewData(
+        profile_has_access=row["profile_has_access"] or False,
+        suite_entry_id=row["invocation_entry_id"],
+        benchmark_id=row["benchmark_id"],
+        department_ids=list(row["department_ids"] or []),
+        model_ids=list(row["model_ids"] or []),
+        voice_ids=list(row["voice_ids"] or []),
+        temperature_level_ids=list(row["temperature_level_ids"] or []),
+        reasoning_level_ids=list(row["reasoning_level_ids"] or []),
+        key_ids=list(row["key_ids"] or []),
+    )

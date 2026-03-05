@@ -8,8 +8,8 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_hint.create import create_attempt_hint
 from app.routes.v5.tools.entries.attempt_hint.get import get_attempt_hints
-from app.routes.v5.tools.entries.attempt_hint.refresh import refresh_attempt_hints
-from app.routes.v5.tools.entries.attempt_hint.search import search_attempt_hints
+from app.routes.v5.tools.entries.attempt_hint.refresh import refresh_attempt_hint
+from app.routes.v5.tools.entries.attempt_hint.search import search_attempt_hint_entries_internal
 
 
 async def get_attempt_hint_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -35,7 +35,7 @@ async def get_attempt_hint_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Creates a new attempt_hint entry for a message.",
             ),
             get_operation_info(
-                refresh_attempt_hints,
+                refresh_attempt_hint,
                 description="Refreshes attempt_hint_mv concurrently.",
             ),
             get_operation_info(
@@ -43,7 +43,7 @@ async def get_attempt_hint_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves hints by IDs from attempt_hint_mv.",
             ),
             get_operation_info(
-                search_attempt_hints,
+                search_attempt_hint_entries_internal,
                 description="Filtered paginated search against attempt_hint_mv.",
             ),
         ],

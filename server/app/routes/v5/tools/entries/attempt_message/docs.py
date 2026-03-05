@@ -8,8 +8,8 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_message.create import create_attempt_message
 from app.routes.v5.tools.entries.attempt_message.get import get_attempt_messages
-from app.routes.v5.tools.entries.attempt_message.refresh import refresh_attempt_messages
-from app.routes.v5.tools.entries.attempt_message.search import search_attempt_messages
+from app.routes.v5.tools.entries.attempt_message.refresh import refresh_attempt_message
+from app.routes.v5.tools.entries.attempt_message.search import search_attempt_message_entries_internal
 
 
 async def get_attempt_message_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -36,7 +36,7 @@ async def get_attempt_message_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Creates a new attempt_message entry linking a message to a chat.",
             ),
             get_operation_info(
-                refresh_attempt_messages,
+                refresh_attempt_message,
                 description="Refreshes attempt_message_mv concurrently.",
             ),
             get_operation_info(
@@ -44,7 +44,7 @@ async def get_attempt_message_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves messages by IDs from attempt_message_mv.",
             ),
             get_operation_info(
-                search_attempt_messages,
+                search_attempt_message_entries_internal,
                 description="Filtered paginated search against attempt_message_mv.",
             ),
         ],

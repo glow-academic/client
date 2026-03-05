@@ -8,8 +8,8 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_completion.create import create_attempt_completion
 from app.routes.v5.tools.entries.attempt_completion.get import get_attempt_completions
-from app.routes.v5.tools.entries.attempt_completion.refresh import refresh_attempt_completions
-from app.routes.v5.tools.entries.attempt_completion.search import search_attempt_completions
+from app.routes.v5.tools.entries.attempt_completion.refresh import refresh_attempt_completion
+from app.routes.v5.tools.entries.attempt_completion.search import search_attempt_completion_entries_internal
 
 
 async def get_attempt_completion_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -35,7 +35,7 @@ async def get_attempt_completion_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Creates a new attempt_completion entry for a chat.",
             ),
             get_operation_info(
-                refresh_attempt_completions,
+                refresh_attempt_completion,
                 description="Refreshes attempt_completion_mv concurrently.",
             ),
             get_operation_info(
@@ -43,7 +43,7 @@ async def get_attempt_completion_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves completions by IDs from attempt_completion_mv.",
             ),
             get_operation_info(
-                search_attempt_completions,
+                search_attempt_completion_entries_internal,
                 description="Filtered paginated search against attempt_completion_mv.",
             ),
         ],

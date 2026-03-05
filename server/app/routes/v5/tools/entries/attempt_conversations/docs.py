@@ -14,7 +14,7 @@ from app.routes.v5.tools.entries.attempt_conversations.refresh import (
     refresh_attempt_conversations,
 )
 from app.routes.v5.tools.entries.attempt_conversations.search import (
-    search_attempt_conversations,
+    search_conversations_entries_internal,
 )
 
 
@@ -49,7 +49,7 @@ async def get_attempt_conversations_docs(conn: asyncpg.Connection) -> DocsRespon
                 description="Batch retrieves conversations by IDs from attempt_conversations_mv.",
             ),
             get_operation_info(
-                search_attempt_conversations,
+                search_conversations_entries_internal,
                 description="Filtered paginated search against attempt_conversations_mv.",
             ),
         ],

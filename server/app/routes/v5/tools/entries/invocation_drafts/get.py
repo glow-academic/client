@@ -4,7 +4,11 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.infra.globals import get_redis_client
 from app.routes.v5.tools.entries.invocation_drafts.types import GetInvocationDraftResponse
+from app.utils.cache.cache_key import cache_key
+from app.utils.cache.get_cached import get_cached
+from app.utils.cache.set_cached import set_cached
 
 
 async def get_invocation_drafts(
@@ -79,3 +83,36 @@ async def get_invocation_drafts(
         )
         for r in rows
     ]
+
+
+async def get_invocation_drafts_entries_internal(
+    conn: asyncpg.Connection,
+    ids: list[UUID],
+    bypass_cache: bool = False,
+) -> list[GetInvocationDraftResponse]:
+    """Cached wrapper for get_invocation_drafts."""
+    if not ids:
+        return []
+
+    tags = ["entries", "invocation_drafts"]
+    cache_key_val = cache_key(
+        "/api/v5/entries/invocation_drafts/get",
+        {"ids": [str(id) for id in ids]},
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        if cached:
+            return [GetInvocationDraftResponse.model_validate(i) for i in cached.get("items", [])]
+
+    items = await get_invocation_drafts(conn, ids)
+
+    await set_cached(
+        cache_key_val,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        ttl=60,
+        tags=tags,
+        redis=get_redis_client(),
+    )
+
+    return items

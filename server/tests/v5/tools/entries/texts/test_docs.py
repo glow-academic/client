@@ -36,8 +36,8 @@ async def test_includes_all_operations(conn):
 
     op_names = [op.name for op in result.operations]
     assert "create_text" in op_names
-    assert "refresh_texts" in op_names
-    assert "get_texts" in op_names
+    assert "refresh_texts_internal" in op_names
+    assert "get_text" in op_names
     assert "search_texts_entries_internal" in op_names
 
 

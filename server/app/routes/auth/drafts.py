@@ -13,6 +13,12 @@ from app.routes.auth.types import GetDraftsApiResponse, QGetProfileContextV4Draf
 from app.routes.v5.tools.entries.agent_drafts.get import (
     get_agent_drafts_entries_internal,
 )
+from app.routes.v5.tools.entries.chat_drafts.get import (
+    get_chat_drafts_entries_internal,
+)
+from app.routes.v5.tools.entries.invocation_drafts.get import (
+    get_invocation_drafts_entries_internal,
+)
 from app.routes.v5.tools.entries.auth_drafts.get import get_auth_drafts_entries_internal
 from app.routes.v5.tools.entries.cohort_drafts.get import (
     get_cohort_drafts_entries_internal,
@@ -55,9 +61,6 @@ from app.routes.v5.tools.entries.simulation_drafts.get import (
     get_simulation_drafts_entries_internal,
 )
 from app.routes.v5.tools.entries.tool_drafts.get import get_tool_drafts_entries_internal
-from app.routes.v5.tools.entries.training_drafts.get import (
-    get_training_drafts_entries_internal,
-)
 from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db, get_pool
 
@@ -67,11 +70,13 @@ router = APIRouter()
 _ARTIFACT_INTERNAL_FN = {
     "agent": get_agent_drafts_entries_internal,
     "auth": get_auth_drafts_entries_internal,
+    "chat": get_chat_drafts_entries_internal,
     "cohort": get_cohort_drafts_entries_internal,
     "department": get_department_drafts_entries_internal,
     "document": get_document_drafts_entries_internal,
     "eval": get_eval_drafts_entries_internal,
     "field": get_field_drafts_entries_internal,
+    "invocation": get_invocation_drafts_entries_internal,
     "model": get_model_drafts_entries_internal,
     "parameter": get_parameter_drafts_entries_internal,
     "persona": get_persona_drafts_entries_internal,
@@ -82,18 +87,19 @@ _ARTIFACT_INTERNAL_FN = {
     "setting": get_setting_drafts_entries_internal,
     "simulation": get_simulation_drafts_entries_internal,
     "tool": get_tool_drafts_entries_internal,
-    "chat": get_training_drafts_entries_internal,
 }
 
 
 def _convert_draft(item: Any, artifact_type: str) -> QGetProfileContextV4Draft:
     """Convert a draft entries item to the API response format."""
     group_id = getattr(item, "group_id", None)
+    draft_id = getattr(item, "draft_id", None) or getattr(item, "id", None)
+    updated_at = getattr(item, "updated_at", None) or getattr(item, "created_at", None)
     return QGetProfileContextV4Draft(
-        id=item.draft_id,
+        id=draft_id,
         artifact_type=artifact_type,
         version=item.version,
-        updated_at=item.updated_at.isoformat() if item.updated_at else None,
+        updated_at=updated_at.isoformat() if updated_at else None,
         group_id=str(group_id) if group_id else None,
     )
 

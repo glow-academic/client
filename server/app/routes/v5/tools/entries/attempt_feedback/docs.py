@@ -8,8 +8,8 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_feedback.create import create_attempt_feedback
 from app.routes.v5.tools.entries.attempt_feedback.get import get_attempt_feedbacks
-from app.routes.v5.tools.entries.attempt_feedback.refresh import refresh_attempt_feedbacks
-from app.routes.v5.tools.entries.attempt_feedback.search import search_attempt_feedbacks
+from app.routes.v5.tools.entries.attempt_feedback.refresh import refresh_attempt_feedback
+from app.routes.v5.tools.entries.attempt_feedback.search import search_attempt_feedback_entries_internal
 
 
 async def get_attempt_feedback_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -39,7 +39,7 @@ async def get_attempt_feedback_docs(conn: asyncpg.Connection) -> DocsResponse:
                 ),
             ),
             get_operation_info(
-                refresh_attempt_feedbacks,
+                refresh_attempt_feedback,
                 description="Refreshes attempt_feedback_mv concurrently.",
             ),
             get_operation_info(
@@ -47,7 +47,7 @@ async def get_attempt_feedback_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves feedbacks by IDs from attempt_feedback_mv.",
             ),
             get_operation_info(
-                search_attempt_feedbacks,
+                search_attempt_feedback_entries_internal,
                 description="Filtered paginated search against attempt_feedback_mv.",
             ),
         ],
