@@ -11,10 +11,8 @@ from app.routes.v5.api.entries.test_stop.types import (
     CreateTestStopEntryResponse,
 )
 from app.routes.v5.tools.entries.test_stop.create import (
-    SQL_PATH,
-    create_test_stop_entry_internal,
+    create_test_stop,
 )
-from app.sql.types import load_sql_query
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

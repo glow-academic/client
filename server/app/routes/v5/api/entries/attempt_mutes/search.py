@@ -6,14 +6,10 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db
-from app.routes.v5.tools.entries.attempt_mutes.search import (
-    SQL_PATH,
-    search_attempt_mutes_entries_internal,
-)
+from app.routes.v5.tools.entries.attempt_mutes.search import search_attempt_mutes_entries_internal
 from app.sql.types import (
     SearchMutesEntriesApiRequest,
     SearchMutesEntriesApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -37,10 +33,8 @@ async def search_attempt_mutes_entries(
     try:
         items = await search_attempt_mutes_entries_internal(
             conn,
-            request.search,
-            request.limit_count,
-            request.offset_count,
-            bypass_cache=bypass_cache,
+            limit_count=request.limit_count,
+            offset_count=request.offset_count,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchMutesEntriesApiResponse(items=items)
@@ -53,7 +47,7 @@ async def search_attempt_mutes_entries(
             error=e,
             route_path=http_request.url.path,
             operation="search_attempt_mutes_entries",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

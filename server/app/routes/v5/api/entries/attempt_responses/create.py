@@ -7,13 +7,11 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db
 from app.routes.v5.tools.entries.attempt_responses.create import (
-    SQL_PATH,
-    create_responses_entry_internal,
+    create_attempt_responses,
 )
 from app.sql.types import (
     CreateResponsesEntriesApiRequest,
     CreateResponsesEntriesApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 

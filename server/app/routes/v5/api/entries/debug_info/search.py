@@ -6,14 +6,10 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db
-from app.routes.v5.tools.entries.debug_info.search import (
-    SQL_PATH,
-    search_debug_info_entries_internal,
-)
+from app.routes.v5.tools.entries.debug_info.search import search_debug_info
 from app.sql.types import (
     SearchDebugInfoEntriesApiRequest,
     SearchDebugInfoEntriesApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -35,12 +31,11 @@ async def search_debug_info_entries(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await search_debug_info_entries_internal(
+        items = await search_debug_info(
             conn,
-            request.search,
-            request.limit_count,
-            request.offset_count,
-            bypass_cache=bypass_cache,
+            limit=request.limit_count,
+            offset=request.offset_count,
+            bypass_mv=bypass_cache,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return SearchDebugInfoEntriesApiResponse(items=items)
@@ -53,7 +48,7 @@ async def search_debug_info_entries(
             error=e,
             route_path=http_request.url.path,
             operation="search_debug_info_entries",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

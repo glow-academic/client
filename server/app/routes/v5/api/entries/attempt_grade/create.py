@@ -27,8 +27,6 @@ async def create_attempt_grade_entry(
 ) -> CreateAttemptGradeEntryResponse:
     """Create attempt_grade entry."""
     tags = ["entries", "attempt_grade"]
-    sql_query = load_sql_query(SQL_PATH)
-
     try:
         profile_id = http_request.state.profile_id
         if not profile_id:
@@ -49,7 +47,7 @@ async def create_attempt_grade_entry(
                 detail="run_id is required",
             )
 
-        api_response = await create_attempt_grade_entry_internal(
+        api_response = await create_attempt_grade(
             conn, request_dict, mcp
         )
 
@@ -65,7 +63,7 @@ async def create_attempt_grade_entry(
             error=e,
             route_path=http_request.url.path,
             operation="create_attempt_grade_entry",
-            sql_query=sql_query,
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )
