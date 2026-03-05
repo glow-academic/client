@@ -1,12 +1,14 @@
 """Cohort draft endpoint - handles autosave for all cohort resources."""
 
+import json
 from typing import Annotated, Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import UPLOAD_FOLDER, get_db, get_pool
+from app.infra.tools.entries.create_tool_call import create_tool_call
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.cohort.permissions import (
@@ -23,21 +25,6 @@ from app.routes.v5.api.permissions import resolve_agents_for_artifact
 from app.routes.v5.tools.entries.cohort_drafts.refresh import (
     refresh_cohort_drafts_internal,
 )
-from app.routes.v5.tools.resources.departments.link import link_departments_internal
-from app.routes.v5.tools.resources.descriptions.link import link_descriptions_internal
-from app.routes.v5.tools.resources.flags.link import link_flags_internal
-from app.routes.v5.tools.resources.names.link import link_names_internal
-from app.routes.v5.tools.resources.profile_personas.link import (
-    link_profile_personas_internal,
-)
-from app.routes.v5.tools.resources.profiles.link import link_profiles_internal
-from app.routes.v5.tools.resources.simulation_availability.link import (
-    link_simulation_availability_internal,
-)
-from app.routes.v5.tools.resources.simulation_positions.link import (
-    link_simulation_positions_internal,
-)
-from app.routes.v5.tools.resources.simulations.link import link_simulations_internal
 from app.sql.types import load_sql_query
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
@@ -47,23 +34,6 @@ from app.utils.sql_helper import execute_sql_typed
 logger = get_logger(__name__)
 
 SQL_PATH = "app/sql/queries/cohorts/patch_cohort_draft_complete.sql"
-
-# Single-select resource key → link internal function
-SINGLE_LINK_MAP: dict[str, Any] = {
-    "names": link_names_internal,
-    "descriptions": link_descriptions_internal,
-    "flags": link_flags_internal,
-}
-
-# Multi-select resource key → link internal function
-MULTI_LINK_MAP: dict[str, Any] = {
-    "departments": link_departments_internal,
-    "simulations": link_simulations_internal,
-    "simulation_positions": link_simulation_positions_internal,
-    "simulation_availability": link_simulation_availability_internal,
-    "profiles": link_profiles_internal,
-    "profile_personas": link_profile_personas_internal,
-}
 
 # Request field → resource key mapping (for single-select)
 SINGLE_REQUEST_FIELDS: dict[str, str] = {
@@ -85,15 +55,22 @@ MULTI_REQUEST_FIELDS: dict[str, str] = {
 router = APIRouter()
 
 
+async def _noop_tool(conn: asyncpg.Connection, **kwargs: str) -> str:
+    """No-op tool function for link tracking (backward compat)."""
+    return json.dumps({"success": True, "message": "Linked resource"})
+
+
 async def _link_draft_resources(
     conn: asyncpg.Connection,
     request: PatchCohortDraftApiRequest,
     group_id: UUID,
+    session_id: UUID,
+    profile_id: UUID,
     link_tool_ids: dict[str, UUID | None],
 ) -> None:
-    """Call link_*_internal for each resource that changed in the draft request.
+    """Record tool calls for each resource that changed in the draft request.
 
-    Only links resources where both a resource_id and a link_tool_id are available.
+    Uses create_tool_call with a no-op tool_fn for backward-compatible tracking.
     Errors are logged but do not fail the draft save.
     """
     # Single-select resources
@@ -104,14 +81,19 @@ async def _link_draft_resources(
         tool_id = link_tool_ids.get(resource_key)
         if tool_id is None:
             continue
-        link_fn = SINGLE_LINK_MAP.get(resource_key)
-        if link_fn:
-            try:
-                await link_fn(
-                    conn, resource_id=resource_id, group_id=group_id, tool_id=tool_id
-                )
-            except Exception as e:
-                logger.warning(f"link_{resource_key}_internal failed (non-fatal): {e}")
+        try:
+            await create_tool_call(
+                conn,
+                group_id=group_id,
+                session_id=session_id,
+                profile_id=profile_id,
+                upload_folder=UPLOAD_FOLDER,
+                tool_fn=_noop_tool,
+                arguments={"resource_id": str(resource_id)},
+                tool_id=tool_id,
+            )
+        except Exception as e:
+            logger.warning(f"link_{resource_key} failed (non-fatal): {e}")
 
     # Multi-select resources
     for field, resource_key in MULTI_REQUEST_FIELDS.items():
@@ -121,17 +103,22 @@ async def _link_draft_resources(
         tool_id = link_tool_ids.get(resource_key)
         if tool_id is None:
             continue
-        link_fn = MULTI_LINK_MAP.get(resource_key)
-        if link_fn:
-            for rid in resource_ids:
-                try:
-                    await link_fn(
-                        conn, resource_id=rid, group_id=group_id, tool_id=tool_id
-                    )
-                except Exception as e:
-                    logger.warning(
-                        f"link_{resource_key}_internal failed for {rid} (non-fatal): {e}"
-                    )
+        for rid in resource_ids:
+            try:
+                await create_tool_call(
+                    conn,
+                    group_id=group_id,
+                    session_id=session_id,
+                    profile_id=profile_id,
+                    upload_folder=UPLOAD_FOLDER,
+                    tool_fn=_noop_tool,
+                    arguments={"resource_id": str(rid)},
+                    tool_id=tool_id,
+                )
+            except Exception as e:
+                logger.warning(
+                    f"link_{resource_key} failed for {rid} (non-fatal): {e}"
+                )
 
 
 @router.patch(
@@ -205,7 +192,19 @@ async def patch_cohort_draft(
 
         # Link resources for tool tracking (after successful draft save)
         if request.group_id and link_tool_ids:
-            await _link_draft_resources(conn, request, request.group_id, link_tool_ids)
+            session_row = await conn.fetchrow(
+                "SELECT session_id FROM groups_entry WHERE id = $1",
+                request.group_id,
+            )
+            if session_row:
+                await _link_draft_resources(
+                    conn,
+                    request,
+                    group_id=request.group_id,
+                    session_id=session_row["session_id"],
+                    profile_id=profile_id,
+                    link_tool_ids=link_tool_ids,
+                )
 
         api_response = PatchCohortDraftApiResponse.model_validate(result.model_dump())
 

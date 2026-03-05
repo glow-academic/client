@@ -1,12 +1,14 @@
 """Persona draft endpoint - handles autosave for all persona resources."""
 
-from typing import Annotated, Any, cast
+import json
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import UPLOAD_FOLDER, get_db, get_pool
+from app.infra.tools.entries.create_tool_call import create_tool_call
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.persona.permissions import (
@@ -23,18 +25,6 @@ from app.routes.v5.api.permissions import resolve_agents_for_artifact
 from app.routes.v5.tools.entries.persona_drafts.refresh import (
     refresh_persona_drafts_internal,
 )
-from app.routes.v5.tools.resources.colors.link import link_colors_internal
-from app.routes.v5.tools.resources.departments.link import link_departments_internal
-from app.routes.v5.tools.resources.descriptions.link import link_descriptions_internal
-from app.routes.v5.tools.resources.examples.link import link_examples_internal
-from app.routes.v5.tools.resources.flags.link import link_flags_internal
-from app.routes.v5.tools.resources.icons.link import link_icons_internal
-from app.routes.v5.tools.resources.instructions.link import link_instructions_internal
-from app.routes.v5.tools.resources.names.link import link_names_internal
-from app.routes.v5.tools.resources.parameter_fields.link import (
-    link_parameter_fields_internal,
-)
-from app.routes.v5.tools.resources.voices.link import link_voices_internal
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
@@ -44,24 +34,6 @@ logger = get_logger(__name__)
 
 # SQL paths
 SQL_PATH = "app/sql/queries/personas/patch_persona_draft_complete.sql"
-
-# Single-select resource key → link internal function
-SINGLE_LINK_MAP: dict[str, Any] = {
-    "names": link_names_internal,
-    "descriptions": link_descriptions_internal,
-    "colors": link_colors_internal,
-    "icons": link_icons_internal,
-    "instructions": link_instructions_internal,
-    "flags": link_flags_internal,
-}
-
-# Multi-select resource key → link internal function
-MULTI_LINK_MAP: dict[str, Any] = {
-    "departments": link_departments_internal,
-    "parameter_fields": link_parameter_fields_internal,
-    "examples": link_examples_internal,
-    "voices": link_voices_internal,
-}
 
 # Request field → resource key mapping (for single-select)
 SINGLE_REQUEST_FIELDS: dict[str, str] = {
@@ -119,15 +91,22 @@ async def patch_persona_draft_internal(
     return result
 
 
+async def _noop_tool(conn: asyncpg.Connection, **kwargs: str) -> str:
+    """No-op tool function for link tracking (backward compat)."""
+    return json.dumps({"success": True, "message": "Linked resource"})
+
+
 async def _link_draft_resources(
     conn: asyncpg.Connection,
     request: PatchPersonaDraftApiRequest,
     group_id: UUID,
+    session_id: UUID,
+    profile_id: UUID,
     link_tool_ids: dict[str, UUID | None],
 ) -> None:
-    """Call link_*_internal for each resource that changed in the draft request.
+    """Record tool calls for each resource that changed in the draft request.
 
-    Only links resources where both a resource_id and a link_tool_id are available.
+    Uses create_tool_call with a no-op tool_fn for backward-compatible tracking.
     Errors are logged but do not fail the draft save.
     """
     # Single-select resources
@@ -138,14 +117,19 @@ async def _link_draft_resources(
         tool_id = link_tool_ids.get(resource_key)
         if tool_id is None:
             continue
-        link_fn = SINGLE_LINK_MAP.get(resource_key)
-        if link_fn:
-            try:
-                await link_fn(
-                    conn, resource_id=resource_id, group_id=group_id, tool_id=tool_id
-                )
-            except Exception as e:
-                logger.warning(f"link_{resource_key}_internal failed (non-fatal): {e}")
+        try:
+            await create_tool_call(
+                conn,
+                group_id=group_id,
+                session_id=session_id,
+                profile_id=profile_id,
+                upload_folder=UPLOAD_FOLDER,
+                tool_fn=_noop_tool,
+                arguments={"resource_id": str(resource_id)},
+                tool_id=tool_id,
+            )
+        except Exception as e:
+            logger.warning(f"link_{resource_key} failed (non-fatal): {e}")
 
     # Multi-select resources
     for field, resource_key in MULTI_REQUEST_FIELDS.items():
@@ -155,17 +139,22 @@ async def _link_draft_resources(
         tool_id = link_tool_ids.get(resource_key)
         if tool_id is None:
             continue
-        link_fn = MULTI_LINK_MAP.get(resource_key)
-        if link_fn:
-            for rid in resource_ids:
-                try:
-                    await link_fn(
-                        conn, resource_id=rid, group_id=group_id, tool_id=tool_id
-                    )
-                except Exception as e:
-                    logger.warning(
-                        f"link_{resource_key}_internal failed for {rid} (non-fatal): {e}"
-                    )
+        for rid in resource_ids:
+            try:
+                await create_tool_call(
+                    conn,
+                    group_id=group_id,
+                    session_id=session_id,
+                    profile_id=profile_id,
+                    upload_folder=UPLOAD_FOLDER,
+                    tool_fn=_noop_tool,
+                    arguments={"resource_id": str(rid)},
+                    tool_id=tool_id,
+                )
+            except Exception as e:
+                logger.warning(
+                    f"link_{resource_key} failed for {rid} (non-fatal): {e}"
+                )
 
 
 @router.patch(
@@ -232,7 +221,20 @@ async def patch_persona_draft(
 
         # Link resources for tool tracking (after successful draft save)
         if request.group_id and link_tool_ids:
-            await _link_draft_resources(conn, request, request.group_id, link_tool_ids)
+            # Resolve session_id from group
+            session_row = await conn.fetchrow(
+                "SELECT session_id FROM groups_entry WHERE id = $1",
+                request.group_id,
+            )
+            if session_row:
+                await _link_draft_resources(
+                    conn,
+                    request,
+                    group_id=request.group_id,
+                    session_id=session_row["session_id"],
+                    profile_id=profile_id,
+                    link_tool_ids=link_tool_ids,
+                )
 
         # Build response with success and message
         is_update = request.input_draft_id is not None
