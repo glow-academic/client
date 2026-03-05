@@ -66,7 +66,7 @@ effective_group AS (
 -- Get agent's departments (only if agent_id provided)
 agent_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(ad.department_id ORDER BY ad.created_at) FILTER (WHERE ad.department_id IS NOT NULL),
+        ARRAY_AGG(ad.departments_id ORDER BY ad.created_at) FILTER (WHERE ad.departments_id IS NOT NULL),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM params x

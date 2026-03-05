@@ -50,7 +50,7 @@ AS $$
           )
     ),
     settings_profiles AS (
-        SELECT sp.setting_id, sp.profile_id
+        SELECT sp.setting_id, sp.profiles_id as profile_id
         FROM setting_profiles_junction sp
         WHERE sp.active = true
     ),
@@ -69,7 +69,7 @@ AS $$
             COALESCE(
                 (SELECT r.role
                  FROM profile_roles_junction prj
-                 JOIN roles_resource r ON r.id = prj.role_id
+                 JOIN roles_resource r ON r.id = prj.roles_id
                  WHERE prj.profile_id = ppj.profile_id
                    AND prj.active = true
                  LIMIT 1),

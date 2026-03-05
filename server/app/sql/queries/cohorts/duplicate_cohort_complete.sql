@@ -113,7 +113,7 @@ link_cohort_description AS (
 ),
 -- Link cohort active flag (set to false for duplicate)
 link_cohort_active_flag AS (
-    INSERT INTO cohort_flags_junction (cohort_id, flag_id, created_at) SELECT nc.id,
+    INSERT INTO cohort_flags_junction (cohort_id, flags_id, created_at) SELECT nc.id,
         f.id,
         NOW()
     FROM new_cohort nc
@@ -130,10 +130,10 @@ cohort_with_title AS (
 ),
 copy_simulations AS (
     -- Copy simulation relationships (positions linked via cohort_simulation_positions_junction)
-    INSERT INTO cohort_simulations_junction (cohort_id, simulation_id, active)
-    SELECT 
+    INSERT INTO cohort_simulations_junction (cohort_id, simulations_id, active)
+    SELECT
         nc.id,
-        cs.simulation_id,
+        cs.simulations_id,
         cs.active
     FROM new_cohort nc
     CROSS JOIN original_cohort oc
@@ -161,10 +161,10 @@ copy_simulation_positions AS (
 ),
 copy_departments AS (
     -- Copy department relationships
-    INSERT INTO cohort_departments_junction (cohort_id, department_id, active, created_at)
-    SELECT 
+    INSERT INTO cohort_departments_junction (cohort_id, departments_id, active, created_at)
+    SELECT
         nc.id,
-        cd.department_id,
+        cd.departments_id,
         cd.active,
         NOW()
     FROM new_cohort nc

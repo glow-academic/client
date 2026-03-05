@@ -59,7 +59,7 @@ parameter_departments_data AS (
         CASE
             WHEN (SELECT parameter_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(pd.department_id ORDER BY pd.created_at)
+                (SELECT ARRAY_AGG(pd.departments_id ORDER BY pd.created_at)
                  FROM parameter_departments_junction pd
                  WHERE pd.parameter_id = (SELECT parameter_id FROM params) AND pd.active = true),
                 ARRAY[]::uuid[]
@@ -87,9 +87,9 @@ parameter_flags_data AS (
         CASE
             WHEN (SELECT parameter_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(pf.flag_id ORDER BY pf.created_at)
+                (SELECT ARRAY_AGG(pf.flags_id ORDER BY pf.created_at)
                  FROM parameter_flags_junction pf
-                 JOIN flags_resource f ON pf.flag_id = f.id
+                 JOIN flags_resource f ON pf.flags_id = f.id
                  WHERE pf.parameter_id = (SELECT parameter_id FROM params)
                    AND pf.active = true
                    AND f.value = true
@@ -113,9 +113,9 @@ description_resource_data AS (
 ),
 flag_resource_data AS (
     SELECT
-        (SELECT pf.flag_id
+        (SELECT pf.flags_id
          FROM parameter_flags_junction pf
-         JOIN flags_resource f ON pf.flag_id = f.id
+         JOIN flags_resource f ON pf.flags_id = f.id
          WHERE pf.parameter_id = (SELECT parameter_id FROM params)
            AND pf.active = true
            AND f.name = 'parameter_active'

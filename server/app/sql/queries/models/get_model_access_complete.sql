@@ -66,7 +66,7 @@ effective_group AS (
 -- Get model departments (for access check)
 model_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(md.department_id ORDER BY md.created_at) FILTER (WHERE md.department_id IS NOT NULL),
+        ARRAY_AGG(md.departments_id ORDER BY md.created_at) FILTER (WHERE md.departments_id IS NOT NULL),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM params x

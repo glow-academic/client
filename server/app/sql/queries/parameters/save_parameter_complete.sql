@@ -313,7 +313,7 @@ BEGIN
     ),
     -- Active flag is always present; true iff parameter_active was selected.
     upsert_parameter_active_flag AS (
-        INSERT INTO parameter_flags_junction (parameter_id, flag_id, created_at)
+        INSERT INTO parameter_flags_junction (parameter_id, flags_id, created_at)
         SELECT
             x.parameter_id,
             f.id,
@@ -325,7 +325,7 @@ BEGIN
     ),
     -- Other flags: set selected flags to true (excluding the canonical active flag).
     upsert_parameter_selected_flags AS (
-        INSERT INTO parameter_flags_junction (parameter_id, flag_id, created_at)
+        INSERT INTO parameter_flags_junction (parameter_id, flags_id, created_at)
         SELECT
             x.parameter_id,
             selected_flag_id,
@@ -339,7 +339,7 @@ BEGIN
             created_at = EXCLUDED.created_at
     ),
     link_departments AS (
-        INSERT INTO parameter_departments_junction (parameter_id, department_id, active, created_at)
+        INSERT INTO parameter_departments_junction (parameter_id, departments_id, active, created_at)
         SELECT
             x.parameter_id,
             dept_id,
@@ -363,7 +363,7 @@ BEGIN
           AND EXISTS (
               SELECT 1
               FROM field_flags_junction ff
-              JOIN flags_resource fr ON fr.id = ff.flag_id
+              JOIN flags_resource fr ON fr.id = ff.flags_id
               WHERE ff.field_id = field_id
                 AND fr.name = 'field_active'
                 AND fr.value = true

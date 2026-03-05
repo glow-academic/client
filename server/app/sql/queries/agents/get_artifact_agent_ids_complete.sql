@@ -263,7 +263,7 @@ eligible_agents AS (
     FROM agent_artifact a
     WHERE EXISTS (
         SELECT 1 FROM agent_flags_junction af
-        JOIN flags_resource f ON af.flag_id = f.id
+        JOIN flags_resource f ON af.flags_id = f.id
         WHERE af.agent_id = a.id
           AND f.name = 'agent_active'
           AND f.value = true
@@ -280,7 +280,7 @@ eligible_agents AS (
             SELECT 1 FROM agent_departments_junction ad
             WHERE ad.agent_id = a.id
               AND ad.active = true
-              AND ad.department_id = ANY(user_department_ids)
+              AND ad.departments_id = ANY(user_department_ids)
         )
     )
 ),
@@ -301,7 +301,7 @@ agent_tool_resources AS (
         ) as tool_resources
     FROM eligible_agents ea
     LEFT JOIN agent_tools_junction at ON at.agent_id = ea.agent_id AND at.active = true
-    LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = at.tool_id
+    LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = at.tools_id
     LEFT JOIN tool_resources_junction tdj ON tdj.tool_id = ttj.tool_id AND tdj.active = true
     LEFT JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
     GROUP BY ea.agent_id, ea.updated_at
@@ -319,7 +319,7 @@ agent_tool_entries AS (
         ) as tool_entries
     FROM eligible_agents ea
     LEFT JOIN agent_tools_junction atj ON atj.agent_id = ea.agent_id AND atj.active = true
-    LEFT JOIN tools_resource tr ON tr.id = atj.tool_id
+    LEFT JOIN tools_resource tr ON tr.id = atj.tools_id
     LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
     LEFT JOIN tool_entries_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
     LEFT JOIN entries_resource b ON b.id = tbj.entries_id

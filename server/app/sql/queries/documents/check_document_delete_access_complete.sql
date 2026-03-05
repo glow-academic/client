@@ -38,7 +38,7 @@ WITH params AS (
 -- Get document departments
 document_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(dd.department_id::text) FILTER (WHERE dd.department_id IS NOT NULL),
+        ARRAY_AGG(dd.departments_id::text) FILTER (WHERE dd.departments_id IS NOT NULL),
         ARRAY[]::text[]
     ) as department_ids
     FROM params x
@@ -48,9 +48,9 @@ document_departments_data AS (
 -- NOTE: Must use COUNT(column) not COUNT(*) with LEFT JOIN, as COUNT(*)
 -- counts the NULL row when there are no matches
 scenario_links AS (
-    SELECT COUNT(sd.document_id)::bigint as active_count
+    SELECT COUNT(sd.documents_id)::bigint as active_count
     FROM params x
-    LEFT JOIN scenario_documents_junction sd ON sd.document_id = x.document_id AND sd.active = true
+    LEFT JOIN scenario_documents_junction sd ON sd.documents_id = x.document_id AND sd.active = true
 )
 SELECT
     (SELECT department_ids FROM document_departments_data) as document_department_ids,

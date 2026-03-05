@@ -45,7 +45,7 @@ original_provider AS (
 ),
 original_departments AS (
     -- Get department IDs from original provider
-    SELECT department_id
+    SELECT departments_id
     FROM params x
     JOIN provider_departments_junction pd ON pd.provider_id = x.provider_id AND pd.active = true
 ),
@@ -94,14 +94,14 @@ link_provider_description AS (
 ),
 -- Link provider active flag (set to false for duplicate)
 link_provider_active_flag AS (
-    INSERT INTO provider_flags_junction (provider_id, flag_id, created_at)
+    INSERT INTO provider_flags_junction (provider_id, flags_id, created_at)
     SELECT np.id,
         f.id,
         NOW()
     FROM new_provider np
     CROSS JOIN flags_resource f
     WHERE f.name = 'provider_active'
-    ON CONFLICT (provider_id, flag_id) DO NOTHING
+    ON CONFLICT (provider_id, flags_id) DO NOTHING
 ),
 -- Link provider to existing value
 link_provider_value AS (
@@ -117,10 +117,10 @@ link_provider_value AS (
 ),
 -- Link provider to existing departments
 copy_departments AS (
-    INSERT INTO provider_departments_junction (provider_id, department_id, active, created_at)
+    INSERT INTO provider_departments_junction (provider_id, departments_id, active, created_at)
     SELECT
         np.id,
-        od.department_id,
+        od.departments_id,
         true,
         NOW()
     FROM new_provider np

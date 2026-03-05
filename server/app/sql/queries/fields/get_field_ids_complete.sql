@@ -60,7 +60,7 @@ field_departments_data AS (
         CASE
             WHEN (SELECT field_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(fd.department_id ORDER BY fd.created_at)
+                (SELECT ARRAY_AGG(fd.departments_id ORDER BY fd.created_at)
                  FROM field_departments_junction fd
                  WHERE fd.field_id = (SELECT field_id FROM params) AND fd.active = true),
                 ARRAY[]::uuid[]
@@ -97,9 +97,9 @@ description_resource_data AS (
 ),
 flag_resource_data AS (
     SELECT
-        (SELECT ff.flag_id
+        (SELECT ff.flags_id
          FROM field_flags_junction ff
-         JOIN flags_resource f ON ff.flag_id = f.id
+         JOIN flags_resource f ON ff.flags_id = f.id
          WHERE ff.field_id = (SELECT field_id FROM params)
            AND ff.active = true
            AND f.name = 'field_active'

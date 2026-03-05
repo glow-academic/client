@@ -494,13 +494,13 @@ BEGIN
     END IF;
 
     -- Upsert active links: multi-select resources
-    INSERT INTO model_flags_junction (model_id, flag_id, created_at, generated, mcp)
+    INSERT INTO model_flags_junction (model_id, flags_id, created_at, generated, mcp)
     SELECT v_model_id, fid, NOW(), false, false
     FROM UNNEST(v_flag_ids) fid
     ON CONFLICT ON CONSTRAINT model_flags_pkey DO UPDATE
     SET generated = false, mcp = false;
 
-    INSERT INTO model_departments_junction (model_id, department_id, active, created_at)
+    INSERT INTO model_departments_junction (model_id, departments_id, active, created_at)
     SELECT v_model_id, did, true, NOW()
     FROM UNNEST(v_department_ids) did
     ON CONFLICT ON CONSTRAINT model_departments_pkey DO UPDATE
@@ -530,13 +530,13 @@ BEGIN
     ON CONFLICT ON CONSTRAINT model_reasoning_levels_pkey DO UPDATE
     SET active = true;
 
-    INSERT INTO model_qualities_junction (model_id, quality_id, active, created_at, generated, mcp)
+    INSERT INTO model_qualities_junction (model_id, qualities_id, active, created_at, generated, mcp)
     SELECT v_model_id, qid, true, NOW(), false, false
     FROM UNNEST(v_quality_ids) qid
     ON CONFLICT ON CONSTRAINT model_qualities_pkey DO UPDATE
     SET active = true;
 
-    INSERT INTO model_voices_junction (model_id, voice_id, active, created_at, generated, mcp)
+    INSERT INTO model_voices_junction (model_id, voices_id, active, created_at, generated, mcp)
     SELECT v_model_id, vid, true, NOW(), false, false
     FROM UNNEST(v_voice_ids) vid
     ON CONFLICT ON CONSTRAINT model_voices_pkey DO UPDATE
@@ -550,8 +550,8 @@ BEGIN
         modality_ids = COALESCE((SELECT ARRAY_AGG(mm.modalities_id) FROM model_modalities_junction mm WHERE mm.model_id = v_model_id AND mm.active = true), ARRAY[]::uuid[]),
         temperature_level_ids = COALESCE((SELECT ARRAY_AGG(mtl.temperature_levels_id) FROM model_temperature_levels_junction mtl WHERE mtl.model_id = v_model_id AND mtl.active = true), ARRAY[]::uuid[]),
         reasoning_level_ids = COALESCE((SELECT ARRAY_AGG(mrl.reasoning_levels_id) FROM model_reasoning_levels_junction mrl WHERE mrl.model_id = v_model_id AND mrl.active = true), ARRAY[]::uuid[]),
-        quality_ids = COALESCE((SELECT ARRAY_AGG(mq.quality_id) FROM model_qualities_junction mq WHERE mq.model_id = v_model_id AND mq.active = true), ARRAY[]::uuid[]),
-        voice_ids = COALESCE((SELECT ARRAY_AGG(mv.voice_id) FROM model_voices_junction mv WHERE mv.model_id = v_model_id AND mv.active = true), ARRAY[]::uuid[])
+        quality_ids = COALESCE((SELECT ARRAY_AGG(mq.qualities_id) FROM model_qualities_junction mq WHERE mq.model_id = v_model_id AND mq.active = true), ARRAY[]::uuid[]),
+        voice_ids = COALESCE((SELECT ARRAY_AGG(mv.voices_id) FROM model_voices_junction mv WHERE mv.model_id = v_model_id AND mv.active = true), ARRAY[]::uuid[])
     FROM model_models_junction j
     LEFT JOIN names_resource n ON n.id = v_name_id
     LEFT JOIN descriptions_resource d ON d.id = v_description_id

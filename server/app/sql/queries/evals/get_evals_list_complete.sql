@@ -83,12 +83,12 @@ user_profile AS (
     SELECT COALESCE(r.role, 'member'::profile_type) as role,
            ''::text as actor_name
     FROM profile_roles_junction prj
-    JOIN roles_resource r ON prj.role_id = r.id
+    JOIN roles_resource r ON prj.roles_id = r.id
     WHERE prj.profile_id = (SELECT profile_id FROM params)
     LIMIT 1
 ),
 user_departments AS (
-    SELECT DISTINCT pd.department_id
+    SELECT DISTINCT pd.departments_id
     FROM params x
     JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
@@ -102,7 +102,7 @@ accessible_evals AS (
         -- Access check: superadmin sees all, others need department overlap or no departments
         (
             up.role = 'superadmin'
-            OR ed.department_id IN (SELECT department_id FROM user_departments)
+            OR ed.departments_id IN (SELECT departments_id FROM user_departments)
             OR NOT EXISTS (SELECT 1 FROM eval_departments_junction ed2 WHERE ed2.eval_id = e.id AND ed2.active = true)
         )
 ),
@@ -134,7 +134,7 @@ filtered_evals AS (
             OR EXISTS (
                 SELECT 1 FROM eval_departments_junction ed
                 WHERE ed.eval_id = ae.id AND ed.active = true
-                AND ed.department_id = ANY(api_list_evals_v4.filter_department_ids)
+                AND ed.departments_id = ANY(api_list_evals_v4.filter_department_ids)
             )
         )
 ),
@@ -158,10 +158,10 @@ eval_objects AS (
                 pe.id,
                 (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.names_id = n.id WHERE en.eval_id = pe.id LIMIT 1),
                 COALESCE((SELECT d.description FROM eval_descriptions_junction ed JOIN descriptions_resource d ON ed.descriptions_id = d.id WHERE ed.eval_id = pe.id LIMIT 1), ''),
-                COALESCE((SELECT ARRAY_AGG(ed.department_id::text) FROM eval_departments_junction ed WHERE ed.eval_id = pe.id AND ed.active = true), ARRAY[]::text[]),
-                NOT COALESCE((SELECT f.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'eval_active' LIMIT 1), false),
-                COALESCE((SELECT f.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'dynamic' LIMIT 1), false),
-                COALESCE((SELECT f.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'use_groups' LIMIT 1), false),
+                COALESCE((SELECT ARRAY_AGG(ed.departments_id::text) FROM eval_departments_junction ed WHERE ed.eval_id = pe.id AND ed.active = true), ARRAY[]::text[]),
+                NOT COALESCE((SELECT f.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flags_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'eval_active' LIMIT 1), false),
+                COALESCE((SELECT f.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flags_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'dynamic' LIMIT 1), false),
+                COALESCE((SELECT f.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flags_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'use_groups' LIMIT 1), false),
                 0,  -- num_runs: eval_runs_junction dropped, runs are runtime-only
                 0,  -- num_groups: eval_groups_junction dropped, groups are runtime-only
                 pe.updated_at
@@ -181,9 +181,9 @@ department_option_data AS (
     FROM departments_resource dr
     JOIN department_departments_junction dd ON dd.department_id = dr.id
     JOIN accessible_evals ae ON EXISTS (
-        SELECT 1 FROM eval_departments_junction ed WHERE ed.eval_id = ae.id AND ed.active = true AND ed.department_id = dr.id
+        SELECT 1 FROM eval_departments_junction ed WHERE ed.eval_id = ae.id AND ed.active = true AND ed.departments_id = dr.id
     )
-    WHERE dr.id IN (SELECT department_id FROM user_departments)
+    WHERE dr.id IN (SELECT departments_id FROM user_departments)
       AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
     GROUP BY dr.id, dd.department_id
 )

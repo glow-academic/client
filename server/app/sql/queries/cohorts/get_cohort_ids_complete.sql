@@ -86,7 +86,7 @@ cohort_departments_junction_data AS (
         CASE
             WHEN (SELECT cohort_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(cd.department_id ORDER BY cd.created_at)
+                (SELECT ARRAY_AGG(cd.departments_id ORDER BY cd.created_at)
                  FROM cohort_departments_junction cd
                  WHERE cd.cohort_id = (SELECT cohort_id FROM params) AND cd.active = true),
                 ARRAY[]::uuid[]
@@ -100,7 +100,7 @@ cohort_simulations_junction_data AS (
         CASE
             WHEN (SELECT cohort_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(cs.simulation_id ORDER BY cs.created_at)
+                (SELECT ARRAY_AGG(cs.simulations_id ORDER BY cs.created_at)
                  FROM cohort_simulations_junction cs
                  WHERE cs.cohort_id = (SELECT cohort_id FROM params) AND cs.active = true),
                 ARRAY[]::uuid[]
@@ -154,7 +154,7 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT COALESCE(
         (SELECT df.flag_id FROM cohort_drafts_flags_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-        (SELECT cf.flag_id FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND f.type = 'cohort_active' AND f.value = TRUE LIMIT 1)
+        (SELECT cf.flags_id FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flags_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND f.type = 'cohort_active' AND f.value = TRUE LIMIT 1)
     ) as active_flag_id
     FROM params
 ),

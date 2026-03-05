@@ -45,7 +45,7 @@ original_dept AS (
         d.id,
         (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = d.id LIMIT 1) as title,
         COALESCE((SELECT d.description FROM department_descriptions_junction dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
-        EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true) as active
+        EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true) as active
     FROM department_artifact d
     WHERE d.id = (SELECT department_id FROM params)
 ),
@@ -69,7 +69,7 @@ get_or_create_description AS (
 ),
 get_active_flag AS (
     -- Get the active flag ID
-    SELECT id as flag_id
+    SELECT id as flags_id
     FROM flags_resource
     WHERE name = 'active'
     LIMIT 1
@@ -98,7 +98,7 @@ link_description AS (
 ),
 link_active_flag AS (
     -- Link active flag to new department (set to false for duplicate)
-    INSERT INTO department_flags_junction (department_id, flag_id, created_at) SELECT nd.id, gaf.flag_id, NOW()
+    INSERT INTO department_flags_junction (department_id, flags_id, created_at) SELECT nd.id, gaf.flags_id, NOW()
     FROM new_dept nd
     CROSS JOIN get_active_flag gaf
 )

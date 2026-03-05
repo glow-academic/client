@@ -81,7 +81,7 @@ WITH params AS (
     SELECT profile_id AS profile_id
 ),
 user_departments AS (
-    SELECT department_id
+    SELECT departments_id as department_id
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
@@ -89,7 +89,7 @@ user_departments AS (
 auth_departments_data AS (
     SELECT
         ad.auth_id,
-        ARRAY_AGG(ad.department_id::text ORDER BY ad.created_at) as department_ids
+        ARRAY_AGG(ad.departments_id::text ORDER BY ad.created_at) as department_ids
     FROM auth_departments_junction ad
     GROUP BY ad.auth_id
 ),
@@ -100,7 +100,7 @@ auth_item_counts AS (
         COUNT(*) as num_items
     FROM auth_auths_junction aaj
     JOIN auth_items_junction ai_j ON ai_j.auth_id = aaj.auth_id
-    JOIN items_resource i ON i.id = ai_j.item_id
+    JOIN items_resource i ON i.id = ai_j.items_id
     GROUP BY aaj.auth_id
 ),
 -- Sample items (top 3) per auth
@@ -116,7 +116,7 @@ auth_sample_items AS (
                ROW_NUMBER() OVER (PARTITION BY aaj.auth_id ORDER BY i.name) as rn
         FROM auth_auths_junction aaj
         JOIN auth_items_junction ai_j ON ai_j.auth_id = aaj.auth_id
-        JOIN items_resource i ON i.id = ai_j.item_id
+        JOIN items_resource i ON i.id = ai_j.items_id
     ) ai
     WHERE ai.rn <= 3
     GROUP BY ai.auth_id
@@ -124,11 +124,11 @@ auth_sample_items AS (
 -- Count active settings linked to each auth via setting_auths_junction
 auth_settings_counts AS (
     SELECT
-        sa.auth_id,
-        COUNT(DISTINCT sa.settings_id)::bigint as active_settings_count
+        sa.auths_id,
+        COUNT(DISTINCT sa.setting_id)::bigint as active_settings_count
     FROM setting_auths_junction sa
     WHERE sa.active = true
-    GROUP BY sa.auth_id
+    GROUP BY sa.auths_id
 ),
 -- Core entity data with department visibility check
 auth_data_base AS (
@@ -136,7 +136,7 @@ auth_data_base AS (
         a.id as auth_id,
         (SELECT n.name FROM auth_auths_junction aaj_n JOIN auth_names_junction an ON an.auth_id = aaj_n.auth_id JOIN names_resource n ON an.names_id = n.id WHERE aaj_n.auth_id = a.id LIMIT 1) as auth_name,
         (SELECT d.description FROM auth_auths_junction aaj_d JOIN auth_descriptions_junction ad ON ad.auth_id = aaj_d.auth_id JOIN descriptions_resource d ON ad.descriptions_id = d.id WHERE aaj_d.auth_id = a.id LIMIT 1) as description,
-        NOT EXISTS (SELECT 1 FROM auth_auths_junction aaj_f JOIN auth_flags_junction af ON af.auth_id = aaj_f.auth_id JOIN flags_resource f ON af.flag_id = f.id WHERE aaj_f.auth_id = a.id AND f.name = 'auth_active' AND f.value = TRUE) as is_inactive,
+        NOT EXISTS (SELECT 1 FROM auth_auths_junction aaj_f JOIN auth_flags_junction af ON af.auth_id = aaj_f.auth_id JOIN flags_resource f ON af.flags_id = f.id WHERE aaj_f.auth_id = a.id AND f.name = 'auth_active' AND f.value = TRUE) as is_inactive,
         a.created_at as updated_at,
         COALESCE(aic.num_items, 0) as num_items,
         COALESCE(asi.sample_items, '{}'::types.q_get_auth_list_v4_auth_item[]) as sample_items,
@@ -145,16 +145,16 @@ auth_data_base AS (
     FROM auths_resource a
     LEFT JOIN auth_item_counts aic ON aic.auth_id = a.id
     LEFT JOIN auth_sample_items asi ON asi.auth_id = a.id
-    LEFT JOIN auth_settings_counts asc_data ON asc_data.auth_id = a.id
+    LEFT JOIN auth_settings_counts asc_data ON asc_data.auths_id = a.id
     -- Department data via auth_auths_junction -> auth_artifact -> auth_departments_junction
     LEFT JOIN auth_auths_junction aaj ON aaj.auth_id = a.id
     LEFT JOIN auth_departments_data add_data ON add_data.auth_id = aaj.auth_id
     -- Department visibility: user must share a department with the auth, or auth has no departments
-    LEFT JOIN auth_departments_junction adv ON adv.auth_id = aaj.auth_id AND adv.department_id IN (SELECT department_id FROM user_departments)
+    LEFT JOIN auth_departments_junction adv ON adv.auth_id = aaj.auth_id AND adv.departments_id IN (SELECT department_id FROM user_departments)
     GROUP BY a.id,
         (SELECT n.name FROM auth_auths_junction aaj_n JOIN auth_names_junction an ON an.auth_id = aaj_n.auth_id JOIN names_resource n ON an.names_id = n.id WHERE aaj_n.auth_id = a.id LIMIT 1),
         (SELECT d.description FROM auth_auths_junction aaj_d JOIN auth_descriptions_junction ad ON ad.auth_id = aaj_d.auth_id JOIN descriptions_resource d ON ad.descriptions_id = d.id WHERE aaj_d.auth_id = a.id LIMIT 1),
-        NOT EXISTS (SELECT 1 FROM auth_auths_junction aaj_f JOIN auth_flags_junction af ON af.auth_id = aaj_f.auth_id JOIN flags_resource f ON af.flag_id = f.id WHERE aaj_f.auth_id = a.id AND f.name = 'auth_active' AND f.value = TRUE),
+        NOT EXISTS (SELECT 1 FROM auth_auths_junction aaj_f JOIN auth_flags_junction af ON af.auth_id = aaj_f.auth_id JOIN flags_resource f ON af.flags_id = f.id WHERE aaj_f.auth_id = a.id AND f.name = 'auth_active' AND f.value = TRUE),
         a.created_at, aic.num_items, asi.sample_items, add_data.department_ids, asc_data.active_settings_count
     HAVING COUNT(adv.auth_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM auth_auths_junction aaj2 JOIN auth_departments_junction ad2 ON ad2.auth_id = aaj2.auth_id WHERE aaj2.auth_id = a.id

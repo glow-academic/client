@@ -52,7 +52,7 @@ cohort_exists_check AS (
 -- Get cohort departments (for access check)
 cohort_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(cd.department_id ORDER BY cd.created_at) FILTER (WHERE cd.department_id IS NOT NULL),
+        ARRAY_AGG(cd.departments_id ORDER BY cd.created_at) FILTER (WHERE cd.departments_id IS NOT NULL),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM params x

@@ -39,7 +39,7 @@ WITH params AS (
 ),
 simulation_departments AS (
     SELECT COALESCE(
-        ARRAY_REMOVE(ARRAY_AGG(DISTINCT sd.department_id), NULL),
+        ARRAY_REMOVE(ARRAY_AGG(DISTINCT sd.departments_id), NULL),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM simulation_departments_junction sd
@@ -59,8 +59,8 @@ cohort_usage AS (
     FROM cohort_artifact c
     JOIN cohort_simulations_junction csj ON csj.cohort_id = c.id
     JOIN cohort_flags_junction cfj ON cfj.cohort_id = c.id
-    JOIN flags_resource f ON f.id = cfj.flag_id
-    WHERE csj.simulation_id = (SELECT simulation_id FROM params)
+    JOIN flags_resource f ON f.id = cfj.flags_id
+    WHERE csj.simulations_id = (SELECT simulation_id FROM params)
       AND csj.active = true
       AND f.type = 'cohort_active'
       AND f.value = true

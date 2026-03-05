@@ -91,7 +91,7 @@ user_departments AS (
 scenario_departments_data AS (
     SELECT
         sd.scenario_id,
-        ARRAY_AGG(sd.department_id ORDER BY sd.created_at) as department_ids,
+        ARRAY_AGG(sd.departments_id ORDER BY sd.created_at) as department_ids,
         ARRAY_AGG(dr.name ORDER BY sd.created_at) as department_names
     FROM scenario_departments_junction sd
     JOIN departments_resource dr ON dr.id = sd.department_id
@@ -102,10 +102,10 @@ scenario_departments_data AS (
 scenario_personas_data AS (
     SELECT
         spj.scenario_id,
-        ARRAY_AGG(spj.persona_id ORDER BY spj.created_at) as persona_ids,
+        ARRAY_AGG(spj.personas_id ORDER BY spj.created_at) as persona_ids,
         ARRAY_AGG(pr.name ORDER BY spj.created_at) as persona_names
     FROM scenario_personas_junction spj
-    JOIN personas_resource pr ON pr.id = spj.persona_id
+    JOIN personas_resource pr ON pr.id = spj.personas_id
     WHERE spj.active = true
     GROUP BY spj.scenario_id
 ),
@@ -113,10 +113,10 @@ scenario_personas_data AS (
 scenario_documents_data AS (
     SELECT
         sdj.scenario_id,
-        ARRAY_AGG(sdj.document_id ORDER BY sdj.created_at) as document_ids,
+        ARRAY_AGG(sdj.documents_id ORDER BY sdj.created_at) as document_ids,
         ARRAY_AGG(dr.name ORDER BY sdj.created_at) as document_names
     FROM scenario_documents_junction sdj
-    JOIN documents_resource dr ON dr.id = sdj.document_id
+    JOIN documents_resource dr ON dr.id = sdj.documents_id
     WHERE sdj.active = true
     GROUP BY sdj.scenario_id
 ),
@@ -147,10 +147,10 @@ scenario_objectives_data AS (
 scenario_images_data AS (
     SELECT
         sij.scenario_id,
-        ARRAY_AGG(sij.image_id ORDER BY sij.created_at) as image_ids,
+        ARRAY_AGG(sij.images_id ORDER BY sij.created_at) as image_ids,
         ARRAY_AGG(ir.name ORDER BY sij.created_at) as image_names
     FROM scenario_images_junction sij
-    JOIN images_resource ir ON ir.id = sij.image_id
+    JOIN images_resource ir ON ir.id = sij.images_id
     WHERE sij.active = true
     GROUP BY sij.scenario_id
 ),
@@ -158,10 +158,10 @@ scenario_images_data AS (
 scenario_videos_data AS (
     SELECT
         svj.scenario_id,
-        ARRAY_AGG(svj.video_id ORDER BY svj.created_at) as video_ids,
+        ARRAY_AGG(svj.videos_id ORDER BY svj.created_at) as video_ids,
         ARRAY_AGG(vr.name ORDER BY svj.created_at) as video_names
     FROM scenario_videos_junction svj
-    JOIN videos_resource vr ON vr.id = svj.video_id
+    JOIN videos_resource vr ON vr.id = svj.videos_id
     WHERE svj.active = true
     GROUP BY svj.scenario_id
 ),
@@ -169,10 +169,10 @@ scenario_videos_data AS (
 scenario_questions_data AS (
     SELECT
         sqj.scenario_id,
-        ARRAY_AGG(sqj.question_id ORDER BY sqj.created_at) as question_ids,
+        ARRAY_AGG(sqj.questions_id ORDER BY sqj.created_at) as question_ids,
         ARRAY_AGG(qr.question_text ORDER BY sqj.created_at) as question_texts
     FROM scenario_questions_junction sqj
-    JOIN questions_resource qr ON qr.id = sqj.question_id
+    JOIN questions_resource qr ON qr.id = sqj.questions_id
     WHERE sqj.active = true
     GROUP BY sqj.scenario_id
 ),
@@ -180,10 +180,10 @@ scenario_questions_data AS (
 scenario_options_data AS (
     SELECT
         soj.scenario_id,
-        ARRAY_AGG(soj.option_id ORDER BY soj.created_at) as option_ids,
+        ARRAY_AGG(soj.options_id ORDER BY soj.created_at) as option_ids,
         ARRAY_AGG(opr.option_text ORDER BY soj.created_at) as option_texts
     FROM scenario_options_junction soj
-    JOIN options_resource opr ON opr.id = soj.option_id
+    JOIN options_resource opr ON opr.id = soj.options_id
     WHERE soj.active = true
     GROUP BY soj.scenario_id
 ),
@@ -191,10 +191,10 @@ scenario_options_data AS (
 scenario_flags_data AS (
     SELECT
         sfj.scenario_id,
-        ARRAY_AGG(sfj.flag_id ORDER BY sfj.created_at) FILTER (WHERE fr.value = true) as flag_ids,
+        ARRAY_AGG(sfj.flags_id ORDER BY sfj.created_at) FILTER (WHERE fr.value = true) as flag_ids,
         ARRAY_AGG(fr.name ORDER BY sfj.created_at) FILTER (WHERE fr.value = true) as flag_names
     FROM scenario_flags_junction sfj
-    JOIN flags_resource fr ON fr.id = sfj.flag_id
+    JOIN flags_resource fr ON fr.id = sfj.flags_id
     WHERE sfj.active = true
     GROUP BY sfj.scenario_id
 ),
@@ -222,7 +222,7 @@ scenario_data AS (
         (SELECT sps.problem_statements_id FROM scenario_problem_statements_junction sps WHERE sps.scenario_id = s.id AND sps.active = true LIMIT 1) as problem_statements_id,
         (SELECT ps.problem_statement FROM scenario_problem_statements_junction sps JOIN problem_statements_resource ps ON ps.id = sps.problem_statements_id WHERE sps.scenario_id = s.id AND sps.active = true LIMIT 1) as problem_statement,
         -- Flags
-        NOT EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = TRUE AND sf.active = true) as is_inactive,
+        NOT EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = TRUE AND sf.active = true) as is_inactive,
         sfd.flag_ids,
         sfd.flag_names as flags,
         -- Multi-select
@@ -274,7 +274,7 @@ scenario_data AS (
         sfd.flag_ids, sfd.flag_names,
         ssim.simulation_ids
     HAVING
-        COUNT(sdj.scenario_id) FILTER (WHERE sdj.department_id IN (SELECT department_id FROM user_departments)) > 0
+        COUNT(sdj.scenario_id) FILTER (WHERE sdj.departments_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM scenario_departments_junction sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
 ),
 -- Apply filters

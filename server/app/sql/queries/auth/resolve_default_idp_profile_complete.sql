@@ -53,7 +53,7 @@ AS $$
             -- Get role
             (SELECT r.role
              FROM profile_roles_junction pr
-             JOIN roles_resource r ON pr.role_id = r.id
+             JOIN roles_resource r ON pr.roles_id = r.id
              WHERE pr.profile_id = rp.resolved_profile_id
              LIMIT 1) as role
         FROM resolved_profile rp

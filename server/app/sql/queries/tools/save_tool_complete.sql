@@ -151,7 +151,7 @@ BEGIN
         SET active = true;
     END IF;
 
-    INSERT INTO tool_flags_junction (tool_id, flag_id, created_at, generated, mcp, active)
+    INSERT INTO tool_flags_junction (tool_id, flags_id, created_at, generated, mcp, active)
     SELECT
         v_tool_id,
         COALESCE(v_active_flag_id, f.id),
@@ -162,7 +162,7 @@ BEGIN
     FROM flags_resource f
     WHERE f.name = 'tool_active'
     ON CONFLICT ON CONSTRAINT tool_flags_pkey DO UPDATE SET
-        flag_id = COALESCE(EXCLUDED.flag_id, tool_flags_junction.flag_id),
+        flag_id = COALESCE(EXCLUDED.flags_id, tool_flags_junction.flags_id),
         active = true;
 
     IF COALESCE(array_length(v_args_ids, 1), 0) > 0 THEN

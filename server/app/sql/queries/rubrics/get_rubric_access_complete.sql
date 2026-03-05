@@ -66,7 +66,7 @@ effective_group AS (
 -- Get rubric departments (for access check)
 rubric_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(rd.department_id ORDER BY rd.created_at) FILTER (WHERE rd.department_id IS NOT NULL),
+        ARRAY_AGG(rd.departments_id ORDER BY rd.created_at) FILTER (WHERE rd.departments_id IS NOT NULL),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM params x

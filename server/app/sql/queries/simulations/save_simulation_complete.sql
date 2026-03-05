@@ -78,13 +78,13 @@ BEGIN
 
         -- Multi-select arrays: preserve existing if NULL passed
         IF flag_ids IS NULL THEN
-            flag_ids := COALESCE((SELECT ARRAY_AGG(j.flag_id) FROM simulation_flags_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
+            flag_ids := COALESCE((SELECT ARRAY_AGG(j.flags_id) FROM simulation_flags_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF department_ids IS NULL THEN
-            department_ids := COALESCE((SELECT ARRAY_AGG(j.department_id) FROM simulation_departments_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
+            department_ids := COALESCE((SELECT ARRAY_AGG(j.departments_id) FROM simulation_departments_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF scenario_ids IS NULL THEN
-            scenario_ids := COALESCE((SELECT ARRAY_AGG(j.scenario_id) FROM simulation_scenarios_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
+            scenario_ids := COALESCE((SELECT ARRAY_AGG(j.scenarios_id) FROM simulation_scenarios_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF scenario_flag_ids IS NULL THEN
             scenario_flag_ids := COALESCE((SELECT ARRAY_AGG(j.scenario_flags_id) FROM simulation_scenario_flags_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
@@ -165,7 +165,7 @@ BEGIN
     ),
     -- Link flags
     link_flags AS (
-        INSERT INTO simulation_flags_junction (simulation_id, flag_id, active, created_at, generated, mcp)
+        INSERT INTO simulation_flags_junction (simulation_id, flags_id, active, created_at, generated, mcp)
         SELECT x.simulation_id, fid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.flag_ids) AS fid
@@ -174,7 +174,7 @@ BEGIN
     ),
     -- Link departments
     link_departments AS (
-        INSERT INTO simulation_departments_junction (simulation_id, department_id, active, created_at, generated, mcp)
+        INSERT INTO simulation_departments_junction (simulation_id, departments_id, active, created_at, generated, mcp)
         SELECT x.simulation_id, did, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) AS did
@@ -183,7 +183,7 @@ BEGIN
     ),
     -- Link scenarios
     link_scenarios AS (
-        INSERT INTO simulation_scenarios_junction (simulation_id, scenario_id, active, created_at, generated, mcp)
+        INSERT INTO simulation_scenarios_junction (simulation_id, scenarios_id, active, created_at, generated, mcp)
         SELECT x.simulation_id, sid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.scenario_ids) AS sid

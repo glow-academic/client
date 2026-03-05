@@ -50,7 +50,7 @@ original_rubric AS (
     WHERE r.id = (SELECT original_rubric_id FROM params)
 ),
 original_departments AS (
-    SELECT department_id
+    SELECT departments_id
     FROM rubric_departments_junction
     WHERE rubric_id = (SELECT original_rubric_id FROM params) AND active = true
 ),
@@ -160,13 +160,13 @@ link_rubric_description AS (
 ),
 -- Link rubric active flag (set to false for duplicate)
 link_rubric_active_flag AS (
-    INSERT INTO rubric_flags_junction (rubric_id, flag_id, created_at) SELECT nr.rubric_id,
+    INSERT INTO rubric_flags_junction (rubric_id, flags_id, created_at) SELECT nr.rubric_id,
         f.id,
         NOW()
     FROM new_rubric nr
     CROSS JOIN flags_resource f
     WHERE f.name = 'rubric_active'
-    ON CONFLICT (rubric_id, flag_id) DO NOTHING
+    ON CONFLICT (rubric_id, flags_id) DO NOTHING
 ),
 -- Link rubric points
 link_rubric_points AS (
@@ -185,16 +185,16 @@ link_rubric_pass_points AS (
     ON CONFLICT (rubric_id, points_id) DO NOTHING
 ),
 link_departments AS (
-    INSERT INTO rubric_departments_junction (rubric_id, department_id, active, created_at)
-    SELECT 
+    INSERT INTO rubric_departments_junction (rubric_id, departments_id, active, created_at)
+    SELECT
         nr.rubric_id,
-        od.department_id,
+        od.departments_id,
         true,
         NOW()
     FROM new_rubric nr
     CROSS JOIN original_departments od
     WHERE EXISTS (SELECT 1 FROM original_departments)
-    ON CONFLICT (rubric_id, department_id) DO UPDATE SET
+    ON CONFLICT (rubric_id, departments_id) DO UPDATE SET
         active = true
 ),
 new_standard_groups AS (

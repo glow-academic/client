@@ -45,11 +45,11 @@ original_parameters AS (
     SELECT pf.parameter_id
     FROM params x
     JOIN parameter_fields_junction pf ON pf.field_id = x.field_id
-    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flag_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'field_active' AND f.value = true)
+    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flags_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'field_active' AND f.value = true)
     LIMIT 1
 ),
 original_departments AS (
-    SELECT fd.department_id
+    SELECT fd.departments_id
     FROM params x
     JOIN field_departments_junction fd ON fd.field_id = x.field_id AND fd.active = true
 ),
@@ -120,17 +120,17 @@ link_field_parameter AS (
 ),
 -- Link field active flag (set to false for duplicate)
 link_field_active_flag AS (
-    INSERT INTO field_flags_junction (field_id, flag_id, created_at) SELECT nf.field_id,
+    INSERT INTO field_flags_junction (field_id, flags_id, created_at) SELECT nf.field_id,
         f.id,
         NOW()
     FROM new_field nf
     CROSS JOIN flags_resource f
     WHERE f.name = 'field_active'
-    ON CONFLICT (field_id, flag_id) DO NOTHING
+    ON CONFLICT (field_id, flags_id) DO NOTHING
 ),
 link_departments AS (
     -- Link new field to same departments as original
-    INSERT INTO field_departments_junction (field_id, department_id, active, created_at)
+    INSERT INTO field_departments_junction (field_id, departments_id, active, created_at)
     SELECT
         nf.field_id,
         od.department_id,
@@ -138,7 +138,7 @@ link_departments AS (
         NOW()
     FROM new_field nf
     CROSS JOIN original_departments od
-    ON CONFLICT (field_id, department_id) DO UPDATE SET
+    ON CONFLICT (field_id, departments_id) DO UPDATE SET
         active = true
 ),
 copy_conditional_parameters AS (

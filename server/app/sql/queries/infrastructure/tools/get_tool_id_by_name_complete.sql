@@ -33,7 +33,7 @@ AS $$
       AND EXISTS (
           SELECT 1
           FROM tool_flags_junction tf
-          JOIN flags_resource f ON f.id = tf.flag_id
+          JOIN flags_resource f ON f.id = tf.flags_id
           WHERE tf.tool_id = t.id
             AND f.name = 'tool_active'
             AND f.value = true

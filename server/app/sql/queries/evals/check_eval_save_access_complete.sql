@@ -36,7 +36,7 @@ WITH params AS (
 ),
 eval_departments AS (
     SELECT COALESCE(
-        ARRAY_AGG(ed.department_id::text) FILTER (WHERE ed.department_id IS NOT NULL),
+        ARRAY_AGG(ed.departments_id::text) FILTER (WHERE ed.departments_id IS NOT NULL),
         ARRAY[]::text[]
     ) as department_ids
     FROM params x

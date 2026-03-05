@@ -84,26 +84,26 @@ WITH params AS (
     SELECT profile_id AS profile_id
 ),
 user_departments AS (
-    SELECT department_id
+    SELECT profile_departments_junction.departments_id AS department_id
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
 -- Scenario linkage via scenario_documents_junction (junction table, not artifact)
 document_active_scenario_links AS (
     SELECT
-        sd.document_id,
+        sd.documents_id,
         COUNT(*) as active_scenario_count
     FROM scenario_documents_junction sd
     WHERE sd.active = true
-    GROUP BY sd.document_id
+    GROUP BY sd.documents_id
 ),
 document_scenarios AS (
     SELECT
-        sd.document_id,
+        sd.documents_id,
         ARRAY_AGG(DISTINCT sd.scenario_id) as scenario_ids
     FROM scenario_documents_junction sd
     WHERE sd.active = true
-    GROUP BY sd.document_id
+    GROUP BY sd.documents_id
 ),
 -- Field linkage via parameter_fields_resource.field_id -> fields_resource.id
 document_fields_cte AS (
@@ -118,7 +118,7 @@ document_fields_cte AS (
 document_departments_data AS (
     SELECT
         dd.document_id,
-        ARRAY_AGG(dd.department_id::text ORDER BY dd.created_at) as department_ids
+        ARRAY_AGG(dd.departments_id::text ORDER BY dd.created_at) as department_ids
     FROM document_departments_junction dd
     WHERE dd.active = true
     GROUP BY dd.document_id
@@ -135,7 +135,7 @@ document_data AS (
     SELECT
         d.id as document_id,
         (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.document_id = d.id LIMIT 1) as document_name,
-        EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND f.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND f.value = TRUE) as active,
         d.updated_at,
         COALESCE(ddd.department_ids, NULL) as department_ids,
         COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
@@ -151,11 +151,11 @@ document_data AS (
     LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
     GROUP BY d.id,
         (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.document_id = d.id LIMIT 1),
-        EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND f.value = TRUE),
+        EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND f.value = TRUE),
         d.updated_at,
         ddd.department_ids, ds.scenario_ids, dfc.field_ids, duc.upload_ids, dasl.active_scenario_count
     HAVING
-        COUNT(dd.document_id) FILTER (WHERE dd.department_id IN (SELECT department_id FROM user_departments)) > 0
+        COUNT(dd.document_id) FILTER (WHERE dd.departments_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM document_departments_junction dd2 WHERE dd2.document_id = d.id AND dd2.active = true)
 ),
 -- Apply server-side filters

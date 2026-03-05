@@ -54,7 +54,7 @@ original_fields AS (
 ),
 original_flags AS (
     -- Get flag IDs from original document
-    SELECT flag_id
+    SELECT flags_id
     FROM params x
     JOIN document_flags_junction df ON df.document_id = x.document_id
 ),
@@ -111,28 +111,28 @@ link_document_description AS (
 ),
 -- Link document active flag (set to false for duplicate)
 link_document_active_flag AS (
-    INSERT INTO document_flags_junction (document_id, flag_id, created_at) SELECT nd.id,
+    INSERT INTO document_flags_junction (document_id, flags_id, created_at) SELECT nd.id,
         f.id,
         NOW()
     FROM new_document nd
     CROSS JOIN flags_resource f
     WHERE f.name = 'document_active'
-    ON CONFLICT (document_id, flag_id) DO NOTHING
+    ON CONFLICT (document_id, flags_id) DO NOTHING
 ),
 -- Copy other flags from original document
 copy_document_flags AS (
-    INSERT INTO document_flags_junction (document_id, flag_id, created_at)
+    INSERT INTO document_flags_junction (document_id, flags_id, created_at)
     SELECT
         nd.id,
-        of.flag_id,
+        of.flags_id,
         NOW()
     FROM new_document nd
     CROSS JOIN original_flags of
-    ON CONFLICT (document_id, flag_id) DO NOTHING
+    ON CONFLICT (document_id, flags_id) DO NOTHING
 ),
 copy_departments AS (
     -- Copy department links from original document
-    INSERT INTO document_departments_junction (document_id, department_id, active, created_at)
+    INSERT INTO document_departments_junction (document_id, departments_id, active, created_at)
     SELECT 
         nd.id,
         od.department_id,

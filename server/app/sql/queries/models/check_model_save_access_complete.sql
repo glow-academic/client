@@ -40,7 +40,7 @@ WITH params AS (
 -- Get model departments (for update mode)
 model_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(md.department_id::text) FILTER (WHERE md.department_id IS NOT NULL),
+        ARRAY_AGG(md.departments_id::text) FILTER (WHERE md.departments_id IS NOT NULL),
         ARRAY[]::text[]
     ) as department_ids
     FROM params x

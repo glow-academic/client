@@ -49,7 +49,7 @@ simulation_name_data AS (
 ),
 -- Get simulation's department IDs
 simulation_departments AS (
-    SELECT ARRAY_AGG(sd.department_id) as department_ids
+    SELECT ARRAY_AGG(sd.departments_id) as department_ids
     FROM simulation_departments_junction sd
     WHERE sd.simulation_id = (SELECT p_simulation_id FROM params)
       AND sd.active = true

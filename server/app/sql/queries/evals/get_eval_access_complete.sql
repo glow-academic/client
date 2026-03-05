@@ -66,7 +66,7 @@ effective_group AS (
 -- Get eval departments (for access check)
 eval_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(ed.department_id ORDER BY ed.created_at) FILTER (WHERE ed.department_id IS NOT NULL),
+        ARRAY_AGG(ed.departments_id ORDER BY ed.created_at) FILTER (WHERE ed.departments_id IS NOT NULL),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM params x

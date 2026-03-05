@@ -116,9 +116,9 @@ flag_resource_data AS (
     SELECT
         COALESCE(
             (SELECT flag_id FROM draft_flag_data),
-            (SELECT af.flag_id
+            (SELECT af.flags_id
              FROM auth_flags_junction af
-             JOIN flags_resource f ON af.flag_id = f.id
+             JOIN flags_resource f ON af.flags_id = f.id
              WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup)
                AND f.name = 'auth_active'
                AND f.value = TRUE
@@ -179,9 +179,9 @@ auth_item_ids_data AS (
                 )
             WHEN (SELECT auth_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(aij.item_id ORDER BY i.position)
+                (SELECT ARRAY_AGG(aij.items_id ORDER BY i.position)
                  FROM auth_items_junction aij
-                 JOIN items_resource i ON i.id = aij.item_id
+                 JOIN items_resource i ON i.id = aij.items_id
                  WHERE aij.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup)),
                 ARRAY[]::uuid[]
             )

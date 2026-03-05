@@ -45,7 +45,7 @@ cohort_check AS (
 -- Get cohort departments
 cohort_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(cd.department_id::text) FILTER (WHERE cd.department_id IS NOT NULL),
+        ARRAY_AGG(cd.departments_id::text) FILTER (WHERE cd.departments_id IS NOT NULL),
         ARRAY[]::text[]
     ) as department_ids
     FROM params x

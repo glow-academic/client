@@ -36,7 +36,7 @@ source_agent AS (
     LEFT JOIN LATERAL (
         SELECT DISTINCT ar.artifact::text
         FROM agent_tools_junction at
-        JOIN tools_resource tr ON tr.id = at.tool_id
+        JOIN tools_resource tr ON tr.id = at.tools_id
         JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
         JOIN tool_resources_junction tdj ON tdj.tool_id = ttj.tool_id AND tdj.active = true
         JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
@@ -256,19 +256,19 @@ link_agent_description AS (
 ),
 -- Link agent active flag (defaults to false)
 link_agent_active_flag AS (
-    INSERT INTO agent_flags_junction (agent_id, flag_id, created_at) SELECT na.agent_id::uuid,
+    INSERT INTO agent_flags_junction (agent_id, flags_id, created_at) SELECT na.agent_id::uuid,
         f.id,
         NOW()
     FROM new_agent na
     CROSS JOIN flags_resource f
     WHERE f.name = 'agent_active'
-    ON CONFLICT (agent_id, flag_id) DO NOTHING
+    ON CONFLICT (agent_id, flags_id) DO NOTHING
 ),
 copy_departments AS (
-    INSERT INTO agent_departments_junction (agent_id, department_id, active, created_at)
-    SELECT 
+    INSERT INTO agent_departments_junction (agent_id, departments_id, active, created_at)
+    SELECT
         na.agent_id::uuid,
-        ad.department_id,
+        ad.departments_id,
         ad.active,
         NOW()
     FROM source_agent sa

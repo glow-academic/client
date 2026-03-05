@@ -81,17 +81,17 @@ link_document_description AS (
 ),
 -- Link document active flag
 link_document_active_flag AS (
-    INSERT INTO document_flags_junction (document_id, flag_id, created_at) SELECT id.document_id,
+    INSERT INTO document_flags_junction (document_id, flags_id, created_at) SELECT id.document_id,
         f.id,
         NOW()
     FROM insert_doc id
     CROSS JOIN flags_resource f
     WHERE f.name = 'document_active'
-    ON CONFLICT (document_id, flag_id) DO NOTHING
+    ON CONFLICT (document_id, flags_id) DO NOTHING
 ),
 -- Link document template flag (defaults to false)
 link_document_template_flag AS (
-    INSERT INTO document_flags_junction (document_id, flag_id, created_at)
+    INSERT INTO document_flags_junction (document_id, flags_id, created_at)
     SELECT
         id.document_id,
         f.id,
@@ -99,7 +99,7 @@ link_document_template_flag AS (
     FROM insert_doc id
     CROSS JOIN flags_resource f
     WHERE f.name = 'template'
-    ON CONFLICT (document_id, flag_id) DO NOTHING
+    ON CONFLICT (document_id, flags_id) DO NOTHING
 ),
 get_files_resource_id AS (
     -- Look up files_resource.id from upload_id via connection table
@@ -120,7 +120,7 @@ insert_upload AS (
         active = true
 ),
 insert_depts AS (
-    INSERT INTO document_departments_junction (document_id, department_id, active, created_at)
+    INSERT INTO document_departments_junction (document_id, departments_id, active, created_at)
     SELECT document_id, dept_id, true, NOW()
     FROM unnest(department_ids) as dept_id
     WHERE cardinality(department_ids) > 0

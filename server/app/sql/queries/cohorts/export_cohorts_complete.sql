@@ -100,10 +100,10 @@ user_profile_resource AS (
 cohort_departments_data AS (
     SELECT
         cd.cohort_id,
-        ARRAY_AGG(cd.department_id ORDER BY cd.created_at) as department_ids,
+        ARRAY_AGG(cd.departments_id ORDER BY cd.created_at) as department_ids,
         ARRAY_AGG(dr.name ORDER BY cd.created_at) as department_names
     FROM cohort_departments_junction cd
-    JOIN departments_resource dr ON dr.id = cd.department_id
+    JOIN departments_resource dr ON dr.id = cd.departments_id
     WHERE cd.active = true
     GROUP BY cd.cohort_id
 ),
@@ -111,10 +111,10 @@ cohort_departments_data AS (
 cohort_simulations_data AS (
     SELECT
         csj.cohort_id,
-        ARRAY_AGG(csj.simulation_id ORDER BY csj.created_at) as simulation_ids,
+        ARRAY_AGG(csj.simulations_id ORDER BY csj.created_at) as simulation_ids,
         ARRAY_AGG(sr.name ORDER BY csj.created_at) as simulation_names
     FROM cohort_simulations_junction csj
-    JOIN simulations_resource sr ON sr.id = csj.simulation_id
+    JOIN simulations_resource sr ON sr.id = csj.simulations_id
     WHERE csj.active = true
     GROUP BY csj.cohort_id
 ),
@@ -177,7 +177,7 @@ cohort_data AS (
         (SELECT cd.descriptions_id FROM cohort_descriptions_junction cd WHERE cd.cohort_id = c.id LIMIT 1) as descriptions_id,
         (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.descriptions_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description,
         -- Flag
-        NOT EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.type = 'cohort_active' AND f.value = TRUE) as is_inactive,
+        NOT EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flags_id = f.id WHERE cf.cohort_id = c.id AND f.type = 'cohort_active' AND f.value = TRUE) as is_inactive,
         -- Multi-select
         cdd.department_ids,
         cdd.department_names as departments,
@@ -204,7 +204,7 @@ cohort_data AS (
     LEFT JOIN cohort_sim_availability_data csad ON csad.cohort_id = c.id
     LEFT JOIN cohort_profiles_data cpd ON cpd.cohort_id = c.id
     LEFT JOIN cohort_profile_personas_data cppd ON cppd.cohort_id = c.id
-    LEFT JOIN cohort_departments_junction cdj ON cdj.cohort_id = c.id AND cdj.active = true AND cdj.department_id IN (SELECT department_id FROM user_departments)
+    LEFT JOIN cohort_departments_junction cdj ON cdj.cohort_id = c.id AND cdj.active = true AND cdj.departments_id IN (SELECT department_id FROM user_departments)
     LEFT JOIN user_profile_resource upr ON true
     CROSS JOIN user_profile up
     WHERE (

@@ -77,7 +77,7 @@ WITH params AS (
     SELECT profile_id AS profile_id
 ),
 user_departments AS (
-    SELECT department_id
+    SELECT departments_id
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
@@ -85,7 +85,7 @@ user_departments AS (
 tool_departments_data AS (
     SELECT
         tdj.tool_id,
-        ARRAY_AGG(tdj.department_id::text ORDER BY tdj.created_at) as department_ids
+        ARRAY_AGG(tdj.departments_id::text ORDER BY tdj.created_at) as department_ids
     FROM tool_departments_junction tdj
     WHERE tdj.active = true
     GROUP BY tdj.tool_id
@@ -96,7 +96,7 @@ tool_agent_counts AS (
         t.id as tool_id,
         COALESCE(
             (SELECT COUNT(DISTINCT atj.agent_id) FROM agent_tools_junction atj
-                JOIN tools_resource tr ON tr.id = atj.tool_id
+                JOIN tools_resource tr ON tr.id = atj.tools_id
                 JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
                 WHERE ttj.tool_id = t.id AND atj.active = true),
             0
@@ -110,7 +110,7 @@ tool_agents_data AS (
         ARRAY_AGG(DISTINCT atj.agent_id) as agent_ids
     FROM tool_tools_junction ttj
     JOIN tools_resource tr ON tr.id = ttj.tool_id AND tr.active = true
-    JOIN agent_tools_junction atj ON atj.tool_id = tr.id AND atj.active = true
+    JOIN agent_tools_junction atj ON atj.tools_id = tr.id AND atj.active = true
     GROUP BY ttj.tool_id
 ),
 -- Creatable flag per tool (derived from tools_resource.operation)
@@ -127,7 +127,7 @@ tool_data AS (
         t.id as tool_id,
         (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.names_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
         (SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.descriptions_id = d.id WHERE td.tool_id = t.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true) as active,
+        EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true) as active,
         t.updated_at,
         COALESCE(tac.active_agent_count, 0)::bigint as active_agent_count,
         COALESCE(tdd.department_ids, ARRAY[]::text[]) as department_ids,
@@ -171,7 +171,7 @@ department_option_data AS (
         (SELECT COUNT(*) FROM tool_data td WHERE dr.id::text = ANY(td.department_ids)) as count
     FROM departments_resource dr
     JOIN department_departments_junction dd ON dd.department_id = dr.id
-    WHERE dr.id IN (SELECT department_id FROM user_departments)
+    WHERE dr.id IN (SELECT departments_id FROM user_departments)
       AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
 ),
 -- Agent options with names resolved in SQL

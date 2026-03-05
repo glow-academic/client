@@ -45,7 +45,7 @@ scenario_name_data AS (
     LIMIT 1
 ),
 scenario_departments AS (
-    SELECT ARRAY_AGG(sd.department_id) as department_ids
+    SELECT ARRAY_AGG(sd.departments_id) as department_ids
     FROM scenario_departments_junction sd
     WHERE sd.scenario_id = (SELECT p_scenario_id FROM params)
       AND sd.active = true

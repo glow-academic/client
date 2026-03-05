@@ -66,7 +66,7 @@ effective_group AS (
 -- Get provider departments (for access check)
 provider_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(pd.department_id ORDER BY pd.created_at) FILTER (WHERE pd.department_id IS NOT NULL),
+        ARRAY_AGG(pd.departments_id ORDER BY pd.created_at) FILTER (WHERE pd.departments_id IS NOT NULL),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM params x

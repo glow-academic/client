@@ -81,7 +81,7 @@ simulation_data AS (
         (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.simulation_id = sa.id LIMIT 1) as simulation_name,
         EXISTS (
             SELECT 1 FROM simulation_flags_junction sf
-            JOIN flags_resource f ON sf.flag_id = f.id
+            JOIN flags_resource f ON sf.flags_id = f.id
             WHERE sf.simulation_id = sa.id AND f.name = 'simulation_active' AND f.value = true
         ) as simulation_is_active
     FROM params p
@@ -98,7 +98,7 @@ access_data AS (
         JOIN profile_profiles_junction ppj ON ppj.profile_id = p.profile_id AND ppj.active = true
         JOIN cohort_profiles_junction cpj ON cpj.profile_id = ppj.profile_id AND cpj.active = true
         JOIN cohort_simulations_junction cs ON cs.cohort_id = cpj.cohort_id AND cs.active = true
-        WHERE cs.simulation_id = p.simulation_id
+        WHERE cs.simulations_id = p.simulation_id
     ) as has_access
 ),
 -- Chat data (chat linked to attempt via bridge table)

@@ -42,10 +42,10 @@ original_setting AS (
 ),
 original_flags AS (
     -- Get flag IDs from original setting (excluding active flag which is handled separately)
-    SELECT sf.flag_id
+    SELECT sf.flags_id
     FROM params x
     JOIN setting_flags_junction sf ON sf.setting_id = x.setting_id
-    JOIN flags_resource f ON sf.flag_id = f.id
+    JOIN flags_resource f ON sf.flags_id = f.id
     WHERE f.name != 'setting_active'
 ),
 -- Insert name INTO names_resource table
@@ -92,24 +92,24 @@ link_setting_description AS (
 ),
 -- Link setting active flag (set to false for duplicate)
 link_setting_active_flag AS (
-    INSERT INTO setting_flags_junction (setting_id, flag_id, created_at) SELECT ns.id,
+    INSERT INTO setting_flags_junction (setting_id, flags_id, created_at) SELECT ns.id,
         f.id,
         NOW()
     FROM new_setting ns
     CROSS JOIN flags_resource f
     WHERE f.name = 'setting_active'
-    ON CONFLICT (setting_id, flag_id) DO NOTHING
+    ON CONFLICT (setting_id, flags_id) DO NOTHING
 ),
 -- Copy other flags from original setting
 copy_setting_flags AS (
-    INSERT INTO setting_flags_junction (setting_id, flag_id, created_at)
+    INSERT INTO setting_flags_junction (setting_id, flags_id, created_at)
     SELECT
         ns.id,
-        of.flag_id,
+        of.flags_id,
         NOW()
     FROM new_setting ns
     CROSS JOIN original_flags of
-    ON CONFLICT (setting_id, flag_id) DO NOTHING
+    ON CONFLICT (setting_id, flags_id) DO NOTHING
 )
 SELECT 
     (SELECT id FROM new_setting LIMIT 1) as new_setting_id,

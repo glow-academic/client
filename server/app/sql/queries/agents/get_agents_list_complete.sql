@@ -91,7 +91,7 @@ user_departments AS (
 agent_departments_data AS (
     SELECT
         ad.agent_id,
-        ARRAY_AGG(ad.department_id::text ORDER BY ad.created_at) as department_ids
+        ARRAY_AGG(ad.departments_id::text ORDER BY ad.created_at) as department_ids
     FROM agent_departments_junction ad
     WHERE ad.active = true
     GROUP BY ad.agent_id
@@ -112,7 +112,7 @@ agent_tools_data AS (
         atj.agent_id,
         ARRAY_AGG(DISTINCT ttj.tool_id) as tool_ids
     FROM agent_tools_junction atj
-    JOIN tools_resource tr ON tr.id = atj.tool_id AND tr.active = true
+    JOIN tools_resource tr ON tr.id = atj.tools_id AND tr.active = true
     JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
     WHERE atj.active = true
     GROUP BY atj.agent_id
@@ -137,10 +137,10 @@ agent_data AS (
     LEFT JOIN agent_departments_data add_data ON add_data.agent_id = a.id
     LEFT JOIN agent_settings_data asd ON asd.agent_id = a.id
     LEFT JOIN agent_tools_data atd ON atd.agent_id = a.id
-    LEFT JOIN agent_departments_junction ad ON ad.agent_id = a.id AND ad.active = true AND ad.department_id IN (SELECT department_id FROM user_departments)
+    LEFT JOIN agent_departments_junction ad ON ad.agent_id = a.id AND ad.active = true AND ad.departments_id IN (SELECT department_id FROM user_departments)
     GROUP BY a.id, a.updated_at,
         add_data.department_ids, asd.active_settings_count, atd.tool_ids
-    HAVING COUNT(ad.department_id) > 0 OR NOT EXISTS (
+    HAVING COUNT(ad.departments_id) > 0 OR NOT EXISTS (
         SELECT 1 FROM agent_departments_junction ad2 WHERE ad2.agent_id = a.id AND ad2.active = true
     )
 ),
@@ -152,7 +152,7 @@ filtered_agents AS (
         -- Search filter: match name or description (case-insensitive)
         (search IS NULL OR LOWER(ad.agent_name) LIKE '%' || LOWER(search) || '%' OR LOWER(ad.description) LIKE '%' || LOWER(search) || '%')
         -- Department filter: agent must belong to at least one selected department
-        AND (filter_department_ids IS NULL OR ad.department_ids && filter_department_ids::text[])
+        AND (filter_department_ids IS NULL OR ad.departments_ids && filter_department_ids::text[])
         -- Model filter: agent must use one of the selected models
         AND (filter_model_ids IS NULL OR ad.model_id = ANY(filter_model_ids))
         -- Tool filter: agent must use one of the selected tools
@@ -174,7 +174,7 @@ department_option_data AS (
     SELECT
         dr.id::text as value,
         (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
-        (SELECT COUNT(*) FROM agent_data ad WHERE dr.id::text = ANY(ad.department_ids)) as count
+        (SELECT COUNT(*) FROM agent_data ad WHERE dr.id::text = ANY(ad.departments_ids)) as count
     FROM departments_resource dr
     JOIN department_departments_junction dd ON dd.department_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)

@@ -93,10 +93,10 @@ simulation_scenarios_data AS (
 simulation_departments_data AS (
     SELECT
         sd.simulation_id,
-        ARRAY_AGG(sd.department_id ORDER BY sd.created_at) as department_ids,
+        ARRAY_AGG(sd.departments_id ORDER BY sd.created_at) as department_ids,
         ARRAY_AGG(dr.name ORDER BY sd.created_at) as department_names
     FROM simulation_departments_junction sd
-    JOIN departments_resource dr ON dr.id = sd.department_id
+    JOIN departments_resource dr ON dr.id = sd.departments_id
     WHERE sd.active = true
     GROUP BY sd.simulation_id
 ),
@@ -167,8 +167,8 @@ simulation_data AS (
         (SELECT sd.descriptions_id FROM simulation_descriptions_junction sd WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1) as descriptions_id,
         (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1) as description,
         -- Flags
-        NOT EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'simulation_active' AND f.value = TRUE) as is_inactive,
-        EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'practice' AND f.value = TRUE) as is_practice,
+        NOT EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'simulation_active' AND f.value = TRUE) as is_inactive,
+        EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'practice' AND f.value = TRUE) as is_practice,
         -- Multi-select
         sdd.department_ids,
         sdd.department_names as departments,
@@ -203,7 +203,7 @@ simulation_data AS (
         sstld.time_limit_ids, sstld.time_limit_values,
         scod.cohort_ids
     HAVING
-        COUNT(sdj.simulation_id) FILTER (WHERE sdj.department_id IN (SELECT department_id FROM user_departments)) > 0
+        COUNT(sdj.simulation_id) FILTER (WHERE sdj.departments_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM simulation_departments_junction sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
 ),
 -- Apply filters

@@ -132,24 +132,24 @@ BEGIN
 
     -- Colors
     IF (colors).resources_id IS NOT NULL THEN
-        INSERT INTO persona_draft_colors_junction (draft_id, color_id, active, created_at)
+        INSERT INTO persona_draft_colors_junction (draft_id, colors_id, active, created_at)
         VALUES (v_draft_id, (colors).resources_id, true, NOW())
         ON CONFLICT (draft_id, color_id) DO UPDATE SET active = true, created_at = NOW();
 
         UPDATE persona_draft_colors_junction
         SET active = false
-        WHERE draft_id = v_draft_id AND color_id != (colors).resources_id;
+        WHERE draft_id = v_draft_id AND colors_id != (colors).resources_id;
     END IF;
 
     -- Icons
     IF (icons).resources_id IS NOT NULL THEN
-        INSERT INTO persona_draft_icons_junction (draft_id, icon_id, active, created_at)
+        INSERT INTO persona_draft_icons_junction (draft_id, icons_id, active, created_at)
         VALUES (v_draft_id, (icons).resources_id, true, NOW())
         ON CONFLICT (draft_id, icon_id) DO UPDATE SET active = true, created_at = NOW();
 
         UPDATE persona_draft_icons_junction
         SET active = false
-        WHERE draft_id = v_draft_id AND icon_id != (icons).resources_id;
+        WHERE draft_id = v_draft_id AND icons_id != (icons).resources_id;
     END IF;
 
     -- Instructions
@@ -165,14 +165,14 @@ BEGIN
 
     -- Flags
     IF (flags).resources_id IS NOT NULL THEN
-        INSERT INTO persona_draft_flags_junction (draft_id, flag_id, value, created_at)
+        INSERT INTO persona_draft_flags_junction (draft_id, flags_id, value, created_at)
         VALUES (v_draft_id, (flags).resources_id, true, NOW())
         ON CONFLICT (draft_id, flag_id) DO UPDATE SET value = true, created_at = NOW();
 
         -- Deactivate other flags of same type
         UPDATE persona_draft_flags_junction
         SET value = false
-        WHERE draft_id = v_draft_id AND flag_id != (flags).resources_id;
+        WHERE draft_id = v_draft_id AND flags_id != (flags).resources_id;
     END IF;
 
     -- Link multi-select resources (replace pattern)
@@ -184,7 +184,7 @@ BEGIN
         WHERE draft_id = v_draft_id;
 
         -- Insert new
-        INSERT INTO persona_draft_departments_junction (draft_id, department_id, active, created_at)
+        INSERT INTO persona_draft_departments_junction (draft_id, departments_id, active, created_at)
         SELECT v_draft_id, dept_id, true, NOW()
         FROM UNNEST((departments).resource_ids) AS dept_id
         ON CONFLICT (draft_id, department_id) DO UPDATE SET active = true, created_at = NOW();

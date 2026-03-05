@@ -52,7 +52,7 @@ provider_departments_data AS (
             WHEN (SELECT provider_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
                 (
-                    SELECT ARRAY_AGG(pd.department_id ORDER BY pd.created_at)
+                    SELECT ARRAY_AGG(pd.departments_id ORDER BY pd.created_at)
                     FROM provider_departments_junction pd
                     WHERE pd.provider_id = (SELECT provider_id FROM params) AND pd.active = true
                 ),
@@ -81,9 +81,9 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT
         (
-            SELECT pf.flag_id
+            SELECT pf.flags_id
             FROM provider_flags_junction pf
-            JOIN flags_resource f ON pf.flag_id = f.id
+            JOIN flags_resource f ON pf.flags_id = f.id
             WHERE pf.provider_id = (SELECT provider_id FROM params)
               AND f.name = 'provider_active'
               AND f.value = true
@@ -112,7 +112,7 @@ endpoint_resource_data AS (
 key_resource_data AS (
     SELECT
         (
-            SELECT pk.key_id
+            SELECT pk.keys_id
             FROM provider_keys_junction pk
             WHERE pk.provider_id = (SELECT provider_id FROM params) AND pk.active = true
             LIMIT 1

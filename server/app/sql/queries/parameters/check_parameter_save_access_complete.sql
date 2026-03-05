@@ -36,7 +36,7 @@ WITH params AS (
 ),
 user_dept AS (
     SELECT COALESCE(
-        ARRAY_AGG(pd.department_id::text) FILTER (WHERE pd.department_id IS NOT NULL),
+        ARRAY_AGG(pd.departments_id::text) FILTER (WHERE pd.departments_id IS NOT NULL),
         ARRAY[]::text[]
     ) as department_ids
     FROM params x
@@ -47,7 +47,7 @@ parameter_dept AS (
         CASE
             WHEN (SELECT parameter_id FROM params) IS NULL THEN NULL::text[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(pd.department_id::text)
+                (SELECT ARRAY_AGG(pd.departments_id::text)
                  FROM parameter_departments_junction pd
                  WHERE pd.parameter_id = (SELECT parameter_id FROM params) AND pd.active = true),
                 ARRAY[]::text[]

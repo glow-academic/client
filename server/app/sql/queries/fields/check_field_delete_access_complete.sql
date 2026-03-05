@@ -38,7 +38,7 @@ WITH params AS (
 -- Get field departments
 field_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(fd.department_id::text) FILTER (WHERE fd.department_id IS NOT NULL),
+        ARRAY_AGG(fd.departments_id::text) FILTER (WHERE fd.departments_id IS NOT NULL),
         ARRAY[]::text[]
     ) as department_ids
     FROM params x

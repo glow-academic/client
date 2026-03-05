@@ -66,7 +66,7 @@ document_departments_data AS (
         CASE
             WHEN (SELECT document_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(dd.department_id ORDER BY dd.created_at)
+                (SELECT ARRAY_AGG(dd.departments_id ORDER BY dd.created_at)
                  FROM document_departments_junction dd
                  WHERE dd.document_id = (SELECT document_id FROM params) AND dd.active = true),
                 ARRAY[]::uuid[]
@@ -144,9 +144,9 @@ description_resource_data AS (
 ),
 flag_resource_data AS (
     SELECT
-        (SELECT df.flag_id
+        (SELECT df.flags_id
          FROM document_flags_junction df
-         JOIN flags_resource f ON df.flag_id = f.id
+         JOIN flags_resource f ON df.flags_id = f.id
          WHERE df.document_id = (SELECT document_id FROM params)
            AND df.active = true
            AND f.name = 'document_active'

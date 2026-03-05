@@ -105,7 +105,7 @@ selected_agent AS (
     WHERE EXISTS (
         SELECT 1
         FROM agent_flags_junction af
-        JOIN flags_resource f ON f.id = af.flag_id
+        JOIN flags_resource f ON f.id = af.flags_id
         WHERE af.agent_id = a.id
           AND f.name = 'agent_active'
           AND f.value = true
@@ -121,7 +121,7 @@ selected_agent AS (
             SELECT 1
             FROM agent_departments_junction ad
             WHERE ad.agent_id = a.id
-              AND ad.department_id = p.department_id
+              AND ad.departments_id = p.department_id
               AND ad.active = true
         )
       )
@@ -266,7 +266,7 @@ scenario_content AS (
                     LIMIT 1
                 ),
                 (
-                    SELECT spj.persona_id
+                    SELECT spj.personas_id
                     FROM scenario_personas_junction spj
                     WHERE spj.scenario_id = s.scenario_artifact_id
                       AND spj.active = true

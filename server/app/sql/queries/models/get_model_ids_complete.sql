@@ -89,37 +89,37 @@ provider_resource_data AS (
 -- Flag IDs
 flag_active_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'model_active' AND f.value = TRUE LIMIT 1) as active_flag_id
+        (SELECT mf.flags_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flags_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.name = 'model_active' AND f.value = TRUE LIMIT 1) as active_flag_id
     FROM params
 ),
 flag_modalities_enabled_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND f.value = TRUE LIMIT 1) as modalities_enabled_flag_id
+        (SELECT mf.flags_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flags_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'modalities_enabled'::flag_type AND f.value = TRUE LIMIT 1) as modalities_enabled_flag_id
     FROM params
 ),
 flag_temperature_enabled_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND f.value = TRUE LIMIT 1) as temperature_enabled_flag_id
+        (SELECT mf.flags_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flags_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'temperature_enabled'::flag_type AND f.value = TRUE LIMIT 1) as temperature_enabled_flag_id
     FROM params
 ),
 flag_pricing_enabled_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND f.value = TRUE LIMIT 1) as pricing_enabled_flag_id
+        (SELECT mf.flags_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flags_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'pricing_enabled'::flag_type AND f.value = TRUE LIMIT 1) as pricing_enabled_flag_id
     FROM params
 ),
 flag_voices_enabled_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND f.value = TRUE LIMIT 1) as voices_enabled_flag_id
+        (SELECT mf.flags_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flags_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'voices_enabled'::flag_type AND f.value = TRUE LIMIT 1) as voices_enabled_flag_id
     FROM params
 ),
 flag_reasoning_levels_enabled_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND f.value = TRUE LIMIT 1) as reasoning_levels_enabled_flag_id
+        (SELECT mf.flags_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flags_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'reasoning_levels_enabled'::flag_type AND f.value = TRUE LIMIT 1) as reasoning_levels_enabled_flag_id
     FROM params
 ),
 flag_qualities_enabled_data AS (
     SELECT
-        (SELECT mf.flag_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND f.value = TRUE LIMIT 1) as qualities_enabled_flag_id
+        (SELECT mf.flags_id FROM model_flags_junction mf JOIN flags_resource f ON mf.flags_id = f.id WHERE mf.model_id = (SELECT model_id FROM params) AND f.type = 'qualities_enabled'::flag_type AND f.value = TRUE LIMIT 1) as qualities_enabled_flag_id
     FROM params
 ),
 -- Multi-select resource IDs
@@ -128,7 +128,7 @@ model_departments_data AS (
         CASE
             WHEN (SELECT model_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(md.department_id ORDER BY md.created_at)
+                (SELECT ARRAY_AGG(md.departments_id ORDER BY md.created_at)
                  FROM model_departments_junction md
                  WHERE md.model_id = (SELECT model_id FROM params) AND md.active = true),
                 ARRAY[]::uuid[]
@@ -222,7 +222,7 @@ quality_ids_data AS (
                     END
                 )
                  FROM model_qualities_junction mq
-                 JOIN qualities_resource qr ON qr.id = mq.quality_id
+                 JOIN qualities_resource qr ON qr.id = mq.qualities_id
                  WHERE mq.model_id = (SELECT model_id FROM params)
                  AND mq.active = true AND qr.active = true),
                 ARRAY[]::uuid[]
@@ -238,7 +238,7 @@ voice_ids_data AS (
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(v.id ORDER BY v.voice::text)
                  FROM model_voices_junction mv
-                 JOIN voices_resource v ON v.id = mv.voice_id
+                 JOIN voices_resource v ON v.id = mv.voices_id
                  WHERE mv.model_id = (SELECT model_id FROM params)
                  AND v.active = true),
                 ARRAY[]::uuid[]

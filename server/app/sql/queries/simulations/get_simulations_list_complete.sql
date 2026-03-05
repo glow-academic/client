@@ -136,7 +136,7 @@ simulation_cohorts_data AS (
 simulation_departments_data AS (
     SELECT
         sd.simulation_id,
-        ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+        ARRAY_AGG(sd.departments_id::text ORDER BY sd.created_at) as department_ids
     FROM simulation_departments_junction sd
     WHERE sd.active = true
     GROUP BY sd.simulation_id
@@ -157,8 +157,8 @@ simulation_data AS (
             ),
             'No description'
         ) as description,
-        NOT EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'simulation_active' AND f.value = TRUE) as is_inactive,
-        EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'practice' AND f.value = TRUE) as practice_simulation,
+        NOT EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'simulation_active' AND f.value = TRUE) as is_inactive,
+        EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'practice' AND f.value = TRUE) as practice_simulation,
         s.updated_at,
         COALESCE(sdd.department_ids, NULL) as department_ids,
         COALESCE(ssd.scenario_ids, ARRAY[]::text[]) as scenario_ids,
@@ -177,12 +177,12 @@ simulation_data AS (
     GROUP BY s.id,
         (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.simulation_id = s.id LIMIT 1),
         (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1),
-        EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'simulation_active' AND f.value = TRUE),
-        EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'practice' AND f.value = TRUE),
+        EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'simulation_active' AND f.value = TRUE),
+        EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'practice' AND f.value = TRUE),
         s.updated_at, sdd.department_ids, ssd.scenario_ids,
         scd.total_cohort_links, scd.num_cohorts, scd.cohort_ids, s.generated, s.mcp, up.role
     HAVING
-        COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0
+        COUNT(sd.simulation_id) FILTER (WHERE sd.departments_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM simulation_departments_junction sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
 ),
 -- Server-side filtering

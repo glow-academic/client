@@ -56,7 +56,7 @@ rubric_departments_data AS (
         CASE
             WHEN (SELECT rubric_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(rd.department_id ORDER BY rd.created_at)
+                (SELECT ARRAY_AGG(rd.departments_id ORDER BY rd.created_at)
                  FROM rubric_departments_junction rd
                  WHERE rd.rubric_id = (SELECT rubric_id FROM params) AND rd.active = true),
                 ARRAY[]::uuid[]
@@ -84,7 +84,7 @@ rubric_standards_data AS (
         CASE
             WHEN (SELECT rubric_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(rs.standard_id ORDER BY rs.created_at)
+                (SELECT ARRAY_AGG(rs.standards_id ORDER BY rs.created_at)
                  FROM rubric_standards_junction rs
                  WHERE rs.rubric_id = (SELECT rubric_id FROM params) AND rs.active = true),
                 ARRAY[]::uuid[]
@@ -106,9 +106,9 @@ description_resource_data AS (
 ),
 flag_resource_data AS (
     SELECT
-        (SELECT rf.flag_id
+        (SELECT rf.flags_id
          FROM rubric_flags_junction rf
-         JOIN flags_resource f ON rf.flag_id = f.id
+         JOIN flags_resource f ON rf.flags_id = f.id
          WHERE rf.rubric_id = (SELECT rubric_id FROM params)
            AND f.name = 'rubric_active'
            AND f.value = TRUE

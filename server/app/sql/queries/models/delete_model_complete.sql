@@ -53,7 +53,7 @@ personas_usage_check AS (
 agents_usage_check AS (
     SELECT COUNT(DISTINCT amj.agent_id)::bigint as usage_count
     FROM agent_models_junction amj
-    WHERE amj.model_id = (SELECT model_id FROM params)
+    WHERE amj.models_id = (SELECT model_id FROM params)
       AND amj.active = true
 ),
 model_info AS (

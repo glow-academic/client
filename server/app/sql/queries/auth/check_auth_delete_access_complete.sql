@@ -40,9 +40,9 @@ auth_exists_check AS (
 ),
 -- Count active settings linked to this auth
 settings_links AS (
-    SELECT COALESCE(COUNT(DISTINCT sa.settings_id), 0)::bigint as active_count
+    SELECT COALESCE(COUNT(DISTINCT sa.setting_id), 0)::bigint as active_count
     FROM params x
-    LEFT JOIN setting_auths_junction sa ON sa.auth_id = x.auth_id AND sa.active = true
+    LEFT JOIN setting_auths_junction sa ON sa.auths_id = x.auth_id AND sa.active = true
 )
 SELECT
     (SELECT auth_exists FROM auth_exists_check) as auth_exists,

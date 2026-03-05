@@ -89,7 +89,7 @@ link_name AS (
     WHERE gocn.names_id IS NOT NULL
 ),
 link_flags AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at) SELECT ns.id, gfi.active_flag_id, NOW()
+    INSERT INTO scenario_flags_junction (scenario_id, flags_id, created_at) SELECT ns.id, gfi.active_flag_id, NOW()
     FROM new_scenario ns
     CROSS JOIN params p
     CROSS JOIN get_flag_ids gfi
@@ -118,7 +118,7 @@ SELECT
     (SELECT created_at FROM scenario_artifact WHERE id = ns.id LIMIT 1) as created_at,
     (SELECT updated_at FROM scenario_artifact WHERE id = ns.id LIMIT 1) as updated_at,
     NULL::uuid as profile_id,
-    (SELECT sd.department_id FROM scenario_departments_junction sd WHERE sd.scenario_id = ns.id AND sd.active = true LIMIT 1) as department_id
+    (SELECT sd.departments_id FROM scenario_departments_junction sd WHERE sd.scenario_id = ns.id AND sd.active = true LIMIT 1) as department_id
 FROM new_scenario ns
 CROSS JOIN params p
 LEFT JOIN get_or_create_name gocn ON gocn.names_id IS NOT NULL

@@ -101,7 +101,7 @@ WITH params AS (
     SELECT profile_id AS profile_id
 ),
 user_departments AS (
-    SELECT department_id
+    SELECT departments_id
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
@@ -113,20 +113,21 @@ rubric_active_simulation_links AS (
     JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
     JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubrics_id AND srr.scenario_id = ss.scenario_id
     JOIN simulation_artifact s ON s.id = ss.simulation_id
-    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flags_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.type = 'scenario_active' AND f.value = true) AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = true) AND srr.rubric_id IS NOT NULL
+    WHERE EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flags_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.type = 'scenario_active' AND f.value = true) AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = true) AND srr.rubric_id IS NOT NULL
     GROUP BY srr.rubric_id
 ),
 simulation_department_access_for_rubrics AS (
     SELECT
         s.id as simulation_id,
         CASE
-            WHEN COUNT(sd.simulation_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0 THEN true
-            WHEN NOT EXISTS (SELECT 1 FROM simulation_departments_junction sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true) THEN true
+            WHEN COUNT(sd.simulation_id) FILTER (WHERE sd.departments_id IN (SELECT departments_id FROM user_departments)) > 0 THEN true
+            WHEN NOT EXISTS (SELECT 1 FROM simulation_departments_junction sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true
+) THEN true
             ELSE false
         END as has_access
     FROM simulation_artifact s
     LEFT JOIN simulation_departments_junction sd ON sd.simulation_id = s.id AND sd.active = true
-    WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = true)
+    WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = true)
     GROUP BY s.id
 ),
 rubric_simulations_distinct AS (
@@ -138,7 +139,7 @@ rubric_simulations_distinct AS (
     INNER JOIN simulation_scenarios_junction ss ON ss.simulation_id = s.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flags_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.type = 'scenario_active' AND f.value = true)
     INNER JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
     INNER JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubrics_id AND srr.scenario_id = ss.scenario_id
-    WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = true) AND srr.rubric_id IS NOT NULL
+    WHERE EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = true) AND srr.rubric_id IS NOT NULL
     ORDER BY srr.rubric_id, s.id
 ),
 rubric_simulations_data AS (
@@ -151,7 +152,7 @@ rubric_simulations_data AS (
 rubric_departments_data AS (
     SELECT
         rd.rubric_id,
-        ARRAY_AGG(rd.department_id::text ORDER BY rd.created_at) as department_ids
+        ARRAY_AGG(rd.departments_id::text ORDER BY rd.created_at) as department_ids
     FROM rubric_departments_junction rd
     WHERE rd.active = true
     GROUP BY rd.rubric_id
@@ -173,7 +174,7 @@ rubric_data AS (
     LEFT JOIN rubric_active_simulation_links rasl ON rasl.rubric_id = r.id
     GROUP BY r.id, (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.names_id = n.id WHERE rn.rubric_id = r.id LIMIT 1), (SELECT d.description FROM rubric_descriptions_junction rd JOIN descriptions_resource d ON rd.descriptions_id = d.id WHERE rd.rubric_id = r.id LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.points_id = p.id WHERE rp.rubric_id = r.id AND p.type = 'total'::point_type LIMIT 1), (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.points_id = p.id WHERE rp.rubric_id = r.id AND p.type = 'pass'::point_type LIMIT 1), rdd.department_ids, rsd.simulation_ids, rasl.active_simulation_count
     HAVING
-        COUNT(rd.rubric_id) FILTER (WHERE rd.department_id IN (SELECT department_id FROM user_departments)) > 0
+        COUNT(rd.rubric_id) FILTER (WHERE rd.departments_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM rubric_departments_junction rd2 WHERE rd2.rubric_id = r.id AND rd2.active = true)
 ),
 -- Apply server-side filters
@@ -184,7 +185,7 @@ filtered_rubrics AS (
         -- Search filter: match name or description (case-insensitive)
         (search IS NULL OR LOWER(rd.name) LIKE '%' || LOWER(search) || '%' OR LOWER(rd.description) LIKE '%' || LOWER(search) || '%')
         -- Department filter: rubric must belong to at least one selected department
-        AND (filter_department_ids IS NULL OR rd.department_ids && filter_department_ids::text[])
+        AND (filter_department_ids IS NULL OR rd.departments_ids && filter_department_ids::text[])
         -- Simulation filter: rubric must be linked to at least one selected simulation
         AND (filter_simulation_ids IS NULL OR rd.simulation_ids && filter_simulation_ids::text[])
 ),
@@ -259,10 +260,10 @@ department_option_data AS (
     SELECT
         dr.id::text as value,
         (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
-        (SELECT COUNT(*) FROM rubric_data rd WHERE rd.department_ids IS NOT NULL AND dr.id::text = ANY(rd.department_ids)) as count
+        (SELECT COUNT(*) FROM rubric_data rd WHERE rd.departments_ids IS NOT NULL AND dr.id::text = ANY(rd.departments_ids)) as count
     FROM departments_resource dr
     JOIN department_departments_junction dd ON dd.department_id = dr.id
-    WHERE dr.id IN (SELECT department_id FROM user_departments)
+    WHERE dr.id IN (SELECT departments_id FROM user_departments)
       AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
 ),
 -- Simulation options with names resolved in SQL

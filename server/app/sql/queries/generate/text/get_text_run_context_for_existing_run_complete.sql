@@ -97,7 +97,7 @@ selected_agent AS (
     FROM agent_artifact a
     CROSS JOIN params p
     WHERE a.id = p.agent_id
-      AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND f.value = true)
+      AND EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flags_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND f.value = true)
     LIMIT 1
 ),
 -- Get profile FROM runs_entry
@@ -129,7 +129,7 @@ runs_today AS (
 ),
 -- Get profile's primary department for department name resolution
 profile_primary_department AS (
-    SELECT pd.department_id
+    SELECT pd.departments_id
     FROM run_profile rp
     JOIN profile_departments_junction pd ON pd.profile_id = rp.profile_id
     WHERE pd.is_primary = TRUE
@@ -209,7 +209,7 @@ agent_tools_data AS (
         sa.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.names_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.descriptions_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(dr.resource::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
+                (t.id, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.names_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.descriptions_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(dr.resource::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
                 ORDER BY COALESCE(dr.resource::text, ''), (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.names_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
             ) FILTER (WHERE t.id IS NOT NULL AND (
                 p.resources IS NULL  -- Backward compatibility: include all tools
@@ -224,9 +224,9 @@ agent_tools_data AS (
     FROM selected_agent sa
     CROSS JOIN params p
     LEFT JOIN agent_tools_junction at ON at.agent_id = sa.agent_id AND at.active = true
-    LEFT JOIN tools_resource tr ON tr.id = at.tool_id
+    LEFT JOIN tools_resource tr ON tr.id = at.tools_id
     LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
-    LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
+    LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
     LEFT JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
     LEFT JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
@@ -430,10 +430,10 @@ combined_resources AS (
 department_data AS (
     SELECT 
         COALESCE(
-            (SELECT ad.department_id FROM agent_departments_junction ad 
+            (SELECT ad.departments_id FROM agent_departments_junction ad 
              JOIN selected_agent sa ON NULL::uuid = sa.agent_id 
              WHERE ad.active = true LIMIT 1),
-            (SELECT ppd.department_id FROM profile_primary_department ppd)
+            (SELECT ppd.departments_id FROM profile_primary_department ppd)
         ) as department_id
 ),
 department_name_data AS (

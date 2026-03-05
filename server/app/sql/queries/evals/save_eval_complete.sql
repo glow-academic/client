@@ -101,7 +101,7 @@ BEGIN
     END IF;
 
     -- Persist all known eval flags.
-    INSERT INTO eval_flags_junction (eval_id, flag_id, created_at)
+    INSERT INTO eval_flags_junction (eval_id, flags_id, created_at)
     SELECT
         v_eval_id,
         f.id,
@@ -112,21 +112,21 @@ BEGIN
     ON CONFLICT ON CONSTRAINT eval_flags_pkey DO UPDATE
     SET active = TRUE;
 
-    INSERT INTO eval_departments_junction (eval_id, department_id, active, created_at)
+    INSERT INTO eval_departments_junction (eval_id, departments_id, active, created_at)
     SELECT v_eval_id, dept_id, TRUE, NOW()
     FROM UNNEST(COALESCE(department_ids, ARRAY[]::uuid[])) AS dept_id
     ON CONFLICT ON CONSTRAINT eval_departments_pkey DO UPDATE
     SET active = TRUE;
 
     -- Direct eval → rubric links (replaces run/group-scoped rubrics)
-    INSERT INTO eval_rubrics_junction (eval_id, rubric_id, active, created_at)
+    INSERT INTO eval_rubrics_junction (eval_id, rubrics_id, active, created_at)
     SELECT v_eval_id, r_id, TRUE, NOW()
     FROM UNNEST(COALESCE(rubric_ids, ARRAY[]::uuid[])) AS r_id
     ON CONFLICT ON CONSTRAINT eval_rubrics_junction_pkey DO UPDATE
     SET active = TRUE;
 
     -- Direct eval → judge model links
-    INSERT INTO eval_models_junction (eval_id, model_id, active, created_at)
+    INSERT INTO eval_models_junction (eval_id, models_id, active, created_at)
     SELECT v_eval_id, m_id, TRUE, NOW()
     FROM UNNEST(COALESCE(model_ids, ARRAY[]::uuid[])) AS m_id
     ON CONFLICT ON CONSTRAINT eval_models_junction_pkey DO UPDATE

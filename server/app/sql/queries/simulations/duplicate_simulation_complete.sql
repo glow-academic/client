@@ -92,7 +92,7 @@ link_description AS (
     WHERE gocd.descriptions_id IS NOT NULL
 ),
 link_flags AS (
-    INSERT INTO simulation_flags_junction (simulation_id, flag_id, created_at) SELECT ns.simulation_id, gfi.active_flag_id, NOW()
+    INSERT INTO simulation_flags_junction (simulation_id, flags_id, created_at) SELECT ns.simulation_id, gfi.active_flag_id, NOW()
     FROM new_simulation ns
     CROSS JOIN get_flag_ids gfi
     UNION ALL
@@ -101,10 +101,10 @@ link_flags AS (
     CROSS JOIN get_flag_ids gfi
 ),
 copy_scenarios AS (
-    INSERT INTO simulation_scenarios_junction (simulation_id, scenario_id, created_at)
-    SELECT 
+    INSERT INTO simulation_scenarios_junction (simulation_id, scenarios_id, created_at)
+    SELECT
         ns.simulation_id,
-        ss.scenario_id,
+        ss.scenarios_id,
         NOW()
     FROM source_simulation ssim
     JOIN simulation_scenarios_junction ss ON ss.simulation_id = ssim.source_id
@@ -146,10 +146,10 @@ copy_rubric_links AS (
     CROSS JOIN new_simulation ns
 ),
 copy_departments AS (
-    INSERT INTO simulation_departments_junction (simulation_id, department_id, active, created_at)
-    SELECT 
+    INSERT INTO simulation_departments_junction (simulation_id, departments_id, active, created_at)
+    SELECT
         ns.simulation_id,
-        sd.department_id,
+        sd.departments_id,
         sd.active,
         NOW()
     FROM source_simulation ssim

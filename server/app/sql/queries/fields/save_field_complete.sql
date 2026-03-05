@@ -141,7 +141,7 @@ BEGIN
         WHERE field_id = v_field_id;
 
         UPDATE field_flags_junction SET
-            flag_id = COALESCE(v_active_flag_id, field_flags_junction.flag_id)
+            flags_id = COALESCE(v_active_flag_id, field_flags_junction.flags_id)
         WHERE field_id = v_field_id;
 
         UPDATE field_fields_junction
@@ -267,7 +267,7 @@ BEGIN
         ON CONFLICT (field_id, descriptions_id) DO NOTHING
     ),
     insert_field_active_flag AS (
-        INSERT INTO field_flags_junction (field_id, flag_id, type, created_at)
+        INSERT INTO field_flags_junction (field_id, flags_id, type, created_at)
         SELECT
             x.field_id,
             COALESCE(x.active_flag_id, f.id),
@@ -276,8 +276,8 @@ BEGIN
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'field_active'
-        ON CONFLICT (field_id, flag_id, type) DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, field_flags_junction.flag_id)
+        ON CONFLICT (field_id, flags_id, type) DO UPDATE SET
+            flags_id = COALESCE(EXCLUDED.flags_id, field_flags_junction.flags_id)
     ),
     ensure_conditional_parameters AS (
         INSERT INTO conditional_parameters_resource (parameter_id, created_at, updated_at)
@@ -302,12 +302,12 @@ BEGIN
             active = true
     ),
     link_departments AS (
-        INSERT INTO field_departments_junction (field_id, department_id, active, created_at)
+        INSERT INTO field_departments_junction (field_id, departments_id, active, created_at)
         SELECT x.field_id, dept_id, true, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) as dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
-        ON CONFLICT (field_id, department_id) DO UPDATE SET
+        ON CONFLICT (field_id, departments_id) DO UPDATE SET
             active = true
     ),
     create_new_resource AS (

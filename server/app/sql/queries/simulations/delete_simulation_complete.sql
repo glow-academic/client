@@ -45,7 +45,7 @@ simulation_info AS (
     SELECT 
         s.id,
         (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as title,
-        (SELECT COUNT(*) FROM cohort_simulations_junction WHERE cohort_simulations_junction.simulation_id = s.id) as usage_count
+        (SELECT COUNT(*) FROM cohort_simulations_junction WHERE cohort_simulations_junction.simulations_id = s.id) as usage_count
     FROM params x
     JOIN simulation_artifact s ON s.id = x.simulation_id
 ),

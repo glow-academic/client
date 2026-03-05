@@ -108,7 +108,7 @@ active_simulations AS (
     WHERE EXISTS (
         SELECT 1
         FROM simulation_flags_junction sf
-        JOIN flags_resource f ON f.id = sf.flag_id
+        JOIN flags_resource f ON f.id = sf.flags_id
         WHERE sf.simulation_id = sa.id
           AND f.name = 'simulation_active'
           AND f.value = true
@@ -133,7 +133,7 @@ first_scenario_persona AS (
     SELECT
         sd.simulation_id,
         (
-            SELECT sp.persona_id
+            SELECT sp.personas_id
             FROM unnest(COALESCE(sd.scenario_ids, ARRAY[]::uuid[])) WITH ORDINALITY sid(scenarios_id, ord)
             JOIN scenario_scenarios_junction ssj ON ssj.scenario_id = sid.scenario_id AND ssj.active = true
             JOIN scenario_personas_junction sp ON sp.scenario_id = ssj.scenario_id AND sp.active = true
@@ -147,13 +147,13 @@ persona_display AS (
         fsp.simulation_id,
         (SELECT c.hex_code
          FROM persona_colors_junction pc
-         JOIN colors_resource c ON c.id = pc.color_id
-         WHERE pc.persona_id = fsp.persona_id
+         JOIN colors_resource c ON c.id = pc.colors_id
+         WHERE pc.persona_id = fsp.personas_id
          LIMIT 1) AS color,
         (SELECT i.name
          FROM persona_icons_junction pi
-         JOIN icons_resource i ON i.id = pi.icon_id
-         WHERE pi.persona_id = fsp.persona_id
+         JOIN icons_resource i ON i.id = pi.icons_id
+         WHERE pi.persona_id = fsp.personas_id
          LIMIT 1) AS icon
     FROM first_scenario_persona fsp
 ),

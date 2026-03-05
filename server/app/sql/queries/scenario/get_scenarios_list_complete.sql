@@ -147,7 +147,7 @@ scenario_cohorts AS (
 scenario_departments_data AS (
     SELECT
         sd.scenario_id,
-        ARRAY_AGG(sd.department_id::text ORDER BY sd.created_at) as department_ids
+        ARRAY_AGG(sd.departments_id::text ORDER BY sd.created_at) as department_ids
     FROM scenario_departments_junction sd
     WHERE sd.active = true
     GROUP BY sd.scenario_id
@@ -168,7 +168,7 @@ scenario_data AS (
         s.id as scenario_id,
         (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name,
         COALESCE(ps.problem_statement, '') as problem_statement,
-        NOT EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = TRUE) as is_inactive,
+        NOT EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = TRUE) as is_inactive,
         s.generated as generated,
         s.mcp as mcp,
         s.updated_at,
@@ -202,14 +202,14 @@ scenario_data AS (
     GROUP BY s.id,
         (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         ps.problem_statement,
-        EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = TRUE),
+        EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = TRUE),
         s.generated, s.mcp, s.updated_at, sr.persona_ids,
         sdd.department_ids, so.objective_ids, sfd.field_ids,
         ss.simulation_ids, ss.num_simulations, sc.cohort_ids,
         su.active_simulation_count, up.role
     HAVING
         -- Department scoping: include if has matching department link OR has no department links at all
-        COUNT(sd.scenario_id) FILTER (WHERE sd.department_id IN (SELECT department_id FROM user_departments)) > 0
+        COUNT(sd.scenario_id) FILTER (WHERE sd.departments_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM scenario_departments_junction sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
 ),
 -- Server-side filtering on scenarios

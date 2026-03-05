@@ -86,35 +86,35 @@ BEGIN
 
         -- Multi-select arrays: preserve existing if NULL passed
         IF flag_ids IS NULL THEN
-            flag_ids := COALESCE((SELECT ARRAY_AGG(j.flag_id) FROM scenario_flags_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
+            flag_ids := COALESCE((SELECT ARRAY_AGG(j.flags_id) FROM scenario_flags_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF department_ids IS NULL THEN
-            department_ids := COALESCE((SELECT ARRAY_AGG(j.department_id) FROM scenario_departments_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
+            department_ids := COALESCE((SELECT ARRAY_AGG(j.departments_id) FROM scenario_departments_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF persona_ids IS NULL THEN
-            persona_ids := COALESCE((SELECT ARRAY_AGG(j.persona_id) FROM scenario_personas_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
+            persona_ids := COALESCE((SELECT ARRAY_AGG(j.personas_id) FROM scenario_personas_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF document_ids IS NULL THEN
-            document_ids := COALESCE((SELECT ARRAY_AGG(j.document_id) FROM scenario_documents_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
+            document_ids := COALESCE((SELECT ARRAY_AGG(j.documents_id) FROM scenario_documents_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         -- parameter_ids: no junction (scenario_parameters_junction was dropped), preserve as NULL
         IF parameter_field_ids IS NULL THEN
             parameter_field_ids := COALESCE((SELECT ARRAY_AGG(j.parameter_fields_id) FROM scenario_parameter_fields_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF image_ids IS NULL THEN
-            image_ids := COALESCE((SELECT ARRAY_AGG(j.image_id) FROM scenario_images_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
+            image_ids := COALESCE((SELECT ARRAY_AGG(j.images_id) FROM scenario_images_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF objective_ids IS NULL THEN
             objective_ids := COALESCE((SELECT ARRAY_AGG(j.objectives_id) FROM scenario_objectives_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF video_ids IS NULL THEN
-            video_ids := COALESCE((SELECT ARRAY_AGG(j.video_id) FROM scenario_videos_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
+            video_ids := COALESCE((SELECT ARRAY_AGG(j.videos_id) FROM scenario_videos_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF question_ids IS NULL THEN
-            question_ids := COALESCE((SELECT ARRAY_AGG(j.question_id) FROM scenario_questions_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
+            question_ids := COALESCE((SELECT ARRAY_AGG(j.questions_id) FROM scenario_questions_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF option_ids IS NULL THEN
-            option_ids := COALESCE((SELECT ARRAY_AGG(j.option_id) FROM scenario_options_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
+            option_ids := COALESCE((SELECT ARRAY_AGG(j.options_id) FROM scenario_options_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
     END IF;
 
@@ -208,7 +208,7 @@ BEGIN
     ),
     -- Link flags
     link_flags AS (
-        INSERT INTO scenario_flags_junction (scenario_id, flag_id, active, created_at, generated, mcp)
+        INSERT INTO scenario_flags_junction (scenario_id, flags_id, active, created_at, generated, mcp)
         SELECT x.scenario_id, fid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.flag_ids) AS fid
@@ -217,7 +217,7 @@ BEGIN
     ),
     -- Link departments
     link_departments AS (
-        INSERT INTO scenario_departments_junction (scenario_id, department_id, active, created_at, generated, mcp)
+        INSERT INTO scenario_departments_junction (scenario_id, departments_id, active, created_at, generated, mcp)
         SELECT x.scenario_id, did, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) AS did
@@ -226,7 +226,7 @@ BEGIN
     ),
     -- Link personas
     link_personas AS (
-        INSERT INTO scenario_personas_junction (scenario_id, persona_id, active, created_at, generated, mcp)
+        INSERT INTO scenario_personas_junction (scenario_id, personas_id, active, created_at, generated, mcp)
         SELECT x.scenario_id, pid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.persona_ids) AS pid
@@ -235,7 +235,7 @@ BEGIN
     ),
     -- Link documents
     link_documents AS (
-        INSERT INTO scenario_documents_junction (scenario_id, document_id, active, created_at, generated, mcp)
+        INSERT INTO scenario_documents_junction (scenario_id, documents_id, active, created_at, generated, mcp)
         SELECT x.scenario_id, docid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.document_ids) AS docid
@@ -253,7 +253,7 @@ BEGIN
     ),
     -- Link images
     link_images AS (
-        INSERT INTO scenario_images_junction (scenario_id, image_id, active, created_at, generated, mcp)
+        INSERT INTO scenario_images_junction (scenario_id, images_id, active, created_at, generated, mcp)
         SELECT x.scenario_id, imgid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.image_ids) AS imgid
@@ -275,7 +275,7 @@ BEGIN
     ),
     -- Link videos
     link_videos AS (
-        INSERT INTO scenario_videos_junction (scenario_id, video_id, active, created_at, generated, mcp)
+        INSERT INTO scenario_videos_junction (scenario_id, videos_id, active, created_at, generated, mcp)
         SELECT x.scenario_id, vid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.video_ids) AS vid
@@ -284,7 +284,7 @@ BEGIN
     ),
     -- Link questions
     link_questions AS (
-        INSERT INTO scenario_questions_junction (scenario_id, question_id, active, created_at, generated, mcp)
+        INSERT INTO scenario_questions_junction (scenario_id, questions_id, active, created_at, generated, mcp)
         SELECT x.scenario_id, qid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.question_ids) AS qid
@@ -293,7 +293,7 @@ BEGIN
     ),
     -- Link options
     link_options AS (
-        INSERT INTO scenario_options_junction (scenario_id, option_id, active, created_at, generated, mcp)
+        INSERT INTO scenario_options_junction (scenario_id, options_id, active, created_at, generated, mcp)
         SELECT x.scenario_id, oid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.option_ids) AS oid

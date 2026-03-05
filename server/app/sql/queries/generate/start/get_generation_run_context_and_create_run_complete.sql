@@ -72,7 +72,7 @@ selected_agent AS (
       AND EXISTS (
           SELECT 1
           FROM agent_flags_junction af
-          JOIN flags_resource f ON af.flag_id = f.id
+          JOIN flags_resource f ON af.flags_id = f.id
           WHERE af.agent_id = a.id
             AND f.name = 'agent_active'
             AND f.value = true

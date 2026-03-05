@@ -95,19 +95,20 @@ user_profile AS (
     SELECT COALESCE(r.role, 'member'::profile_type) as role,
            ''::text as actor_name
     FROM profile_roles_junction prj
-    JOIN roles_resource r ON prj.role_id = r.id
+    JOIN roles_resource r ON prj.roles_id = r.id
     WHERE prj.profile_id = (SELECT profile_id FROM params)
     LIMIT 1
 ),
 profile_departments_agg AS (
     SELECT
         pd.profile_id,
-        ARRAY_AGG(pd.department_id::text ORDER BY (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1)) as department_ids
+        ARRAY_AGG(pd.departments_id::text ORDER BY (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1)) as department_ids
     FROM profile_departments_junction pd
-    JOIN departments_resource d ON d.id = pd.department_id
+    JOIN departments_resource d ON d.id = pd.departments_id
     JOIN department_departments_junction ddj ON ddj.department_id = d.id
     WHERE pd.active = true
     GROUP BY pd.profile_id
+
 ),
 recent_runs AS (
     SELECT
@@ -132,7 +133,7 @@ departments_data AS (
         (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.descriptions_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '') as description
     FROM department_artifact d
-    WHERE EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true)
+    WHERE EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true)
 ),
 staff_rows AS (
     SELECT DISTINCT ON (p.id)
@@ -156,23 +157,24 @@ staff_rows AS (
         (SELECT e2.email FROM profile_emails_junction pe2 JOIN emails_resource e2 ON pe2.emails_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as name,
         (SELECT r.role FROM profile_roles_junction pr_j 
-         JOIN roles_resource r ON pr_j.role_id = r.id 
+         JOIN roles_resource r ON pr_j.roles_id = r.id 
          WHERE pr_j.profile_id = p.id 
          LIMIT 1) as role,
         COALESCE(SUBSTRING((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1) FROM 1 FOR 1), '') ||
         COALESCE(NULLIF(SUBSTRING(SPLIT_PART((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ' ', 2) FROM 1 FOR 1), ''), '') as initials,
-        EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND f.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flags_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND f.value = TRUE) as active,
         pa.last_active,
         COALESCE(
             ARRAY(SELECT unnest(pda.department_ids)::text),
             ARRAY[]::text[]
         ) as department_ids,
-        COALESCE((SELECT pd2.department_id::text FROM profile_departments_junction pd2 WHERE pd2.profile_id = p.id AND pd2.active = true AND pd2.is_primary = true LIMIT 1), '') as primary_department_id,
+        COALESCE((SELECT pd2.departments_id::text FROM profile_departments_junction pd2 WHERE pd2.profile_id = p.id AND pd2.active = true AND pd2.is_primary = true LIMIT 1), '') as primary_department_id,
         rl.requests_per_day,
         COALESCE(ptr.total_requests, 0) as total_requests,
         COALESCE(rr.run_count::int, 0) as requests_in_last_day
     FROM profile_artifact p
     JOIN profile_departments_junction pd ON pd.profile_id = p.id AND pd.active = true
+
     LEFT JOIN profile_emails_junction pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN emails_resource e ON pe.emails_id = e.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
@@ -208,7 +210,7 @@ staff_rows AS (
                 AND pe_search.active = true 
                 AND e_search.email ILIKE '%' || (SELECT query FROM params) || '%'
             )
-            OR (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1)::text ILIKE '%' || (SELECT query FROM params) || '%'
+            OR (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.roles_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1)::text ILIKE '%' || (SELECT query FROM params) || '%'
         )
     )
     AND (
@@ -218,11 +220,11 @@ staff_rows AS (
         OR NOT EXISTS (
             SELECT 1 FROM profile_departments_junction pd_exclude 
             WHERE pd_exclude.profile_id = p.id 
-            AND pd_exclude.department_id = ANY((SELECT department_ids FROM params)::uuid[])
+            AND pd_exclude.departments_id = ANY((SELECT department_ids FROM params)::uuid[])
             AND pd_exclude.active = true
         )
     )
-    GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND f.value = TRUE),
+    GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.roles_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flags_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND f.value = TRUE),
              pa.last_active, rl.requests_per_day, pda.department_ids,
              ptr.total_requests, rr.run_count
     ORDER BY p.id, (SELECT n2.name FROM profile_names_junction pn2 JOIN names_resource n2 ON pn2.names_id = n2.id WHERE pn2.profile_id = p.id LIMIT 1), (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1)

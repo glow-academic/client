@@ -71,9 +71,9 @@ canonical_description AS (
     LIMIT 1
 ),
 canonical_flag AS (
-    SELECT pf.flag_id as active_flag_id
+    SELECT pf.flags_id as active_flag_id
     FROM setting_flags_junction pf
-    JOIN flags_resource f ON pf.flag_id = f.id
+    JOIN flags_resource f ON pf.flags_id = f.id
     WHERE pf.setting_id = (SELECT setting_id FROM params)
       AND pf.active = true
       AND f.name = 'setting_active'
@@ -83,7 +83,7 @@ canonical_flag AS (
 -- Multi-select
 canonical_colors AS (
     SELECT COALESCE(
-        ARRAY_AGG(sc.color_id ORDER BY sc.created_at),
+        ARRAY_AGG(sc.colors_id ORDER BY sc.created_at),
         ARRAY[]::uuid[]
     ) as color_ids
     FROM setting_colors_junction sc
@@ -99,7 +99,7 @@ canonical_departments AS (
 ),
 canonical_profiles AS (
     SELECT COALESCE(
-        ARRAY_AGG(sp.profile_id ORDER BY sp.created_at),
+        ARRAY_AGG(sp.profiles_id ORDER BY sp.created_at),
         ARRAY[]::uuid[]
     ) as profile_ids
     FROM setting_profiles_junction sp
@@ -107,11 +107,11 @@ canonical_profiles AS (
 ),
 canonical_auths AS (
     SELECT COALESCE(
-        ARRAY_AGG(sa.auth_id ORDER BY sa.created_at),
+        ARRAY_AGG(sa.auths_id ORDER BY sa.created_at),
         ARRAY[]::uuid[]
     ) as auth_ids
     FROM setting_auths_junction sa
-    WHERE sa.settings_id = (SELECT setting_id FROM params) AND sa.active = true
+    WHERE sa.setting_id = (SELECT setting_id FROM params) AND sa.active = true
 ),
 canonical_provider_keys AS (
     SELECT COALESCE(
@@ -209,7 +209,7 @@ merged_ids AS (
             THEN (SELECT profile_ids FROM draft_profiles)
             ELSE (SELECT profile_ids FROM canonical_profiles)
         END as profile_ids,
-        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_auths_junction WHERE settings_id = (SELECT setting_id FROM params))
+        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_auths_junction WHERE setting_id = (SELECT setting_id FROM params))
             THEN (SELECT auth_ids FROM canonical_auths)
             ELSE (SELECT auth_ids FROM canonical_auths)
         END as auth_ids,

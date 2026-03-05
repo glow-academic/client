@@ -177,7 +177,7 @@ BEGIN
         DELETE FROM document_texts_junction WHERE document_id = v_document_id;
         -- Update existing flags
         UPDATE document_flags_junction SET
-            flag_id = COALESCE(v_flag_id, document_flags_junction.flag_id)
+            flags_id = COALESCE(v_flag_id, document_flags_junction.flags_id)
         WHERE document_id = v_document_id;
     END IF;
 
@@ -355,18 +355,18 @@ BEGIN
 
     -- Insert or update active flag
     IF v_flag_id IS NOT NULL THEN
-        INSERT INTO document_flags_junction (document_id, flag_id, created_at)
+        INSERT INTO document_flags_junction (document_id, flags_id, created_at)
         SELECT v_document_id,
             COALESCE(v_flag_id, f.id),
             NOW()
         FROM flags_resource f
         WHERE f.name = 'document_active'
         ON CONFLICT ON CONSTRAINT document_flags_pkey DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, document_flags_junction.flag_id);
+            flags_id = COALESCE(EXCLUDED.flags_id, document_flags_junction.flags_id);
     END IF;
 
     -- Link departments
-    INSERT INTO document_departments_junction (document_id, department_id, active, created_at)
+    INSERT INTO document_departments_junction (document_id, departments_id, active, created_at)
     SELECT v_document_id, did, true, NOW()
     FROM UNNEST(v_department_ids) AS did
     WHERE COALESCE(array_length(v_department_ids, 1), 0) > 0

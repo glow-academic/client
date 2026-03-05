@@ -66,7 +66,7 @@ WITH params AS (
 ),
 -- user_departments returns departments_resource IDs (from profile_departments_junction)
 user_departments AS (
-    SELECT department_id
+    SELECT departments_id
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
@@ -74,7 +74,7 @@ user_departments AS (
 user_department_artifacts AS (
     SELECT ddj.department_id as artifacts_id, ddj.department_id as resources_id
     FROM department_departments_junction ddj
-    WHERE ddj.department_id IN (SELECT department_id FROM user_departments)
+    WHERE ddj.department_id IN (SELECT departments_id FROM user_departments)
 ),
 -- Get each profile's role for role-based staff count filtering
 profile_roles_cte AS (
@@ -82,14 +82,14 @@ profile_roles_cte AS (
         pr.profile_id,
         COALESCE(r.role, 'member'::profile_type)::text as role
     FROM profile_roles_junction pr
-    JOIN roles_resource r ON pr.role_id = r.id
+    JOIN roles_resource r ON pr.roles_id = r.id
 ),
 -- Count visible profiles per department based on requesting user's role hierarchy
 -- profile_departments_junction.department_id = departments_resource.id
 department_staff_count AS (
     SELECT uda.artifacts_id as department_id, COUNT(DISTINCT pd.profile_id)::int as staff_count
     FROM profile_departments_junction pd
-    JOIN user_department_artifacts uda ON uda.resources_id = pd.department_id
+    JOIN user_department_artifacts uda ON uda.resources_id = pd.departments_id
     WHERE pd.active = true
     AND pd.profile_id IN (
         SELECT pr.profile_id FROM profile_roles_cte pr
@@ -106,11 +106,11 @@ department_staff_count AS (
 department_usage AS (
     SELECT uda.artifacts_id as department_id,
         (
-            (SELECT COUNT(*) FROM simulation_departments_junction WHERE department_id = uda.resources_id AND active = true) +
-            (SELECT COUNT(*) FROM scenario_departments_junction WHERE department_id = uda.resources_id AND active = true) +
-            (SELECT COUNT(*) FROM persona_departments_junction WHERE department_id = uda.resources_id AND active = true) +
-            (SELECT COUNT(*) FROM document_departments_junction WHERE department_id = uda.resources_id AND active = true) +
-            (SELECT COUNT(*) FROM cohort_departments_junction WHERE department_id = uda.resources_id AND active = true)
+            (SELECT COUNT(*) FROM simulation_departments_junction WHERE departments_id = uda.resources_id AND active = true) +
+            (SELECT COUNT(*) FROM scenario_departments_junction WHERE departments_id = uda.resources_id AND active = true) +
+            (SELECT COUNT(*) FROM persona_departments_junction WHERE departments_id = uda.resources_id AND active = true) +
+            (SELECT COUNT(*) FROM document_departments_junction WHERE departments_id = uda.resources_id AND active = true) +
+            (SELECT COUNT(*) FROM cohort_departments_junction WHERE departments_id = uda.resources_id AND active = true)
         )::bigint as total_usage
     FROM user_department_artifacts uda
 ),
@@ -120,7 +120,7 @@ departments_data AS (
         d.id as department_id,
         (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
         COALESCE((SELECT desc_r.description FROM department_descriptions_junction dd JOIN descriptions_resource desc_r ON dd.descriptions_id = desc_r.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
-        NOT EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true) as is_inactive,
+        NOT EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true) as is_inactive,
         d.updated_at,
         COALESCE(dsc.staff_count, 0) as staff_count,
         COALESCE(du.total_usage, 0) as total_usage

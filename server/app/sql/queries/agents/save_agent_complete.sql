@@ -164,7 +164,7 @@ BEGIN
         DELETE FROM agent_tools_junction WHERE agent_id = v_agent_id;
         -- Update existing active flag if it exists
         UPDATE agent_flags_junction SET
-            flag_id = COALESCE(v_active_flag_id, agent_flags_junction.flag_id)
+            flags_id = COALESCE(v_active_flag_id, agent_flags_junction.flags_id)
         WHERE agent_id = v_agent_id;
         -- Deactivate existing temperature/reasoning/voice links
         UPDATE agent_temperature_levels_junction SET active = false WHERE agent_id = v_agent_id;
@@ -427,17 +427,17 @@ BEGIN
     remove_old_model AS (
         DELETE FROM agent_models_junction
         WHERE agent_id = (SELECT agent_id FROM params)
-          AND model_id != (SELECT model_id FROM params)
+          AND models_id != (SELECT model_id FROM params)
     ),
     link_agent_model AS (
-        INSERT INTO agent_models_junction (agent_id, model_id, created_at)
+        INSERT INTO agent_models_junction (agent_id, models_id, created_at)
         SELECT
             x.agent_id,
             x.model_id,
             NOW()
         FROM params x
         WHERE x.model_id IS NOT NULL
-        ON CONFLICT (agent_id, model_id) DO NOTHING
+        ON CONFLICT (agent_id, models_id) DO NOTHING
     ),
     -- Remove old prompt links for update
     remove_old_prompts AS (
@@ -470,18 +470,18 @@ BEGIN
     ),
     -- Insert or UPDATE agent_artifact active flag
     insert_agent_active_flag AS (
-        INSERT INTO agent_flags_junction (agent_id, flag_id, created_at) SELECT x.agent_id,
+        INSERT INTO agent_flags_junction (agent_id, flags_id, created_at) SELECT x.agent_id,
             COALESCE(x.active_flag_id, f.id),
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'agent_active'
-        ON CONFLICT (agent_id, flag_id, type) DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, agent_flags_junction.flag_id)
+        ON CONFLICT (agent_id, flags_id, type) DO UPDATE SET
+            flags_id = COALESCE(EXCLUDED.flags_id, agent_flags_junction.flags_id)
     ),
     -- Link departments (old ones already deleted above if update)
     link_departments AS (
-        INSERT INTO agent_departments_junction (agent_id, department_id, active, created_at)
+        INSERT INTO agent_departments_junction (agent_id, departments_id, active, created_at)
         SELECT
             x.agent_id,
             dept_id,
@@ -490,7 +490,7 @@ BEGIN
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) as dept_id
         WHERE COALESCE(array_length(x.department_ids, 1), 0) > 0
-        ON CONFLICT (agent_id, department_id) DO UPDATE SET
+        ON CONFLICT (agent_id, departments_id) DO UPDATE SET
             active = true
     ),
     -- Link temperature level if provided
@@ -521,7 +521,7 @@ BEGIN
     ),
     -- Link voices if provided
     link_voices AS (
-        INSERT INTO agent_voices_junction (agent_id, voice_id, active, created_at)
+        INSERT INTO agent_voices_junction (agent_id, voices_id, active, created_at)
         SELECT
             x.agent_id,
             voice_id,
@@ -530,7 +530,7 @@ BEGIN
         FROM params x
         CROSS JOIN UNNEST(x.voice_ids) as voice_id
         WHERE COALESCE(array_length(x.voice_ids, 1), 0) > 0
-        ON CONFLICT (agent_id, voice_id) DO UPDATE SET
+        ON CONFLICT (agent_id, voices_id) DO UPDATE SET
             active = true
     ),
     -- Create tools_resource entries for provided tool_ids (tool_ids here are tool_artifact IDs)
@@ -546,7 +546,7 @@ BEGIN
     ),
     -- Link tools if provided
     link_tools AS (
-        INSERT INTO agent_tools_junction (agent_id, tool_id, active, created_at)
+        INSERT INTO agent_tools_junction (agent_id, tools_id, active, created_at)
         SELECT
             x.agent_id,
             ctr.id,
@@ -555,7 +555,7 @@ BEGIN
         FROM params x
         CROSS JOIN create_tool_resources ctr
         WHERE COALESCE(array_length(x.tool_ids, 1), 0) > 0
-        ON CONFLICT (agent_id, tool_id) DO UPDATE SET
+        ON CONFLICT (agent_id, tools_id) DO UPDATE SET
             active = true
     ),
     -- Sync linked resources with name/description

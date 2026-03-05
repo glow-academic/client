@@ -80,7 +80,7 @@ active_flag_id_data AS (
     SELECT
         COALESCE(
             (SELECT df.flag_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'active' LIMIT 1),
-            (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'eval_active' AND f.value = TRUE LIMIT 1)
+            (SELECT ef.flags_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flags_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'eval_active' AND f.value = TRUE LIMIT 1)
         ) as active_flag_id
     FROM params
     LIMIT 1
@@ -90,7 +90,7 @@ dynamic_flag_id_data AS (
     SELECT
         COALESCE(
             (SELECT df.flag_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'dynamic' LIMIT 1),
-            (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'dynamic' AND f.value = TRUE LIMIT 1)
+            (SELECT ef.flags_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flags_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'dynamic' AND f.value = TRUE LIMIT 1)
         ) as dynamic_flag_id
     FROM params
     LIMIT 1
@@ -100,7 +100,7 @@ groups_flag_id_data AS (
     SELECT
         COALESCE(
             (SELECT df.flag_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = '' LIMIT 1),
-            (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = '' AND f.value = TRUE LIMIT 1)
+            (SELECT ef.flags_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flags_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = '' AND f.value = TRUE LIMIT 1)
         ) as groups_flag_id
     FROM params
     LIMIT 1
@@ -111,7 +111,7 @@ eval_department_ids_data AS (
         CASE
             WHEN (SELECT eval_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(ed.department_id ORDER BY ed.created_at)
+                (SELECT ARRAY_AGG(ed.departments_id ORDER BY ed.created_at)
                  FROM eval_departments_junction ed
                  WHERE ed.eval_id = (SELECT eval_id FROM params) AND ed.active = true),
                 ARRAY[]::uuid[]
@@ -132,7 +132,7 @@ eval_rubric_ids_data AS (
                     ARRAY[]::uuid[]
                 )
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(er.rubric_id ORDER BY er.created_at)
+                (SELECT ARRAY_AGG(er.rubrics_id ORDER BY er.created_at)
                  FROM eval_rubrics_junction er
                  WHERE er.eval_id = (SELECT eval_id FROM params) AND er.active = true),
                 ARRAY[]::uuid[]
@@ -153,7 +153,7 @@ eval_model_ids_data AS (
                     ARRAY[]::uuid[]
                 )
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(em.model_id ORDER BY em.created_at)
+                (SELECT ARRAY_AGG(em.models_id ORDER BY em.created_at)
                  FROM eval_models_junction em
                  WHERE em.eval_id = (SELECT eval_id FROM params) AND em.active = true),
                 ARRAY[]::uuid[]
@@ -249,13 +249,13 @@ description_suggestions_data AS (
 department_suggestions_data AS (
     SELECT
         COALESCE(
-            (SELECT ARRAY_AGG(ed.department_id ORDER BY ed.created_at DESC)
+            (SELECT ARRAY_AGG(ed.departments_id ORDER BY ed.created_at DESC)
              FROM (
-                 SELECT DISTINCT ed.department_id, MAX(ed.created_at) as created_at
+                 SELECT DISTINCT ed.departments_id, MAX(ed.created_at) as created_at
                  FROM eval_departments_junction ed
-                 JOIN departments_resource d ON d.id = ed.department_id
-                 WHERE ed.department_id IS NOT NULL AND ed.active = true
-                 GROUP BY ed.department_id
+                 JOIN departments_resource d ON d.id = ed.departments_id
+                 WHERE ed.departments_id IS NOT NULL AND ed.active = true
+                 GROUP BY ed.departments_id
                  ORDER BY MAX(ed.created_at) DESC
                  LIMIT 20
              ) ed),
@@ -271,14 +271,14 @@ rubric_suggestions_data AS (
             (SELECT ARRAY_AGG(r.id)
              FROM rubrics_resource r
              WHERE EXISTS (
-                 SELECT 1 FROM rubric_flags_junction rf JOIN flags_resource f ON rf.flag_id = f.id
+                 SELECT 1 FROM rubric_flags_junction rf JOIN flags_resource f ON rf.flags_id = f.id
                  WHERE rf.rubric_id = r.id AND f.name = 'rubric_active' AND f.value = true
              )
              AND (
                  EXISTS (
                      SELECT 1 FROM rubric_departments_junction rd
                      WHERE rd.rubric_id = r.id AND rd.active = true
-                     AND rd.department_id = ANY(api_get_eval_ids_v4.user_department_ids)
+                     AND rd.departments_id = ANY(api_get_eval_ids_v4.user_department_ids)
                  )
                  OR NOT EXISTS (
                      SELECT 1 FROM rubric_departments_junction rd2

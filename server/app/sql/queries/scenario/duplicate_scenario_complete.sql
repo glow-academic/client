@@ -62,26 +62,26 @@ source_scenario AS (
 source_flags AS (
     SELECT
         ss.source_id,
-        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'objectives_enabled' LIMIT 1) as objectives_enabled,
-        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'images_enabled' LIMIT 1) as images_enabled,
-        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'video_enabled' LIMIT 1) as video_enabled,
-        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'questions_enabled' LIMIT 1) as questions_enabled,
-        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'problem_statement_enabled' LIMIT 1) as problem_statement_enabled
+        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'objectives_enabled' LIMIT 1) as objectives_enabled,
+        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'images_enabled' LIMIT 1) as images_enabled,
+        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'video_enabled' LIMIT 1) as video_enabled,
+        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'questions_enabled' LIMIT 1) as questions_enabled,
+        (SELECT f.value FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = ss.source_id AND f.type = 'problem_statement_enabled' LIMIT 1) as problem_statement_enabled
     FROM source_scenario ss
 ),
 -- Get multi-select resource IDs from source
 source_personas AS (
-    SELECT sp.persona_id, sp.active
+    SELECT sp.personas_id, sp.active
     FROM params x
     JOIN scenario_personas_junction sp ON sp.scenario_id = x.scenario_id AND sp.active = true
 ),
 source_documents AS (
-    SELECT sd.document_id, sd.active
+    SELECT sd.documents_id, sd.active
     FROM params x
     JOIN scenario_documents_junction sd ON sd.scenario_id = x.scenario_id AND sd.active = true
 ),
 source_departments AS (
-    SELECT sd.department_id, sd.active
+    SELECT sd.departments_id, sd.active
     FROM params x
     JOIN scenario_departments_junction sd ON sd.scenario_id = x.scenario_id AND sd.active = true
 ),
@@ -96,17 +96,17 @@ source_objectives AS (
     JOIN scenario_objectives_junction so ON so.scenario_id = x.scenario_id
 ),
 source_images AS (
-    SELECT si.image_id
+    SELECT si.images_id
     FROM params x
     JOIN scenario_images_junction si ON si.scenario_id = x.scenario_id AND si.active = true
 ),
 source_videos AS (
-    SELECT sv.video_id
+    SELECT sv.videos_id
     FROM params x
     JOIN scenario_videos_junction sv ON sv.scenario_id = x.scenario_id AND sv.active = true
 ),
 source_questions AS (
-    SELECT sq.question_id
+    SELECT sq.questions_id
     FROM params x
     JOIN scenario_questions_junction sq ON sq.scenario_id = x.scenario_id AND sq.active = true
 ),
@@ -188,14 +188,14 @@ link_problem_statement AS (
 ),
 -- Link active flag (set to false for duplicate)
 link_active_flag AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at)
+    INSERT INTO scenario_flags_junction (scenario_id, flags_id, created_at)
     SELECT ns.id, gaf.flag_id, NOW()
     FROM new_scenario ns
     CROSS JOIN get_active_flag gaf
 ),
 -- Link objectives_enabled flag (copy value from source)
 link_objectives_enabled_flag AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at)
+    INSERT INTO scenario_flags_junction (scenario_id, flags_id, created_at)
     SELECT ns.id, goef.flag_id, NOW()
     FROM new_scenario ns
     CROSS JOIN source_flags sf
@@ -204,7 +204,7 @@ link_objectives_enabled_flag AS (
 ),
 -- Link images_enabled flag (copy value from source)
 link_images_enabled_flag AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at)
+    INSERT INTO scenario_flags_junction (scenario_id, flags_id, created_at)
     SELECT ns.id, gief.flag_id, NOW()
     FROM new_scenario ns
     CROSS JOIN source_flags sf
@@ -213,7 +213,7 @@ link_images_enabled_flag AS (
 ),
 -- Link video_enabled flag (copy value from source)
 link_video_enabled_flag AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at)
+    INSERT INTO scenario_flags_junction (scenario_id, flags_id, created_at)
     SELECT ns.id, gvef.flag_id, NOW()
     FROM new_scenario ns
     CROSS JOIN source_flags sf
@@ -222,7 +222,7 @@ link_video_enabled_flag AS (
 ),
 -- Link questions_enabled flag (copy value from source)
 link_questions_enabled_flag AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at)
+    INSERT INTO scenario_flags_junction (scenario_id, flags_id, created_at)
     SELECT ns.id, gqef.flag_id, NOW()
     FROM new_scenario ns
     CROSS JOIN source_flags sf
@@ -231,7 +231,7 @@ link_questions_enabled_flag AS (
 ),
 -- Link problem_statement_enabled flag (copy value from source)
 link_problem_statement_enabled_flag AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at)
+    INSERT INTO scenario_flags_junction (scenario_id, flags_id, created_at)
     SELECT ns.id, gpsef.flag_id, NOW()
     FROM new_scenario ns
     CROSS JOIN source_flags sf
@@ -240,22 +240,22 @@ link_problem_statement_enabled_flag AS (
 ),
 -- Link existing personas
 copy_personas AS (
-    INSERT INTO scenario_personas_junction (scenario_id, persona_id, active, created_at)
-    SELECT ns.id, sp.persona_id, sp.active, NOW()
+    INSERT INTO scenario_personas_junction (scenario_id, personas_id, active, created_at)
+    SELECT ns.id, sp.personas_id, sp.active, NOW()
     FROM new_scenario ns
     CROSS JOIN source_personas sp
 ),
 -- Link existing documents
 copy_documents AS (
-    INSERT INTO scenario_documents_junction (scenario_id, document_id, active, created_at)
-    SELECT ns.id, sd.document_id, sd.active, NOW()
+    INSERT INTO scenario_documents_junction (scenario_id, documents_id, active, created_at)
+    SELECT ns.id, sd.documents_id, sd.active, NOW()
     FROM new_scenario ns
     CROSS JOIN source_documents sd
 ),
 -- Link existing departments
 copy_departments AS (
-    INSERT INTO scenario_departments_junction (scenario_id, department_id, active, created_at)
-    SELECT ns.id, sd.department_id, sd.active, NOW()
+    INSERT INTO scenario_departments_junction (scenario_id, departments_id, active, created_at)
+    SELECT ns.id, sd.departments_id, sd.active, NOW()
     FROM new_scenario ns
     CROSS JOIN source_departments sd
 ),
@@ -275,22 +275,22 @@ copy_objectives AS (
 ),
 -- Link existing images
 copy_images AS (
-    INSERT INTO scenario_images_junction (scenario_id, image_id, active, created_at)
-    SELECT ns.id, si.image_id, true, NOW()
+    INSERT INTO scenario_images_junction (scenario_id, images_id, active, created_at)
+    SELECT ns.id, si.images_id, true, NOW()
     FROM new_scenario ns
     CROSS JOIN source_images si
 ),
 -- Link existing videos
 copy_videos AS (
-    INSERT INTO scenario_videos_junction (scenario_id, video_id, active, created_at)
-    SELECT ns.id, sv.video_id, true, NOW()
+    INSERT INTO scenario_videos_junction (scenario_id, videos_id, active, created_at)
+    SELECT ns.id, sv.videos_id, true, NOW()
     FROM new_scenario ns
     CROSS JOIN source_videos sv
 ),
 -- Link existing questions
 copy_questions AS (
-    INSERT INTO scenario_questions_junction (scenario_id, question_id, active, created_at)
-    SELECT ns.id, sq.question_id, true, NOW()
+    INSERT INTO scenario_questions_junction (scenario_id, questions_id, active, created_at)
+    SELECT ns.id, sq.questions_id, true, NOW()
     FROM new_scenario ns
     CROSS JOIN source_questions sq
 )

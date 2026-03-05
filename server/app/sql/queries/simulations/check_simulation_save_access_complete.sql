@@ -47,7 +47,7 @@ simulation_exists_check AS (
 ),
 -- Get simulation's department IDs (only if simulation exists)
 simulation_departments AS (
-    SELECT ARRAY_AGG(sd.department_id) as department_ids
+    SELECT ARRAY_AGG(sd.departments_id) as department_ids
     FROM simulation_departments_junction sd
     WHERE sd.simulation_id = (SELECT p_simulation_id FROM params)
       AND sd.active = true
@@ -56,7 +56,7 @@ simulation_departments AS (
 cohort_usage AS (
     SELECT COUNT(DISTINCT cs.cohort_id)::int as usage_count
     FROM cohort_simulations_junction cs
-    WHERE cs.simulation_id = (SELECT p_simulation_id FROM params)
+    WHERE cs.simulations_id = (SELECT p_simulation_id FROM params)
       AND cs.active = true
 ),
 -- Get department IDs from draft (for create mode validation)

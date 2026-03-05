@@ -60,9 +60,9 @@ description_resource_data AS (
 ),
 flag_resource_data AS (
     SELECT
-        (SELECT df.flag_id
+        (SELECT df.flags_id
          FROM department_flags_junction df
-         JOIN flags_resource f ON df.flag_id = f.id
+         JOIN flags_resource f ON df.flags_id = f.id
          WHERE df.department_id = (SELECT department_id FROM params)
            AND f.name = 'department_active'
            AND f.value = TRUE

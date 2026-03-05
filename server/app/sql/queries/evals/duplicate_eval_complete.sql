@@ -42,16 +42,16 @@ original_eval AS (
 ),
 original_departments AS (
     -- Get department IDs from original eval
-    SELECT department_id
+    SELECT departments_id
     FROM params x
     JOIN eval_departments_junction ed ON ed.eval_id = x.eval_id AND ed.active = true
 ),
 original_flags AS (
     -- Get flag IDs from original eval (excluding active flag which is handled separately)
-    SELECT ef.flag_id
+    SELECT ef.flags_id
     FROM params x
     JOIN eval_flags_junction ef ON ef.eval_id = x.eval_id
-    JOIN flags_resource f ON ef.flag_id = f.id
+    JOIN flags_resource f ON ef.flags_id = f.id
     WHERE f.name != 'active'
 ),
 -- Insert name INTO names_resource table
@@ -107,28 +107,28 @@ link_eval_description AS (
 ),
 -- Link eval active flag (set to false for duplicate)
 link_eval_active_flag AS (
-    INSERT INTO eval_flags_junction (eval_id, flag_id, created_at) SELECT ne.id,
+    INSERT INTO eval_flags_junction (eval_id, flags_id, created_at) SELECT ne.id,
         f.id,
         NOW()
     FROM new_eval ne
     CROSS JOIN flags_resource f
     WHERE f.name = 'eval_active'
-    ON CONFLICT (eval_id, flag_id) DO NOTHING
+    ON CONFLICT (eval_id, flags_id) DO NOTHING
 ),
 -- Copy other flags from original eval
 copy_eval_flags AS (
-    INSERT INTO eval_flags_junction (eval_id, flag_id, created_at)
+    INSERT INTO eval_flags_junction (eval_id, flags_id, created_at)
     SELECT
         ne.id,
         of.flag_id,
         NOW()
     FROM new_eval ne
     CROSS JOIN original_flags of
-    ON CONFLICT (eval_id, flag_id) DO NOTHING
+    ON CONFLICT (eval_id, flags_id) DO NOTHING
 ),
 copy_departments AS (
     -- Copy department links from original eval
-    INSERT INTO eval_departments_junction (eval_id, department_id, active, created_at)
+    INSERT INTO eval_departments_junction (eval_id, departments_id, active, created_at)
     SELECT 
         ne.id,
         od.department_id,

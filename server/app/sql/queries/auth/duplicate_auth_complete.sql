@@ -55,7 +55,7 @@ source_auth AS (
         id, 
         (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.names_id = n.id WHERE an.auth_id = auth_artifact.id LIMIT 1) as name, 
         (SELECT d.description FROM auth_descriptions_junction ad JOIN descriptions_resource d ON ad.descriptions_id = d.id WHERE ad.auth_id = auth_artifact.id LIMIT 1) as description, 
-        EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = auth_artifact.id AND f.name = 'auth_active' AND f.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flags_id = f.id WHERE af.auth_id = auth_artifact.id AND f.name = 'auth_active' AND f.value = TRUE) as active,
         (SELECT p.value FROM auth_protocols_junction ap JOIN protocols_resource p ON p.id = ap.protocols_id WHERE ap.auth_id = auth_artifact.id LIMIT 1) as auth_type, 
         (SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slugs_id WHERE as_j.auth_id = auth_artifact.id LIMIT 1) as slug
     FROM params x
@@ -148,13 +148,13 @@ link_auth_description AS (
 ),
 -- Link auth active flag
 link_auth_active_flag AS (
-    INSERT INTO auth_flags_junction (auth_id, flag_id, created_at) SELECT na.auth_id,
+    INSERT INTO auth_flags_junction (auth_id, flags_id, created_at) SELECT na.auth_id,
         f.id,
         NOW()
     FROM new_auth na
     CROSS JOIN flags_resource f
     WHERE f.name = 'auth_active'
-    ON CONFLICT (auth_id, flag_id) DO NOTHING
+    ON CONFLICT (auth_id, flags_id) DO NOTHING
 ),
 source_items AS (
     SELECT 
@@ -166,7 +166,7 @@ source_items AS (
         i.active
     FROM source_auth sa
     JOIN auth_items_junction ai_j ON ai_j.auth_id = sa.id
-    JOIN items_resource i ON i.id = ai_j.item_id
+    JOIN items_resource i ON i.id = ai_j.items_id
 ),
 new_items AS (
     -- Create new items (standalone table)
@@ -198,15 +198,15 @@ items_with_idx AS (
 ),
 -- Link auth to items via junction table
 link_auth_items AS (
-    INSERT INTO auth_items_junction (auth_id, item_id, created_at)
-    SELECT 
+    INSERT INTO auth_items_junction (auth_id, items_id, created_at)
+    SELECT
         na.auth_id,
         iwi.item_id,
         NOW()
     FROM new_auth na
     CROSS JOIN source_items si
     JOIN items_with_idx iwi ON iwi.item_idx = si.item_idx
-    ON CONFLICT (auth_id, item_id) DO NOTHING
+    ON CONFLICT (auth_id, items_id) DO NOTHING
 )
 SELECT 
     aec.auth_exists::boolean as auth_exists,

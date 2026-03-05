@@ -140,7 +140,7 @@ scenario_departments_junction_data AS (
         CASE
             WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(sd.department_id ORDER BY sd.created_at)
+                (SELECT ARRAY_AGG(sd.departments_id ORDER BY sd.created_at)
                  FROM scenario_departments_junction sd
                  WHERE sd.scenario_id = (SELECT scenario_id FROM params) AND sd.active = true),
                 ARRAY[]::uuid[]
@@ -154,7 +154,7 @@ scenario_personas_junction_data AS (
         CASE
             WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(sp.persona_id ORDER BY sp.persona_id)
+                (SELECT ARRAY_AGG(sp.personas_id ORDER BY sp.personas_id)
                  FROM scenario_personas_junction sp
                  WHERE sp.scenario_id = (SELECT scenario_id FROM params) AND sp.active = true),
                 ARRAY[]::uuid[]
@@ -168,7 +168,7 @@ scenario_documents_junction_data AS (
         CASE
             WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(sd.document_id ORDER BY sd.document_id)
+                (SELECT ARRAY_AGG(sd.documents_id ORDER BY sd.documents_id)
                  FROM scenario_documents_junction sd
                  WHERE sd.scenario_id = (SELECT scenario_id FROM params) AND sd.active = true),
                 ARRAY[]::uuid[]
@@ -216,7 +216,7 @@ scenario_images_junction_data AS (
         CASE
             WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(si.image_id ORDER BY si.created_at)
+                (SELECT ARRAY_AGG(si.images_id ORDER BY si.created_at)
                  FROM scenario_images_junction si
                  WHERE si.scenario_id = (SELECT scenario_id FROM params) AND si.active = true),
                 ARRAY[]::uuid[]
@@ -230,7 +230,7 @@ scenario_videos_junction_data AS (
         CASE
             WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(sv.video_id ORDER BY sv.created_at)
+                (SELECT ARRAY_AGG(sv.videos_id ORDER BY sv.created_at)
                  FROM scenario_videos_junction sv
                  WHERE sv.scenario_id = (SELECT scenario_id FROM params) AND sv.active = true),
                 ARRAY[]::uuid[]
@@ -244,7 +244,7 @@ scenario_questions_junction_data AS (
         CASE
             WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(sq.question_id ORDER BY sq.created_at)
+                (SELECT ARRAY_AGG(sq.questions_id ORDER BY sq.created_at)
                  FROM scenario_questions_junction sq
                  WHERE sq.scenario_id = (SELECT scenario_id FROM params) AND sq.active = true),
                 ARRAY[]::uuid[]
@@ -376,7 +376,7 @@ scenario_options_junction_data AS (
         CASE
             WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(so.option_id ORDER BY so.created_at)
+                (SELECT ARRAY_AGG(so.options_id ORDER BY so.created_at)
                  FROM scenario_options_junction so
                  WHERE so.scenario_id = (SELECT scenario_id FROM params) AND so.active = true),
                 ARRAY[]::uuid[]
@@ -423,42 +423,42 @@ problem_statement_resource_data AS (
 active_flag_resource_data AS (
     SELECT COALESCE(
         (SELECT df.flag_id FROM scenario_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.type = 'scenario_active' LIMIT 1),
-        (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.type = 'scenario_active' AND f.value = TRUE AND sf.active = true LIMIT 1)
+        (SELECT sf.flags_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.type = 'scenario_active' AND f.value = TRUE AND sf.active = true LIMIT 1)
     ) as active_flag_id
     FROM params
 ),
 objectives_enabled_flag_resource_data AS (
     SELECT COALESCE(
         (SELECT df.flag_id FROM scenario_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.type = 'objectives_enabled' LIMIT 1),
-        (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.type = 'objectives_enabled' AND f.value = TRUE AND sf.active = true LIMIT 1)
+        (SELECT sf.flags_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.type = 'objectives_enabled' AND f.value = TRUE AND sf.active = true LIMIT 1)
     ) as objectives_enabled_flag_id
     FROM params
 ),
 images_enabled_flag_resource_data AS (
     SELECT COALESCE(
         (SELECT df.flag_id FROM scenario_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.type = 'images_enabled' LIMIT 1),
-        (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.type = 'images_enabled' AND f.value = TRUE AND sf.active = true LIMIT 1)
+        (SELECT sf.flags_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.type = 'images_enabled' AND f.value = TRUE AND sf.active = true LIMIT 1)
     ) as images_enabled_flag_id
     FROM params
 ),
 video_enabled_flag_resource_data AS (
     SELECT COALESCE(
         (SELECT df.flag_id FROM scenario_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.type = 'video_enabled' LIMIT 1),
-        (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.type = 'video_enabled' AND f.value = TRUE AND sf.active = true LIMIT 1)
+        (SELECT sf.flags_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.type = 'video_enabled' AND f.value = TRUE AND sf.active = true LIMIT 1)
     ) as video_enabled_flag_id
     FROM params
 ),
 questions_enabled_flag_resource_data AS (
     SELECT COALESCE(
         (SELECT df.flag_id FROM scenario_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.type = 'questions_enabled' LIMIT 1),
-        (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.type = 'questions_enabled' AND f.value = TRUE AND sf.active = true LIMIT 1)
+        (SELECT sf.flags_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.type = 'questions_enabled' AND f.value = TRUE AND sf.active = true LIMIT 1)
     ) as questions_enabled_flag_id
     FROM params
 ),
 problem_statement_enabled_flag_resource_data AS (
     SELECT COALESCE(
         (SELECT df.flag_id FROM scenario_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM params) AND f.type = 'problem_statement_enabled' LIMIT 1),
-        (SELECT sf.flag_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.type = 'problem_statement_enabled' AND f.value = TRUE AND sf.active = true LIMIT 1)
+        (SELECT sf.flags_id FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = (SELECT scenario_id FROM params) AND f.type = 'problem_statement_enabled' AND f.value = TRUE AND sf.active = true LIMIT 1)
     ) as problem_statement_enabled_flag_id
     FROM params
 ),
@@ -467,7 +467,7 @@ video_enabled_value_data AS (
     SELECT COALESCE(
         (SELECT f.value
          FROM scenario_flags_junction sf
-         JOIN flags_resource f ON sf.flag_id = f.id
+         JOIN flags_resource f ON sf.flags_id = f.id
          WHERE sf.scenario_id = (SELECT scenario_id FROM params)
            AND f.type = 'video_enabled'
            AND sf.active = true

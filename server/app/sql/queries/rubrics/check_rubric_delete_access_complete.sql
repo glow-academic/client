@@ -38,7 +38,7 @@ WITH params AS (
 -- Get rubric departments
 rubric_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(rd.department_id::text) FILTER (WHERE rd.department_id IS NOT NULL),
+        ARRAY_AGG(rd.departments_id::text) FILTER (WHERE rd.departments_id IS NOT NULL),
         ARRAY[]::text[]
     ) as department_ids
     FROM params x
@@ -54,7 +54,7 @@ simulation_links AS (
          JOIN simulation_artifact s ON s.id = ss.simulation_id
          WHERE srr.rubric_id = (SELECT rubric_id FROM params)
          AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flags_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.type = 'scenario_active' AND f.value = true)
-         AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = true)
+         AND EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = true)
         ),
         0
     )::bigint as active_count

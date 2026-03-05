@@ -65,7 +65,7 @@ effective_group AS (
 -- Get field departments (for access check)
 field_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(fd.department_id ORDER BY fd.created_at) FILTER (WHERE fd.department_id IS NOT NULL),
+        ARRAY_AGG(fd.departments_id ORDER BY fd.created_at) FILTER (WHERE fd.departments_id IS NOT NULL),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM params x

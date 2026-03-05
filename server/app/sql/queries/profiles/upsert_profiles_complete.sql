@@ -93,7 +93,7 @@ profiles_expanded AS (
 current_user_role AS (
     -- Get current user's role for validation
     SELECT (SELECT r.role FROM profile_roles_junction pr_j 
-            JOIN roles_resource r ON pr_j.role_id = r.id 
+            JOIN roles_resource r ON pr_j.roles_id = r.id 
             WHERE pr_j.profile_id = p.id 
             LIMIT 1) as role 
     FROM params x JOIN profile_artifact p ON p.id = x.current_profile_id
@@ -209,7 +209,7 @@ profile_type_delete_upsert AS (
     RETURNING profile_id
 ),
 profile_type_insert_upsert AS (
-    INSERT INTO profile_roles_junction (profile_id, role_id, created_at, generated, mcp)
+    INSERT INTO profile_roles_junction (profile_id, roles_id, created_at, generated, mcp)
     SELECT pu.id, rru.role_id, NOW(), false, false
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
@@ -238,14 +238,14 @@ link_profile_names AS (
 ),
 -- Link profile active flags
 link_profile_active_flags AS (
-    INSERT INTO profile_flags_junction (profile_id, flag_id, created_at) SELECT pu.id,
+    INSERT INTO profile_flags_junction (profile_id, flags_id, created_at) SELECT pu.id,
         f.id,
         NOW()
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
     CROSS JOIN flags_resource f
     WHERE f.name = 'profile_active'
-    ON CONFLICT (profile_id, flag_id) DO NOTHING
+    ON CONFLICT (profile_id, flags_id) DO NOTHING
 ),
 profile_upsert_with_created AS (
     -- Join back to get created status
@@ -285,7 +285,7 @@ dept_cleanup AS (
 ),
 dept_insert AS (
     -- Insert department relationships (first one as primary) for all profiles
-    INSERT INTO profile_departments_junction (profile_id, department_id, is_primary, active, created_at)
+    INSERT INTO profile_departments_junction (profile_id, departments_id, is_primary, active, created_at)
     SELECT 
         pu.id,
         dept_id,
@@ -297,7 +297,7 @@ dept_insert AS (
     JOIN profiles_expanded pe ON pe.profile_idx = pwi.profile_idx
     CROSS JOIN unnest(pe.department_ids) as dept_id
     WHERE cardinality(pe.department_ids) > 0
-    ON CONFLICT (profile_id, department_id) DO UPDATE SET
+    ON CONFLICT (profile_id, departments_id) DO UPDATE SET
         is_primary = EXCLUDED.is_primary,
         active = true
 ),

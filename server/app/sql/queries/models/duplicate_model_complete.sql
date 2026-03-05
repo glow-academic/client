@@ -50,7 +50,7 @@ source_model AS (
     SELECT
         (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.names_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
         (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.descriptions_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND f.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flags_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND f.value = TRUE) as active,
         NULL::uuid as domain_id,  -- Domain no longer exists, use NULL
         (SELECT mpj.providers_id FROM model_providers_junction mpj WHERE mpj.model_id = m.id AND mpj.active = true LIMIT 1) as provider_id
     FROM params x
@@ -156,13 +156,13 @@ link_model_provider AS (
 ),
 -- Link model active flag (set to false for duplicate)
 link_model_active_flag AS (
-    INSERT INTO model_flags_junction (model_id, flag_id, created_at) SELECT dm.id,
+    INSERT INTO model_flags_junction (model_id, flags_id, created_at) SELECT dm.id,
         f.id,
         NOW()
     FROM duplicated_model dm
     CROSS JOIN flags_resource f
     WHERE f.name = 'model_active'
-    ON CONFLICT (model_id, flag_id) DO NOTHING
+    ON CONFLICT (model_id, flags_id) DO NOTHING
 ),
 model_with_name AS (
     -- Get model with name for return

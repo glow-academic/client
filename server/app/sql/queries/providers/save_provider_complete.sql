@@ -162,7 +162,7 @@ BEGIN
         SET active = true, created_at = NOW();
     END IF;
 
-    INSERT INTO provider_flags_junction (provider_id, flag_id, created_at, active)
+    INSERT INTO provider_flags_junction (provider_id, flags_id, created_at, active)
     VALUES (
         v_provider_id,
         COALESCE(v_active_flag_id, v_default_provider_active_flag_id),
@@ -170,7 +170,7 @@ BEGIN
         true
     )
     ON CONFLICT ON CONSTRAINT provider_flags_pkey DO UPDATE
-    SET flag_id = EXCLUDED.flag_id,
+    SET flags_id = EXCLUDED.flags_id,
         active = true,
         created_at = NOW();
 
@@ -187,14 +187,14 @@ BEGIN
     END IF;
 
     IF v_key_id IS NOT NULL THEN
-        INSERT INTO provider_keys_junction (provider_id, key_id, created_at, active)
+        INSERT INTO provider_keys_junction (provider_id, keys_id, created_at, active)
         VALUES (v_provider_id, v_key_id, NOW(), true)
         ON CONFLICT ON CONSTRAINT provider_keys_junction_pkey DO UPDATE
         SET active = true, created_at = NOW();
     END IF;
 
     IF COALESCE(array_length(v_department_ids, 1), 0) > 0 THEN
-        INSERT INTO provider_departments_junction (provider_id, department_id, created_at, active)
+        INSERT INTO provider_departments_junction (provider_id, departments_id, created_at, active)
         SELECT v_provider_id, did, NOW(), true
         FROM unnest(v_department_ids) AS did
         ON CONFLICT ON CONSTRAINT provider_departments_pkey DO UPDATE

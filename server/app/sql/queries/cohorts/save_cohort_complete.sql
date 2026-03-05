@@ -78,10 +78,10 @@ BEGIN
 
         -- Multi-select arrays: preserve existing if NULL passed
         IF department_ids IS NULL THEN
-            department_ids := COALESCE((SELECT ARRAY_AGG(j.department_id) FROM cohort_departments_junction j WHERE j.cohort_id = v_cohort_id AND j.active), ARRAY[]::uuid[]);
+            department_ids := COALESCE((SELECT ARRAY_AGG(j.departments_id) FROM cohort_departments_junction j WHERE j.cohort_id = v_cohort_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF simulation_ids IS NULL THEN
-            simulation_ids := COALESCE((SELECT ARRAY_AGG(j.simulation_id) FROM cohort_simulations_junction j WHERE j.cohort_id = v_cohort_id AND j.active), ARRAY[]::uuid[]);
+            simulation_ids := COALESCE((SELECT ARRAY_AGG(j.simulations_id) FROM cohort_simulations_junction j WHERE j.cohort_id = v_cohort_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF simulation_position_ids IS NULL THEN
             simulation_position_ids := COALESCE((SELECT ARRAY_AGG(j.simulation_positions_id) FROM cohort_simulation_positions_junction j WHERE j.cohort_id = v_cohort_id AND j.active), ARRAY[]::uuid[]);
@@ -98,7 +98,7 @@ BEGIN
 
         -- Flag: preserve existing active flag if not provided
         IF active_flag_id IS NULL THEN
-            active_flag_id := (SELECT j.flag_id FROM cohort_flags_junction j JOIN flags_resource fr ON j.flag_id = fr.id WHERE j.cohort_id = v_cohort_id AND fr.value = true LIMIT 1);
+            active_flag_id := (SELECT j.flags_id FROM cohort_flags_junction j JOIN flags_resource fr ON j.flags_id = fr.id WHERE j.cohort_id = v_cohort_id AND fr.value = true LIMIT 1);
         END IF;
     END IF;
 
@@ -170,7 +170,7 @@ BEGIN
     ),
     -- Upsert active flag
     upsert_flag AS (
-        INSERT INTO cohort_flags_junction (cohort_id, flag_id, created_at, active)
+        INSERT INTO cohort_flags_junction (cohort_id, flags_id, created_at, active)
         SELECT x.cohort_id,
             COALESCE(x.active_flag_id, f.id),
             NOW(),
@@ -179,12 +179,12 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.type = 'cohort_active'
         ON CONFLICT ON CONSTRAINT cohort_flags_pkey DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, cohort_flags_junction.flag_id),
+            flags_id = COALESCE(EXCLUDED.flags_id, cohort_flags_junction.flags_id),
             active = true
     ),
     -- Link departments
     link_departments AS (
-        INSERT INTO cohort_departments_junction (cohort_id, department_id, active, created_at)
+        INSERT INTO cohort_departments_junction (cohort_id, departments_id, active, created_at)
         SELECT x.cohort_id, dept_id, true, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) AS dept_id
@@ -193,7 +193,7 @@ BEGIN
     ),
     -- Link simulations
     link_simulations AS (
-        INSERT INTO cohort_simulations_junction (cohort_id, simulation_id, active, created_at)
+        INSERT INTO cohort_simulations_junction (cohort_id, simulations_id, active, created_at)
         SELECT x.cohort_id, sim_id, true, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.simulation_ids) AS sim_id

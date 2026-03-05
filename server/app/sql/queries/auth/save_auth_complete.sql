@@ -153,6 +153,7 @@ BEGIN
     UPDATE auth_names_junction SET active = false WHERE auth_id = v_auth_id AND active = true;
     UPDATE auth_descriptions_junction SET active = false WHERE auth_id = v_auth_id AND active = true;
     UPDATE auth_flags_junction SET active = false WHERE auth_id = v_auth_id AND active = true;
+
     UPDATE auth_protocols_junction SET active = false WHERE auth_id = v_auth_id AND active = true;
     UPDATE auth_slugs_junction SET active = false WHERE auth_id = v_auth_id AND active = true;
     UPDATE auth_items_junction SET active = false WHERE auth_id = v_auth_id AND active = true;
@@ -169,7 +170,7 @@ BEGIN
         SET active = true, created_at = NOW();
     END IF;
 
-    INSERT INTO auth_flags_junction (auth_id, flag_id, created_at, active)
+    INSERT INTO auth_flags_junction (auth_id, flags_id, created_at, active)
     VALUES (
         v_auth_id,
         COALESCE(v_active_flag_id, v_default_auth_active_flag_id),
@@ -177,7 +178,7 @@ BEGIN
         true
     )
     ON CONFLICT ON CONSTRAINT auth_flags_pkey DO UPDATE
-    SET flag_id = EXCLUDED.flag_id,
+    SET flags_id = EXCLUDED.flags_id,
         active = true,
         created_at = NOW();
 
@@ -231,7 +232,7 @@ BEGIN
             SELECT row_number() OVER (ORDER BY id) AS item_idx, id
             FROM created_items
         )
-        INSERT INTO auth_items_junction (auth_id, item_id, created_at, active)
+        INSERT INTO auth_items_junction (auth_id, items_id, created_at, active)
         SELECT v_auth_id, ii.id, NOW(), true
         FROM indexed_items ii
         ON CONFLICT ON CONSTRAINT auth_items_pkey DO UPDATE
@@ -347,7 +348,7 @@ BEGIN
             VALUES (v_call_id, 'auth_save_create_items_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((items).create_tool_id, v_call_id);
             INSERT INTO items_calls_connection (item_id, call_id)
-            SELECT aij.item_id, v_call_id
+            SELECT aij.items_id, v_call_id
             FROM auth_items_junction aij
             WHERE aij.auth_id = v_auth_id AND aij.active = true;
         END IF;
@@ -357,7 +358,7 @@ BEGIN
             VALUES (v_call_id, 'auth_save_link_items_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((items).link_tool_id, v_call_id);
             INSERT INTO items_calls_connection (item_id, call_id)
-            SELECT aij.item_id, v_call_id
+            SELECT aij.items_id, v_call_id
             FROM auth_items_junction aij
             WHERE aij.auth_id = v_auth_id AND aij.active = true;
         END IF;

@@ -90,9 +90,9 @@ flag_resource_data AS (
              FROM agent_drafts_flags_connection df
              WHERE df.draft_id = (SELECT draft_id FROM params)
              LIMIT 1),
-            (SELECT af.flag_id
+            (SELECT af.flags_id
              FROM agent_flags_junction af
-             JOIN flags_resource f ON af.flag_id = f.id
+             JOIN flags_resource f ON af.flags_id = f.id
              WHERE af.agent_id = (SELECT agent_id FROM params)
                AND f.name = 'agent_active'
                AND f.value = true
@@ -133,7 +133,7 @@ department_ids_data AS (
              FROM agent_drafts_departments_connection dd
              WHERE dd.draft_id = (SELECT draft_id FROM params)
                AND dd.active = true),
-            (SELECT ARRAY_AGG(ad.department_id ORDER BY ad.created_at)
+            (SELECT ARRAY_AGG(ad.departments_id ORDER BY ad.created_at)
              FROM agent_departments_junction ad
              WHERE ad.agent_id = (SELECT agent_id FROM params)
                AND ad.active = true),
@@ -147,7 +147,7 @@ tool_ids_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(ttj.tool_id ORDER BY at.created_at)
              FROM agent_tools_junction at
-             JOIN tools_resource tr ON tr.id = at.tool_id
+             JOIN tools_resource tr ON tr.id = at.tools_id
              JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
              JOIN tool_artifact t ON t.id = ttj.tool_id
              WHERE at.agent_id = (SELECT agent_id FROM params)

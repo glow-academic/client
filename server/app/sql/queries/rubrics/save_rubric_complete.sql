@@ -182,7 +182,7 @@ BEGIN
           AND active = true;
 
         UPDATE rubric_flags_junction
-        SET flag_id = COALESCE(v_active_flag_id, rubric_flags_junction.flag_id)
+        SET flags_id = COALESCE(v_active_flag_id, rubric_flags_junction.flags_id)
         WHERE rubric_id = v_rubric_id;
     END IF;
 
@@ -349,7 +349,7 @@ BEGIN
     END IF;
 
     -- Insert or update rubric active flag
-    INSERT INTO rubric_flags_junction (rubric_id, flag_id, created_at)
+    INSERT INTO rubric_flags_junction (rubric_id, flags_id, created_at)
     SELECT
         v_rubric_id,
         COALESCE(v_active_flag_id, f.id),
@@ -357,7 +357,7 @@ BEGIN
     FROM flags_resource f
     WHERE f.name = 'rubric_active'
     ON CONFLICT ON CONSTRAINT rubric_flags_pkey DO UPDATE SET
-        flag_id = COALESCE(EXCLUDED.flag_id, rubric_flags_junction.flag_id);
+        flags_id = COALESCE(EXCLUDED.flags_id, rubric_flags_junction.flags_id);
 
     -- Link total points
     IF v_total_points_id IS NOT NULL THEN
@@ -374,7 +374,7 @@ BEGIN
     END IF;
 
     -- Link departments
-    INSERT INTO rubric_departments_junction (rubric_id, department_id, active, created_at)
+    INSERT INTO rubric_departments_junction (rubric_id, departments_id, active, created_at)
     SELECT
         v_rubric_id,
         dept_id,
@@ -401,7 +401,7 @@ BEGIN
         active = true;
 
     -- Link standards
-    INSERT INTO rubric_standards_junction (rubric_id, standard_id, active, created_at)
+    INSERT INTO rubric_standards_junction (rubric_id, standards_id, active, created_at)
     SELECT
         v_rubric_id,
         std_id,

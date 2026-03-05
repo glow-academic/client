@@ -67,7 +67,7 @@ effective_group AS (
 -- Get document departments (for access check)
 document_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(dd.department_id ORDER BY dd.created_at) FILTER (WHERE dd.department_id IS NOT NULL),
+        ARRAY_AGG(dd.departments_id ORDER BY dd.created_at) FILTER (WHERE dd.departments_id IS NOT NULL),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM params x
@@ -77,10 +77,10 @@ document_departments_data AS (
 -- Get document edit state (active scenario count + total scenario links)
 document_edit_state AS (
     SELECT
-        COALESCE(COUNT(sd.document_id) FILTER (WHERE sd.active = true), 0)::int as active_scenario_count,
-        COALESCE(COUNT(sd.document_id), 0)::bigint as total_scenario_links
+        COALESCE(COUNT(sd.documents_id) FILTER (WHERE sd.active = true), 0)::int as active_scenario_count,
+        COALESCE(COUNT(sd.documents_id), 0)::bigint as total_scenario_links
     FROM params x
-    LEFT JOIN scenario_documents_junction sd ON sd.document_id = x.document_id
+    LEFT JOIN scenario_documents_junction sd ON sd.documents_id = x.document_id
     WHERE x.document_id IS NOT NULL
 )
 SELECT

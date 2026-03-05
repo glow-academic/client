@@ -33,7 +33,7 @@ AS $$
 WITH
 -- Get user's department IDs
 user_departments AS (
-    SELECT pd.department_id
+    SELECT pd.departments_id
     FROM profile_departments_junction pd
     WHERE pd.profile_id = p_profile_id AND pd.active = true
 ),
@@ -43,7 +43,7 @@ accessible_agents AS (
     FROM agent_artifact a
     WHERE EXISTS (
         SELECT 1 FROM agent_flags_junction af
-        JOIN flags_resource f ON af.flag_id = f.id
+        JOIN flags_resource f ON af.flags_id = f.id
         WHERE af.agent_id = a.id AND f.name = 'agent_active' AND f.value = true
     )
     AND (
@@ -56,7 +56,7 @@ accessible_agents AS (
         -- Agent matches user's departments
         EXISTS (
             SELECT 1 FROM agent_departments_junction ad
-            JOIN user_departments ud ON ud.department_id = ad.department_id
+            JOIN user_departments ud ON ud.department_id = ad.departments_id
             WHERE ad.agent_id = a.id AND ad.active = true
         )
     )
@@ -68,7 +68,7 @@ agent_entry_types AS (
         b.entry::text as entry_type
     FROM accessible_agents aa
     JOIN agent_tools_junction atj ON atj.agent_id = aa.agent_id AND atj.active = true
-    JOIN tools_resource tr ON tr.id = atj.tool_id
+    JOIN tools_resource tr ON tr.id = atj.tools_id
     JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
     JOIN tool_entries_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
     JOIN entries_resource b ON b.id = tbj.entries_id AND b.active = true 

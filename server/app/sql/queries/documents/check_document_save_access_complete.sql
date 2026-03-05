@@ -41,12 +41,12 @@ WITH params AS (
 document_edit_state AS (
     SELECT
         COALESCE(
-            ARRAY_AGG(dd.department_id::text) FILTER (WHERE dd.department_id IS NOT NULL),
+            ARRAY_AGG(dd.departments_id::text) FILTER (WHERE dd.departments_id IS NOT NULL),
             ARRAY[]::text[]
         ) as department_ids,
-        (SELECT COUNT(sd.document_id)::bigint
+        (SELECT COUNT(sd.documents_id)::bigint
          FROM scenario_documents_junction sd
-         WHERE sd.document_id = (SELECT document_id FROM params) AND sd.active = true
+         WHERE sd.documents_id = (SELECT document_id FROM params) AND sd.active = true
         ) as active_scenario_count
     FROM params x
     LEFT JOIN document_departments_junction dd ON dd.document_id = x.document_id AND dd.active = true

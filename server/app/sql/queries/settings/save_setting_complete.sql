@@ -120,13 +120,13 @@ BEGIN
         UPDATE setting_colors_junction SET active = false WHERE setting_colors_junction.setting_id = v_setting_id AND active = true;
         UPDATE department_settings_junction SET active = false WHERE department_settings_junction.settings_id = v_setting_id AND active = true;
         UPDATE setting_profiles_junction SET active = false WHERE setting_profiles_junction.setting_id = v_setting_id AND active = true;
-        UPDATE setting_auths_junction SET active = false WHERE setting_auths_junction.settings_id = v_setting_id AND active = true;
+        UPDATE setting_auths_junction SET active = false WHERE setting_auths_junction.setting_id = v_setting_id AND active = true;
         UPDATE setting_provider_keys_junction SET active = false WHERE setting_provider_keys_junction.setting_id = v_setting_id AND active = true;
         UPDATE setting_auth_item_keys_junction SET active = false WHERE setting_auth_item_keys_junction.setting_id = v_setting_id AND active = true;
         UPDATE setting_roles_junction SET active = false WHERE setting_roles_junction.setting_id = v_setting_id AND active = true;
 
         UPDATE setting_flags_junction
-        SET flag_id = COALESCE(v_active_flag_id, setting_flags_junction.flag_id),
+        SET flags_id = COALESCE(v_active_flag_id, setting_flags_junction.flags_id),
             active = true
         WHERE setting_flags_junction.setting_id = v_setting_id;
     END IF;
@@ -368,7 +368,7 @@ BEGIN
             active = true
     ),
     link_colors AS (
-        INSERT INTO setting_colors_junction (setting_id, color_id, active, created_at)
+        INSERT INTO setting_colors_junction (setting_id, colors_id, active, created_at)
         SELECT x.setting_id, color_id, true, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.color_ids) as color_id
@@ -377,7 +377,7 @@ BEGIN
             active = true
     ),
     insert_setting_active_flag AS (
-        INSERT INTO setting_flags_junction (setting_id, flag_id, created_at)
+        INSERT INTO setting_flags_junction (setting_id, flags_id, created_at)
         SELECT x.setting_id,
             COALESCE(x.active_flag_id, f.id),
             NOW()
@@ -385,7 +385,7 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.name = 'setting_active'
         ON CONFLICT ON CONSTRAINT setting_flags_pkey DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, setting_flags_junction.flag_id),
+            flags_id = COALESCE(EXCLUDED.flags_id, setting_flags_junction.flags_id),
             active = true
     ),
     link_departments AS (
@@ -398,7 +398,7 @@ BEGIN
             active = true
     ),
     link_profiles AS (
-        INSERT INTO setting_profiles_junction (setting_id, profile_id, active, created_at)
+        INSERT INTO setting_profiles_junction (setting_id, profiles_id, active, created_at)
         SELECT x.setting_id, pid, true, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.profile_ids) as pid
@@ -407,7 +407,7 @@ BEGIN
             active = true
     ),
     link_auths AS (
-        INSERT INTO setting_auths_junction (settings_id, auth_id, active, created_at)
+        INSERT INTO setting_auths_junction (setting_id, auths_id, active, created_at)
         SELECT x.setting_id, auth_id, true, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.auth_ids) as auth_id

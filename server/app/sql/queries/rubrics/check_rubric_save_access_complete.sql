@@ -38,7 +38,7 @@ WITH params AS (
 -- Get rubric departments (for update mode)
 rubric_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(rd.department_id::text) FILTER (WHERE rd.department_id IS NOT NULL),
+        ARRAY_AGG(rd.departments_id::text) FILTER (WHERE rd.departments_id IS NOT NULL),
         ARRAY[]::text[]
     ) as department_ids
     FROM params x

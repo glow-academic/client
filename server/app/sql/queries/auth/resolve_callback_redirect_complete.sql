@@ -24,7 +24,7 @@ AS $$
     WITH profile_role AS (
         SELECT r.role::text as role
         FROM profile_roles_junction pr
-        JOIN roles_resource r ON pr.role_id = r.id
+        JOIN roles_resource r ON pr.roles_id = r.id
         WHERE pr.profile_id = p_profile_id
         LIMIT 1
     )

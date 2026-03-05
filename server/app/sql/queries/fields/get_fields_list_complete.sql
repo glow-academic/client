@@ -83,7 +83,7 @@ WITH params AS (
     SELECT profile_id AS profile_id
 ),
 user_departments AS (
-    SELECT department_id
+    SELECT pd.departments_id AS department_id
     FROM params x
     JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
@@ -92,7 +92,7 @@ user_profile AS (
     SELECT COALESCE(r.role, 'member'::profile_type) as role,
            ''::text as actor_name
     FROM profile_roles_junction prj
-    JOIN roles_resource r ON prj.role_id = r.id
+    JOIN roles_resource r ON prj.roles_id = r.id
     WHERE prj.profile_id = (SELECT profile_id FROM params)
     LIMIT 1
 ),
@@ -104,12 +104,12 @@ field_parameters_agg AS (
             ELSE ARRAY[]::text[]
         END as parameter_ids
     FROM field_artifact f
-    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = true)
+    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flags_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = true)
 ),
 field_departments_data AS (
     SELECT
         fd.field_id,
-        ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) as department_ids
+        ARRAY_AGG(fd.departments_id::text ORDER BY fd.created_at) as department_ids
     FROM field_departments_junction fd
     WHERE fd.active = true
     GROUP BY fd.field_id
@@ -142,14 +142,14 @@ fields_data AS (
         f.id as field_id,
         (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = f.id LIMIT 1),
         (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.descriptions_id = d.id WHERE fd.field_id = f.id LIMIT 1),
-        EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flags_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = TRUE) as active,
         f.created_at,
         f.updated_at,
         COALESCE(fdd.department_ids, NULL) as department_ids,
         COALESCE(fpa.parameter_ids, ARRAY[]::text[]) as parameter_ids,
         COALESCE(fcpa.conditional_parameter_ids, ARRAY[]::text[]) as conditional_parameter_ids,
         COALESCE(fcpa.active_parameter_count, 0)::bigint as active_parameter_count,
-        NOT EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = TRUE) as is_inactive,
+        NOT EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flags_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = TRUE) as is_inactive,
         COALESCE(fpd.persona_ids, ARRAY[]::uuid[]) as persona_ids
     FROM params x
     JOIN field_artifact f ON true
@@ -158,7 +158,7 @@ fields_data AS (
     LEFT JOIN field_conditional_parameters_agg fcpa ON fcpa.field_id = f.id
     LEFT JOIN field_personas_data fpd ON fpd.field_id = f.id
     CROSS JOIN user_profile up
-    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = true)
+    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flags_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = true)
     AND (
         -- Superadmin can see all fields
         up.role = 'superadmin'::profile_type
@@ -170,11 +170,11 @@ fields_data AS (
         EXISTS (
             SELECT 1 FROM field_departments_junction fd
             WHERE fd.field_id = f.id
-            AND fd.department_id IN (SELECT department_id FROM user_departments)
+            AND fd.departments_id IN (SELECT department_id FROM user_departments)
             AND fd.active = true
         )
     )
-    GROUP BY f.id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.descriptions_id = d.id WHERE fd.field_id = f.id LIMIT 1), EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = TRUE), f.created_at, f.updated_at, fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, fcpa.active_parameter_count, up.role, fpd.persona_ids
+    GROUP BY f.id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.descriptions_id = d.id WHERE fd.field_id = f.id LIMIT 1), EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flags_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = TRUE), f.created_at, f.updated_at, fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, fcpa.active_parameter_count, up.role, fpd.persona_ids
 ),
 -- Apply server-side filters
 filtered_fields AS (

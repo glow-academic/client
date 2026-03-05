@@ -51,7 +51,7 @@ scenario_exists_check AS (
 -- Get scenario departments (for access check)
 scenario_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(sd.department_id ORDER BY sd.created_at) FILTER (WHERE sd.department_id IS NOT NULL),
+        ARRAY_AGG(sd.departments_id ORDER BY sd.created_at) FILTER (WHERE sd.department_id IS NOT NULL),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM params x
@@ -62,7 +62,7 @@ scenario_departments_data AS (
 scenario_edit_state AS (
     SELECT COUNT(*) as active_simulation_count
     FROM params x
-    JOIN simulation_scenarios_junction ssj ON ssj.scenario_id = x.scenario_id AND ssj.active = true
+    JOIN simulation_scenarios_junction ssj ON ssj.scenarios_id = x.scenario_id AND ssj.active = true
     JOIN simulation_artifact sim ON sim.id = ssj.simulation_id
     JOIN simulation_flags_junction sf ON sf.simulation_id = sim.id
     JOIN flags_resource f ON f.id = sf.flag_id AND f.name = 'simulation_active' AND f.value = true

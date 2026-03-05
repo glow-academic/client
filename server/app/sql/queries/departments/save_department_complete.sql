@@ -122,14 +122,14 @@ BEGIN
         ON CONFLICT ON CONSTRAINT department_descriptions_pkey DO NOTHING;
     END IF;
 
-    INSERT INTO department_flags_junction (department_id, flag_id, created_at)
+    INSERT INTO department_flags_junction (department_id, flags_id, created_at)
     VALUES (
         v_department_id,
         COALESCE(v_active_flag_id, v_default_department_active_flag_id),
         NOW()
     )
     ON CONFLICT ON CONSTRAINT department_flags_pkey DO UPDATE
-    SET flag_id = EXCLUDED.flag_id;
+    SET flags_id = EXCLUDED.flags_id;
 
     IF COALESCE(array_length(v_settings_ids, 1), 0) > 0 THEN
         INSERT INTO department_settings_junction (settings_id, department_id, active, created_at)
