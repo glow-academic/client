@@ -111,7 +111,7 @@ flag_resource_data AS (
          JOIN flags_resource f ON rf.flag_id = f.id
          WHERE rf.rubric_id = (SELECT rubric_id FROM params)
            AND f.name = 'rubric_active'
-           AND rf.value = TRUE
+           AND f.value = TRUE
          LIMIT 1) as active_flag_id
     FROM params
 ),

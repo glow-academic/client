@@ -88,7 +88,7 @@ rubric_active_simulation_count AS (
                WHERE ssf.simulation_id = ss.simulation_id
                  AND sfr.scenario_id = ss.scenario_id
                  AND f.type = 'scenario_active'
-                 AND ssf.value = true
+                 AND f.value = true
            )
         ),
         0

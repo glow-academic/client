@@ -65,7 +65,7 @@ scenario_edit_state AS (
     JOIN simulation_scenarios_junction ssj ON ssj.scenario_id = x.scenario_id AND ssj.active = true
     JOIN simulation_artifact sim ON sim.id = ssj.simulation_id
     JOIN simulation_flags_junction sf ON sf.simulation_id = sim.id
-    JOIN flags_resource f ON f.id = sf.flag_id AND f.name = 'simulation_active' AND sf.value = true
+    JOIN flags_resource f ON f.id = sf.flag_id AND f.name = 'simulation_active' AND f.value = true
     WHERE x.scenario_id IS NOT NULL
 )
 SELECT

@@ -313,29 +313,22 @@ BEGIN
     ),
     -- Active flag is always present; true iff parameter_active was selected.
     upsert_parameter_active_flag AS (
-        INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, created_at)
         SELECT
             x.parameter_id,
             f.id,
-            EXISTS (
-                SELECT 1
-                FROM UNNEST(x.flag_ids) AS selected_flag_id
-                WHERE selected_flag_id = f.id
-            ) AS value,
             NOW()
         FROM params x
         JOIN flags_resource f ON f.name = 'parameter_active'
         ON CONFLICT ON CONSTRAINT parameter_flags_pkey DO UPDATE SET
-            value = EXCLUDED.value,
             created_at = EXCLUDED.created_at
     ),
     -- Other flags: set selected flags to true (excluding the canonical active flag).
     upsert_parameter_selected_flags AS (
-        INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
+        INSERT INTO parameter_flags_junction (parameter_id, flag_id, created_at)
         SELECT
             x.parameter_id,
             selected_flag_id,
-            true,
             NOW()
         FROM params x
         CROSS JOIN UNNEST(x.flag_ids) AS selected_flag_id
@@ -343,7 +336,6 @@ BEGIN
             SELECT id FROM flags_resource WHERE name = 'parameter_active'
         )
         ON CONFLICT ON CONSTRAINT parameter_flags_pkey DO UPDATE SET
-            value = true,
             created_at = EXCLUDED.created_at
     ),
     link_departments AS (
@@ -374,7 +366,7 @@ BEGIN
               JOIN flags_resource fr ON fr.id = ff.flag_id
               WHERE ff.field_id = field_id
                 AND fr.name = 'field_active'
-                AND ff.value = true
+                AND fr.value = true
           )
         ON CONFLICT ON CONSTRAINT parameter_fields_pkey DO NOTHING
     ),

@@ -150,7 +150,7 @@ flag_resource_data AS (
          WHERE df.document_id = (SELECT document_id FROM params)
            AND df.active = true
            AND f.name = 'document_active'
-           AND df.value = TRUE
+           AND f.value = TRUE
          LIMIT 1) as active_flag_id
     FROM params
 )

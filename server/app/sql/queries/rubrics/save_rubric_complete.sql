@@ -182,8 +182,7 @@ BEGIN
           AND active = true;
 
         UPDATE rubric_flags_junction
-        SET flag_id = COALESCE(v_active_flag_id, rubric_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
+        SET flag_id = COALESCE(v_active_flag_id, rubric_flags_junction.flag_id)
         WHERE rubric_id = v_rubric_id;
     END IF;
 
@@ -350,17 +349,15 @@ BEGIN
     END IF;
 
     -- Insert or update rubric active flag
-    INSERT INTO rubric_flags_junction (rubric_id, flag_id, value, created_at)
+    INSERT INTO rubric_flags_junction (rubric_id, flag_id, created_at)
     SELECT
         v_rubric_id,
         COALESCE(v_active_flag_id, f.id),
-        CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
         NOW()
     FROM flags_resource f
     WHERE f.name = 'rubric_active'
     ON CONFLICT ON CONSTRAINT rubric_flags_pkey DO UPDATE SET
-        flag_id = COALESCE(EXCLUDED.flag_id, rubric_flags_junction.flag_id),
-        value = EXCLUDED.value;
+        flag_id = COALESCE(EXCLUDED.flag_id, rubric_flags_junction.flag_id);
 
     -- Link total points
     IF v_total_points_id IS NOT NULL THEN

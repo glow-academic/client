@@ -107,7 +107,7 @@ parameter_active_scenario_links AS (
     JOIN scenarios_resource sr ON pfr.id = ANY(sr.parameter_field_ids)
     JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = sr.id
     JOIN scenario_flags_junction sf ON sf.scenario_id = ssj.scenario_id
-    JOIN flags_resource f ON sf.flag_id = f.id AND f.type = 'scenario_active' AND sf.value = true
+    JOIN flags_resource f ON sf.flag_id = f.id AND f.type = 'scenario_active' AND f.value = true
     GROUP BY ppj.parameter_id
 ),
 parameter_departments_data AS (
@@ -125,7 +125,7 @@ parameter_fields_agg AS (
         ARRAY_AGG(DISTINCT pfj.field_id) as field_ids
     FROM parameter_fields_junction pfj
     JOIN field_flags_junction ff ON ff.field_id = pfj.field_id
-    JOIN flags_resource fl ON ff.flag_id = fl.id AND fl.name = 'field_active' AND ff.value = true
+    JOIN flags_resource fl ON ff.flag_id = fl.id AND fl.name = 'field_active' AND fl.value = true
     GROUP BY pfj.parameter_id
 ),
 parameter_item_counts AS (
@@ -134,7 +134,7 @@ parameter_item_counts AS (
         COUNT(DISTINCT pfj.field_id) as num_items
     FROM parameter_fields_junction pfj
     JOIN field_flags_junction ff ON ff.field_id = pfj.field_id
-    JOIN flags_resource fl ON ff.flag_id = fl.id AND fl.name = 'field_active' AND ff.value = true
+    JOIN flags_resource fl ON ff.flag_id = fl.id AND fl.name = 'field_active' AND fl.value = true
     GROUP BY pfj.parameter_id
 ),
 parameter_sample_items_data AS (
@@ -152,7 +152,7 @@ parameter_sample_items_data AS (
             ROW_NUMBER() OVER (PARTITION BY pfj.parameter_id ORDER BY (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = pfj.field_id LIMIT 1)) as rn
         FROM parameter_fields_junction pfj
         JOIN field_flags_junction ff ON ff.field_id = pfj.field_id
-        JOIN flags_resource fl ON ff.flag_id = fl.id AND fl.name = 'field_active' AND ff.value = true
+        JOIN flags_resource fl ON ff.flag_id = fl.id AND fl.name = 'field_active' AND fl.value = true
     ) f_sub
     WHERE f_sub.rn <= 3
 ),
@@ -161,7 +161,7 @@ parameter_data_base AS (
         p.id as parameter_id,
         (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) as parameter_name,
         (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1) as description,
-        EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND pf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND f.value = TRUE) as active,
         p.updated_at,
         COALESCE(pdd.department_ids, NULL) as department_ids,
         COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
@@ -184,7 +184,7 @@ parameter_data_base AS (
     GROUP BY p.id,
         (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
         (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1),
-        EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND pf.value = TRUE),
+        EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND f.value = TRUE),
         p.updated_at,
         pdd.department_ids, ps.scenario_ids, pfa.field_ids, pic.num_items,
         pasl.active_scenario_count

@@ -91,7 +91,7 @@ flag_resource_data AS (
              JOIN flags_resource f ON pf.flag_id = f.id
              WHERE pf.profile_id = (SELECT target_profile_id FROM params)
                AND f.name = 'profile_active'
-               AND pf.value = true
+               AND f.value = true
              LIMIT 1),
             NULL::uuid
         ) as active_flag_id

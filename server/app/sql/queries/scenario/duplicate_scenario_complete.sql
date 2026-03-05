@@ -231,8 +231,8 @@ link_questions_enabled_flag AS (
 ),
 -- Link problem_statement_enabled flag (copy value from source)
 link_problem_statement_enabled_flag AS (
-    INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, created_at)
-    SELECT ns.id, gpsef.flag_id, sf.problem_statement_enabled, NOW()
+    INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at)
+    SELECT ns.id, gpsef.flag_id, NOW()
     FROM new_scenario ns
     CROSS JOIN source_flags sf
     CROSS JOIN get_problem_statement_enabled_flag gpsef

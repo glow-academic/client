@@ -191,8 +191,8 @@ scenario_options_data AS (
 scenario_flags_data AS (
     SELECT
         sfj.scenario_id,
-        ARRAY_AGG(sfj.flag_id ORDER BY sfj.created_at) FILTER (WHERE sfj.value = true) as flag_ids,
-        ARRAY_AGG(fr.name ORDER BY sfj.created_at) FILTER (WHERE sfj.value = true) as flag_names
+        ARRAY_AGG(sfj.flag_id ORDER BY sfj.created_at) FILTER (WHERE fr.value = true) as flag_ids,
+        ARRAY_AGG(fr.name ORDER BY sfj.created_at) FILTER (WHERE fr.value = true) as flag_names
     FROM scenario_flags_junction sfj
     JOIN flags_resource fr ON fr.id = sfj.flag_id
     WHERE sfj.active = true
@@ -222,7 +222,7 @@ scenario_data AS (
         (SELECT sps.problem_statement_id FROM scenario_problem_statements_junction sps WHERE sps.scenario_id = s.id AND sps.active = true LIMIT 1) as problem_statement_id,
         (SELECT ps.problem_statement FROM scenario_problem_statements_junction sps JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id WHERE sps.scenario_id = s.id AND sps.active = true LIMIT 1) as problem_statement,
         -- Flags
-        NOT EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND sf.value = TRUE AND sf.active = true) as is_inactive,
+        NOT EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = TRUE AND sf.active = true) as is_inactive,
         sfd.flag_ids,
         sfd.flag_names as flags,
         -- Multi-select

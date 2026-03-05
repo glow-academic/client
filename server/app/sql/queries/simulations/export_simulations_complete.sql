@@ -167,8 +167,8 @@ simulation_data AS (
         (SELECT sd.description_id FROM simulation_descriptions_junction sd WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1) as description_id,
         (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1) as description,
         -- Flags
-        NOT EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'simulation_active' AND sf.value = TRUE) as is_inactive,
-        EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'practice' AND sf.value = TRUE) as is_practice,
+        NOT EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'simulation_active' AND f.value = TRUE) as is_inactive,
+        EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'practice' AND f.value = TRUE) as is_practice,
         -- Multi-select
         sdd.department_ids,
         sdd.department_names as departments,

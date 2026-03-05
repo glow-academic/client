@@ -122,32 +122,28 @@ link_parameter_persona_flag AS (
     ON CONFLICT (parameter_id, flag_id) DO NOTHING
 ),
 link_parameter_scenario_flag AS (
-    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, created_at)
     SELECT
         np.parameter_id,
         f.id,
-        op.scenario_parameter,
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
     CROSS JOIN flags_resource f
     WHERE f.name = 'parameter_scenario' AND op.scenario_parameter = TRUE
-    ON CONFLICT (parameter_id, flag_id) DO UPDATE SET
-        value = EXCLUDED.value
+    ON CONFLICT (parameter_id, flag_id) DO NOTHING
 ),
 link_parameter_video_flag AS (
-    INSERT INTO parameter_flags_junction (parameter_id, flag_id, value, created_at)
+    INSERT INTO parameter_flags_junction (parameter_id, flag_id, created_at)
     SELECT
         np.parameter_id,
         f.id,
-        op.video_parameter,
         NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
     CROSS JOIN flags_resource f
     WHERE f.name = 'parameter_video' AND op.video_parameter = TRUE
-    ON CONFLICT (parameter_id, flag_id) DO UPDATE SET
-        value = EXCLUDED.value
+    ON CONFLICT (parameter_id, flag_id) DO NOTHING
 ),
 original_fields AS (
     SELECT
@@ -157,7 +153,7 @@ original_fields AS (
     FROM params x
     JOIN parameter_fields_junction pfj ON pfj.parameter_id = x.parameter_id
     JOIN field_artifact f ON f.id = pfj.field_id
-    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = true)
+    WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = true)
 ),
 original_field_departments AS (
     SELECT

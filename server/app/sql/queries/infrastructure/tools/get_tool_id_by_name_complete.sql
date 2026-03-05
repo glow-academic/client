@@ -36,7 +36,7 @@ AS $$
           JOIN flags_resource f ON f.id = tf.flag_id
           WHERE tf.tool_id = t.id
             AND f.name = 'tool_active'
-            AND tf.value = true
+            AND f.value = true
       )
     LIMIT 1;
 $$;

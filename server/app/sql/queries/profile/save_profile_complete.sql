@@ -424,17 +424,15 @@ BEGIN
     ),
     -- Link/update profile active flag
     link_profile_active_flag AS (
-        INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at)
+        INSERT INTO profile_flags_junction (profile_id, flag_id, created_at)
         SELECT x.target_profile_id,
             f.id,
-            x.active,
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'profile_active'
           AND x.active IS NOT NULL
-        ON CONFLICT ON CONSTRAINT profile_flags_pkey DO UPDATE SET
-            value = EXCLUDED.value
+        ON CONFLICT ON CONSTRAINT profile_flags_pkey DO NOTHING
     ),
     -- Handle emails if provided
     all_emails_data AS (

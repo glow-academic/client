@@ -165,12 +165,12 @@ BEGIN
     ),
     -- Link flags
     link_flags AS (
-        INSERT INTO simulation_flags_junction (simulation_id, flag_id, value, active, created_at, generated, mcp)
-        SELECT x.simulation_id, fid, true, true, NOW(), false, false
+        INSERT INTO simulation_flags_junction (simulation_id, flag_id, active, created_at, generated, mcp)
+        SELECT x.simulation_id, fid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.flag_ids) AS fid
         WHERE COALESCE(array_length(x.flag_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT simulation_flags_pkey DO UPDATE SET value = true, active = true, generated = false, mcp = false
+        ON CONFLICT ON CONSTRAINT simulation_flags_pkey DO UPDATE SET active = true, generated = false, mcp = false
     ),
     -- Link departments
     link_departments AS (
@@ -192,12 +192,12 @@ BEGIN
     ),
     -- Link scenario flags
     link_scenario_flags AS (
-        INSERT INTO simulation_scenario_flags_junction (simulation_id, scenario_flag_id, value, active, created_at, generated, mcp)
-        SELECT x.simulation_id, sfid, true, true, NOW(), false, false
+        INSERT INTO simulation_scenario_flags_junction (simulation_id, scenario_flag_id, active, created_at, generated, mcp)
+        SELECT x.simulation_id, sfid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.scenario_flag_ids) AS sfid
         WHERE COALESCE(array_length(x.scenario_flag_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT simulation_scenario_flags_new_pkey DO UPDATE SET value = true, active = true, generated = false, mcp = false
+        ON CONFLICT ON CONSTRAINT simulation_scenario_flags_new_pkey DO UPDATE SET active = true, generated = false, mcp = false
     ),
     -- Link scenario positions
     link_scenario_positions AS (

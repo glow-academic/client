@@ -51,12 +51,12 @@ scenario_parameters_data AS (
                             'id', p.id::text,
                             'name', (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
                             'description', (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1),
-                            'active', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND pf.value = TRUE),
-                            'document_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'document_parameter' AND pf.value = TRUE),
-                            'persona_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'persona_parameter' AND pf.value = TRUE),
-                            'scenario_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'scenario_parameter' AND pf.value = TRUE),
-                            'video_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'video_parameter' AND pf.value = TRUE),
-                            'simulation_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'simulation_parameter' AND pf.value = TRUE),
+                            'active', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND f.value = TRUE),
+                            'document_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'document_parameter' AND f.value = TRUE),
+                            'persona_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'persona_parameter' AND f.value = TRUE),
+                            'scenario_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'scenario_parameter' AND f.value = TRUE),
+                            'video_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'video_parameter' AND f.value = TRUE),
+                            'simulation_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'simulation_parameter' AND f.value = TRUE),
                             'created_at', p.created_at::text,
                             'updated_at', p.created_at::text
                         )
@@ -76,7 +76,7 @@ scenario_parameters_data AS (
     ) distinct_params
     JOIN parameters_resource p ON p.id = distinct_params.parameter_id
     WHERE p_scenario_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND pf.value = true)
+      AND EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND f.value = true)
       AND EXISTS (SELECT 1 FROM agent_has_scenario_artifact WHERE has_scenario = true)
 ),
 -- Get fields for scenario (if scenario_id provided and agent has scenario artifact)
@@ -92,7 +92,7 @@ scenario_fields_data AS (
                             'name', (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
                             'description', (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
                             'parameter_id', pfr.parameter_id::text,
-                            'active', EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = TRUE),
+                            'active', EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = TRUE),
                             'created_at', f.created_at::text,
                             'updated_at', f.created_at::text
                         )
@@ -107,7 +107,7 @@ scenario_fields_data AS (
     JOIN fields_resource f ON f.id = pfr.field_id
     WHERE (p_scenario_id IS NOT NULL AND spf.scenario_id = p_scenario_id)
       AND spf.active = true
-      AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND ff.value = true)
+      AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = true)
       AND EXISTS (SELECT 1 FROM agent_has_scenario_artifact WHERE has_scenario = true)
 ),
 -- Get documents for scenario (if scenario_id provided and agent has scenario artifact)
@@ -123,7 +123,7 @@ scenario_documents_data AS (
                             'name', (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
                             'description', COALESCE((SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''),
                             'content', '',  -- document_content table was removed, content now accessed via message_documents → message_contents
-                            'active', EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = TRUE),
+                            'active', EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND f.value = TRUE),
                             'created_at', d.created_at::text,
                             'updated_at', d.created_at::text
                         )
@@ -137,7 +137,7 @@ scenario_documents_data AS (
     JOIN documents_resource d ON d.id = sd.document_id
     WHERE (p_scenario_id IS NOT NULL AND sd.scenario_id = p_scenario_id)
       AND sd.active = true
-      AND EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = true)
+      AND EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND f.value = true)
       AND EXISTS (SELECT 1 FROM agent_has_scenario_artifact WHERE has_scenario = true)
 )
 SELECT 

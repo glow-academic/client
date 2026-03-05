@@ -92,7 +92,7 @@ profile_data AS (
          JOIN roles_resource r ON pr_j.role_id = r.id
          WHERE pr_j.profile_id = p.id
          LIMIT 1) as role,
-        EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND pf.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND f.value = TRUE) as active,
         pd.department_id as primary_department_id,
         (SELECT r.artifacts FROM profile_roles_junction pr_j
          JOIN roles_resource r ON pr_j.role_id = r.id
@@ -141,7 +141,7 @@ department_ids_data AS (
           JOIN department_departments_junction ddj ON ddj.departments_id = d.id
           WHERE df.department_id = ddj.department_id
             AND f.name = 'department_active'
-            AND df.value = true
+            AND f.value = true
       )
 ),
 cohort_ids_internal AS (
@@ -156,7 +156,7 @@ cohort_ids_internal AS (
     JOIN cohort_profiles_junction cpj ON cpj.profiles_id = ppj.profiles_id AND cpj.active = true
     JOIN cohort_cohorts_junction ccj ON ccj.cohort_id = cpj.cohort_id AND ccj.active = true
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
-      AND EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = cpj.cohort_id AND f.name = 'cohort_active' AND cf.value = true)
+      AND EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = cpj.cohort_id AND f.name = 'cohort_active' AND f.value = true)
 ),
 cohort_ids_data AS (
     -- Return resource IDs for analytics (matches mv_chat_facts.cohort_id)
@@ -171,7 +171,7 @@ settings_resolution AS (
     WITH default_settings AS (
         SELECT s.id as settings_id
         FROM setting_artifact s
-        WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
+        WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND f.value = TRUE)
           AND NOT EXISTS (
               SELECT 1 FROM department_settings_junction sd
               WHERE sd.settings_id = s.id AND sd.active = true
@@ -203,14 +203,14 @@ settings_resolution AS (
         CROSS JOIN resolved_department_id rdi
         WHERE rdi.department_id IS NOT NULL
           AND sd.department_id = rdi.department_id
-          AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND sf.value = TRUE)
+          AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND f.value = TRUE)
           AND sd.active = true
         LIMIT 1
     )
     SELECT COALESCE(
         (SELECT settings_id FROM dept_specific_settings),
         (SELECT settings_id FROM default_settings),
-        (SELECT id FROM setting_artifact WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = setting_artifact.id AND f.name = 'setting_active' AND sf.value = TRUE) LIMIT 1)
+        (SELECT id FROM setting_artifact WHERE EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = setting_artifact.id AND f.name = 'setting_active' AND f.value = TRUE) LIMIT 1)
     ) as settings_id
 ),
 draft_ids_data AS (
@@ -426,7 +426,7 @@ artifact_agent_ids_data AS (
             JOIN flags_resource f ON af.flag_id = f.id
             WHERE af.agent_id = a.id
               AND f.name = 'agent_active'
-              AND af.value = true
+              AND f.value = true
         )
         AND (
             NOT EXISTS (

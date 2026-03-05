@@ -127,7 +127,6 @@ BEGIN
 
         UPDATE setting_flags_junction
         SET flag_id = COALESCE(v_active_flag_id, setting_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
             active = true
         WHERE setting_flags_junction.setting_id = v_setting_id;
     END IF;
@@ -378,17 +377,15 @@ BEGIN
             active = true
     ),
     insert_setting_active_flag AS (
-        INSERT INTO setting_flags_junction (setting_id, flag_id, value, created_at)
+        INSERT INTO setting_flags_junction (setting_id, flag_id, created_at)
         SELECT x.setting_id,
             COALESCE(x.active_flag_id, f.id),
-            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'setting_active'
         ON CONFLICT ON CONSTRAINT setting_flags_pkey DO UPDATE SET
             flag_id = COALESCE(EXCLUDED.flag_id, setting_flags_junction.flag_id),
-            value = EXCLUDED.value,
             active = true
     ),
     link_departments AS (

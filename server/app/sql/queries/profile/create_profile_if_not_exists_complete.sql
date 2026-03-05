@@ -124,8 +124,8 @@ link_profile_name AS (
 ),
 -- Set profile active flag (only if creating)
 set_profile_active AS (
-    INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at)
-    SELECT pi.id, f.id, true, NOW()
+    INSERT INTO profile_flags_junction (profile_id, flag_id, created_at)
+    SELECT pi.id, f.id, NOW()
     FROM profile_insert pi
     CROSS JOIN flags_resource f
     WHERE f.name = 'profile_active'

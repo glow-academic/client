@@ -63,7 +63,7 @@ cohort_usage AS (
     WHERE csj.simulation_id = (SELECT simulation_id FROM params)
       AND csj.active = true
       AND f.type = 'cohort_active'
-      AND cfj.value = true
+      AND f.value = true
 )
 SELECT
     CASE

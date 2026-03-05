@@ -92,7 +92,7 @@ parameter_flags_data AS (
                  JOIN flags_resource f ON pf.flag_id = f.id
                  WHERE pf.parameter_id = (SELECT parameter_id FROM params)
                    AND pf.active = true
-                   AND pf.value = true
+                   AND f.value = true
                    AND f.name LIKE 'parameter_%'),
                 ARRAY[]::uuid[]
             )
@@ -119,7 +119,7 @@ flag_resource_data AS (
          WHERE pf.parameter_id = (SELECT parameter_id FROM params)
            AND pf.active = true
            AND f.name = 'parameter_active'
-           AND pf.value = TRUE
+           AND f.value = TRUE
          LIMIT 1) as active_flag_id
     FROM params
 )

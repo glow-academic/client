@@ -169,17 +169,15 @@ BEGIN
         SET active = true, created_at = NOW();
     END IF;
 
-    INSERT INTO auth_flags_junction (auth_id, flag_id, value, created_at, active)
+    INSERT INTO auth_flags_junction (auth_id, flag_id, created_at, active)
     VALUES (
         v_auth_id,
         COALESCE(v_active_flag_id, v_default_auth_active_flag_id),
-        CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END,
         NOW(),
         true
     )
     ON CONFLICT ON CONSTRAINT auth_flags_pkey DO UPDATE
     SET flag_id = EXCLUDED.flag_id,
-        value = EXCLUDED.value,
         active = true,
         created_at = NOW();
 

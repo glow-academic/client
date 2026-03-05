@@ -208,12 +208,12 @@ BEGIN
     ),
     -- Link flags
     link_flags AS (
-        INSERT INTO scenario_flags_junction (scenario_id, flag_id, value, active, created_at, generated, mcp)
-        SELECT x.scenario_id, fid, true, true, NOW(), false, false
+        INSERT INTO scenario_flags_junction (scenario_id, flag_id, active, created_at, generated, mcp)
+        SELECT x.scenario_id, fid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.flag_ids) AS fid
         WHERE COALESCE(array_length(x.flag_ids, 1), 0) > 0
-        ON CONFLICT ON CONSTRAINT scenario_flags_pkey DO UPDATE SET value = true, active = true, generated = false, mcp = false
+        ON CONFLICT ON CONSTRAINT scenario_flags_pkey DO UPDATE SET active = true, generated = false, mcp = false
     ),
     -- Link departments
     link_departments AS (

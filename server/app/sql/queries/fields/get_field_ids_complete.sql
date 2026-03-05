@@ -103,7 +103,7 @@ flag_resource_data AS (
          WHERE ff.field_id = (SELECT field_id FROM params)
            AND ff.active = true
            AND f.name = 'field_active'
-           AND ff.value = TRUE
+           AND f.value = TRUE
          LIMIT 1) as active_flag_id
     FROM params
 )

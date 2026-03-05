@@ -171,16 +171,14 @@ link_profile_name AS (
 ),
 -- UPDATE profile_artifact active flag
 update_profile_active_flag AS (
-    INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at) SELECT pu.id,
+    INSERT INTO profile_flags_junction (profile_id, flag_id, created_at) SELECT pu.id,
         f.id,
-        (SELECT active FROM params),
         NOW()
     FROM profile_upsert pu
     CROSS JOIN flags_resource f
     WHERE f.name = 'profile_active'
       AND EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
-    ON CONFLICT (profile_id, flag_id) DO UPDATE SET 
-        value = (SELECT active FROM params)
+    ON CONFLICT (profile_id, flag_id) DO NOTHING
 ),
 email_deactivate_all AS (
     -- Deactivate all existing emails for this profile

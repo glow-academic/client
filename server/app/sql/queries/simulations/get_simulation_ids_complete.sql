@@ -70,8 +70,9 @@ flag_data AS (
     SELECT COALESCE(
         (SELECT ARRAY_AGG(fd.flags_id) FROM simulation_drafts_flags_connection fd WHERE fd.draft_id = (SELECT p_draft_id FROM params)),
         (SELECT ARRAY_AGG(sf.flag_id) FROM simulation_flags_junction sf
+         JOIN flags_resource f ON sf.flag_id = f.id
          WHERE sf.simulation_id = (SELECT p_simulation_id FROM params)
-           AND sf.value = true),
+           AND f.value = true),
         ARRAY[]::uuid[]
     ) as flag_ids
 ),
@@ -95,7 +96,7 @@ scenario_data AS (
 scenario_flag_data AS (
     SELECT COALESCE(
         (SELECT ARRAY_AGG(sfd.scenario_flags_id) FROM simulation_drafts_scenario_flags_connection sfd WHERE sfd.draft_id = (SELECT p_draft_id FROM params)),
-        (SELECT ARRAY_AGG(ssf.scenario_flag_id) FROM simulation_scenario_flags_junction ssf WHERE ssf.simulation_id = (SELECT p_simulation_id FROM params) AND ssf.value = true),
+        (SELECT ARRAY_AGG(ssf.scenario_flag_id) FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON sfr.id = ssf.scenario_flag_id JOIN flags_resource f ON f.id = sfr.flag_id WHERE ssf.simulation_id = (SELECT p_simulation_id FROM params) AND f.value = true),
         ARRAY[]::uuid[]
     ) as scenario_flag_ids
 ),

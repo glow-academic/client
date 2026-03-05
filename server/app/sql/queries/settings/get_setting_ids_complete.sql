@@ -77,7 +77,7 @@ canonical_flag AS (
     WHERE pf.setting_id = (SELECT setting_id FROM params)
       AND pf.active = true
       AND f.name = 'setting_active'
-      AND pf.value = TRUE
+      AND f.value = TRUE
     LIMIT 1
 ),
 -- Multi-select

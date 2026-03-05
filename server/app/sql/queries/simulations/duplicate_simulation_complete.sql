@@ -92,11 +92,11 @@ link_description AS (
     WHERE gocd.description_id IS NOT NULL
 ),
 link_flags AS (
-    INSERT INTO simulation_flags_junction (simulation_id, flag_id, value, created_at) SELECT ns.simulation_id, gfi.active_flag_id, false, NOW()
+    INSERT INTO simulation_flags_junction (simulation_id, flag_id, created_at) SELECT ns.simulation_id, gfi.active_flag_id, NOW()
     FROM new_simulation ns
     CROSS JOIN get_flag_ids gfi
     UNION ALL
-    SELECT ns.simulation_id, gfi.practice_flag_id, false, NOW()
+    SELECT ns.simulation_id, gfi.practice_flag_id, NOW()
     FROM new_simulation ns
     CROSS JOIN get_flag_ids gfi
 ),
@@ -123,11 +123,10 @@ copy_scenario_positions AS (
     CROSS JOIN new_simulation ns
 ),
 copy_scenario_flags AS (
-    INSERT INTO simulation_scenario_flags_junction (simulation_id, scenario_flag_id, value, created_at, generated, mcp)
-    SELECT 
+    INSERT INTO simulation_scenario_flags_junction (simulation_id, scenario_flag_id, created_at, generated, mcp)
+    SELECT
         ns.simulation_id,
         ssf.scenario_flag_id,
-        ssf.value,
         NOW(),
         ssf.generated,
         ssf.mcp

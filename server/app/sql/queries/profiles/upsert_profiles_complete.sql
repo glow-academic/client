@@ -238,16 +238,14 @@ link_profile_names AS (
 ),
 -- Link profile active flags
 link_profile_active_flags AS (
-    INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at) SELECT pu.id,
+    INSERT INTO profile_flags_junction (profile_id, flag_id, created_at) SELECT pu.id,
         f.id,
-        pwi.active,
         NOW()
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
     CROSS JOIN flags_resource f
     WHERE f.name = 'profile_active'
-    ON CONFLICT (profile_id, flag_id) DO UPDATE SET 
-        value = EXCLUDED.value
+    ON CONFLICT (profile_id, flag_id) DO NOTHING
 ),
 profile_upsert_with_created AS (
     -- Join back to get created status

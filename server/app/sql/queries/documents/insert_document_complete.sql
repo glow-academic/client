@@ -81,29 +81,25 @@ link_document_description AS (
 ),
 -- Link document active flag
 link_document_active_flag AS (
-    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at) SELECT id.document_id,
+    INSERT INTO document_flags_junction (document_id, flag_id, created_at) SELECT id.document_id,
         f.id,
-        true,
         NOW()
     FROM insert_doc id
     CROSS JOIN flags_resource f
     WHERE f.name = 'document_active'
-    ON CONFLICT (document_id, flag_id) DO UPDATE SET 
-        value = true
+    ON CONFLICT (document_id, flag_id) DO NOTHING
 ),
 -- Link document template flag (defaults to false)
 link_document_template_flag AS (
-    INSERT INTO document_flags_junction (document_id, flag_id, value, created_at)
-    SELECT 
+    INSERT INTO document_flags_junction (document_id, flag_id, created_at)
+    SELECT
         id.document_id,
         f.id,
-        false,
         NOW()
     FROM insert_doc id
     CROSS JOIN flags_resource f
     WHERE f.name = 'template'
-    ON CONFLICT (document_id, flag_id) DO UPDATE SET 
-        value = false
+    ON CONFLICT (document_id, flag_id) DO NOTHING
 ),
 get_files_resource_id AS (
     -- Look up files_resource.id from upload_id via connection table

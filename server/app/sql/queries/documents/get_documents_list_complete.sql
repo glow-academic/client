@@ -135,7 +135,7 @@ document_data AS (
     SELECT
         d.id as document_id,
         (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1) as document_name,
-        EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND f.value = TRUE) as active,
         d.updated_at,
         COALESCE(ddd.department_ids, NULL) as department_ids,
         COALESCE(ds.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
@@ -151,7 +151,7 @@ document_data AS (
     LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
     GROUP BY d.id,
         (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
-        EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND df.value = TRUE),
+        EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND f.value = TRUE),
         d.updated_at,
         ddd.department_ids, ds.scenario_ids, dfc.field_ids, duc.upload_ids, dasl.active_scenario_count
     HAVING

@@ -84,15 +84,14 @@ copy_role AS (
     ON CONFLICT (profile_id, role_id) DO UPDATE SET active = EXCLUDED.active
 ),
 copy_flags AS (
-    INSERT INTO profile_flags_junction (profile_id, flag_id, value, created_at)
+    INSERT INTO profile_flags_junction (profile_id, flag_id, created_at)
     SELECT
         np.id,
         pf.flag_id,
-        false,
         NOW()
     FROM new_profile np
     JOIN profile_flags_junction pf ON pf.profile_id = (SELECT id FROM source_profile)
-    ON CONFLICT ON CONSTRAINT profile_flags_pkey DO UPDATE SET value = EXCLUDED.value
+    ON CONFLICT ON CONSTRAINT profile_flags_pkey DO NOTHING
 ),
 copy_departments AS (
     INSERT INTO profile_departments_junction (profile_id, department_id, is_primary, active)

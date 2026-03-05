@@ -141,8 +141,7 @@ BEGIN
         WHERE field_id = v_field_id;
 
         UPDATE field_flags_junction SET
-            flag_id = COALESCE(v_active_flag_id, field_flags_junction.flag_id),
-            value = CASE WHEN v_active_flag_id IS NOT NULL THEN true ELSE false END
+            flag_id = COALESCE(v_active_flag_id, field_flags_junction.flag_id)
         WHERE field_id = v_field_id;
 
         UPDATE field_fields_junction
@@ -268,19 +267,17 @@ BEGIN
         ON CONFLICT (field_id, description_id) DO NOTHING
     ),
     insert_field_active_flag AS (
-        INSERT INTO field_flags_junction (field_id, flag_id, type, value, created_at)
+        INSERT INTO field_flags_junction (field_id, flag_id, type, created_at)
         SELECT
             x.field_id,
             COALESCE(x.active_flag_id, f.id),
             'active'::type_field_flags,
-            CASE WHEN x.active_flag_id IS NOT NULL THEN true ELSE false END,
             NOW()
         FROM params x
         CROSS JOIN flags_resource f
         WHERE f.name = 'field_active'
         ON CONFLICT (field_id, flag_id, type) DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, field_flags_junction.flag_id),
-            value = EXCLUDED.value
+            flag_id = COALESCE(EXCLUDED.flag_id, field_flags_junction.flag_id)
     ),
     ensure_conditional_parameters AS (
         INSERT INTO conditional_parameters_resource (parameter_id, created_at, updated_at)

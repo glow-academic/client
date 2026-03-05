@@ -40,12 +40,11 @@ WITH get_active_flag AS (
 ),
 insert_or_update_flag AS (
     -- Insert or update profile_flags_junction to set active = false
-    INSERT INTO profile_flags_junction (profile_id, flag_id, value) SELECT profile_id,
-        (SELECT flag_id FROM get_active_flag),
-        false
+    INSERT INTO profile_flags_junction (profile_id, flag_id) SELECT profile_id,
+        (SELECT flag_id FROM get_active_flag)
     FROM get_active_flag
-    ON CONFLICT (profile_id, flag_id) 
-    DO UPDATE SET value = false
+    ON CONFLICT (profile_id, flag_id)
+    DO NOTHING
     RETURNING profile_id::uuid as profile_id
 ),
 update_profile AS (
