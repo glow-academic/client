@@ -1,11 +1,11 @@
 """Tests for get_videos."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.videos.create import create_video
 from app.routes.v5.tools.resources.videos.get import get_videos
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -25,7 +25,7 @@ async def test_gets_created_video(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_video(conn, redis_client):
-    items = await get_videos(conn, [uuid4()], redis_client)
+    items = await get_videos(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

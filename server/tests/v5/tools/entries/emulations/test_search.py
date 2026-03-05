@@ -1,7 +1,6 @@
 """Tests for search_emulations."""
 
 from datetime import datetime, timedelta, UTC
-from uuid import uuid4
 
 import pytest
 
@@ -11,6 +10,7 @@ from app.routes.v5.tools.entries.emulations.refresh import refresh_emulations
 from app.routes.v5.tools.entries.emulations.search import search_emulations
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -42,7 +42,7 @@ async def test_filters_by_session(conn):
     await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     await refresh_emulations(conn)
 
-    items = await search_emulations(conn, session_id=uuid4())
+    items = await search_emulations(conn, session_id=nonexistent_id())
 
     assert items == []
 
@@ -65,7 +65,7 @@ async def test_filters_by_wrong_grant(conn):
     await create_emulation(conn, grant_id=grant_id, session_id=session.id)
     await refresh_emulations(conn)
 
-    items = await search_emulations(conn, grant_id=uuid4())
+    items = await search_emulations(conn, grant_id=nonexistent_id())
 
     assert items == []
 

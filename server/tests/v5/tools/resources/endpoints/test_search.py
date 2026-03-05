@@ -1,17 +1,17 @@
 """Tests for search_endpoints."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.endpoints.create import create_endpoint
 from app.routes.v5.tools.resources.endpoints.search import search_endpoints
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_finds_created_endpoint(conn, redis_client):
-    url = f"https://search-test-alpha-{uuid4().hex[:6]}.example.com"
+    url = f"https://search-test-alpha-{unique_tag()}.example.com"
     await create_endpoint(conn, url, redis_client)
 
     items = await search_endpoints(conn, redis_client, search="search-test-alpha")
@@ -21,7 +21,7 @@ async def test_finds_created_endpoint(conn, redis_client):
 
 
 async def test_search_is_case_insensitive(conn, redis_client):
-    url = f"https://CaseTest-Search-Endpoint-{uuid4().hex[:6]}.example.com"
+    url = f"https://CaseTest-Search-Endpoint-{unique_tag()}.example.com"
     await create_endpoint(conn, url, redis_client)
 
     items = await search_endpoints(conn, redis_client, search="casetest-search-endpoint")
@@ -31,7 +31,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 async def test_returns_empty_for_no_match(conn, redis_client):
     items = await search_endpoints(
-        conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8]
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
     )
 
     assert items == []
@@ -40,7 +40,7 @@ async def test_returns_empty_for_no_match(conn, redis_client):
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
         await create_endpoint(
-            conn, f"https://limit-test-endpoint-{uuid4().hex[:6]}.example.com", redis_client
+            conn, f"https://limit-test-endpoint-{unique_tag()}.example.com", redis_client
         )
 
     items = await search_endpoints(
@@ -53,7 +53,7 @@ async def test_respects_limit(conn, redis_client):
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
         await create_endpoint(
-            conn, f"https://offset-test-endpoint-{uuid4().hex[:6]}.example.com", redis_client
+            conn, f"https://offset-test-endpoint-{unique_tag()}.example.com", redis_client
         )
 
     all_items = await search_endpoints(
@@ -68,10 +68,10 @@ async def test_respects_offset(conn, redis_client):
 
 async def test_excludes_ids(conn, redis_client):
     a = await create_endpoint(
-        conn, f"https://exclude-a-endpoint-{uuid4().hex[:6]}.example.com", redis_client
+        conn, f"https://exclude-a-endpoint-{unique_tag()}.example.com", redis_client
     )
     b = await create_endpoint(
-        conn, f"https://exclude-b-endpoint-{uuid4().hex[:6]}.example.com", redis_client
+        conn, f"https://exclude-b-endpoint-{unique_tag()}.example.com", redis_client
     )
 
     items = await search_endpoints(
@@ -91,7 +91,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 async def test_cache_hit(conn, redis_client):
     await create_endpoint(
-        conn, f"https://cache-hit-endpoint-{uuid4().hex[:6]}.example.com", redis_client
+        conn, f"https://cache-hit-endpoint-{unique_tag()}.example.com", redis_client
     )
 
     items1 = await search_endpoints(conn, redis_client, search="cache-hit-endpoint-")
@@ -103,7 +103,7 @@ async def test_cache_hit(conn, redis_client):
 
 async def test_bypass_cache(conn, redis_client):
     await create_endpoint(
-        conn, f"https://bypass-endpoint-{uuid4().hex[:6]}.example.com", redis_client
+        conn, f"https://bypass-endpoint-{unique_tag()}.example.com", redis_client
     )
 
     items = await search_endpoints(

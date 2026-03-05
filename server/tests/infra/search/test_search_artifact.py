@@ -4,7 +4,6 @@ Uses persona_* tables as a concrete test bed, but the helpers
 themselves are artifact-agnostic.
 """
 
-from uuid import uuid4
 
 import pytest
 
@@ -13,6 +12,7 @@ from app.infra.search.search_artifact import (
     add_text_search,
     execute_artifact_search,
 )
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -23,7 +23,7 @@ pytestmark = pytest.mark.asyncio
 
 
 def _u() -> str:
-    return uuid4().hex[:8]
+    return unique_tag()
 
 
 async def _make_persona(conn, *, active=True):

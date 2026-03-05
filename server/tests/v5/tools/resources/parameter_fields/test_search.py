@@ -1,6 +1,5 @@
 """Tests for search_parameter_fields."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -8,14 +7,15 @@ from app.routes.v5.tools.resources.fields.create import create_field
 from app.routes.v5.tools.resources.parameter_fields.create import create_parameter_field
 from app.routes.v5.tools.resources.parameter_fields.search import search_parameter_fields
 from app.routes.v5.tools.resources.parameters.create import create_parameter
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 async def _create_parameter_field_with_deps(conn, redis_client):
     """Helper: create a parameter + field + parameter_field."""
-    parameter = await create_parameter(conn, redis_client, name=f"param-{uuid4().hex[:6]}")
-    field = await create_field(conn, name=f"field-{uuid4().hex[:6]}", description="", redis=redis_client)
+    parameter = await create_parameter(conn, redis_client, name=f"param-{unique_tag()}")
+    field = await create_field(conn, name=f"field-{unique_tag()}", description="", redis=redis_client)
     pf = await create_parameter_field(conn, field.id, redis_client, parameter_id=parameter.id)
     return pf
 

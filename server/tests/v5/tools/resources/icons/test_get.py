@@ -1,11 +1,11 @@
 """Tests for get_icons."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.icons.create import create_icon
 from app.routes.v5.tools.resources.icons.get import get_icons
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -26,7 +26,7 @@ async def test_gets_created_icon(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_icon(conn, redis_client):
-    items = await get_icons(conn, [uuid4()], redis_client)
+    items = await get_icons(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

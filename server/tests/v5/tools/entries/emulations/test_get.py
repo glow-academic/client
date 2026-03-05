@@ -1,6 +1,5 @@
 """Tests for get_emulations."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -10,6 +9,7 @@ from app.routes.v5.tools.entries.emulations.get import get_emulations
 from app.routes.v5.tools.entries.emulations.refresh import refresh_emulations
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -55,7 +55,7 @@ async def test_returns_multiple(conn):
 
 
 async def test_returns_empty_for_missing(conn):
-    items = await get_emulations(conn, [uuid4()])
+    items = await get_emulations(conn, [nonexistent_id()])
 
     assert items == []
 

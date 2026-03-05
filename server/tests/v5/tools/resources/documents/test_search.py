@@ -1,11 +1,11 @@
 """Tests for search_documents."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.documents.create import create_document
 from app.routes.v5.tools.resources.documents.search import search_documents
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,14 +28,14 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_documents(conn, redis_client, search="zzz-no-doc-match-zzz-" + uuid4().hex[:8])
+    items = await search_documents(conn, redis_client, search="zzz-no-doc-match-zzz-" + unique_tag())
 
     assert items == []
 
 
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
-        await create_document(conn, redis_client, name=f"limit-doc-{uuid4().hex[:6]}", description="")
+        await create_document(conn, redis_client, name=f"limit-doc-{unique_tag()}", description="")
 
     items = await search_documents(conn, redis_client, search="limit-doc-", limit_count=2)
 
@@ -44,7 +44,7 @@ async def test_respects_limit(conn, redis_client):
 
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
-        await create_document(conn, redis_client, name=f"offset-doc-{uuid4().hex[:6]}", description="")
+        await create_document(conn, redis_client, name=f"offset-doc-{unique_tag()}", description="")
 
     all_items = await search_documents(conn, redis_client, search="offset-doc-", limit_count=10)
     offset_items = await search_documents(conn, redis_client, search="offset-doc-", limit_count=10, offset_count=1)
@@ -53,8 +53,8 @@ async def test_respects_offset(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    a = await create_document(conn, redis_client, name=f"exclude-doc-a-{uuid4().hex[:6]}", description="")
-    b = await create_document(conn, redis_client, name=f"exclude-doc-b-{uuid4().hex[:6]}", description="")
+    a = await create_document(conn, redis_client, name=f"exclude-doc-a-{unique_tag()}", description="")
+    b = await create_document(conn, redis_client, name=f"exclude-doc-b-{unique_tag()}", description="")
 
     items = await search_documents(
         conn, redis_client, search="exclude-doc-", exclude_ids=[a.id],
@@ -72,7 +72,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_cache_hit(conn, redis_client):
-    await create_document(conn, redis_client, name=f"cache-doc-{uuid4().hex[:6]}", description="")
+    await create_document(conn, redis_client, name=f"cache-doc-{unique_tag()}", description="")
 
     items1 = await search_documents(conn, redis_client, search="cache-doc-")
     items2 = await search_documents(conn, redis_client, search="cache-doc-")
@@ -82,7 +82,7 @@ async def test_cache_hit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    await create_document(conn, redis_client, name=f"bypass-doc-{uuid4().hex[:6]}", description="")
+    await create_document(conn, redis_client, name=f"bypass-doc-{unique_tag()}", description="")
 
     items = await search_documents(conn, redis_client, search="bypass-doc-", bypass_cache=True)
 

@@ -1,6 +1,5 @@
 """Tests for delete_tools — black-box using tool functions only."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -8,12 +7,13 @@ from app.routes.v5.tools.artifacts.tool.create import create_tool
 from app.routes.v5.tools.artifacts.tool.delete import delete_tools
 from app.routes.v5.tools.artifacts.tool.get import get_tools
 from app.routes.v5.tools.resources.names.create import create_name
+from tests.helpers import unique_tag, nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
 
 def _u() -> str:
-    return uuid4().hex[:8]
+    return unique_tag()
 
 
 async def test_hard_delete_single(conn, redis_client):
@@ -38,7 +38,7 @@ async def test_hard_delete_multiple(conn, redis_client):
 
 
 async def test_hard_delete_nonexistent(conn, redis_client):
-    fake_id = uuid4()
+    fake_id = nonexistent_id()
     result = await delete_tools(conn, [fake_id])
     assert result.deleted_ids == []
 

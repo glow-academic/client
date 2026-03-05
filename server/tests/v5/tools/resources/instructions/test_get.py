@@ -1,11 +1,11 @@
 """Tests for get_instructions."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.instructions.create import create_instruction
 from app.routes.v5.tools.resources.instructions.get import get_instructions
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -22,7 +22,7 @@ async def test_gets_created_instruction(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_instructions(conn, [uuid4()], redis_client)
+    items = await get_instructions(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

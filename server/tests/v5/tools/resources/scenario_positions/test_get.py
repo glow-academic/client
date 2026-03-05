@@ -1,12 +1,12 @@
 """Tests for get_scenario_positions."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.scenario_positions.create import create_scenario_position
 from app.routes.v5.tools.resources.scenario_positions.get import get_scenario_positions
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -25,7 +25,7 @@ async def test_gets_created_scenario_position(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_scenario_positions(conn, [uuid4()], redis_client)
+    items = await get_scenario_positions(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

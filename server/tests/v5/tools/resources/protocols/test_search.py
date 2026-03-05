@@ -1,11 +1,11 @@
 """Tests for search_protocols."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.protocols.create import create_protocol
 from app.routes.v5.tools.resources.protocols.search import search_protocols
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,14 +28,14 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_protocols(conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8])
+    items = await search_protocols(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
 
     assert items == []
 
 
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
-        await create_protocol(conn, f"limit-proto-{uuid4().hex[:6]}", redis_client)
+        await create_protocol(conn, f"limit-proto-{unique_tag()}", redis_client)
 
     items = await search_protocols(conn, redis_client, search="limit-proto-", limit_count=2)
 
@@ -44,7 +44,7 @@ async def test_respects_limit(conn, redis_client):
 
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
-        await create_protocol(conn, f"offset-proto-{uuid4().hex[:6]}", redis_client)
+        await create_protocol(conn, f"offset-proto-{unique_tag()}", redis_client)
 
     all_items = await search_protocols(conn, redis_client, search="offset-proto-", limit_count=10)
     offset_items = await search_protocols(conn, redis_client, search="offset-proto-", limit_count=10, offset_count=1)
@@ -53,8 +53,8 @@ async def test_respects_offset(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    a = await create_protocol(conn, f"exclude-pa-{uuid4().hex[:6]}", redis_client)
-    b = await create_protocol(conn, f"exclude-pb-{uuid4().hex[:6]}", redis_client)
+    a = await create_protocol(conn, f"exclude-pa-{unique_tag()}", redis_client)
+    b = await create_protocol(conn, f"exclude-pb-{unique_tag()}", redis_client)
 
     items = await search_protocols(
         conn, redis_client, search="exclude-p", exclude_ids=[a.id],
@@ -72,7 +72,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_cache_hit(conn, redis_client):
-    await create_protocol(conn, f"cache-hit-proto-{uuid4().hex[:6]}", redis_client)
+    await create_protocol(conn, f"cache-hit-proto-{unique_tag()}", redis_client)
 
     items1 = await search_protocols(conn, redis_client, search="cache-hit-proto-")
     items2 = await search_protocols(conn, redis_client, search="cache-hit-proto-")
@@ -82,7 +82,7 @@ async def test_cache_hit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    await create_protocol(conn, f"bypass-proto-{uuid4().hex[:6]}", redis_client)
+    await create_protocol(conn, f"bypass-proto-{unique_tag()}", redis_client)
 
     items = await search_protocols(conn, redis_client, search="bypass-proto-", bypass_cache=True)
 

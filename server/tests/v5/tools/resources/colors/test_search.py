@@ -1,11 +1,11 @@
 """Tests for search_colors."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.colors.create import create_color
 from app.routes.v5.tools.resources.colors.search import search_colors
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,14 +28,14 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_colors(conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8])
+    items = await search_colors(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
 
     assert items == []
 
 
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
-        await create_color(conn, f"limit-color-{uuid4().hex[:6]}", "desc", "#AAAAAA", redis_client)
+        await create_color(conn, f"limit-color-{unique_tag()}", "desc", "#AAAAAA", redis_client)
 
     items = await search_colors(conn, redis_client, search="limit-color-", limit_count=2)
 
@@ -44,7 +44,7 @@ async def test_respects_limit(conn, redis_client):
 
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
-        await create_color(conn, f"offset-color-{uuid4().hex[:6]}", "desc", "#BBBBBB", redis_client)
+        await create_color(conn, f"offset-color-{unique_tag()}", "desc", "#BBBBBB", redis_client)
 
     all_items = await search_colors(conn, redis_client, search="offset-color-", limit_count=10)
     offset_items = await search_colors(conn, redis_client, search="offset-color-", limit_count=10, offset_count=1)
@@ -53,8 +53,8 @@ async def test_respects_offset(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    a = await create_color(conn, f"exclude-a-{uuid4().hex[:6]}", "desc", "#111111", redis_client)
-    b = await create_color(conn, f"exclude-b-{uuid4().hex[:6]}", "desc", "#222222", redis_client)
+    a = await create_color(conn, f"exclude-a-{unique_tag()}", "desc", "#111111", redis_client)
+    b = await create_color(conn, f"exclude-b-{unique_tag()}", "desc", "#222222", redis_client)
 
     items = await search_colors(
         conn, redis_client, search="exclude-", exclude_ids=[a.id],
@@ -72,7 +72,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_cache_hit(conn, redis_client):
-    await create_color(conn, f"cache-hit-{uuid4().hex[:6]}", "desc", "#CCCCCC", redis_client)
+    await create_color(conn, f"cache-hit-{unique_tag()}", "desc", "#CCCCCC", redis_client)
 
     items1 = await search_colors(conn, redis_client, search="cache-hit-")
     items2 = await search_colors(conn, redis_client, search="cache-hit-")
@@ -82,7 +82,7 @@ async def test_cache_hit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    await create_color(conn, f"bypass-{uuid4().hex[:6]}", "desc", "#DDDDDD", redis_client)
+    await create_color(conn, f"bypass-{unique_tag()}", "desc", "#DDDDDD", redis_client)
 
     items = await search_colors(conn, redis_client, search="bypass-", bypass_cache=True)
 

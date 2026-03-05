@@ -3,6 +3,7 @@
 import pytest
 
 from app.routes.v5.tools.artifacts.field.get import get_fields
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,9 +29,8 @@ async def test_returns_base_columns(conn):
 
 
 async def test_returns_empty_for_unknown_id(conn):
-    from uuid import uuid4
 
-    items = await get_fields(conn, [uuid4()])
+    items = await get_fields(conn, [nonexistent_id()])
     assert items == []
 
 

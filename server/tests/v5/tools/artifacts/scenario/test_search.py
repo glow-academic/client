@@ -1,6 +1,5 @@
 """Tests for search_scenarios — black-box using resource + artifact tools only."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -9,12 +8,13 @@ from app.routes.v5.tools.artifacts.scenario.search import search_scenarios
 from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.names.create import create_name
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 def _u() -> str:
-    return uuid4().hex[:8]
+    return unique_tag()
 
 
 # ---------------------------------------------------------------------------

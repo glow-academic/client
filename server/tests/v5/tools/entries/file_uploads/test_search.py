@@ -1,6 +1,5 @@
 """Tests for file_uploads search."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -10,6 +9,7 @@ from app.routes.v5.tools.entries.files.create import create_file
 from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -46,7 +46,7 @@ async def test_search_filters_by_file_id(conn):
         conn, file_id=file.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_file_uploads(conn, file_id=uuid4())
+    results = await search_file_uploads(conn, file_id=nonexistent_id())
 
     assert len(results) == 0
 
@@ -57,7 +57,7 @@ async def test_search_filters_by_upload_id(conn):
         conn, file_id=file.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_file_uploads(conn, upload_id=uuid4())
+    results = await search_file_uploads(conn, upload_id=nonexistent_id())
 
     assert len(results) == 0
 

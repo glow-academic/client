@@ -1,11 +1,11 @@
 """Tests for get_systems."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.systems.create import create_system
 from app.routes.v5.tools.resources.systems.get import get_systems
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -24,7 +24,7 @@ async def test_gets_created_system(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_systems(conn, [uuid4()], redis_client)
+    items = await get_systems(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

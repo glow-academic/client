@@ -1,7 +1,5 @@
 """Tests for search_temperature_levels."""
 
-from uuid import uuid4
-
 import pytest
 
 from app.routes.v5.tools.resources.temperature_levels.create import create_temperature_level

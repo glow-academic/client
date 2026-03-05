@@ -1,11 +1,11 @@
 """Tests for get_objectives."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.objectives.create import create_objective
 from app.routes.v5.tools.resources.objectives.get import get_objectives
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -22,7 +22,7 @@ async def test_gets_created_objective(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_objective(conn, redis_client):
-    items = await get_objectives(conn, [uuid4()], redis_client)
+    items = await get_objectives(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

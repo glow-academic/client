@@ -1,6 +1,5 @@
 """Tests for document_drafts search."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -9,6 +8,7 @@ from app.routes.v5.tools.entries.document_drafts.search import search_document_d
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -35,7 +35,7 @@ async def test_search_filters_by_group(conn):
     session, group = await _setup(conn)
     await create_document_draft(conn, group_id=group.id, session_id=session.id)
 
-    items = await search_document_drafts(conn, group_id=uuid4())
+    items = await search_document_drafts(conn, group_id=nonexistent_id())
 
     assert items == []
 

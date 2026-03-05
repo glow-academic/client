@@ -1,11 +1,11 @@
 """Tests for search_points."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.points.create import create_point
 from app.routes.v5.tools.resources.points.search import search_points
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -31,7 +31,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 async def test_returns_empty_for_no_match(conn, redis_client):
     items = await search_points(
-        conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8]
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
     )
 
     assert items == []

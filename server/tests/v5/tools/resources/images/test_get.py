@@ -1,11 +1,11 @@
 """Tests for get_images."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.images.create import create_image
 from app.routes.v5.tools.resources.images.get import get_images
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -25,7 +25,7 @@ async def test_gets_created_image(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_image(conn, redis_client):
-    items = await get_images(conn, [uuid4()], redis_client)
+    items = await get_images(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

@@ -1,11 +1,11 @@
 """Tests for get_qualities."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.qualities.create import create_quality
 from app.routes.v5.tools.resources.qualities.get import get_qualities
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -22,7 +22,7 @@ async def test_gets_created_quality(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_qualities(conn, [uuid4()], redis_client)
+    items = await get_qualities(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

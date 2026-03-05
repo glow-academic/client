@@ -1,7 +1,6 @@
 """Tests for search_sessions."""
 
 from datetime import datetime, timedelta, UTC
-from uuid import uuid4
 
 import pytest
 
@@ -9,6 +8,7 @@ from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.sessions.refresh import refresh_sessions
 from app.routes.v5.tools.entries.sessions.search import search_sessions
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -27,7 +27,7 @@ async def test_filters_by_profile(conn):
     result = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
     await refresh_sessions(conn)
 
-    items = await search_sessions(conn, profile_id=uuid4())
+    items = await search_sessions(conn, profile_id=nonexistent_id())
 
     ids = [item.id for item in items]
     assert result.id not in ids

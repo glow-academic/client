@@ -1,6 +1,5 @@
 """Tests for search_providers — black-box using resource + artifact tools only."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -9,12 +8,13 @@ from app.routes.v5.tools.artifacts.provider.search import search_providers
 from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.names.create import create_name
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 def _u() -> str:
-    return uuid4().hex[:8]
+    return unique_tag()
 
 
 async def test_bare_search_returns_results(conn, redis_client):

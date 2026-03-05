@@ -1,11 +1,11 @@
 """Tests for get_names."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -22,7 +22,7 @@ async def test_gets_created_name(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_name(conn, redis_client):
-    items = await get_names(conn, [uuid4()], redis_client)
+    items = await get_names(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

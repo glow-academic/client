@@ -1,19 +1,19 @@
 """Tests for search_conditional_parameters."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.conditional_parameters.create import create_conditional_parameter
 from app.routes.v5.tools.resources.conditional_parameters.search import search_conditional_parameters
 from app.routes.v5.tools.resources.parameters.create import create_parameter
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 async def _make(conn, redis_client, name: str = ""):
     """Helper: create a parameter then a conditional_parameter referencing it."""
-    param = await create_parameter(conn, redis_client, name=name or f"p-{uuid4().hex[:8]}")
+    param = await create_parameter(conn, redis_client, name=name or f"p-{unique_tag()}")
     return await create_conditional_parameter(conn, param.id, redis_client)
 
 
@@ -38,7 +38,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 async def test_returns_empty_for_no_match(conn, redis_client):
     items = await search_conditional_parameters(
-        conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8]
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
     )
 
     assert items == []

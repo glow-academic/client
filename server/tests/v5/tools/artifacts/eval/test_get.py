@@ -4,6 +4,7 @@ import pytest
 
 from app.routes.v5.tools.artifacts.eval.get import get_evals
 from tests.seed_ids import SEED_EVAL_ARTIFACT_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,9 +29,8 @@ async def test_returns_base_columns(conn):
 
 
 async def test_returns_empty_for_unknown_id(conn):
-    from uuid import uuid4
 
-    items = await get_evals(conn, [uuid4()])
+    items = await get_evals(conn, [nonexistent_id()])
     assert items == []
 
 

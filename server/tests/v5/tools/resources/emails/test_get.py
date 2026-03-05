@@ -1,11 +1,11 @@
 """Tests for get_emails."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.emails.create import create_email
 from app.routes.v5.tools.resources.emails.get import get_emails
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -22,7 +22,7 @@ async def test_gets_created_email(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_email(conn, redis_client):
-    items = await get_emails(conn, [uuid4()], redis_client)
+    items = await get_emails(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

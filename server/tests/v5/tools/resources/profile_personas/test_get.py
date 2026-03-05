@@ -1,6 +1,5 @@
 """Tests for get_profile_personas."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -8,6 +7,7 @@ from app.routes.v5.tools.resources.personas.create import create_persona
 from app.routes.v5.tools.resources.profile_personas.create import create_profile_persona
 from app.routes.v5.tools.resources.profile_personas.get import get_profile_personas
 from app.routes.v5.tools.resources.profiles.create import create_profile
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -27,7 +27,7 @@ async def test_gets_created_profile_persona(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_profile_personas(conn, [uuid4()], redis_client)
+    items = await get_profile_personas(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

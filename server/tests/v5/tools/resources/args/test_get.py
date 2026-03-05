@@ -1,11 +1,11 @@
 """Tests for get_args."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.args.create import create_arg
 from app.routes.v5.tools.resources.args.get import get_args
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -23,7 +23,7 @@ async def test_gets_created_arg(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_args(conn, [uuid4()], redis_client)
+    items = await get_args(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

@@ -1,11 +1,11 @@
 """Tests for search_standard_groups."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.standard_groups.create import create_standard_group
 from app.routes.v5.tools.resources.standard_groups.search import search_standard_groups
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -33,7 +33,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 async def test_returns_empty_for_no_match(conn, redis_client):
     items = await search_standard_groups(
-        conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8]
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
     )
 
     assert items == []
@@ -42,7 +42,7 @@ async def test_returns_empty_for_no_match(conn, redis_client):
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
         await create_standard_group(
-            conn, f"limit-test-sg-{uuid4().hex[:6]}", "LT", "desc", 100, 70, redis_client
+            conn, f"limit-test-sg-{unique_tag()}", "LT", "desc", 100, 70, redis_client
         )
 
     items = await search_standard_groups(
@@ -55,7 +55,7 @@ async def test_respects_limit(conn, redis_client):
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
         await create_standard_group(
-            conn, f"offset-test-sg-{uuid4().hex[:6]}", "OT", "desc", 100, 70, redis_client
+            conn, f"offset-test-sg-{unique_tag()}", "OT", "desc", 100, 70, redis_client
         )
 
     all_items = await search_standard_groups(
@@ -70,10 +70,10 @@ async def test_respects_offset(conn, redis_client):
 
 async def test_excludes_ids(conn, redis_client):
     a = await create_standard_group(
-        conn, f"exclude-a-sg-{uuid4().hex[:6]}", "EA", "desc", 100, 70, redis_client
+        conn, f"exclude-a-sg-{unique_tag()}", "EA", "desc", 100, 70, redis_client
     )
     b = await create_standard_group(
-        conn, f"exclude-b-sg-{uuid4().hex[:6]}", "EB", "desc", 100, 70, redis_client
+        conn, f"exclude-b-sg-{unique_tag()}", "EB", "desc", 100, 70, redis_client
     )
 
     items = await search_standard_groups(
@@ -93,7 +93,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 async def test_cache_hit(conn, redis_client):
     await create_standard_group(
-        conn, f"cache-hit-sg-{uuid4().hex[:6]}", "CH", "desc", 100, 70, redis_client
+        conn, f"cache-hit-sg-{unique_tag()}", "CH", "desc", 100, 70, redis_client
     )
 
     items1 = await search_standard_groups(conn, redis_client, search="cache-hit-sg-")
@@ -105,7 +105,7 @@ async def test_cache_hit(conn, redis_client):
 
 async def test_bypass_cache(conn, redis_client):
     await create_standard_group(
-        conn, f"bypass-sg-{uuid4().hex[:6]}", "BP", "desc", 100, 70, redis_client
+        conn, f"bypass-sg-{unique_tag()}", "BP", "desc", 100, 70, redis_client
     )
 
     items = await search_standard_groups(

@@ -1,12 +1,12 @@
 """Tests for get_provider_keys."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.provider_keys.get import get_provider_keys
 from app.routes.v5.tools.resources.providers.create import create_provider
 from app.routes.v5.tools.resources.keys.create import create_key
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -34,7 +34,7 @@ async def test_gets_created_provider_key(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_provider_key(conn, redis_client):
-    items = await get_provider_keys(conn, [uuid4()], redis_client)
+    items = await get_provider_keys(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

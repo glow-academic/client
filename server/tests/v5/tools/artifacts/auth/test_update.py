@@ -1,6 +1,5 @@
 """Tests for update_auth — black-box using resource + artifact tools only."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -11,6 +10,7 @@ from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.slugs.create import create_slug
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -21,7 +21,7 @@ pytestmark = pytest.mark.asyncio
 
 
 def _u() -> str:
-    return uuid4().hex[:8]
+    return unique_tag()
 
 
 async def _create_with_junctions(conn, redis_client):

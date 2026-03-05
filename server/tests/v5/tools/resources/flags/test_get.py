@@ -1,11 +1,11 @@
 """Tests for get_flags."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.flags.get import get_flags
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -26,7 +26,7 @@ async def test_gets_created_flag(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_flag(conn, redis_client):
-    items = await get_flags(conn, [uuid4()], redis_client)
+    items = await get_flags(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

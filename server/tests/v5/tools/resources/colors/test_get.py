@@ -1,11 +1,11 @@
 """Tests for get_colors."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.colors.create import create_color
 from app.routes.v5.tools.resources.colors.get import get_colors
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -26,7 +26,7 @@ async def test_gets_created_color(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_color(conn, redis_client):
-    items = await get_colors(conn, [uuid4()], redis_client)
+    items = await get_colors(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

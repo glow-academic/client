@@ -1,11 +1,11 @@
 """Tests for get_slugs."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.slugs.create import create_slug
 from app.routes.v5.tools.resources.slugs.get import get_slugs
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -22,7 +22,7 @@ async def test_gets_created_slug(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_slug(conn, redis_client):
-    items = await get_slugs(conn, [uuid4()], redis_client)
+    items = await get_slugs(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

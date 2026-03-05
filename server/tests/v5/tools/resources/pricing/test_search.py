@@ -1,11 +1,11 @@
 """Tests for search_pricing."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.pricing.create import create_pricing
 from app.routes.v5.tools.resources.pricing.search import search_pricing
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -19,7 +19,7 @@ async def test_finds_created_pricing(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_pricing(conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8])
+    items = await search_pricing(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
 
     assert items == []
 

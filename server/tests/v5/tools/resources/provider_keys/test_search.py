@@ -1,6 +1,5 @@
 """Tests for search_provider_keys."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -8,13 +7,14 @@ from app.routes.v5.tools.resources.keys.create import create_key
 from app.routes.v5.tools.resources.provider_keys.create import create_provider_key
 from app.routes.v5.tools.resources.provider_keys.search import search_provider_keys
 from app.routes.v5.tools.resources.providers.create import create_provider
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 async def _create_provider_key(conn, redis_client, name_suffix=None):
     """Helper to create a provider_key with required FKs."""
-    suffix = name_suffix or uuid4().hex[:6]
+    suffix = name_suffix or unique_tag()
     provider = await create_provider(conn, f"pk-prov-{suffix}", redis=redis_client)
     key = await create_key(conn, redis_client, name=f"pk-key-{suffix}")
     return await create_provider_key(
@@ -40,7 +40,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_provider_keys(conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8])
+    items = await search_provider_keys(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
 
     assert items == []
 
@@ -55,8 +55,8 @@ async def test_respects_limit(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    a = await _create_provider_key(conn, redis_client, name_suffix=f"excl-a-{uuid4().hex[:4]}")
-    b = await _create_provider_key(conn, redis_client, name_suffix=f"excl-b-{uuid4().hex[:4]}")
+    a = await _create_provider_key(conn, redis_client, name_suffix=f"excl-a-{unique_tag()}")
+    b = await _create_provider_key(conn, redis_client, name_suffix=f"excl-b-{unique_tag()}")
 
     items = await search_provider_keys(
         conn, redis_client, search="pk-name-excl-", exclude_ids=[a.id],
@@ -74,7 +74,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_cache_hit(conn, redis_client):
-    await _create_provider_key(conn, redis_client, name_suffix=f"cache-{uuid4().hex[:6]}")
+    await _create_provider_key(conn, redis_client, name_suffix=f"cache-{unique_tag()}")
 
     items1 = await search_provider_keys(conn, redis_client, search="pk-name-cache-")
     items2 = await search_provider_keys(conn, redis_client, search="pk-name-cache-")
@@ -84,7 +84,7 @@ async def test_cache_hit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    await _create_provider_key(conn, redis_client, name_suffix=f"bypass-{uuid4().hex[:6]}")
+    await _create_provider_key(conn, redis_client, name_suffix=f"bypass-{unique_tag()}")
 
     items = await search_provider_keys(conn, redis_client, search="pk-name-bypass-", bypass_cache=True)
 

@@ -1,6 +1,5 @@
 """Tests for audio_uploads search."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -10,6 +9,7 @@ from app.routes.v5.tools.entries.audios.create import create_audio
 from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -46,7 +46,7 @@ async def test_search_filters_by_audio_id(conn):
         conn, audio_id=audio.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_audio_uploads(conn, audio_id=uuid4())
+    results = await search_audio_uploads(conn, audio_id=nonexistent_id())
 
     assert len(results) == 0
 
@@ -57,7 +57,7 @@ async def test_search_filters_by_upload_id(conn):
         conn, audio_id=audio.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_audio_uploads(conn, upload_id=uuid4())
+    results = await search_audio_uploads(conn, upload_id=nonexistent_id())
 
     assert len(results) == 0
 

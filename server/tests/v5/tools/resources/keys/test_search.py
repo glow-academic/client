@@ -1,11 +1,11 @@
 """Tests for search_keys."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.keys.create import create_key
 from app.routes.v5.tools.resources.keys.search import search_keys
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -29,7 +29,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 async def test_returns_empty_for_no_match(conn, redis_client):
     items = await search_keys(
-        conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8]
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
     )
 
     assert items == []
@@ -38,7 +38,7 @@ async def test_returns_empty_for_no_match(conn, redis_client):
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
         await create_key(
-            conn, redis_client, name=f"limit-test-key-{uuid4().hex[:6]}"
+            conn, redis_client, name=f"limit-test-key-{unique_tag()}"
         )
 
     items = await search_keys(
@@ -51,7 +51,7 @@ async def test_respects_limit(conn, redis_client):
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
         await create_key(
-            conn, redis_client, name=f"offset-test-key-{uuid4().hex[:6]}"
+            conn, redis_client, name=f"offset-test-key-{unique_tag()}"
         )
 
     all_items = await search_keys(
@@ -66,10 +66,10 @@ async def test_respects_offset(conn, redis_client):
 
 async def test_excludes_ids(conn, redis_client):
     a = await create_key(
-        conn, redis_client, name=f"exclude-a-key-{uuid4().hex[:6]}"
+        conn, redis_client, name=f"exclude-a-key-{unique_tag()}"
     )
     b = await create_key(
-        conn, redis_client, name=f"exclude-b-key-{uuid4().hex[:6]}"
+        conn, redis_client, name=f"exclude-b-key-{unique_tag()}"
     )
 
     items = await search_keys(
@@ -89,7 +89,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 async def test_cache_hit(conn, redis_client):
     await create_key(
-        conn, redis_client, name=f"cache-hit-key-{uuid4().hex[:6]}"
+        conn, redis_client, name=f"cache-hit-key-{unique_tag()}"
     )
 
     items1 = await search_keys(conn, redis_client, search="cache-hit-key-")
@@ -101,7 +101,7 @@ async def test_cache_hit(conn, redis_client):
 
 async def test_bypass_cache(conn, redis_client):
     await create_key(
-        conn, redis_client, name=f"bypass-key-{uuid4().hex[:6]}"
+        conn, redis_client, name=f"bypass-key-{unique_tag()}"
     )
 
     items = await search_keys(

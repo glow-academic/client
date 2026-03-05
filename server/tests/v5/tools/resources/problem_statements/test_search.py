@@ -1,6 +1,5 @@
 """Tests for search_problem_statements."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -10,6 +9,7 @@ from app.routes.v5.tools.resources.problem_statements.create import (
 from app.routes.v5.tools.resources.problem_statements.search import (
     search_problem_statements,
 )
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -41,7 +41,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 async def test_returns_empty_for_no_match(conn, redis_client):
     items = await search_problem_statements(
-        conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8]
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
     )
 
     assert items == []
@@ -51,7 +51,7 @@ async def test_respects_limit(conn, redis_client):
     for i in range(5):
         await create_problem_statement(
             conn,
-            f"limit-test-ps-{uuid4().hex[:6]}",
+            f"limit-test-ps-{unique_tag()}",
             "problem text",
             redis_client,
         )
@@ -67,7 +67,7 @@ async def test_respects_offset(conn, redis_client):
     for i in range(3):
         await create_problem_statement(
             conn,
-            f"offset-test-ps-{uuid4().hex[:6]}",
+            f"offset-test-ps-{unique_tag()}",
             "problem text",
             redis_client,
         )
@@ -84,10 +84,10 @@ async def test_respects_offset(conn, redis_client):
 
 async def test_excludes_ids(conn, redis_client):
     a = await create_problem_statement(
-        conn, f"exclude-a-ps-{uuid4().hex[:6]}", "text a", redis_client
+        conn, f"exclude-a-ps-{unique_tag()}", "text a", redis_client
     )
     b = await create_problem_statement(
-        conn, f"exclude-b-ps-{uuid4().hex[:6]}", "text b", redis_client
+        conn, f"exclude-b-ps-{unique_tag()}", "text b", redis_client
     )
 
     items = await search_problem_statements(
@@ -107,7 +107,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 async def test_cache_hit(conn, redis_client):
     await create_problem_statement(
-        conn, f"cache-hit-ps-{uuid4().hex[:6]}", "text", redis_client
+        conn, f"cache-hit-ps-{unique_tag()}", "text", redis_client
     )
 
     items1 = await search_problem_statements(
@@ -123,7 +123,7 @@ async def test_cache_hit(conn, redis_client):
 
 async def test_bypass_cache(conn, redis_client):
     await create_problem_statement(
-        conn, f"bypass-ps-{uuid4().hex[:6]}", "text", redis_client
+        conn, f"bypass-ps-{unique_tag()}", "text", redis_client
     )
 
     items = await search_problem_statements(

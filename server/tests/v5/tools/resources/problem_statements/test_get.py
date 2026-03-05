@@ -1,6 +1,5 @@
 """Tests for get_problem_statements."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -8,6 +7,7 @@ from app.routes.v5.tools.resources.problem_statements.create import (
     create_problem_statement,
 )
 from app.routes.v5.tools.resources.problem_statements.get import get_problem_statements
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -27,7 +27,7 @@ async def test_gets_created_problem_statement(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_problem_statements(conn, [uuid4()], redis_client)
+    items = await get_problem_statements(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

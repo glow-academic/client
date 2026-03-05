@@ -1,6 +1,5 @@
 """Tests for delete_personas — black-box using tool functions only."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -8,12 +7,13 @@ from app.routes.v5.tools.artifacts.persona.create import create_persona
 from app.routes.v5.tools.artifacts.persona.delete import delete_personas
 from app.routes.v5.tools.artifacts.persona.get import get_personas
 from app.routes.v5.tools.resources.names.create import create_name
+from tests.helpers import unique_tag, nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
 
 def _u() -> str:
-    return uuid4().hex[:8]
+    return unique_tag()
 
 
 async def test_hard_delete_single(conn, redis_client):
@@ -45,7 +45,7 @@ async def test_hard_delete_multiple(conn, redis_client):
 
 async def test_hard_delete_nonexistent(conn, redis_client):
     """Deleting a nonexistent ID returns empty deleted_ids."""
-    fake_id = uuid4()
+    fake_id = nonexistent_id()
     result = await delete_personas(conn, [fake_id])
     assert result.deleted_ids == []
 

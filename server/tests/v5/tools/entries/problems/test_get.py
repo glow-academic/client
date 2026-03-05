@@ -1,6 +1,5 @@
 """Tests for get_problems."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -12,6 +11,7 @@ from app.routes.v5.tools.entries.problems.refresh import refresh_problems
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -58,7 +58,7 @@ async def test_returns_multiple(conn):
 
 
 async def test_returns_empty_for_missing(conn):
-    items = await get_problems(conn, [uuid4()])
+    items = await get_problems(conn, [nonexistent_id()])
 
     assert items == []
 

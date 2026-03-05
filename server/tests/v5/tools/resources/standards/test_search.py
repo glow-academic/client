@@ -1,12 +1,12 @@
 """Tests for search_standards."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.standard_groups.create import create_standard_group
 from app.routes.v5.tools.resources.standards.create import create_standard
 from app.routes.v5.tools.resources.standards.search import search_standards
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -14,8 +14,8 @@ pytestmark = pytest.mark.asyncio
 async def _make_group(conn, redis_client, suffix=""):
     return await create_standard_group(
         conn,
-        name=f"sg-{suffix or uuid4().hex[:6]}",
-        short_name=f"SG-{suffix or uuid4().hex[:4]}",
+        name=f"sg-{suffix or unique_tag()}",
+        short_name=f"SG-{suffix or unique_tag()}",
         description="test group",
         points=100,
         pass_points=70,
@@ -55,7 +55,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 async def test_returns_empty_for_no_match(conn, redis_client):
     items = await search_standards(
-        conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8]
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
     )
 
     assert items == []
@@ -65,7 +65,7 @@ async def test_respects_limit(conn, redis_client):
     group = await _make_group(conn, redis_client)
     for i in range(5):
         await _make_standard(
-            conn, redis_client, f"limit-std-{uuid4().hex[:6]}", group.id
+            conn, redis_client, f"limit-std-{unique_tag()}", group.id
         )
 
     items = await search_standards(conn, redis_client, search="limit-std-", limit_count=2)
@@ -77,7 +77,7 @@ async def test_respects_offset(conn, redis_client):
     group = await _make_group(conn, redis_client)
     for i in range(3):
         await _make_standard(
-            conn, redis_client, f"offset-std-{uuid4().hex[:6]}", group.id
+            conn, redis_client, f"offset-std-{unique_tag()}", group.id
         )
 
     all_items = await search_standards(
@@ -93,10 +93,10 @@ async def test_respects_offset(conn, redis_client):
 async def test_excludes_ids(conn, redis_client):
     group = await _make_group(conn, redis_client)
     a = await _make_standard(
-        conn, redis_client, f"exclude-a-{uuid4().hex[:6]}", group.id
+        conn, redis_client, f"exclude-a-{unique_tag()}", group.id
     )
     b = await _make_standard(
-        conn, redis_client, f"exclude-b-{uuid4().hex[:6]}", group.id
+        conn, redis_client, f"exclude-b-{unique_tag()}", group.id
     )
 
     items = await search_standards(
@@ -109,9 +109,9 @@ async def test_excludes_ids(conn, redis_client):
 
 
 async def test_filters_by_standard_group_ids(conn, redis_client):
-    group_a = await _make_group(conn, redis_client, f"grp-a-{uuid4().hex[:4]}")
-    group_b = await _make_group(conn, redis_client, f"grp-b-{uuid4().hex[:4]}")
-    tag = uuid4().hex[:6]
+    group_a = await _make_group(conn, redis_client, f"grp-a-{unique_tag()}")
+    group_b = await _make_group(conn, redis_client, f"grp-b-{unique_tag()}")
+    tag = unique_tag()
     await _make_standard(conn, redis_client, f"sg-filter-{tag}-a", group_a.id)
     await _make_standard(conn, redis_client, f"sg-filter-{tag}-b", group_b.id)
 
@@ -135,7 +135,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 async def test_cache_hit(conn, redis_client):
     group = await _make_group(conn, redis_client)
     await _make_standard(
-        conn, redis_client, f"cache-hit-{uuid4().hex[:6]}", group.id
+        conn, redis_client, f"cache-hit-{unique_tag()}", group.id
     )
 
     items1 = await search_standards(conn, redis_client, search="cache-hit-")
@@ -148,7 +148,7 @@ async def test_cache_hit(conn, redis_client):
 async def test_bypass_cache(conn, redis_client):
     group = await _make_group(conn, redis_client)
     await _make_standard(
-        conn, redis_client, f"bypass-{uuid4().hex[:6]}", group.id
+        conn, redis_client, f"bypass-{unique_tag()}", group.id
     )
 
     items = await search_standards(conn, redis_client, search="bypass-", bypass_cache=True)

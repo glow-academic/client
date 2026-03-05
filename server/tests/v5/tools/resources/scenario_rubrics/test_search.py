@@ -1,6 +1,5 @@
 """Tests for search_scenario_rubrics."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -8,14 +7,15 @@ from app.routes.v5.tools.resources.rubrics.create import create_rubric
 from app.routes.v5.tools.resources.scenario_rubrics.create import create_scenario_rubric
 from app.routes.v5.tools.resources.scenario_rubrics.search import search_scenario_rubrics
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 async def _create_scenario_rubric_with_deps(conn, redis_client):
     """Helper: create a scenario + rubric + scenario_rubric."""
-    scenario = await create_scenario(conn, redis_client, name=f"scenario-{uuid4().hex[:6]}")
-    rubric = await create_rubric(conn, redis_client, name=f"rubric-{uuid4().hex[:6]}")
+    scenario = await create_scenario(conn, redis_client, name=f"scenario-{unique_tag()}")
+    rubric = await create_rubric(conn, redis_client, name=f"rubric-{unique_tag()}")
     sr = await create_scenario_rubric(conn, scenario.id, rubric.id, redis_client)
     return sr
 

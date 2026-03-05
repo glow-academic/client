@@ -4,6 +4,7 @@ import pytest
 
 from app.routes.v5.tools.artifacts.persona.get import get_personas
 from tests.seed_ids import SEED_PERSONA_ARTIFACT_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -22,9 +23,8 @@ async def test_returns_base_columns(conn):
 
 
 async def test_returns_empty_for_unknown_id(conn):
-    from uuid import uuid4
 
-    items = await get_personas(conn, [uuid4()])
+    items = await get_personas(conn, [nonexistent_id()])
     assert items == []
 
 

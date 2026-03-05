@@ -1,11 +1,11 @@
 """Tests for search_examples."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.examples.create import create_example
 from app.routes.v5.tools.resources.examples.search import search_examples
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -33,7 +33,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 async def test_returns_empty_for_no_match(conn, redis_client):
     items = await search_examples(
-        conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8]
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
     )
 
     assert items == []
@@ -42,7 +42,7 @@ async def test_returns_empty_for_no_match(conn, redis_client):
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
         await create_example(
-            conn, f"limit-test-example-{uuid4().hex[:6]}", redis_client
+            conn, f"limit-test-example-{unique_tag()}", redis_client
         )
 
     items = await search_examples(
@@ -55,7 +55,7 @@ async def test_respects_limit(conn, redis_client):
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
         await create_example(
-            conn, f"offset-test-example-{uuid4().hex[:6]}", redis_client
+            conn, f"offset-test-example-{unique_tag()}", redis_client
         )
 
     all_items = await search_examples(
@@ -74,10 +74,10 @@ async def test_respects_offset(conn, redis_client):
 
 async def test_excludes_ids(conn, redis_client):
     a = await create_example(
-        conn, f"exclude-a-example-{uuid4().hex[:6]}", redis_client
+        conn, f"exclude-a-example-{unique_tag()}", redis_client
     )
     b = await create_example(
-        conn, f"exclude-b-example-{uuid4().hex[:6]}", redis_client
+        conn, f"exclude-b-example-{unique_tag()}", redis_client
     )
 
     items = await search_examples(
@@ -97,7 +97,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 async def test_cache_hit(conn, redis_client):
     await create_example(
-        conn, f"cache-hit-example-{uuid4().hex[:6]}", redis_client
+        conn, f"cache-hit-example-{unique_tag()}", redis_client
     )
 
     items1 = await search_examples(conn, redis_client, search="cache-hit-example-")
@@ -109,7 +109,7 @@ async def test_cache_hit(conn, redis_client):
 
 async def test_bypass_cache(conn, redis_client):
     await create_example(
-        conn, f"bypass-example-{uuid4().hex[:6]}", redis_client
+        conn, f"bypass-example-{unique_tag()}", redis_client
     )
 
     items = await search_examples(

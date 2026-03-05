@@ -1,17 +1,17 @@
 """Tests for search_operations."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.operations.create import create_operation
 from app.routes.v5.tools.resources.operations.search import search_operations
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_finds_created_operation(conn, redis_client):
-    tag = uuid4().hex[:6]
+    tag = unique_tag()
     await create_operation(conn, f"search-op-{tag}", redis_client)
 
     items = await search_operations(conn, redis_client, search=f"search-op-{tag}")
@@ -20,7 +20,7 @@ async def test_finds_created_operation(conn, redis_client):
 
 
 async def test_search_is_case_insensitive(conn, redis_client):
-    tag = uuid4().hex[:6]
+    tag = unique_tag()
     await create_operation(conn, f"CaseOp-{tag}", redis_client)
 
     items = await search_operations(conn, redis_client, search=f"caseop-{tag}")
@@ -30,7 +30,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 async def test_returns_empty_for_no_match(conn, redis_client):
     items = await search_operations(
-        conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8]
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
     )
 
     assert items == []
@@ -38,7 +38,7 @@ async def test_returns_empty_for_no_match(conn, redis_client):
 
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
-        await create_operation(conn, f"limit-op-{uuid4().hex[:6]}", redis_client)
+        await create_operation(conn, f"limit-op-{unique_tag()}", redis_client)
 
     items = await search_operations(conn, redis_client, search="limit-op-", limit_count=2)
 
@@ -46,7 +46,7 @@ async def test_respects_limit(conn, redis_client):
 
 
 async def test_respects_offset(conn, redis_client):
-    tag = uuid4().hex[:6]
+    tag = unique_tag()
     for i in range(3):
         await create_operation(conn, f"offset-op-{tag}-{i}", redis_client)
 
@@ -59,7 +59,7 @@ async def test_respects_offset(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    tag = uuid4().hex[:6]
+    tag = unique_tag()
     a = await create_operation(conn, f"exclude-a-{tag}", redis_client)
     b = await create_operation(conn, f"exclude-b-{tag}", redis_client)
 
@@ -79,7 +79,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    tag = uuid4().hex[:6]
+    tag = unique_tag()
     await create_operation(conn, f"bypass-op-{tag}", redis_client)
 
     items = await search_operations(conn, redis_client, search=f"bypass-op-{tag}", bypass_cache=True)

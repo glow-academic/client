@@ -1,11 +1,11 @@
 """Tests for search_profiles."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.profiles.create import create_profile
 from app.routes.v5.tools.resources.profiles.search import search_profiles
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,14 +28,14 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_profiles(conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8])
+    items = await search_profiles(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
 
     assert items == []
 
 
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
-        await create_profile(conn, redis_client, name=f"limit-test-{uuid4().hex[:6]}")
+        await create_profile(conn, redis_client, name=f"limit-test-{unique_tag()}")
 
     items = await search_profiles(conn, redis_client, search="limit-test-", limit_count=2)
 
@@ -44,7 +44,7 @@ async def test_respects_limit(conn, redis_client):
 
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
-        await create_profile(conn, redis_client, name=f"offset-test-{uuid4().hex[:6]}")
+        await create_profile(conn, redis_client, name=f"offset-test-{unique_tag()}")
 
     all_items = await search_profiles(conn, redis_client, search="offset-test-", limit_count=10)
     offset_items = await search_profiles(conn, redis_client, search="offset-test-", limit_count=10, offset_count=1)
@@ -53,8 +53,8 @@ async def test_respects_offset(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    a = await create_profile(conn, redis_client, name=f"exclude-a-{uuid4().hex[:6]}")
-    b = await create_profile(conn, redis_client, name=f"exclude-b-{uuid4().hex[:6]}")
+    a = await create_profile(conn, redis_client, name=f"exclude-a-{unique_tag()}")
+    b = await create_profile(conn, redis_client, name=f"exclude-b-{unique_tag()}")
 
     items = await search_profiles(
         conn, redis_client, search="exclude-", exclude_ids=[a.id],
@@ -72,7 +72,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_cache_hit(conn, redis_client):
-    await create_profile(conn, redis_client, name=f"cache-hit-{uuid4().hex[:6]}")
+    await create_profile(conn, redis_client, name=f"cache-hit-{unique_tag()}")
 
     items1 = await search_profiles(conn, redis_client, search="cache-hit-")
     items2 = await search_profiles(conn, redis_client, search="cache-hit-")
@@ -82,7 +82,7 @@ async def test_cache_hit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    await create_profile(conn, redis_client, name=f"bypass-{uuid4().hex[:6]}")
+    await create_profile(conn, redis_client, name=f"bypass-{unique_tag()}")
 
     items = await search_profiles(conn, redis_client, search="bypass-", bypass_cache=True)
 

@@ -1,17 +1,17 @@
 """Tests for search_artifacts."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.artifacts.create import create_artifact
 from app.routes.v5.tools.resources.artifacts.search import search_artifacts
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_finds_created_artifact(conn, redis_client):
-    await create_artifact(conn, f"search-test-{uuid4().hex[:6]}", redis_client)
+    await create_artifact(conn, f"search-test-{unique_tag()}", redis_client)
 
     items = await search_artifacts(conn, redis_client, search="search-test-")
 
@@ -19,7 +19,7 @@ async def test_finds_created_artifact(conn, redis_client):
 
 
 async def test_search_is_case_insensitive(conn, redis_client):
-    tag = uuid4().hex[:6]
+    tag = unique_tag()
     await create_artifact(conn, f"CaseArt-{tag}", redis_client)
 
     items = await search_artifacts(conn, redis_client, search=f"caseart-{tag}")
@@ -29,7 +29,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 async def test_returns_empty_for_no_match(conn, redis_client):
     items = await search_artifacts(
-        conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8]
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
     )
 
     assert items == []
@@ -37,7 +37,7 @@ async def test_returns_empty_for_no_match(conn, redis_client):
 
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
-        await create_artifact(conn, f"limit-art-{uuid4().hex[:6]}", redis_client)
+        await create_artifact(conn, f"limit-art-{unique_tag()}", redis_client)
 
     items = await search_artifacts(conn, redis_client, search="limit-art-", limit_count=2)
 
@@ -45,7 +45,7 @@ async def test_respects_limit(conn, redis_client):
 
 
 async def test_respects_offset(conn, redis_client):
-    tag = uuid4().hex[:6]
+    tag = unique_tag()
     for i in range(3):
         await create_artifact(conn, f"offset-art-{tag}-{i}", redis_client)
 
@@ -58,7 +58,7 @@ async def test_respects_offset(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    tag = uuid4().hex[:6]
+    tag = unique_tag()
     a = await create_artifact(conn, f"exclude-a-{tag}", redis_client)
     b = await create_artifact(conn, f"exclude-b-{tag}", redis_client)
 
@@ -78,7 +78,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    await create_artifact(conn, f"bypass-art-{uuid4().hex[:6]}", redis_client)
+    await create_artifact(conn, f"bypass-art-{unique_tag()}", redis_client)
 
     items = await search_artifacts(conn, redis_client, search="bypass-art-", bypass_cache=True)
 

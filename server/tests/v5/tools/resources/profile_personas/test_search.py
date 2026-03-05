@@ -1,6 +1,5 @@
 """Tests for search_profile_personas."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -8,14 +7,15 @@ from app.routes.v5.tools.resources.personas.create import create_persona
 from app.routes.v5.tools.resources.profile_personas.create import create_profile_persona
 from app.routes.v5.tools.resources.profile_personas.search import search_profile_personas
 from app.routes.v5.tools.resources.profiles.create import create_profile
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 async def _create_profile_persona_with_deps(conn, redis_client):
     """Helper: create a profile + persona + profile_persona."""
-    profile = await create_profile(conn, redis_client, name=f"profile-{uuid4().hex[:6]}")
-    persona = await create_persona(conn, redis_client, name=f"persona-{uuid4().hex[:6]}")
+    profile = await create_profile(conn, redis_client, name=f"profile-{unique_tag()}")
+    persona = await create_persona(conn, redis_client, name=f"persona-{unique_tag()}")
     pp = await create_profile_persona(conn, profile.id, persona.id, redis_client)
     return pp
 

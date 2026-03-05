@@ -1,17 +1,17 @@
 """Tests for create_operation."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.operations.create import create_operation
 from app.routes.v5.tools.resources.operations.get import get_operations
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_creates_new_operation(conn, redis_client):
-    result = await create_operation(conn, f"test-operation-{uuid4().hex[:8]}", redis_client)
+    result = await create_operation(conn, f"test-operation-{unique_tag()}", redis_client)
 
     assert result.operation is not None
     assert result.active is True
@@ -19,7 +19,7 @@ async def test_creates_new_operation(conn, redis_client):
 
 
 async def test_visible_via_get(conn, redis_client):
-    result = await create_operation(conn, f"visible-operation-{uuid4().hex[:8]}", redis_client)
+    result = await create_operation(conn, f"visible-operation-{unique_tag()}", redis_client)
 
     items = await get_operations(conn, [result.id], redis_client, bypass_cache=True)
 
@@ -29,7 +29,7 @@ async def test_visible_via_get(conn, redis_client):
 
 
 async def test_returns_existing_on_conflict(conn, redis_client):
-    name = f"duplicate-operation-{uuid4().hex[:8]}"
+    name = f"duplicate-operation-{unique_tag()}"
     first = await create_operation(conn, name, redis_client)
     second = await create_operation(conn, name, redis_client)
 
@@ -38,7 +38,7 @@ async def test_returns_existing_on_conflict(conn, redis_client):
 
 
 async def test_sets_mcp_flag(conn, redis_client):
-    result = await create_operation(conn, f"mcp-operation-{uuid4().hex[:8]}", redis_client, mcp=True)
+    result = await create_operation(conn, f"mcp-operation-{unique_tag()}", redis_client, mcp=True)
 
     assert result.mcp is True
     assert result.generated is True

@@ -1,11 +1,11 @@
 """Tests for get_request_limits."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.request_limits.create import create_request_limit
 from app.routes.v5.tools.resources.request_limits.get import get_request_limits
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -22,7 +22,7 @@ async def test_gets_created_request_limit(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_request_limits(conn, [uuid4()], redis_client)
+    items = await get_request_limits(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

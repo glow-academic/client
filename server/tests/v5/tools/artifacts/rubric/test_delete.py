@@ -1,6 +1,5 @@
 """Tests for delete_rubrics — black-box using tool functions only."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -8,12 +7,13 @@ from app.routes.v5.tools.artifacts.rubric.create import create_rubric
 from app.routes.v5.tools.artifacts.rubric.delete import delete_rubrics
 from app.routes.v5.tools.artifacts.rubric.get import get_rubrics
 from app.routes.v5.tools.resources.names.create import create_name
+from tests.helpers import unique_tag, nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
 
 def _u() -> str:
-    return uuid4().hex[:8]
+    return unique_tag()
 
 
 async def test_hard_delete_single(conn, redis_client):
@@ -45,7 +45,7 @@ async def test_hard_delete_multiple(conn, redis_client):
 
 async def test_hard_delete_nonexistent(conn, redis_client):
     """Deleting a nonexistent ID returns empty deleted_ids."""
-    fake_id = uuid4()
+    fake_id = nonexistent_id()
     result = await delete_rubrics(conn, [fake_id])
     assert result.deleted_ids == []
 

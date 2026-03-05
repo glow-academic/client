@@ -1,6 +1,5 @@
 """Tests for search_personas."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -8,6 +7,7 @@ from app.routes.v5.tools.entries.personas.create import create_personas
 from app.routes.v5.tools.entries.personas.search import search_personas
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -30,7 +30,7 @@ async def test_search_filters_by_session(conn):
     session = await _session(conn)
     await create_personas(conn, session_id=session.id)
 
-    items = await search_personas(conn, session_id=uuid4())
+    items = await search_personas(conn, session_id=nonexistent_id())
 
     assert items == []
 

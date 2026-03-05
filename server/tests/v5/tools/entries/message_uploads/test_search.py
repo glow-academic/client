@@ -1,6 +1,5 @@
 """Tests for message_uploads search."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -12,6 +11,7 @@ from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -50,7 +50,7 @@ async def test_search_filters_by_message_id(conn):
         conn, message_id=message.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_message_uploads(conn, message_id=uuid4())
+    results = await search_message_uploads(conn, message_id=nonexistent_id())
 
     assert len(results) == 0
 
@@ -61,7 +61,7 @@ async def test_search_filters_by_upload_id(conn):
         conn, message_id=message.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_message_uploads(conn, upload_id=uuid4())
+    results = await search_message_uploads(conn, upload_id=nonexistent_id())
 
     assert len(results) == 0
 

@@ -1,17 +1,17 @@
 """Tests for create_artifact."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.artifacts.create import create_artifact
 from app.routes.v5.tools.resources.artifacts.get import get_artifacts
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_creates_new_artifact(conn, redis_client):
-    result = await create_artifact(conn, f"test-artifact-{uuid4().hex[:8]}", redis_client)
+    result = await create_artifact(conn, f"test-artifact-{unique_tag()}", redis_client)
 
     assert result.artifact is not None
     assert result.active is True
@@ -19,7 +19,7 @@ async def test_creates_new_artifact(conn, redis_client):
 
 
 async def test_visible_via_get(conn, redis_client):
-    result = await create_artifact(conn, f"visible-artifact-{uuid4().hex[:8]}", redis_client)
+    result = await create_artifact(conn, f"visible-artifact-{unique_tag()}", redis_client)
 
     items = await get_artifacts(conn, [result.id], redis_client, bypass_cache=True)
 
@@ -29,7 +29,7 @@ async def test_visible_via_get(conn, redis_client):
 
 
 async def test_returns_existing_on_conflict(conn, redis_client):
-    name = f"duplicate-artifact-{uuid4().hex[:8]}"
+    name = f"duplicate-artifact-{unique_tag()}"
     first = await create_artifact(conn, name, redis_client)
     second = await create_artifact(conn, name, redis_client)
 
@@ -38,7 +38,7 @@ async def test_returns_existing_on_conflict(conn, redis_client):
 
 
 async def test_sets_mcp_flag(conn, redis_client):
-    result = await create_artifact(conn, f"mcp-artifact-{uuid4().hex[:8]}", redis_client, mcp=True)
+    result = await create_artifact(conn, f"mcp-artifact-{unique_tag()}", redis_client, mcp=True)
 
     assert result.mcp is True
     assert result.generated is True

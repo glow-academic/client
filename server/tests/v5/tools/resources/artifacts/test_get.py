@@ -1,17 +1,17 @@
 """Tests for get_artifacts."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.artifacts.create import create_artifact
 from app.routes.v5.tools.resources.artifacts.get import get_artifacts
+from tests.helpers import unique_tag, nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_artifact(conn, redis_client):
-    created = await create_artifact(conn, f"test-artifact-{uuid4().hex[:8]}", redis_client)
+    created = await create_artifact(conn, f"test-artifact-{unique_tag()}", redis_client)
 
     items = await get_artifacts(conn, [created.id], redis_client)
 
@@ -23,7 +23,7 @@ async def test_gets_created_artifact(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_artifacts(conn, [uuid4()], redis_client)
+    items = await get_artifacts(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 
@@ -35,7 +35,7 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 
 async def test_cache_hit_skips_db(conn, redis_client):
-    created = await create_artifact(conn, f"test-artifact-{uuid4().hex[:8]}", redis_client)
+    created = await create_artifact(conn, f"test-artifact-{unique_tag()}", redis_client)
 
     # First call populates cache
     items = await get_artifacts(conn, [created.id], redis_client)
@@ -48,7 +48,7 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
-    created = await create_artifact(conn, f"test-artifact-{uuid4().hex[:8]}", redis_client)
+    created = await create_artifact(conn, f"test-artifact-{unique_tag()}", redis_client)
 
     items = await get_artifacts(conn, [created.id], redis_client, bypass_cache=True)
     assert len(items) == 1

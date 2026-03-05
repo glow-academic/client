@@ -1,11 +1,11 @@
 """Tests for search_descriptions."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.descriptions.search import search_descriptions
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,14 +28,14 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_descriptions(conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8])
+    items = await search_descriptions(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
 
     assert items == []
 
 
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
-        await create_description(conn, f"limit-test-desc-{uuid4().hex[:6]}", redis_client)
+        await create_description(conn, f"limit-test-desc-{unique_tag()}", redis_client)
 
     items = await search_descriptions(conn, redis_client, search="limit-test-desc-", limit_count=2)
 
@@ -44,7 +44,7 @@ async def test_respects_limit(conn, redis_client):
 
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
-        await create_description(conn, f"offset-test-desc-{uuid4().hex[:6]}", redis_client)
+        await create_description(conn, f"offset-test-desc-{unique_tag()}", redis_client)
 
     all_items = await search_descriptions(conn, redis_client, search="offset-test-desc-", limit_count=10)
     offset_items = await search_descriptions(conn, redis_client, search="offset-test-desc-", limit_count=10, offset_count=1)
@@ -53,8 +53,8 @@ async def test_respects_offset(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    a = await create_description(conn, f"exclude-a-desc-{uuid4().hex[:6]}", redis_client)
-    b = await create_description(conn, f"exclude-b-desc-{uuid4().hex[:6]}", redis_client)
+    a = await create_description(conn, f"exclude-a-desc-{unique_tag()}", redis_client)
+    b = await create_description(conn, f"exclude-b-desc-{unique_tag()}", redis_client)
 
     items = await search_descriptions(
         conn, redis_client, search="exclude-", exclude_ids=[a.id],
@@ -72,7 +72,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_cache_hit(conn, redis_client):
-    await create_description(conn, f"cache-hit-desc-{uuid4().hex[:6]}", redis_client)
+    await create_description(conn, f"cache-hit-desc-{unique_tag()}", redis_client)
 
     items1 = await search_descriptions(conn, redis_client, search="cache-hit-desc-")
     items2 = await search_descriptions(conn, redis_client, search="cache-hit-desc-")
@@ -82,7 +82,7 @@ async def test_cache_hit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    await create_description(conn, f"bypass-desc-{uuid4().hex[:6]}", redis_client)
+    await create_description(conn, f"bypass-desc-{unique_tag()}", redis_client)
 
     items = await search_descriptions(conn, redis_client, search="bypass-desc-", bypass_cache=True)
 

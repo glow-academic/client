@@ -1,12 +1,12 @@
 """Tests for get_standards."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.standard_groups.create import create_standard_group
 from app.routes.v5.tools.resources.standards.create import create_standard
 from app.routes.v5.tools.resources.standards.get import get_standards
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -27,7 +27,7 @@ async def test_gets_created_standard(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_standards(conn, [uuid4()], redis_client)
+    items = await get_standards(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

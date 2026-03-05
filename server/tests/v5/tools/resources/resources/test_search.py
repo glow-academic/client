@@ -1,11 +1,11 @@
 """Tests for search_resources."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.resources.create import create_resource
 from app.routes.v5.tools.resources.resources.search import search_resources
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -20,7 +20,7 @@ async def test_finds_created_resource(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_resources(conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8])
+    items = await search_resources(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
 
     assert items == []
 

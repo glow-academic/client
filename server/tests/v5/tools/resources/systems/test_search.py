@@ -1,11 +1,11 @@
 """Tests for search_systems."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.systems.create import create_system
 from app.routes.v5.tools.resources.systems.search import search_systems
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,14 +28,14 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_systems(conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8])
+    items = await search_systems(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
 
     assert items == []
 
 
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
-        await create_system(conn, name=f"limit-test-system-{uuid4().hex[:6]}", redis=redis_client)
+        await create_system(conn, name=f"limit-test-system-{unique_tag()}", redis=redis_client)
 
     items = await search_systems(conn, redis_client, search="limit-test-system-", limit_count=2)
 
@@ -44,7 +44,7 @@ async def test_respects_limit(conn, redis_client):
 
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
-        await create_system(conn, name=f"offset-test-system-{uuid4().hex[:6]}", redis=redis_client)
+        await create_system(conn, name=f"offset-test-system-{unique_tag()}", redis=redis_client)
 
     all_items = await search_systems(conn, redis_client, search="offset-test-system-", limit_count=10)
     offset_items = await search_systems(conn, redis_client, search="offset-test-system-", limit_count=10, offset_count=1)
@@ -53,8 +53,8 @@ async def test_respects_offset(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    a = await create_system(conn, name=f"exclude-a-system-{uuid4().hex[:6]}", redis=redis_client)
-    b = await create_system(conn, name=f"exclude-b-system-{uuid4().hex[:6]}", redis=redis_client)
+    a = await create_system(conn, name=f"exclude-a-system-{unique_tag()}", redis=redis_client)
+    b = await create_system(conn, name=f"exclude-b-system-{unique_tag()}", redis=redis_client)
 
     items = await search_systems(
         conn, redis_client, search="exclude-", exclude_ids=[a.id],
@@ -72,7 +72,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_cache_hit(conn, redis_client):
-    await create_system(conn, name=f"cache-hit-system-{uuid4().hex[:6]}", redis=redis_client)
+    await create_system(conn, name=f"cache-hit-system-{unique_tag()}", redis=redis_client)
 
     items1 = await search_systems(conn, redis_client, search="cache-hit-system-")
     items2 = await search_systems(conn, redis_client, search="cache-hit-system-")
@@ -82,7 +82,7 @@ async def test_cache_hit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    await create_system(conn, name=f"bypass-system-{uuid4().hex[:6]}", redis=redis_client)
+    await create_system(conn, name=f"bypass-system-{unique_tag()}", redis=redis_client)
 
     items = await search_systems(conn, redis_client, search="bypass-system-", bypass_cache=True)
 

@@ -1,14 +1,14 @@
 """Tests for build_call_payload."""
 
-from uuid import uuid4
 
 from app.infra.tools.entries.build_call_payload import build_call_payload
+from tests.helpers import nonexistent_id
 
 
 def test_has_correct_keys():
     payload = build_call_payload(
-        call_id=uuid4(),
-        tool_id=uuid4(),
+        call_id=nonexistent_id(),
+        tool_id=nonexistent_id(),
         arguments={"name": "Dr. Smith"},
         output={"success": True},
     )
@@ -16,8 +16,8 @@ def test_has_correct_keys():
 
 
 def test_serializes_uuids():
-    call_id = uuid4()
-    tool_id = uuid4()
+    call_id = nonexistent_id()
+    tool_id = nonexistent_id()
     payload = build_call_payload(
         call_id=call_id,
         tool_id=tool_id,
@@ -31,8 +31,8 @@ def test_serializes_uuids():
 def test_preserves_arguments():
     args = {"name": "Dr. Smith", "department": "Cardiology", "count": 3}
     payload = build_call_payload(
-        call_id=uuid4(),
-        tool_id=uuid4(),
+        call_id=nonexistent_id(),
+        tool_id=nonexistent_id(),
         arguments=args,
         output={},
     )
@@ -42,8 +42,8 @@ def test_preserves_arguments():
 def test_preserves_output():
     output = {"success": True, "message": "Created", "entry_id": "123"}
     payload = build_call_payload(
-        call_id=uuid4(),
-        tool_id=uuid4(),
+        call_id=nonexistent_id(),
+        tool_id=nonexistent_id(),
         arguments={},
         output=output,
     )

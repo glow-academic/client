@@ -1,11 +1,11 @@
 """Tests for get_conditional_parameters."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.conditional_parameters.get import get_conditional_parameters
 from app.routes.v5.tools.resources.parameters.create import create_parameter
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -25,7 +25,7 @@ async def test_gets_created_conditional_parameter(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_conditional_parameters(conn, [uuid4()], redis_client)
+    items = await get_conditional_parameters(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

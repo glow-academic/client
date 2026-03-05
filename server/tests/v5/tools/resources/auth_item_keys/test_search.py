@@ -1,6 +1,5 @@
 """Tests for search_auth_item_keys."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -9,15 +8,16 @@ from app.routes.v5.tools.resources.auth_item_keys.search import search_auth_item
 from app.routes.v5.tools.resources.auths.create import create_auth
 from app.routes.v5.tools.resources.items.create import create_item
 from app.routes.v5.tools.resources.keys.create import create_key
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 async def _create_auth_item_key(conn, redis_client):
     """Helper to create an auth_item_key with required FKs."""
-    auth = await create_auth(conn, redis_client, name=f"aik-auth-{uuid4().hex[:6]}")
-    item = await create_item(conn, f"aik-item-{uuid4().hex[:6]}", "", redis_client)
-    key = await create_key(conn, redis_client, name=f"aik-key-{uuid4().hex[:6]}")
+    auth = await create_auth(conn, redis_client, name=f"aik-auth-{unique_tag()}")
+    item = await create_item(conn, f"aik-item-{unique_tag()}", "", redis_client)
+    key = await create_key(conn, redis_client, name=f"aik-key-{unique_tag()}")
     return await create_auth_item_key(conn, auth.id, item.id, key.id, redis_client)
 
 

@@ -4,6 +4,7 @@ import pytest
 
 from app.routes.v5.tools.artifacts.scenario.get import get_scenarios
 from tests.seed_ids import SEED_SCENARIO_ARTIFACT_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -21,9 +22,8 @@ async def test_returns_base_columns(conn):
 
 
 async def test_returns_empty_for_unknown_id(conn):
-    from uuid import uuid4
 
-    items = await get_scenarios(conn, [uuid4()])
+    items = await get_scenarios(conn, [nonexistent_id()])
     assert items == []
 
 

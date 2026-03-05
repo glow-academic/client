@@ -1,6 +1,5 @@
 """Tests for get_scenario_rubrics."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -8,6 +7,7 @@ from app.routes.v5.tools.resources.rubrics.create import create_rubric
 from app.routes.v5.tools.resources.scenario_rubrics.create import create_scenario_rubric
 from app.routes.v5.tools.resources.scenario_rubrics.get import get_scenario_rubrics
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -27,7 +27,7 @@ async def test_gets_created_scenario_rubric(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_scenario_rubrics(conn, [uuid4()], redis_client)
+    items = await get_scenario_rubrics(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

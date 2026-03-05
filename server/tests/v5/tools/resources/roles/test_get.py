@@ -1,11 +1,11 @@
 """Tests for get_roles."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.roles.create import create_role
 from app.routes.v5.tools.resources.roles.get import get_roles
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -25,7 +25,7 @@ async def test_gets_created_role(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_roles(conn, [uuid4()], redis_client)
+    items = await get_roles(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

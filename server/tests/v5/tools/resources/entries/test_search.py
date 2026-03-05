@@ -1,11 +1,11 @@
 """Tests for search_entries."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.entries.create import create_entry
 from app.routes.v5.tools.resources.entries.search import search_entries
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -29,7 +29,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 async def test_returns_empty_for_no_match(conn, redis_client):
     items = await search_entries(
-        conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8]
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
     )
 
     assert items == []

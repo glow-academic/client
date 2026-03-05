@@ -1,7 +1,5 @@
 """Tests for search_thresholds."""
 
-from uuid import uuid4
-
 import pytest
 
 from app.routes.v5.tools.resources.thresholds.create import create_threshold

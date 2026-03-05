@@ -1,11 +1,11 @@
 """Tests for search_modalities."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.modalities.create import create_modality
 from app.routes.v5.tools.resources.modalities.search import search_modalities
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -28,7 +28,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_modalities(conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8])
+    items = await search_modalities(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
 
     assert items == []
 

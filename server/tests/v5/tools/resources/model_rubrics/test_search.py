@@ -1,6 +1,5 @@
 """Tests for search_model_rubrics."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -8,14 +7,15 @@ from app.routes.v5.tools.resources.model_rubrics.create import create_model_rubr
 from app.routes.v5.tools.resources.model_rubrics.search import search_model_rubrics
 from app.routes.v5.tools.resources.models.create import create_model
 from app.routes.v5.tools.resources.rubrics.create import create_rubric
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
 async def _create_model_rubric_with_deps(conn, redis_client):
     """Helper: create a model + rubric + model_rubric."""
-    model = await create_model(conn, value=f"model-{uuid4().hex[:6]}", redis=redis_client)
-    rubric = await create_rubric(conn, redis_client, name=f"rubric-{uuid4().hex[:6]}")
+    model = await create_model(conn, value=f"model-{unique_tag()}", redis=redis_client)
+    rubric = await create_rubric(conn, redis_client, name=f"rubric-{unique_tag()}")
     mr = await create_model_rubric(conn, model.id, rubric.id, redis_client)
     return mr
 

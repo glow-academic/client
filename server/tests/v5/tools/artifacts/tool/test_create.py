@@ -1,6 +1,5 @@
 """Tests for create_tool — black-box using resource + artifact tools only."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -11,6 +10,7 @@ from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.tools.create import create_tool as create_tool_resource
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -21,7 +21,7 @@ pytestmark = pytest.mark.asyncio
 
 
 def _u() -> str:
-    return uuid4().hex[:8]
+    return unique_tag()
 
 
 # ---------------------------------------------------------------------------

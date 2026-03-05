@@ -1,11 +1,11 @@
 """Tests for search_items."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.items.create import create_item
 from app.routes.v5.tools.resources.items.search import search_items
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -29,7 +29,7 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 async def test_returns_empty_for_no_match(conn, redis_client):
     items = await search_items(
-        conn, redis_client, search="zzz-no-match-zzz-" + uuid4().hex[:8]
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
     )
 
     assert items == []
@@ -38,7 +38,7 @@ async def test_returns_empty_for_no_match(conn, redis_client):
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
         await create_item(
-            conn, f"limit-test-item-{uuid4().hex[:6]}", "desc", redis_client
+            conn, f"limit-test-item-{unique_tag()}", "desc", redis_client
         )
 
     items = await search_items(
@@ -51,7 +51,7 @@ async def test_respects_limit(conn, redis_client):
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
         await create_item(
-            conn, f"offset-test-item-{uuid4().hex[:6]}", "desc", redis_client
+            conn, f"offset-test-item-{unique_tag()}", "desc", redis_client
         )
 
     all_items = await search_items(
@@ -66,10 +66,10 @@ async def test_respects_offset(conn, redis_client):
 
 async def test_excludes_ids(conn, redis_client):
     a = await create_item(
-        conn, f"exclude-a-item-{uuid4().hex[:6]}", "desc", redis_client
+        conn, f"exclude-a-item-{unique_tag()}", "desc", redis_client
     )
     b = await create_item(
-        conn, f"exclude-b-item-{uuid4().hex[:6]}", "desc", redis_client
+        conn, f"exclude-b-item-{unique_tag()}", "desc", redis_client
     )
 
     items = await search_items(
@@ -89,7 +89,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 async def test_cache_hit(conn, redis_client):
     await create_item(
-        conn, f"cache-hit-item-{uuid4().hex[:6]}", "desc", redis_client
+        conn, f"cache-hit-item-{unique_tag()}", "desc", redis_client
     )
 
     items1 = await search_items(conn, redis_client, search="cache-hit-item-")
@@ -101,7 +101,7 @@ async def test_cache_hit(conn, redis_client):
 
 async def test_bypass_cache(conn, redis_client):
     await create_item(
-        conn, f"bypass-item-{uuid4().hex[:6]}", "desc", redis_client
+        conn, f"bypass-item-{unique_tag()}", "desc", redis_client
     )
 
     items = await search_items(

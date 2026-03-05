@@ -1,7 +1,6 @@
 """Tests for search_groups."""
 
 from datetime import datetime, timedelta, UTC
-from uuid import uuid4
 
 import pytest
 
@@ -10,6 +9,7 @@ from app.routes.v5.tools.entries.groups.refresh import refresh_groups
 from app.routes.v5.tools.entries.groups.search import search_groups
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -34,7 +34,7 @@ async def test_filters_by_session(conn):
     await create_group(conn, session_id=session.id)
     await refresh_groups(conn)
 
-    items = await search_groups(conn, session_id=uuid4())
+    items = await search_groups(conn, session_id=nonexistent_id())
 
     assert items == []
 

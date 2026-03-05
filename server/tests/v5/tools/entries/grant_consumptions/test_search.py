@@ -1,7 +1,6 @@
 """Tests for search_grant_consumptions."""
 
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
 
 import pytest
 
@@ -14,6 +13,7 @@ from app.routes.v5.tools.entries.grant_consumptions.search import (
 from app.routes.v5.tools.entries.grants.create import create_grant
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -38,7 +38,7 @@ async def test_filters_by_grant_id(conn):
     grant = await _grant(conn)
     await create_grant_consumption(conn, grant_id=grant.id)
 
-    items = await search_grant_consumptions(conn, grant_id=uuid4())
+    items = await search_grant_consumptions(conn, grant_id=nonexistent_id())
 
     assert items == []
 

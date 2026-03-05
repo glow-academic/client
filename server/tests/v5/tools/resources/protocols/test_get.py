@@ -1,11 +1,11 @@
 """Tests for get_protocols."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.protocols.create import create_protocol
 from app.routes.v5.tools.resources.protocols.get import get_protocols
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -22,7 +22,7 @@ async def test_gets_created_protocol(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_protocol(conn, redis_client):
-    items = await get_protocols(conn, [uuid4()], redis_client)
+    items = await get_protocols(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

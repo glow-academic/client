@@ -1,11 +1,11 @@
 """Tests for get_departments."""
 
-from uuid import uuid4
 
 import pytest
 
 from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.departments.get import get_departments
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -25,7 +25,7 @@ async def test_gets_created_department(conn, redis_client):
 
 
 async def test_returns_empty_for_missing_id(conn, redis_client):
-    items = await get_departments(conn, [uuid4()], redis_client)
+    items = await get_departments(conn, [nonexistent_id()], redis_client)
 
     assert items == []
 

@@ -1,7 +1,5 @@
 """Tests for search_files."""
 
-from uuid import uuid4
-
 import pytest
 
 from app.routes.v5.tools.resources.files.create import create_file

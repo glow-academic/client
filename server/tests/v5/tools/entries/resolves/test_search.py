@@ -1,7 +1,6 @@
 """Tests for search_resolves."""
 
 from datetime import datetime, timedelta, UTC
-from uuid import uuid4
 
 import pytest
 
@@ -14,6 +13,7 @@ from app.routes.v5.tools.entries.resolves.search import search_resolves
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -53,7 +53,7 @@ async def test_filters_by_problem_id(conn):
     await create_resolve(conn, problem_id=problem_id, resolved=False, call_id=call.id)
     await refresh_resolves(conn)
 
-    items = await search_resolves(conn, problem_id=uuid4())
+    items = await search_resolves(conn, problem_id=nonexistent_id())
 
     assert items == []
 

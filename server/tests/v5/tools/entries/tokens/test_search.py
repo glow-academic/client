@@ -1,7 +1,6 @@
 """Tests for search_tokens."""
 
 from datetime import UTC, datetime, timedelta
-from uuid import uuid4
 
 import pytest
 
@@ -12,6 +11,7 @@ from app.routes.v5.tools.entries.tokens.create import create_token
 from app.routes.v5.tools.entries.tokens.refresh import refresh_tokens
 from app.routes.v5.tools.entries.tokens.search import search_tokens
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -39,7 +39,7 @@ async def test_filters_by_run_id(conn):
     await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
-    items = await search_tokens(conn, run_id=uuid4())
+    items = await search_tokens(conn, run_id=nonexistent_id())
 
     assert items == []
 
@@ -60,7 +60,7 @@ async def test_filters_by_session_id_no_match(conn):
     await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
-    items = await search_tokens(conn, session_id=uuid4())
+    items = await search_tokens(conn, session_id=nonexistent_id())
 
     assert items == []
 

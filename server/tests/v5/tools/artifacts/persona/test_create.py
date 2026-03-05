@@ -1,6 +1,5 @@
 """Tests for create_persona — black-box using resource + artifact tools only."""
 
-from uuid import uuid4
 
 import pytest
 
@@ -13,6 +12,7 @@ from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.icons.create import create_icon
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.voices.create import create_voice
+from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -23,7 +23,7 @@ pytestmark = pytest.mark.asyncio
 
 
 def _u() -> str:
-    return uuid4().hex[:8]
+    return unique_tag()
 
 
 # ---------------------------------------------------------------------------
