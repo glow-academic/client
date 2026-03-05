@@ -1,84 +1,95 @@
-"""model_rubrics/search internal — reusable data-access layer."""
+"""Model Rubrics SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    QGetModelRubricsV4Item,
-    SearchModelRubricsSqlParams,
-    SearchModelRubricsSqlRow,
-)
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.model_rubrics.get import get_model_rubrics
+from app.routes.v5.tools.resources.model_rubrics.types import GetModelRubricResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/model_rubrics/search_model_rubrics_complete.sql"
+JUNCTION_ARTIFACTS = ["eval"]
 
 
-async def search_model_rubrics_internal(
+async def search_model_rubrics(
     conn: asyncpg.Connection,
-    model_ids: list[UUID],
+    redis: Redis,
+    limit_count: int = 20,
+    offset_count: int = 0,
+    exclude_ids: list[UUID] | None = None,
+    model_ids: list[UUID] | None = None,
     rubric_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     eval: bool = False,
-) -> list[QGetModelRubricsV4Item]:
-    """Internal function for parallel fetching from artifact endpoint.
+) -> list[GetModelRubricResponse]:
+    """Search model rubrics with optional artifact filters."""
+    if limit_count <= 0:
+        return []
 
-    Args:
-        conn: Database connection
-        model_ids: List of model IDs to search rubrics for
-        bypass_cache: Whether to bypass cache
+    artifact_filters = {"eval": eval}
 
-    Returns:
-        List of available model rubric items
-    """
-    # Generate cache key
-    cache_key_val = cache_key(
-        "model_rubrics/search",
+    extra_conditions: list[tuple[str, object]] = []
+
+    if model_ids:
+        extra_conditions.append(
+            ("{alias}.model_id = ANY(${idx})", model_ids)
+        )
+    if rubric_ids:
+        extra_conditions.append(
+            ("{alias}.rubric_id = ANY(${idx})", rubric_ids)
+        )
+
+    tags = ["resources", "model_rubrics"]
+    key = cache_key(
+        "/api/v5/resources/model_rubrics/search",
         {
-            "model_ids": sorted([str(id) for id in model_ids]),
+            "limit_count": limit_count,
+            "offset_count": offset_count,
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
+            "model_ids": sorted(str(i) for i in (model_ids or [])),
             "rubric_ids": sorted(str(i) for i in (rubric_ids or [])),
-            "eval": eval,
+            **artifact_filters,
         },
     )
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetModelRubricsV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetModelRubricResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = SearchModelRubricsSqlParams(
-        model_ids=model_ids or [],
-        rubric_ids=rubric_ids or [],
-        eval=eval,
-    )
-    result = cast(
-        SearchModelRubricsSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
+    ids = await search_resource_ids(
+        conn,
+        table="model_rubrics_resource",
+        resource="model_rubrics",
+        search_column=None,
+        order_column="created_at",
+        limit_count=limit_count,
+        offset_count=offset_count,
+        exclude_ids=exclude_ids,
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
+        extra_conditions=extra_conditions if extra_conditions else None,
     )
 
-    items = result.items or []
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
 
-    # Cache response
+    items = await get_model_rubrics(conn, ids, redis, bypass_cache=True)
+
     await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["model_rubrics"],
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items

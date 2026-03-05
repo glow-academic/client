@@ -1,94 +1,94 @@
-"""simulation_positions/search internal — reusable data-access layer."""
+"""Simulation Positions SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.routes.v5.api.resources.simulation_positions.types import (
-    GetSimulationPositionsV4Item,
-    SearchSimulationPositionsSqlRow,
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.simulation_positions.get import (
+    get_simulation_positions,
 )
-from app.sql.types import SearchSimulationPositionsSqlParams
+from app.routes.v5.tools.resources.simulation_positions.types import (
+    GetSimulationPositionResponse,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/simulation_positions/search_simulation_positions_complete.sql"
+JUNCTION_ARTIFACTS = ["cohort"]
+DRAFT_ARTIFACTS = ["cohort"]
 
 
-async def search_simulation_positions_internal(
+async def search_simulation_positions(
     conn: asyncpg.Connection,
-    simulation_ids: list[UUID] | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
+    redis: Redis,
+    limit_count: int = 20,
+    offset_count: int = 0,
     exclude_ids: list[UUID] | None = None,
+    simulation_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     cohort: bool = False,
-) -> list[GetSimulationPositionsV4Item]:
-    """Internal function for searching simulation positions.
+) -> list[GetSimulationPositionResponse]:
+    """Search simulation positions with optional artifact filters."""
+    if limit_count <= 0:
+        return []
 
-    Args:
-        conn: Database connection
-        simulation_ids: Optional simulation IDs to filter by
-        limit_count: Maximum number of results
-        offset_count: Offset for pagination
-        exclude_ids: IDs to exclude from results
-        bypass_cache: Whether to bypass cache
+    artifact_filters = {"cohort": cohort}
 
-    Returns:
-        List of simulation position items
-    """
-    # Generate cache key
-    cache_key_val = cache_key(
-        "simulation_positions/search",
+    extra_conditions: list[tuple[str, object]] = []
+    if simulation_ids:
+        extra_conditions.append(
+            ("{alias}.simulation_id = ANY(${idx})", simulation_ids)
+        )
+
+    tags = ["resources", "simulation_positions"]
+    key = cache_key(
+        "/api/v5/resources/simulation_positions/search",
         {
-            "simulation_ids": [str(id) for id in (simulation_ids or [])],
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "exclude_ids": [str(id) for id in (exclude_ids or [])],
-            "cohort": cohort,
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
+            "simulation_ids": sorted(str(i) for i in (simulation_ids or [])),
+            **artifact_filters,
         },
     )
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetSimulationPositionsV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetSimulationPositionResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = SearchSimulationPositionsSqlParams(
-        simulation_ids=simulation_ids or [],
+    ids = await search_resource_ids(
+        conn,
+        table="simulation_positions_resource",
+        resource="simulation_positions",
+        search_column=None,
+        order_column="value",
         limit_count=limit_count,
         offset_count=offset_count,
-        exclude_ids=exclude_ids or [],
-        cohort=cohort,
+        exclude_ids=exclude_ids,
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
+        draft_artifacts=DRAFT_ARTIFACTS,
+        extra_conditions=extra_conditions if extra_conditions else None,
     )
 
-    result = cast(
-        SearchSimulationPositionsSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
-    )
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
 
-    items = result.items or []
+    items = await get_simulation_positions(conn, ids, redis, bypass_cache=True)
 
-    # Cache response
     await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["simulation_positions"],
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items

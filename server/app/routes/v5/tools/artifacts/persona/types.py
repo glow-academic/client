@@ -33,3 +33,7 @@ class CreatePersonaResponse(BaseModel):
 
 class UpdatePersonaResponse(BaseModel):
     id: UUID
+
+
+class DeletePersonasResponse(BaseModel):
+    deleted_ids: list[UUID]

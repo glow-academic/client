@@ -108,7 +108,7 @@ from app.routes.v5.tools.resources.parameter_fields.get import (
     get_parameter_fields,
 )
 from app.routes.v5.tools.resources.parameter_fields.search import (
-    search_parameter_fields_internal,
+    search_parameter_fields,
 )
 from app.routes.v5.tools.resources.parameters.get import get_parameters
 from app.routes.v5.tools.resources.parameters.search import search_parameters
@@ -122,7 +122,6 @@ from app.sql.types import (
     GetPersonaAccessSqlRow,
     GetPersonaIdsSqlParams,
     GetPersonaIdsSqlRow,
-    QGetParameterFieldsV4Item,
     load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
@@ -522,22 +521,14 @@ async def get_persona_internal(
                 c, parameter_field_ids, get_redis_client(), bypass_cache
             )
             # Fetch available fields for the currently expanded parameters (from URL)
-            available: list[QGetParameterFieldsV4Item] = []
+            available: list = []
             conditional_param_ids: list[UUID] = []
             if parameter_ids:
-                available = await search_parameter_fields_internal(
+                available = await search_parameter_fields(
                     c,
+                    get_redis_client(),
                     parameter_ids=parameter_ids,
                     bypass_cache=bypass_cache,
-                )
-                # Extract conditional parameter IDs from available fields
-                # These are "next" parameters the client can explore
-                conditional_param_ids = list(
-                    {
-                        UUID(str(f.conditional_parameter_id))
-                        for f in available
-                        if f.conditional_parameter_id
-                    }
                 )
             return (selected, available, conditional_param_ids)
 

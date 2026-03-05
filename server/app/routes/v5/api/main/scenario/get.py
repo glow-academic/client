@@ -108,7 +108,7 @@ from app.routes.v5.tools.resources.parameter_fields.get import (
     get_parameter_fields,
 )
 from app.routes.v5.tools.resources.parameter_fields.search import (
-    search_parameter_fields_internal,
+    search_parameter_fields,
 )
 from app.routes.v5.tools.resources.parameters.get import get_parameters
 from app.routes.v5.tools.resources.parameters.search import search_parameters
@@ -624,17 +624,11 @@ async def get_scenario_internal(
             available: list = []
             conditional_param_ids: list[UUID] = []
             if parameter_ids:
-                available = await search_parameter_fields_internal(
+                available = await search_parameter_fields(
                     c,
+                    get_redis_client(),
                     parameter_ids=parameter_ids,
                     bypass_cache=bypass_cache,
-                )
-                conditional_param_ids = list(
-                    {
-                        UUID(str(f.conditional_parameter_id))
-                        for f in available
-                        if f.conditional_parameter_id
-                    }
                 )
             return (selected, available, conditional_param_ids)
 

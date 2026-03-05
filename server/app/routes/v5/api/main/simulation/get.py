@@ -98,19 +98,19 @@ from app.routes.v5.tools.resources.scenario_positions.get import (
     get_scenario_positions,
 )
 from app.routes.v5.tools.resources.scenario_positions.search import (
-    search_scenario_positions_internal,
+    search_scenario_positions,
 )
 from app.routes.v5.tools.resources.scenario_rubrics.get import (
     get_scenario_rubrics,
 )
 from app.routes.v5.tools.resources.scenario_rubrics.search import (
-    search_scenario_rubrics_internal,
+    search_scenario_rubrics,
 )
 from app.routes.v5.tools.resources.scenario_time_limits.get import (
     get_scenario_time_limits,
 )
 from app.routes.v5.tools.resources.scenario_time_limits.search import (
-    search_scenario_time_limits_internal,
+    search_scenario_time_limits,
 )
 from app.routes.v5.tools.resources.scenarios.search import search_scenarios
 from app.routes.v5.tools.resources.tools.get import get_tools
@@ -452,8 +452,11 @@ async def get_simulation_internal(
             selected = await get_scenario_positions(
                 c, scenario_position_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_scenario_positions_internal(
-                c, effective_scenario_ids, bypass_cache=bypass_cache
+            suggestions = await search_scenario_positions(
+                c,
+                get_redis_client(),
+                scenario_ids=effective_scenario_ids,
+                bypass_cache=bypass_cache,
             )
             return (selected, suggestions)
 
@@ -462,8 +465,8 @@ async def get_simulation_internal(
             selected = await get_scenario_rubrics(
                 c, scenario_rubric_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_scenario_rubrics_internal(
-                c, effective_scenario_ids, bypass_cache=bypass_cache
+            suggestions = await search_scenario_rubrics(
+                c, get_redis_client(), scenario_ids=effective_scenario_ids, bypass_cache=bypass_cache
             )
             return (selected, suggestions)
 
@@ -472,8 +475,8 @@ async def get_simulation_internal(
             selected = await get_scenario_time_limits(
                 c, scenario_time_limit_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_scenario_time_limits_internal(
-                c, effective_scenario_ids, bypass_cache=bypass_cache
+            suggestions = await search_scenario_time_limits(
+                c, get_redis_client(), scenario_ids=effective_scenario_ids, bypass_cache=bypass_cache
             )
             return (selected, suggestions)
 

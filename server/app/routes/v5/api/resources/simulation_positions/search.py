@@ -1,35 +1,26 @@
-"""Simulation positions search endpoint - v4 API.
+"""Simulation Positions SEARCH endpoint - v4 API following DHH principles."""
 
-Provides search endpoint for simulation positions.
-"""
-
-from typing import Annotated, Any
+from typing import Annotated
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
-from app.routes.v5.api.resources.simulation_positions.types import (
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.resources.simulation_positions.search import (
+    search_simulation_positions as search_simulation_positions_fn,
+)
+from app.sql.types import (
     SearchSimulationPositionsApiRequest,
     SearchSimulationPositionsApiResponse,
 )
-from app.routes.v5.tools.resources.simulation_positions.search import (
-    SQL_PATH,
-    search_simulation_positions_internal,
-)
-from app.sql.types import load_sql_query
 from app.utils.error.handle_route_error import handle_route_error
 
-# Load SQL with types at module level
 router = APIRouter()
-
-# =============================================================================
-# HTTP Endpoint
-# =============================================================================
 
 
 @router.post(
-    "/simulation_positions/search", response_model=SearchSimulationPositionsApiResponse
+    "/simulation_positions/search",
+    response_model=SearchSimulationPositionsApiResponse,
 )
 async def search_simulation_positions(
     request: SearchSimulationPositionsApiRequest,
@@ -37,48 +28,33 @@ async def search_simulation_positions(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SearchSimulationPositionsApiResponse:
-    """Search simulation positions with optional filters."""
+    """Search simulation_positions resources."""
     tags = ["resources", "simulation_positions"]
-
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        # Get profile_id from header
-        profile_id = http_request.state.profile_id
-        if not profile_id:
-            raise HTTPException(
-                status_code=401,
-                detail="Profile ID is required. Please sign in again.",
-            )
-
-        # Check for cache bypass header
-        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-
-        # Use internal function
-        items = await search_simulation_positions_internal(
-            conn=conn,
-            simulation_ids=request.simulation_ids,
-            limit_count=request.limit_count,
-            offset_count=request.offset_count,
+        items = await search_simulation_positions_fn(
+            conn,
+            get_redis_client(),
+            limit_count=request.limit_count or 20,
+            offset_count=request.offset_count or 0,
             exclude_ids=request.exclude_ids,
+            simulation_ids=request.simulation_ids,
             bypass_cache=bypass_cache,
             cohort=request.cohort or False,
         )
-
-        api_response = SearchSimulationPositionsApiResponse(items=items)
-
         response.headers["X-Cache-Tags"] = ",".join(tags)
-
-        return api_response
+        return SearchSimulationPositionsApiResponse(items=items)
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
             operation="search_simulation_positions",
-            sql_query=sql_query,
-            sql_params=sql_params,
+            sql_query=None,
+            sql_params=None,
             request=http_request,
         )

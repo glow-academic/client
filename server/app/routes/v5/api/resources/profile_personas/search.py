@@ -1,30 +1,19 @@
-"""Profile personas search endpoint - v4 API.
+"""Profile personas SEARCH endpoint - v4 API following DHH principles."""
 
-Provides search endpoint for finding available profile personas for profiles.
-"""
-
-from typing import Annotated, Any
+from typing import Annotated
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
-from app.routes.v5.tools.resources.profile_personas.search import (
-    SQL_PATH,
-    search_profile_personas_internal,
-)
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.resources.profile_personas.search import search_profile_personas as search_profile_personas_fn
 from app.sql.types import (
     SearchProfilePersonasApiRequest,
     SearchProfilePersonasApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
-
-# =============================================================================
-# HTTP Endpoint
-# =============================================================================
 
 
 @router.post(
@@ -39,39 +28,29 @@ async def search_profile_personas(
 ) -> SearchProfilePersonasApiResponse:
     """Search available profile personas for profiles."""
     tags = ["resources", "profile_personas"]
-
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        profile_id = http_request.state.profile_id
-        if not profile_id:
-            raise HTTPException(
-                status_code=401,
-                detail="Profile ID is required. Please sign in again.",
-            )
-
-        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-
-        items = await search_profile_personas_internal(
-            conn=conn,
-            profile_ids=request.profile_ids or [],
+        items = await search_profile_personas_fn(
+            conn,
+            get_redis_client(),
+            profile_ids=request.profile_ids,
+            persona_ids=request.persona_ids,
             bypass_cache=bypass_cache,
             cohort=request.cohort or False,
         )
-
-        api_response = SearchProfilePersonasApiResponse(items=items)
         response.headers["X-Cache-Tags"] = ",".join(tags)
-
-        return api_response
+        return SearchProfilePersonasApiResponse(items=items)
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,
             route_path=http_request.url.path,
             operation="search_profile_personas",
-            sql_query=sql_query,
-            sql_params=sql_params,
+            sql_query=None,
+            sql_params=None,
             request=http_request,
         )

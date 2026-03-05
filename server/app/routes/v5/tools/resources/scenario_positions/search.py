@@ -1,81 +1,90 @@
-"""scenario_positions/search internal — reusable data-access layer."""
+"""Scenario Positions SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    QGetScenarioPositionsV4Item,
-    SearchScenarioPositionsSqlParams,
-    SearchScenarioPositionsSqlRow,
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.scenario_positions.get import get_scenario_positions
+from app.routes.v5.tools.resources.scenario_positions.types import (
+    GetScenarioPositionResponse,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/scenario_positions/search_scenario_positions_complete.sql"
+JUNCTION_ARTIFACTS = ["simulation"]
+DRAFT_ARTIFACTS = ["simulation"]
 
 
-async def search_scenario_positions_internal(
+async def search_scenario_positions(
     conn: asyncpg.Connection,
-    scenario_ids: list[UUID],
+    redis: Redis,
+    limit_count: int = 20,
+    offset_count: int = 0,
+    exclude_ids: list[UUID] | None = None,
+    scenario_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     simulation: bool = False,
-) -> list[QGetScenarioPositionsV4Item]:
-    """Internal function for parallel fetching from artifact endpoint.
+) -> list[GetScenarioPositionResponse]:
+    """Search scenario positions with optional artifact filters."""
+    if limit_count <= 0:
+        return []
 
-    Args:
-        conn: Database connection
-        scenario_ids: List of scenario IDs to search positions for
-        bypass_cache: Whether to bypass cache
+    artifact_filters = {"simulation": simulation}
 
-    Returns:
-        List of available scenario position items
-    """
-    # Generate cache key
-    cache_key_val = cache_key(
-        "scenario_positions/search",
+    extra_conditions: list[tuple[str, object]] = []
+    if scenario_ids:
+        extra_conditions.append(("{alias}.scenario_id = ANY(${idx})", scenario_ids))
+
+    tags = ["resources", "scenario_positions"]
+    key = cache_key(
+        "/api/v5/resources/scenario_positions/search",
         {
-            "scenario_ids": sorted([str(id) for id in scenario_ids]),
-            "simulation": simulation,
+            "limit_count": limit_count,
+            "offset_count": offset_count,
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
+            "scenario_ids": sorted(str(i) for i in (scenario_ids or [])),
+            **artifact_filters,
         },
     )
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetScenarioPositionsV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetScenarioPositionResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = SearchScenarioPositionsSqlParams(
-        scenario_ids=scenario_ids or [],
-        simulation=simulation,
-    )
-    result = cast(
-        SearchScenarioPositionsSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
+    ids = await search_resource_ids(
+        conn,
+        table="scenario_positions_resource",
+        resource="scenario_positions",
+        search_column=None,
+        order_column="value",
+        limit_count=limit_count,
+        offset_count=offset_count,
+        exclude_ids=exclude_ids,
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
+        draft_artifacts=DRAFT_ARTIFACTS,
+        extra_conditions=extra_conditions if extra_conditions else None,
     )
 
-    items = result.items or []
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
 
-    # Cache response
+    items = await get_scenario_positions(conn, ids, redis, bypass_cache=True)
+
     await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["scenario_positions"],
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items

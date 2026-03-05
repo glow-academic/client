@@ -1,84 +1,103 @@
-"""scenario_time_limits/search internal — reusable data-access layer."""
+"""Scenario Time Limits SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    QGetScenarioTimeLimitsV4Item,
-    SearchScenarioTimeLimitsSqlParams,
-    SearchScenarioTimeLimitsSqlRow,
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.scenario_time_limits.get import get_scenario_time_limits
+from app.routes.v5.tools.resources.scenario_time_limits.types import (
+    GetScenarioTimeLimitResponse,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/scenario_time_limits/search_scenario_time_limits_complete.sql"
+JUNCTION_ARTIFACTS = ["simulation"]
+DRAFT_ARTIFACTS = ["simulation"]
 
 
-async def search_scenario_time_limits_internal(
+async def search_scenario_time_limits(
     conn: asyncpg.Connection,
-    scenario_ids: list[UUID],
+    redis: Redis,
+    search: str | None = None,
+    limit_count: int = 20,
+    offset_count: int = 0,
+    exclude_ids: list[UUID] | None = None,
+    scenario_ids: list[UUID] | None = None,
     negative: bool | None = None,
     bypass_cache: bool = False,
     *,
     simulation: bool = False,
-) -> list[QGetScenarioTimeLimitsV4Item]:
-    """Internal function for parallel fetching from artifact endpoint.
+) -> list[GetScenarioTimeLimitResponse]:
+    """Search scenario time limits with optional artifact filters."""
+    if limit_count <= 0:
+        return []
 
-    Args:
-        conn: Database connection
-        scenario_ids: List of scenario IDs to search time limits for
-        bypass_cache: Whether to bypass cache
+    artifact_filters = {
+        "simulation": simulation,
+    }
 
-    Returns:
-        List of available scenario time limit items
-    """
-    # Generate cache key
-    cache_key_val = cache_key(
-        "scenario_time_limits/search",
+    extra_conditions: list[tuple[str, object]] = [
+        ("{alias}.active = ${idx}::boolean", True),
+    ]
+
+    if scenario_ids:
+        extra_conditions.append(("{alias}.scenario_id = ANY(${idx})", scenario_ids))
+
+    if negative is not None:
+        extra_conditions.append(("{alias}.negative = ${idx}::boolean", negative))
+
+    tags = ["resources", "scenario_time_limits"]
+    key = cache_key(
+        "/api/v5/resources/scenario_time_limits/search",
         {
-            "scenario_ids": sorted([str(id) for id in scenario_ids]),
+            "search": search,
+            "limit_count": limit_count,
+            "offset_count": offset_count,
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
+            "scenario_ids": [str(i) for i in (scenario_ids or [])],
             "negative": negative,
-            "simulation": simulation,
+            **artifact_filters,
         },
     )
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetScenarioTimeLimitsV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetScenarioTimeLimitResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = SearchScenarioTimeLimitsSqlParams(
-        scenario_ids=scenario_ids or [],
-        negative=negative,
-        simulation=simulation,
-    )
-    result = cast(
-        SearchScenarioTimeLimitsSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
+    ids = await search_resource_ids(
+        conn,
+        table="scenario_time_limits_resource",
+        resource="scenario_time_limits",
+        search_column=None,
+        search=None,
+        limit_count=limit_count,
+        offset_count=offset_count,
+        exclude_ids=exclude_ids,
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
+        draft_artifacts=DRAFT_ARTIFACTS,
+        order_column="time_limit_seconds",
+        extra_conditions=extra_conditions,
     )
 
-    items = result.items or []
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
 
-    # Cache response
+    items = await get_scenario_time_limits(conn, ids, redis, bypass_cache=True)
+
     await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["scenario_time_limits"],
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items

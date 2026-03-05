@@ -292,14 +292,23 @@ async def _resolve_scenario_values(
             item.document_ids = resolved_ids
 
     if item.parameter_fields is not None and item.parameter_field_ids is None:
+        from app.routes.v5.tools.resources.fields.get import get_fields
         from app.routes.v5.tools.resources.parameter_fields.search import (
-            search_parameter_fields_internal,
+            search_parameter_fields,
         )
 
-        all_pf = await search_parameter_fields_internal(
-            conn, parameter_ids=[], scenario=True
+        all_pf = await search_parameter_fields(
+            conn, get_redis_client(), scenario=True
         )
-        pf_name_map = {pf.name.lower(): pf.id for pf in all_pf if pf.name and pf.id}
+        # Fetch field names for the parameter_fields (name lives on fields_resource)
+        field_ids_list = [pf.field_id for pf in all_pf if pf.field_id]
+        fields_list = await get_fields(conn, field_ids_list, get_redis_client()) if field_ids_list else []
+        field_name_map = {f.id: f.name for f in fields_list if f.name}
+        pf_name_map = {
+            field_name_map[pf.field_id].lower(): pf.id
+            for pf in all_pf
+            if pf.field_id and pf.id and pf.field_id in field_name_map
+        }
         resolved_ids = []
         for pf_name in item.parameter_fields:
             pf_id = pf_name_map.get(pf_name.lower())

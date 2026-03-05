@@ -53,7 +53,7 @@ from app.routes.v5.tools.entries.tool_drafts.get import get_tool_drafts_entries_
 from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.arg_positions.get import get_arg_positions
 from app.routes.v5.tools.resources.arg_positions.search import (
-    search_arg_positions_internal,
+    search_arg_positions,
 )
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args.search import search_args
@@ -273,13 +273,14 @@ async def get_tool_internal(
                 get_redis_client(),
                 bypass_cache,
             )
-            suggestions = await search_arg_positions_internal(
+            suggestions = await search_arg_positions(
                 c,
-                args_ids=selected_args_ids,
+                get_redis_client(),
                 limit_count=100,
                 offset_count=0,
                 exclude_ids=selected_arg_position_ids,
-                cache=cache,
+                args_ids=selected_args_ids,
+                bypass_cache=bypass_cache,
                 tool=True,
             )
             return selected, suggestions

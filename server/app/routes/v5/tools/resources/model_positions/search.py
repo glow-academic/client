@@ -1,83 +1,86 @@
-"""model_positions/search internal — reusable data-access layer."""
+"""Model Positions SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    QGetModelPositionsV4Item,
-    SearchModelPositionsSqlParams,
-    SearchModelPositionsSqlRow,
-)
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.model_positions.get import get_model_positions
+from app.routes.v5.tools.resources.model_positions.types import GetModelPositionResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = (
-    "app/sql/queries/resources/model_positions/search_model_positions_complete.sql"
-)
+JUNCTION_ARTIFACTS = ["eval"]
 
 
-async def search_model_positions_internal(
+async def search_model_positions(
     conn: asyncpg.Connection,
-    model_ids: list[UUID],
+    redis: Redis,
+    limit_count: int = 20,
+    offset_count: int = 0,
+    exclude_ids: list[UUID] | None = None,
+    model_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     eval: bool = False,
-) -> list[QGetModelPositionsV4Item]:
-    """Internal function for parallel fetching from artifact endpoint.
+) -> list[GetModelPositionResponse]:
+    """Search model positions with optional artifact filters."""
+    if limit_count <= 0:
+        return []
 
-    Args:
-        conn: Database connection
-        model_ids: List of model IDs to search positions for
-        bypass_cache: Whether to bypass cache
+    artifact_filters = {"eval": eval}
 
-    Returns:
-        List of available model position items
-    """
-    # Generate cache key
-    cache_key_val = cache_key(
-        "model_positions/search",
+    extra_conditions: list[tuple[str, object]] = []
+    if model_ids:
+        extra_conditions.append(("{alias}.model_id = ANY(${idx})", model_ids))
+
+    tags = ["resources", "model_positions"]
+    key = cache_key(
+        "/api/v5/resources/model_positions/search",
         {
-            "model_ids": sorted([str(id) for id in model_ids]),
-            "eval": eval,
+            "limit_count": limit_count,
+            "offset_count": offset_count,
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
+            "model_ids": sorted(str(i) for i in (model_ids or [])),
+            **artifact_filters,
         },
     )
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetModelPositionsV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetModelPositionResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = SearchModelPositionsSqlParams(
-        model_ids=model_ids or [],
-        eval=eval,
-    )
-    result = cast(
-        SearchModelPositionsSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
+    ids = await search_resource_ids(
+        conn,
+        table="model_positions_resource",
+        resource="model_positions",
+        search_column=None,
+        order_column="value",
+        limit_count=limit_count,
+        offset_count=offset_count,
+        exclude_ids=exclude_ids,
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
+        extra_conditions=extra_conditions if extra_conditions else None,
     )
 
-    items = result.items or []
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
 
-    # Cache response
+    items = await get_model_positions(conn, ids, redis, bypass_cache=True)
+
     await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["model_positions"],
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items

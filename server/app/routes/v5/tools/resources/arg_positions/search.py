@@ -1,76 +1,90 @@
-"""arg_positions/search internal — reusable data-access layer."""
+"""Arg Positions SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    QGetArgPositionsV4Item,
-    SearchArgPositionsSqlParams,
-    SearchArgPositionsSqlRow,
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.arg_positions.get import get_arg_positions
+from app.routes.v5.tools.resources.arg_positions.types import (
+    GetArgPositionResponse,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/arg_positions/search_arg_positions_complete.sql"
+JUNCTION_ARTIFACTS = ["tool"]
+DRAFT_ARTIFACTS = ["tool"]
 
 
-async def search_arg_positions_internal(
+async def search_arg_positions(
     conn: asyncpg.Connection,
-    args_ids: list[UUID] | None = None,
-    limit_count: int | None = 100,
-    offset_count: int | None = 0,
+    redis: Redis,
+    limit_count: int = 20,
+    offset_count: int = 0,
     exclude_ids: list[UUID] | None = None,
+    args_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     tool: bool = False,
-) -> list[QGetArgPositionsV4Item]:
-    """Internal function to search arg_positions."""
+) -> list[GetArgPositionResponse]:
+    """Search arg positions with optional artifact filters."""
+    if limit_count <= 0:
+        return []
+
+    artifact_filters = {"tool": tool}
+
+    extra_conditions: list[tuple[str, object]] = []
+    if args_ids:
+        extra_conditions.append(("{alias}.args_id = ANY(${idx})", args_ids))
+
     tags = ["resources", "arg_positions"]
-    cache_key_val = cache_key(
+    key = cache_key(
         "/api/v5/resources/arg_positions/search",
         {
-            "args_ids": sorted([str(id) for id in (args_ids or [])]),
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "exclude_ids": sorted([str(id) for id in (exclude_ids or [])]),
-            "tool": tool,
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
+            "args_ids": sorted(str(i) for i in (args_ids or [])),
+            **artifact_filters,
         },
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetArgPositionsV4Item.model_validate(item)
+                GetArgPositionResponse.model_validate(item)
                 for item in cached.get("items", [])
             ]
 
-    params = SearchArgPositionsSqlParams(
-        args_ids=args_ids or [],
+    ids = await search_resource_ids(
+        conn,
+        table="arg_positions_resource",
+        resource="arg_positions",
+        search_column=None,
+        order_column="value",
         limit_count=limit_count,
         offset_count=offset_count,
-        exclude_ids=exclude_ids or [],
-        tool=tool,
-    )
-    result = cast(
-        SearchArgPositionsSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+        exclude_ids=exclude_ids,
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
+        draft_artifacts=DRAFT_ARTIFACTS,
+        extra_conditions=extra_conditions if extra_conditions else None,
     )
 
-    items: list[QGetArgPositionsV4Item] = (
-        result.items if result and result.items else []
-    )
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
+
+    items = await get_arg_positions(conn, ids, redis, bypass_cache=True)
 
     await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items
