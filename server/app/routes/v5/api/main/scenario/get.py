@@ -538,8 +538,9 @@ async def get_scenario_internal(
                 bypass_cache=bypass_cache,
             )
             dept_source = "all" if scenario_id is None else "recent"
-            suggestions = await search_departments_internal(
+            suggestions = await search_departments(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
@@ -826,7 +827,7 @@ async def get_scenario_internal(
     )
     all_scenario_flags = _dedupe_by_id(flags_selected + flags_suggestions, "name")
     departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "department_id"
+        departments_selected + departments_suggestions, "id"
     )
     personas = _dedupe_by_id(personas_selected + personas_suggestions, "persona_id")
     documents = _dedupe_by_id(documents_selected + documents_suggestions, "document_id")
@@ -1007,7 +1008,7 @@ async def get_scenario_internal(
         None,
     )
     department_resources = [
-        d for d in departments if d.department_id in set(selected_department_ids)
+        d for d in departments if d.id in set(selected_department_ids)
     ]
     persona_resources = personas_selected
     document_resources = documents_selected
@@ -1083,7 +1084,7 @@ async def get_scenario_internal(
         "problem_statements": [
             ps.problem_statement_id for ps in problem_statements_suggestions
         ],
-        "departments": [d.department_id for d in departments_suggestions],
+        "departments": [d.id for d in departments_suggestions],
         "personas": [p.persona_id for p in personas_suggestions],
         "documents": [d.document_id for d in documents_suggestions],
         "parameters": [p.parameter_id for p in parameters_suggestions],

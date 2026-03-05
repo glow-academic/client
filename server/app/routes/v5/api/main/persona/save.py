@@ -28,7 +28,7 @@ from app.routes.v5.api.main.persona.types import (
 )
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
 from app.routes.v5.tools.resources.colors.search import search_colors_internal
-from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.create import (
     create_descriptions_internal,
 )
@@ -291,13 +291,13 @@ async def _resolve_persona_values(
 
     if item.departments is not None and item.department_ids is None:
         # Fetch all departments and match by name
-        all_depts = await search_departments_internal(
-            conn, search=None, limit_count=1000, persona=True
+        all_depts = await search_departments(
+            conn, get_redis_client(), search=None, limit_count=1000, persona=True
         )
         dept_name_map = {
-            d.name.lower(): d.department_id
+            d.name.lower(): d.id
             for d in all_depts
-            if d.name and d.department_id
+            if d.name and d.id
         }
         resolved_ids = []
         for dept_name in item.departments:

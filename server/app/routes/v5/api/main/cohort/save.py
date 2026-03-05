@@ -209,17 +209,18 @@ async def _resolve_cohort_values(
             )
 
     if item.departments is not None and item.department_ids is None:
+        from app.infra.globals import get_redis_client
         from app.routes.v5.tools.resources.departments.search import (
-            search_departments_internal,
+            search_departments,
         )
 
-        all_depts = await search_departments_internal(
-            conn, search=None, limit_count=1000, cohort=True
+        all_depts = await search_departments(
+            conn, get_redis_client(), search=None, limit_count=1000, cohort=True
         )
         dept_name_map = {
-            d.name.lower(): d.department_id
+            d.name.lower(): d.id
             for d in all_depts
-            if d.name and d.department_id
+            if d.name and d.id
         }
         resolved_ids = []
         for dept_name in item.departments:

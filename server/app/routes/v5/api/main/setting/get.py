@@ -332,8 +332,9 @@ async def get_setting_internal(
                 get_redis_client(),
                 bypass_cache=bypass_cache,
             )
-            suggestions = await search_departments_internal(
+            suggestions = await search_departments(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
@@ -486,7 +487,7 @@ async def get_setting_internal(
     colors = _dedupe_by_id(colors_selected + colors_suggestions, "id")
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
     departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "department_id"
+        departments_selected + departments_suggestions, "id"
     )
     profiles = _dedupe_by_id(profiles_selected + profiles_suggestions, "profile_id")
     auths = _dedupe_by_id(auths_selected + auths_suggestions, "id")
@@ -518,7 +519,7 @@ async def get_setting_internal(
 
     color_resources = [c for c in colors if c.id in color_id_set]
     department_resources = [
-        d for d in departments if d.department_id in department_id_set
+        d for d in departments if d.id in department_id_set
     ]
     profile_resources = [p for p in profiles if p.profile_id in profile_id_set]
     auth_resources = [a for a in auths if a.id in auth_id_set]
@@ -531,7 +532,7 @@ async def get_setting_internal(
     name_suggestions_ids = [n.id for n in names_suggestions]
     description_suggestions_ids = [d.id for d in descriptions_suggestions]
     color_suggestions_ids = [c.id for c in colors_suggestions]
-    department_suggestions_ids = [d.department_id for d in departments_suggestions]
+    department_suggestions_ids = [d.id for d in departments_suggestions]
     profile_suggestions_ids = [p.profile_id for p in profiles_suggestions]
     auth_suggestions_ids = [a.id for a in auths_suggestions]
     pk_suggestions_ids = [pk.id for pk in provider_keys_suggestions]

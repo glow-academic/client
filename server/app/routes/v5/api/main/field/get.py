@@ -381,7 +381,7 @@ async def get_field_internal(
     )
 
     selected_departments = [
-        d for d in all_departments if d.department_id in selected_department_ids
+        d for d in all_departments if d.id in selected_department_ids
     ]
     selected_conditional_parameters = [
         p
@@ -491,7 +491,7 @@ async def get_field_internal(
         suggestions_map={
             "names": [n.id for n in names_suggestions],
             "descriptions": [d.id for d in descriptions_suggestions],
-            "departments": [d.department_id for d in departments_suggestions],
+            "departments": [d.id for d in departments_suggestions],
             "conditional_parameters": [
                 p.parameter_id for p in conditional_parameters_suggestions
             ],

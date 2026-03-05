@@ -478,15 +478,16 @@ async def get_model_internal(
                 get_redis_client(),
                 bypass_cache=bypass_cache,
             )
-            suggestions = await search_departments_internal(
+            suggestions = await search_departments(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
                 department_ids=user_department_ids,
                 suggest_source="all",
                 exclude_ids=selected_department_ids,
-                cache=cache,
+                bypass_cache=bypass_cache,
                 model=True,
             )
             return (selected, suggestions)
@@ -567,7 +568,7 @@ async def get_model_internal(
     providers = _dedupe_by_id(providers_selected + providers_suggestions, "id")
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
     departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "department_id"
+        departments_selected + departments_suggestions, "id"
     )
     modalities = _dedupe_by_id(modalities_selected + modalities_suggestions, "id")
     temperature_levels = _dedupe_by_id(
@@ -593,7 +594,7 @@ async def get_model_internal(
     )
 
     department_resources = [
-        d for d in departments if d.department_id in selected_department_ids
+        d for d in departments if d.id in selected_department_ids
     ]
     modality_resources = [m for m in modalities if m.id in selected_modality_ids]
     temperature_level_resources = [
@@ -671,7 +672,7 @@ async def get_model_internal(
         "names": [n.id for n in names_suggestions],
         "descriptions": [d.id for d in descriptions_suggestions],
         "values": [v.id for v in values_suggestions],
-        "departments": [d.department_id for d in departments_suggestions],
+        "departments": [d.id for d in departments_suggestions],
         "modalities": [m.id for m in modalities_suggestions],
         "temperature_levels": [
             t.temperature_level_id for t in temperature_levels_suggestions

@@ -416,8 +416,9 @@ async def get_profile_internal(
             selected = await get_departments(
                 c, department_ids, get_redis_client(), bypass_cache=bypass_cache
             )
-            suggestions = await search_departments_internal(
+            suggestions = await search_departments(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
@@ -501,7 +502,7 @@ async def get_profile_internal(
     )
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
     departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "department_id"
+        departments_selected + departments_suggestions, "id"
     )
 
     # Compute final show flags based on actual data
@@ -548,7 +549,7 @@ async def get_profile_internal(
     name_suggestions = [n.id for n in names_suggestions]
     email_suggestions = [e.id for e in emails_suggestions]
     request_limit_suggestions = [r.id for r in request_limits_suggestions]
-    department_suggestions = [d.department_id for d in departments_suggestions]
+    department_suggestions = [d.id for d in departments_suggestions]
 
     # Build show_ai_generate map
     show_ai_generate_map = {
@@ -574,7 +575,7 @@ async def get_profile_internal(
         (r for r in request_limits if r.id == selected_request_limit_id), None
     )
     department_resources = [
-        d for d in departments if d.department_id in selected_department_ids
+        d for d in departments if d.id in selected_department_ids
     ]
 
     selected_flag_resource = (

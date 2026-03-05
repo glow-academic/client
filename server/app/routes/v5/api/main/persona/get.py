@@ -500,8 +500,9 @@ async def get_persona_internal(
             )
             # Always use "all" to show all available departments the user has access to
             # This ensures users can see all options when editing, not just recently used ones
-            suggestions = await search_departments_internal(
+            suggestions = await search_departments(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
@@ -676,7 +677,7 @@ async def get_persona_internal(
     )
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
     departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "department_id"
+        departments_selected + departments_suggestions, "id"
     )
     examples = _dedupe_by_id(examples_selected + examples_suggestions, "id")
     parameters = _dedupe_by_id(
@@ -711,7 +712,7 @@ async def get_persona_internal(
     flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
 
     department_resources = [
-        d for d in departments if d.department_id in selected_department_ids
+        d for d in departments if d.id in selected_department_ids
     ]
     parameter_field_resources = parameter_fields_selected
     resolved_parameter_ids = list(
@@ -726,7 +727,7 @@ async def get_persona_internal(
     color_suggestions = [c.id for c in colors_suggestions]
     icon_suggestions = [i.id for i in icons_suggestions]
     instructions_suggestions_ids = [i.id for i in instructions_suggestions]
-    department_suggestions = [d.department_id for d in departments_suggestions]
+    department_suggestions = [d.id for d in departments_suggestions]
     parameter_field_suggestions: list[UUID] = []
     example_suggestions = [e.id for e in examples_suggestions]
     parameter_suggestions = [p.parameter_id for p in parameters_suggestions]

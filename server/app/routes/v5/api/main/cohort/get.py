@@ -426,8 +426,9 @@ async def get_cohort_internal(
                 c, department_ids, get_redis_client(), bypass_cache=bypass_cache
             )
             # Use "all" to show all available departments the user has access to
-            suggestions = await search_departments_internal(
+            suggestions = await search_departments(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
@@ -572,7 +573,7 @@ async def get_cohort_internal(
     )
     flags_raw = _dedupe_by_id(flags_selected + flags_suggestions, "id")
     departments_raw = _dedupe_by_id(
-        departments_selected + departments_suggestions, "department_id"
+        departments_selected + departments_suggestions, "id"
     )
     simulations_raw = _dedupe_by_id(
         simulations_selected + simulations_suggestions, "simulation_id"
@@ -592,7 +593,7 @@ async def get_cohort_internal(
     ]
     departments = [
         CohortDepartment(
-            department_id=d.department_id,
+            department_id=d.id,
             name=d.name,
             description=d.description,
             generated=d.generated,
@@ -652,7 +653,7 @@ async def get_cohort_internal(
     # Suggestion IDs
     name_suggestions_ids = [n.id for n in names_suggestions]
     description_suggestions_ids = [d.id for d in descriptions_suggestions]
-    department_suggestions_ids = [d.department_id for d in departments_suggestions]
+    department_suggestions_ids = [d.id for d in departments_suggestions]
     simulation_suggestions_ids = [s.simulation_id for s in simulations_suggestions]
     profile_suggestions_ids = [
         p.profile_id for p in profiles_suggestions if p.profile_id
