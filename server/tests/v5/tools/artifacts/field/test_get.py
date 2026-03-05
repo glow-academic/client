@@ -2,26 +2,23 @@
 
 import pytest
 
+from app.routes.v5.tools.artifacts.field.create import create_field
 from app.routes.v5.tools.artifacts.field.get import get_fields
-from tests.helpers import nonexistent_id
+from app.routes.v5.tools.resources.names.create import create_name
+from tests.helpers import nonexistent_id, unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _create_field(conn):
-    field_id = await conn.fetchval(
-        "INSERT INTO field_artifact (generated) VALUES (true) RETURNING id"
-    )
-    return field_id
+async def test_returns_base_columns(conn, redis_client):
+    name = await create_name(conn, f"test-{unique_tag()}", redis_client)
+    created = await create_field(conn, name_id=name.id)
 
-
-async def test_returns_base_columns(conn):
-    field_id = await _create_field(conn)
-    items = await get_fields(conn, [field_id])
+    items = await get_fields(conn, [created.id])
 
     assert len(items) == 1
     p = items[0]
-    assert p.id == field_id
+    assert p.id == created.id
     # No junctions requested — all should be None
     assert p.name_ids is None
     assert p.description_ids is None
@@ -39,9 +36,11 @@ async def test_returns_empty_for_empty_ids(conn):
     assert items == []
 
 
-async def test_fetches_name_ids_when_requested(conn):
-    field_id = await _create_field(conn)
-    items = await get_fields(conn, [field_id], names=True)
+async def test_fetches_name_ids_when_requested(conn, redis_client):
+    name = await create_name(conn, f"test-{unique_tag()}", redis_client)
+    created = await create_field(conn, name_id=name.id)
+
+    items = await get_fields(conn, [created.id], names=True)
 
     assert len(items) == 1
     p = items[0]
@@ -50,11 +49,13 @@ async def test_fetches_name_ids_when_requested(conn):
     assert p.description_ids is None
 
 
-async def test_fetches_multiple_junctions(conn):
-    field_id = await _create_field(conn)
+async def test_fetches_multiple_junctions(conn, redis_client):
+    name = await create_name(conn, f"test-{unique_tag()}", redis_client)
+    created = await create_field(conn, name_id=name.id)
+
     items = await get_fields(
         conn,
-        [field_id],
+        [created.id],
         names=True,
         descriptions=True,
         departments=True,
@@ -70,9 +71,11 @@ async def test_fetches_multiple_junctions(conn):
     assert p.conditional_parameter_ids is None
 
 
-async def test_no_junctions_when_all_false(conn):
-    field_id = await _create_field(conn)
-    items = await get_fields(conn, [field_id])
+async def test_no_junctions_when_all_false(conn, redis_client):
+    name = await create_name(conn, f"test-{unique_tag()}", redis_client)
+    created = await create_field(conn, name_id=name.id)
+
+    items = await get_fields(conn, [created.id])
 
     p = items[0]
     for field in [

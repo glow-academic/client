@@ -2,19 +2,23 @@
 
 import pytest
 
+from app.routes.v5.tools.artifacts.model.create import create_model
 from app.routes.v5.tools.artifacts.model.get import get_models
-from tests.seed_ids import SEED_MODEL_ARTIFACT_ID
-from tests.helpers import nonexistent_id
+from app.routes.v5.tools.resources.names.create import create_name
+from tests.helpers import nonexistent_id, unique_tag
 
 pytestmark = pytest.mark.asyncio
 
 
-async def test_returns_base_columns(conn):
-    items = await get_models(conn, [SEED_MODEL_ARTIFACT_ID])
+async def test_returns_base_columns(conn, redis_client):
+    name = await create_name(conn, f"test-{unique_tag()}", redis_client)
+    created = await create_model(conn, name_id=name.id)
+
+    items = await get_models(conn, [created.id])
 
     assert len(items) == 1
     p = items[0]
-    assert p.id == SEED_MODEL_ARTIFACT_ID
+    assert p.id == created.id
     # No junctions requested — all should be None
     assert p.name_ids is None
     assert p.description_ids is None
@@ -42,8 +46,11 @@ async def test_returns_empty_for_empty_ids(conn):
     assert items == []
 
 
-async def test_fetches_name_ids_when_requested(conn):
-    items = await get_models(conn, [SEED_MODEL_ARTIFACT_ID], names=True)
+async def test_fetches_name_ids_when_requested(conn, redis_client):
+    name = await create_name(conn, f"test-{unique_tag()}", redis_client)
+    created = await create_model(conn, name_id=name.id)
+
+    items = await get_models(conn, [created.id], names=True)
 
     assert len(items) == 1
     p = items[0]
@@ -52,10 +59,13 @@ async def test_fetches_name_ids_when_requested(conn):
     assert p.description_ids is None
 
 
-async def test_fetches_multiple_junctions(conn):
+async def test_fetches_multiple_junctions(conn, redis_client):
+    name = await create_name(conn, f"test-{unique_tag()}", redis_client)
+    created = await create_model(conn, name_id=name.id)
+
     items = await get_models(
         conn,
-        [SEED_MODEL_ARTIFACT_ID],
+        [created.id],
         names=True,
         descriptions=True,
         departments=True,
@@ -71,8 +81,11 @@ async def test_fetches_multiple_junctions(conn):
     assert p.modality_ids is None
 
 
-async def test_no_junctions_when_all_false(conn):
-    items = await get_models(conn, [SEED_MODEL_ARTIFACT_ID])
+async def test_no_junctions_when_all_false(conn, redis_client):
+    name = await create_name(conn, f"test-{unique_tag()}", redis_client)
+    created = await create_model(conn, name_id=name.id)
+
+    items = await get_models(conn, [created.id])
 
     p = items[0]
     for field in [

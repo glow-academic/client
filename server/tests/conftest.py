@@ -348,6 +348,63 @@ async def redis_client() -> AsyncGenerator[Redis, None]:
         await client.aclose()
 
 
+# --- ENTITY FIXTURES ---
+
+
+@pytest_asyncio.fixture
+async def profile_id(conn, redis_client):
+    """A fresh profiles_resource ID."""
+    from app.routes.v5.tools.resources.profiles.create import create_profile
+
+    profile = await create_profile(conn, redis_client)
+    return profile.id
+
+
+@pytest_asyncio.fixture
+async def department_id(conn, redis_client):
+    """A fresh departments_resource ID."""
+    from app.routes.v5.tools.resources.departments.create import create_department
+
+    dept = await create_department(conn, redis_client)
+    return dept.id
+
+
+@pytest_asyncio.fixture
+async def session_id(conn, profile_id):
+    """A fresh sessions_entry ID (depends on profile_id)."""
+    from app.routes.v5.tools.entries.sessions.create import create_session
+
+    session = await create_session(conn, profile_id=profile_id)
+    return session.id
+
+
+@pytest_asyncio.fixture
+async def group_id(conn, session_id):
+    """A fresh groups_entry ID (depends on session_id)."""
+    from app.routes.v5.tools.entries.groups.create import create_group
+
+    group = await create_group(conn, session_id=session_id)
+    return group.id
+
+
+@pytest_asyncio.fixture
+async def run_id(conn, group_id, session_id):
+    """A fresh runs_entry ID (depends on group_id, session_id)."""
+    from app.routes.v5.tools.entries.runs.create import create_run
+
+    run = await create_run(conn, group_id=group_id, session_id=session_id)
+    return run.id
+
+
+@pytest_asyncio.fixture
+async def call_id(conn, run_id, session_id):
+    """A fresh calls_entry ID (depends on run_id, session_id)."""
+    from app.routes.v5.tools.entries.calls.create import create_call
+
+    call = await create_call(conn, run_id=run_id, session_id=session_id)
+    return call.id
+
+
 # --- OTHER CONFIG ---
 
 
