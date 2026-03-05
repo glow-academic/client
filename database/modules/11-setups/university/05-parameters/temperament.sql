@@ -15,9 +15,9 @@ INSERT INTO public.parameter_artifact (created_at, updated_at, id, generated, mc
 
 -- Junctions
 -- parameter_descriptions_junction
-INSERT INTO public.parameter_descriptions_junction (parameter_id, description_id, created_at, generated, mcp, active) VALUES ('019b3be4-36df-7c7c-b05d-a5d004557609', '019b995c-8e92-7ca0-a8f5-0cdda8d108c9', '2025-12-12T13:26:55.660542+00:00', false, false, true) ON CONFLICT (parameter_id, description_id) DO NOTHING;
+INSERT INTO public.parameter_descriptions_junction (parameter_id, descriptions_id, created_at, generated, mcp, active) VALUES ('019b3be4-36df-7c7c-b05d-a5d004557609', '019b995c-8e92-7ca0-a8f5-0cdda8d108c9', '2025-12-12T13:26:55.660542+00:00', false, false, true) ON CONFLICT (parameter_id, descriptions_id) DO NOTHING;
 -- parameter_fields_junction
 -- parameter_names_junction
-INSERT INTO public.parameter_names_junction (parameter_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-36df-7c7c-b05d-a5d004557609', '019b995c-8e91-792c-afd4-89c7a904339c', '2025-12-12T13:26:55.660542+00:00', false, false, true) ON CONFLICT (parameter_id, name_id) DO NOTHING;
+INSERT INTO public.parameter_names_junction (parameter_id, names_id, created_at, generated, mcp, active) VALUES ('019b3be4-36df-7c7c-b05d-a5d004557609', '019b995c-8e91-792c-afd4-89c7a904339c', '2025-12-12T13:26:55.660542+00:00', false, false, true) ON CONFLICT (parameter_id, names_id) DO NOTHING;
 -- parameter_parameters_junction
 INSERT INTO public.parameter_parameters_junction (parameter_id, parameters_id, active, created_at, generated, mcp) VALUES ('019b3be4-36df-7c7c-b05d-a5d004557609', '019bb25e-e621-702e-a7ba-81fd751a9c61', true, '2025-12-12T13:26:55.660542+00:00', false, false) ON CONFLICT (parameter_id, parameters_id) DO NOTHING;

@@ -14,5 +14,5 @@ INSERT INTO public.persona_artifact (created_at, updated_at, id, generated, mcp)
 -- Junctions
 -- persona_departments_junction
 -- persona_names_junction
-INSERT INTO public.persona_names_junction (persona_id, name_id, created_at, generated, mcp, active) VALUES ('dd000011-0001-0000-0000-000000000001', 'dd000012-0001-0000-0000-000000000001', '2026-02-19T09:59:35.509148+00:00', false, false, true) ON CONFLICT (persona_id, name_id) DO NOTHING;
+INSERT INTO public.persona_names_junction (persona_id, names_id, created_at, generated, mcp, active) VALUES ('dd000011-0001-0000-0000-000000000001', 'dd000012-0001-0000-0000-000000000001', '2026-02-19T09:59:35.509148+00:00', false, false, true) ON CONFLICT (persona_id, names_id) DO NOTHING;
 -- persona_personas_junction

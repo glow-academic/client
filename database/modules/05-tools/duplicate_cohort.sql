@@ -17,10 +17,10 @@ INSERT INTO public.tool_artifact (id, created_at, updated_at, generated, mcp) VA
 -- tool_args_junction
 INSERT INTO public.tool_args_junction (tool_id, args_id, created_at, generated, mcp, active) VALUES ('019521d0-0013-7000-8000-000000000001', '019521d0-0004-7000-8000-000000000001', '2026-02-24T01:53:57.278464+00:00', false, false, true) ON CONFLICT (tool_id, args_id) DO NOTHING;
 -- tool_artifacts_junction
-INSERT INTO public.tool_artifacts_junction (tool_id, artifact_id, active, generated, mcp, created_at) VALUES ('019521d0-0013-7000-8000-000000000001', '019c8d5a-6426-7bd8-b8d2-e129a934f053', true, false, false, '2026-02-24T01:53:57.278464+00:00') ON CONFLICT (tool_id, artifact_id) DO NOTHING;
+INSERT INTO public.tool_artifacts_junction (tool_id, artifacts_id, active, generated, mcp, created_at) VALUES ('019521d0-0013-7000-8000-000000000001', '019c8d5a-6426-7bd8-b8d2-e129a934f053', true, false, false, '2026-02-24T01:53:57.278464+00:00') ON CONFLICT (tool_id, artifacts_id) DO NOTHING;
 -- tool_operations_junction
-INSERT INTO public.tool_operations_junction (tool_id, operation_id, created_at, active, generated, mcp) VALUES ('019521d0-0013-7000-8000-000000000001', '019d0000-0001-7000-8000-000000000007', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (tool_id, operation_id) DO NOTHING;
+INSERT INTO public.tool_operations_junction (tool_id, operations_id, created_at, active, generated, mcp) VALUES ('019521d0-0013-7000-8000-000000000001', '019d0000-0001-7000-8000-000000000007', '2026-02-27T00:00:00.000000+00:00', true, false, false) ON CONFLICT (tool_id, operations_id) DO NOTHING;
 -- tool_names_junction
-INSERT INTO public.tool_names_junction (tool_id, name_id, created_at, generated, mcp, active) VALUES ('019521d0-0013-7000-8000-000000000001', '019521d0-0033-7000-8000-000000000001', '2026-02-24T01:53:57.278464+00:00', false, false, true) ON CONFLICT (tool_id, name_id) DO NOTHING;
+INSERT INTO public.tool_names_junction (tool_id, names_id, created_at, generated, mcp, active) VALUES ('019521d0-0013-7000-8000-000000000001', '019521d0-0033-7000-8000-000000000001', '2026-02-24T01:53:57.278464+00:00', false, false, true) ON CONFLICT (tool_id, names_id) DO NOTHING;
 -- tool_tools_junction
 INSERT INTO public.tool_tools_junction (tool_id, tools_id, active, created_at, generated, mcp) VALUES ('019521d0-0013-7000-8000-000000000001', '019521d0-0023-7000-8000-000000000001', true, '2026-02-24T01:53:57.278464+00:00', false, false) ON CONFLICT (tool_id, tools_id) DO NOTHING;

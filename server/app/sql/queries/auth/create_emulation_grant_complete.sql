@@ -146,7 +146,7 @@ grant_insert AS (
         NOW() + ((SELECT ttl_minutes FROM params) || ' minutes')::interval,
         (SELECT s.id FROM sessions_entry s
          JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-         WHERE psc.profile_id = (SELECT requester_profile_id FROM params) AND s.active = true
+         WHERE psc.profiles_id = (SELECT requester_profile_id FROM params) AND s.active = true
          ORDER BY s.created_at DESC LIMIT 1),
         NOW()
     WHERE (SELECT allowed FROM allowed_check) = true
@@ -168,7 +168,7 @@ emulation_insert AS (
         gi.id,
         (SELECT s.id FROM sessions_entry s
          JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-         WHERE psc.profile_id = (SELECT target_profile_id FROM params) AND s.active = true
+         WHERE psc.profiles_id = (SELECT target_profile_id FROM params) AND s.active = true
          ORDER BY s.created_at DESC LIMIT 1)
     FROM grant_insert gi
     RETURNING id

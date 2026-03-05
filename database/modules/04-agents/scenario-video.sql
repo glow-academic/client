@@ -39,17 +39,17 @@ INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) V
 -- agent_agents_junction
 INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_at, generated, mcp) VALUES ('3937bcae-527f-495f-82c5-476d18ce7fed', 'a942aa81-bffd-43d9-bdaa-2e44bf7eebae', true, '2026-03-02T00:00:00.000000+00:00', false, false) ON CONFLICT (agent_id, agents_id) DO NOTHING;
 -- agent_models_junction
-INSERT INTO public.agent_models_junction (agent_id, model_id, active, created_at, generated, mcp)
+INSERT INTO public.agent_models_junction (agent_id, models_id, active, created_at, generated, mcp)
 SELECT '3937bcae-527f-495f-82c5-476d18ce7fed', ar.model_id, true, '2026-03-02T00:00:00.000000+00:00', false, false
 FROM public.agents_resource ar
 WHERE ar.id = 'a942aa81-bffd-43d9-bdaa-2e44bf7eebae'
   AND ar.model_id IS NOT NULL
-ON CONFLICT (agent_id, model_id) DO NOTHING;
+ON CONFLICT (agent_id, models_id) DO NOTHING;
 -- agent_descriptions_junction
-INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('3937bcae-527f-495f-82c5-476d18ce7fed', '15fbbb68-e16c-4500-943f-6d14dd199ba3', '2026-03-02T00:00:00.000000+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
+INSERT INTO public.agent_descriptions_junction (agent_id, descriptions_id, created_at, generated, mcp, active) VALUES ('3937bcae-527f-495f-82c5-476d18ce7fed', '15fbbb68-e16c-4500-943f-6d14dd199ba3', '2026-03-02T00:00:00.000000+00:00', false, false, true) ON CONFLICT (agent_id, descriptions_id) DO NOTHING;
 -- agent_flags_junction
-INSERT INTO public.agent_flags_junction (agent_id, flag_id, created_at, generated, mcp, active) VALUES ('3937bcae-527f-495f-82c5-476d18ce7fed', '019be334-bfc4-76ac-80d3-c8ba7618bc7a', '2026-03-02T00:00:00.000000+00:00', false, false, true) ON CONFLICT (agent_id, flag_id) DO NOTHING;
+INSERT INTO public.agent_flags_junction (agent_id, flags_id, created_at, generated, mcp, active) VALUES ('3937bcae-527f-495f-82c5-476d18ce7fed', '019be334-bfc4-76ac-80d3-c8ba7618bc7a', '2026-03-02T00:00:00.000000+00:00', false, false, true) ON CONFLICT (agent_id, flags_id) DO NOTHING;
 -- agent_names_junction
-INSERT INTO public.agent_names_junction (agent_id, name_id, created_at, generated, mcp, active) VALUES ('3937bcae-527f-495f-82c5-476d18ce7fed', 'a238e815-43f5-45b8-b378-e9dea62f618d', '2026-03-02T00:00:00.000000+00:00', false, false, true) ON CONFLICT (agent_id, name_id) DO NOTHING;
+INSERT INTO public.agent_names_junction (agent_id, names_id, created_at, generated, mcp, active) VALUES ('3937bcae-527f-495f-82c5-476d18ce7fed', 'a238e815-43f5-45b8-b378-e9dea62f618d', '2026-03-02T00:00:00.000000+00:00', false, false, true) ON CONFLICT (agent_id, names_id) DO NOTHING;
 -- agent_tools_junction
-INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('3937bcae-527f-495f-82c5-476d18ce7fed', 'f3ca206e-801e-4074-8266-f94f3d332874', true, '2026-03-02T00:00:00.000000+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
+INSERT INTO public.agent_tools_junction (agent_id, tools_id, active, created_at, generated, mcp) VALUES ('3937bcae-527f-495f-82c5-476d18ce7fed', 'f3ca206e-801e-4074-8266-f94f3d332874', true, '2026-03-02T00:00:00.000000+00:00', false, false) ON CONFLICT (agent_id, tools_id) DO NOTHING;

@@ -152,7 +152,7 @@ filtered_agents AS (
         -- Search filter: match name or description (case-insensitive)
         (search IS NULL OR LOWER(ad.agent_name) LIKE '%' || LOWER(search) || '%' OR LOWER(ad.description) LIKE '%' || LOWER(search) || '%')
         -- Department filter: agent must belong to at least one selected department
-        AND (filter_department_ids IS NULL OR ad.departments_ids && filter_department_ids::text[])
+        AND (filter_department_ids IS NULL OR ad.department_ids && filter_department_ids::text[])
         -- Model filter: agent must use one of the selected models
         AND (filter_model_ids IS NULL OR ad.model_id = ANY(filter_model_ids))
         -- Tool filter: agent must use one of the selected tools
@@ -174,7 +174,7 @@ department_option_data AS (
     SELECT
         dr.id::text as value,
         (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
-        (SELECT COUNT(*) FROM agent_data ad WHERE dr.id::text = ANY(ad.departments_ids)) as count
+        (SELECT COUNT(*) FROM agent_data ad WHERE dr.id::text = ANY(ad.department_ids)) as count
     FROM departments_resource dr
     JOIN department_departments_junction dd ON dd.department_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)

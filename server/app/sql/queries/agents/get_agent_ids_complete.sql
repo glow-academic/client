@@ -86,7 +86,7 @@ model_resource_data AS (
 flag_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT df.flag_id
+            (SELECT df.flags_id
              FROM agent_drafts_flags_connection df
              WHERE df.draft_id = (SELECT draft_id FROM params)
              LIMIT 1),

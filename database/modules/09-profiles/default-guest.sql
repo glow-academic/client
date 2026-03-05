@@ -14,12 +14,12 @@ INSERT INTO public.profile_artifact (updated_at, created_at, id, generated, mcp)
 
 -- Junctions
 -- profile_flags_junction
-INSERT INTO public.profile_flags_junction (profile_id, flag_id, created_at, generated, mcp, active) VALUES ('019b3be4-36f0-792c-82d6-126664ed18b6', '019be334-bfc5-7197-8f3e-c203790334de', '2025-08-12T12:52:09.564220+00:00', false, false, true) ON CONFLICT (profile_id, flag_id) DO NOTHING;
+INSERT INTO public.profile_flags_junction (profile_id, flags_id, created_at, generated, mcp, active) VALUES ('019b3be4-36f0-792c-82d6-126664ed18b6', '019be334-bfc5-7197-8f3e-c203790334de', '2025-08-12T12:52:09.564220+00:00', false, false, true) ON CONFLICT (profile_id, flags_id) DO NOTHING;
 -- profile_names_junction
-INSERT INTO public.profile_names_junction (profile_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-36f0-792c-82d6-126664ed18b6', '019b995b-cb82-777d-af04-d80af5048021', '2025-08-12T12:52:09.564220+00:00', false, false, true) ON CONFLICT (profile_id) DO NOTHING;
+INSERT INTO public.profile_names_junction (profile_id, names_id, created_at, generated, mcp, active) VALUES ('019b3be4-36f0-792c-82d6-126664ed18b6', '019b995b-cb82-777d-af04-d80af5048021', '2025-08-12T12:52:09.564220+00:00', false, false, true) ON CONFLICT (profile_id) DO NOTHING;
 -- profile_profiles_junction
 INSERT INTO public.profile_profiles_junction (profile_id, profiles_id, active, created_at, generated, mcp) VALUES ('019b3be4-36f0-792c-82d6-126664ed18b6', '019bb25e-e611-78ab-b453-5c7720d87aec', true, '2025-08-12T12:52:09.564220+00:00', false, false) ON CONFLICT (profile_id, profiles_id) DO NOTHING;
 -- profile_request_limits_junction
-INSERT INTO public.profile_request_limits_junction (requests_per_day, active, created_at, profile_id, request_limit_id, generated, mcp) VALUES (10, true, '2025-08-12T12:52:09.564220+00:00', '019b3be4-36f0-792c-82d6-126664ed18b6', '019bb553-e77f-797c-ae44-544fbe10351b', false, false);
+INSERT INTO public.profile_request_limits_junction (requests_per_day, active, created_at, profile_id, request_limits_id, generated, mcp) VALUES (10, true, '2025-08-12T12:52:09.564220+00:00', '019b3be4-36f0-792c-82d6-126664ed18b6', '019bb553-e77f-797c-ae44-544fbe10351b', false, false);
 -- profile_roles_junction
-INSERT INTO public.profile_roles_junction (profile_id, role_id, created_at, generated, mcp, active) VALUES ('019b3be4-36f0-792c-82d6-126664ed18b6', '019bbabc-5a37-7028-8b98-728b7aa54d0d', '2025-08-12T12:52:09.564220+00:00', false, false, true) ON CONFLICT (profile_id, role_id) DO NOTHING;
+INSERT INTO public.profile_roles_junction (profile_id, roles_id, created_at, generated, mcp, active) VALUES ('019b3be4-36f0-792c-82d6-126664ed18b6', '019bbabc-5a37-7028-8b98-728b7aa54d0d', '2025-08-12T12:52:09.564220+00:00', false, false, true) ON CONFLICT (profile_id, roles_id) DO NOTHING;
