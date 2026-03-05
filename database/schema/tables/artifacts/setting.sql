@@ -10,7 +10,8 @@ CREATE TABLE public.setting_artifact (
     id uuid DEFAULT uuidv7() CONSTRAINT settings_id_v7_not_null NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT settings_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT settings_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT settings_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT settings_mcp_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 

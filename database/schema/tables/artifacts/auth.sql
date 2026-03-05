@@ -10,7 +10,8 @@ CREATE TABLE public.auth_artifact (
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT auth_updated_at_not_null NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT auth_id_v7_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT auth_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT auth_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT auth_mcp_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 

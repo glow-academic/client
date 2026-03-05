@@ -10,7 +10,8 @@ CREATE TABLE public.profile_artifact (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT profiles_created_at_not_null NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT profiles_id_v7_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT profiles_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT profiles_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT profiles_mcp_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 

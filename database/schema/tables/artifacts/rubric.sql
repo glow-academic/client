@@ -10,7 +10,8 @@ CREATE TABLE public.rubric_artifact (
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT rubrics_updated_at_not_null NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT rubrics_id_v7_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT rubrics_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT rubrics_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT rubrics_mcp_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 

@@ -10,7 +10,8 @@ CREATE TABLE public.field_artifact (
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT fields_updated_at_not_null NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT fields_id_v7_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT fields_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT fields_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT fields_mcp_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 

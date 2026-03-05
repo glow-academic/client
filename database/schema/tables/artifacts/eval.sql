@@ -10,7 +10,8 @@ CREATE TABLE public.eval_artifact (
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT evals_updated_at_not_null NOT NULL,
     id uuid DEFAULT uuidv7() CONSTRAINT evals_id_v7_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT evals_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT evals_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT evals_mcp_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 

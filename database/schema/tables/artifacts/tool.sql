@@ -10,7 +10,8 @@ CREATE TABLE public.tool_artifact (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT tools_created_at_not_null NOT NULL,
     updated_at timestamp with time zone DEFAULT now() CONSTRAINT tools_updated_at_not_null NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL
 );
 
 
