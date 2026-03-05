@@ -6,6 +6,9 @@ from app.routes.v5.tools.entries.grant_consumptions.create import (
     create_grant_consumption,
 )
 from app.routes.v5.tools.entries.grant_consumptions.get import get_grant_consumptions
+from app.routes.v5.tools.entries.grant_consumptions.refresh import (
+    refresh_grant_consumptions,
+)
 from app.routes.v5.tools.entries.grants.create import create_grant
 from app.routes.v5.tools.entries.sessions.create import create_session
 from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
@@ -29,6 +32,7 @@ async def test_returns_id(conn):
 async def test_visible_via_get(conn):
     grant = await _grant(conn)
     result = await create_grant_consumption(conn, grant_id=grant.id)
+    await refresh_grant_consumptions(conn)
 
     items = await get_grant_consumptions(conn, [result.id])
 
@@ -43,6 +47,7 @@ async def test_visible_via_get(conn):
 async def test_passes_mcp_flag(conn):
     grant = await _grant(conn)
     result = await create_grant_consumption(conn, grant_id=grant.id, mcp=True)
+    await refresh_grant_consumptions(conn)
 
     items = await get_grant_consumptions(conn, [result.id])
 

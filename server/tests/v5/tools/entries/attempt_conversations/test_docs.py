@@ -40,7 +40,7 @@ async def test_includes_all_operations(conn):
     assert "create_attempt_conversations" in op_names
     assert "refresh_attempt_conversations" in op_names
     assert "get_attempt_conversations" in op_names
-    assert "search_attempt_conversations" in op_names
+    assert "search_conversations_entries_internal" in op_names
 
 
 async def test_create_operation_has_params(conn):
