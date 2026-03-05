@@ -80,7 +80,7 @@ WITH params AS (
     SELECT profile_id AS profile_id
 ),
 user_departments AS (
-    SELECT department_id
+    SELECT pd.departments_id as department_id
     FROM params x
     JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
