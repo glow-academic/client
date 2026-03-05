@@ -38,15 +38,6 @@ ALTER TABLE ONLY public.parameter_descriptions_junction
 
 --
 
--- Name: parameter_fields_junction parameter_fields_field_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.parameter_fields_junction
-    ADD CONSTRAINT parameter_fields_field_id_fkey FOREIGN KEY (field_id) REFERENCES public.field_artifact(id) ON DELETE CASCADE;
-
-
---
-
 -- Name: parameter_fields_junction parameter_fields_field_resource_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

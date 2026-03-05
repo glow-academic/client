@@ -37,7 +37,6 @@ CREATE TABLE public.parameter_descriptions_junction (
 
 CREATE TABLE public.parameter_fields_junction (
     parameter_id uuid CONSTRAINT parameter_fields_parameter_id_not_null NOT NULL,
-    field_id uuid CONSTRAINT parameter_fields_field_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT parameter_fields_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT parameter_fields_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT parameter_fields_mcp_not_null NOT NULL,
@@ -115,7 +114,7 @@ ALTER TABLE ONLY public.parameter_descriptions_junction
 --
 
 ALTER TABLE ONLY public.parameter_fields_junction
-    ADD CONSTRAINT parameter_fields_pkey PRIMARY KEY (parameter_id, field_id);
+    ADD CONSTRAINT parameter_fields_pkey PRIMARY KEY (parameter_id, fields_id);
 
 
 --

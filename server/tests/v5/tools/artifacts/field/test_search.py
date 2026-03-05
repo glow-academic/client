@@ -73,11 +73,13 @@ async def test_department_filter(conn, redis_client):
 
 async def test_exclude_ids(conn, redis_client):
     """Excluded fields should not appear in results."""
-    name = await create_name(conn, f"excl-{_u()}", redis_client)
-    f1 = await create_field(conn, name_id=name.id)
-    f2 = await create_field(conn, name_id=name.id)
+    tag = _u()
+    n1 = await create_name(conn, f"excl-{tag}-a", redis_client)
+    n2 = await create_name(conn, f"excl-{tag}-b", redis_client)
+    f1 = await create_field(conn, name_id=n1.id)
+    f2 = await create_field(conn, name_id=n2.id)
 
-    ids = await search_fields(conn, exclude_ids=[f1.id])
+    ids = await search_fields(conn, search=f"excl-{tag}", exclude_ids=[f1.id])
     assert f1.id not in ids
     assert f2.id in ids
 

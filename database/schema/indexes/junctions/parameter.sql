@@ -114,14 +114,6 @@ CREATE INDEX parameter_descriptions_parameter_id_idx ON public.parameter_descrip
 
 --
 
--- Name: parameter_fields_field_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX parameter_fields_field_id_idx ON public.parameter_fields_junction USING btree (field_id);
-
-
---
-
 -- Name: parameter_fields_field_resource_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 

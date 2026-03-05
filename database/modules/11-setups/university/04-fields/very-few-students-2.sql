@@ -23,4 +23,4 @@ INSERT INTO public.field_flags_junction (field_id, flags_id, created_at, generat
 -- field_names_junction
 INSERT INTO public.field_names_junction (field_id, names_id, created_at, generated, mcp, active) VALUES ('019b3be4-3255-7f3a-b5e7-7bae81d29469', '019b995c-8e9b-79d1-9498-15e96fd9248b', '2025-08-12 07:52:09.869197-05', false, false, true) ON CONFLICT (field_id, names_id) DO NOTHING;
 -- parameter_fields_junction
-INSERT INTO public.parameter_fields_junction (parameter_id, field_id, fields_id, active, created_at, generated, mcp) VALUES ('019b3be4-36df-7c4b-93fa-5876061f1e89', '019b3be4-3255-7f3a-b5e7-7bae81d29469', '019bb25e-e5f8-7d92-a3bf-60eae43b4e2f', true, '2025-08-12 07:52:09.869197-05', false, false) ON CONFLICT (parameter_id, field_id) DO NOTHING;
+INSERT INTO public.parameter_fields_junction (parameter_id, fields_id, active, created_at, generated, mcp) VALUES ('019b3be4-36df-7c4b-93fa-5876061f1e89', '019bb25e-e5f8-7d92-a3bf-60eae43b4e2f', true, '2025-08-12 07:52:09.869197-05', false, false) ON CONFLICT (parameter_id, fields_id) DO NOTHING;

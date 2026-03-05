@@ -8,6 +8,7 @@ from app.routes.v5.tools.artifacts.parameter.create import create_parameter
 from app.routes.v5.tools.artifacts.parameter.search import search_parameters
 from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.descriptions.create import create_description
+from app.routes.v5.tools.resources.fields.create import create_field
 from app.routes.v5.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
@@ -71,13 +72,28 @@ async def test_department_filter(conn, redis_client):
     assert p2.id not in ids
 
 
+async def test_field_ids_filter(conn, redis_client):
+    """Filter by field_ids returns only matching parameters."""
+    f1 = await create_field(conn, f"field-{_u()}", redis=redis_client)
+    f2 = await create_field(conn, f"field-{_u()}", redis=redis_client)
+
+    p1 = await create_parameter(conn, field_ids=[f1.id])
+    p2 = await create_parameter(conn, field_ids=[f2.id])
+
+    ids = await search_parameters(conn, field_ids=[f1.id])
+    assert p1.id in ids
+    assert p2.id not in ids
+
+
 async def test_exclude_ids(conn, redis_client):
     """Excluded parameters should not appear in results."""
-    name = await create_name(conn, f"excl-{_u()}", redis_client)
-    p1 = await create_parameter(conn, name_id=name.id)
-    p2 = await create_parameter(conn, name_id=name.id)
+    tag = _u()
+    n1 = await create_name(conn, f"excl-{tag}-a", redis_client)
+    n2 = await create_name(conn, f"excl-{tag}-b", redis_client)
+    p1 = await create_parameter(conn, name_id=n1.id)
+    p2 = await create_parameter(conn, name_id=n2.id)
 
-    ids = await search_parameters(conn, exclude_ids=[p1.id])
+    ids = await search_parameters(conn, search=f"excl-{tag}", exclude_ids=[p1.id])
     assert p1.id not in ids
     assert p2.id in ids
 
