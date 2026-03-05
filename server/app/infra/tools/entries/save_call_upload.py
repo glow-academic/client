@@ -8,16 +8,13 @@ from uuid import UUID
 
 
 def save_call_upload(
-    call_id: UUID,
-    tool_id: UUID,
-    arguments: dict[str, Any],
-    output: dict[str, Any],
+    payload: dict[str, Any],
     upload_id: UUID,
     upload_folder: Path,
 ) -> str:
     """Write a call receipt to {upload_folder}/call/{upload_id}.json.
 
-    The file captures exactly what went in (arguments) and what came out (output).
+    Expects a payload dict from build_call_payload().
 
     Returns the relative file path: call/{upload_id}.json
     """
@@ -26,13 +23,6 @@ def save_call_upload(
 
     filename = f"{upload_id}.json"
     full_path = subfolder / filename
-
-    payload = {
-        "call_id": str(call_id),
-        "tool_id": str(tool_id),
-        "arguments": arguments,
-        "output": output,
-    }
 
     full_path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
 
