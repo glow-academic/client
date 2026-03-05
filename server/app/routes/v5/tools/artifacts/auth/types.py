@@ -30,3 +30,7 @@ class CreateAuthResponse(BaseModel):
 
 class UpdateAuthResponse(BaseModel):
     id: UUID
+
+
+class DeleteAuthsResponse(BaseModel):
+    deleted_ids: list[UUID]
