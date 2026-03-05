@@ -67,13 +67,13 @@ from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
-    search_descriptions_internal,
+    search_descriptions,
 )
 from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
@@ -354,16 +354,8 @@ async def get_eval_internal(
             selected = await get_descriptions(
                 c, description_ids, get_redis_client(), cache
             )
-            suggestions = await search_descriptions_internal(
-                c,
-                None,
-                20,
-                0,
-                effective_group_id,
-                "recent",
-                description_ids,
-                bypass_cache,
-                eval=True,
+            suggestions = await search_descriptions(
+                c, get_redis_client(), draft_id=effective_group_id, exclude_ids=description_ids, bypass_cache=bypass_cache, eval=True,
             )
             return (selected, suggestions)
 
@@ -375,14 +367,10 @@ async def get_eval_internal(
             selected = await get_flags(
                 c, all_flag_ids, get_redis_client(), bypass_cache
             )
-            all_flags = await search_flags_internal(
-                c,
-                None,
-                50,
-                0,
-                all_flag_ids,
-                bypass_cache,
-                eval=True,
+            all_flags = await search_flags(
+                c, get_redis_client(), search=None, limit_count=50,
+                offset_count=0, exclude_ids=all_flag_ids,
+                bypass_cache=bypass_cache, eval=True,
             )
             suggestions = [f for f in all_flags if f.name in EVAL_FLAG_NAMES]
             return (selected, suggestions)
@@ -392,15 +380,16 @@ async def get_eval_internal(
             selected = await get_departments(
                 c, department_ids, get_redis_client(), bypass_cache=bypass_cache
             )
-            suggestions = await search_departments_internal(
+            suggestions = await search_departments(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
                 department_ids=user_department_ids,
                 suggest_source="all",
                 exclude_ids=department_ids,
-                cache=cache,
+                bypass_cache=bypass_cache,
                 eval=True,
             )
             return (selected, suggestions)
@@ -434,7 +423,7 @@ async def get_eval_internal(
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
     departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "department_id"
+        departments_selected + departments_suggestions, "id"
     )
     rubrics = _dedupe_by_id(rubrics_selected + rubrics_suggestions, "id")
 
@@ -442,7 +431,7 @@ async def get_eval_internal(
     name_resource = next((n for n in names if n.id == selected_name_id), None)
     name_suggestion_ids = [n.id for n in names_suggestions]
     description_suggestion_ids = [d.id for d in descriptions_suggestions]
-    department_suggestion_ids = [d.department_id for d in departments_suggestions]
+    department_suggestion_ids = [d.id for d in departments_suggestions]
     rubric_suggestion_ids_out = [r.id for r in rubrics_suggestions if r.id]
 
     # Compute show flags
@@ -768,7 +757,7 @@ async def get_eval_websocket(
         }
     ]
     selected_departments = [
-        d for d in data.departments if d.department_id in data.department_ids
+        d for d in data.departments if d.id in data.department_ids
     ]
     selected_agents = [a for a in data.eval_agents if a.id in set()]
     selected_rubrics = [r for r in data.rubrics if r.id in set(data.rubric_ids)]
@@ -851,7 +840,7 @@ async def get_eval_client(
         (d for d in data.descriptions if d.id == data.description_id), None
     )
     selected_departments = [
-        d for d in data.departments if d.department_id in data.department_ids
+        d for d in data.departments if d.id in data.department_ids
     ]
     selected_agents = [a for a in data.eval_agents if a.id in set()]
     selected_rubrics = [r for r in data.rubrics if r.id in set(data.rubric_ids)]

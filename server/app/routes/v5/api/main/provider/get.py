@@ -58,14 +58,14 @@ from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
-    search_descriptions_internal,
+    search_descriptions,
 )
 from app.routes.v5.tools.resources.endpoints.get import get_endpoints
 from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.keys.get import get_keys
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
@@ -267,24 +267,18 @@ async def get_provider_internal(
             selected = await get_descriptions(
                 c, description_ids, get_redis_client(), cache
             )
-            suggestions = await search_descriptions_internal(
-                c,
-                None,
-                20,
-                0,
-                effective_group_id,
-                "recent",
-                description_ids,
-                bypass_cache,
-                provider=True,
+            suggestions = await search_descriptions(
+                c, get_redis_client(), draft_id=effective_group_id, exclude_ids=description_ids, bypass_cache=bypass_cache, provider=True,
             )
             return (selected, suggestions)
 
     async def fetch_flags():
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
-            all_flags = await search_flags_internal(
-                c, None, 50, 0, flag_ids, bypass_cache, provider=True
+            all_flags = await search_flags(
+                c, get_redis_client(), search=None, limit_count=50,
+                offset_count=0, exclude_ids=flag_ids,
+                bypass_cache=bypass_cache, provider=True,
             )
             suggestions = [f for f in all_flags if (f.name or "") == "provider_active"]
             return (selected, suggestions)
@@ -294,15 +288,16 @@ async def get_provider_internal(
             selected = await get_departments(
                 c, department_ids, get_redis_client(), bypass_cache=bypass_cache
             )
-            suggestions = await search_departments_internal(
+            suggestions = await search_departments(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
                 department_ids=user_department_ids,
                 suggest_source="all",
                 exclude_ids=department_ids,
-                cache=cache,
+                bypass_cache=bypass_cache,
                 provider=True,
             )
             return (selected, suggestions)
@@ -365,7 +360,7 @@ async def get_provider_internal(
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
     raw_flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
     departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "department_id"
+        departments_selected + departments_suggestions, "id"
     )
     values = _dedupe_by_id(values_selected + values_suggestions, "id")
     endpoints = _dedupe_by_id(endpoints_selected + endpoints_suggestions, "id")
@@ -381,7 +376,7 @@ async def get_provider_internal(
     )
     key_resource = next((k for k in keys if k.id == selected_key_id), None)
     department_resources = [
-        d for d in departments if d.department_id in selected_department_ids
+        d for d in departments if d.id in selected_department_ids
     ]
 
     show_flags_map = {
@@ -487,7 +482,7 @@ async def get_provider_internal(
             "names": [n.id for n in names_suggestions if n.id],
             "descriptions": [d.id for d in descriptions_suggestions if d.id],
             "departments": [
-                d.department_id for d in departments_suggestions if d.department_id
+                d.id for d in departments_suggestions if d.id
             ],
             "values": [v.id for v in values_suggestions if v.id],
             "endpoints": [e.id for e in endpoints_suggestions if e.id],

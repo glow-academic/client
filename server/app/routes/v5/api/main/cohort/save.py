@@ -9,7 +9,7 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.cohort.permissions import (
     COHORT_RESOURCES,
@@ -189,14 +189,11 @@ async def _resolve_cohort_values(
     # --- Match-by-name resolution for value fields (CSV import) ---
 
     if item.is_inactive is not None and item.flag_id is None:
-        from app.routes.v5.tools.resources.flags.search import search_flags_internal
+        from app.routes.v5.tools.resources.flags.search import search_flags
 
-        all_flags = await search_flags_internal(
-            conn,
-            search=None,
-            limit_count=1000,
-            flag_type="cohort_active",
-            cohort=True,
+        all_flags = await search_flags(
+            conn, get_redis_client(), search=None, limit_count=1000,
+            flag_type="cohort_active", cohort=True,
         )
         match = next((f for f in all_flags if f.type == "cohort_active"), None)
         if match and match.id:

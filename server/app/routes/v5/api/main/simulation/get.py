@@ -80,13 +80,13 @@ from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
-    search_descriptions_internal,
+    search_descriptions,
 )
 from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
@@ -351,16 +351,8 @@ async def get_simulation_internal(
             selected = await get_descriptions(
                 c, description_ids, get_redis_client(), cache
             )
-            suggestions = await search_descriptions_internal(
-                c,
-                None,
-                20,
-                0,
-                effective_group_id,
-                "recent",
-                description_ids,
-                bypass_cache,
-                simulation=True,
+            suggestions = await search_descriptions(
+                c, get_redis_client(), draft_id=effective_group_id, exclude_ids=description_ids, bypass_cache=bypass_cache, simulation=True,
             )
             return (selected, suggestions)
 
@@ -369,14 +361,10 @@ async def get_simulation_internal(
     async def fetch_flags():
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
-            all_flags = await search_flags_internal(
-                c,
-                search=None,
-                limit_count=50,
-                offset_count=0,
-                exclude_ids=None,
-                cache=cache,
-                simulation=True,
+            all_flags = await search_flags(
+                c, get_redis_client(), search=None, limit_count=50,
+                offset_count=0, exclude_ids=None,
+                bypass_cache=bypass_cache, simulation=True,
             )
             flags_by_type = {f.type: f for f in all_flags}
             available = [
@@ -392,8 +380,9 @@ async def get_simulation_internal(
                 c, department_ids, get_redis_client(), bypass_cache=bypass_cache
             )
             dept_source = "all" if simulation_id is None else "recent"
-            suggestions = await search_departments_internal(
+            suggestions = await search_departments(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
@@ -444,12 +433,9 @@ async def get_simulation_internal(
                 c, scenario_flag_ids, get_redis_client(), bypass_cache
             )
             # Also fetch all flag types for cross-product (built after scenarios are known)
-            all_flags = await search_flags_internal(
-                c,
-                search=None,
-                limit_count=50,
-                offset_count=0,
-                exclude_ids=None,
+            all_flags = await search_flags(
+                c, get_redis_client(), search=None, limit_count=50,
+                offset_count=0, exclude_ids=None,
                 bypass_cache=bypass_cache,
             )
             flags_by_type = {f.type: f for f in all_flags}
@@ -523,7 +509,7 @@ async def get_simulation_internal(
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
     departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "department_id"
+        departments_selected + departments_suggestions, "id"
     )
     scenarios_combined = _dedupe_by_id(
         scenarios_selected + scenarios_suggestions, "scenario_id"
@@ -569,7 +555,7 @@ async def get_simulation_internal(
     description_resource = next(
         (d for d in descriptions if d.id == ids_result.description_id), None
     )
-    department_resources = [d for d in departments if d.department_id in department_ids]
+    department_resources = [d for d in departments if d.id in department_ids]
 
     # Convert scenarios to SimulationScenario type with computed show_* flags
     def convert_scenario(s: Any) -> SimulationScenario:
@@ -610,7 +596,7 @@ async def get_simulation_internal(
     # Suggestion IDs
     name_suggestions_ids = [n.id for n in names_suggestions]
     description_suggestions_ids = [d.id for d in descriptions_suggestions]
-    department_suggestions_ids = [d.department_id for d in departments_suggestions]
+    department_suggestions_ids = [d.id for d in departments_suggestions]
     scenario_suggestions_ids = [s.scenario_id for s in scenarios_suggestions]
 
     suggestions_map: dict[str, list[UUID]] = {
@@ -623,7 +609,7 @@ async def get_simulation_internal(
     # Convert departments to typed format
     departments_typed = [
         SimulationDepartment(
-            department_id=d.department_id,
+            department_id=d.id,
             name=d.name,
             description=d.description,
             generated=d.generated,
@@ -632,7 +618,7 @@ async def get_simulation_internal(
     ]
     department_resources_typed = [
         SimulationDepartment(
-            department_id=d.department_id,
+            department_id=d.id,
             name=d.name,
             description=d.description,
             generated=d.generated,

@@ -84,13 +84,13 @@ from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
-    search_descriptions_internal,
+    search_descriptions,
 )
 from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.instructions.search import (
     search_instructions_internal,
@@ -433,16 +433,8 @@ async def get_agent_internal(
             selected = await get_descriptions(
                 c, description_ids, get_redis_client(), cache
             )
-            suggestions = await search_descriptions_internal(
-                c,
-                None,
-                20,
-                0,
-                None,
-                None,
-                description_ids,
-                bypass_cache,
-                agent=True,
+            suggestions = await search_descriptions(
+                c, get_redis_client(), exclude_ids=description_ids, bypass_cache=bypass_cache, agent=True,
             )
             return (selected, suggestions)
 
@@ -497,8 +489,10 @@ async def get_agent_internal(
     async def fetch_flags():
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
-            all_flags = await search_flags_internal(
-                c, None, 50, 0, flag_ids, bypass_cache, agent=True
+            all_flags = await search_flags(
+                c, get_redis_client(), search=None, limit_count=50,
+                offset_count=0, exclude_ids=flag_ids,
+                bypass_cache=bypass_cache, agent=True,
             )
             # Filter to only agent-specific flags
             suggestions = [f for f in all_flags if f.name in AGENT_FLAG_NAMES]
@@ -509,8 +503,9 @@ async def get_agent_internal(
             selected = await get_departments(
                 c, department_ids_list, get_redis_client(), bypass_cache=bypass_cache
             )
-            suggestions = await search_departments_internal(
+            suggestions = await search_departments(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
@@ -609,7 +604,7 @@ async def get_agent_internal(
     instructions = _dedupe_by_id(instructions_selected + instructions_suggestions, "id")
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
     departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "department_id"
+        departments_selected + departments_suggestions, "id"
     )
     tools = _dedupe_by_id(tools_selected + tools_suggestions, "id")
     temperature_levels = _dedupe_by_id(
@@ -691,7 +686,7 @@ async def get_agent_internal(
         "models": [m.id for m in models_suggestions],
         "prompts": [p.id for p in prompts_suggestions],
         "instructions": [i.id for i in instructions_suggestions],
-        "departments": [d.department_id for d in departments_suggestions],
+        "departments": [d.id for d in departments_suggestions],
         "tools": [t.id for t in tools_suggestions],
         "temperature_levels": [t.id for t in temperature_levels_suggestions],
         "reasoning_levels": [r.id for r in reasoning_levels_suggestions],
@@ -709,7 +704,7 @@ async def get_agent_internal(
         (i for i in instructions if i.id == selected_instructions_id), None
     )
     department_resources = [
-        d for d in departments if d.department_id in selected_department_ids
+        d for d in departments if d.id in selected_department_ids
     ]
     tool_resources = [t for t in tools if t.id in set(selected_tool_ids)]
     temperature_level_resource = next(

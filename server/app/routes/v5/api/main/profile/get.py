@@ -62,11 +62,11 @@ from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.emails.get import get_emails
 from app.routes.v5.tools.resources.emails.search import search_emails_internal
 from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
@@ -402,14 +402,10 @@ async def get_profile_internal(
     async def fetch_flags():
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
-            all_flags = await search_flags_internal(
-                c,
-                None,
-                50,
-                0,
-                flag_ids,
-                cache=cache,
-                profile=True,
+            all_flags = await search_flags(
+                c, get_redis_client(), search=None, limit_count=50,
+                offset_count=0, exclude_ids=flag_ids,
+                bypass_cache=bypass_cache, profile=True,
             )
             # Filter to only profile-specific flags
             suggestions = [f for f in all_flags if f.name in PROFILE_FLAG_NAMES]

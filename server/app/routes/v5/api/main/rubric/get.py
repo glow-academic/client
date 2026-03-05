@@ -70,13 +70,13 @@ from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
-    search_descriptions_internal,
+    search_descriptions,
 )
 from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
@@ -388,16 +388,8 @@ async def get_rubric_internal(
             selected = await get_descriptions(
                 c, description_ids, get_redis_client(), cache
             )
-            suggestions = await search_descriptions_internal(
-                c,
-                description_search,
-                20,
-                0,
-                effective_group_id,
-                "recent",
-                description_ids,
-                bypass_cache,
-                rubric=True,
+            suggestions = await search_descriptions(
+                c, get_redis_client(), search=description_search, draft_id=effective_group_id, exclude_ids=description_ids, bypass_cache=bypass_cache, rubric=True,
             )
             return (selected, suggestions)
 
@@ -406,14 +398,10 @@ async def get_rubric_internal(
     async def fetch_flags() -> tuple[list[Any], list[Any]]:
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
-            all_flags = await search_flags_internal(
-                c,
-                None,
-                50,
-                0,
-                flag_ids,
-                bypass_cache,
-                rubric=True,
+            all_flags = await search_flags(
+                c, get_redis_client(), search=None, limit_count=50,
+                offset_count=0, exclude_ids=flag_ids,
+                bypass_cache=bypass_cache, rubric=True,
             )
             suggestions = [f for f in all_flags if f.name in RUBRIC_FLAG_NAMES]
             return (selected, suggestions)
@@ -423,15 +411,16 @@ async def get_rubric_internal(
             selected = await get_departments(
                 c, department_ids, get_redis_client(), bypass_cache=bypass_cache
             )
-            suggestions = await search_departments_internal(
+            suggestions = await search_departments(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
                 department_ids=user_department_ids,
                 suggest_source="all",
                 exclude_ids=department_ids,
-                cache=cache,
+                bypass_cache=bypass_cache,
                 rubric=True,
             )
             return (selected, suggestions)
@@ -479,7 +468,7 @@ async def get_rubric_internal(
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
     departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "department_id"
+        departments_selected + departments_suggestions, "id"
     )
 
     # Find selected resources
@@ -489,7 +478,7 @@ async def get_rubric_internal(
         None,
     )
     department_resources = [
-        d for d in departments if d.department_id in selected_department_ids
+        d for d in departments if d.id in selected_department_ids
     ]
 
     # Points resources - selected are the current
@@ -498,7 +487,7 @@ async def get_rubric_internal(
 
     name_suggestion_ids = [n.id for n in names_suggestions]
     description_suggestion_ids = [d.id for d in descriptions_suggestions]
-    department_suggestion_ids = [d.department_id for d in departments_suggestions]
+    department_suggestion_ids = [d.id for d in departments_suggestions]
     points_suggestion_ids: list[UUID] = []
     pass_points_suggestion_ids: list[UUID] = []
     standard_group_suggestion_ids: list[UUID] = []

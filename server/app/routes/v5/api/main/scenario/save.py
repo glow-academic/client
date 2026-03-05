@@ -9,7 +9,7 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.scenario.permissions import (
@@ -191,14 +191,11 @@ async def _resolve_scenario_values(
     # --- Match-by-name resolution for multi-select fields (CSV import) ---
 
     if item.active_flag is not None and item.active_flag_id is None:
-        from app.routes.v5.tools.resources.flags.search import search_flags_internal
+        from app.routes.v5.tools.resources.flags.search import search_flags
 
-        all_flags = await search_flags_internal(
-            conn,
-            search=None,
-            limit_count=1000,
-            flag_type="scenario_active",
-            scenario=True,
+        all_flags = await search_flags(
+            conn, get_redis_client(), search=None, limit_count=1000,
+            flag_type="scenario_active", scenario=True,
         )
         match = next((f for f in all_flags if f.type == "scenario_active"), None)
         if match and match.id:

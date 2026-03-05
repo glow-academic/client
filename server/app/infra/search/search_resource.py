@@ -21,6 +21,7 @@ async def search_resource_ids(
     junction_artifacts: list[str] | None = None,
     draft_artifacts: list[str] | None = None,
     order_column: str | None = None,
+    extra_conditions: list[tuple[str, object]] | None = None,
 ) -> list[UUID]:
     """Search a resource table and return matching IDs.
 
@@ -29,6 +30,8 @@ async def search_resource_ids(
     - exclude_ids: NOT IN filter
     - draft_id + suggest_source='draft': EXISTS across draft connection tables
     - artifact_filters: EXISTS across junction tables for each True filter
+    - extra_conditions: list of (sql_template, param) for resource-specific filters.
+      sql_template uses {idx} placeholder for param position, {alias} for table alias.
     """
     if limit_count <= 0:
         return []
@@ -61,6 +64,13 @@ async def search_resource_ids(
         )
         params.append(draft_id)
         idx += 1
+
+    # Extra resource-specific conditions
+    if extra_conditions:
+        for sql_template, param in extra_conditions:
+            conditions.append(sql_template.format(idx=idx, alias=alias))
+            params.append(param)
+            idx += 1
 
     # Artifact boolean filters
     if artifact_filters and junction_artifacts:

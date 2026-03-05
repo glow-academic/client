@@ -54,13 +54,13 @@ from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
-    search_descriptions_internal,
+    search_descriptions,
 )
 from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
@@ -276,30 +276,18 @@ async def get_field_internal(
         async with pool.acquire() as c:
             return (
                 await get_descriptions(c, description_ids, get_redis_client(), cache),
-                await search_descriptions_internal(
-                    c,
-                    description_search,
-                    20,
-                    0,
-                    effective_group_id,
-                    "recent",
-                    description_ids,
-                    bypass_cache,
-                    field=True,
+                await search_descriptions(
+                    c, get_redis_client(), search=description_search, draft_id=effective_group_id, exclude_ids=description_ids, bypass_cache=bypass_cache, field=True,
                 ),
             )
 
     async def fetch_flags():
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
-            all_flags = await search_flags_internal(
-                c,
-                None,
-                50,
-                0,
-                flag_ids,
-                bypass_cache,
-                field=True,
+            all_flags = await search_flags(
+                c, get_redis_client(), search=None, limit_count=50,
+                offset_count=0, exclude_ids=flag_ids,
+                bypass_cache=bypass_cache, field=True,
             )
             suggestions = [f for f in all_flags if f.name == "field_active"]
             return (selected, suggestions)
@@ -313,15 +301,16 @@ async def get_field_internal(
                     get_redis_client(),
                     bypass_cache=bypass_cache,
                 ),
-                await search_departments_internal(
+                await search_departments(
                     c,
+                    get_redis_client(),
                     search=None,
                     limit_count=20,
                     offset_count=0,
                     department_ids=user_department_ids,
                     suggest_source="all",
                     exclude_ids=selected_department_ids,
-                    cache=cache,
+                    bypass_cache=bypass_cache,
                     field=True,
                 ),
             )
@@ -374,7 +363,7 @@ async def get_field_internal(
     all_flags_raw = _dedupe_by_id(flags_selected + flags_suggestions, "id")
     all_departments = _dedupe_by_id(
         departments_selected + departments_suggestions,
-        "department_id",
+        "id",
     )
     all_conditional_parameters = _dedupe_by_id(
         conditional_parameters_selected + conditional_parameters_suggestions,

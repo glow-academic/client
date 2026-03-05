@@ -85,16 +85,16 @@ from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.colors.get import get_colors
 from app.routes.v5.tools.resources.colors.search import search_colors_internal
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments_internal
+from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
-    search_descriptions_internal,
+    search_descriptions,
 )
 from app.routes.v5.tools.resources.examples.get import get_examples
 from app.routes.v5.tools.resources.examples.search import search_examples_internal
 from app.routes.v5.tools.resources.fields.search import search_fields_internal
 from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.icons.get import get_icons
 from app.routes.v5.tools.resources.icons.search import search_icons_internal
 from app.routes.v5.tools.resources.instructions.get import get_instructions
@@ -423,16 +423,8 @@ async def get_persona_internal(
             selected = await get_descriptions(
                 c, description_ids, get_redis_client(), cache
             )
-            suggestions = await search_descriptions_internal(
-                c,
-                descriptions_search,
-                20,
-                0,
-                effective_group_id,
-                "all",
-                description_ids,
-                bypass_cache,
-                persona=True,
+            suggestions = await search_descriptions(
+                c, get_redis_client(), search=descriptions_search, draft_id=effective_group_id, suggest_source="all", exclude_ids=description_ids, bypass_cache=bypass_cache, persona=True,
             )
             return (selected, suggestions)
 
@@ -492,14 +484,10 @@ async def get_persona_internal(
     async def fetch_flags():
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
-            all_flags = await search_flags_internal(
-                c,
-                None,
-                50,
-                0,
-                flag_ids,
-                cache=cache,
-                persona=True,
+            all_flags = await search_flags(
+                c, get_redis_client(), search=None, limit_count=50,
+                offset_count=0, exclude_ids=flag_ids,
+                bypass_cache=bypass_cache, persona=True,
             )
             # Filter to only persona-specific flags (business logic in Python)
             suggestions = [f for f in all_flags if f.type in PERSONA_FLAG_TYPES]

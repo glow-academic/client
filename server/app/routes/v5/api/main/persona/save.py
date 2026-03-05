@@ -9,7 +9,7 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.persona.permissions import (
@@ -33,7 +33,7 @@ from app.routes.v5.tools.resources.descriptions.create import (
     create_descriptions_internal,
 )
 from app.routes.v5.tools.resources.examples.create import create_examples_internal
-from app.routes.v5.tools.resources.flags.search import search_flags_internal
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.icons.search import search_icons_internal
 from app.routes.v5.tools.resources.instructions.create import (
     create_instructions_internal,
@@ -270,8 +270,9 @@ async def _resolve_persona_values(
             )
 
     if item.active_flag is not None and item.active_flag_id is None:
-        results = await search_flags_internal(
-            conn, search=None, flag_type="persona_active", limit_count=100, persona=True
+        results = await search_flags(
+            conn, get_redis_client(), search=None, flag_type="persona_active",
+            limit_count=100, persona=True,
         )
         match = next(
             (r for r in results if r.type == "persona_active"),
