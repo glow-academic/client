@@ -44,7 +44,7 @@ INSERT INTO public.tool_args_outputs_junction (tool_id, args_outputs_id, created
 -- tool_descriptions_junction
 INSERT INTO public.tool_descriptions_junction (tool_id, description_id, created_at, generated, mcp, active) VALUES ('019bbdce-8403-7263-882c-cdc0fce2012b', '019bbdce-8403-74f0-9da1-572a2a8d08e6', '2026-01-14T18:39:46.667548+00:00', false, false, true) ON CONFLICT (tool_id, description_id) DO NOTHING;
 -- tool_resources_junction
-INSERT INTO public.tool_resources_junction (tool_id, resource_id, active, created_at, generated, mcp) VALUES ('019bbdce-8403-7263-882c-cdc0fce2012b', '019c4f27-1789-7095-80b8-34474346622f', '2026-02-12T00:01:27.881501+00:00', false, false) ON CONFLICT (tool_id, resource_id) DO NOTHING;
+INSERT INTO public.tool_resources_junction (tool_id, resource_id, active, created_at, generated, mcp) VALUES ('019bbdce-8403-7263-882c-cdc0fce2012b', '019c4f27-1789-7095-80b8-34474346622f', true, '2026-02-12T00:01:27.881501+00:00', false, false) ON CONFLICT (tool_id, resource_id) DO NOTHING;
 -- tool_flags_junction
 INSERT INTO public.tool_flags_junction (tool_id, flag_id, created_at, generated, mcp, active) VALUES ('019bbdce-8403-7263-882c-cdc0fce2012b', '019be334-bfc6-74fb-be11-ea6b522945bb', '2026-01-14T18:39:46.667548+00:00', false, false, true) ON CONFLICT (tool_id, flag_id) DO NOTHING;
 -- tool_operations_junction
@@ -52,4 +52,4 @@ INSERT INTO public.tool_operations_junction (tool_id, operation_id, created_at, 
 -- tool_names_junction
 INSERT INTO public.tool_names_junction (tool_id, name_id, created_at, generated, mcp, active) VALUES ('019bbdce-8403-7263-882c-cdc0fce2012b', '019bbdce-8403-730a-b3f4-aa63f877a110', '2026-01-14T18:39:46.667548+00:00', false, false, true) ON CONFLICT (tool_id, name_id) DO NOTHING;
 -- tool_tools_junction
-INSERT INTO public.tool_tools_junction (tool_id, tools_id, active, created_at, generated, mcp) VALUES ('019bbdce-8403-7263-882c-cdc0fce2012b', '019bebc4-d436-7ce3-babd-f4ea7d97e54c', '2026-01-17T17:58:56.053417+00:00', false, false) ON CONFLICT (tool_id, tools_id) DO NOTHING;
+INSERT INTO public.tool_tools_junction (tool_id, tools_id, active, created_at, generated, mcp) VALUES ('019bbdce-8403-7263-882c-cdc0fce2012b', '019bebc4-d436-7ce3-babd-f4ea7d97e54c', true, '2026-01-17T17:58:56.053417+00:00', false, false) ON CONFLICT (tool_id, tools_id) DO NOTHING;

@@ -111,13 +111,14 @@ async def test_clears_all_multi_ids(conn, redis_client):
 
 async def test_updates_flags(conn, redis_client):
     f1 = await create_flag(conn, f"f-{_u()}", "desc", "icon", redis_client)
-    result = await create_model(conn, flag_ids={f1.id: True})
+    f2 = await create_flag(conn, f"f-{_u()}", "desc", "icon", redis_client)
+    result = await create_model(conn, flag_ids=[f1.id])
 
-    await update_model(conn, result.id, flag_ids={f1.id: False})
+    await update_model(conn, result.id, flag_ids=[f2.id])
 
-    # Flag still linked (visible via get)
+    # f1 replaced by f2
     items = await get_models(conn, [result.id], flags=True)
-    assert items[0].flag_ids == [f1.id]
+    assert items[0].flag_ids == [f2.id]
 
 
 async def test_multi_none_means_no_change(conn, redis_client):

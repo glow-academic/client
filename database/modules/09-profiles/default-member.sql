@@ -18,6 +18,6 @@ INSERT INTO public.profile_flags_junction (profile_id, flag_id, created_at, gene
 -- profile_names_junction
 INSERT INTO public.profile_names_junction (profile_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-36f0-7eb3-bc4e-bcab772edd92', '019b995b-cb82-774e-ae20-8bd47c373c00', '2025-08-12T12:52:09.564220+00:00', false, false, true) ON CONFLICT (profile_id) DO NOTHING;
 -- profile_profiles_junction
-INSERT INTO public.profile_profiles_junction (profile_id, profiles_id, active, created_at, generated, mcp) VALUES ('019b3be4-36f0-7eb3-bc4e-bcab772edd92', '019bb25e-e611-78ad-9fcf-3548045e6ef8', '2025-08-12T12:52:09.564220+00:00', false, false) ON CONFLICT (profile_id, profiles_id) DO NOTHING;
+INSERT INTO public.profile_profiles_junction (profile_id, profiles_id, active, created_at, generated, mcp) VALUES ('019b3be4-36f0-7eb3-bc4e-bcab772edd92', '019bb25e-e611-78ad-9fcf-3548045e6ef8', true, '2025-08-12T12:52:09.564220+00:00', false, false) ON CONFLICT (profile_id, profiles_id) DO NOTHING;
 -- profile_roles_junction
 INSERT INTO public.profile_roles_junction (profile_id, role_id, created_at, generated, mcp, active) VALUES ('019b3be4-36f0-7eb3-bc4e-bcab772edd92', '019bf21d-4d50-74fc-8c81-be446d602de2', '2025-08-12T12:52:09.564220+00:00', false, false, true) ON CONFLICT (profile_id, role_id) DO NOTHING;

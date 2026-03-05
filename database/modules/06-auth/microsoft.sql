@@ -25,7 +25,7 @@ INSERT INTO public.auth_artifact (created_at, updated_at, id, generated, mcp) VA
 
 -- Junctions
 -- auth_auths_junction
-INSERT INTO public.auth_auths_junction (auth_id, auths_id, active, created_at, generated, mcp) VALUES ('019b3be4-3117-7afc-8d1d-a2815d70f294', '019bb25e-e5e2-74c2-aaf3-42c5403f26f9', '2025-11-23T01:06:57.190112+00:00', false, false) ON CONFLICT (auth_id, auths_id) DO NOTHING;
+INSERT INTO public.auth_auths_junction (auth_id, auths_id, active, created_at, generated, mcp) VALUES ('019b3be4-3117-7afc-8d1d-a2815d70f294', '019bb25e-e5e2-74c2-aaf3-42c5403f26f9', true, '2025-11-23T01:06:57.190112+00:00', false, false) ON CONFLICT (auth_id, auths_id) DO NOTHING;
 -- auth_descriptions_junction
 INSERT INTO public.auth_descriptions_junction (auth_id, description_id, created_at, generated, mcp, active) VALUES ('019b3be4-3117-7afc-8d1d-a2815d70f294', '019b995c-8eaf-7d05-be91-06a88bab7ec8', '2025-11-23T01:06:57.190112+00:00', false, false, true) ON CONFLICT (auth_id, description_id) DO NOTHING;
 -- auth_flags_junction

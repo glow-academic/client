@@ -36,7 +36,7 @@ INSERT INTO public.setting_auth_item_keys_junction (active, created_at, generate
 -- setting_auths_junction
 INSERT INTO public.setting_auths_junction (active, created_at, auth_id, settings_id, generated, mcp) VALUES (true, '2026-02-08T23:18:33.077464+00:00', '019bb25e-e5e2-73eb-9313-57d774b30875', '019c3f8c-b97c-7fa5-b369-7d7418bedbcf', false, false) ON CONFLICT (settings_id, auth_id) DO NOTHING;
 -- setting_departments_junction
-INSERT INTO public.setting_departments_junction (setting_id, department_id, active, created_at, generated, mcp) VALUES ('019c3f8c-b97c-7fa5-b369-7d7418bedbcf', '019c3f8c-b97f-70eb-86fb-4f3fae4902f8', '2026-02-13T17:17:19.748438+00:00', false, false) ON CONFLICT (setting_id, department_id) DO NOTHING;
+INSERT INTO public.setting_departments_junction (setting_id, department_id, active, created_at, generated, mcp) VALUES ('019c3f8c-b97c-7fa5-b369-7d7418bedbcf', '019c3f8c-b97f-70eb-86fb-4f3fae4902f8', true, '2026-02-13T17:17:19.748438+00:00', false, false) ON CONFLICT (setting_id, department_id) DO NOTHING;
 -- setting_descriptions_junction
 INSERT INTO public.setting_descriptions_junction (setting_id, description_id, created_at, generated, mcp, active) VALUES ('019c3f8c-b97c-7fa5-b369-7d7418bedbcf', '019c5801-d003-75de-80fa-9515249c9c6b', '2026-02-13T17:17:19.748107+00:00', false, false, true) ON CONFLICT (setting_id, description_id) DO NOTHING;
 -- setting_flags_junction
@@ -49,7 +49,7 @@ INSERT INTO public.setting_names_junction (setting_id, name_id, created_at, gene
 INSERT INTO public.setting_provider_keys_junction (setting_id, provider_key_id, created_at, active, generated, mcp) VALUES ('019c3f8c-b97c-7fa5-b369-7d7418bedbcf', '019c441a-0eb9-7665-a01c-a6fec156d716', '2026-02-13T19:50:33.702587+00:00', true, false, false) ON CONFLICT (setting_id, provider_key_id) DO NOTHING;
 INSERT INTO public.setting_provider_keys_junction (setting_id, provider_key_id, created_at, active, generated, mcp) VALUES ('019c3f8c-b97c-7fa5-b369-7d7418bedbcf', '019c441a-0eb9-7938-8d65-ccfc25d92856', '2026-02-13T19:50:33.702587+00:00', true, false, false) ON CONFLICT (setting_id, provider_key_id) DO NOTHING;
 -- setting_settings_junction
-INSERT INTO public.setting_settings_junction (setting_id, settings_id, active, created_at, generated, mcp) VALUES ('019c3f8c-b97c-7fa5-b369-7d7418bedbcf', '019c51c3-5130-734a-b5f4-c7e48130cc99', '2026-02-12T12:11:20.750426+00:00', false, false) ON CONFLICT (setting_id, settings_id) DO NOTHING;
+INSERT INTO public.setting_settings_junction (setting_id, settings_id, active, created_at, generated, mcp) VALUES ('019c3f8c-b97c-7fa5-b369-7d7418bedbcf', '019c51c3-5130-734a-b5f4-c7e48130cc99', true, '2026-02-12T12:11:20.750426+00:00', false, false) ON CONFLICT (setting_id, settings_id) DO NOTHING;
 -- department_settings_junction (moved from department file — needs settings_resource to exist)
 INSERT INTO public.department_settings_junction (active, created_at, department_id, settings_id, generated, mcp) VALUES (true, '2026-02-25T22:07:55.636235+00:00', '019c3f8c-b97b-7350-8d77-632e29b1c3f9', '019c51c3-5130-734a-b5f4-c7e48130cc99', false, false) ON CONFLICT (department_id, settings_id) DO NOTHING;
 

@@ -78,7 +78,7 @@ async def test_links_flags_with_value(conn, redis_client):
     f1 = await create_flag(conn, f"f-{_u()}", "desc", "icon", redis_client)
     f2 = await create_flag(conn, f"f-{_u()}", "desc", "icon", redis_client)
 
-    result = await create_auth(conn, flag_ids={f1.id: True, f2.id: False})
+    result = await create_auth(conn, flag_ids=[f1.id, f2.id])
 
     items = await get_auths(conn, [result.id], flags=True)
     assert set(items[0].flag_ids) == {f1.id, f2.id}

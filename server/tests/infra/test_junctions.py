@@ -8,12 +8,8 @@ import pytest
 
 from app.infra.junctions import (
     insert_multi,
-    insert_multi_with_idx,
-    insert_multi_with_value,
     insert_single,
     upsert_multi,
-    upsert_multi_with_idx,
-    upsert_multi_with_value,
     upsert_single,
 )
 
@@ -44,18 +40,6 @@ async def _make_name(conn):
 async def _make_dept(conn):
     return await conn.fetchval(
         "INSERT INTO departments_resource DEFAULT VALUES RETURNING id"
-    )
-
-
-async def _make_example(conn):
-    return await conn.fetchval(
-        "INSERT INTO examples_resource (example) VALUES ('ex') RETURNING id"
-    )
-
-
-async def _make_flag(conn):
-    return await conn.fetchval(
-        "INSERT INTO flags_resource (name, description, icon) VALUES ('f', 'd', 'i') RETURNING id"
     )
 
 
@@ -127,63 +111,6 @@ async def test_insert_multi_empty_is_noop(conn):
 
     ids = await _active_ids(conn, "persona_departments_junction", pid, "department_id")
     assert ids == set()
-
-
-# ---------------------------------------------------------------------------
-# insert_multi_with_idx
-# ---------------------------------------------------------------------------
-
-
-async def test_insert_multi_with_idx(conn):
-    pid = await _make_persona(conn)
-    e1 = await _make_example(conn)
-    e2 = await _make_example(conn)
-
-    await insert_multi_with_idx(
-        conn,
-        table="persona_examples_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="example_id",
-        resource_ids=[e1, e2],
-    )
-
-    rows = await conn.fetch(
-        "SELECT example_id, idx FROM persona_examples_junction "
-        "WHERE persona_id = $1 AND active = true ORDER BY idx",
-        pid,
-    )
-    assert rows[0]["example_id"] == e1 and rows[0]["idx"] == 0
-    assert rows[1]["example_id"] == e2 and rows[1]["idx"] == 1
-
-
-# ---------------------------------------------------------------------------
-# insert_multi_with_value
-# ---------------------------------------------------------------------------
-
-
-async def test_insert_multi_with_value(conn):
-    pid = await _make_persona(conn)
-    f1 = await _make_flag(conn)
-    f2 = await _make_flag(conn)
-
-    await insert_multi_with_value(
-        conn,
-        table="persona_flags_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="flag_id",
-        resource_values={f1: True, f2: False},
-    )
-
-    rows = await conn.fetch(
-        "SELECT flag_id, value FROM persona_flags_junction "
-        "WHERE persona_id = $1 AND active = true",
-        pid,
-    )
-    vals = {r["flag_id"]: r["value"] for r in rows}
-    assert vals[f1] is True
-    assert vals[f2] is False
 
 
 # ---------------------------------------------------------------------------
@@ -351,77 +278,3 @@ async def test_upsert_multi_clears_all(conn):
     assert ids == set()
 
 
-# ---------------------------------------------------------------------------
-# upsert_multi_with_idx — reorder
-# ---------------------------------------------------------------------------
-
-
-async def test_upsert_multi_with_idx_reorders(conn):
-    pid = await _make_persona(conn)
-    e1 = await _make_example(conn)
-    e2 = await _make_example(conn)
-
-    await insert_multi_with_idx(
-        conn,
-        table="persona_examples_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="example_id",
-        resource_ids=[e1, e2],
-    )
-
-    # Reverse order
-    await upsert_multi_with_idx(
-        conn,
-        table="persona_examples_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="example_id",
-        resource_ids=[e2, e1],
-        constraint="persona_examples_pkey",
-    )
-
-    rows = await conn.fetch(
-        "SELECT example_id, idx FROM persona_examples_junction "
-        "WHERE persona_id = $1 AND active = true ORDER BY idx",
-        pid,
-    )
-    assert rows[0]["example_id"] == e2 and rows[0]["idx"] == 0
-    assert rows[1]["example_id"] == e1 and rows[1]["idx"] == 1
-
-
-# ---------------------------------------------------------------------------
-# upsert_multi_with_value — flip value
-# ---------------------------------------------------------------------------
-
-
-async def test_upsert_multi_with_value_flips(conn):
-    pid = await _make_persona(conn)
-    f1 = await _make_flag(conn)
-
-    await insert_multi_with_value(
-        conn,
-        table="persona_flags_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="flag_id",
-        resource_values={f1: True},
-    )
-
-    await upsert_multi_with_value(
-        conn,
-        table="persona_flags_junction",
-        owner_col=OWNER_COL,
-        owner_id=pid,
-        resource_col="flag_id",
-        resource_values={f1: False},
-        constraint="persona_flags_pkey",
-    )
-
-    val = await conn.fetchval(
-        "SELECT value FROM persona_flags_junction "
-        "WHERE persona_id = $1 AND flag_id = $2 AND active = true",
-        pid,
-        f1,
-    )
-    assert val is False

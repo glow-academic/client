@@ -29,4 +29,4 @@ INSERT INTO public.tool_operations_junction (tool_id, operation_id, created_at, 
 -- tool_names_junction
 INSERT INTO public.tool_names_junction (tool_id, name_id, created_at, generated, mcp, active) VALUES ('0eb5b1be-fc65-4a0e-95d4-799d0242efb3', '019c82b8-5d89-723c-bdd2-5e1abc8c8fdd', '2026-02-22T00:20:46.593734+00:00', false, false, true) ON CONFLICT (tool_id, name_id) DO NOTHING;
 -- tool_tools_junction
-INSERT INTO public.tool_tools_junction (tool_id, tools_id, active, created_at, generated, mcp) VALUES ('0eb5b1be-fc65-4a0e-95d4-799d0242efb3', 'e3abe747-7f2d-4f59-992d-4dcfed8d8664', '2026-02-21T22:16:39.608062+00:00', false, false) ON CONFLICT (tool_id, tools_id) DO NOTHING;
+INSERT INTO public.tool_tools_junction (tool_id, tools_id, active, created_at, generated, mcp) VALUES ('0eb5b1be-fc65-4a0e-95d4-799d0242efb3', 'e3abe747-7f2d-4f59-992d-4dcfed8d8664', true, '2026-02-21T22:16:39.608062+00:00', false, false) ON CONFLICT (tool_id, tools_id) DO NOTHING;

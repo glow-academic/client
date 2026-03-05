@@ -19,7 +19,7 @@ INSERT INTO public.document_artifact (created_at, updated_at, id, generated, mcp
 -- document_descriptions_junction
 INSERT INTO public.document_descriptions_junction (document_id, description_id, created_at, generated, mcp, active) VALUES ('019b3be4-324b-73ee-afba-5103618244d8', '019b995c-8e90-77cc-800b-b9884003b017', '2025-12-06T02:59:23.893847+00:00', false, false, true) ON CONFLICT (document_id, description_id) DO NOTHING;
 -- document_documents_junction
-INSERT INTO public.document_documents_junction (document_id, documents_id, active, created_at, generated, mcp) VALUES ('019b3be4-324b-73ee-afba-5103618244d8', '019bb25e-e619-781f-9283-8bae433caa45', '2025-12-06T02:59:23.893847+00:00', false, false) ON CONFLICT (document_id, documents_id) DO NOTHING;
+INSERT INTO public.document_documents_junction (document_id, documents_id, active, created_at, generated, mcp) VALUES ('019b3be4-324b-73ee-afba-5103618244d8', '019bb25e-e619-781f-9283-8bae433caa45', true, '2025-12-06T02:59:23.893847+00:00', false, false) ON CONFLICT (document_id, documents_id) DO NOTHING;
 -- document_flags_junction
 INSERT INTO public.document_flags_junction (document_id, flag_id, created_at, generated, mcp, active) VALUES ('019b3be4-324b-73ee-afba-5103618244d8', '019b995a-86ef-78bb-87a8-0de554b128bb', '2025-12-06T02:59:23.893847+00:00', false, false, true) ON CONFLICT (document_id, flag_id) DO NOTHING;
 INSERT INTO public.document_flags_junction (document_id, flag_id, created_at, generated, mcp, active) VALUES ('019b3be4-324b-73ee-afba-5103618244d8', '019be334-bfc4-7b69-96a1-6cf5422bba50', '2025-12-06T02:59:23.893847+00:00', false, false, true) ON CONFLICT (document_id, flag_id) DO NOTHING;
@@ -28,4 +28,4 @@ INSERT INTO public.document_names_junction (document_id, name_id, created_at, ge
 -- document_parameter_fields_junction
 INSERT INTO public.document_parameter_fields_junction (document_id, parameter_field_id, active, generated, mcp, created_at) VALUES ('019b3be4-324b-73ee-afba-5103618244d8', 'f4cec549-e224-427d-8b10-d37725893997', true, false, false, '2025-12-06T02:59:23.893847+00:00') ON CONFLICT (document_id, parameter_field_id) DO NOTHING;
 -- document_texts_junction
-INSERT INTO public.document_texts_junction (document_id, texts_id, active, created_at) VALUES ('019b3be4-324b-73ee-afba-5103618244d8', '019c29d6-005c-7205-8dea-be2ddf4258ef', '2026-02-13T20:09:41.891519+00:00') ON CONFLICT (document_id, texts_id) DO NOTHING;
+INSERT INTO public.document_texts_junction (document_id, texts_id, active, created_at) VALUES ('019b3be4-324b-73ee-afba-5103618244d8', '019c29d6-005c-7205-8dea-be2ddf4258ef', true, '2026-02-13T20:09:41.891519+00:00') ON CONFLICT (document_id, texts_id) DO NOTHING;

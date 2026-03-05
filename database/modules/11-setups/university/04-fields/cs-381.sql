@@ -18,7 +18,7 @@ INSERT INTO public.field_artifact (created_at, updated_at, id, generated, mcp) V
 -- field_descriptions_junction
 INSERT INTO public.field_descriptions_junction (field_id, description_id, created_at, generated, mcp, active) VALUES ('019b3be4-3255-7da8-8b3a-21da5b688b2f', '019b995c-8e9e-7897-b32c-6ed9a7e67cbf', '2025-08-12 07:52:10.017187-05', false, false, true) ON CONFLICT (field_id, description_id) DO NOTHING;
 -- field_fields_junction
-INSERT INTO public.field_fields_junction (field_id, fields_id, active, created_at, generated, mcp) VALUES ('019b3be4-3255-7da8-8b3a-21da5b688b2f', '019bb25e-e5f8-7d22-9d6f-d0976eea78ec', '2025-08-12 07:52:10.017187-05', false, false) ON CONFLICT (field_id, fields_id) DO NOTHING;
+INSERT INTO public.field_fields_junction (field_id, fields_id, active, created_at, generated, mcp) VALUES ('019b3be4-3255-7da8-8b3a-21da5b688b2f', '019bb25e-e5f8-7d22-9d6f-d0976eea78ec', true, '2025-08-12 07:52:10.017187-05', false, false) ON CONFLICT (field_id, fields_id) DO NOTHING;
 -- field_flags_junction
 INSERT INTO public.field_flags_junction (field_id, flag_id, created_at, generated, mcp, active) VALUES ('019b3be4-3255-7da8-8b3a-21da5b688b2f', '019be334-bfc4-7dd2-bcbd-93f1af18c233', '2025-08-12 07:52:10.017187-05', false, false, true) ON CONFLICT (field_id, flag_id) DO NOTHING;
 -- field_names_junction

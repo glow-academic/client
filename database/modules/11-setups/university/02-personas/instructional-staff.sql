@@ -23,9 +23,9 @@ INSERT INTO public.persona_colors_junction (persona_id, color_id, created_at, ge
 -- persona_descriptions_junction
 INSERT INTO public.persona_descriptions_junction (persona_id, description_id, created_at, generated, mcp, active) VALUES ('019b3be4-36e2-772b-bdb9-1f088978f564', '019b995c-8e9a-77b2-86c1-a4a56d23f8b1', '2025-12-12T13:26:55.656189+00:00', false, false, true) ON CONFLICT (persona_id, description_id) DO NOTHING;
 -- persona_examples_junction
-INSERT INTO public.persona_examples_junction (idx, created_at, example_id, persona_id, active, generated, mcp) VALUES (0, '2025-12-12T13:26:55.656189+00:00', '019b3be4-3253-7eb7-8261-0fe697a817a2', '019b3be4-36e2-772b-bdb9-1f088978f564', true, false, false) ON CONFLICT (persona_id, example_id) DO NOTHING;
-INSERT INTO public.persona_examples_junction (idx, created_at, example_id, persona_id, active, generated, mcp) VALUES (1, '2025-12-12T13:26:55.656189+00:00', '019b3be4-3253-7eb8-9539-4b59144276f0', '019b3be4-36e2-772b-bdb9-1f088978f564', true, false, false) ON CONFLICT (persona_id, example_id) DO NOTHING;
-INSERT INTO public.persona_examples_junction (idx, created_at, example_id, persona_id, active, generated, mcp) VALUES (2, '2025-12-12T13:26:55.656189+00:00', '019b3be4-3253-7ebf-996b-91356ae8f539', '019b3be4-36e2-772b-bdb9-1f088978f564', true, false, false) ON CONFLICT (persona_id, example_id) DO NOTHING;
+INSERT INTO public.persona_examples_junction (created_at, example_id, persona_id, active, generated, mcp) VALUES ('2025-12-12T13:26:55.656189+00:00', '019b3be4-3253-7eb7-8261-0fe697a817a2', '019b3be4-36e2-772b-bdb9-1f088978f564', true, false, false) ON CONFLICT (persona_id, example_id) DO NOTHING;
+INSERT INTO public.persona_examples_junction (created_at, example_id, persona_id, active, generated, mcp) VALUES ('2025-12-12T13:26:55.656189+00:00', '019b3be4-3253-7eb8-9539-4b59144276f0', '019b3be4-36e2-772b-bdb9-1f088978f564', true, false, false) ON CONFLICT (persona_id, example_id) DO NOTHING;
+INSERT INTO public.persona_examples_junction (created_at, example_id, persona_id, active, generated, mcp) VALUES ('2025-12-12T13:26:55.656189+00:00', '019b3be4-3253-7ebf-996b-91356ae8f539', '019b3be4-36e2-772b-bdb9-1f088978f564', true, false, false) ON CONFLICT (persona_id, example_id) DO NOTHING;
 -- persona_flags_junction
 INSERT INTO public.persona_flags_junction (persona_id, flag_id, created_at, generated, mcp, active) VALUES ('019b3be4-36e2-772b-bdb9-1f088978f564', '019be334-bfc3-7998-9dcf-a00d3d137da5', '2025-12-12T13:26:55.656189+00:00', false, false, true) ON CONFLICT (persona_id, flag_id) DO NOTHING;
 -- persona_icons_junction
@@ -35,4 +35,4 @@ INSERT INTO public.persona_names_junction (persona_id, name_id, created_at, gene
 -- persona_parameter_fields_junction
 INSERT INTO public.persona_parameter_fields_junction (persona_id, parameter_field_id, active, generated, mcp, created_at) VALUES ('019b3be4-36e2-772b-bdb9-1f088978f564', '9e885f85-7798-4777-8214-600f32621b98', true, false, false, '2025-12-12T13:26:55.660542+00:00') ON CONFLICT (persona_id, parameter_field_id) DO NOTHING;
 -- persona_personas_junction
-INSERT INTO public.persona_personas_junction (persona_id, personas_id, active, created_at, generated, mcp) VALUES ('019b3be4-36e2-772b-bdb9-1f088978f564', '019bb25e-e60c-7359-9409-c72170bf358e', '2025-12-12T13:26:55.656189+00:00', false, false) ON CONFLICT (persona_id, personas_id) DO NOTHING;
+INSERT INTO public.persona_personas_junction (persona_id, personas_id, active, created_at, generated, mcp) VALUES ('019b3be4-36e2-772b-bdb9-1f088978f564', '019bb25e-e60c-7359-9409-c72170bf358e', true, '2025-12-12T13:26:55.656189+00:00', false, false) ON CONFLICT (persona_id, personas_id) DO NOTHING;

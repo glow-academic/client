@@ -9,7 +9,7 @@ INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp)
 
 -- Scenario resource rows
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8e88-7433-8cd6-691a7a195edb', 'Practice scenario featuring an aggressive or confrontational student persona.', '2025-08-12T12:52:09.879666+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.images_resource (created_at, name, active, id, description, generated, mcp) VALUES ('2025-12-21T14:38:39.922985+00:00', 'Classroom', '019b4159-2535-7781-9419-6be634e4eadf', 'Classroom', false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.images_resource (created_at, name, active, id, description, generated, mcp) VALUES ('2025-12-21T14:38:39.922985+00:00', 'Classroom', true, '019b4159-2535-7781-9419-6be634e4eadf', 'Classroom', false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8e80-77cd-b5f8-3605acf7b2a4', 'Aggressive Scenario', '2025-08-12T12:52:09.879666+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Scenario artifacts
@@ -58,4 +58,4 @@ INSERT INTO public.simulation_flags_junction (simulation_id, flag_id, created_at
 -- simulation_names_junction
 INSERT INTO public.simulation_names_junction (simulation_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-3cb8-7aa7-b0e6-8652f2ad09f7', '019b995c-8e93-7fce-9bc7-b9778a79bb71', '2025-08-12T12:52:09.984906+00:00', false, false, true) ON CONFLICT (simulation_id, name_id) DO NOTHING;
 -- simulation_simulations_junction
-INSERT INTO public.simulation_simulations_junction (simulation_id, simulations_id, active, created_at, generated, mcp) VALUES ('019b3be4-3cb8-7aa7-b0e6-8652f2ad09f7', '019bb25e-e62c-789f-add0-0e4d307e952c', '2025-08-12T12:52:09.984906+00:00', false, false) ON CONFLICT (simulation_id, simulations_id) DO NOTHING;
+INSERT INTO public.simulation_simulations_junction (simulation_id, simulations_id, active, created_at, generated, mcp) VALUES ('019b3be4-3cb8-7aa7-b0e6-8652f2ad09f7', '019bb25e-e62c-789f-add0-0e4d307e952c', true, '2025-08-12T12:52:09.984906+00:00', false, false) ON CONFLICT (simulation_id, simulations_id) DO NOTHING;
