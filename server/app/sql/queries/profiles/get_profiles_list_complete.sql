@@ -119,7 +119,8 @@ profile_primary_department AS (
         pd.profile_id,
         pd.departments_id::text as department_id
     FROM profile_departments_junction pd
-    WHERE pd.active = true AND pd.is_primary = true
+    JOIN departments_resource dr ON dr.id = pd.departments_id
+    WHERE pd.active = true AND dr.is_primary = true
 ),
 -- Base staff data: profile's own junctions only
 staff_rows AS (
@@ -130,18 +131,18 @@ staff_rows AS (
                 SELECT email FROM (
                     SELECT DISTINCT ON (e2.email)
                         e2.email,
-                        pe2.is_primary,
+                        e2.is_primary,
                         pe2.created_at
                     FROM profile_emails_junction pe2
                     JOIN emails_resource e2 ON pe2.emails_id = e2.id
                     WHERE pe2.profile_id = p.id AND pe2.active = true
-                    ORDER BY e2.email, pe2.is_primary DESC, pe2.created_at
+                    ORDER BY e2.email, e2.is_primary DESC, pe2.created_at
                 ) distinct_emails
                 ORDER BY is_primary DESC, created_at
             ),
             ARRAY[]::text[]
         ) as emails,
-        (SELECT e2.email FROM profile_emails_junction pe2 JOIN emails_resource e2 ON pe2.emails_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
+        (SELECT e2.email FROM profile_emails_junction pe2 JOIN emails_resource e2 ON pe2.emails_id = e2.id WHERE pe2.profile_id = p.id AND e2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as name,
         (SELECT r.role FROM profile_roles_junction pr_j
          JOIN roles_resource r ON pr_j.roles_id = r.id

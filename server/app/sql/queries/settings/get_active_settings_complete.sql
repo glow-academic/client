@@ -95,10 +95,10 @@ resolve_department_id AS (
             ELSE (
                 SELECT pd.departments_id
                 FROM resolve_profile_id rpi
-                JOIN profile_departments_junction pd ON pd.profile_id = rpi.resolved_profile_id
+                JOIN profile_departments_junction pd ON pd.profile_id = rpi.resolved_profile_id AND pd.active = true
+                JOIN departments_resource dr ON dr.id = pd.departments_id
                 WHERE rpi.resolved_profile_id IS NOT NULL
-                  AND pd.is_primary = TRUE
-                  AND pd.active = true
+                  AND dr.is_primary = TRUE
                 LIMIT 1
             )
         END as resolved_department_id

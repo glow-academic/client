@@ -6,7 +6,6 @@
 --
 
 CREATE TABLE public.profile_departments_junction (
-    is_primary boolean DEFAULT false CONSTRAINT profile_departments_is_primary_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT profile_departments_created_at_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT profile_departments_active_not_null NOT NULL,
     departments_id uuid CONSTRAINT profile_departments_department_id_not_null NOT NULL,
@@ -23,7 +22,6 @@ CREATE TABLE public.profile_departments_junction (
 
 CREATE TABLE public.profile_emails_junction (
     email text CONSTRAINT profile_emails_email_not_null NOT NULL,
-    is_primary boolean DEFAULT false CONSTRAINT profile_emails_is_primary_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT profile_emails_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT profile_emails_created_at_not_null NOT NULL,
     profile_id uuid CONSTRAINT profile_emails_profile_id_not_null NOT NULL,

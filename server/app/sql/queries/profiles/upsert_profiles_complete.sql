@@ -126,13 +126,9 @@ existing_profiles AS (
 ),
 all_emails_expanded AS (
     -- Extract all emails with their ordering for all profiles
-    SELECT 
+    SELECT
         pe.profile_idx,
         email_val as email,
-        CASE 
-            WHEN (idx - 1) = pe.primary_email_index THEN true
-            ELSE false
-        END as is_primary,
         idx - 1 as email_index
     FROM profiles_expanded pe
     CROSS JOIN LATERAL unnest(pe.emails) WITH ORDINALITY AS t(email_val, idx)
@@ -263,11 +259,10 @@ email_deactivate_all AS (
 ),
 email_upsert AS (
     -- Insert or update all emails for all profiles
-    INSERT INTO profile_emails_junction (profile_id, email, is_primary, active)
-    SELECT 
+    INSERT INTO profile_emails_junction (profile_id, email, active)
+    SELECT
         pu.id,
         aee.email,
-        aee.is_primary,
         true
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
@@ -275,7 +270,6 @@ email_upsert AS (
     WHERE EXISTS (SELECT 1 FROM role_validation rv WHERE rv.profile_idx = pwi.profile_idx AND rv.can_assign = true)
     ORDER BY aee.profile_idx, aee.email_index
     ON CONFLICT (profile_id, email) DO UPDATE SET
-        is_primary = EXCLUDED.is_primary,
         active = true
 ),
 dept_cleanup AS (
@@ -284,12 +278,11 @@ dept_cleanup AS (
     WHERE profile_id IN (SELECT id FROM profile_upsert)
 ),
 dept_insert AS (
-    -- Insert department relationships (first one as primary) for all profiles
-    INSERT INTO profile_departments_junction (profile_id, departments_id, is_primary, active, created_at)
-    SELECT 
+    -- Insert department relationships for all profiles
+    INSERT INTO profile_departments_junction (profile_id, departments_id, active, created_at)
+    SELECT
         pu.id,
         dept_id,
-        (ROW_NUMBER() OVER (PARTITION BY pu.id ORDER BY dept_id) = 1) as is_primary,
         true,
         NOW()
     FROM profile_upsert pu
@@ -298,7 +291,6 @@ dept_insert AS (
     CROSS JOIN unnest(pe.department_ids) as dept_id
     WHERE cardinality(pe.department_ids) > 0
     ON CONFLICT (profile_id, departments_id) DO UPDATE SET
-        is_primary = EXCLUDED.is_primary,
         active = true
 ),
 results AS (

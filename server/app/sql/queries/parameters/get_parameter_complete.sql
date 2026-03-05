@@ -663,14 +663,14 @@ department_suggestions_data AS (
 field_suggestions_data AS (
     SELECT
         COALESCE(
-            (SELECT ARRAY_AGG(pf.field_id ORDER BY pf.created_at DESC)
+            (SELECT ARRAY_AGG(pf.fields_id ORDER BY pf.created_at DESC)
              FROM (
-                 SELECT DISTINCT pf.field_id, MAX(pf.created_at) as created_at
+                 SELECT DISTINCT pf.fields_id, MAX(pf.created_at) as created_at
                  FROM parameter_fields_junction pf
-                 JOIN fields_resource f2 ON f2.id = pf.field_id
+                 JOIN fields_resource f2 ON f2.id = pf.fields_id
                  JOIN field_fields_junction ffj2 ON ffj2.fields_id = f2.id
                  CROSS JOIN draft_group_data dgd
-                 WHERE pf.field_id IS NOT NULL
+                 WHERE pf.fields_id IS NOT NULL
                    AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flags_id = fl.id WHERE ff.field_id = ffj2.field_id AND fl.name = 'field_active' AND fl.value = true)
                    AND (
                        pf.active = true
@@ -680,7 +680,7 @@ field_suggestions_data AS (
                            AND f2.generated = true
                        )
                    )
-                 GROUP BY pf.field_id
+                 GROUP BY pf.fields_id
                  ORDER BY MAX(pf.created_at) DESC
                  LIMIT 20
              ) pf),
@@ -732,11 +732,11 @@ field_ids_data AS (
             )
             WHEN (SELECT parameter_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(pf.field_id ORDER BY pf.created_at)
+                (SELECT ARRAY_AGG(pf.fields_id ORDER BY pf.created_at)
                  FROM parameter_fields_junction pf
                  WHERE pf.parameter_id = (SELECT parameter_id FROM params)
                    AND pf.active = true
-                   AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flags_id = fl.id WHERE ff.field_id = pf.field_id AND fl.name = 'field_active' AND fl.value = true)),
+                   AND EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flags_id = fl.id WHERE ff.field_id = pf.fields_id AND fl.name = 'field_active' AND fl.value = true)),
                 ARRAY[]::uuid[]
             )
         END as field_ids

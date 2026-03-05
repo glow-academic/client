@@ -131,9 +131,9 @@ runs_today AS (
 profile_primary_department AS (
     SELECT pd.departments_id
     FROM run_profile rp
-    JOIN profile_departments_junction pd ON pd.profile_id = rp.profile_id
-    WHERE pd.is_primary = TRUE
-      AND pd.active = true
+    JOIN profile_departments_junction pd ON pd.profile_id = rp.profile_id AND pd.active = true
+    JOIN departments_resource dr ON dr.id = pd.departments_id
+    WHERE dr.is_primary = TRUE
     LIMIT 1
 ),
 -- Build tool arguments FROM args_resource (replaces schemas_resource)

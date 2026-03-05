@@ -100,7 +100,7 @@ field_parameters_agg AS (
     SELECT
         f.id as field_id,
         CASE
-            WHEN (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1) IS NOT NULL THEN ARRAY[(SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.field_id = f.id LIMIT 1)::text]
+            WHEN (SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.fields_id = f.id LIMIT 1) IS NOT NULL THEN ARRAY[(SELECT pf.parameter_id FROM parameter_fields_junction pf WHERE pf.fields_id = f.id LIMIT 1)::text]
             ELSE ARRAY[]::text[]
         END as parameter_ids
     FROM field_artifact f

@@ -152,7 +152,7 @@ original_fields AS (
         (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.descriptions_id = d.id WHERE fd.field_id = f.id LIMIT 1)
     FROM params x
     JOIN parameter_fields_junction pfj ON pfj.parameter_id = x.parameter_id
-    JOIN field_artifact f ON f.id = pfj.field_id
+    JOIN field_artifact f ON f.id = pfj.fields_id
     WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flags_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = true)
 ),
 original_field_departments AS (
@@ -215,14 +215,14 @@ link_field_descriptions AS (
 ),
 -- Link fields to parameter via parameter_fields_junction junction table
 link_fields_to_parameter AS (
-    INSERT INTO parameter_fields_junction (parameter_id, field_id, created_at)
+    INSERT INTO parameter_fields_junction (parameter_id, fields_id, created_at)
     SELECT
         np.parameter_id,
         nf.field_id,
         NOW()
     FROM new_parameter np
     CROSS JOIN new_fields nf
-    ON CONFLICT (parameter_id, field_id) DO NOTHING
+    ON CONFLICT (parameter_id, fields_id) DO NOTHING
 ),
 -- Get field names for return (matching by order)
 new_fields_with_names AS (

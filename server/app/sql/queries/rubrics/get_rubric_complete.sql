@@ -258,9 +258,10 @@ departments_agg AS (
     LIMIT 1
 ),
 primary_department_id_data AS (
-    SELECT departments_id
+    SELECT pd.departments_id
     FROM params x
-    JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.is_primary = TRUE
+    JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
+    JOIN departments_resource dr ON dr.id = pd.departments_id AND dr.is_primary = TRUE
     LIMIT 1
 ),
 -- Active departments for user (departments with active flag that user is linked to)
@@ -711,7 +712,8 @@ rubric_department_for_agents AS (
 profile_primary_department_for_agents AS (
     SELECT pd.departments_id as department_id
     FROM params p
-    JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id AND pd.is_primary = TRUE AND pd.active = true
+    JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id AND pd.active = true
+    JOIN departments_resource dr ON dr.id = pd.departments_id AND dr.is_primary = TRUE
     WHERE p.rubric_id IS NULL
     LIMIT 1
 ),

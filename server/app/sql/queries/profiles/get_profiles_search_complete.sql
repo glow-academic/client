@@ -141,20 +141,20 @@ staff_rows AS (
         COALESCE(
             ARRAY(
                 SELECT email FROM (
-                    SELECT DISTINCT ON (e2.email) 
+                    SELECT DISTINCT ON (e2.email)
                         e2.email,
-                        pe2.is_primary,
+                        e2.is_primary,
                         pe2.created_at
                     FROM profile_emails_junction pe2
                     JOIN emails_resource e2 ON pe2.emails_id = e2.id
-                    WHERE pe2.profile_id = p.id AND pe2.active = true 
-                    ORDER BY e2.email, pe2.is_primary DESC, pe2.created_at
+                    WHERE pe2.profile_id = p.id AND pe2.active = true
+                    ORDER BY e2.email, e2.is_primary DESC, pe2.created_at
                 ) distinct_emails
                 ORDER BY is_primary DESC, created_at
             ),
             ARRAY[]::text[]
         ) as emails,
-        (SELECT e2.email FROM profile_emails_junction pe2 JOIN emails_resource e2 ON pe2.emails_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
+        (SELECT e2.email FROM profile_emails_junction pe2 JOIN emails_resource e2 ON pe2.emails_id = e2.id WHERE pe2.profile_id = p.id AND e2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as name,
         (SELECT r.role FROM profile_roles_junction pr_j 
          JOIN roles_resource r ON pr_j.roles_id = r.id 
@@ -168,7 +168,7 @@ staff_rows AS (
             ARRAY(SELECT unnest(pda.department_ids)::text),
             ARRAY[]::text[]
         ) as department_ids,
-        COALESCE((SELECT pd2.departments_id::text FROM profile_departments_junction pd2 WHERE pd2.profile_id = p.id AND pd2.active = true AND pd2.is_primary = true LIMIT 1), '') as primary_department_id,
+        COALESCE((SELECT pd2.departments_id::text FROM profile_departments_junction pd2 JOIN departments_resource dr2 ON dr2.id = pd2.departments_id WHERE pd2.profile_id = p.id AND pd2.active = true AND dr2.is_primary = true LIMIT 1), '') as primary_department_id,
         rl.requests_per_day,
         COALESCE(ptr.total_requests, 0) as total_requests,
         COALESCE(rr.run_count::int, 0) as requests_in_last_day

@@ -11,7 +11,8 @@ CREATE TABLE public.emails_resource (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT emails_created_at_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT emails_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT emails_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT emails_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT emails_mcp_not_null NOT NULL,
+    is_primary boolean DEFAULT false NOT NULL
 );
 
 

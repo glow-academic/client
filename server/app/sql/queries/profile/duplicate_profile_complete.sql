@@ -94,16 +94,15 @@ copy_flags AS (
     ON CONFLICT ON CONSTRAINT profile_flags_pkey DO NOTHING
 ),
 copy_departments AS (
-    INSERT INTO profile_departments_junction (profile_id, departments_id, is_primary, active)
+    INSERT INTO profile_departments_junction (profile_id, departments_id, active)
     SELECT
         np.id,
         pd.departments_id,
-        pd.is_primary,
         pd.active
     FROM new_profile np
     JOIN profile_departments_junction pd ON pd.profile_id = (SELECT id FROM source_profile)
     ON CONFLICT (profile_id, departments_id) DO UPDATE
-    SET is_primary = EXCLUDED.is_primary, active = EXCLUDED.active
+    SET active = EXCLUDED.active
 ),
 copy_request_limits AS (
     INSERT INTO profile_request_limits_junction (

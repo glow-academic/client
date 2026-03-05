@@ -44,7 +44,7 @@ original_field AS (
 original_parameters AS (
     SELECT pf.parameter_id
     FROM params x
-    JOIN parameter_fields_junction pf ON pf.field_id = x.field_id
+    JOIN parameter_fields_junction pf ON pf.fields_id = x.field_id
     WHERE EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource f ON ff.flags_id = f.id WHERE ff.field_id = x.field_id AND f.name = 'field_active' AND f.value = true)
     LIMIT 1
 ),
@@ -108,7 +108,7 @@ link_field_description AS (
 ),
 -- Link field to parameter via parameter_fields_junction junction table
 link_field_parameter AS (
-    INSERT INTO parameter_fields_junction (parameter_id, field_id, created_at)
+    INSERT INTO parameter_fields_junction (parameter_id, fields_id, created_at)
     SELECT
         op.parameter_id,
         nf.field_id,

@@ -98,7 +98,8 @@ profile_data AS (
          JOIN roles_resource r ON pr_j.roles_id = r.id
          WHERE pr_j.profile_id = p.id LIMIT 1) as artifacts
     FROM profile_artifact p
-    LEFT JOIN profile_departments_junction pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+    LEFT JOIN profile_departments_junction pd ON p.id = pd.profile_id AND pd.active = true
+        AND EXISTS (SELECT 1 FROM departments_resource dr WHERE dr.id = pd.departments_id AND dr.is_primary = TRUE)
     WHERE p.id = (SELECT profile_id FROM params)
     UNION ALL
     -- Return single row with NULL values when profile ID is NULL
@@ -128,7 +129,7 @@ scoped_roles_computed AS (
 department_ids_data AS (
     -- Get department IDs for the profile
     SELECT COALESCE(
-        ARRAY_AGG(pd.departments_id ORDER BY pd.is_primary DESC, pd.created_at),
+        ARRAY_AGG(pd.departments_id ORDER BY d.is_primary DESC, pd.created_at),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM profile_departments_junction pd
@@ -182,8 +183,9 @@ settings_resolution AS (
         SELECT pd.departments_id
         FROM params p
         JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id
+        JOIN departments_resource dr ON dr.id = pd.departments_id
         WHERE p.profile_id IS NOT NULL
-          AND pd.is_primary = TRUE
+          AND dr.is_primary = TRUE
           AND pd.active = true
         LIMIT 1
     ),

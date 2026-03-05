@@ -41,7 +41,7 @@ AS $$
              FROM profile_emails_junction pe
              JOIN emails_resource e ON pe.emails_id = e.id
              WHERE pe.profile_id = rp.resolved_profile_id
-               AND pe.is_primary = true
+               AND e.is_primary = true
                AND pe.active = true
              LIMIT 1) as primary_email,
             -- Get name

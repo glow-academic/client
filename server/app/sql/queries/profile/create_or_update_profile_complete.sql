@@ -188,10 +188,9 @@ email_deactivate_all AS (
       AND EXISTS (SELECT 1 FROM profile_upsert)
 ),
 all_emails_data AS (
-    -- Prepare all emails with primary flag based on index
-    SELECT 
-        email,
-        CASE WHEN ord = (SELECT primary_email_index + 1 FROM params) THEN true ELSE false END as is_primary
+    -- Prepare all emails
+    SELECT
+        email
     FROM unnest((SELECT emails FROM params)) WITH ORDINALITY AS e(email, ord)
 ),
 email_resources AS (
@@ -207,12 +206,11 @@ email_resources AS (
 ),
 email_upsert AS (
     -- Link emails to profile via profile_emails_junction junction table
-    INSERT INTO profile_emails_junction (profile_id, email, emails_id, is_primary, active)
-    SELECT 
+    INSERT INTO profile_emails_junction (profile_id, email, emails_id, active)
+    SELECT
         pu.id,
         er.email,
         er.emails_id,
-        aed.is_primary,
         true
     FROM profile_upsert pu
     CROSS JOIN all_emails_data aed
@@ -220,7 +218,6 @@ email_upsert AS (
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     ON CONFLICT (profile_id, emails_id) DO UPDATE SET
         email = EXCLUDED.email,
-        is_primary = EXCLUDED.is_primary,
         active = true
 ),
 dept_cleanup AS (
@@ -230,12 +227,11 @@ dept_cleanup AS (
       AND EXISTS (SELECT 1 FROM profile_upsert)
 ),
 dept_insert AS (
-    -- Insert department relationships (first one as primary)
-    INSERT INTO profile_departments_junction (profile_id, departments_id, is_primary, active, created_at)
+    -- Insert department relationships
+    INSERT INTO profile_departments_junction (profile_id, departments_id, active, created_at)
     SELECT
         pu.id,
         dept_id,
-        (ROW_NUMBER() OVER (ORDER BY dept_id) = 1) as is_primary,
         true,
         NOW()
     FROM profile_upsert pu
@@ -243,7 +239,6 @@ dept_insert AS (
     WHERE cardinality((SELECT department_ids FROM params)) > 0
       AND EXISTS (SELECT 1 FROM profile_upsert)
     ON CONFLICT (profile_id, departments_id) DO UPDATE SET
-        is_primary = EXCLUDED.is_primary,
         active = true
 ),
 deactivate_old_sessions AS (

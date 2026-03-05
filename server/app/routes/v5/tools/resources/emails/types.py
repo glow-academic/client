@@ -9,6 +9,7 @@ from pydantic import BaseModel
 class GetEmailResponse(BaseModel):
     id: UUID
     email: str
+    is_primary: bool
     created_at: datetime
     active: bool
     mcp: bool

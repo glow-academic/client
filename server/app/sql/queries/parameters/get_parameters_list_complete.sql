@@ -122,18 +122,18 @@ parameter_departments_data AS (
 parameter_fields_agg AS (
     SELECT
         pfj.parameter_id,
-        ARRAY_AGG(DISTINCT pfj.field_id) as field_ids
+        ARRAY_AGG(DISTINCT pfj.fields_id) as field_ids
     FROM parameter_fields_junction pfj
-    JOIN field_flags_junction ff ON ff.field_id = pfj.field_id
+    JOIN field_flags_junction ff ON ff.field_id = pfj.fields_id
     JOIN flags_resource fl ON ff.flags_id = fl.id AND fl.name = 'field_active' AND fl.value = true
     GROUP BY pfj.parameter_id
 ),
 parameter_item_counts AS (
     SELECT
         pfj.parameter_id,
-        COUNT(DISTINCT pfj.field_id) as num_items
+        COUNT(DISTINCT pfj.fields_id) as num_items
     FROM parameter_fields_junction pfj
-    JOIN field_flags_junction ff ON ff.field_id = pfj.field_id
+    JOIN field_flags_junction ff ON ff.field_id = pfj.fields_id
     JOIN flags_resource fl ON ff.flags_id = fl.id AND fl.name = 'field_active' AND fl.value = true
     GROUP BY pfj.parameter_id
 ),
@@ -146,12 +146,12 @@ parameter_sample_items_data AS (
     FROM (
         SELECT
             pfj.parameter_id,
-            pfj.field_id,
-            (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = pfj.field_id LIMIT 1) as name,
-            (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.descriptions_id = d.id WHERE fd.field_id = pfj.field_id LIMIT 1) as description,
-            ROW_NUMBER() OVER (PARTITION BY pfj.parameter_id ORDER BY (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = pfj.field_id LIMIT 1)) as rn
+            pfj.fields_id as field_id,
+            (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = pfj.fields_id LIMIT 1) as name,
+            (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.descriptions_id = d.id WHERE fd.field_id = pfj.fields_id LIMIT 1) as description,
+            ROW_NUMBER() OVER (PARTITION BY pfj.parameter_id ORDER BY (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = pfj.fields_id LIMIT 1)) as rn
         FROM parameter_fields_junction pfj
-        JOIN field_flags_junction ff ON ff.field_id = pfj.field_id
+        JOIN field_flags_junction ff ON ff.field_id = pfj.fields_id
         JOIN flags_resource fl ON ff.flags_id = fl.id AND fl.name = 'field_active' AND fl.value = true
     ) f_sub
     WHERE f_sub.rn <= 3

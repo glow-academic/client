@@ -12,6 +12,7 @@ class GetDepartmentResponse(BaseModel):
     description: str | None
     department_ids: list[UUID]
     setting_ids: list[UUID]
+    is_primary: bool
     created_at: datetime
     active: bool
     mcp: bool

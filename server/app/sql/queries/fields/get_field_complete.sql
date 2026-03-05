@@ -205,7 +205,7 @@ field_parameters_data AS (
         ) as parameter_ids
     FROM params x
     JOIN fields_resource f ON f.id = x.field_id
-    LEFT JOIN parameter_fields_junction pf ON pf.field_id = f.id AND pf.active = true
+    LEFT JOIN parameter_fields_junction pf ON pf.fields_id = f.id AND pf.active = true
     WHERE x.field_id IS NOT NULL
     GROUP BY f.id
 ),
@@ -263,7 +263,7 @@ field_parameter_ids_data AS (
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(pf.parameter_id ORDER BY pf.created_at)
                  FROM parameter_fields_junction pf
-                 WHERE pf.field_id = (SELECT field_id FROM params)
+                 WHERE pf.fields_id = (SELECT field_id FROM params)
                    AND pf.active = true),
                 ARRAY[]::uuid[]
             )
@@ -509,7 +509,8 @@ field_department_for_agents AS (
 profile_primary_department_for_agents AS (
     SELECT pd.departments_id AS department_id
     FROM params p
-    JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id AND pd.is_primary = TRUE AND pd.active = true
+    JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id AND pd.active = true
+    JOIN departments_resource dr ON dr.id = pd.departments_id AND dr.is_primary = TRUE
     WHERE p.field_id IS NULL
     LIMIT 1
 ),

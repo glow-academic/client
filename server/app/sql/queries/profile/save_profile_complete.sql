@@ -437,15 +437,13 @@ BEGIN
     -- Handle emails if provided
     all_emails_data AS (
         SELECT
-            email,
-            CASE WHEN ord = (SELECT primary_email_index + 1 FROM params) THEN true ELSE false END as is_primary
+            email
         FROM unnest((SELECT email_texts FROM params)) WITH ORDINALITY AS e(email, ord)
         WHERE array_length((SELECT email_texts FROM params), 1) > 0
     ),
     email_update AS (
         UPDATE profile_emails_junction SET
-            active = false,
-            is_primary = false
+            active = false
         WHERE profile_id = (SELECT target_profile_id FROM params)
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
           AND array_length((SELECT email_texts FROM params), 1) > 0
@@ -465,12 +463,11 @@ BEGIN
         RETURNING id as emails_id, email
     ),
     email_insert AS (
-        INSERT INTO profile_emails_junction (profile_id, email, emails_id, is_primary, active)
+        INSERT INTO profile_emails_junction (profile_id, email, emails_id, active)
         SELECT
             x.target_profile_id,
             er.email,
             er.emails_id,
-            aed.is_primary,
             true
         FROM params x
         CROSS JOIN all_emails_data aed
@@ -478,14 +475,12 @@ BEGIN
         WHERE array_length(x.email_texts, 1) > 0
         ON CONFLICT (profile_id, emails_id) DO UPDATE SET
             email = EXCLUDED.email,
-            is_primary = EXCLUDED.is_primary,
             active = true
     ),
     -- Handle departments if provided
     department_deactivate AS (
         UPDATE profile_departments_junction SET
-            active = false,
-            is_primary = false
+            active = false
         WHERE profile_id = (SELECT target_profile_id FROM params)
           AND EXISTS (SELECT 1 FROM params WHERE NOT is_create)
           AND array_length((SELECT department_ids FROM params), 1) >= 0
@@ -495,17 +490,15 @@ BEGIN
           )
     ),
     department_insert AS (
-        INSERT INTO profile_departments_junction (profile_id, departments_id, is_primary, active)
+        INSERT INTO profile_departments_junction (profile_id, departments_id, active)
         SELECT
             x.target_profile_id,
             dept.dept_id,
-            (dept.ord - 1 = (SELECT primary_department_index FROM params)) as is_primary,
             true
         FROM params x
         CROSS JOIN unnest(x.department_ids) WITH ORDINALITY AS dept(dept_id, ord)
         WHERE array_length(x.department_ids, 1) > 0
         ON CONFLICT (profile_id, departments_id) DO UPDATE SET
-            is_primary = EXCLUDED.is_primary,
             active = true
     ),
     -- Handle requests_per_day if provided

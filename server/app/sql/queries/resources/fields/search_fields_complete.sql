@@ -93,7 +93,7 @@ FROM (
       )
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT field OR EXISTS (SELECT 1 FROM field_fields_junction j WHERE j.field_id = f.id AND j.active = true))
-      AND (NOT parameter OR EXISTS (SELECT 1 FROM parameter_fields_junction j WHERE j.field_id = f.id AND j.active = true))
+      AND (NOT parameter OR EXISTS (SELECT 1 FROM parameter_fields_junction j WHERE j.fields_id = f.id AND j.active = true))
     ORDER BY f.name
     LIMIT limit_count
     OFFSET offset_count

@@ -358,8 +358,9 @@ email_ids_data AS (
              FROM profile_drafts_emails_connection de
              WHERE de.draft_id = (SELECT draft_id FROM params)
                AND de.active = true),
-            (SELECT ARRAY_AGG(pe.emails_id ORDER BY pe.is_primary DESC, pe.created_at)
+            (SELECT ARRAY_AGG(pe.emails_id ORDER BY er.is_primary DESC, pe.created_at)
              FROM profile_emails_junction pe
+             JOIN emails_resource er ON er.id = pe.emails_id
              WHERE pe.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
                AND pe.active = true),
             ARRAY[]::uuid[]
@@ -653,14 +654,15 @@ ui_flags AS (
 primary_department_id_data AS (
     SELECT departments_id
     FROM params x
-    JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.is_primary = TRUE AND pd.active = true
+    JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
+    JOIN departments_resource dr ON dr.id = pd.departments_id AND dr.is_primary = TRUE
     WHERE x.target_profile_id IS NULL
     LIMIT 1
 ),
 selected_department_for_agents AS (
     SELECT
         COALESCE(
-            (SELECT departments_id FROM profile_departments_junction pd WHERE pd.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND pd.is_primary = TRUE AND pd.active = true LIMIT 1),
+            (SELECT pd.departments_id FROM profile_departments_junction pd JOIN departments_resource dr ON dr.id = pd.departments_id WHERE pd.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id) AND dr.is_primary = TRUE AND pd.active = true LIMIT 1),
             (SELECT departments_id FROM primary_department_id_data)
         ) as department_id
 ),

@@ -235,8 +235,8 @@ profile_data AS (
     SELECT
         p.id,
         (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1) as name,
-        ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
-        (SELECT e2.email FROM profile_emails_junction pe2 JOIN emails_resource e2 ON pe2.emails_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
+        ARRAY_AGG(e.email ORDER BY e.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
+        (SELECT e2.email FROM profile_emails_junction pe2 JOIN emails_resource e2 ON pe2.emails_id = e2.id WHERE pe2.profile_id = p.id AND e2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         (SELECT r.role FROM profile_roles_junction pr_j
          JOIN roles_resource r ON pr_j.roles_id = r.id
          WHERE pr_j.profile_id = p.id
@@ -251,7 +251,8 @@ profile_data AS (
     FROM profile_artifact p
     LEFT JOIN profile_emails_junction pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN emails_resource e ON pe.emails_id = e.id
-    LEFT JOIN profile_departments_junction pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
+    LEFT JOIN profile_departments_junction pd ON p.id = pd.profile_id AND pd.active = true
+        AND EXISTS (SELECT 1 FROM departments_resource dr WHERE dr.id = pd.departments_id AND dr.is_primary = TRUE)
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limits_id = rl.id
     LEFT JOIN LATERAL (
@@ -291,7 +292,7 @@ dept_data AS (
         (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1) as name,
         (SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.descriptions_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true) as active,
-        pd.is_primary
+        d.is_primary
     FROM profile_departments_junction pd
     JOIN departments_resource d ON d.id = pd.departments_id
     JOIN department_departments_junction ddj ON ddj.department_id = d.id
@@ -401,8 +402,9 @@ settings_resolution AS (
         SELECT pd.departments_id
         FROM params p
         JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id
+        JOIN departments_resource dr ON dr.id = pd.departments_id
         WHERE p.profile_id IS NOT NULL
-          AND pd.is_primary = TRUE
+          AND dr.is_primary = TRUE
           AND pd.active = true
         LIMIT 1
     ),

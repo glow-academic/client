@@ -570,7 +570,8 @@ auth_items_data AS (
 profile_primary_department_for_agents AS (
     SELECT pd.departments_id as department_id
     FROM params p
-    JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id AND pd.is_primary = TRUE AND pd.active = true
+    JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id AND pd.active = true
+    JOIN departments_resource dr ON dr.id = pd.departments_id AND dr.is_primary = TRUE
     LIMIT 1
 ),
 selected_department_for_agents AS (

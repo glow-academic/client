@@ -147,8 +147,8 @@ email_id_lookup AS (
 ),
 -- Link email to profile (only if creating)
 email_insert AS (
-    INSERT INTO profile_emails_junction (profile_id, email, emails_id, is_primary, active)
-    SELECT pi.id, (SELECT email FROM params), el.emails_id, true, true
+    INSERT INTO profile_emails_junction (profile_id, email, emails_id, active)
+    SELECT pi.id, (SELECT email FROM params), el.emails_id, true
     FROM profile_insert pi
     CROSS JOIN email_id_lookup el
     WHERE el.emails_id IS NOT NULL

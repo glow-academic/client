@@ -105,8 +105,9 @@ email_ids_data AS (
              FROM profile_drafts_emails_connection de
              WHERE de.draft_id = (SELECT draft_id FROM params)
                AND de.active = true),
-            (SELECT ARRAY_AGG(pe.emails_id ORDER BY pe.is_primary DESC, pe.created_at)
+            (SELECT ARRAY_AGG(pe.emails_id ORDER BY er.is_primary DESC, pe.created_at)
              FROM profile_emails_junction pe
+             JOIN emails_resource er ON er.id = pe.emails_id
              WHERE pe.profile_id = (SELECT target_profile_id FROM params)
                AND pe.active = true),
             ARRAY[]::uuid[]
