@@ -259,7 +259,7 @@ scenario_content AS (
             FROM persona_artifact pa
             WHERE pa.id = COALESCE(
                 (
-                    SELECT pdc.persona_id
+                    SELECT pdc.personas_id
                     FROM chat_drafts_personas_connection pdc
                     WHERE p.draft_id IS NOT NULL
                       AND pdc.draft_id = p.draft_id
@@ -275,11 +275,11 @@ scenario_content AS (
             )
             LIMIT 1
         ) AS persona,
-        (SELECT ARRAY_AGG(svj.video_id)
+        (SELECT ARRAY_AGG(svj.videos_id)
          FROM scenario_videos_junction svj
          WHERE svj.scenario_id = s.scenario_artifact_id
            AND svj.active = true) AS video_ids,
-        (SELECT ARRAY_AGG(sij.image_id)
+        (SELECT ARRAY_AGG(sij.images_id)
          FROM scenario_images_junction sij
          WHERE sij.scenario_id = s.scenario_artifact_id
            AND sij.active = true) AS image_ids

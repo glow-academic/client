@@ -247,7 +247,7 @@ cohort_profiles_data AS (
         CASE
             WHEN (SELECT cohort_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(cp.profile_id ORDER BY cp.created_at)
+                (SELECT ARRAY_AGG(cp.profiles_id ORDER BY cp.created_at)
                  FROM cohort_profiles_junction cp
                  WHERE cp.cohort_id = (SELECT cohort_id FROM params) AND cp.active = true),
                 ARRAY[]::uuid[]

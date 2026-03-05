@@ -177,7 +177,7 @@ standard_group_data AS (
 standard_data AS (
     SELECT DISTINCT s.id AS standard_id
     FROM standard_group_data sgd
-    JOIN standards_resource s ON s.standard_groups_id = sgd.standard_groups_id AND s.active = true
+    JOIN standards_resource s ON s.standard_group_id = sgd.standard_groups_id AND s.active = true
 ),
 simulation_rubric_data AS (
     SELECT
@@ -218,13 +218,13 @@ latest_attempt_grades AS (
 ),
 simulation_stats AS (
     SELECT
-        COALESCE(hsc.simulation_id, psc.simulation_id) AS simulation_id,
+        COALESCE(hsc.simulations_id, psc.simulations_id) AS simulation_id,
         COUNT(DISTINCT a.id)::int AS attempt_count,
         MAX(lag.score_percent) AS highest_score_percent,
         BOOL_OR(COALESCE(lag.has_passed, false)) AS has_passed
     FROM profile_resource pr
     JOIN attempt_profiles_connection apc
-      ON apc.profile_id = pr.profile_id
+      ON apc.profiles_id = pr.profile_id
      AND apc.active = true
     JOIN attempt_entry a
       ON a.id = apc.attempt_id
@@ -243,7 +243,7 @@ simulation_stats AS (
           ((SELECT practice FROM params) = false AND ahc.attempt_id IS NOT NULL)
           OR ((SELECT practice FROM params) = true AND ape.attempt_id IS NOT NULL)
       )
-    GROUP BY COALESCE(hsc.simulation_id, psc.simulation_id)
+    GROUP BY COALESCE(hsc.simulations_id, psc.simulations_id)
 ),
 simulation_data_with_stats AS (
     SELECT

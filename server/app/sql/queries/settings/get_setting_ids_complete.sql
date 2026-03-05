@@ -166,12 +166,12 @@ draft_departments AS (
 ),
 draft_profiles AS (
     SELECT COALESCE(
-        ARRAY_AGG(pdc.profile_id),
+        ARRAY_AGG(pdc.profiles_id),
         ARRAY[]::uuid[]
     ) as profile_ids
     FROM setting_drafts_profiles_connection pdc
     WHERE pdc.draft_id = (SELECT draft_id FROM params)
-      AND pdc.profile_id != (SELECT profile_id FROM params)  -- Exclude the owner profile
+      AND pdc.profiles_id != (SELECT profile_id FROM params)  -- Exclude the owner profile
 ),
 draft_provider_keys AS (
     SELECT COALESCE(
@@ -205,7 +205,7 @@ merged_ids AS (
             THEN (SELECT department_ids FROM draft_departments)
             ELSE (SELECT department_ids FROM canonical_departments)
         END as department_ids,
-        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_profiles_connection pdc WHERE pdc.draft_id = (SELECT draft_id FROM params) AND pdc.profile_id != (SELECT profile_id FROM params))
+        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_profiles_connection pdc WHERE pdc.draft_id = (SELECT draft_id FROM params) AND pdc.profiles_id != (SELECT profile_id FROM params))
             THEN (SELECT profile_ids FROM draft_profiles)
             ELSE (SELECT profile_ids FROM canonical_profiles)
         END as profile_ids,
