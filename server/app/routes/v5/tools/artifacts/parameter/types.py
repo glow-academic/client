@@ -20,3 +20,11 @@ class GetParametersResponse(BaseModel):
     flag_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
+
+
+class CreateParameterResponse(BaseModel):
+    id: UUID
+
+
+class UpdateParameterResponse(BaseModel):
+    id: UUID

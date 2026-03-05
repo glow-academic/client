@@ -24,3 +24,11 @@ class GetCohortsResponse(BaseModel):
     simulation_availability_ids: list[UUID] | None = None
     simulation_position_ids: list[UUID] | None = None
     cohort_ids: list[UUID] | None = None
+
+
+class CreateCohortResponse(BaseModel):
+    id: UUID
+
+
+class UpdateCohortResponse(BaseModel):
+    id: UUID

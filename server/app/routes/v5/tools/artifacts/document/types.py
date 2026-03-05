@@ -24,3 +24,11 @@ class GetDocumentsResponse(BaseModel):
     parameter_ids: list[UUID] | None = None
     texts_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
+
+
+class CreateDocumentResponse(BaseModel):
+    id: UUID
+
+
+class UpdateDocumentResponse(BaseModel):
+    id: UUID

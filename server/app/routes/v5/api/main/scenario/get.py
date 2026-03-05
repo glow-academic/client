@@ -100,7 +100,7 @@ from app.routes.v5.tools.resources.flags.search import search_flags_internal
 from app.routes.v5.tools.resources.images.get import get_images
 from app.routes.v5.tools.resources.images.search import search_images_internal
 from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.search import search_names_internal
+from app.routes.v5.tools.resources.names.search import search_names
 from app.routes.v5.tools.resources.objectives.get import get_objectives
 from app.routes.v5.tools.resources.options.get import get_options
 from app.routes.v5.tools.resources.options.search import search_options_internal
@@ -455,15 +455,12 @@ async def get_scenario_internal(
             selected = await get_names(
                 c, selected_name_ids, get_redis_client(), bypass_cache=bypass_cache
             )
-            suggestions = await search_names_internal(
+            suggestions = await search_names(
                 c,
-                None,
-                20,
-                0,
-                effective_group_id,
-                None,
-                selected_name_ids,
-                bypass_cache,
+                get_redis_client(),
+                draft_id=effective_group_id,
+                exclude_ids=selected_name_ids,
+                bypass_cache=bypass_cache,
                 scenario=True,
             )
             return (selected, suggestions)

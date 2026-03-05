@@ -24,3 +24,11 @@ class GetEvalsResponse(BaseModel):
     model_rubric_ids: list[UUID] | None = None
     rubric_ids: list[UUID] | None = None
     eval_ids: list[UUID] | None = None
+
+
+class CreateEvalResponse(BaseModel):
+    id: UUID
+
+
+class UpdateEvalResponse(BaseModel):
+    id: UUID

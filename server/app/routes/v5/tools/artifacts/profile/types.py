@@ -21,3 +21,11 @@ class GetProfilesResponse(BaseModel):
     profile_ids: list[UUID] | None = None
     request_limit_ids: list[UUID] | None = None
     role_ids: list[UUID] | None = None
+
+
+class CreateProfileResponse(BaseModel):
+    id: UUID
+
+
+class UpdateProfileResponse(BaseModel):
+    id: UUID

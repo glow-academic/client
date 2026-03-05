@@ -24,3 +24,11 @@ class GetSimulationsResponse(BaseModel):
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
     simulation_ids: list[UUID] | None = None
+
+
+class CreateSimulationResponse(BaseModel):
+    id: UUID
+
+
+class UpdateSimulationResponse(BaseModel):
+    id: UUID

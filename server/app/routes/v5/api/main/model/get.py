@@ -95,7 +95,7 @@ from app.routes.v5.tools.resources.flags.search import search_flags_internal
 from app.routes.v5.tools.resources.modalities.get import get_modalities
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.search import search_names_internal
+from app.routes.v5.tools.resources.names.search import search_names
 from app.routes.v5.tools.resources.pricing.get import get_pricing
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
@@ -425,15 +425,12 @@ async def get_model_internal(
             selected = await get_names(
                 c, name_ids, get_redis_client(), bypass_cache=bypass_cache
             )
-            suggestions = await search_names_internal(
+            suggestions = await search_names(
                 c,
-                None,
-                20,
-                0,
-                effective_group_id,
-                None,
-                name_ids,
-                bypass_cache,
+                get_redis_client(),
+                draft_id=effective_group_id,
+                exclude_ids=name_ids,
+                bypass_cache=bypass_cache,
                 model=True,
             )
             return (selected, suggestions)

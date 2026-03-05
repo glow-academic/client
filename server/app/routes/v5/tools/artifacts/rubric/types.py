@@ -22,3 +22,11 @@ class GetRubricsResponse(BaseModel):
     standard_group_ids: list[UUID] | None = None
     standard_ids: list[UUID] | None = None
     rubric_ids: list[UUID] | None = None
+
+
+class CreateRubricResponse(BaseModel):
+    id: UUID
+
+
+class UpdateRubricResponse(BaseModel):
+    id: UUID
