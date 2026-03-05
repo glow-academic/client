@@ -74,19 +74,19 @@ AS $$
 WITH scope AS (
     SELECT
         tb.id AS chat_entry_id,
-        scj_conn.scenario_id AS scenarios_resource_id,
-        COALESCE(hsc.simulation_id, psc.simulation_id) AS simulations_id,
+        scj_conn.scenarios_id AS scenarios_resource_id,
+        COALESCE(hsc.simulations_id, psc.simulations_id) AS simulations_id,
         (
             SELECT ssj.simulation_id
             FROM simulation_simulations_junction ssj
-            WHERE ssj.simulation_id = COALESCE(hsc.simulation_id, psc.simulation_id)
+            WHERE ssj.simulations_id = COALESCE(hsc.simulations_id, psc.simulations_id)
               AND ssj.active = true
             LIMIT 1
         ) AS simulation_artifact_id,
         (
             SELECT scj.scenario_id
             FROM scenario_scenarios_junction scj
-            WHERE scj.scenario_id = scj_conn.scenario_id
+            WHERE scj.scenario_id = scj_conn.scenarios_id
               AND scj.active = true
             LIMIT 1
         ) AS scenario_artifact_id

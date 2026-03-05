@@ -63,7 +63,7 @@ user_profile AS (
     LIMIT 1
 ),
 user_departments AS (
-    SELECT COALESCE(ARRAY_AGG(pd.department_id), ARRAY[]::uuid[]) as department_ids
+    SELECT COALESCE(ARRAY_AGG(pd.departments_id), ARRAY[]::uuid[]) as department_ids
     FROM profile_departments_junction pd
     WHERE pd.profile_id = (SELECT p_profile_id FROM params)
       AND pd.active = true

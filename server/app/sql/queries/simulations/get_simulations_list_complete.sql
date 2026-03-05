@@ -81,7 +81,7 @@ WITH params AS (
     SELECT profile_id AS profile_id
 ),
 user_departments AS (
-    SELECT department_id
+    SELECT departments_id
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
@@ -182,7 +182,7 @@ simulation_data AS (
         s.updated_at, sdd.department_ids, ssd.scenario_ids,
         scd.total_cohort_links, scd.num_cohorts, scd.cohort_ids, s.generated, s.mcp, up.role
     HAVING
-        COUNT(sd.simulation_id) FILTER (WHERE sd.departments_id IN (SELECT department_id FROM user_departments)) > 0
+        COUNT(sd.simulation_id) FILTER (WHERE sd.departments_id IN (SELECT departments_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM simulation_departments_junction sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
 ),
 -- Server-side filtering
@@ -261,7 +261,7 @@ SELECT
             ORDER BY dr.name
         )
          FROM departments_resource dr
-         WHERE dr.id IN (SELECT department_id FROM user_departments)
+         WHERE dr.id IN (SELECT departments_id FROM user_departments)
            AND dr.id::text IN (SELECT department_id FROM all_department_ids_options)
            AND (department_search IS NULL OR LOWER(dr.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_simulations_v4_option[]

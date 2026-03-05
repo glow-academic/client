@@ -81,7 +81,7 @@ WITH params AS (
 ),
 -- Draft multi-select resource IDs
 draft_departments_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.department_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as department_ids
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as department_ids
     FROM params x
     LEFT JOIN scenario_drafts_departments_connection dd ON dd.draft_id = x.draft_id
     LIMIT 1

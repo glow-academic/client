@@ -68,7 +68,7 @@ description_data AS (
 -- Get flag_ids (from draft first, then simulation)
 flag_data AS (
     SELECT COALESCE(
-        (SELECT ARRAY_AGG(fd.flag_id) FROM simulation_drafts_flags_connection fd WHERE fd.draft_id = (SELECT p_draft_id FROM params)),
+        (SELECT ARRAY_AGG(fd.flags_id) FROM simulation_drafts_flags_connection fd WHERE fd.draft_id = (SELECT p_draft_id FROM params)),
         (SELECT ARRAY_AGG(sf.flags_id) FROM simulation_flags_junction sf
          JOIN flags_resource f ON sf.flags_id = f.id
          WHERE sf.simulation_id = (SELECT p_simulation_id FROM params)

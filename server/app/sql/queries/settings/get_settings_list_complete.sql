@@ -83,7 +83,7 @@ user_profile AS (
     LIMIT 1
 ),
 user_departments AS (
-    SELECT DISTINCT pd.department_id
+    SELECT DISTINCT pd.departments_id
     FROM params x
     JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.active = true
 ),
@@ -128,7 +128,7 @@ settings_keys_data AS (
             JOIN provider_keys_resource pkr ON pkr.id = spk.provider_keys_id
             JOIN setting_artifact s ON s.id = spk.setting_id AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flags_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND f.value = true)
             JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
-            JOIN user_departments ud ON ud.department_id = ds.department_id
+            JOIN user_departments ud ON ud.departments_id = ds.department_id
             WHERE pkr.key_id = kr.id AND spk.active = true
         )
         OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = kr.id)

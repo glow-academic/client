@@ -55,7 +55,7 @@ cohort_departments_data AS (
 -- NOTE: Must use COUNT(column) not COUNT(*) with LEFT JOIN, as COUNT(*)
 -- counts the NULL row when there are no matches
 profile_links AS (
-    SELECT COUNT(cpj.profile_id)::bigint as total_links
+    SELECT COUNT(cpj.profiles_id)::bigint as total_links
     FROM params x
     LEFT JOIN cohort_profiles_junction cpj ON cpj.cohort_id = x.cohort_id AND cpj.active = true
 )

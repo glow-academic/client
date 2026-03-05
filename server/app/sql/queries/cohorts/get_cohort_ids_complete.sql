@@ -69,7 +69,7 @@ WITH params AS (
 ),
 -- Draft multi-select resource IDs
 draft_departments_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.department_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as department_ids
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as department_ids
     FROM params x
     LEFT JOIN cohort_drafts_departments_connection dd ON dd.draft_id = x.draft_id
     LIMIT 1
@@ -153,7 +153,7 @@ description_resource_data AS (
 ),
 flag_resource_data AS (
     SELECT COALESCE(
-        (SELECT df.flag_id FROM cohort_drafts_flags_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+        (SELECT df.flags_id FROM cohort_drafts_flags_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
         (SELECT cf.flags_id FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flags_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND f.type = 'cohort_active' AND f.value = TRUE LIMIT 1)
     ) as active_flag_id
     FROM params

@@ -143,7 +143,7 @@ draft_description AS (
     LIMIT 1
 ),
 draft_flag AS (
-    SELECT fdc.flag_id as active_flag_id
+    SELECT fdc.flags_id as active_flag_id
     FROM setting_drafts_flags_connection fdc
     WHERE fdc.draft_id = (SELECT draft_id FROM params)
     LIMIT 1

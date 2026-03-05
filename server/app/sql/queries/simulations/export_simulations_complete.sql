@@ -73,7 +73,7 @@ WITH params AS (
     SELECT profile_id AS profile_id
 ),
 user_departments AS (
-    SELECT department_id
+    SELECT departments_id
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
@@ -203,7 +203,7 @@ simulation_data AS (
         sstld.time_limit_ids, sstld.time_limit_values,
         scod.cohort_ids
     HAVING
-        COUNT(sdj.simulation_id) FILTER (WHERE sdj.departments_id IN (SELECT department_id FROM user_departments)) > 0
+        COUNT(sdj.simulation_id) FILTER (WHERE sdj.departments_id IN (SELECT departments_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM simulation_departments_junction sd2 WHERE sd2.simulation_id = s.id AND sd2.active = true)
 ),
 -- Apply filters

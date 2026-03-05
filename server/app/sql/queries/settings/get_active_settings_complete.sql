@@ -93,11 +93,11 @@ resolve_department_id AS (
             WHEN (SELECT department_id FROM params) IS NOT NULL AND (SELECT department_id FROM params) != '' THEN (SELECT department_id::uuid FROM params)
             -- Otherwise, try to get FROM profile_artifact's primary department
             ELSE (
-                SELECT pd.department_id
+                SELECT pd.departments_id
                 FROM resolve_profile_id rpi
                 JOIN profile_departments_junction pd ON pd.profile_id = rpi.resolved_profile_id
                 WHERE rpi.resolved_profile_id IS NOT NULL
-                  AND pd.is_primary = TRUE 
+                  AND pd.is_primary = TRUE
                   AND pd.active = true
                 LIMIT 1
             )

@@ -61,7 +61,7 @@ CREATE TYPE types.q_get_rubrics_list_v4_standard_group AS (
 
 CREATE TYPE types.q_get_rubrics_list_v4_standard AS (
     standard_id uuid,
-    standard_groups_id uuid,
+    standard_group_id uuid,
     name text,
     description text,
     points int
@@ -239,17 +239,17 @@ standard_groups_aggregated AS (
 ),
 standards_distinct AS (
     SELECT DISTINCT ON (s.id)
-        s.id, s.standard_groups_id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description, s.points
+        s.id, s.standard_group_id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1), COALESCE((SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.scenario_id = s.id LIMIT 1), '') as description, s.points
     FROM standards_resource s
-    WHERE s.standard_groups_id IN (SELECT standard_groups_id FROM all_standard_group_ids)
-    ORDER BY s.id, s.standard_groups_id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
+    WHERE s.standard_group_id IN (SELECT standard_groups_id FROM all_standard_group_ids)
+    ORDER BY s.id, s.standard_group_id, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
 ),
 standards_aggregated AS (
     SELECT
         COALESCE(
             ARRAY_AGG(
-                (sd.id, sd.standard_groups_id, sd.name, sd.description, sd.points)::types.q_get_rubrics_list_v4_standard
-                ORDER BY sd.standard_groups_id, sd.name
+                (sd.id, sd.standard_group_id, sd.name, sd.description, sd.points)::types.q_get_rubrics_list_v4_standard
+                ORDER BY sd.standard_group_id, sd.name
             ),
             '{}'::types.q_get_rubrics_list_v4_standard[]
         ) as standards

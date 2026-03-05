@@ -61,8 +61,8 @@ WITH params AS (
 scope AS (
     SELECT
         tb.id AS chat_entry_id,
-        scj_conn.scenario_id,
-        COALESCE(hsc.simulation_id, psc.simulation_id) AS simulations_id,
+        scj_conn.scenarios_id,
+        COALESCE(hsc.simulations_id, psc.simulations_id) AS simulations_id,
         COALESCE(hcc.cohorts_id, pcc.cohorts_id) AS cohorts_id,
         COALESCE(he.active, pe.active, false) AS training_active,
         sa.id AS simulation_artifact_id,
@@ -85,14 +85,14 @@ scope AS (
       ON scj_conn.chat_id = tb.id
      AND scj_conn.active = true
     LEFT JOIN simulation_simulations_junction ssj
-      ON ssj.simulation_id = COALESCE(hsc.simulation_id, psc.simulation_id)
+      ON ssj.simulations_id = COALESCE(hsc.simulations_id, psc.simulations_id)
      AND ssj.active = true
     LEFT JOIN simulation_artifact sa
       ON sa.id = ssj.simulation_id
     LEFT JOIN simulations_resource s
-      ON s.id = COALESCE(hsc.simulation_id, psc.simulation_id)
+      ON s.id = COALESCE(hsc.simulations_id, psc.simulations_id)
     LEFT JOIN scenario_scenarios_junction scj
-      ON scj.scenario_id = scj_conn.scenario_id
+      ON scj.scenario_id = scj_conn.scenarios_id
      AND scj.active = true
     LEFT JOIN scenario_artifact sc
       ON sc.id = scj.scenario_id

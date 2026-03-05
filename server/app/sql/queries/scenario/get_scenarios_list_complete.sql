@@ -87,7 +87,7 @@ WITH params AS (
     SELECT profile_id AS profile_id
 ),
 user_departments AS (
-    SELECT department_id
+    SELECT departments_id
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
@@ -209,7 +209,7 @@ scenario_data AS (
         su.active_simulation_count, up.role
     HAVING
         -- Department scoping: include if has matching department link OR has no department links at all
-        COUNT(sd.scenario_id) FILTER (WHERE sd.departments_id IN (SELECT department_id FROM user_departments)) > 0
+        COUNT(sd.scenario_id) FILTER (WHERE sd.departments_id IN (SELECT departments_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM scenario_departments_junction sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
 ),
 -- Server-side filtering on scenarios
@@ -292,7 +292,7 @@ SELECT
             ORDER BY dr.name
          )
          FROM departments_resource dr
-         WHERE dr.id IN (SELECT department_id FROM user_departments)
+         WHERE dr.id IN (SELECT departments_id FROM user_departments)
            AND dr.id::text IN (SELECT department_id FROM all_department_ids_options)
            AND (department_search IS NULL OR LOWER(dr.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_scenarios_v4_option[]

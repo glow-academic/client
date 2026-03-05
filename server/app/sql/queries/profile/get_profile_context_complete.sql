@@ -243,7 +243,7 @@ profile_data AS (
          LIMIT 1) as role,
         EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flags_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND f.value = TRUE) as active,
         COALESCE(rl.requests_per_day, 0) as req_per_day,
-        (SELECT le.created_at FROM profiles_logins_connection plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1) as last_login,
+        (SELECT le.created_at FROM profiles_logins_connection plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profiles_id = p.id ORDER BY le.created_at DESC LIMIT 1) as last_login,
         pa.last_active,
         p.created_at,
         p.updated_at,
@@ -258,13 +258,13 @@ profile_data AS (
         SELECT ae.created_at AS last_active
         FROM profiles_activity_connection pactj
         JOIN activity_entry ae ON ae.id = pactj.activity_id
-        WHERE pactj.profile_id = p.id
+        WHERE pactj.profiles_id = p.id
         ORDER BY ae.created_at DESC
         LIMIT 1
     ) pa ON true
     WHERE p.id = (SELECT profile_id FROM params)
     GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.roles_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flags_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND f.value = TRUE),
-             rl.requests_per_day, (SELECT le.created_at FROM profiles_logins_connection plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profile_id = p.id ORDER BY le.created_at DESC LIMIT 1), pa.last_active,
+             rl.requests_per_day, (SELECT le.created_at FROM profiles_logins_connection plj JOIN logins_entry le ON le.id = plj.login_id WHERE plj.profiles_id = p.id ORDER BY le.created_at DESC LIMIT 1), pa.last_active,
              p.created_at, p.updated_at, pd.departments_id
     UNION ALL
     -- Return single row with NULL values when profile ID is NULL (for settings-only requests)
@@ -561,7 +561,7 @@ drafts_data AS (
         d.version,
         d.updated_at
     FROM profile_profiles_junction ppj
-    JOIN profiles_sessions_connection psc ON psc.profile_id = ppj.profile_id
+    JOIN profiles_sessions_connection psc ON psc.profiles_id = ppj.profile_id
     JOIN (SELECT id, 'agent'::text as artifact, version, session_id, created_at as updated_at FROM agent_drafts_entry WHERE active = true
      UNION ALL SELECT id, 'auth', version, session_id, created_at FROM auth_drafts_entry WHERE active = true
      UNION ALL SELECT id, 'cohort', version, session_id, created_at FROM cohort_drafts_entry WHERE active = true
@@ -599,7 +599,7 @@ session_resolution AS (
     SELECT s.id as session_id
     FROM sessions_entry s
     JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-    JOIN profile_profiles_junction ppj ON ppj.profile_id = psc.profile_id
+    JOIN profile_profiles_junction ppj ON ppj.profile_id = psc.profiles_id
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
       AND s.active = true
     ORDER BY s.created_at DESC

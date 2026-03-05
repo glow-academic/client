@@ -69,15 +69,15 @@ original_groups AS (
       AND rsg.active = true
 ),
 original_standards AS (
-    SELECT 
+    SELECT
         s.id,
-        s.standard_groups_id,
+        s.standard_group_id,
         (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         (SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.scenario_id = s.id LIMIT 1),
         s.points,
         og.group_order
     FROM standards_resource s
-    JOIN original_groups og ON s.standard_groups_id = og.id
+    JOIN original_groups og ON s.standard_group_id = og.id
     ORDER BY og.group_order, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
 ),
 -- Insert name INTO names_resource table
@@ -311,7 +311,7 @@ insert_standard_call_tool_junctions AS (
 ),
 new_standards AS (
     INSERT INTO standards_resource (
-        standard_groups_id,
+        standard_group_id,
         name,
         description,
         points,
@@ -330,7 +330,7 @@ new_standards AS (
         false,
         false
     FROM original_standards os
-    JOIN groups_mapping gm ON os.standard_groups_id = gm.old_group_id
+    JOIN groups_mapping gm ON os.standard_group_id = gm.old_group_id
     JOIN standard_calls sc ON sc.standard_id = os.id
     JOIN insert_standard_calls isc ON isc.id = sc.call_id
     RETURNING id

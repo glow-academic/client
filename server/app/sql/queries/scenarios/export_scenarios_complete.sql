@@ -83,7 +83,7 @@ WITH params AS (
     SELECT profile_id AS profile_id
 ),
 user_departments AS (
-    SELECT department_id
+    SELECT departments_id
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
@@ -274,7 +274,7 @@ scenario_data AS (
         sfd.flag_ids, sfd.flag_names,
         ssim.simulation_ids
     HAVING
-        COUNT(sdj.scenario_id) FILTER (WHERE sdj.departments_id IN (SELECT department_id FROM user_departments)) > 0
+        COUNT(sdj.scenario_id) FILTER (WHERE sdj.departments_id IN (SELECT departments_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM scenario_departments_junction sd2 WHERE sd2.scenario_id = s.id AND sd2.active = true)
 ),
 -- Apply filters

@@ -144,10 +144,10 @@ cohort_sim_availability_data AS (
 cohort_profiles_data AS (
     SELECT
         cpj.cohort_id,
-        ARRAY_AGG(cpj.profile_id ORDER BY cpj.created_at) as profile_ids,
+        ARRAY_AGG(cpj.profiles_id ORDER BY cpj.created_at) as profile_ids,
         ARRAY_AGG(pr.name ORDER BY cpj.created_at) as profile_names
     FROM cohort_profiles_junction cpj
-    JOIN profiles_resource pr ON pr.id = cpj.profile_id
+    JOIN profiles_resource pr ON pr.id = cpj.profiles_id
     WHERE cpj.active = true
     GROUP BY cpj.cohort_id
 ),

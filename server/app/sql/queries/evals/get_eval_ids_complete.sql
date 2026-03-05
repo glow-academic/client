@@ -79,7 +79,7 @@ description_id_data AS (
 active_flag_id_data AS (
     SELECT
         COALESCE(
-            (SELECT df.flag_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'active' LIMIT 1),
+            (SELECT df.flags_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'active' LIMIT 1),
             (SELECT ef.flags_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flags_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'eval_active' AND f.value = TRUE LIMIT 1)
         ) as active_flag_id
     FROM params
@@ -89,7 +89,7 @@ active_flag_id_data AS (
 dynamic_flag_id_data AS (
     SELECT
         COALESCE(
-            (SELECT df.flag_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'dynamic' LIMIT 1),
+            (SELECT df.flags_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'dynamic' LIMIT 1),
             (SELECT ef.flags_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flags_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'dynamic' AND f.value = TRUE LIMIT 1)
         ) as dynamic_flag_id
     FROM params
@@ -99,7 +99,7 @@ dynamic_flag_id_data AS (
 groups_flag_id_data AS (
     SELECT
         COALESCE(
-            (SELECT df.flag_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = '' LIMIT 1),
+            (SELECT df.flags_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = '' LIMIT 1),
             (SELECT ef.flags_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flags_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = '' AND f.value = TRUE LIMIT 1)
         ) as groups_flag_id
     FROM params

@@ -102,7 +102,7 @@ selected_agent AS (
 ),
 -- Get profile FROM runs_entry
 run_profile AS (
-    SELECT prj.profile_id
+    SELECT prj.profiles_id as profile_id
     FROM runs_entry r
     JOIN profiles_runs_connection prj ON prj.run_id = r.id
     CROSS JOIN params p
@@ -124,7 +124,7 @@ runs_today AS (
     FROM runs_entry mr
     JOIN profiles_runs_connection prj2 ON prj2.run_id = mr.id
     CROSS JOIN run_profile rp
-    WHERE prj2.profile_id = rp.profile_id
+    WHERE prj2.profiles_id = rp.profile_id
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Get profile's primary department for department name resolution

@@ -79,7 +79,7 @@ draft_description_data AS (
     LIMIT 1
 ),
 draft_flag_data AS (
-    SELECT fdc.flag_id as flag_id
+    SELECT fdc.flags_id as flag_id
     FROM auth_drafts_flags_connection fdc
     WHERE fdc.draft_id = (SELECT draft_id FROM params)
     ORDER BY fdc.version DESC

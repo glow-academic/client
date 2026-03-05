@@ -1340,7 +1340,7 @@ permissions_data_with_tools AS (
                 -- New mode permissions
                 CASE 
                     WHEN up.role = 'superadmin' THEN true
-                    WHEN (SELECT department_id FROM primary_department_id_data) IS NOT NULL THEN true
+                    WHEN (SELECT departments_id FROM primary_department_id_data) IS NOT NULL THEN true
                     ELSE false
                 END
             ELSE

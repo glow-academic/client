@@ -112,20 +112,20 @@ profile_departments_agg AS (
 ),
 recent_runs AS (
     SELECT
-        prj.profile_id,
+        prj.profiles_id,
         COUNT(*) as run_count
     FROM profiles_runs_connection prj
     JOIN runs_entry r ON r.id = prj.run_id
     WHERE r.created_at >= NOW() - INTERVAL '24 hours'
-    GROUP BY prj.profile_id
+    GROUP BY prj.profiles_id
 ),
 profile_total_runs AS (
     SELECT
-        prj.profile_id,
+        prj.profiles_id,
         COUNT(*) as total_requests
     FROM profiles_runs_connection prj
     JOIN runs_entry r ON r.id = prj.run_id
-    GROUP BY prj.profile_id
+    GROUP BY prj.profiles_id
 ),
 departments_data AS (
     SELECT 
@@ -178,15 +178,15 @@ staff_rows AS (
     LEFT JOIN profile_emails_junction pe ON pe.profile_id = p.id AND pe.active = true
     LEFT JOIN emails_resource e ON pe.emails_id = e.id
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
-    LEFT JOIN profile_total_runs ptr ON ptr.profile_id = p.id
-    LEFT JOIN recent_runs rr ON rr.profile_id = p.id
+    LEFT JOIN profile_total_runs ptr ON ptr.profiles_id = p.id
+    LEFT JOIN recent_runs rr ON rr.profiles_id = p.id
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
     LEFT JOIN request_limits_resource rl ON prl.request_limits_id = rl.id
     LEFT JOIN LATERAL (
         SELECT ae.created_at AS last_active
         FROM profiles_activity_connection pactj
         JOIN activity_entry ae ON ae.id = pactj.activity_id
-        WHERE pactj.profile_id = p.id
+        WHERE pactj.profiles_id = p.id
         ORDER BY ae.created_at DESC
         LIMIT 1
     ) pa ON true

@@ -67,7 +67,7 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT fd.flag_id FROM tool_drafts_flags_connection fd WHERE fd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT fd.flags_id FROM tool_drafts_flags_connection fd WHERE fd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT tf.flags_id
              FROM tool_flags_junction tf
              JOIN flags_resource f ON tf.flags_id = f.id

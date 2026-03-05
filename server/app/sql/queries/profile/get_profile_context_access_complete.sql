@@ -153,7 +153,7 @@ cohort_ids_internal AS (
         ccj.cohorts_id AS resources_id,
         cpj.created_at
     FROM profile_profiles_junction ppj
-    JOIN cohort_profiles_junction cpj ON cpj.profile_id = ppj.profile_id AND cpj.active = true
+    JOIN cohort_profiles_junction cpj ON cpj.profiles_id = ppj.profile_id AND cpj.active = true
     JOIN cohort_cohorts_junction ccj ON ccj.cohort_id = cpj.cohort_id AND ccj.active = true
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
       AND EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flags_id = f.id WHERE cf.cohort_id = cpj.cohort_id AND f.name = 'cohort_active' AND f.value = true)
@@ -221,7 +221,7 @@ draft_ids_data AS (
         ARRAY[]::uuid[]
     ) as draft_ids
     FROM profile_profiles_junction ppj
-    JOIN profiles_sessions_connection psc ON psc.profile_id = ppj.profile_id
+    JOIN profiles_sessions_connection psc ON psc.profiles_id = ppj.profile_id
     JOIN (SELECT id, session_id, created_at, active FROM agent_drafts_entry
      UNION ALL SELECT id, session_id, created_at, active FROM auth_drafts_entry
      UNION ALL SELECT id, session_id, created_at, active FROM cohort_drafts_entry

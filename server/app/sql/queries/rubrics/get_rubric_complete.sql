@@ -87,7 +87,7 @@ CREATE TYPE types.q_get_rubric_v4_standard_group_resource AS (
 
 CREATE TYPE types.q_get_rubric_v4_standard_resource AS (
     standard_id uuid,
-    standard_groups_id uuid,
+    standard_group_id uuid,
     name text,
     description text,
     points int,
@@ -258,7 +258,7 @@ departments_agg AS (
     LIMIT 1
 ),
 primary_department_id_data AS (
-    SELECT department_id
+    SELECT departments_id
     FROM params x
     JOIN profile_departments_junction pd ON pd.profile_id = x.profile_id AND pd.is_primary = TRUE
     LIMIT 1
@@ -448,7 +448,7 @@ standard_ids_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(s.id ORDER BY s.created_at)
              FROM rubric_drafts_standard_groups_connection dsg
-             JOIN standards_resource s ON s.standard_groups_id = dsg.standard_groups_id
+             JOIN standards_resource s ON s.standard_group_id = dsg.standard_groups_id
              WHERE dsg.draft_id = (SELECT draft_id FROM params)),
             (SELECT ARRAY_AGG(rs.standards_id ORDER BY rs.created_at)
              FROM rubric_standards_junction rs
@@ -1445,7 +1445,7 @@ permissions_data_with_tools AS (
                 -- New mode permissions
                 CASE 
                     WHEN up.role = 'superadmin' THEN true
-                    WHEN (SELECT department_id FROM primary_department_id_data) IS NOT NULL THEN true
+                    WHEN (SELECT departments_id FROM primary_department_id_data) IS NOT NULL THEN true
                     ELSE false
                 END
             ELSE
@@ -1630,7 +1630,7 @@ standard_groups_selected_data AS (
         COALESCE(sgld.generated, false) as generated
     FROM standard_group_links_data sgld
     JOIN standard_groups_resource sg ON sg.id = sgld.standard_groups_id
-    LEFT JOIN standards_resource s ON s.standard_groups_id = sg.id
+    LEFT JOIN standards_resource s ON s.standard_group_id = sg.id
     GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sgld.active, sgld.generated
 ),
 -- Standard groups_entry data (all available standard groups_entry for options array)
@@ -1647,7 +1647,7 @@ standard_groups_all_data AS (
     FROM params x
     CROSS JOIN standard_groups_resource sg
     LEFT JOIN standard_group_links_data sgld ON sgld.standard_groups_id = sg.id
-    LEFT JOIN standards_resource s ON s.standard_groups_id = sg.id
+    LEFT JOIN standards_resource s ON s.standard_group_id = sg.id
     WHERE sg.active = true
       AND (
           (SELECT standard_group_search FROM params LIMIT 1) IS NULL
@@ -1686,9 +1686,9 @@ standard_groups_all_aggregated AS (
 ),
 -- Standards data (selected standards)
 standards_selected_data AS (
-    SELECT 
+    SELECT
         s.id as standard_id,
-        s.standard_groups_id,
+        s.standard_group_id,
         s.name,
         s.description,
         s.points,
@@ -1697,14 +1697,14 @@ standards_selected_data AS (
     JOIN standards_resource s ON s.id IN (
         SELECT unnest(standard_ids) FROM standard_ids_data
     )
-    LEFT JOIN rubric_drafts_standard_groups_connection dsg ON dsg.draft_id = x.draft_id AND dsg.standard_groups_id = s.standard_groups_id
+    LEFT JOIN rubric_drafts_standard_groups_connection dsg ON dsg.draft_id = x.draft_id AND dsg.standard_groups_id = s.standard_group_id
     LEFT JOIN rubric_standards_junction rs ON rs.rubric_id = x.rubric_id AND rs.standards_id = s.id AND rs.active = true
 ),
 -- Standards data (all available standards for selected groups_entry)
 standards_all_data AS (
-    SELECT 
+    SELECT
         s.id as standard_id,
-        s.standard_groups_id,
+        s.standard_group_id,
         s.name,
         s.description,
         s.points,
@@ -1712,15 +1712,15 @@ standards_all_data AS (
     FROM standards_resource s
     CROSS JOIN standard_group_ids_data sgid
     WHERE s.active = true
-      AND s.standard_groups_id = ANY(sgid.standard_group_ids)
+      AND s.standard_group_id = ANY(sgid.standard_group_ids)
 ),
 -- Standards aggregated (selected standards for standard_resources)
 standards_selected_aggregated AS (
-    SELECT 
+    SELECT
         COALESCE(
             ARRAY_AGG(
-                (s.standard_id, s.standard_groups_id, s.name, COALESCE(s.description, ''), s.points, s.generated)::types.q_get_rubric_v4_standard_resource
-                ORDER BY s.standard_groups_id, s.name
+                (s.standard_id, s.standard_group_id, s.name, COALESCE(s.description, ''), s.points, s.generated)::types.q_get_rubric_v4_standard_resource
+                ORDER BY s.standard_group_id, s.name
             ),
             '{}'::types.q_get_rubric_v4_standard_resource[]
         ) as standard_resources
@@ -1730,11 +1730,11 @@ standards_selected_aggregated AS (
 ),
 -- Standards aggregated (all available standards for standards array)
 standards_all_aggregated AS (
-    SELECT 
+    SELECT
         COALESCE(
             ARRAY_AGG(
-                (s.standard_id, s.standard_groups_id, s.name, COALESCE(s.description, ''), s.points, s.generated)::types.q_get_rubric_v4_standard_resource
-                ORDER BY s.standard_groups_id, s.name
+                (s.standard_id, s.standard_group_id, s.name, COALESCE(s.description, ''), s.points, s.generated)::types.q_get_rubric_v4_standard_resource
+                ORDER BY s.standard_group_id, s.name
             ),
             '{}'::types.q_get_rubric_v4_standard_resource[]
         ) as standards

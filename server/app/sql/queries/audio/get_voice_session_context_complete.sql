@@ -40,7 +40,7 @@ WITH chat_info AS (
     SELECT
         c.id as chat_id,
         ac.attempt_id,
-        COALESCE(home_sim.simulation_id, prac_sim.simulation_id) as simulation_id
+        COALESCE(home_sim.simulations_id, prac_sim.simulations_id) as simulation_id
     FROM attempt_chat_entry c
     JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
     JOIN attempt_entry a ON a.id = ac.attempt_id

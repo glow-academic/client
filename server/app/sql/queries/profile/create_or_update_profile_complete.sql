@@ -252,7 +252,7 @@ deactivate_old_sessions AS (
     WHERE id IN (
         SELECT psc.session_id
         FROM profiles_sessions_connection psc
-        WHERE psc.profile_id = (SELECT id FROM profile_upsert)
+        WHERE psc.profiles_id = (SELECT id FROM profile_upsert)
     )
       AND active = true
 ),
