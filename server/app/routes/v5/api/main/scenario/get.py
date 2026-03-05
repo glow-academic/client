@@ -103,7 +103,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
 from app.routes.v5.tools.resources.objectives.get import get_objectives
 from app.routes.v5.tools.resources.options.get import get_options
-from app.routes.v5.tools.resources.options.search import search_options_internal
+from app.routes.v5.tools.resources.options.search import search_options
 from app.routes.v5.tools.resources.parameter_fields.get import (
     get_parameter_fields,
 )
@@ -122,10 +122,10 @@ from app.routes.v5.tools.resources.problem_statements.search import (
 )
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.questions.get import get_questions
-from app.routes.v5.tools.resources.questions.search import search_questions_internal
+from app.routes.v5.tools.resources.questions.search import search_questions
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.videos.get import get_videos
-from app.routes.v5.tools.resources.videos.search import search_videos_internal
+from app.routes.v5.tools.resources.videos.search import search_videos
 from app.sql.types import (
     GetScenarioAccessSqlParams,
     GetScenarioAccessSqlRow,
@@ -662,12 +662,13 @@ async def get_scenario_internal(
     async def fetch_videos():
         async with pool.acquire() as c:
             selected = await get_videos(c, selected_video_ids, get_redis_client(), bypass_cache)
-            suggestions = await search_videos_internal(
+            suggestions = await search_videos(
                 c,
-                video_search,
-                20,
-                0,
-                selected_video_ids,
+                get_redis_client(),
+                search=video_search,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=selected_video_ids,
                 bypass_cache=bypass_cache,
                 scenario=True,
             )
@@ -678,12 +679,13 @@ async def get_scenario_internal(
             selected = await get_questions(
                 c, selected_question_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_questions_internal(
+            suggestions = await search_questions(
                 c,
-                question_search,
-                20,
-                0,
-                selected_question_ids,
+                get_redis_client(),
+                search=question_search,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=selected_question_ids,
                 bypass_cache=bypass_cache,
                 scenario=True,
             )
@@ -692,12 +694,13 @@ async def get_scenario_internal(
     async def fetch_options():
         async with pool.acquire() as c:
             selected = await get_options(c, selected_option_ids, get_redis_client(), bypass_cache)
-            suggestions = await search_options_internal(
+            suggestions = await search_options(
                 c,
-                option_search,
-                20,
-                0,
-                selected_option_ids,
+                get_redis_client(),
+                search=option_search,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=selected_option_ids,
                 question_ids=selected_question_ids or None,
                 bypass_cache=bypass_cache,
                 scenario=True,
@@ -859,7 +862,7 @@ async def get_scenario_internal(
     images = _dedupe_by_id(images_selected + images_suggestions, "id")
     videos = _dedupe_by_id(videos_selected + videos_suggestions, "video_id")
     questions = _dedupe_by_id(questions_selected + questions_suggestions, "question_id")
-    options = _dedupe_by_id(options_selected + options_suggestions, "option_id")
+    options = _dedupe_by_id(options_selected + options_suggestions, "id")
 
     # Compute final show flags
     show_name = compute_show_name()
@@ -1103,7 +1106,7 @@ async def get_scenario_internal(
         "images": [i.id for i in images_suggestions],
         "videos": [v.video_id for v in videos_suggestions],
         "questions": [q.question_id for q in questions_suggestions],
-        "options": [o.option_id for o in options_suggestions],
+        "options": [o.id for o in options_suggestions],
     }
 
     # Validation for new mode

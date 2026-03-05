@@ -21,12 +21,13 @@ async def search_resource_ids(
     junction_artifacts: list[str] | None = None,
     draft_artifacts: list[str] | None = None,
     order_column: str | None = None,
+    additional_search_columns: list[str] | None = None,
     extra_conditions: list[tuple[str, object]] | None = None,
 ) -> list[UUID]:
     """Search a resource table and return matching IDs.
 
     Builds a dynamic WHERE clause from the provided filters:
-    - search: ILIKE on search_column
+    - search: ILIKE on search_column (+ additional_search_columns via OR)
     - exclude_ids: NOT IN filter
     - draft_id + suggest_source='draft': EXISTS across draft connection tables
     - artifact_filters: EXISTS across junction tables for each True filter
@@ -43,7 +44,15 @@ async def search_resource_ids(
 
     # Search filter
     if search:
-        conditions.append(f"LOWER({alias}.{search_column}) LIKE '%' || LOWER(${idx}) || '%'")
+        all_cols = [search_column] + (additional_search_columns or [])
+        if len(all_cols) == 1:
+            conditions.append(f"LOWER({alias}.{all_cols[0]}) LIKE '%' || LOWER(${idx}) || '%'")
+        else:
+            or_parts = [
+                f"LOWER(COALESCE({alias}.{col}, '')) LIKE '%' || LOWER(${idx}) || '%'"
+                for col in all_cols
+            ]
+            conditions.append(f"({' OR '.join(or_parts)})")
         params.append(search)
         idx += 1
 

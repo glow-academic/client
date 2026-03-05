@@ -368,13 +368,13 @@ async def _resolve_scenario_values(
             item.image_ids = resolved_ids
 
     if item.videos is not None and item.video_ids is None:
-        from app.routes.v5.tools.resources.videos.search import search_videos_internal
+        from app.routes.v5.tools.resources.videos.search import search_videos
 
-        all_videos = await search_videos_internal(
-            conn, search=None, limit_count=1000, scenario=True
+        all_videos = await search_videos(
+            conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
         vid_name_map = {
-            v.name.lower(): v.video_id for v in all_videos if v.name and v.video_id
+            v.name.lower(): v.id for v in all_videos if v.name and v.id
         }
         resolved_ids = []
         for vid_name in item.videos:
@@ -392,12 +392,10 @@ async def _resolve_scenario_values(
             item.video_ids = resolved_ids
 
     if item.questions is not None and item.question_ids is None:
-        from app.routes.v5.tools.resources.questions.search import (
-            search_questions_internal,
-        )
+        from app.routes.v5.tools.resources.questions.search import search_questions
 
-        all_questions = await search_questions_internal(
-            conn, search=None, limit_count=1000, scenario=True
+        all_questions = await search_questions(
+            conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
         q_name_map = {
             q.question_text.lower(): q.question_id
@@ -420,15 +418,15 @@ async def _resolve_scenario_values(
             item.question_ids = resolved_ids
 
     if item.options is not None and item.option_ids is None:
-        from app.routes.v5.tools.resources.options.search import search_options_internal
+        from app.routes.v5.tools.resources.options.search import search_options
 
-        all_options = await search_options_internal(
-            conn, search=None, limit_count=1000, scenario=True
+        all_options = await search_options(
+            conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
         opt_name_map = {
-            o.option_text.lower(): o.option_id
+            o.option_text.lower(): o.id
             for o in all_options
-            if o.option_text and o.option_id
+            if o.option_text and o.id
         }
         resolved_ids = []
         for opt_name in item.options:

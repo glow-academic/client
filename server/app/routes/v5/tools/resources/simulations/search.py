@@ -1,30 +1,30 @@
-"""simulations/search internal — reusable data-access layer."""
+"""Simulations SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.routes.v5.api.resources.simulations.types import (
-    GetSimulationsV4Item,
-    SearchSimulationsSqlRow,
-)
-from app.sql.types import SearchSimulationsSqlParams
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.simulations.get import get_simulations
+from app.routes.v5.tools.resources.simulations.types import GetSimulationResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/simulations/search_simulations_complete.sql"
+JUNCTION_ARTIFACTS = ["cohort", "simulation"]
+
+DRAFT_ARTIFACTS = ["cohort"]
 
 
-async def search_simulations_internal(
+async def search_simulations(
     conn: asyncpg.Connection,
+    redis: Redis,
     search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
+    limit_count: int = 20,
+    offset_count: int = 0,
     draft_id: UUID | None = None,
-    suggest_source: str | None = "all",
+    suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
     scenario_ids: list[UUID] | None = None,
@@ -32,86 +32,75 @@ async def search_simulations_internal(
     *,
     cohort: bool = False,
     simulation: bool = False,
-) -> list[GetSimulationsV4Item]:
-    """Internal function for searching simulations.
+) -> list[GetSimulationResponse]:
+    """Search simulations with optional artifact/draft filters."""
+    if limit_count <= 0:
+        return []
 
-    Args:
-        conn: Database connection
-        search: Search term to filter by name/description
-        limit_count: Maximum number of results
-        offset_count: Offset for pagination
-        draft_id: Optional draft ID for filtering by draft connection
-        suggest_source: Source for suggestions ('all', 'linked', 'draft')
-        exclude_ids: IDs to exclude from results
-        bypass_cache: Whether to bypass cache
+    artifact_filters = {"cohort": cohort, "simulation": simulation}
 
-    Returns:
-        List of simulation items
-    """
-    # Generate cache key
-    cache_key_val = cache_key(
-        "simulations/search",
+    extra_conditions: list[tuple[str, object]] = []
+    if department_ids:
+        extra_conditions.append(
+            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.department_ids && ${idx}::uuid[])", department_ids)
+        )
+    if scenario_ids:
+        extra_conditions.append(
+            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.scenario_ids && ${idx}::uuid[])", scenario_ids)
+        )
+
+    tags = ["resources", "simulations"]
+    key = cache_key(
+        "/api/v5/resources/simulations/search",
         {
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
             "draft_id": str(draft_id) if draft_id else None,
             "suggest_source": suggest_source,
-            "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
             "department_ids": sorted(str(i) for i in (department_ids or [])),
             "scenario_ids": sorted(str(i) for i in (scenario_ids or [])),
-            "cohort": cohort,
-            "simulation": simulation,
+            **artifact_filters,
         },
     )
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetSimulationsV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetSimulationResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = SearchSimulationsSqlParams(
+    ids = await search_resource_ids(
+        conn,
+        table="simulations_resource",
+        resource="simulations",
+        search_column="name",
+        additional_search_columns=["description"],
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
+        exclude_ids=exclude_ids,
         draft_id=draft_id,
         suggest_source=suggest_source,
-        exclude_ids=exclude_ids or [],
-        department_ids=department_ids or [],
-        scenario_ids=scenario_ids or [],
-        cohort=cohort,
-        simulation=simulation,
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
+        draft_artifacts=DRAFT_ARTIFACTS,
+        extra_conditions=extra_conditions if extra_conditions else None,
     )
 
-    result = cast(
-        SearchSimulationsSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
-    )
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
 
-    # Convert auto-generated Q* types to handcrafted types via dict roundtrip
-    items: list[GetSimulationsV4Item] = [
-        GetSimulationsV4Item.model_validate(
-            item.model_dump() if hasattr(item, "model_dump") else item
-        )
-        for item in (result.items or [])
-    ]
+    items = await get_simulations(conn, ids, redis, bypass_cache=True)
 
-    # Cache response
     await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["simulations"],
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items

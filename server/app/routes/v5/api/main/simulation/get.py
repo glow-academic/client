@@ -112,7 +112,7 @@ from app.routes.v5.tools.resources.scenario_time_limits.get import (
 from app.routes.v5.tools.resources.scenario_time_limits.search import (
     search_scenario_time_limits_internal,
 )
-from app.routes.v5.tools.resources.scenarios.search import search_scenarios_internal
+from app.routes.v5.tools.resources.scenarios.search import search_scenarios
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import QGetScenarioFlagsV4Item, load_sql_query
 from app.utils.error.handle_route_error import handle_route_error
@@ -398,8 +398,9 @@ async def get_simulation_internal(
 
         async with pool.acquire() as c:
             selected = await get_scenarios(c, scenario_ids, get_redis_client(), bypass_cache)
-            suggestions = await search_scenarios_internal(
+            suggestions = await search_scenarios(
                 c,
+                get_redis_client(),
                 search=scenario_search,
                 limit_count=20,
                 offset_count=0,
@@ -512,11 +513,11 @@ async def get_simulation_internal(
         departments_selected + departments_suggestions, "id"
     )
     scenarios_combined = _dedupe_by_id(
-        scenarios_selected + scenarios_suggestions, "scenario_id"
+        scenarios_selected + scenarios_suggestions, "id"
     )
     # Build scenario flags: cross-product of all scenario IDs × flag types
     # (canonical pattern: explicit flag type list, same as SIMULATION_FLAG_TYPES_ORDERED)
-    all_scenario_ids = [s.scenario_id for s in scenarios_combined if s.scenario_id]
+    all_scenario_ids = [s.id for s in scenarios_combined if s.id]
     _sf_existing: set[tuple[UUID, UUID]] = set()
     for sf in scenario_flags_selected:
         if sf.scenario_id and sf.flag_id:
@@ -560,7 +561,7 @@ async def get_simulation_internal(
     # Convert scenarios to SimulationScenario type with computed show_* flags
     def convert_scenario(s: Any) -> SimulationScenario:
         return SimulationScenario(
-            scenario_id=s.scenario_id,
+            scenario_id=s.id,
             name=s.name,
             description=s.description,
             generated=s.generated,
@@ -597,7 +598,7 @@ async def get_simulation_internal(
     name_suggestions_ids = [n.id for n in names_suggestions]
     description_suggestions_ids = [d.id for d in descriptions_suggestions]
     department_suggestions_ids = [d.id for d in departments_suggestions]
-    scenario_suggestions_ids = [s.scenario_id for s in scenarios_suggestions]
+    scenario_suggestions_ids = [s.id for s in scenarios_suggestions]
 
     suggestions_map: dict[str, list[UUID]] = {
         "names": name_suggestions_ids,

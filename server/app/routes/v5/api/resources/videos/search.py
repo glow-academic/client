@@ -5,12 +5,11 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
-from app.routes.v5.tools.resources.videos.search import SQL_PATH, search_videos_internal
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.resources.videos.search import search_videos as search_videos_fn
 from app.sql.types import (
     SearchVideosApiRequest,
     SearchVideosApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -31,17 +30,18 @@ async def search_videos(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await search_videos_internal(
+        items = await search_videos_fn(
             conn,
-            request.search,
-            request.limit_count,
-            request.offset_count,
-            request.exclude_ids,
+            redis=get_redis_client(),
+            search=request.search,
+            limit_count=request.limit_count or 20,
+            offset_count=request.offset_count or 0,
+            exclude_ids=request.exclude_ids,
             bypass_cache=bypass_cache,
             scenario=request.scenario or False,
         )
         response.headers["X-Cache-Tags"] = ",".join(tags)
-        return SearchVideosApiResponse(items=items)
+        return SearchVideosApiResponse(items=items)  # type: ignore[arg-type]
     except HTTPException:
         raise
     except ValueError as e:
@@ -51,7 +51,7 @@ async def search_videos(
             error=e,
             route_path=http_request.url.path,
             operation="search_videos",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

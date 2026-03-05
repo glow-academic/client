@@ -106,7 +106,7 @@ from app.routes.v5.tools.resources.simulation_positions.get import (
     get_simulation_positions,
 )
 from app.routes.v5.tools.resources.simulations.get import get_simulations
-from app.routes.v5.tools.resources.simulations.search import search_simulations_internal
+from app.routes.v5.tools.resources.simulations.search import search_simulations
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetCohortAccessSqlParams,
@@ -445,8 +445,9 @@ async def get_cohort_internal(
                 c, simulation_ids, get_redis_client(), bypass_cache=bypass_cache
             )
             # Search for suggestions
-            suggestions = await search_simulations_internal(
+            suggestions = await search_simulations(
                 c,
+                get_redis_client(),
                 search=simulation_search,
                 limit_count=20,
                 offset_count=0,

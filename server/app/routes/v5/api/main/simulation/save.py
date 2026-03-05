@@ -237,17 +237,15 @@ async def _resolve_simulation_values(
             item.department_ids = resolved_ids
 
     if item.scenarios is not None and item.scenario_ids is None:
-        from app.routes.v5.tools.resources.scenarios.search import (
-            search_scenarios_internal,
-        )
+        from app.routes.v5.tools.resources.scenarios.search import search_scenarios
 
-        all_scenarios = await search_scenarios_internal(
-            conn, search=None, limit_count=1000, simulation=True
+        all_scenarios = await search_scenarios(
+            conn, get_redis_client(), search=None, limit_count=1000, simulation=True
         )
         scenario_name_map = {
-            s.name.lower(): s.scenario_id
+            s.name.lower(): s.id
             for s in all_scenarios
-            if s.name and s.scenario_id
+            if s.name and s.id
         }
         resolved_ids = []
         for scenario_name in item.scenarios:

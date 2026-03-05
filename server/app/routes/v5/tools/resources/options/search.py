@@ -1,83 +1,91 @@
-"""options/search internal — reusable data-access layer."""
+"""Options SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    QGetOptionsV4Item,
-    SearchOptionsSqlParams,
-    SearchOptionsSqlRow,
-)
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.options.get import get_options
+from app.routes.v5.tools.resources.options.types import GetOptionResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/options/search_options_complete.sql"
+JUNCTION_ARTIFACTS = ["scenario"]
 
 
-async def search_options_internal(
+async def search_options(
     conn: asyncpg.Connection,
+    redis: Redis,
     search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
+    limit_count: int = 20,
+    offset_count: int = 0,
     exclude_ids: list[UUID] | None = None,
     question_ids: list[UUID] | None = None,
     is_correct: bool | None = None,
     bypass_cache: bool = False,
     *,
     scenario: bool = False,
-) -> list[QGetOptionsV4Item]:
-    """Internal function to search options."""
-    if limit_count is not None and limit_count <= 0:
+) -> list[GetOptionResponse]:
+    """Search options with optional artifact filters."""
+    if limit_count <= 0:
         return []
 
+    artifact_filters = {"scenario": scenario}
+
+    extra_conditions: list[tuple[str, object]] = []
+    if question_ids:
+        extra_conditions.append(("{alias}.question_id = ANY(${idx})", question_ids))
+    if is_correct is not None:
+        extra_conditions.append(("{alias}.is_correct = ${idx}::boolean", is_correct))
+
     tags = ["resources", "options"]
-    cache_key_val = cache_key(
+    key = cache_key(
         "/api/v5/resources/options/search",
         {
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
             "question_ids": sorted(str(i) for i in (question_ids or [])),
             "is_correct": is_correct,
-            "scenario": scenario,
+            **artifact_filters,
         },
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetOptionsV4Item.model_validate(item)
-                for item in cached.get("items", [])
+                GetOptionResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = SearchOptionsSqlParams(
+    ids = await search_resource_ids(
+        conn,
+        table="options_resource",
+        resource="options",
+        search_column="option_text",
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
-        exclude_ids=exclude_ids or [],
-        question_ids=question_ids or [],
-        is_correct=is_correct,
-        scenario=scenario,
-    )
-    result = cast(
-        SearchOptionsSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+        exclude_ids=exclude_ids,
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
+        extra_conditions=extra_conditions if extra_conditions else None,
     )
 
-    items: list[QGetOptionsV4Item] = result.items if result and result.items else []
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
+
+    items = await get_options(conn, ids, redis, bypass_cache=True)
 
     await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items

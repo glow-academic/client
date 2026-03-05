@@ -5,6 +5,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.routes.v5.tools.resources.simulations.types import GetSimulationResponse
+
 SuggestSource = Literal["all", "linked", "draft"]
 
 
@@ -66,7 +68,7 @@ class SearchSimulationsApiRequest(BaseModel):
 class SearchSimulationsApiResponse(BaseModel):
     """Response for searching simulations."""
 
-    items: list[GetSimulationsV4Item] | None = Field(default_factory=list)
+    items: list[GetSimulationResponse] | None = Field(default_factory=list)
 
 
 class SearchSimulationsSqlParams(BaseModel):

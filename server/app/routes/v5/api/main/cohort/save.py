@@ -238,17 +238,15 @@ async def _resolve_cohort_values(
             item.department_ids = resolved_ids
 
     if item.simulations is not None and item.simulation_ids is None:
-        from app.routes.v5.tools.resources.simulations.search import (
-            search_simulations_internal,
-        )
+        from app.routes.v5.tools.resources.simulations.search import search_simulations
 
-        all_simulations = await search_simulations_internal(
-            conn, search=None, limit_count=1000, cohort=True
+        all_simulations = await search_simulations(
+            conn, get_redis_client(), search=None, limit_count=1000, cohort=True
         )
         sim_name_map = {
-            s.name.lower(): s.simulation_id
+            s.name.lower(): s.id
             for s in all_simulations
-            if s.name and s.simulation_id
+            if s.name and s.id
         }
         resolved_ids = []
         for sim_name in item.simulations:

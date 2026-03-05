@@ -273,9 +273,11 @@ class SearchScenariosApiRequest(BaseModel):
     search: str | None = None
     limit_count: int | None = 20
     offset_count: int | None = 0
-    user_department_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = None
+    scenario: bool | None = None
+    simulation: bool | None = None
 
 
 class SearchScenariosApiResponse(BaseModel):
