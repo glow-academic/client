@@ -21,7 +21,7 @@ async def get_tests(
         f"""
         SELECT
             test_id, eval_id, profile_id, department_ids,
-            benchmark_id, test_name, test_description,
+            test_name, test_description,
             num_invocations, infinite_mode, archived, test_created_at
         FROM {MV_NAME}
         WHERE test_id = ANY($1)
@@ -35,7 +35,6 @@ async def get_tests(
             eval_id=r["eval_id"],
             profile_id=r["profile_id"],
             department_ids=r["department_ids"],
-            benchmark_id=r["benchmark_id"],
             test_name=r["test_name"],
             test_description=r["test_description"],
             num_invocations=r["num_invocations"],

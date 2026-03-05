@@ -6,7 +6,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, Request, Response
 
 from app.infra.globals import get_db
-from app.routes.v5.tools.entries.logins.refresh import refresh_logins_internal
+from app.routes.v5.tools.entries.logins.refresh import refresh_logins as refresh_logins_impl
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -20,7 +20,7 @@ async def refresh_logins(
 ) -> dict:
     """Refresh the logins_mv materialized view."""
     try:
-        result = await refresh_logins_internal(conn)
+        result = await refresh_logins_impl(conn)
         response.headers["X-Cache-Tags"] = "entries,logins"
         return result
     except Exception as e:

@@ -17,7 +17,6 @@ END $$;
 CREATE OR REPLACE FUNCTION public.api_create_test_entry_v4(
     run_id uuid,
     infinite_mode bool DEFAULT false,
-    benchmark_id uuid DEFAULT NULL,
     tool_id uuid DEFAULT NULL,
     upload_id uuid DEFAULT NULL,
     session_id uuid DEFAULT NULL,
@@ -53,8 +52,8 @@ BEGIN
     END IF;
 
     -- 4. Create entry
-    INSERT INTO test_entry (call_id, infinite_mode, benchmark_id, mcp)
-    VALUES (v_call_id, api_create_test_entry_v4.infinite_mode, api_create_test_entry_v4.benchmark_id, api_create_test_entry_v4.mcp)
+    INSERT INTO test_entry (call_id, infinite_mode, mcp)
+    VALUES (v_call_id, api_create_test_entry_v4.infinite_mode, api_create_test_entry_v4.mcp)
     RETURNING test_entry.id INTO v_entry_id;
 
     -- 5. Create message

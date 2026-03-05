@@ -15,7 +15,6 @@ class GetTestResponse(BaseModel):
     eval_id: UUID | None
     profile_id: UUID | None
     department_ids: list[UUID]
-    benchmark_id: UUID | None
     test_name: str
     test_description: str
     num_invocations: int

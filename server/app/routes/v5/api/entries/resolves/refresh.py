@@ -6,7 +6,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, Request, Response
 
 from app.infra.globals import get_db
-from app.routes.v5.tools.entries.resolves.refresh import refresh_resolves_internal
+from app.routes.v5.tools.entries.resolves.refresh import refresh_resolves as refresh_resolves_impl
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -20,7 +20,7 @@ async def refresh_resolves(
 ) -> dict:
     """Refresh the resolves_mv materialized view."""
     try:
-        result = await refresh_resolves_internal(conn)
+        result = await refresh_resolves_impl(conn)
         response.headers["X-Cache-Tags"] = "entries,resolves"
         return result
     except Exception as e:

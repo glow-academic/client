@@ -6,7 +6,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, Request, Response
 
 from app.infra.globals import get_db
-from app.routes.v5.tools.entries.attempt_mutes.refresh import refresh_attempt_mutes_internal
+from app.routes.v5.tools.entries.attempt_mutes.refresh import refresh_attempt_mutes as refresh_attempt_mutes_impl
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -20,7 +20,7 @@ async def refresh_attempt_mutes(
 ) -> dict:
     """Refresh the attempt_mutes_mv materialized view."""
     try:
-        result = await refresh_attempt_mutes_internal(conn)
+        result = await refresh_attempt_mutes_impl(conn)
         response.headers["X-Cache-Tags"] = "entries,attempt_mutes"
         return result
     except Exception as e:

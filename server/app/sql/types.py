@@ -6849,109 +6849,6 @@ class SearchCallsEntriesApiResponse(BaseModel):
 
 
 
-# Generated from: create_certificates_entries
-
-class CreateCertificatesEntriesSqlParams(BaseModel):
-
-    run_id: UUID
-    upload_id: UUID
-    tool_id: UUID | None = None
-    text_upload_id: UUID | None = None
-    session_id: UUID | None = None
-    mcp: bool | None = False
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.run_id,
-            self.upload_id,
-            self.tool_id,
-            self.text_upload_id,
-            self.session_id,
-            self.mcp,
-        )
-
-class CreateCertificatesEntriesSqlRow(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-class CreateCertificatesEntriesApiRequest(BaseModel):
-
-    run_id: UUID
-    upload_id: UUID
-    tool_id: UUID | None = None
-    text_upload_id: UUID | None = None
-    session_id: UUID | None = None
-    mcp: bool | None = False
-
-class CreateCertificatesEntriesApiResponse(BaseModel):
-
-    id: UUID | None = None
-    call_id: UUID | None = None
-    message_id: UUID | None = None
-
-
-
-# Generated from: get_certificates_entries
-
-class GetCertificatesEntriesSqlParams(BaseModel):
-
-    ids: list[UUID]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.ids,
-        )
-
-class GetCertificatesEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class GetCertificatesEntriesApiRequest(BaseModel):
-
-    ids: list[UUID]
-
-class GetCertificatesEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
-# Generated from: search_certificates_entries
-
-class SearchCertificatesEntriesSqlParams(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    upload_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.search,
-            self.limit_count,
-            self.offset_count,
-            self.upload_id,
-        )
-
-class SearchCertificatesEntriesSqlRow(BaseModel):
-
-    items: Any | None = None
-
-class SearchCertificatesEntriesApiRequest(BaseModel):
-
-    search: str | None = None
-    limit_count: int | None = 20
-    offset_count: int | None = 0
-    upload_id: UUID | None = None
-
-class SearchCertificatesEntriesApiResponse(BaseModel):
-
-    items: Any | None = None
-
-
-
 # Generated from: create_chat_entries
 
 class CreateChatEntriesSqlParams(BaseModel):
@@ -10902,7 +10799,6 @@ class CreateTestEntriesSqlParams(BaseModel):
 
     run_id: UUID
     infinite_mode: bool | None = False
-    benchmark_id: UUID | None = None
     tool_id: UUID | None = None
     upload_id: UUID | None = None
     session_id: UUID | None = None
@@ -10912,7 +10808,6 @@ class CreateTestEntriesSqlParams(BaseModel):
         return (
             self.run_id,
             self.infinite_mode,
-            self.benchmark_id,
             self.tool_id,
             self.upload_id,
             self.session_id,
@@ -10929,7 +10824,6 @@ class CreateTestEntriesApiRequest(BaseModel):
 
     run_id: UUID
     infinite_mode: bool | None = False
-    benchmark_id: UUID | None = None
     tool_id: UUID | None = None
     upload_id: UUID | None = None
     session_id: UUID | None = None
@@ -35277,24 +35171,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SearchCallsEntriesApiRequest",
         "SearchCallsEntriesApiResponse",
     ),
-    "app/sql/queries/entries/certificates/create_certificates_entries_complete.sql": (
-        "CreateCertificatesEntriesSqlParams",
-        "CreateCertificatesEntriesSqlRow",
-        "CreateCertificatesEntriesApiRequest",
-        "CreateCertificatesEntriesApiResponse",
-    ),
-    "app/sql/queries/entries/certificates/get_certificates_entries_complete.sql": (
-        "GetCertificatesEntriesSqlParams",
-        "GetCertificatesEntriesSqlRow",
-        "GetCertificatesEntriesApiRequest",
-        "GetCertificatesEntriesApiResponse",
-    ),
-    "app/sql/queries/entries/certificates/search_certificates_entries_complete.sql": (
-        "SearchCertificatesEntriesSqlParams",
-        "SearchCertificatesEntriesSqlRow",
-        "SearchCertificatesEntriesApiRequest",
-        "SearchCertificatesEntriesApiResponse",
-    ),
     "app/sql/queries/entries/chat/create_chat_entries_complete.sql": (
         "CreateChatEntriesSqlParams",
         "CreateChatEntriesSqlRow",
@@ -40287,21 +40163,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/entries/calls/search_calls_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/entries/certificates/create_certificates_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/entries/certificates/get_certificates_entries_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/entries/certificates/search_certificates_entries_complete.sql"]
     ) -> SqlString: ...
 
     @overload

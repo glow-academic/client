@@ -11,13 +11,11 @@ class TestEntryData(BaseModel):
     id: str | None = None
     created_at: str | None = None
     infinite_mode: bool | None = None
-    benchmark_id: str | None = None
 
 
 class CreateTestEntryRequest(BaseModel):
     run_id: UUID
     infinite_mode: bool = False
-    benchmark_id: UUID | None = None
 
 
 class CreateTestEntryResponse(BaseModel):
@@ -29,13 +27,12 @@ class CreateTestEntryResponse(BaseModel):
 class CreateTestEntrySqlParams(BaseModel):
     run_id: UUID
     infinite_mode: bool = False
-    benchmark_id: UUID | None = None
     tool_id: UUID | None = None
     upload_id: UUID | None = None
     mcp: bool = False
 
     def to_tuple(self) -> tuple:
-        return (self.run_id, self.infinite_mode, self.benchmark_id, self.mcp)
+        return (self.run_id, self.infinite_mode, self.mcp)
 
 
 class CreateTestEntrySqlRow(BaseModel):
