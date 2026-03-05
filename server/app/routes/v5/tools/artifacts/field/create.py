@@ -14,12 +14,12 @@ OWNER_COL = "field_id"
 
 # (junction_table, resource_column)
 SINGLE_JUNCTIONS: list[tuple[str, str]] = [
-    ("field_names_junction", "name_id"),
-    ("field_descriptions_junction", "description_id"),
+    ("field_names_junction", "names_id"),
+    ("field_descriptions_junction", "descriptions_id"),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str]] = [
-    ("field_departments_junction", "department_id"),
+    ("field_departments_junction", "departments_id"),
     ("field_conditional_parameters_junction", "conditional_parameter_id"),
     ("field_fields_junction", "fields_id"),
 ]
@@ -87,7 +87,7 @@ async def create_field(
             table="field_flags_junction",
             owner_col=OWNER_COL,
             owner_id=field_id,
-            resource_col="flag_id",
+            resource_col="flags_id",
             resource_ids=flag_ids,
             generated=generated,
             mcp=mcp,

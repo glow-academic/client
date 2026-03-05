@@ -11,11 +11,11 @@ ARTIFACT_FK = "field_id"
 
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
-    ("names", "field_names_junction", "name_id", "name_ids"),
-    ("descriptions", "field_descriptions_junction", "description_id", "description_ids"),
-    ("departments", "field_departments_junction", "department_id", "department_ids"),
-    ("flags", "field_flags_junction", "flag_id", "flag_ids"),
-    ("conditional_parameters", "field_conditional_parameters_junction", "conditional_parameter_id", "conditional_parameter_ids"),
+    ("names", "field_names_junction", "names_id", "name_ids"),
+    ("descriptions", "field_descriptions_junction", "descriptions_id", "description_ids"),
+    ("departments", "field_departments_junction", "departments_id", "department_ids"),
+    ("flags", "field_flags_junction", "flags_id", "flag_ids"),
+    ("conditional_parameters", "field_conditional_parameters_junction", "conditional_parameters_id", "conditional_parameter_ids"),
     ("fields", "field_fields_junction", "fields_id", "field_ids"),
 ]
 

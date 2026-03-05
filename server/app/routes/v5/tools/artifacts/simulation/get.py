@@ -11,15 +11,15 @@ ARTIFACT_FK = "simulation_id"
 
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
-    ("names", "simulation_names_junction", "name_id", "name_ids"),
-    ("descriptions", "simulation_descriptions_junction", "description_id", "description_ids"),
-    ("departments", "simulation_departments_junction", "department_id", "department_ids"),
-    ("flags", "simulation_flags_junction", "flag_id", "flag_ids"),
-    ("scenarios", "simulation_scenarios_junction", "scenario_id", "scenario_ids"),
-    ("scenario_flags", "simulation_scenario_flags_junction", "scenario_flag_id", "scenario_flag_ids"),
-    ("scenario_positions", "simulation_scenario_positions_junction", "scenario_position_id", "scenario_position_ids"),
-    ("scenario_rubrics", "simulation_scenario_rubrics_junction", "scenario_rubric_id", "scenario_rubric_ids"),
-    ("scenario_time_limits", "simulation_scenario_time_limits_junction", "scenario_time_limit_id", "scenario_time_limit_ids"),
+    ("names", "simulation_names_junction", "names_id", "name_ids"),
+    ("descriptions", "simulation_descriptions_junction", "descriptions_id", "description_ids"),
+    ("departments", "simulation_departments_junction", "departments_id", "department_ids"),
+    ("flags", "simulation_flags_junction", "flags_id", "flag_ids"),
+    ("scenarios", "simulation_scenarios_junction", "scenarios_id", "scenario_ids"),
+    ("scenario_flags", "simulation_scenario_flags_junction", "scenario_flags_id", "scenario_flag_ids"),
+    ("scenario_positions", "simulation_scenario_positions_junction", "scenario_positions_id", "scenario_position_ids"),
+    ("scenario_rubrics", "simulation_scenario_rubrics_junction", "scenario_rubrics_id", "scenario_rubric_ids"),
+    ("scenario_time_limits", "simulation_scenario_time_limits_junction", "scenario_time_limits_id", "scenario_time_limit_ids"),
     ("simulations", "simulation_simulations_junction", "simulations_id", "simulation_ids"),
 ]
 

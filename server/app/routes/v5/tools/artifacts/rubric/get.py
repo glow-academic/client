@@ -10,13 +10,13 @@ TABLE = "rubric_artifact"
 
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
-    ("names", "rubric_names_junction", "name_id", "name_ids"),
-    ("descriptions", "rubric_descriptions_junction", "description_id", "description_ids"),
-    ("departments", "rubric_departments_junction", "department_id", "department_ids"),
-    ("flags", "rubric_flags_junction", "flag_id", "flag_ids"),
-    ("points", "rubric_points_junction", "point_id", "point_ids"),
-    ("standard_groups", "rubric_standard_groups_junction", "standard_group_id", "standard_group_ids"),
-    ("standards", "rubric_standards_junction", "standard_id", "standard_ids"),
+    ("names", "rubric_names_junction", "names_id", "name_ids"),
+    ("descriptions", "rubric_descriptions_junction", "descriptions_id", "description_ids"),
+    ("departments", "rubric_departments_junction", "departments_id", "department_ids"),
+    ("flags", "rubric_flags_junction", "flags_id", "flag_ids"),
+    ("points", "rubric_points_junction", "points_id", "point_ids"),
+    ("standard_groups", "rubric_standard_groups_junction", "standard_groups_id", "standard_group_ids"),
+    ("standards", "rubric_standards_junction", "standards_id", "standard_ids"),
     ("rubrics", "rubric_rubrics_junction", "rubrics_id", "rubric_ids"),
 ]
 

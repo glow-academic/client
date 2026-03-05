@@ -21,8 +21,8 @@ OWNER_COL = "department_id"
 
 # (junction_table, resource_column, pk_constraint)
 SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
-    ("department_names_junction", "name_id", "department_names_pkey"),
-    ("department_descriptions_junction", "description_id", "department_descriptions_pkey"),
+    ("department_names_junction", "names_id", "department_names_pkey"),
+    ("department_descriptions_junction", "descriptions_id", "department_descriptions_pkey"),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
@@ -103,7 +103,7 @@ async def update_department(
             table="department_flags_junction",
             owner_col=OWNER_COL,
             owner_id=department_id,
-            resource_col="flag_id",
+            resource_col="flags_id",
             resource_ids=flag_ids,
             constraint="department_flags_pkey",
             mcp=mcp,

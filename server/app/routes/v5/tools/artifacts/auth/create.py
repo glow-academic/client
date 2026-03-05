@@ -14,15 +14,15 @@ OWNER_COL = "auth_id"
 
 # (junction_table, resource_column)
 SINGLE_JUNCTIONS: list[tuple[str, str]] = [
-    ("auth_names_junction", "name_id"),
-    ("auth_descriptions_junction", "description_id"),
-    ("auth_slugs_junction", "slug_id"),
+    ("auth_names_junction", "names_id"),
+    ("auth_descriptions_junction", "descriptions_id"),
+    ("auth_slugs_junction", "slugs_id"),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str]] = [
-    ("auth_departments_junction", "department_id"),
-    ("auth_items_junction", "item_id"),
-    ("auth_protocols_junction", "protocol_id"),
+    ("auth_departments_junction", "departments_id"),
+    ("auth_items_junction", "items_id"),
+    ("auth_protocols_junction", "protocols_id"),
     ("auth_auths_junction", "auths_id"),
 ]
 
@@ -91,7 +91,7 @@ async def create_auth(
             table="auth_flags_junction",
             owner_col=OWNER_COL,
             owner_id=auth_id,
-            resource_col="flag_id",
+            resource_col="flags_id",
             resource_ids=flag_ids,
             generated=generated,
             mcp=mcp,

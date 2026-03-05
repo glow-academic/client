@@ -12,19 +12,19 @@ TABLE = "setting_artifact"
 # NOTE: setting_auths_junction and setting_auth_values_junction use settings_id (plural)
 # as their FK back to setting_artifact, not setting_id.
 JUNCTIONS: list[tuple[str, str, str, str]] = [
-    ("names", "setting_names_junction", "name_id", "name_ids"),
-    ("descriptions", "setting_descriptions_junction", "description_id", "description_ids"),
-    ("departments", "setting_departments_junction", "department_id", "department_ids"),
-    ("flags", "setting_flags_junction", "flag_id", "flag_ids"),
-    ("colors", "setting_colors_junction", "color_id", "color_ids"),
-    ("profiles", "setting_profiles_junction", "profile_id", "profile_ids"),
+    ("names", "setting_names_junction", "names_id", "name_ids"),
+    ("descriptions", "setting_descriptions_junction", "descriptions_id", "description_ids"),
+    ("departments", "setting_departments_junction", "departments_id", "department_ids"),
+    ("flags", "setting_flags_junction", "flags_id", "flag_ids"),
+    ("colors", "setting_colors_junction", "colors_id", "color_ids"),
+    ("profiles", "setting_profiles_junction", "profiles_id", "profile_ids"),
     ("auth_item_keys", "setting_auth_item_keys_junction", "auth_item_keys_id", "auth_item_keys_ids"),
-    ("provider_keys", "setting_provider_keys_junction", "provider_key_id", "provider_key_ids"),
-    ("thresholds", "setting_thresholds_junction", "threshold_id", "threshold_ids"),
+    ("provider_keys", "setting_provider_keys_junction", "provider_keys_id", "provider_key_ids"),
+    ("thresholds", "setting_thresholds_junction", "thresholds_id", "threshold_ids"),
     ("systems", "setting_systems_junction", "systems_id", "systems_ids"),
     ("settings", "setting_settings_junction", "settings_id", "setting_ids"),
-    ("auths", "setting_auths_junction", "auth_id", "auth_ids"),
-    ("auth_values", "setting_auth_values_junction", "auth_id", "auth_value_ids"),
+    ("auths", "setting_auths_junction", "auths_id", "auth_ids"),
+    ("auth_values", "setting_auth_values_junction", "auths_id", "auth_value_ids"),
 ]
 
 # Junctions that use `settings_id` (plural) as the FK back to setting_artifact

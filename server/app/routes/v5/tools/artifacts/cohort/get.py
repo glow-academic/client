@@ -11,15 +11,15 @@ ARTIFACT_FK = "cohort_id"
 
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
-    ("names", "cohort_names_junction", "name_id", "name_ids"),
-    ("descriptions", "cohort_descriptions_junction", "description_id", "description_ids"),
-    ("departments", "cohort_departments_junction", "department_id", "department_ids"),
-    ("flags", "cohort_flags_junction", "flag_id", "flag_ids"),
+    ("names", "cohort_names_junction", "names_id", "name_ids"),
+    ("descriptions", "cohort_descriptions_junction", "descriptions_id", "description_ids"),
+    ("departments", "cohort_departments_junction", "departments_id", "department_ids"),
+    ("flags", "cohort_flags_junction", "flags_id", "flag_ids"),
     ("profiles", "cohort_profiles_junction", "profiles_id", "profiles_ids"),
-    ("profile_personas", "cohort_profile_personas_junction", "profile_persona_id", "profile_persona_ids"),
-    ("simulations", "cohort_simulations_junction", "simulation_id", "simulation_ids"),
+    ("profile_personas", "cohort_profile_personas_junction", "profile_personas_id", "profile_persona_ids"),
+    ("simulations", "cohort_simulations_junction", "simulations_id", "simulation_ids"),
     ("simulation_availability", "cohort_simulation_availability_junction", "simulation_availability_id", "simulation_availability_ids"),
-    ("simulation_positions", "cohort_simulation_positions_junction", "simulation_position_id", "simulation_position_ids"),
+    ("simulation_positions", "cohort_simulation_positions_junction", "simulation_positions_id", "simulation_position_ids"),
     ("cohorts", "cohort_cohorts_junction", "cohorts_id", "cohort_ids"),
 ]
 

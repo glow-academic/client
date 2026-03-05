@@ -21,19 +21,19 @@ OWNER_COL = "tool_id"
 
 # (junction_table, resource_column, pk_constraint)
 SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
-    ("tool_names_junction", "name_id", "tool_names_pkey"),
-    ("tool_descriptions_junction", "description_id", "tool_descriptions_pkey"),
+    ("tool_names_junction", "names_id", "tool_names_pkey"),
+    ("tool_descriptions_junction", "descriptions_id", "tool_descriptions_pkey"),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
-    ("tool_departments_junction", "department_id", "tool_departments_pkey"),
+    ("tool_departments_junction", "departments_id", "tool_departments_pkey"),
     ("tool_arg_positions_junction", "arg_positions_id", "tool_arg_positions_junction_pkey"),
     ("tool_args_junction", "args_id", "tool_args_pkey"),
     ("tool_args_outputs_junction", "args_outputs_id", "tool_args_outputs_pkey"),
-    ("tool_artifacts_junction", "artifact_id", "tool_artifacts_junction_pkey"),
-    ("tool_entries_junction", "entry_id", "tool_entries_junction_pkey"),
-    ("tool_operations_junction", "operation_id", "tool_operations_pkey"),
-    ("tool_resources_junction", "resource_id", "tool_resources_pkey"),
+    ("tool_artifacts_junction", "artifacts_id", "tool_artifacts_junction_pkey"),
+    ("tool_entries_junction", "entries_id", "tool_entries_junction_pkey"),
+    ("tool_operations_junction", "operations_id", "tool_operations_pkey"),
+    ("tool_resources_junction", "resources_id", "tool_resources_pkey"),
     ("tool_tools_junction", "tools_id", "tool_tools_junction_pkey"),
 ]
 
@@ -124,7 +124,7 @@ async def update_tool(
             table="tool_flags_junction",
             owner_col=OWNER_COL,
             owner_id=tool_id,
-            resource_col="flag_id",
+            resource_col="flags_id",
             resource_ids=flag_ids,
             constraint="tool_flags_pkey",
             mcp=mcp,

@@ -21,14 +21,14 @@ OWNER_COL = "provider_id"
 
 # (junction_table, resource_column, pk_constraint)
 SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
-    ("provider_names_junction", "name_id", "provider_names_pkey"),
-    ("provider_descriptions_junction", "description_id", "provider_descriptions_pkey"),
+    ("provider_names_junction", "names_id", "provider_names_pkey"),
+    ("provider_descriptions_junction", "descriptions_id", "provider_descriptions_pkey"),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
-    ("provider_departments_junction", "department_id", "provider_departments_pkey"),
-    ("provider_endpoints_junction", "endpoint_id", "provider_endpoints_junction_pkey"),
-    ("provider_keys_junction", "key_id", "provider_keys_junction_pkey"),
+    ("provider_departments_junction", "departments_id", "provider_departments_pkey"),
+    ("provider_endpoints_junction", "endpoints_id", "provider_endpoints_junction_pkey"),
+    ("provider_keys_junction", "keys_id", "provider_keys_junction_pkey"),
     ("provider_providers_junction", "providers_id", "provider_providers_junction_pkey"),
     ("provider_values_junction", "values_id", "provider_values_pkey"),
 ]
@@ -112,7 +112,7 @@ async def update_provider(
             table="provider_flags_junction",
             owner_col=OWNER_COL,
             owner_id=provider_id,
-            resource_col="flag_id",
+            resource_col="flags_id",
             resource_ids=flag_ids,
             constraint="provider_flags_pkey",
             mcp=mcp,

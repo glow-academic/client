@@ -10,11 +10,11 @@ TABLE = "parameter_artifact"
 
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
-    ("names", "parameter_names_junction", "name_id", "name_ids"),
-    ("descriptions", "parameter_descriptions_junction", "description_id", "description_ids"),
-    ("departments", "parameter_departments_junction", "department_id", "department_ids"),
-    ("flags", "parameter_flags_junction", "flag_id", "flag_ids"),
-    ("fields", "parameter_fields_junction", "field_id", "field_ids"),
+    ("names", "parameter_names_junction", "names_id", "name_ids"),
+    ("descriptions", "parameter_descriptions_junction", "descriptions_id", "description_ids"),
+    ("departments", "parameter_departments_junction", "departments_id", "department_ids"),
+    ("flags", "parameter_flags_junction", "flags_id", "flag_ids"),
+    ("fields", "parameter_fields_junction", "fields_id", "field_ids"),
     ("parameters", "parameter_parameters_junction", "parameters_id", "parameter_ids"),
 ]
 

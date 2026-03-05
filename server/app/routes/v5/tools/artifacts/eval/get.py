@@ -10,15 +10,15 @@ TABLE = "eval_artifact"
 
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
-    ("names", "eval_names_junction", "name_id", "name_ids"),
-    ("descriptions", "eval_descriptions_junction", "description_id", "description_ids"),
-    ("departments", "eval_departments_junction", "department_id", "department_ids"),
-    ("flags", "eval_flags_junction", "flag_id", "flag_ids"),
-    ("models", "eval_models_junction", "model_id", "model_ids"),
-    ("model_flags", "eval_model_flags_junction", "model_flag_id", "model_flag_ids"),
-    ("model_positions", "eval_model_positions_junction", "model_position_id", "model_position_ids"),
-    ("model_rubrics", "eval_model_rubrics_junction", "model_rubric_id", "model_rubric_ids"),
-    ("rubrics", "eval_rubrics_junction", "rubric_id", "rubric_ids"),
+    ("names", "eval_names_junction", "names_id", "name_ids"),
+    ("descriptions", "eval_descriptions_junction", "descriptions_id", "description_ids"),
+    ("departments", "eval_departments_junction", "departments_id", "department_ids"),
+    ("flags", "eval_flags_junction", "flags_id", "flag_ids"),
+    ("models", "eval_models_junction", "models_id", "model_ids"),
+    ("model_flags", "eval_model_flags_junction", "model_flags_id", "model_flag_ids"),
+    ("model_positions", "eval_model_positions_junction", "model_positions_id", "model_position_ids"),
+    ("model_rubrics", "eval_model_rubrics_junction", "model_rubrics_id", "model_rubric_ids"),
+    ("rubrics", "eval_rubrics_junction", "rubrics_id", "rubric_ids"),
     ("evals", "eval_evals_junction", "evals_id", "eval_ids"),
 ]
 

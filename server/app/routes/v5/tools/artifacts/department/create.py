@@ -14,8 +14,8 @@ OWNER_COL = "department_id"
 
 # (junction_table, resource_column)
 SINGLE_JUNCTIONS: list[tuple[str, str]] = [
-    ("department_names_junction", "name_id"),
-    ("department_descriptions_junction", "description_id"),
+    ("department_names_junction", "names_id"),
+    ("department_descriptions_junction", "descriptions_id"),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str]] = [
@@ -85,7 +85,7 @@ async def create_department(
             table="department_flags_junction",
             owner_col=OWNER_COL,
             owner_id=department_id,
-            resource_col="flag_id",
+            resource_col="flags_id",
             resource_ids=flag_ids,
             generated=generated,
             mcp=mcp,

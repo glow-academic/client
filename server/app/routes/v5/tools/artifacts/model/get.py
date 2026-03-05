@@ -10,18 +10,18 @@ TABLE = "model_artifact"
 
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
-    ("names", "model_names_junction", "name_id", "name_ids"),
-    ("descriptions", "model_descriptions_junction", "description_id", "description_ids"),
-    ("departments", "model_departments_junction", "department_id", "department_ids"),
-    ("flags", "model_flags_junction", "flag_id", "flag_ids"),
-    ("modalities", "model_modalities_junction", "modality_id", "modality_ids"),
+    ("names", "model_names_junction", "names_id", "name_ids"),
+    ("descriptions", "model_descriptions_junction", "descriptions_id", "description_ids"),
+    ("departments", "model_departments_junction", "departments_id", "department_ids"),
+    ("flags", "model_flags_junction", "flags_id", "flag_ids"),
+    ("modalities", "model_modalities_junction", "modalities_id", "modality_ids"),
     ("pricing", "model_pricing_junction", "pricing_id", "pricing_ids"),
     ("providers", "model_providers_junction", "providers_id", "provider_ids"),
-    ("qualities", "model_qualities_junction", "quality_id", "quality_ids"),
-    ("reasoning_levels", "model_reasoning_levels_junction", "reasoning_level_id", "reasoning_level_ids"),
-    ("temperature_levels", "model_temperature_levels_junction", "temperature_level_id", "temperature_level_ids"),
-    ("values", "model_values_junction", "value_id", "value_ids"),
-    ("voices", "model_voices_junction", "voice_id", "voice_ids"),
+    ("qualities", "model_qualities_junction", "qualities_id", "quality_ids"),
+    ("reasoning_levels", "model_reasoning_levels_junction", "reasoning_levels_id", "reasoning_level_ids"),
+    ("temperature_levels", "model_temperature_levels_junction", "temperature_levels_id", "temperature_level_ids"),
+    ("values", "model_values_junction", "values_id", "value_ids"),
+    ("voices", "model_voices_junction", "voices_id", "voice_ids"),
     ("models", "model_models_junction", "models_id", "model_ids"),
 ]
 

@@ -11,15 +11,15 @@ ARTIFACT_FK = "agent_id"
 
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
-    ("names", "agent_names_junction", "name_id", "name_ids"),
-    ("descriptions", "agent_descriptions_junction", "description_id", "description_ids"),
-    ("departments", "agent_departments_junction", "department_id", "department_ids"),
-    ("flags", "agent_flags_junction", "flag_id", "flag_ids"),
-    ("models", "agent_models_junction", "model_id", "model_ids"),
-    ("reasoning_levels", "agent_reasoning_levels_junction", "reasoning_level_id", "reasoning_level_ids"),
-    ("temperature_levels", "agent_temperature_levels_junction", "temperature_level_id", "temperature_level_ids"),
-    ("tools", "agent_tools_junction", "tool_id", "tool_ids"),
-    ("voices", "agent_voices_junction", "voice_id", "voice_ids"),
+    ("names", "agent_names_junction", "names_id", "name_ids"),
+    ("descriptions", "agent_descriptions_junction", "descriptions_id", "description_ids"),
+    ("departments", "agent_departments_junction", "departments_id", "department_ids"),
+    ("flags", "agent_flags_junction", "flags_id", "flag_ids"),
+    ("models", "agent_models_junction", "models_id", "model_ids"),
+    ("reasoning_levels", "agent_reasoning_levels_junction", "reasoning_levels_id", "reasoning_level_ids"),
+    ("temperature_levels", "agent_temperature_levels_junction", "temperature_levels_id", "temperature_level_ids"),
+    ("tools", "agent_tools_junction", "tools_id", "tool_ids"),
+    ("voices", "agent_voices_junction", "voices_id", "voice_ids"),
     ("agents", "agent_agents_junction", "agents_id", "agent_ids"),
 ]
 

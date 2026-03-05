@@ -14,18 +14,18 @@ OWNER_COL = "persona_id"
 
 # (junction_table, resource_column)
 SINGLE_JUNCTIONS: list[tuple[str, str]] = [
-    ("persona_names_junction", "name_id"),
-    ("persona_descriptions_junction", "description_id"),
-    ("persona_colors_junction", "color_id"),
-    ("persona_icons_junction", "icon_id"),
-    ("persona_instructions_junction", "instruction_id"),
+    ("persona_names_junction", "names_id"),
+    ("persona_descriptions_junction", "descriptions_id"),
+    ("persona_colors_junction", "colors_id"),
+    ("persona_icons_junction", "icons_id"),
+    ("persona_instructions_junction", "instructions_id"),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str]] = [
-    ("persona_departments_junction", "department_id"),
-    ("persona_parameter_fields_junction", "parameter_field_id"),
+    ("persona_departments_junction", "departments_id"),
+    ("persona_parameter_fields_junction", "parameter_fields_id"),
     ("persona_personas_junction", "personas_id"),
-    ("persona_voices_junction", "voice_id"),
+    ("persona_voices_junction", "voices_id"),
 ]
 
 
@@ -96,7 +96,7 @@ async def create_persona(
             table="persona_examples_junction",
             owner_col=OWNER_COL,
             owner_id=persona_id,
-            resource_col="example_id",
+            resource_col="examples_id",
             resource_ids=example_ids,
             generated=generated,
             mcp=mcp,
@@ -109,7 +109,7 @@ async def create_persona(
             table="persona_flags_junction",
             owner_col=OWNER_COL,
             owner_id=persona_id,
-            resource_col="flag_id",
+            resource_col="flags_id",
             resource_ids=flag_ids,
             generated=generated,
             mcp=mcp,

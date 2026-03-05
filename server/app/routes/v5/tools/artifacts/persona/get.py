@@ -10,17 +10,17 @@ TABLE = "persona_artifact"
 
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
-    ("names", "persona_names_junction", "name_id", "name_ids"),
-    ("descriptions", "persona_descriptions_junction", "description_id", "description_ids"),
-    ("colors", "persona_colors_junction", "color_id", "color_ids"),
-    ("departments", "persona_departments_junction", "department_id", "department_ids"),
-    ("examples", "persona_examples_junction", "example_id", "example_ids"),
-    ("flags", "persona_flags_junction", "flag_id", "flag_ids"),
-    ("icons", "persona_icons_junction", "icon_id", "icon_ids"),
-    ("instructions", "persona_instructions_junction", "instruction_id", "instruction_ids"),
-    ("parameter_fields", "persona_parameter_fields_junction", "parameter_field_id", "parameter_field_ids"),
+    ("names", "persona_names_junction", "names_id", "name_ids"),
+    ("descriptions", "persona_descriptions_junction", "descriptions_id", "description_ids"),
+    ("colors", "persona_colors_junction", "colors_id", "color_ids"),
+    ("departments", "persona_departments_junction", "departments_id", "department_ids"),
+    ("examples", "persona_examples_junction", "examples_id", "example_ids"),
+    ("flags", "persona_flags_junction", "flags_id", "flag_ids"),
+    ("icons", "persona_icons_junction", "icons_id", "icon_ids"),
+    ("instructions", "persona_instructions_junction", "instructions_id", "instruction_ids"),
+    ("parameter_fields", "persona_parameter_fields_junction", "parameter_fields_id", "parameter_field_ids"),
     ("personas", "persona_personas_junction", "personas_id", "persona_ids"),
-    ("voices", "persona_voices_junction", "voice_id", "voice_ids"),
+    ("voices", "persona_voices_junction", "voices_id", "voice_ids"),
 ]
 
 

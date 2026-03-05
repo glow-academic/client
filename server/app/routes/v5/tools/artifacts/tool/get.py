@@ -11,17 +11,17 @@ ARTIFACT_FK = "tool_id"
 
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
-    ("names", "tool_names_junction", "name_id", "name_ids"),
-    ("descriptions", "tool_descriptions_junction", "description_id", "description_ids"),
-    ("departments", "tool_departments_junction", "department_id", "department_ids"),
-    ("flags", "tool_flags_junction", "flag_id", "flag_ids"),
+    ("names", "tool_names_junction", "names_id", "name_ids"),
+    ("descriptions", "tool_descriptions_junction", "descriptions_id", "description_ids"),
+    ("departments", "tool_departments_junction", "departments_id", "department_ids"),
+    ("flags", "tool_flags_junction", "flags_id", "flag_ids"),
     ("args", "tool_args_junction", "args_id", "args_ids"),
     ("args_outputs", "tool_args_outputs_junction", "args_outputs_id", "args_outputs_ids"),
     ("arg_positions", "tool_arg_positions_junction", "arg_positions_id", "arg_positions_ids"),
-    ("artifacts", "tool_artifacts_junction", "artifact_id", "artifact_ids"),
-    ("entries", "tool_entries_junction", "entry_id", "entry_ids"),
-    ("operations", "tool_operations_junction", "operation_id", "operation_ids"),
-    ("resources", "tool_resources_junction", "resource_id", "resource_ids"),
+    ("artifacts", "tool_artifacts_junction", "artifacts_id", "artifact_ids"),
+    ("entries", "tool_entries_junction", "entries_id", "entry_ids"),
+    ("operations", "tool_operations_junction", "operations_id", "operation_ids"),
+    ("resources", "tool_resources_junction", "resources_id", "resource_ids"),
     ("tools", "tool_tools_junction", "tools_id", "tool_ids"),
 ]
 

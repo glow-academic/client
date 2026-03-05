@@ -21,12 +21,12 @@ OWNER_COL = "field_id"
 
 # (junction_table, resource_column, pk_constraint)
 SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
-    ("field_names_junction", "name_id", "field_names_pkey"),
-    ("field_descriptions_junction", "description_id", "field_descriptions_pkey"),
+    ("field_names_junction", "names_id", "field_names_pkey"),
+    ("field_descriptions_junction", "descriptions_id", "field_descriptions_pkey"),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
-    ("field_departments_junction", "department_id", "field_departments_pkey"),
+    ("field_departments_junction", "departments_id", "field_departments_pkey"),
     ("field_conditional_parameters_junction", "conditional_parameter_id", "field_conditional_parameters_junction_pkey"),
     ("field_fields_junction", "fields_id", "field_fields_junction_pkey"),
 ]
@@ -106,7 +106,7 @@ async def update_field(
             table="field_flags_junction",
             owner_col=OWNER_COL,
             owner_id=field_id,
-            resource_col="flag_id",
+            resource_col="flags_id",
             resource_ids=flag_ids,
             constraint="field_flags_pkey",
             mcp=mcp,

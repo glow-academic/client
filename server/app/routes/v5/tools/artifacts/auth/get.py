@@ -11,13 +11,13 @@ ARTIFACT_FK = "auth_id"
 
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
-    ("names", "auth_names_junction", "name_id", "name_ids"),
-    ("descriptions", "auth_descriptions_junction", "description_id", "description_ids"),
-    ("departments", "auth_departments_junction", "department_id", "department_ids"),
-    ("flags", "auth_flags_junction", "flag_id", "flag_ids"),
-    ("items", "auth_items_junction", "item_id", "item_ids"),
-    ("protocols", "auth_protocols_junction", "protocol_id", "protocol_ids"),
-    ("slugs", "auth_slugs_junction", "slug_id", "slug_ids"),
+    ("names", "auth_names_junction", "names_id", "name_ids"),
+    ("descriptions", "auth_descriptions_junction", "descriptions_id", "description_ids"),
+    ("departments", "auth_departments_junction", "departments_id", "department_ids"),
+    ("flags", "auth_flags_junction", "flags_id", "flag_ids"),
+    ("items", "auth_items_junction", "items_id", "item_ids"),
+    ("protocols", "auth_protocols_junction", "protocols_id", "protocol_ids"),
+    ("slugs", "auth_slugs_junction", "slugs_id", "slug_ids"),
     ("auths", "auth_auths_junction", "auths_id", "auth_ids"),
 ]
 

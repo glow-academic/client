@@ -21,21 +21,21 @@ OWNER_COL = "model_id"
 
 # (junction_table, resource_column, pk_constraint)
 SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
-    ("model_names_junction", "name_id", "model_names_pkey"),
-    ("model_descriptions_junction", "description_id", "model_descriptions_pkey"),
+    ("model_names_junction", "names_id", "model_names_pkey"),
+    ("model_descriptions_junction", "descriptions_id", "model_descriptions_pkey"),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
-    ("model_departments_junction", "department_id", "model_departments_pkey"),
+    ("model_departments_junction", "departments_id", "model_departments_pkey"),
     ("model_modalities_junction", "modality_id", "model_modalities_pkey"),
     ("model_models_junction", "models_id", "model_models_junction_pkey"),
     ("model_pricing_junction", "pricing_id", "model_pricing_pkey"),
     ("model_providers_junction", "providers_id", "model_providers_junction_pkey"),
     ("model_qualities_junction", "quality_id", "model_qualities_pkey"),
-    ("model_reasoning_levels_junction", "reasoning_level_id", "model_reasoning_levels_pkey"),
-    ("model_temperature_levels_junction", "temperature_level_id", "model_temperature_levels_pkey"),
+    ("model_reasoning_levels_junction", "reasoning_levels_id", "model_reasoning_levels_pkey"),
+    ("model_temperature_levels_junction", "temperature_levels_id", "model_temperature_levels_pkey"),
     ("model_values_junction", "value_id", "model_values_pkey"),
-    ("model_voices_junction", "voice_id", "model_voices_pkey"),
+    ("model_voices_junction", "voices_id", "model_voices_pkey"),
 ]
 
 
@@ -127,7 +127,7 @@ async def update_model(
             table="model_flags_junction",
             owner_col=OWNER_COL,
             owner_id=model_id,
-            resource_col="flag_id",
+            resource_col="flags_id",
             resource_ids=flag_ids,
             constraint="model_flags_pkey",
             mcp=mcp,

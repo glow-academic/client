@@ -66,11 +66,11 @@ async def test_insert_single(conn):
         table="persona_names_junction",
         owner_col=OWNER_COL,
         owner_id=pid,
-        resource_col="name_id",
+        resource_col="names_id",
         resource_id=nid,
     )
 
-    ids = await _active_ids(conn, "persona_names_junction", pid, "name_id")
+    ids = await _active_ids(conn, "persona_names_junction", pid, "names_id")
     assert ids == {nid}
 
 
@@ -89,11 +89,11 @@ async def test_insert_multi(conn):
         table="persona_departments_junction",
         owner_col=OWNER_COL,
         owner_id=pid,
-        resource_col="department_id",
+        resource_col="departments_id",
         resource_ids=[d1, d2],
     )
 
-    ids = await _active_ids(conn, "persona_departments_junction", pid, "department_id")
+    ids = await _active_ids(conn, "persona_departments_junction", pid, "departments_id")
     assert ids == {d1, d2}
 
 
@@ -105,11 +105,11 @@ async def test_insert_multi_empty_is_noop(conn):
         table="persona_departments_junction",
         owner_col=OWNER_COL,
         owner_id=pid,
-        resource_col="department_id",
+        resource_col="departments_id",
         resource_ids=[],
     )
 
-    ids = await _active_ids(conn, "persona_departments_junction", pid, "department_id")
+    ids = await _active_ids(conn, "persona_departments_junction", pid, "departments_id")
     assert ids == set()
 
 
@@ -128,7 +128,7 @@ async def test_upsert_single_replaces_old(conn):
         table="persona_names_junction",
         owner_col=OWNER_COL,
         owner_id=pid,
-        resource_col="name_id",
+        resource_col="names_id",
         resource_id=n1,
     )
 
@@ -137,18 +137,18 @@ async def test_upsert_single_replaces_old(conn):
         table="persona_names_junction",
         owner_col=OWNER_COL,
         owner_id=pid,
-        resource_col="name_id",
+        resource_col="names_id",
         resource_id=n2,
         constraint="persona_names_pkey",
     )
 
-    ids = await _active_ids(conn, "persona_names_junction", pid, "name_id")
+    ids = await _active_ids(conn, "persona_names_junction", pid, "names_id")
     assert ids == {n2}
 
     # Old row deactivated, not deleted
     old = await conn.fetchval(
         "SELECT active FROM persona_names_junction "
-        "WHERE persona_id = $1 AND name_id = $2",
+        "WHERE persona_id = $1 AND names_id = $2",
         pid,
         n1,
     )
@@ -164,7 +164,7 @@ async def test_upsert_single_keeps_same(conn):
         table="persona_names_junction",
         owner_col=OWNER_COL,
         owner_id=pid,
-        resource_col="name_id",
+        resource_col="names_id",
         resource_id=n1,
     )
 
@@ -173,12 +173,12 @@ async def test_upsert_single_keeps_same(conn):
         table="persona_names_junction",
         owner_col=OWNER_COL,
         owner_id=pid,
-        resource_col="name_id",
+        resource_col="names_id",
         resource_id=n1,
         constraint="persona_names_pkey",
     )
 
-    ids = await _active_ids(conn, "persona_names_junction", pid, "name_id")
+    ids = await _active_ids(conn, "persona_names_junction", pid, "names_id")
     assert ids == {n1}
 
 
@@ -197,7 +197,7 @@ async def test_upsert_multi_adds_new(conn):
         table="persona_departments_junction",
         owner_col=OWNER_COL,
         owner_id=pid,
-        resource_col="department_id",
+        resource_col="departments_id",
         resource_ids=[d1],
     )
 
@@ -206,12 +206,12 @@ async def test_upsert_multi_adds_new(conn):
         table="persona_departments_junction",
         owner_col=OWNER_COL,
         owner_id=pid,
-        resource_col="department_id",
+        resource_col="departments_id",
         resource_ids=[d1, d2],
         constraint="persona_departments_pkey",
     )
 
-    ids = await _active_ids(conn, "persona_departments_junction", pid, "department_id")
+    ids = await _active_ids(conn, "persona_departments_junction", pid, "departments_id")
     assert ids == {d1, d2}
 
 
@@ -225,7 +225,7 @@ async def test_upsert_multi_removes_old(conn):
         table="persona_departments_junction",
         owner_col=OWNER_COL,
         owner_id=pid,
-        resource_col="department_id",
+        resource_col="departments_id",
         resource_ids=[d1, d2],
     )
 
@@ -234,17 +234,17 @@ async def test_upsert_multi_removes_old(conn):
         table="persona_departments_junction",
         owner_col=OWNER_COL,
         owner_id=pid,
-        resource_col="department_id",
+        resource_col="departments_id",
         resource_ids=[d1],
         constraint="persona_departments_pkey",
     )
 
-    ids = await _active_ids(conn, "persona_departments_junction", pid, "department_id")
+    ids = await _active_ids(conn, "persona_departments_junction", pid, "departments_id")
     assert ids == {d1}
 
     d2_active = await conn.fetchval(
         "SELECT active FROM persona_departments_junction "
-        "WHERE persona_id = $1 AND department_id = $2",
+        "WHERE persona_id = $1 AND departments_id = $2",
         pid,
         d2,
     )
@@ -260,7 +260,7 @@ async def test_upsert_multi_clears_all(conn):
         table="persona_departments_junction",
         owner_col=OWNER_COL,
         owner_id=pid,
-        resource_col="department_id",
+        resource_col="departments_id",
         resource_ids=[d1],
     )
 
@@ -269,12 +269,12 @@ async def test_upsert_multi_clears_all(conn):
         table="persona_departments_junction",
         owner_col=OWNER_COL,
         owner_id=pid,
-        resource_col="department_id",
+        resource_col="departments_id",
         resource_ids=[],
         constraint="persona_departments_pkey",
     )
 
-    ids = await _active_ids(conn, "persona_departments_junction", pid, "department_id")
+    ids = await _active_ids(conn, "persona_departments_junction", pid, "departments_id")
     assert ids == set()
 
 

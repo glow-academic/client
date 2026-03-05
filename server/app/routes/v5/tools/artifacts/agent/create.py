@@ -14,17 +14,17 @@ OWNER_COL = "agent_id"
 
 # (junction_table, resource_column)
 SINGLE_JUNCTIONS: list[tuple[str, str]] = [
-    ("agent_names_junction", "name_id"),
-    ("agent_descriptions_junction", "description_id"),
+    ("agent_names_junction", "names_id"),
+    ("agent_descriptions_junction", "descriptions_id"),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str]] = [
-    ("agent_departments_junction", "department_id"),
-    ("agent_models_junction", "model_id"),
-    ("agent_reasoning_levels_junction", "reasoning_level_id"),
-    ("agent_temperature_levels_junction", "temperature_level_id"),
-    ("agent_tools_junction", "tool_id"),
-    ("agent_voices_junction", "voice_id"),
+    ("agent_departments_junction", "departments_id"),
+    ("agent_models_junction", "models_id"),
+    ("agent_reasoning_levels_junction", "reasoning_levels_id"),
+    ("agent_temperature_levels_junction", "temperature_levels_id"),
+    ("agent_tools_junction", "tools_id"),
+    ("agent_voices_junction", "voices_id"),
     ("agent_agents_junction", "agents_id"),
 ]
 
@@ -103,7 +103,7 @@ async def create_agent(
             table="agent_flags_junction",
             owner_col=OWNER_COL,
             owner_id=agent_id,
-            resource_col="flag_id",
+            resource_col="flags_id",
             resource_ids=flag_ids,
             generated=generated,
             mcp=mcp,

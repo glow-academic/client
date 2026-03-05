@@ -21,18 +21,18 @@ OWNER_COL = "persona_id"
 
 # (junction_table, resource_column, pk_constraint)
 SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
-    ("persona_names_junction", "name_id", "persona_names_pkey"),
-    ("persona_descriptions_junction", "description_id", "persona_descriptions_pkey"),
-    ("persona_colors_junction", "color_id", "persona_colors_pkey"),
-    ("persona_icons_junction", "icon_id", "persona_icons_pkey"),
-    ("persona_instructions_junction", "instruction_id", "persona_instructions_pkey"),
+    ("persona_names_junction", "names_id", "persona_names_pkey"),
+    ("persona_descriptions_junction", "descriptions_id", "persona_descriptions_pkey"),
+    ("persona_colors_junction", "colors_id", "persona_colors_pkey"),
+    ("persona_icons_junction", "icons_id", "persona_icons_pkey"),
+    ("persona_instructions_junction", "instructions_id", "persona_instructions_pkey"),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
-    ("persona_departments_junction", "department_id", "persona_departments_pkey"),
-    ("persona_parameter_fields_junction", "parameter_field_id", "persona_parameter_fields_junction_pkey"),
+    ("persona_departments_junction", "departments_id", "persona_departments_pkey"),
+    ("persona_parameter_fields_junction", "parameter_fields_id", "persona_parameter_fields_junction_pkey"),
     ("persona_personas_junction", "personas_id", "persona_personas_junction_pkey"),
-    ("persona_voices_junction", "voice_id", "persona_voices_junction_pkey"),
+    ("persona_voices_junction", "voices_id", "persona_voices_junction_pkey"),
 ]
 
 
@@ -116,7 +116,7 @@ async def update_persona(
             table="persona_examples_junction",
             owner_col=OWNER_COL,
             owner_id=persona_id,
-            resource_col="example_id",
+            resource_col="examples_id",
             resource_ids=example_ids,
             constraint="persona_examples_pkey",
             mcp=mcp,
@@ -129,7 +129,7 @@ async def update_persona(
             table="persona_flags_junction",
             owner_col=OWNER_COL,
             owner_id=persona_id,
-            resource_col="flag_id",
+            resource_col="flags_id",
             resource_ids=flag_ids,
             constraint="persona_flags_pkey",
             mcp=mcp,
