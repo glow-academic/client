@@ -21,3 +21,11 @@ class GetAuthsResponse(BaseModel):
     protocol_ids: list[UUID] | None = None
     slug_ids: list[UUID] | None = None
     auth_ids: list[UUID] | None = None
+
+
+class CreateAuthResponse(BaseModel):
+    id: UUID
+
+
+class UpdateAuthResponse(BaseModel):
+    id: UUID

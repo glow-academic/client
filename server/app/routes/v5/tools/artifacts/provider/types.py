@@ -21,3 +21,11 @@ class GetProvidersResponse(BaseModel):
     key_ids: list[UUID] | None = None
     value_ids: list[UUID] | None = None
     provider_ids: list[UUID] | None = None
+
+
+class CreateProviderResponse(BaseModel):
+    id: UUID
+
+
+class UpdateProviderResponse(BaseModel):
+    id: UUID

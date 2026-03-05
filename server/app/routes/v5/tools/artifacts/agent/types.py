@@ -23,3 +23,11 @@ class GetAgentsResponse(BaseModel):
     tool_ids: list[UUID] | None = None
     voice_ids: list[UUID] | None = None
     agent_ids: list[UUID] | None = None
+
+
+class CreateAgentResponse(BaseModel):
+    id: UUID
+
+
+class UpdateAgentResponse(BaseModel):
+    id: UUID

@@ -25,3 +25,11 @@ class GetToolsResponse(BaseModel):
     operation_ids: list[UUID] | None = None
     resource_ids: list[UUID] | None = None
     tool_ids: list[UUID] | None = None
+
+
+class CreateToolResponse(BaseModel):
+    id: UUID
+
+
+class UpdateToolResponse(BaseModel):
+    id: UUID

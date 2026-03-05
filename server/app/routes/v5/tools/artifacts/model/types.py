@@ -26,3 +26,11 @@ class GetModelsResponse(BaseModel):
     value_ids: list[UUID] | None = None
     voice_ids: list[UUID] | None = None
     model_ids: list[UUID] | None = None
+
+
+class CreateModelResponse(BaseModel):
+    id: UUID
+
+
+class UpdateModelResponse(BaseModel):
+    id: UUID

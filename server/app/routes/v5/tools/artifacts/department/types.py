@@ -18,3 +18,11 @@ class GetDepartmentsResponse(BaseModel):
     flag_ids: list[UUID] | None = None
     settings_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
+
+
+class CreateDepartmentResponse(BaseModel):
+    id: UUID
+
+
+class UpdateDepartmentResponse(BaseModel):
+    id: UUID

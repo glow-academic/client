@@ -19,3 +19,11 @@ class GetFieldsResponse(BaseModel):
     flag_ids: list[UUID] | None = None
     conditional_parameter_ids: list[UUID] | None = None
     field_ids: list[UUID] | None = None
+
+
+class CreateFieldResponse(BaseModel):
+    id: UUID
+
+
+class UpdateFieldResponse(BaseModel):
+    id: UUID
