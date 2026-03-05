@@ -6,8 +6,6 @@ import asyncpg
 
 from app.infra.junctions import (
     insert_multi,
-    insert_multi_with_idx,
-    insert_multi_with_value,
     insert_single,
 )
 from app.routes.v5.tools.artifacts.persona.types import CreatePersonaResponse
@@ -41,7 +39,7 @@ async def create_persona(
     instruction_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
     example_ids: list[UUID] | None = None,
-    flag_ids: dict[UUID, bool] | None = None,
+    flag_ids: list[UUID] | None = None,
     parameter_field_ids: list[UUID] | None = None,
     persona_ids: list[UUID] | None = None,
     voice_ids: list[UUID] | None = None,
@@ -93,7 +91,7 @@ async def create_persona(
 
     # Examples with idx
     if example_ids:
-        await insert_multi_with_idx(
+        await insert_multi(
             conn,
             table="persona_examples_junction",
             owner_col=OWNER_COL,
@@ -106,13 +104,13 @@ async def create_persona(
 
     # Flags with value
     if flag_ids:
-        await insert_multi_with_value(
+        await insert_multi(
             conn,
             table="persona_flags_junction",
             owner_col=OWNER_COL,
             owner_id=persona_id,
             resource_col="flag_id",
-            resource_values=flag_ids,
+            resource_ids=flag_ids,
             generated=generated,
             mcp=mcp,
         )

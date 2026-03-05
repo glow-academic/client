@@ -11,7 +11,6 @@ import asyncpg
 
 from app.infra.junctions import (
     upsert_multi,
-    upsert_multi_with_value,
     upsert_single,
 )
 from app.routes.v5.tools.artifacts.department.types import UpdateDepartmentResponse
@@ -41,7 +40,7 @@ async def update_department(
     description_id: UUID | Any = _UNSET,
     # Multi-select junctions (None = don't change, [] = remove all)
     department_ids: list[UUID] | None = None,
-    flag_ids: dict[UUID, bool] | None = None,
+    flag_ids: list[UUID] | None = None,
     settings_ids: list[UUID] | None = None,
     # Base columns
     active: bool | Any = _UNSET,
@@ -97,15 +96,15 @@ async def update_department(
                 mcp=mcp,
             )
 
-    # 4. Flags with value
+    # 4. Flags
     if flag_ids is not None:
-        await upsert_multi_with_value(
+        await upsert_multi(
             conn,
             table="department_flags_junction",
             owner_col=OWNER_COL,
             owner_id=department_id,
             resource_col="flag_id",
-            resource_values=flag_ids,
+            resource_ids=flag_ids,
             constraint="department_flags_pkey",
             mcp=mcp,
         )

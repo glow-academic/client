@@ -11,7 +11,6 @@ import asyncpg
 
 from app.infra.junctions import (
     upsert_multi,
-    upsert_multi_with_value,
     upsert_single,
 )
 from app.routes.v5.tools.artifacts.tool.types import UpdateToolResponse
@@ -53,7 +52,7 @@ async def update_tool(
     args_outputs_ids: list[UUID] | None = None,
     artifact_ids: list[UUID] | None = None,
     entry_ids: list[UUID] | None = None,
-    flag_ids: dict[UUID, bool] | None = None,
+    flag_ids: list[UUID] | None = None,
     operation_ids: list[UUID] | None = None,
     resource_ids: list[UUID] | None = None,
     tool_ids: list[UUID] | None = None,
@@ -118,15 +117,15 @@ async def update_tool(
                 mcp=mcp,
             )
 
-    # 4. Flags with value
+    # 4. Flags
     if flag_ids is not None:
-        await upsert_multi_with_value(
+        await upsert_multi(
             conn,
             table="tool_flags_junction",
             owner_col=OWNER_COL,
             owner_id=tool_id,
             resource_col="flag_id",
-            resource_values=flag_ids,
+            resource_ids=flag_ids,
             constraint="tool_flags_pkey",
             mcp=mcp,
         )

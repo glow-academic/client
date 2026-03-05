@@ -11,7 +11,6 @@ import asyncpg
 
 from app.infra.junctions import (
     upsert_multi,
-    upsert_multi_with_value,
     upsert_single,
 )
 from app.routes.v5.tools.artifacts.auth.types import UpdateAuthResponse
@@ -45,7 +44,7 @@ async def update_auth(
     slug_id: UUID | Any = _UNSET,
     # Multi-select junctions (None = don't change, [] = remove all)
     department_ids: list[UUID] | None = None,
-    flag_ids: dict[UUID, bool] | None = None,
+    flag_ids: list[UUID] | None = None,
     item_ids: list[UUID] | None = None,
     protocol_ids: list[UUID] | None = None,
     auth_ids: list[UUID] | None = None,
@@ -105,15 +104,15 @@ async def update_auth(
                 mcp=mcp,
             )
 
-    # 4. Flags with value
+    # 4. Flags
     if flag_ids is not None:
-        await upsert_multi_with_value(
+        await upsert_multi(
             conn,
             table="auth_flags_junction",
             owner_col=OWNER_COL,
             owner_id=auth_id,
             resource_col="flag_id",
-            resource_values=flag_ids,
+            resource_ids=flag_ids,
             constraint="auth_flags_pkey",
             mcp=mcp,
         )

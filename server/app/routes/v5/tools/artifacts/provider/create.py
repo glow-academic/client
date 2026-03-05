@@ -6,7 +6,6 @@ import asyncpg
 
 from app.infra.junctions import (
     insert_multi,
-    insert_multi_with_value,
     insert_single,
 )
 from app.routes.v5.tools.artifacts.provider.types import CreateProviderResponse
@@ -35,7 +34,7 @@ async def create_provider(
     description_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
     endpoint_ids: list[UUID] | None = None,
-    flag_ids: dict[UUID, bool] | None = None,
+    flag_ids: list[UUID] | None = None,
     key_ids: list[UUID] | None = None,
     provider_ids: list[UUID] | None = None,
     value_ids: list[UUID] | None = None,
@@ -85,15 +84,15 @@ async def create_provider(
                 mcp=mcp,
             )
 
-    # Flags with value
+    # Flags
     if flag_ids:
-        await insert_multi_with_value(
+        await insert_multi(
             conn,
             table="provider_flags_junction",
             owner_col=OWNER_COL,
             owner_id=provider_id,
             resource_col="flag_id",
-            resource_values=flag_ids,
+            resource_ids=flag_ids,
             generated=generated,
             mcp=mcp,
         )

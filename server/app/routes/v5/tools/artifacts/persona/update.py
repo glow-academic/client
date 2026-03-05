@@ -11,8 +11,6 @@ import asyncpg
 
 from app.infra.junctions import (
     upsert_multi,
-    upsert_multi_with_idx,
-    upsert_multi_with_value,
     upsert_single,
 )
 from app.routes.v5.tools.artifacts.persona.types import UpdatePersonaResponse
@@ -51,7 +49,7 @@ async def update_persona(
     # Multi-select junctions (None = don't change, [] = remove all)
     department_ids: list[UUID] | None = None,
     example_ids: list[UUID] | None = None,
-    flag_ids: dict[UUID, bool] | None = None,
+    flag_ids: list[UUID] | None = None,
     parameter_field_ids: list[UUID] | None = None,
     persona_ids: list[UUID] | None = None,
     voice_ids: list[UUID] | None = None,
@@ -113,7 +111,7 @@ async def update_persona(
 
     # 4. Examples with idx
     if example_ids is not None:
-        await upsert_multi_with_idx(
+        await upsert_multi(
             conn,
             table="persona_examples_junction",
             owner_col=OWNER_COL,
@@ -126,13 +124,13 @@ async def update_persona(
 
     # 5. Flags with value
     if flag_ids is not None:
-        await upsert_multi_with_value(
+        await upsert_multi(
             conn,
             table="persona_flags_junction",
             owner_col=OWNER_COL,
             owner_id=persona_id,
             resource_col="flag_id",
-            resource_values=flag_ids,
+            resource_ids=flag_ids,
             constraint="persona_flags_pkey",
             mcp=mcp,
         )

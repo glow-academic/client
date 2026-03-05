@@ -6,7 +6,6 @@ import asyncpg
 
 from app.infra.junctions import (
     insert_multi,
-    insert_multi_with_value,
     insert_single,
 )
 from app.routes.v5.tools.artifacts.model.types import CreateModelResponse
@@ -39,7 +38,7 @@ async def create_model(
     name_id: UUID | None = None,
     description_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
-    flag_ids: dict[UUID, bool] | None = None,
+    flag_ids: list[UUID] | None = None,
     modality_ids: list[UUID] | None = None,
     model_ids: list[UUID] | None = None,
     pricing_ids: list[UUID] | None = None,
@@ -106,15 +105,15 @@ async def create_model(
                 mcp=mcp,
             )
 
-    # Flags with value
+    # Flags
     if flag_ids:
-        await insert_multi_with_value(
+        await insert_multi(
             conn,
             table="model_flags_junction",
             owner_col=OWNER_COL,
             owner_id=model_id,
             resource_col="flag_id",
-            resource_values=flag_ids,
+            resource_ids=flag_ids,
             generated=generated,
             mcp=mcp,
         )
