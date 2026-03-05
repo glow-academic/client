@@ -84,7 +84,7 @@ FROM (
                       SELECT documents_id, draft_id FROM scenario_drafts_documents_connection WHERE active = true
                       UNION ALL SELECT documents_id, draft_id FROM chat_drafts_documents_connection WHERE active = true
                   ) dc
-                  WHERE dc.document_id = d.id
+                  WHERE dc.documents_id = d.id
                     AND dc.draft_id = api_search_documents_v4.draft_id
               )
           )

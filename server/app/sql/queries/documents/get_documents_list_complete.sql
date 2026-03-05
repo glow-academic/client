@@ -145,10 +145,10 @@ document_data AS (
     FROM document_artifact d
     LEFT JOIN document_departments_junction dd ON dd.document_id = d.id AND dd.active = true
     LEFT JOIN document_departments_data ddd ON ddd.document_id = d.id
-    LEFT JOIN document_scenarios ds ON ds.document_id = d.id
+    LEFT JOIN document_scenarios ds ON ds.documents_id = d.id
     LEFT JOIN document_fields_cte dfc ON dfc.document_id = d.id
     LEFT JOIN document_uploads_cte duc ON duc.document_id = d.id
-    LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
+    LEFT JOIN document_active_scenario_links dasl ON dasl.documents_id = d.id
     GROUP BY d.id,
         (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND f.value = TRUE),

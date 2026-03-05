@@ -220,7 +220,7 @@ department_mapping_data AS (
     CROSS JOIN user_profile up
     JOIN departments_resource d ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.departments_id = d.id AND f.name = 'department_active' AND f.value = true)
+        EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments_junction pd WHERE pd.departments_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
@@ -424,7 +424,7 @@ department_suggestions_data AS (
                  JOIN departments_resource d ON d.id = fd.departments_id
                  CROSS JOIN draft_group_data dgd
                  WHERE fd.departments_id IS NOT NULL
-                   AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.departments_id = d.id AND f.name = 'department_active' AND f.value = true)
+                   AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true)
                    AND (
                        -- Option 1: Linked to fields with active=true
                        fd.active = true
@@ -500,14 +500,14 @@ ui_flags AS (
 ),
 -- Agent selection helper CTEs (shared across all agent selections)
 field_department_for_agents AS (
-    SELECT fd.departments_id
+    SELECT fd.departments_id AS department_id
     FROM params p
     JOIN field_departments_junction fd ON fd.field_id = p.field_id AND fd.active = true
     WHERE p.field_id IS NOT NULL
     LIMIT 1
 ),
 profile_primary_department_for_agents AS (
-    SELECT pd.department_id
+    SELECT pd.departments_id AS department_id
     FROM params p
     JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id AND pd.is_primary = TRUE AND pd.active = true
     WHERE p.field_id IS NULL
@@ -521,7 +521,7 @@ selected_department_for_agents AS (
         ) as department_id
 ),
 user_departments_for_agents AS (
-    SELECT pd.department_id
+    SELECT pd.departments_id AS department_id
     FROM params p
     JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id AND pd.active = true
 ),

@@ -120,7 +120,7 @@ copy_eval_flags AS (
     INSERT INTO eval_flags_junction (eval_id, flags_id, created_at)
     SELECT
         ne.id,
-        of.flag_id,
+        of.flags_id,
         NOW()
     FROM new_eval ne
     CROSS JOIN original_flags of
@@ -131,7 +131,7 @@ copy_departments AS (
     INSERT INTO eval_departments_junction (eval_id, departments_id, active, created_at)
     SELECT 
         ne.id,
-        od.department_id,
+        od.departments_id,
         true,
         NOW()
     FROM new_eval ne

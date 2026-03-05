@@ -133,7 +133,7 @@ link_departments AS (
     INSERT INTO field_departments_junction (field_id, departments_id, active, created_at)
     SELECT
         nf.field_id,
-        od.department_id,
+        od.departments_id,
         true,
         NOW()
     FROM new_field nf

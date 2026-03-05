@@ -42,7 +42,7 @@ original_document AS (
 ),
 original_departments AS (
     -- Get department IDs from original document
-    SELECT department_id
+    SELECT dd.departments_id AS department_id
     FROM params x
     JOIN document_departments_junction dd ON dd.document_id = x.document_id AND dd.active = true
 ),

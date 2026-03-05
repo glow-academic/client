@@ -158,7 +158,7 @@ original_fields AS (
 original_field_departments AS (
     SELECT
         of.original_field_id,
-        COALESCE(ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) FILTER (WHERE fd.department_id IS NOT NULL), NULL) as department_ids
+        COALESCE(ARRAY_AGG(fd.departments_id::text ORDER BY fd.created_at) FILTER (WHERE fd.departments_id IS NOT NULL), NULL) as department_ids
     FROM original_fields of
     LEFT JOIN field_departments_junction fd ON fd.field_id = of.original_field_id AND fd.active = true
     GROUP BY of.original_field_id

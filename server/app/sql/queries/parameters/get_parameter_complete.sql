@@ -486,7 +486,7 @@ department_mapping_data AS (
     CROSS JOIN user_profile up
     JOIN departments_resource d ON (
         -- Only include departments with active flag AND user is linked to them
-        EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.departments_id = d.id AND f.name = 'department_active' AND f.value = true)
+        EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true)
         AND
         EXISTS (SELECT 1 FROM profile_departments_junction pd WHERE pd.departments_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
@@ -496,7 +496,7 @@ department_mapping_data AS (
 all_fields_data AS (
     SELECT
         ffj.field_id as field_id,
-        COALESCE(ARRAY_AGG(fd.department_id::text ORDER BY fd.created_at) FILTER (WHERE fd.department_id IS NOT NULL), ARRAY[]::text[]) as department_ids
+        COALESCE(ARRAY_AGG(fd.departments_id::text ORDER BY fd.created_at) FILTER (WHERE fd.departments_id IS NOT NULL), ARRAY[]::text[]) as department_ids
     FROM fields_resource f
     JOIN field_fields_junction ffj ON ffj.fields_id = f.id
     LEFT JOIN field_departments_junction fd ON fd.field_id = ffj.field_id AND fd.active = true
@@ -641,7 +641,7 @@ department_suggestions_data AS (
                  JOIN departments_resource d ON d.id = pd.departments_id
                  CROSS JOIN draft_group_data dgd
                  WHERE pd.departments_id IS NOT NULL
-                   AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.departments_id = d.id AND f.name = 'department_active' AND f.value = true)
+                   AND EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true)
                    AND (
                        pd.active = true
                        OR

@@ -450,7 +450,7 @@ standard_ids_data AS (
              FROM rubric_drafts_standard_groups_connection dsg
              JOIN standards_resource s ON s.standard_groups_id = dsg.standard_groups_id
              WHERE dsg.draft_id = (SELECT draft_id FROM params)),
-            (SELECT ARRAY_AGG(rs.standard_id ORDER BY rs.created_at)
+            (SELECT ARRAY_AGG(rs.standards_id ORDER BY rs.created_at)
              FROM rubric_standards_junction rs
              WHERE rs.rubric_id = (SELECT rubric_id FROM params) AND rs.active = true),
             ARRAY[]::uuid[]
@@ -632,13 +632,13 @@ standard_group_suggestions_data AS (
 standard_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(rs.standard_id ORDER BY rs.created_at DESC)
+            (SELECT ARRAY_AGG(rs.standards_id ORDER BY rs.created_at DESC)
              FROM (
-                 SELECT DISTINCT rs.standard_id, MAX(rs.created_at) as created_at
+                 SELECT DISTINCT rs.standards_id, MAX(rs.created_at) as created_at
                  FROM rubric_standards_junction rs
-                 JOIN standards_resource s ON s.id = rs.standard_id
+                 JOIN standards_resource s ON s.id = rs.standards_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE rs.standard_id IS NOT NULL
+                 WHERE rs.standards_id IS NOT NULL
                    AND s.name IS NOT NULL
                    AND s.name != ''
                    AND (
@@ -651,7 +651,7 @@ standard_suggestions_data AS (
                            AND s.generated = true
                        )
                    )
-                 GROUP BY rs.standard_id
+                 GROUP BY rs.standards_id
                  ORDER BY MAX(rs.created_at) DESC
                  LIMIT 20
              ) rs),
@@ -1698,7 +1698,7 @@ standards_selected_data AS (
         SELECT unnest(standard_ids) FROM standard_ids_data
     )
     LEFT JOIN rubric_drafts_standard_groups_connection dsg ON dsg.draft_id = x.draft_id AND dsg.standard_groups_id = s.standard_groups_id
-    LEFT JOIN rubric_standards_junction rs ON rs.rubric_id = x.rubric_id AND rs.standard_id = s.id AND rs.active = true
+    LEFT JOIN rubric_standards_junction rs ON rs.rubric_id = x.rubric_id AND rs.standards_id = s.id AND rs.active = true
 ),
 -- Standards data (all available standards for selected groups_entry)
 standards_all_data AS (

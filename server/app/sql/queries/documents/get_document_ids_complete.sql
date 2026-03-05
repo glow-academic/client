@@ -108,7 +108,7 @@ document_images_data AS (
         CASE
             WHEN (SELECT document_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(di.image_id ORDER BY di.created_at)
+                (SELECT ARRAY_AGG(di.images_id ORDER BY di.created_at)
                  FROM document_images_junction di
                  WHERE di.document_id = (SELECT document_id FROM params) AND di.active = true),
                 ARRAY[]::uuid[]
