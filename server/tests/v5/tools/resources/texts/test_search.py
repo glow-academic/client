@@ -30,9 +30,9 @@ async def test_respects_offset(conn, redis_client):
     for _ in range(3):
         await create_text(conn, redis_client)
 
-    all_items = await search_texts(conn, redis_client, limit_count=10)
+    all_items = await search_texts(conn, redis_client, limit_count=200)
     offset_items = await search_texts(
-        conn, redis_client, limit_count=10, offset_count=1
+        conn, redis_client, limit_count=200, offset_count=1
     )
 
     assert len(offset_items) == len(all_items) - 1

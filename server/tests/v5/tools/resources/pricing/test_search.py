@@ -11,7 +11,7 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_finds_created_pricing(conn, redis_client):
-    await create_pricing(conn, "input", 0.01, "tokens", "token", 1000, redis_client)
+    await create_pricing(conn, "input", 0.01, "tokens", "tokens", 1000, redis_client)
 
     items = await search_pricing(conn, redis_client, search="input")
 
@@ -31,7 +31,7 @@ async def test_respects_limit(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    a = await create_pricing(conn, "input", 0.02, "tokens", "token", 500, redis_client)
+    a = await create_pricing(conn, "input", 0.02, "tokens", "tokens", 500, redis_client)
 
     items = await search_pricing(
         conn, redis_client, exclude_ids=[a.id],
@@ -48,7 +48,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_cache_hit(conn, redis_client):
-    await create_pricing(conn, "input", 0.03, "tokens", "token", 100, redis_client)
+    await create_pricing(conn, "input", 0.03, "tokens", "tokens", 100, redis_client)
 
     items1 = await search_pricing(conn, redis_client, search="input")
     items2 = await search_pricing(conn, redis_client, search="input")
@@ -58,7 +58,7 @@ async def test_cache_hit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    await create_pricing(conn, "input", 0.04, "tokens", "token", 200, redis_client)
+    await create_pricing(conn, "input", 0.04, "tokens", "tokens", 200, redis_client)
 
     items = await search_pricing(conn, redis_client, search="input", bypass_cache=True)
 

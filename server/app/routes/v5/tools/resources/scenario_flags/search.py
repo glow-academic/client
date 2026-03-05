@@ -1,103 +1,108 @@
-"""scenario_flags/search internal — reusable data-access layer."""
+"""Scenario Flags SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    QGetScenarioFlagsV4Item,
-    SearchScenarioFlagsSqlParams,
-    SearchScenarioFlagsSqlRow,
-)
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.scenario_flags.get import get_scenario_flags
+from app.routes.v5.tools.resources.scenario_flags.types import GetScenarioFlagResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/scenario_flags/search_scenario_flags_complete.sql"
+JUNCTION_ARTIFACTS = ["simulation"]
 
 
-async def search_scenario_flags_internal(
+async def search_scenario_flags(
     conn: asyncpg.Connection,
+    redis: Redis,
     search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
+    limit_count: int = 20,
+    offset_count: int = 0,
     exclude_ids: list[UUID] | None = None,
     scenario_ids: list[UUID] | None = None,
     flag_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     simulation: bool = False,
-) -> list[QGetScenarioFlagsV4Item]:
-    """Internal function for parallel fetching from artifact endpoint.
+) -> list[GetScenarioFlagResponse]:
+    """Search scenario flags with optional artifact filters."""
+    if limit_count <= 0:
+        return []
 
-    Args:
-        conn: Database connection
-        search: Text search filter
-        limit_count: Max results to return
-        offset_count: Offset for pagination
-        exclude_ids: IDs to exclude from results
-        scenario_ids: List of scenario IDs to search flags for (empty = all scenarios)
-        bypass_cache: Whether to bypass cache
+    artifact_filters = {"simulation": simulation}
 
-    Returns:
-        List of available scenario flag items
-    """
-    effective_scenario_ids = scenario_ids or []
-    effective_exclude_ids = exclude_ids or []
+    extra_conditions: list[tuple[str, object]] = []
 
-    # Generate cache key
-    cache_key_val = cache_key(
-        "scenario_flags/search",
+    # Search by name/description via joined flags_resource
+    if search:
+        extra_conditions.append((
+            "EXISTS (SELECT 1 FROM flags_resource f "
+            "WHERE f.id = {alias}.flag_id AND f.active = true "
+            "AND (LOWER(f.name) LIKE '%' || LOWER(${idx}) || '%' "
+            "OR LOWER(COALESCE(f.description, '')) LIKE '%' || LOWER(${idx}) || '%'))",
+            search,
+        ))
+
+    if scenario_ids:
+        extra_conditions.append(
+            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.scenario_id = ANY(${idx}::uuid[]))", scenario_ids)
+        )
+    if flag_ids:
+        extra_conditions.append(
+            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.flag_id = ANY(${idx}::uuid[]))", flag_ids)
+        )
+
+    tags = ["resources", "scenario_flags"]
+    key = cache_key(
+        "/api/v5/resources/scenario_flags/search",
         {
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "exclude_ids": sorted(str(i) for i in effective_exclude_ids),
-            "scenario_ids": sorted(str(i) for i in effective_scenario_ids),
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
+            "scenario_ids": sorted(str(i) for i in (scenario_ids or [])),
             "flag_ids": sorted(str(i) for i in (flag_ids or [])),
-            "simulation": simulation,
+            **artifact_filters,
         },
     )
 
-    # Try cache (unless bypassed)
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetScenarioFlagsV4Item.model_validate(item)
-                for item in cached.get("data", [])
+                GetScenarioFlagResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
-    # Execute SQL
-    params = SearchScenarioFlagsSqlParams(
-        search=search,
+    ids = await search_resource_ids(
+        conn,
+        table="scenario_flags_resource",
+        resource="scenario_flags",
+        search_column="id::text",
+        search=None,  # Search handled via extra_conditions (JOIN on flags_resource)
         limit_count=limit_count,
         offset_count=offset_count,
-        exclude_ids=effective_exclude_ids,
-        scenario_ids=effective_scenario_ids,
-        flag_ids=flag_ids or [],
-        simulation=simulation,
-    )
-    result = cast(
-        SearchScenarioFlagsSqlRow,
-        await execute_sql_typed(
-            conn,
-            SQL_PATH,
-            params=params,
-        ),
+        exclude_ids=exclude_ids,
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
+        order_column="created_at",
+        extra_conditions=extra_conditions if extra_conditions else None,
     )
 
-    items = result.items or []
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
 
-    # Cache response
+    items = await get_scenario_flags(conn, ids, redis, bypass_cache=True)
+
     await set_cached(
-        cache_key_val,
-        {"data": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=["scenario_flags"],
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items
