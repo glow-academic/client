@@ -25,3 +25,11 @@ class GetPersonasResponse(BaseModel):
     parameter_field_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
     voice_ids: list[UUID] | None = None
+
+
+class CreatePersonaResponse(BaseModel):
+    id: UUID
+
+
+class UpdatePersonaResponse(BaseModel):
+    id: UUID
