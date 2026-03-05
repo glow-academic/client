@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
+from app.routes.v5.tools.resources.fields.types import GetFieldResponse
 from app.routes.v5.tools.resources.parameters.types import GetParameterResponse
 from app.sql.types import (
     QGetAgentsV4Item,
@@ -18,7 +19,6 @@ from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetExamplesV4Item,
-    QGetFieldsV4Item,
     QGetIconsV4Item,
     QGetInstructionsV4Item,
     QGetModelsV4Item,
@@ -155,7 +155,7 @@ class GetPersonaApiResponse(BaseModel):
     parameters: PersonaParameterSection | None = None
     voices: PersonaVoiceSection | None = None
     # Fields catalog (not a section — computed resource, never saved)
-    fields: list[QGetFieldsV4Item] | None = None
+    fields: list[GetFieldResponse] | None = None
     # Resolved parameter IDs (derived from saved parameter_fields)
     resolved_parameter_ids: list[str] | None = None
 
@@ -182,7 +182,7 @@ class PersonaWebsocketResources(BaseModel):
     examples: list[QGetExamplesV4Item] | None = None
     parameters: list[GetParameterResponse] | None = None
     voices: list[QGetVoicesV4Item] | None = None
-    fields: list[QGetFieldsV4Item] | None = None
+    fields: list[GetFieldResponse] | None = None
 
 
 class GetPersonaWebsocketResponse(InternalResponseBase):
@@ -211,7 +211,7 @@ class PersonaResourceBucket(BaseModel):
     examples: list[QGetExamplesV4Item] | None = None
     parameters: list[GetParameterResponse] | None = None
     voices: list[QGetVoicesV4Item] | None = None
-    fields: list[QGetFieldsV4Item] | None = None
+    fields: list[GetFieldResponse] | None = None
 
 
 class PersonaResources(BaseModel):

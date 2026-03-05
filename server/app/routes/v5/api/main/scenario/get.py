@@ -93,8 +93,8 @@ from app.routes.v5.tools.resources.descriptions.search import (
     search_descriptions,
 )
 from app.routes.v5.tools.resources.documents.get import get_documents
-from app.routes.v5.tools.resources.documents.search import search_documents_internal
-from app.routes.v5.tools.resources.fields.search import search_fields_internal
+from app.routes.v5.tools.resources.documents.search import search_documents
+from app.routes.v5.tools.resources.fields.search import search_fields
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.images.get import get_images
@@ -576,13 +576,14 @@ async def get_scenario_internal(
             selected = await get_documents(
                 c, selected_document_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_documents_internal(
+            suggestions = await search_documents(
                 c,
-                document_search,
-                20,
-                0,
-                user_department_ids,
-                effective_group_id,
+                get_redis_client(),
+                search=document_search,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_department_ids,
+                draft_id=effective_group_id,
                 suggest_source="selected" if document_show_selected else None,
                 exclude_ids=selected_document_ids,
                 bypass_cache=bypass_cache,
@@ -778,9 +779,9 @@ async def get_scenario_internal(
             persona_to_params = {}
 
         all_document_ids_for_video = [
-            d.document_id
+            d.id
             for d in documents_selected + documents_suggestions
-            if d.document_id
+            if d.id
         ]
         if all_document_ids_for_video:
             doc_param_rows = await filter_conn.fetch(
@@ -833,7 +834,7 @@ async def get_scenario_internal(
         departments_selected + departments_suggestions, "id"
     )
     personas = _dedupe_by_id(personas_selected + personas_suggestions, "id")
-    documents = _dedupe_by_id(documents_selected + documents_suggestions, "document_id")
+    documents = _dedupe_by_id(documents_selected + documents_suggestions, "id")
     parameters = _dedupe_by_id(
         parameters_selected + parameters_suggestions,
         "parameter_id",
@@ -987,7 +988,7 @@ async def get_scenario_internal(
     def _document_to_dict(document: Any) -> dict[str, Any]:
         d = _to_dict(document)
         video_document, non_video_document = compute_document_video_flags(
-            document.document_id
+            document.id
         )
         d["video_document"] = video_document
         d["non_video_document"] = non_video_document
@@ -1096,7 +1097,7 @@ async def get_scenario_internal(
         ],
         "departments": [d.id for d in departments_suggestions],
         "personas": [p.id for p in personas_suggestions],
-        "documents": [d.document_id for d in documents_suggestions],
+        "documents": [d.id for d in documents_suggestions],
         "parameters": [p.id for p in parameters_suggestions],
         "objectives": [],
         "images": [i.id for i in images_suggestions],
@@ -1300,13 +1301,13 @@ async def get_scenario_websocket(
 
     async def fetch_fields():
         async with pool.acquire() as c:
-            return await search_fields_internal(
+            return await search_fields(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=200,
                 offset_count=0,
-                department_ids=None,
-                cache=cache,
+                bypass_cache=bypass_cache,
             )
 
     (

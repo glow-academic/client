@@ -267,14 +267,14 @@ async def _resolve_scenario_values(
 
     if item.documents is not None and item.document_ids is None:
         from app.routes.v5.tools.resources.documents.search import (
-            search_documents_internal,
+            search_documents,
         )
 
-        all_docs = await search_documents_internal(
-            conn, search=None, limit_count=1000, scenario=True
+        all_docs = await search_documents(
+            conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
         doc_name_map = {
-            d.name.lower(): d.document_id for d in all_docs if d.name and d.document_id
+            d.name.lower(): d.id for d in all_docs if d.name and d.id
         }
         resolved_ids = []
         for doc_name in item.documents:

@@ -92,7 +92,7 @@ from app.routes.v5.tools.resources.descriptions.search import (
 )
 from app.routes.v5.tools.resources.examples.get import get_examples
 from app.routes.v5.tools.resources.examples.search import search_examples_internal
-from app.routes.v5.tools.resources.fields.search import search_fields_internal
+from app.routes.v5.tools.resources.fields.search import search_fields
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.icons.get import get_icons
@@ -543,8 +543,9 @@ async def get_persona_internal(
 
     async def fetch_fields():
         async with pool.acquire() as c:
-            return await search_fields_internal(
+            return await search_fields(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=200,
                 offset_count=0,

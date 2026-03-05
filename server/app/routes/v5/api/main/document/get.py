@@ -73,7 +73,7 @@ from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
     search_descriptions,
 )
-from app.routes.v5.tools.resources.fields.search import search_fields_internal
+from app.routes.v5.tools.resources.fields.search import search_fields
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.images.get import get_images
@@ -411,16 +411,15 @@ async def get_document_internal(
         async with pool.acquire() as c:
             selected = await get_parameter_fields(c, field_ids, get_redis_client(), bypass_cache)
             # Search for available fields scoped to user departments
-            suggestions = await search_fields_internal(
+            suggestions = await search_fields(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
                 department_ids=user_department_ids,
-                draft_id=None,
                 suggest_source="all",
                 exclude_ids=field_ids,
-                conditional_parameter_ids=None,
                 bypass_cache=bypass_cache,
             )
             return (selected, suggestions)
@@ -517,7 +516,7 @@ async def get_document_internal(
     name_suggestions = [n.id for n in names_suggestions]
     description_suggestions = [d.id for d in descriptions_suggestions]
     department_suggestions = [d.id for d in departments_suggestions]
-    field_suggestions = [f.field_id for f in fields_suggestions]
+    field_suggestions = [f.id for f in fields_suggestions]
     upload_suggestions = [u.files_id for u in uploads_suggestions]
     image_suggestions = [i.id for i in images_suggestions]
     text_suggestions = [t.texts_id for t in texts_suggestions]

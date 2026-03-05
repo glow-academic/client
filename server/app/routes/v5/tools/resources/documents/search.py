@@ -1,28 +1,28 @@
-"""documents/search internal — reusable data-access layer."""
+"""Documents SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    QGetDocumentsV4Item,
-    SearchDocumentsSqlParams,
-    SearchDocumentsSqlRow,
-)
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.documents.get import get_documents
+from app.routes.v5.tools.resources.documents.types import GetDocumentResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/documents/search_documents_complete.sql"
+JUNCTION_ARTIFACTS = ["document", "scenario"]
+
+DRAFT_ARTIFACTS = ["chat", "scenario"]
 
 
-async def search_documents_internal(
+async def search_documents(
     conn: asyncpg.Connection,
+    redis: Redis,
     search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
+    limit_count: int = 20,
+    offset_count: int = 0,
     department_ids: list[UUID] | None = None,
     draft_id: UUID | None = None,
     suggest_source: str | None = None,
@@ -35,66 +35,96 @@ async def search_documents_internal(
     *,
     document: bool = False,
     scenario: bool = False,
-) -> list[QGetDocumentsV4Item]:
-    if limit_count is not None and limit_count <= 0:
+) -> list[GetDocumentResponse]:
+    """Search documents with optional artifact/draft filters."""
+    if limit_count <= 0:
         return []
 
+    artifact_filters = {
+        "document": document,
+        "scenario": scenario,
+    }
+
     tags = ["resources", "documents"]
-    cache_key_val = cache_key(
+    key = cache_key(
         "/api/v5/resources/documents/search",
         {
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "department_ids": [str(id) for id in (department_ids or [])],
+            "department_ids": [str(i) for i in (department_ids or [])],
             "draft_id": str(draft_id) if draft_id else None,
             "suggest_source": suggest_source,
-            "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
             "upload_ids": sorted(str(i) for i in (upload_ids or [])),
             "text_ids": sorted(str(i) for i in (text_ids or [])),
             "image_ids": sorted(str(i) for i in (image_ids or [])),
             "template": template,
-            "document": document,
-            "scenario": scenario,
+            **artifact_filters,
         },
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetDocumentsV4Item.model_validate(item)
-                for item in cached.get("items", [])
+                GetDocumentResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = SearchDocumentsSqlParams(
+    # Build extra conditions for document-specific filters
+    extra_conditions: list[tuple[str, object]] = []
+    # Active filter
+    extra_conditions.append(("{alias}.active = ${idx}", True))
+    # Department access: user can see if document has matching department OR has no departments
+    if department_ids:
+        extra_conditions.append(
+            ("({alias}.department_ids && ${idx} OR COALESCE(array_length({alias}.department_ids, 1), 0) = 0)", department_ids),
+        )
+    if upload_ids:
+        extra_conditions.append(
+            ("{alias}.upload_id = ANY(${idx})", upload_ids),
+        )
+    if text_ids:
+        extra_conditions.append(
+            ("{alias}.text_id = ANY(${idx})", text_ids),
+        )
+    if image_ids:
+        extra_conditions.append(
+            ("{alias}.image_ids && ${idx}", image_ids),
+        )
+    if template is not None:
+        extra_conditions.append(
+            ("{alias}.template = ${idx}", template),
+        )
+
+    ids = await search_resource_ids(
+        conn,
+        table="documents_resource",
+        resource="documents",
+        search_column="name",
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
-        department_ids=department_ids or [],
+        exclude_ids=exclude_ids,
         draft_id=draft_id,
         suggest_source=suggest_source,
-        exclude_ids=exclude_ids or [],
-        upload_ids=upload_ids or [],
-        text_ids=text_ids or [],
-        image_ids=image_ids or [],
-        template=template,
-        document=document,
-        scenario=scenario,
-    )
-    result = cast(
-        SearchDocumentsSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
+        draft_artifacts=DRAFT_ARTIFACTS,
+        extra_conditions=extra_conditions if extra_conditions else None,
     )
 
-    items: list[QGetDocumentsV4Item] = result.items if result and result.items else []
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
+
+    items = await get_documents(conn, ids, redis, bypass_cache=True)
 
     await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items
