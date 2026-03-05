@@ -384,40 +384,20 @@ BEGIN
     ON CONFLICT ON CONSTRAINT rubric_departments_pkey DO UPDATE SET
         active = true;
 
-    -- Link standard groups (preserve previous position where possible)
-    WITH standard_groups_with_position AS (
-        SELECT
-            sg_id,
-            COALESCE(
-                (
-                    SELECT rsg.position
-                    FROM rubric_standard_groups_junction rsg
-                    WHERE rsg.rubric_id = v_rubric_id
-                      AND rsg.standard_group_id = sg_id
-                      AND rsg.active = false
-                    ORDER BY rsg.updated_at DESC
-                    LIMIT 1
-                ),
-                (ROW_NUMBER() OVER (ORDER BY ordinality))::int
-            ) AS position
-        FROM UNNEST(v_standard_group_ids) WITH ORDINALITY AS t(sg_id, ordinality)
-    )
+    -- Link standard groups
     INSERT INTO rubric_standard_groups_junction (
         rubric_id,
         standard_group_id,
-        position,
         active,
         created_at
     )
     SELECT
         v_rubric_id,
-        sgwp.sg_id,
-        sgwp.position,
+        sg_id,
         true,
         NOW()
-    FROM standard_groups_with_position sgwp
+    FROM UNNEST(v_standard_group_ids) AS sg_id
     ON CONFLICT ON CONSTRAINT rubric_standard_groups_pkey DO UPDATE SET
-        position = EXCLUDED.position,
         active = true;
 
     -- Link standards

@@ -99,7 +99,6 @@ CREATE TABLE public.rubric_rubrics_junction (
 CREATE TABLE public.rubric_standard_groups_junction (
     rubric_id uuid CONSTRAINT rubric_standard_groups_rubric_id_not_null NOT NULL,
     standard_group_id uuid CONSTRAINT rubric_standard_groups_standard_group_id_not_null NOT NULL,
-    "position" integer DEFAULT 1 CONSTRAINT rubric_standard_groups_position_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT rubric_standard_groups_active_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT rubric_standard_groups_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT rubric_standard_groups_generated_not_null NOT NULL,

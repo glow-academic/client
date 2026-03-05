@@ -91,7 +91,7 @@ source_parameter_fields AS (
     JOIN scenario_parameter_fields_junction spf ON spf.scenario_id = x.scenario_id AND spf.active = true
 ),
 source_objectives AS (
-    SELECT so.objective_id, so.idx
+    SELECT so.objective_id
     FROM params x
     JOIN scenario_objectives_junction so ON so.scenario_id = x.scenario_id
 ),
@@ -268,8 +268,8 @@ copy_parameter_fields AS (
 ),
 -- Link existing objectives
 copy_objectives AS (
-    INSERT INTO scenario_objectives_junction (scenario_id, objective_id, idx, created_at)
-    SELECT ns.id, so.objective_id, so.idx, NOW()
+    INSERT INTO scenario_objectives_junction (scenario_id, objective_id, created_at)
+    SELECT ns.id, so.objective_id, NOW()
     FROM new_scenario ns
     CROSS JOIN source_objectives so
 ),

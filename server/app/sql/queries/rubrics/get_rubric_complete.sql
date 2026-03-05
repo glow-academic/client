@@ -80,7 +80,6 @@ CREATE TYPE types.q_get_rubric_v4_standard_group_resource AS (
     description text,
     points int,
     pass_points int,
-    position int,
     active boolean,
     standard_ids uuid[],
     generated boolean
@@ -412,18 +411,16 @@ pass_points_resource_data AS (
 ),
 -- Standard groups_entry resource data (draft-first)
 standard_group_links_data AS (
-    SELECT 
+    SELECT
         dsg.standard_groups_id as standard_group_id,
-        ROW_NUMBER() OVER (ORDER BY dsg.created_at) as position,
         true as active,
         COALESCE(dsg.generated, false) as generated
     FROM params x
     JOIN rubric_drafts_standard_groups_connection dsg ON dsg.draft_id = x.draft_id
     WHERE x.draft_id IS NOT NULL
     UNION ALL
-    SELECT 
+    SELECT
         rsg.standard_group_id,
-        rsg.position,
         rsg.active,
         COALESCE(rsg.generated, false) as generated
     FROM params x
@@ -437,7 +434,7 @@ standard_group_links_data AS (
 standard_group_ids_data AS (
     SELECT 
         COALESCE(
-            ARRAY_AGG(sgld.standard_group_id ORDER BY sgld.position),
+            ARRAY_AGG(sgld.standard_group_id),
             ARRAY[]::uuid[]
         ) as standard_group_ids
     FROM standard_group_links_data sgld
@@ -1628,24 +1625,22 @@ standard_groups_selected_data AS (
         sg.description,
         sg.points,
         sg.pass_points,
-        sgld.position,
         sgld.active,
         ARRAY_AGG(s.id ORDER BY s.name) FILTER (WHERE s.id IS NOT NULL) as standard_ids,
         COALESCE(sgld.generated, false) as generated
     FROM standard_group_links_data sgld
     JOIN standard_groups_resource sg ON sg.id = sgld.standard_group_id
     LEFT JOIN standards_resource s ON s.standard_group_id = sg.id
-    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sgld.position, sgld.active, sgld.generated
+    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sgld.active, sgld.generated
 ),
 -- Standard groups_entry data (all available standard groups_entry for options array)
 standard_groups_all_data AS (
-    SELECT 
+    SELECT
         sg.id as standard_group_id,
         sg.name,
         sg.description,
         sg.points,
         sg.pass_points,
-        COALESCE(sgld.position, 0) as position,
         COALESCE(sgld.active, true) as active,
         ARRAY_AGG(s.id ORDER BY s.name) FILTER (WHERE s.id IS NOT NULL) as standard_ids,
         COALESCE(sg.generated, false) as generated
@@ -1659,15 +1654,15 @@ standard_groups_all_data AS (
           OR LOWER(sg.name) LIKE '%' || LOWER((SELECT standard_group_search FROM params LIMIT 1)) || '%'
           OR LOWER(COALESCE(sg.description, '')) LIKE '%' || LOWER((SELECT standard_group_search FROM params LIMIT 1)) || '%'
       )
-    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sgld.position, sgld.active, sg.generated
+    GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sgld.active, sg.generated
 ),
 -- Standard groups_entry aggregated (selected groups_entry for standard_group_resources)
 standard_groups_selected_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.position, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
-                ORDER BY sg.position, sg.name
+                (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
+                ORDER BY sg.name
             ),
             '{}'::types.q_get_rubric_v4_standard_group_resource[]
         ) as standard_group_resources
@@ -1680,8 +1675,8 @@ standard_groups_all_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.position, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
-                ORDER BY sg.position, sg.name
+                (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
+                ORDER BY sg.name
             ),
             '{}'::types.q_get_rubric_v4_standard_group_resource[]
         ) as standard_groups
@@ -1852,8 +1847,8 @@ SELECT
     -- Standard group resources (selected standard groups_entry filtered by standard_group_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.position, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
-            ORDER BY sg.position, sg.name
+            (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
+            ORDER BY sg.name
         )
         FROM standard_groups_selected_data sg
         WHERE sg.standard_group_id = ANY(COALESCE((SELECT standard_group_ids FROM standard_group_ids_data), ARRAY[]::uuid[]))),

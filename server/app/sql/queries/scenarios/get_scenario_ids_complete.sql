@@ -202,7 +202,7 @@ scenario_objectives_junction_data AS (
         CASE
             WHEN (SELECT scenario_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(so.objective_id ORDER BY so.idx, so.objective_id)
+                (SELECT ARRAY_AGG(so.objective_id ORDER BY so.objective_id)
                  FROM scenario_objectives_junction so
                  WHERE so.scenario_id = (SELECT scenario_id FROM params)),
                 ARRAY[]::uuid[]

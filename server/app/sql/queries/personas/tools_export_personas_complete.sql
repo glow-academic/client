@@ -111,12 +111,12 @@ persona_departments_data AS (
     JOIN departments_resource dr ON dr.id = pd.department_id
     GROUP BY pd.persona_id
 ),
--- Example data (ordered by idx)
+-- Example data
 persona_examples_data AS (
     SELECT
         pej.persona_id,
-        ARRAY_AGG(pej.example_id ORDER BY pej.idx) as example_ids,
-        ARRAY_AGG(er.example ORDER BY pej.idx) as example_values
+        ARRAY_AGG(pej.example_id ORDER BY pej.created_at) as example_ids,
+        ARRAY_AGG(er.example ORDER BY pej.created_at) as example_values
     FROM persona_examples_junction pej
     JOIN examples_resource er ON er.id = pej.example_id
     WHERE pej.active = true

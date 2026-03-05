@@ -103,7 +103,7 @@ BEGIN
             parameter_field_ids := COALESCE((SELECT ARRAY_AGG(j.parameter_field_id) FROM persona_parameter_fields_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF example_ids IS NULL THEN
-            example_ids := COALESCE((SELECT ARRAY_AGG(j.example_id ORDER BY j.idx) FROM persona_examples_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
+            example_ids := COALESCE((SELECT ARRAY_AGG(j.example_id ORDER BY j.created_at) FROM persona_examples_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF voice_ids IS NULL THEN
             voice_ids := COALESCE((SELECT ARRAY_AGG(j.voice_id) FROM persona_voices_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
@@ -246,20 +246,14 @@ BEGIN
         WHERE COALESCE(array_length(x.parameter_field_ids, 1), 0) > 0
         ON CONFLICT (persona_id, parameter_field_id) DO UPDATE SET active = active_value
     ),
-    -- Link examples (with ordering)
-    examples_with_index AS (
-        SELECT ex_id, ROW_NUMBER() OVER () - 1 AS idx
+    -- Link examples
+    link_examples AS (
+        INSERT INTO persona_examples_junction (persona_id, example_id, active, created_at)
+        SELECT x.persona_id, ex_id, active_value, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.example_ids) AS ex_id
         WHERE COALESCE(array_length(x.example_ids, 1), 0) > 0
-    ),
-    link_examples AS (
-        INSERT INTO persona_examples_junction (persona_id, example_id, idx, active, created_at)
-        SELECT x.persona_id, ewi.ex_id, ewi.idx, active_value, NOW()
-        FROM params x
-        CROSS JOIN examples_with_index ewi
         ON CONFLICT ON CONSTRAINT persona_examples_pkey DO UPDATE SET
-            idx = EXCLUDED.idx,
             active = active_value,
             created_at = EXCLUDED.created_at
     ),

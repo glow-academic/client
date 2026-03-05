@@ -40,13 +40,13 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.example, q.idx, q.generated)::types.q_get_examples_v4_item
+        (q.id, q.example, q.generated)::types.q_get_examples_v4_item
         ORDER BY q.example
     ),
     ARRAY[]::types.q_get_examples_v4_item[]
 ) as items
 FROM (
-    SELECT e.id, e.example, 0 AS idx, COALESCE(e.generated, false) AS generated
+    SELECT e.id, e.example, COALESCE(e.generated, false) AS generated
     FROM examples_resource e
     WHERE e.example IS NOT NULL
       AND e.example != ''

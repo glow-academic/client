@@ -52,7 +52,6 @@ END $$;
 CREATE TYPE types.q_get_examples_v4_item AS (
     id uuid,
     example text,
-    idx integer,
     generated boolean
 );
 
@@ -68,7 +67,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (e.id, e.example, array_position(ids, e.id), COALESCE(e.generated, false))::types.q_get_examples_v4_item
+        (e.id, e.example, COALESCE(e.generated, false))::types.q_get_examples_v4_item
         ORDER BY array_position(ids, e.id)
     ),
     ARRAY[]::types.q_get_examples_v4_item[]

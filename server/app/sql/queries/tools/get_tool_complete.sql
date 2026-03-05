@@ -640,7 +640,7 @@ names_agent_data AS (
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
-              AND af.value = true
+              AND f.value = true
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
@@ -678,7 +678,7 @@ names_agent_data AS (
             (SELECT mcp FROM params) = false
             OR EXISTS (SELECT 1 FROM agent_flags_junction af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
                   AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
+                  AND f_mcp.value = true
             )
         )
     ),
@@ -725,7 +725,7 @@ descriptions_agent_data AS (
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
-              AND af.value = true
+              AND f.value = true
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
@@ -763,7 +763,7 @@ descriptions_agent_data AS (
             (SELECT mcp FROM params) = false
             OR EXISTS (SELECT 1 FROM agent_flags_junction af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
                   AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
+                  AND f_mcp.value = true
             )
         )
     ),
@@ -810,7 +810,7 @@ args_agent_data AS (
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
-              AND af.value = true
+              AND f.value = true
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
@@ -848,7 +848,7 @@ args_agent_data AS (
             (SELECT mcp FROM params) = false
             OR EXISTS (SELECT 1 FROM agent_flags_junction af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
                   AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
+                  AND f_mcp.value = true
             )
         )
     ),
@@ -895,7 +895,7 @@ args_outputs_agent_data AS (
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
         WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
-              AND af.value = true
+              AND f.value = true
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
@@ -933,7 +933,7 @@ args_outputs_agent_data AS (
             (SELECT mcp FROM params) = false
             OR EXISTS (SELECT 1 FROM agent_flags_junction af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
                   AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
+                  AND f_mcp.value = true
             )
         )
     ),

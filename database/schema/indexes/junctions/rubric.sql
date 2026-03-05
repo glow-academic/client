@@ -234,14 +234,6 @@ CREATE INDEX rubric_standard_groups_rubric_idx ON public.rubric_standard_groups_
 
 --
 
--- Name: rubric_standard_groups_rubric_position_uniq; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE UNIQUE INDEX rubric_standard_groups_rubric_position_uniq ON public.rubric_standard_groups_junction USING btree (rubric_id, "position");
-
-
---
-
 -- Name: rubric_standard_groups_rubric_standard_group_idx; Type: INDEX; Schema: public; Owner: -
 --
 

@@ -111,7 +111,6 @@ CREATE TABLE public.scenario_names_junction (
 --
 
 CREATE TABLE public.scenario_objectives_junction (
-    idx integer CONSTRAINT scenario_objectives_idx_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT scenario_objectives_created_at_not_null NOT NULL,
     objective_id uuid CONSTRAINT scenario_objectives_objective_id_not_null NOT NULL,
     scenario_id uuid CONSTRAINT scenario_objectives_scenario_id_not_null NOT NULL,

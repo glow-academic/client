@@ -70,7 +70,7 @@ rubric_standard_groups_data AS (
         CASE
             WHEN (SELECT rubric_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(rsg.standard_group_id ORDER BY rsg.position, rsg.created_at)
+                (SELECT ARRAY_AGG(rsg.standard_group_id ORDER BY rsg.created_at)
                  FROM rubric_standard_groups_junction rsg
                  WHERE rsg.rubric_id = (SELECT rubric_id FROM params) AND rsg.active = true),
                 ARRAY[]::uuid[]

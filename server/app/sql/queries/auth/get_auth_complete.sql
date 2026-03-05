@@ -637,7 +637,7 @@ name_agent_data AS (
             (SELECT mcp FROM params) = false
             OR EXISTS (SELECT 1 FROM agent_flags_junction af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
                   AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
+                  AND f_mcp.value = true
             )
         )
     ),
@@ -712,7 +712,7 @@ description_agent_data AS (
             (SELECT mcp FROM params) = false
             OR EXISTS (SELECT 1 FROM agent_flags_junction af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
                   AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
+                  AND f_mcp.value = true
             )
         )
     ),
@@ -787,7 +787,7 @@ flag_agent_data AS (
             (SELECT mcp FROM params) = false
             OR EXISTS (SELECT 1 FROM agent_flags_junction af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
                   AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
+                  AND f_mcp.value = true
             )
         )
     ),
@@ -862,7 +862,7 @@ protocols_agent_data AS (
             (SELECT mcp FROM params) = false
             OR EXISTS (SELECT 1 FROM agent_flags_junction af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
                   AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
+                  AND f_mcp.value = true
             )
         )
     ),
@@ -937,7 +937,7 @@ slugs_agent_data AS (
             (SELECT mcp FROM params) = false
             OR EXISTS (SELECT 1 FROM agent_flags_junction af_mcp JOIN flags_resource f_mcp ON af_mcp.flag_id = f_mcp.id WHERE af_mcp.agent_id = a.id
                   AND f_mcp.name = 'mcp'
-                  AND af_mcp.value = true
+                  AND f_mcp.value = true
             )
         )
     ),

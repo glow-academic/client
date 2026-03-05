@@ -51,7 +51,6 @@ CREATE TABLE public.persona_descriptions_junction (
 --
 
 CREATE TABLE public.persona_examples_junction (
-    idx integer CONSTRAINT persona_examples_idx_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT persona_examples_created_at_not_null NOT NULL,
     example_id uuid CONSTRAINT persona_examples_example_id_not_null NOT NULL,
     persona_id uuid CONSTRAINT persona_examples_persona_id_not_null NOT NULL,

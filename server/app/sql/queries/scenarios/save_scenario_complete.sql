@@ -105,7 +105,7 @@ BEGIN
             image_ids := COALESCE((SELECT ARRAY_AGG(j.image_id) FROM scenario_images_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF objective_ids IS NULL THEN
-            objective_ids := COALESCE((SELECT ARRAY_AGG(j.objective_id ORDER BY j.idx) FROM scenario_objectives_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
+            objective_ids := COALESCE((SELECT ARRAY_AGG(j.objective_id) FROM scenario_objectives_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF video_ids IS NULL THEN
             video_ids := COALESCE((SELECT ARRAY_AGG(j.video_id) FROM scenario_videos_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
@@ -260,15 +260,14 @@ BEGIN
         WHERE COALESCE(array_length(x.image_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT scenario_images_pkey DO UPDATE SET active = true, generated = false, mcp = false
     ),
-    -- Link objectives (with ordering via WITH ORDINALITY)
+    -- Link objectives
     link_objectives AS (
-        INSERT INTO scenario_objectives_junction (scenario_id, objective_id, idx, active, created_at, generated, mcp)
-        SELECT x.scenario_id, obj.id, obj.ord::integer - 1, true, NOW(), false, false
+        INSERT INTO scenario_objectives_junction (scenario_id, objective_id, active, created_at, generated, mcp)
+        SELECT x.scenario_id, obj, true, NOW(), false, false
         FROM params x
-        CROSS JOIN UNNEST(x.objective_ids) WITH ORDINALITY AS obj(id, ord)
+        CROSS JOIN UNNEST(x.objective_ids) AS obj
         WHERE COALESCE(array_length(x.objective_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT scenario_objectives_pkey DO UPDATE SET
-            idx = EXCLUDED.idx,
             active = true,
             created_at = EXCLUDED.created_at,
             generated = false,

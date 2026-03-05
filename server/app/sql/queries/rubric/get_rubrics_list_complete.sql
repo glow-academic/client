@@ -206,7 +206,7 @@ all_rubric_ids AS (
 rubric_standard_group_ids AS (
     SELECT
         rsg.rubric_id,
-        ARRAY_AGG(rsg.standard_group_id ORDER BY rsg.position, sg.name) as standard_group_ids
+        ARRAY_AGG(rsg.standard_group_id ORDER BY sg.name) as standard_group_ids
     FROM rubric_standard_groups_junction rsg
     JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
     WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
@@ -219,18 +219,18 @@ all_standard_group_ids AS (
 ),
 standard_groups_distinct AS (
     SELECT DISTINCT ON (sg.id)
-        sg.id, rsg.rubric_id, sg.name, COALESCE(sg.description, '') as description, sg.points, sg.pass_points, rsg.position
+        sg.id, rsg.rubric_id, sg.name, COALESCE(sg.description, '') as description, sg.points, sg.pass_points
     FROM rubric_standard_groups_junction rsg
     JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
     WHERE rsg.rubric_id IN (SELECT rubric_id FROM all_rubric_ids) AND rsg.active = true
-    ORDER BY sg.id, rsg.rubric_id, rsg.position, sg.name
+    ORDER BY sg.id, rsg.rubric_id, sg.name
 ),
 standard_groups_aggregated AS (
     SELECT
         COALESCE(
             ARRAY_AGG(
                 (sgd.id, sgd.rubric_id, sgd.name, sgd.description, sgd.points, sgd.pass_points)::types.q_get_rubrics_list_v4_standard_group
-                ORDER BY sgd.rubric_id, sgd.position, sgd.name
+                ORDER BY sgd.rubric_id, sgd.name
             ),
             '{}'::types.q_get_rubrics_list_v4_standard_group[]
         ) as standard_groups

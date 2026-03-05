@@ -136,8 +136,8 @@ scenario_pf_data AS (
 scenario_objectives_data AS (
     SELECT
         soj.scenario_id,
-        ARRAY_AGG(soj.objective_id ORDER BY soj.idx) as objective_ids,
-        ARRAY_AGG(obr.objective ORDER BY soj.idx) as objective_values
+        ARRAY_AGG(soj.objective_id) as objective_ids,
+        ARRAY_AGG(obr.objective) as objective_values
     FROM scenario_objectives_junction soj
     JOIN objectives_resource obr ON obr.id = soj.objective_id
     WHERE soj.active = true

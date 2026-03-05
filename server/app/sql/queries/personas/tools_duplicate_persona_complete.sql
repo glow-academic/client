@@ -58,7 +58,7 @@ original_fields AS (
     JOIN persona_parameter_fields_junction ppfj ON ppfj.persona_id = x.persona_id AND ppfj.active = true
 ),
 original_examples AS (
-    SELECT pej.example_id, pej.idx
+    SELECT pej.example_id
     FROM params x
     JOIN persona_examples_junction pej ON pej.persona_id = x.persona_id AND pej.active = true
 ),
@@ -164,11 +164,10 @@ copy_fields AS (
     RETURNING persona_id
 ),
 copy_examples AS (
-    INSERT INTO persona_examples_junction (persona_id, example_id, idx, active, created_at)
+    INSERT INTO persona_examples_junction (persona_id, example_id, active, created_at)
     SELECT
         np.id,
         oe.example_id,
-        oe.idx,
         active_value,
         NOW()
     FROM new_persona np

@@ -100,7 +100,7 @@ persona_examples_data AS (
         CASE
             WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(e.id ORDER BY pe.idx)
+                (SELECT ARRAY_AGG(e.id ORDER BY pe.created_at)
                  FROM persona_examples_junction pe
                  JOIN examples_resource e ON e.id = pe.example_id
                  WHERE pe.persona_id = (SELECT persona_id FROM params) AND pe.active = true),

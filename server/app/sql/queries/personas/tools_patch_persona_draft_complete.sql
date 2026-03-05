@@ -208,11 +208,10 @@ BEGIN
         SET active = false
         WHERE draft_id = v_draft_id;
 
-        INSERT INTO persona_draft_examples_junction (draft_id, example_id, idx, active, created_at)
-        SELECT v_draft_id, ex_id, (ROW_NUMBER() OVER ()) - 1, true, NOW()
+        INSERT INTO persona_draft_examples_junction (draft_id, example_id, active, created_at)
+        SELECT v_draft_id, ex_id, true, NOW()
         FROM UNNEST((examples).resource_ids) AS ex_id
         ON CONFLICT (draft_id, example_id) DO UPDATE SET
-            idx = EXCLUDED.idx,
             active = true,
             created_at = NOW();
     END IF;

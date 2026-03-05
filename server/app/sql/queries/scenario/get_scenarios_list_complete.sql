@@ -104,7 +104,7 @@ user_profile AS (
 scenario_objectives_agg AS (
     SELECT
         so.scenario_id,
-        ARRAY_AGG(so.objective_id::text ORDER BY so.idx) as objective_ids
+        ARRAY_AGG(so.objective_id::text) as objective_ids
     FROM scenario_objectives_junction so
     WHERE so.active = true
     GROUP BY so.scenario_id

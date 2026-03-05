@@ -62,7 +62,7 @@ original_groups AS (
         sg.description,
         sg.points,
         sg.pass_points,
-        ROW_NUMBER() OVER (ORDER BY rsg.position, sg.name) as group_order
+        ROW_NUMBER() OVER (ORDER BY sg.name) as group_order
     FROM rubric_standard_groups_junction rsg
     JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
     WHERE rsg.rubric_id = (SELECT original_rubric_id FROM params)
@@ -215,11 +215,10 @@ new_standard_groups AS (
     RETURNING id, name, short_name, description, points, pass_points
 ),
 link_standard_groups AS (
-    INSERT INTO rubric_standard_groups_junction (rubric_id, standard_group_id, position, active, created_at)
-    SELECT 
+    INSERT INTO rubric_standard_groups_junction (rubric_id, standard_group_id, active, created_at)
+    SELECT
         nr.rubric_id,
         nsg.id,
-        og.group_order,
         true,
         NOW()
     FROM new_rubric nr
