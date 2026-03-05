@@ -50,7 +50,7 @@ END $$;
 
 -- Create composite type for objective item
 CREATE TYPE types.q_get_objectives_v4_item AS (
-    objective_id uuid,
+    objectives_id uuid,
     objective text,
     generated boolean
 );

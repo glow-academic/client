@@ -43,7 +43,7 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         p.id as resolved_profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
@@ -60,7 +60,7 @@ usage_check AS (
           AND EXISTS (
               SELECT 1
               FROM simulation_scenario_flags_junction ssf
-              JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id
+              JOIN scenario_flags_resource sfr ON ssf.scenario_flags_id = sfr.id
               JOIN flags_resource f ON sfr.flag_id = f.id
               WHERE ssf.simulation_id = ss.simulation_id
                 AND sfr.scenario_id = ss.scenario_id
@@ -70,7 +70,7 @@ usage_check AS (
     ) + (
         -- Count chats using this scenario via scenario_scenarios_junction
         SELECT COUNT(*) FROM attempt_chat_mv msc
-        JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = msc.scenario_id
+        JOIN scenario_scenarios_junction ssj ON ssj.scenario_id = msc.scenario_id
         WHERE ssj.scenario_id = x.scenario_id
     ) as usage_count
     FROM params x
@@ -79,7 +79,7 @@ scenario_info AS (
     -- Check if scenario exists and get name
     SELECT 
         s.id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         uc.usage_count
     FROM params x
     JOIN scenario_artifact s ON s.id = x.scenario_id

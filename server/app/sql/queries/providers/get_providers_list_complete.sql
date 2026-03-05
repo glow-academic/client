@@ -101,7 +101,7 @@ provider_data AS (
     SELECT
         pr.id as provider_id,
         n.name as name,
-        COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), '') as description,
+        COALESCE((SELECT d.description FROM provider_descriptions_junction pd JOIN descriptions_resource d ON pd.descriptions_id = d.id WHERE pd.provider_id = pr.id LIMIT 1), '') as description,
         COALESCE((SELECT v.value FROM provider_values_junction pvj JOIN values_resource v ON pvj.values_id = v.id WHERE pvj.provider_id = pr.id AND pvj.active = true LIMIT 1), '') as value,
         EXISTS (SELECT 1 FROM provider_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.provider_id = pr.id AND f.name = 'provider_active' AND f.value = TRUE) as active,
         pr.updated_at,
@@ -122,7 +122,7 @@ provider_data AS (
     JOIN provider_providers_junction ppj ON ppj.providers_id = p.id
     JOIN provider_artifact pr ON pr.id = ppj.provider_id
     JOIN provider_names_junction pn ON pn.provider_id = pr.id
-    JOIN names_resource n ON n.id = pn.name_id
+    JOIN names_resource n ON n.id = pn.names_id
     LEFT JOIN model_data md ON md.provider_id = pr.id
     WHERE p.active = true
 ),
@@ -166,12 +166,12 @@ providers_agg AS (
 department_option_data AS (
     SELECT
         dr.id::text as value,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
         (SELECT COUNT(*) FROM provider_data pd WHERE dr.id = ANY(pd.department_ids)) as count
     FROM departments_resource dr
-    JOIN department_departments_junction dd ON dd.departments_id = dr.id
+    JOIN department_departments_junction dd ON dd.department_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)
-      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
+      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
 ),
 -- Model options with names resolved in SQL
 all_model_ids AS (
@@ -182,11 +182,11 @@ all_model_ids AS (
 model_option_data AS (
     SELECT
         ma.id::text as value,
-        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON n.id = mn.name_id WHERE mn.model_id = ma.id LIMIT 1) as label,
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON n.id = mn.names_id WHERE mn.model_id = ma.id LIMIT 1) as label,
         (SELECT COUNT(*) FROM provider_data pd WHERE ma.id = ANY(pd.model_ids)) as count
     FROM model_artifact ma
     WHERE ma.id IN (SELECT model_id FROM all_model_ids)
-      AND (model_search IS NULL OR LOWER((SELECT n.name FROM model_names_junction mn JOIN names_resource n ON n.id = mn.name_id WHERE mn.model_id = ma.id LIMIT 1)) LIKE '%' || LOWER(model_search) || '%')
+      AND (model_search IS NULL OR LOWER((SELECT n.name FROM model_names_junction mn JOIN names_resource n ON n.id = mn.names_id WHERE mn.model_id = ma.id LIMIT 1)) LIKE '%' || LOWER(model_search) || '%')
 ),
 -- Status options with counts
 status_option_data AS (

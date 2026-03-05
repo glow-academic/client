@@ -36,10 +36,10 @@ WITH RECURSIVE conditional_chain AS (
     -- Base case: conditional params linked to fields of starting parameters
     SELECT DISTINCT cpr.parameter_id
     FROM conditional_parameters_resource cpr
-    JOIN field_conditional_parameters_junction fcpj ON fcpj.conditional_parameter_id = cpr.id
+    JOIN field_conditional_parameters_junction fcpj ON fcpj.conditional_parameters_id = cpr.id
     JOIN field_fields_junction ffj ON ffj.field_id = fcpj.field_id
     JOIN fields_resource fr ON fr.id = ffj.fields_id
-    JOIN parameter_fields_junction pfj ON pfj.field_resource_id = fr.id
+    JOIN parameter_fields_junction pfj ON pfj.fields_id = fr.id
     JOIN parameter_parameters_junction ppj ON ppj.parameter_id = pfj.parameter_id
     WHERE cpr.active = true
       AND fcpj.active = true
@@ -53,10 +53,10 @@ WITH RECURSIVE conditional_chain AS (
     FROM conditional_chain cc
     JOIN parameter_parameters_junction ppj ON ppj.parameters_id = cc.parameter_id
     JOIN parameter_fields_junction pfj ON pfj.parameter_id = ppj.parameter_id
-    JOIN fields_resource fr ON fr.id = pfj.field_resource_id
+    JOIN fields_resource fr ON fr.id = pfj.fields_id
     JOIN field_fields_junction ffj ON ffj.fields_id = fr.id
     JOIN field_conditional_parameters_junction fcpj ON fcpj.field_id = ffj.field_id
-    JOIN conditional_parameters_resource cpr ON cpr.id = fcpj.conditional_parameter_id
+    JOIN conditional_parameters_resource cpr ON cpr.id = fcpj.conditional_parameters_id
     WHERE cpr.active = true
       AND fcpj.active = true
       AND pfj.active = true

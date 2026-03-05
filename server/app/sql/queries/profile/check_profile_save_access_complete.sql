@@ -40,7 +40,7 @@ WITH params AS (
 -- Get target profile departments (for update mode)
 target_departments AS (
     SELECT COALESCE(
-        ARRAY_AGG(pd.department_id::text) FILTER (WHERE pd.department_id IS NOT NULL),
+        ARRAY_AGG(pd.departments_id::text) FILTER (WHERE pd.departments_id IS NOT NULL),
         ARRAY[]::text[]
     ) as department_ids
     FROM params x

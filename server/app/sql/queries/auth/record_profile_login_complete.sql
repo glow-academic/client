@@ -44,7 +44,7 @@ login_insert AS (
     SELECT (
         SELECT s.id FROM sessions_entry s
         JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-        WHERE psc.profiles_id = (SELECT profile_id FROM params) AND s.active = true
+        WHERE psc.profile_id = (SELECT profile_id FROM params) AND s.active = true
         ORDER BY s.created_at DESC LIMIT 1
     )
     WHERE EXISTS (SELECT 1 FROM profile_exists)

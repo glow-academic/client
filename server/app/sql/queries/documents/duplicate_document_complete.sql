@@ -35,8 +35,8 @@ WITH params AS (
 original_document AS (
     SELECT 
         d.id,
-        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
-        (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1)
+        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.document_id = d.id LIMIT 1),
+        (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.document_id = d.id LIMIT 1)
     FROM params x
     JOIN document_artifact d ON d.id = x.document_id
 ),
@@ -48,7 +48,7 @@ original_departments AS (
 ),
 original_fields AS (
     -- Get parameter_field IDs from original document
-    SELECT dpfj.parameter_field_id
+    SELECT dpfj.parameter_fields_id
     FROM params x
     JOIN document_parameter_fields_junction dpfj ON dpfj.document_id = x.document_id AND dpfj.active = true
 ),
@@ -65,7 +65,7 @@ new_name_resource AS (
     FROM original_document
     WHERE name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id, name
+    RETURNING id as names_id, name
 ),
 -- Insert description INTO descriptions_resource table
 new_description_resource AS (
@@ -74,7 +74,7 @@ new_description_resource AS (
     FROM original_document
     WHERE description IS NOT NULL AND description != ''
     ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as description_id, description
+    RETURNING id as descriptions_id, description
 ),
 new_document AS (
     INSERT INTO document_artifact (
@@ -89,25 +89,25 @@ new_document AS (
 ),
 -- Link document to name
 link_document_name AS (
-    INSERT INTO document_names_junction (document_id, name_id, created_at)
+    INSERT INTO document_names_junction (document_id, names_id, created_at)
     SELECT 
         nd.id,
-        nnr.name_id,
+        nnr.names_id,
         NOW()
     FROM new_document nd
     CROSS JOIN new_name_resource nnr
-    ON CONFLICT (document_id, name_id) DO NOTHING
+    ON CONFLICT (document_id, names_id) DO NOTHING
 ),
 -- Link document to description
 link_document_description AS (
-    INSERT INTO document_descriptions_junction (document_id, description_id, created_at)
+    INSERT INTO document_descriptions_junction (document_id, descriptions_id, created_at)
     SELECT 
         nd.id,
-        ndr.description_id,
+        ndr.descriptions_id,
         NOW()
     FROM new_document nd
     CROSS JOIN new_description_resource ndr
-    ON CONFLICT (document_id, description_id) DO NOTHING
+    ON CONFLICT (document_id, descriptions_id) DO NOTHING
 ),
 -- Link document active flag (set to false for duplicate)
 link_document_active_flag AS (
@@ -144,10 +144,10 @@ copy_departments AS (
 ),
 copy_fields AS (
     -- Copy parameter_field links from original document
-    INSERT INTO document_parameter_fields_junction (document_id, parameter_field_id, active, created_at)
+    INSERT INTO document_parameter_fields_junction (document_id, parameter_fields_id, active, created_at)
     SELECT
         nd.id,
-        of.parameter_field_id,
+        of.parameter_fields_id,
         true,
         NOW()
     FROM new_document nd

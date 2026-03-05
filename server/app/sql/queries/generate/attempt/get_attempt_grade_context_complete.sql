@@ -60,12 +60,12 @@ rate_limit_data AS (
     FROM params p
     JOIN profile_artifact prof ON prof.id = p.profile_id
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = prof.id AND prl.active = true
-    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
+    LEFT JOIN request_limits_resource rl ON prl.request_limits_id = rl.id
 ),
 runs_today_data AS (
     SELECT COUNT(*)::bigint as runs_today
     FROM params p
-    JOIN profiles_runs_connection prj ON prj.profiles_id = p.profile_id
+    JOIN profiles_runs_connection prj ON prj.profile_id = p.profile_id
     JOIN runs_entry mr ON mr.id = prj.run_id
     WHERE mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
@@ -74,7 +74,7 @@ simulation_data AS (
     SELECT
         s.id as simulation_id,
         TRUE as simulation_exists,
-        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as simulation_name,
+        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as simulation_name,
         EXISTS (
             SELECT 1 FROM simulation_flags_junction sf
             JOIN flags_resource f ON sf.flag_id = f.id
@@ -91,7 +91,7 @@ access_data AS (
         SELECT 1
         FROM params p
         JOIN profile_profiles_junction ppj ON ppj.profile_id = p.profile_id AND ppj.active = true
-        JOIN cohort_profiles_junction cpj ON cpj.profiles_id = ppj.profiles_id AND cpj.active = true
+        JOIN cohort_profiles_junction cpj ON cpj.profile_id = ppj.profile_id AND cpj.active = true
         JOIN cohort_simulations_junction cs ON cs.cohort_id = cpj.cohort_id AND cs.active = true
         WHERE cs.simulation_id = p.simulation_id
     ) as has_access

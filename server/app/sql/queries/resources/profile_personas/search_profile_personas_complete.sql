@@ -47,5 +47,5 @@ WHERE ppr.active = true
   )
   AND (COALESCE(array_length(persona_ids, 1), 0) = 0 OR ppr.persona_id = ANY(persona_ids))
   -- Artifact boolean filters
-  AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_profile_personas_junction j WHERE j.profile_persona_id = ppr.id AND j.active = true));
+  AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_profile_personas_junction j WHERE j.profile_personas_id = ppr.id AND j.active = true));
 $$;

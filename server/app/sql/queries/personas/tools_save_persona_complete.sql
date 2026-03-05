@@ -20,8 +20,8 @@ END $$;
 CREATE OR REPLACE FUNCTION tools_save_persona_v4(
     profile_id uuid,
     input_persona_id uuid DEFAULT NULL,
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
+    names_id uuid DEFAULT NULL,
+    descriptions_id uuid DEFAULT NULL,
     color_id uuid DEFAULT NULL,
     icon_id uuid DEFAULT NULL,
     instructions_id uuid DEFAULT NULL,
@@ -49,7 +49,7 @@ BEGIN
 
     -- Validate required fields (only on create)
     IF is_create THEN
-        IF name_id IS NULL THEN
+        IF names_id IS NULL THEN
             RAISE EXCEPTION 'Name resource is required';
         END IF;
 
@@ -79,39 +79,39 @@ BEGIN
 
         -- COALESCE: fill NULL params from existing active junctions (partial update support)
         -- Single-select resources
-        IF name_id IS NULL THEN
-            name_id := (SELECT j.name_id FROM persona_names_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
+        IF names_id IS NULL THEN
+            names_id := (SELECT j.names_id FROM persona_names_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
         END IF;
-        IF description_id IS NULL THEN
-            description_id := (SELECT j.description_id FROM persona_descriptions_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
+        IF descriptions_id IS NULL THEN
+            descriptions_id := (SELECT j.descriptions_id FROM persona_descriptions_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
         END IF;
         IF color_id IS NULL THEN
-            color_id := (SELECT j.color_id FROM persona_colors_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
+            color_id := (SELECT j.colors_id FROM persona_colors_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
         END IF;
         IF icon_id IS NULL THEN
-            icon_id := (SELECT j.icon_id FROM persona_icons_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
+            icon_id := (SELECT j.icons_id FROM persona_icons_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
         END IF;
         IF instructions_id IS NULL THEN
-            instructions_id := (SELECT j.instruction_id FROM persona_instructions_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
+            instructions_id := (SELECT j.instructions_id FROM persona_instructions_junction j WHERE j.persona_id = v_persona_id AND j.active LIMIT 1);
         END IF;
 
         -- Multi-select arrays: preserve existing if NULL passed
         IF department_ids IS NULL THEN
-            department_ids := COALESCE((SELECT ARRAY_AGG(j.department_id) FROM persona_departments_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
+            department_ids := COALESCE((SELECT ARRAY_AGG(j.departments_id) FROM persona_departments_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF parameter_field_ids IS NULL THEN
-            parameter_field_ids := COALESCE((SELECT ARRAY_AGG(j.parameter_field_id) FROM persona_parameter_fields_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
+            parameter_field_ids := COALESCE((SELECT ARRAY_AGG(j.parameter_fields_id) FROM persona_parameter_fields_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF example_ids IS NULL THEN
-            example_ids := COALESCE((SELECT ARRAY_AGG(j.example_id ORDER BY j.created_at) FROM persona_examples_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
+            example_ids := COALESCE((SELECT ARRAY_AGG(j.examples_id ORDER BY j.created_at) FROM persona_examples_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF voice_ids IS NULL THEN
-            voice_ids := COALESCE((SELECT ARRAY_AGG(j.voice_id) FROM persona_voices_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
+            voice_ids := COALESCE((SELECT ARRAY_AGG(j.voices_id) FROM persona_voices_junction j WHERE j.persona_id = v_persona_id AND j.active), ARRAY[]::uuid[]);
         END IF;
 
         -- Flag: preserve existing active flag if not provided
         IF active_flag_id IS NULL THEN
-            active_flag_id := (SELECT j.flag_id FROM persona_flags_junction j JOIN flags_resource fr ON j.flag_id = fr.id WHERE j.persona_id = v_persona_id AND fr.value = true LIMIT 1);
+            active_flag_id := (SELECT j.flags_id FROM persona_flags_junction j JOIN flags_resource fr ON j.flags_id = fr.id WHERE j.persona_id = v_persona_id AND fr.value = true LIMIT 1);
         END IF;
     END IF;
 
@@ -138,8 +138,8 @@ BEGIN
             false,
             false
         FROM (SELECT 1) AS dummy
-        LEFT JOIN names_resource n ON n.id = tools_save_persona_v4.name_id
-        LEFT JOIN descriptions_resource d ON d.id = tools_save_persona_v4.description_id
+        LEFT JOIN names_resource n ON n.id = tools_save_persona_v4.names_id
+        LEFT JOIN descriptions_resource d ON d.id = tools_save_persona_v4.descriptions_id
         LEFT JOIN icons_resource ic ON ic.id = tools_save_persona_v4.icon_id
         LEFT JOIN colors_resource c ON c.id = tools_save_persona_v4.color_id
         LEFT JOIN instructions_resource ins ON ins.id = tools_save_persona_v4.instructions_id
@@ -164,8 +164,8 @@ BEGIN
     WITH params AS (
         SELECT
             v_persona_id AS persona_id,
-            tools_save_persona_v4.name_id AS name_id,
-            tools_save_persona_v4.description_id AS description_id,
+            tools_save_persona_v4.names_id AS names_id,
+            tools_save_persona_v4.descriptions_id AS descriptions_id,
             tools_save_persona_v4.color_id AS color_id,
             tools_save_persona_v4.icon_id AS icon_id,
             tools_save_persona_v4.instructions_id AS instructions_id,
@@ -178,23 +178,23 @@ BEGIN
     ),
     -- Link name
     link_name AS (
-        INSERT INTO persona_names_junction (persona_id, name_id, active, created_at)
-        SELECT x.persona_id, x.name_id, active_value, NOW()
+        INSERT INTO persona_names_junction (persona_id, names_id, active, created_at)
+        SELECT x.persona_id, x.names_id, active_value, NOW()
         FROM params x
-        WHERE x.name_id IS NOT NULL
+        WHERE x.names_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT persona_names_pkey DO UPDATE SET active = active_value
     ),
     -- Link description
     link_description AS (
-        INSERT INTO persona_descriptions_junction (persona_id, description_id, active, created_at)
-        SELECT x.persona_id, x.description_id, active_value, NOW()
+        INSERT INTO persona_descriptions_junction (persona_id, descriptions_id, active, created_at)
+        SELECT x.persona_id, x.descriptions_id, active_value, NOW()
         FROM params x
-        WHERE x.description_id IS NOT NULL
+        WHERE x.descriptions_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT persona_descriptions_pkey DO UPDATE SET active = active_value
     ),
     -- Link color
     link_color AS (
-        INSERT INTO persona_colors_junction (persona_id, color_id, active, created_at)
+        INSERT INTO persona_colors_junction (persona_id, colors_id, active, created_at)
         SELECT x.persona_id, x.color_id, active_value, NOW()
         FROM params x
         WHERE x.color_id IS NOT NULL
@@ -202,7 +202,7 @@ BEGIN
     ),
     -- Link icon
     link_icon AS (
-        INSERT INTO persona_icons_junction (persona_id, icon_id, active, created_at)
+        INSERT INTO persona_icons_junction (persona_id, icons_id, active, created_at)
         SELECT x.persona_id, x.icon_id, active_value, NOW()
         FROM params x
         WHERE x.icon_id IS NOT NULL
@@ -210,7 +210,7 @@ BEGIN
     ),
     -- Link instructions
     link_instruction AS (
-        INSERT INTO persona_instructions_junction (persona_id, instruction_id, active, created_at)
+        INSERT INTO persona_instructions_junction (persona_id, instructions_id, active, created_at)
         SELECT x.persona_id, x.instructions_id, active_value, NOW()
         FROM params x
         WHERE x.instructions_id IS NOT NULL
@@ -218,7 +218,7 @@ BEGIN
     ),
     -- Upsert active flag
     upsert_flag AS (
-        INSERT INTO persona_flags_junction (persona_id, flag_id, created_at)
+        INSERT INTO persona_flags_junction (persona_id, flags_id, created_at)
         SELECT x.persona_id,
             COALESCE(x.active_flag_id, f.id),
             NOW()
@@ -226,11 +226,11 @@ BEGIN
         CROSS JOIN flags_resource f
         WHERE f.type = 'persona_active'
         ON CONFLICT ON CONSTRAINT persona_flags_pkey DO UPDATE SET
-            flag_id = COALESCE(EXCLUDED.flag_id, persona_flags_junction.flag_id)
+            flags_id = COALESCE(EXCLUDED.flags_id, persona_flags_junction.flags_id)
     ),
     -- Link departments
     link_departments AS (
-        INSERT INTO persona_departments_junction (persona_id, department_id, active, created_at)
+        INSERT INTO persona_departments_junction (persona_id, departments_id, active, created_at)
         SELECT x.persona_id, dept_id, active_value, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.department_ids) AS dept_id
@@ -239,16 +239,16 @@ BEGIN
     ),
     -- Link parameter fields
     link_parameter_fields AS (
-        INSERT INTO persona_parameter_fields_junction (persona_id, parameter_field_id, active, created_at)
+        INSERT INTO persona_parameter_fields_junction (persona_id, parameter_fields_id, active, created_at)
         SELECT x.persona_id, field_id, active_value, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.parameter_field_ids) AS field_id
         WHERE COALESCE(array_length(x.parameter_field_ids, 1), 0) > 0
-        ON CONFLICT (persona_id, parameter_field_id) DO UPDATE SET active = active_value
+        ON CONFLICT (persona_id, parameter_fields_id) DO UPDATE SET active = active_value
     ),
     -- Link examples
     link_examples AS (
-        INSERT INTO persona_examples_junction (persona_id, example_id, active, created_at)
+        INSERT INTO persona_examples_junction (persona_id, examples_id, active, created_at)
         SELECT x.persona_id, ex_id, active_value, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.example_ids) AS ex_id
@@ -259,12 +259,12 @@ BEGIN
     ),
     -- Link voices
     link_voices AS (
-        INSERT INTO persona_voices_junction (persona_id, voice_id, active, created_at)
+        INSERT INTO persona_voices_junction (persona_id, voices_id, active, created_at)
         SELECT x.persona_id, vid, active_value, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.voice_ids) AS vid
         WHERE COALESCE(array_length(x.voice_ids, 1), 0) > 0
-        ON CONFLICT (persona_id, voice_id) DO UPDATE SET active = active_value
+        ON CONFLICT (persona_id, voices_id) DO UPDATE SET active = active_value
     ),
     -- Deactivate old personas_resource link
     deactivate_old_resource AS (

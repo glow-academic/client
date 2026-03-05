@@ -38,7 +38,7 @@ WITH params AS (
 -- Get persona departments
 persona_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(pd.department_id::text) FILTER (WHERE pd.department_id IS NOT NULL),
+        ARRAY_AGG(pd.departments_id::text) FILTER (WHERE pd.departments_id IS NOT NULL),
         ARRAY[]::text[]
     ) as department_ids
     FROM params x
@@ -48,9 +48,9 @@ persona_departments_data AS (
 -- NOTE: Must use COUNT(column) not COUNT(*) with LEFT JOIN, as COUNT(*)
 -- counts the NULL row when there are no matches
 scenario_links AS (
-    SELECT COUNT(sp.persona_id)::bigint as active_count
+    SELECT COUNT(sp.personas_id)::bigint as active_count
     FROM params x
-    LEFT JOIN scenario_personas_junction sp ON sp.persona_id = x.persona_id AND sp.active = true
+    LEFT JOIN scenario_personas_junction sp ON sp.personas_id = x.persona_id AND sp.active = true
 )
 SELECT
     (SELECT department_ids FROM persona_departments_data) as persona_department_ids,

@@ -25,11 +25,11 @@ CREATE OR REPLACE FUNCTION api_get_provider_ids_v4(
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
-    name_id uuid,
-    description_id uuid,
+    names_id uuid,
+    descriptions_id uuid,
     active_flag_id uuid,
-    value_id uuid,
-    endpoint_id uuid,
+    values_id uuid,
+    endpoints_id uuid,
     key_id uuid,
     department_ids uuid[],
     providers_id uuid,
@@ -63,20 +63,20 @@ provider_departments_data AS (
 name_resource_data AS (
     SELECT
         (
-            SELECT pn.name_id
+            SELECT pn.names_id
             FROM provider_names_junction pn
             WHERE pn.provider_id = (SELECT provider_id FROM params) AND pn.active = true
             LIMIT 1
-        ) AS name_id
+        ) AS names_id
 ),
 description_resource_data AS (
     SELECT
         (
-            SELECT pd.description_id
+            SELECT pd.descriptions_id
             FROM provider_descriptions_junction pd
             WHERE pd.provider_id = (SELECT provider_id FROM params) AND pd.active = true
             LIMIT 1
-        ) AS description_id
+        ) AS descriptions_id
 ),
 flag_resource_data AS (
     SELECT
@@ -98,16 +98,16 @@ value_resource_data AS (
             FROM provider_values_junction pv
             WHERE pv.provider_id = (SELECT provider_id FROM params) AND pv.active = true
             LIMIT 1
-        ) AS value_id
+        ) AS values_id
 ),
 endpoint_resource_data AS (
     SELECT
         (
-            SELECT pe.endpoint_id
+            SELECT pe.endpoints_id
             FROM provider_endpoints_junction pe
             WHERE pe.provider_id = (SELECT provider_id FROM params) AND pe.active = true
             LIMIT 1
-        ) AS endpoint_id
+        ) AS endpoints_id
 ),
 key_resource_data AS (
     SELECT
@@ -144,11 +144,11 @@ key_suggestions_data AS (
     WHERE k.active = true
 )
 SELECT
-    (SELECT name_id FROM name_resource_data) AS name_id,
-    (SELECT description_id FROM description_resource_data) AS description_id,
+    (SELECT names_id FROM name_resource_data) AS names_id,
+    (SELECT descriptions_id FROM description_resource_data) AS descriptions_id,
     (SELECT active_flag_id FROM flag_resource_data) AS active_flag_id,
-    (SELECT value_id FROM value_resource_data) AS value_id,
-    (SELECT endpoint_id FROM endpoint_resource_data) AS endpoint_id,
+    (SELECT values_id FROM value_resource_data) AS values_id,
+    (SELECT endpoints_id FROM endpoint_resource_data) AS endpoints_id,
     (SELECT key_id FROM key_resource_data) AS key_id,
     (SELECT department_ids FROM provider_departments_data) AS department_ids,
     (SELECT providers_id FROM providers_resource_data) AS providers_id,

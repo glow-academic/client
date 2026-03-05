@@ -29,8 +29,8 @@ CREATE OR REPLACE FUNCTION api_get_tool_ids_v4(
     user_department_ids uuid[] DEFAULT ARRAY[]::uuid[]
 )
 RETURNS TABLE (
-    name_id uuid,
-    description_id uuid,
+    names_id uuid,
+    descriptions_id uuid,
     active_flag_id uuid,
 
     args_ids uuid[],
@@ -52,22 +52,22 @@ name_resource_data AS (
     SELECT
         COALESCE(
             (SELECT nd.names_id FROM tool_drafts_names_connection nd WHERE nd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT tn.name_id FROM tool_names_junction tn WHERE tn.tool_id = (SELECT tool_id FROM params) AND tn.active = true LIMIT 1)
-        ) as name_id
+            (SELECT tn.names_id FROM tool_names_junction tn WHERE tn.tool_id = (SELECT tool_id FROM params) AND tn.active = true LIMIT 1)
+        ) as names_id
     FROM params
 ),
 description_resource_data AS (
     SELECT
         COALESCE(
             (SELECT dd.descriptions_id FROM tool_drafts_descriptions_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT td.description_id FROM tool_descriptions_junction td WHERE td.tool_id = (SELECT tool_id FROM params) AND td.active = true LIMIT 1)
-        ) as description_id
+            (SELECT td.descriptions_id FROM tool_descriptions_junction td WHERE td.tool_id = (SELECT tool_id FROM params) AND td.active = true LIMIT 1)
+        ) as descriptions_id
     FROM params
 ),
 flag_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT fd.flags_id FROM tool_drafts_flags_connection fd WHERE fd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT fd.flag_id FROM tool_drafts_flags_connection fd WHERE fd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT tf.flag_id
              FROM tool_flags_junction tf
              JOIN flags_resource f ON tf.flag_id = f.id
@@ -144,8 +144,8 @@ args_outputs_ids_data AS (
     LIMIT 1
 )
 SELECT
-    (SELECT name_id FROM name_resource_data) as name_id,
-    (SELECT description_id FROM description_resource_data) as description_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
+    (SELECT descriptions_id FROM description_resource_data) as descriptions_id,
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
 
     (SELECT args_ids FROM args_ids_data) as args_ids,

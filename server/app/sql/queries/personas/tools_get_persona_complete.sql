@@ -27,8 +27,8 @@ CREATE OR REPLACE FUNCTION tools_get_persona_v4(
 )
 RETURNS TABLE (
     -- Single-select resource IDs (from draft or persona junction)
-    name_id uuid,
-    description_id uuid,
+    names_id uuid,
+    descriptions_id uuid,
     color_id uuid,
     icon_id uuid,
     instructions_id uuid,
@@ -57,7 +57,7 @@ persona_departments_data AS (
         CASE
             WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(pd.department_id ORDER BY pd.created_at)
+                (SELECT ARRAY_AGG(pd.departments_id ORDER BY pd.created_at)
                  FROM persona_departments_junction pd
                  WHERE pd.persona_id = (SELECT persona_id FROM params) AND pd.active = true),
                 ARRAY[]::uuid[]
@@ -71,7 +71,7 @@ persona_parameter_fields_data AS (
         CASE
             WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(ppfj.parameter_field_id ORDER BY ppfj.created_at)
+                (SELECT ARRAY_AGG(ppfj.parameter_fields_id ORDER BY ppfj.created_at)
                  FROM persona_parameter_fields_junction ppfj
                  WHERE ppfj.persona_id = (SELECT persona_id FROM params) AND ppfj.active = true),
                 ARRAY[]::uuid[]
@@ -87,7 +87,7 @@ persona_examples_data AS (
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(e.id ORDER BY pe.created_at)
                  FROM persona_examples_junction pe
-                 JOIN examples_resource e ON e.id = pe.example_id
+                 JOIN examples_resource e ON e.id = pe.examples_id
                  WHERE pe.persona_id = (SELECT persona_id FROM params) AND pe.active = true),
                 ARRAY[]::uuid[]
             )
@@ -106,7 +106,7 @@ persona_voices_data AS (
         CASE
             WHEN (SELECT persona_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(pv.voice_id ORDER BY pv.created_at)
+                (SELECT ARRAY_AGG(pv.voices_id ORDER BY pv.created_at)
                  FROM persona_voices_junction pv
                  WHERE pv.persona_id = (SELECT persona_id FROM params) AND pv.active = true),
                 ARRAY[]::uuid[]
@@ -118,34 +118,34 @@ persona_voices_data AS (
 -- Single-select resource IDs (canonical only).
 name_resource_data AS (
     SELECT
-        (SELECT pn.name_id FROM persona_names_junction pn WHERE pn.persona_id = (SELECT persona_id FROM params) AND pn.active = true LIMIT 1) as name_id
+        (SELECT pn.names_id FROM persona_names_junction pn WHERE pn.persona_id = (SELECT persona_id FROM params) AND pn.active = true LIMIT 1) as names_id
     FROM params
 ),
 description_resource_data AS (
     SELECT
-        (SELECT pd.description_id FROM persona_descriptions_junction pd WHERE pd.persona_id = (SELECT persona_id FROM params) AND pd.active = true LIMIT 1) as description_id
+        (SELECT pd.descriptions_id FROM persona_descriptions_junction pd WHERE pd.persona_id = (SELECT persona_id FROM params) AND pd.active = true LIMIT 1) as descriptions_id
     FROM params
 ),
 color_resource_data AS (
     SELECT
-        (SELECT pc.color_id FROM persona_colors_junction pc WHERE pc.persona_id = (SELECT persona_id FROM params) AND pc.active = true LIMIT 1) as color_id
+        (SELECT pc.colors_id FROM persona_colors_junction pc WHERE pc.persona_id = (SELECT persona_id FROM params) AND pc.active = true LIMIT 1) as color_id
     FROM params
 ),
 icon_resource_data AS (
     SELECT
-        (SELECT pi.icon_id FROM persona_icons_junction pi WHERE pi.persona_id = (SELECT persona_id FROM params) AND pi.active = true LIMIT 1) as icon_id
+        (SELECT pi.icons_id FROM persona_icons_junction pi WHERE pi.persona_id = (SELECT persona_id FROM params) AND pi.active = true LIMIT 1) as icon_id
     FROM params
 ),
 instructions_resource_data AS (
     SELECT
-        (SELECT pinst.instruction_id FROM persona_instructions_junction pinst WHERE pinst.persona_id = (SELECT persona_id FROM params) AND pinst.active = true LIMIT 1) as instructions_id
+        (SELECT pinst.instructions_id FROM persona_instructions_junction pinst WHERE pinst.persona_id = (SELECT persona_id FROM params) AND pinst.active = true LIMIT 1) as instructions_id
     FROM params
 ),
 flag_resource_data AS (
     SELECT
-        (SELECT pf.flag_id
+        (SELECT pf.flags_id
          FROM persona_flags_junction pf
-         JOIN flags_resource f ON pf.flag_id = f.id
+         JOIN flags_resource f ON pf.flags_id = f.id
          WHERE pf.persona_id = (SELECT persona_id FROM params)
            AND pf.active = true
            AND f.type = 'persona_active'
@@ -155,8 +155,8 @@ flag_resource_data AS (
 )
 SELECT
     -- Single-select resource IDs
-    (SELECT name_id FROM name_resource_data) as name_id,
-    (SELECT description_id FROM description_resource_data) as description_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
+    (SELECT descriptions_id FROM description_resource_data) as descriptions_id,
     (SELECT color_id FROM color_resource_data) as color_id,
     (SELECT icon_id FROM icon_resource_data) as icon_id,
     (SELECT instructions_id FROM instructions_resource_data) as instructions_id,

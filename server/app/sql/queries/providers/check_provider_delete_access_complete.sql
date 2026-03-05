@@ -58,7 +58,7 @@ provider_name_data AS (
     SELECT n.name
     FROM params x
     JOIN provider_names_junction pn ON pn.provider_id = x.provider_id
-    JOIN names_resource n ON n.id = pn.name_id
+    JOIN names_resource n ON n.id = pn.names_id
     LIMIT 1
 )
 SELECT

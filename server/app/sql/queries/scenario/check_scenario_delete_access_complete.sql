@@ -48,7 +48,7 @@ scenario_exists_check AS (
 scenario_name_data AS (
     SELECT n.name as scenario_name
     FROM scenario_names_junction sn
-    JOIN names_resource n ON sn.name_id = n.id
+    JOIN names_resource n ON sn.names_id = n.id
     WHERE sn.scenario_id = (SELECT p_scenario_id FROM params)
     LIMIT 1
 ),
@@ -60,7 +60,7 @@ scenario_departments AS (
 ),
 -- Get the scenarios_resource.id for this scenario_artifact
 scenario_resource AS (
-    SELECT ssj.scenarios_id
+    SELECT ssj.scenario_id
     FROM scenario_scenarios_junction ssj
     WHERE ssj.scenario_id = (SELECT p_scenario_id FROM params)
     LIMIT 1
@@ -70,12 +70,12 @@ usage_check AS (
         -- Active simulation links via denormalized simulations_resource.scenario_ids + per-simulation flag check
         SELECT COUNT(*)
         FROM simulations_resource sim_r
-        JOIN simulation_simulations_junction ssj_bridge ON ssj_bridge.simulations_id = sim_r.id
+        JOIN simulation_simulations_junction ssj_bridge ON ssj_bridge.simulation_id = sim_r.id
         WHERE (SELECT scenarios_id FROM scenario_resource) = ANY(sim_r.scenario_ids)
           AND EXISTS (
               SELECT 1
               FROM simulation_scenario_flags_junction ssf
-              JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id
+              JOIN scenario_flags_resource sfr ON ssf.scenario_flags_id = sfr.id
               JOIN flags_resource f ON sfr.flag_id = f.id
               WHERE ssf.simulation_id = ssj_bridge.simulation_id
                 AND sfr.scenario_id = (SELECT scenarios_id FROM scenario_resource)

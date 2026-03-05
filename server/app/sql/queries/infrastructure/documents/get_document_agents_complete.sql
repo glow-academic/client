@@ -31,8 +31,8 @@ AS $$
     SELECT 
         NULL::uuid as classify_agent_id,
         NULL::uuid as document_agent_id,
-        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = doc.id LIMIT 1) as name,
-        (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = doc.id LIMIT 1) as description
+        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.document_id = doc.id LIMIT 1) as name,
+        (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.document_id = doc.id LIMIT 1) as description
     FROM document_artifact doc
     WHERE doc.id = $1
     LIMIT 1

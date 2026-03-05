@@ -6,7 +6,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.model_resource_action CASCADE;
     CREATE TYPE types.model_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -89,10 +89,10 @@ DECLARE
     default_voice_ids uuid[];
 BEGIN
     -- Extract resource IDs from composites
-    v_name_id := (names).resource_id;
-    v_description_id := (descriptions).resource_id;
-    v_value_id := ("values").resource_id;
-    v_provider_id := (providers).resource_id;
+    v_name_id := (names).resources_id;
+    v_description_id := (descriptions).resources_id;
+    v_value_id := ("values").resources_id;
+    v_provider_id := (providers).resources_id;
     v_flag_ids := COALESCE((flags).resource_ids, ARRAY[]::uuid[]);
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_modality_ids := COALESCE((modalities).resource_ids, ARRAY[]::uuid[]);
@@ -466,21 +466,21 @@ BEGIN
 
     -- Upsert active links: single-select resources
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO model_names_junction (model_id, name_id, created_at, generated, mcp)
+        INSERT INTO model_names_junction (model_id, names_id, created_at, generated, mcp)
         VALUES (v_model_id, v_name_id, NOW(), false, false)
         ON CONFLICT ON CONSTRAINT model_names_pkey DO UPDATE
         SET generated = false, mcp = false;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO model_descriptions_junction (model_id, description_id, created_at, generated, mcp)
+        INSERT INTO model_descriptions_junction (model_id, descriptions_id, created_at, generated, mcp)
         VALUES (v_model_id, v_description_id, NOW(), false, false)
         ON CONFLICT ON CONSTRAINT model_descriptions_pkey DO UPDATE
         SET generated = false, mcp = false;
     END IF;
 
     IF v_value_id IS NOT NULL THEN
-        INSERT INTO model_values_junction (model_id, value_id, created_at, generated, mcp)
+        INSERT INTO model_values_junction (model_id, values_id, created_at, generated, mcp)
         VALUES (v_model_id, v_value_id, NOW(), false, false)
         ON CONFLICT ON CONSTRAINT model_values_pkey DO UPDATE
         SET generated = false, mcp = false;
@@ -506,13 +506,13 @@ BEGIN
     ON CONFLICT ON CONSTRAINT model_departments_pkey DO UPDATE
     SET active = true;
 
-    INSERT INTO model_modalities_junction (model_id, modality_id, active, created_at, generated, mcp)
+    INSERT INTO model_modalities_junction (model_id, modalities_id, active, created_at, generated, mcp)
     SELECT v_model_id, mid, true, NOW(), false, false
     FROM UNNEST(v_modality_ids) mid
     ON CONFLICT ON CONSTRAINT model_modalities_pkey DO UPDATE
     SET active = true, generated = false, mcp = false;
 
-    INSERT INTO model_temperature_levels_junction (model_id, temperature_level_id, active, created_at, generated, mcp)
+    INSERT INTO model_temperature_levels_junction (model_id, temperature_levels_id, active, created_at, generated, mcp)
     SELECT v_model_id, tid, true, NOW(), false, false
     FROM UNNEST(v_temperature_level_ids) tid
     ON CONFLICT ON CONSTRAINT model_temperature_levels_pkey DO UPDATE
@@ -524,7 +524,7 @@ BEGIN
     ON CONFLICT ON CONSTRAINT model_pricing_pkey DO UPDATE
     SET active = true;
 
-    INSERT INTO model_reasoning_levels_junction (model_id, reasoning_level_id, active, created_at, generated, mcp)
+    INSERT INTO model_reasoning_levels_junction (model_id, reasoning_levels_id, active, created_at, generated, mcp)
     SELECT v_model_id, rid, true, NOW(), false, false
     FROM UNNEST(v_reasoning_level_ids) rid
     ON CONFLICT ON CONSTRAINT model_reasoning_levels_pkey DO UPDATE
@@ -547,15 +547,15 @@ BEGIN
     SET name = n.name,
         description = d.description,
         provider_id = v_provider_id,
-        modality_ids = COALESCE((SELECT ARRAY_AGG(mm.modality_id) FROM model_modalities_junction mm WHERE mm.model_id = v_model_id AND mm.active = true), ARRAY[]::uuid[]),
-        temperature_level_ids = COALESCE((SELECT ARRAY_AGG(mtl.temperature_level_id) FROM model_temperature_levels_junction mtl WHERE mtl.model_id = v_model_id AND mtl.active = true), ARRAY[]::uuid[]),
-        reasoning_level_ids = COALESCE((SELECT ARRAY_AGG(mrl.reasoning_level_id) FROM model_reasoning_levels_junction mrl WHERE mrl.model_id = v_model_id AND mrl.active = true), ARRAY[]::uuid[]),
+        modality_ids = COALESCE((SELECT ARRAY_AGG(mm.modalities_id) FROM model_modalities_junction mm WHERE mm.model_id = v_model_id AND mm.active = true), ARRAY[]::uuid[]),
+        temperature_level_ids = COALESCE((SELECT ARRAY_AGG(mtl.temperature_levels_id) FROM model_temperature_levels_junction mtl WHERE mtl.model_id = v_model_id AND mtl.active = true), ARRAY[]::uuid[]),
+        reasoning_level_ids = COALESCE((SELECT ARRAY_AGG(mrl.reasoning_levels_id) FROM model_reasoning_levels_junction mrl WHERE mrl.model_id = v_model_id AND mrl.active = true), ARRAY[]::uuid[]),
         quality_ids = COALESCE((SELECT ARRAY_AGG(mq.quality_id) FROM model_qualities_junction mq WHERE mq.model_id = v_model_id AND mq.active = true), ARRAY[]::uuid[]),
         voice_ids = COALESCE((SELECT ARRAY_AGG(mv.voice_id) FROM model_voices_junction mv WHERE mv.model_id = v_model_id AND mv.active = true), ARRAY[]::uuid[])
     FROM model_models_junction j
     LEFT JOIN names_resource n ON n.id = v_name_id
     LEFT JOIN descriptions_resource d ON d.id = v_description_id
-    WHERE j.models_id = r.id
+    WHERE j.model_id = r.id
       AND j.model_id = v_model_id;
 
     RETURN QUERY SELECT v_model_id;

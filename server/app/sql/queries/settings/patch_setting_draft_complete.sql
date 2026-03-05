@@ -4,7 +4,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.setting_resource_action CASCADE;
     CREATE TYPE types.setting_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -67,9 +67,9 @@ DECLARE
     v_profile_id uuid := profile_id;  -- This is profile_artifact.id
     v_profiles_resource_id uuid;      -- This is profiles_resource.id (for FK)
     v_group_id uuid;
-    v_name_id uuid := (names).resource_id;
-    v_description_id uuid := (descriptions).resource_id;
-    v_active_flag_id uuid := (flags).resource_id;
+    v_name_id uuid := (names).resources_id;
+    v_description_id uuid := (descriptions).resources_id;
+    v_active_flag_id uuid := (flags).resources_id;
     v_color_ids uuid[] := COALESCE((colors).resource_ids, ARRAY[]::uuid[]);
     v_department_ids uuid[] := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_profile_ids uuid[] := COALESCE((profiles).resource_ids, ARRAY[]::uuid[]);
@@ -82,7 +82,7 @@ DECLARE
 BEGIN
     -- Resolve profile_artifact.id to profiles_resource.id via junction table
     -- setting_drafts_profiles_connection has FK to profiles_resource, not profile_artifact
-    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    SELECT ppj.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = v_profile_id
     LIMIT 1;
@@ -122,7 +122,7 @@ BEGIN
             INSERT INTO groups_entry (created_at, session_id)
             VALUES (
                 NOW(),
-                (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1)
+                (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profile_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1)
             )
             RETURNING id INTO v_group_id;
         END IF;
@@ -132,7 +132,7 @@ BEGIN
             updated_at = now(),
             group_id = COALESCE(setting_drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM setting_drafts_profiles_connection pdj WHERE pdj.draft_id = setting_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
+          AND EXISTS (SELECT 1 FROM setting_drafts_profiles_connection pdj WHERE pdj.draft_id = setting_drafts_entry.id AND pdj.profile_id = v_profiles_resource_id)
           AND setting_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
 
@@ -414,7 +414,7 @@ BEGIN
         INSERT INTO groups_entry (created_at, session_id)
         VALUES (
             NOW(),
-            (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1)
+            (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profile_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1)
         )
         RETURNING id INTO v_group_id;
     END IF;

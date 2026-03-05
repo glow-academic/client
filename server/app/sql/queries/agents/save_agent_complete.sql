@@ -6,7 +6,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.agent_resource_action CASCADE;
     CREATE TYPE types.agent_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -86,14 +86,14 @@ BEGIN
     -- Assign parameters to local variables (extract from composites)
     v_profile_id := profile_id;
     v_input_agent_id := input_agent_id;
-    v_name_id := (names).resource_id;
-    v_description_id := (descriptions).resource_id;
-    v_model_id := (models).resource_id;
-    v_prompt_id := (prompts).resource_id;
-    v_instructions_id := (instructions).resource_id;
-    v_active_flag_id := (flags).resource_id;
-    v_temperature_level_id := (temperature_levels).resource_id;
-    v_reasoning_level_id := (reasoning_levels).resource_id;
+    v_name_id := (names).resources_id;
+    v_description_id := (descriptions).resources_id;
+    v_model_id := (models).resources_id;
+    v_prompt_id := (prompts).resources_id;
+    v_instructions_id := (instructions).resources_id;
+    v_active_flag_id := (flags).resources_id;
+    v_temperature_level_id := (temperature_levels).resources_id;
+    v_reasoning_level_id := (reasoning_levels).resources_id;
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_tool_ids := COALESCE((tools).resource_ids, ARRAY[]::uuid[]);
     v_voice_ids := COALESCE((voices).resource_ids, ARRAY[]::uuid[]);
@@ -389,39 +389,39 @@ BEGIN
     WITH params AS (
         SELECT
             v_agent_id AS agent_id,
-            v_name_id AS name_id,
-            v_description_id AS description_id,
+            v_name_id AS names_id,
+            v_description_id AS descriptions_id,
             v_model_id AS model_id,
             v_prompt_id AS prompt_id,
             v_instructions_id AS instructions_id,
             v_active_flag_id AS active_flag_id,
-            v_temperature_level_id AS temperature_level_id,
-            v_reasoning_level_id AS reasoning_level_id,
+            v_temperature_level_id AS temperature_levels_id,
+            v_reasoning_level_id AS reasoning_levels_id,
             v_department_ids AS department_ids,
             v_tool_ids AS tool_ids,
             v_voice_ids AS voice_ids
     ),
     -- Link agent to name
     link_agent_name AS (
-        INSERT INTO agent_names_junction (agent_id, name_id, created_at)
+        INSERT INTO agent_names_junction (agent_id, names_id, created_at)
         SELECT
             x.agent_id,
-            x.name_id,
+            x.names_id,
             NOW()
         FROM params x
-        WHERE x.name_id IS NOT NULL
-        ON CONFLICT (agent_id, name_id) DO NOTHING
+        WHERE x.names_id IS NOT NULL
+        ON CONFLICT (agent_id, names_id) DO NOTHING
     ),
     -- Link agent to description
     link_agent_description AS (
-        INSERT INTO agent_descriptions_junction (agent_id, description_id, created_at)
+        INSERT INTO agent_descriptions_junction (agent_id, descriptions_id, created_at)
         SELECT
             x.agent_id,
-            x.description_id,
+            x.descriptions_id,
             NOW()
         FROM params x
-        WHERE x.description_id IS NOT NULL
-        ON CONFLICT (agent_id, description_id) DO NOTHING
+        WHERE x.descriptions_id IS NOT NULL
+        ON CONFLICT (agent_id, descriptions_id) DO NOTHING
     ),
     -- Link agent to model (remove old links first for update)
     remove_old_model AS (
@@ -459,14 +459,14 @@ BEGIN
     ),
     -- Link agent to instructions
     link_agent_instructions AS (
-        INSERT INTO agent_instructions_junction (agent_id, instruction_id, created_at)
+        INSERT INTO agent_instructions_junction (agent_id, instructions_id, created_at)
         SELECT
             x.agent_id,
             x.instructions_id,
             NOW()
         FROM params x
         WHERE x.instructions_id IS NOT NULL
-        ON CONFLICT (agent_id, instruction_id) DO NOTHING
+        ON CONFLICT (agent_id, instructions_id) DO NOTHING
     ),
     -- Insert or UPDATE agent_artifact active flag
     insert_agent_active_flag AS (
@@ -495,28 +495,28 @@ BEGIN
     ),
     -- Link temperature level if provided
     link_temperature_level AS (
-        INSERT INTO agent_temperature_levels_junction (agent_id, temperature_level_id, active, created_at)
+        INSERT INTO agent_temperature_levels_junction (agent_id, temperature_levels_id, active, created_at)
         SELECT
             x.agent_id,
-            x.temperature_level_id,
+            x.temperature_levels_id,
             true,
             NOW()
         FROM params x
-        WHERE x.temperature_level_id IS NOT NULL
-        ON CONFLICT (agent_id, temperature_level_id) DO UPDATE SET
+        WHERE x.temperature_levels_id IS NOT NULL
+        ON CONFLICT (agent_id, temperature_levels_id) DO UPDATE SET
             active = true
     ),
     -- Link reasoning level if provided
     link_reasoning_level AS (
-        INSERT INTO agent_reasoning_levels_junction (agent_id, reasoning_level_id, active, created_at)
+        INSERT INTO agent_reasoning_levels_junction (agent_id, reasoning_levels_id, active, created_at)
         SELECT
             x.agent_id,
-            x.reasoning_level_id,
+            x.reasoning_levels_id,
             true,
             NOW()
         FROM params x
-        WHERE x.reasoning_level_id IS NOT NULL
-        ON CONFLICT (agent_id, reasoning_level_id) DO UPDATE SET
+        WHERE x.reasoning_levels_id IS NOT NULL
+        ON CONFLICT (agent_id, reasoning_levels_id) DO UPDATE SET
             active = true
     ),
     -- Link voices if provided
@@ -565,8 +565,8 @@ BEGIN
             description = d.description
         FROM agent_agents_junction j
         CROSS JOIN params p
-        LEFT JOIN names_resource n ON n.id = p.name_id
-        LEFT JOIN descriptions_resource d ON d.id = p.description_id
+        LEFT JOIN names_resource n ON n.id = p.names_id
+        LEFT JOIN descriptions_resource d ON d.id = p.descriptions_id
         WHERE j.agents_id = r.id
           AND j.agent_id = p.agent_id
         RETURNING r.id

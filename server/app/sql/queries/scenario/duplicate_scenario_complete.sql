@@ -45,16 +45,16 @@ WITH params AS (
 actor_profile AS (
     SELECT
         p.id as resolved_profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_scenario AS (
     SELECT
         s.id as source_id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name,
-        (SELECT sd.description_id FROM scenario_descriptions_junction sd WHERE sd.scenario_id = s.id LIMIT 1) as description_id,
-        (SELECT sps.problem_statement_id FROM scenario_problem_statements_junction sps WHERE sps.scenario_id = s.id AND sps.active = true LIMIT 1) as problem_statement_id
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name,
+        (SELECT sd.descriptions_id FROM scenario_descriptions_junction sd WHERE sd.scenario_id = s.id LIMIT 1) as descriptions_id,
+        (SELECT sps.problem_statements_id FROM scenario_problem_statements_junction sps WHERE sps.scenario_id = s.id AND sps.active = true LIMIT 1) as problem_statements_id
     FROM params x
     JOIN scenario_artifact s ON s.id = x.scenario_id
 ),
@@ -86,12 +86,12 @@ source_departments AS (
     JOIN scenario_departments_junction sd ON sd.scenario_id = x.scenario_id AND sd.active = true
 ),
 source_parameter_fields AS (
-    SELECT spf.parameter_field_id, spf.active
+    SELECT spf.parameter_fields_id, spf.active
     FROM params x
     JOIN scenario_parameter_fields_junction spf ON spf.scenario_id = x.scenario_id AND spf.active = true
 ),
 source_objectives AS (
-    SELECT so.objective_id
+    SELECT so.objectives_id
     FROM params x
     JOIN scenario_objectives_junction so ON so.scenario_id = x.scenario_id
 ),
@@ -165,26 +165,26 @@ new_scenario AS (
 ),
 -- Link name (name resource created by Python)
 link_name AS (
-    INSERT INTO scenario_names_junction (scenario_id, name_id, created_at)
+    INSERT INTO scenario_names_junction (scenario_id, names_id, created_at)
     SELECT ns.id, name_resource_id, NOW()
     FROM new_scenario ns
     WHERE name_resource_id IS NOT NULL
 ),
 -- Link existing description
 link_description AS (
-    INSERT INTO scenario_descriptions_junction (scenario_id, description_id, created_at)
-    SELECT ns.id, ss.description_id, NOW()
+    INSERT INTO scenario_descriptions_junction (scenario_id, descriptions_id, created_at)
+    SELECT ns.id, ss.descriptions_id, NOW()
     FROM new_scenario ns
     CROSS JOIN source_scenario ss
-    WHERE ss.description_id IS NOT NULL
+    WHERE ss.descriptions_id IS NOT NULL
 ),
 -- Link existing problem statement
 link_problem_statement AS (
-    INSERT INTO scenario_problem_statements_junction (scenario_id, problem_statement_id, active, created_at)
-    SELECT ns.id, ss.problem_statement_id, true, NOW()
+    INSERT INTO scenario_problem_statements_junction (scenario_id, problem_statements_id, active, created_at)
+    SELECT ns.id, ss.problem_statements_id, true, NOW()
     FROM new_scenario ns
     CROSS JOIN source_scenario ss
-    WHERE ss.problem_statement_id IS NOT NULL
+    WHERE ss.problem_statements_id IS NOT NULL
 ),
 -- Link active flag (set to false for duplicate)
 link_active_flag AS (
@@ -261,15 +261,15 @@ copy_departments AS (
 ),
 -- Link existing parameter fields
 copy_parameter_fields AS (
-    INSERT INTO scenario_parameter_fields_junction (scenario_id, parameter_field_id, active, created_at)
-    SELECT ns.id, spf.parameter_field_id, spf.active, NOW()
+    INSERT INTO scenario_parameter_fields_junction (scenario_id, parameter_fields_id, active, created_at)
+    SELECT ns.id, spf.parameter_fields_id, spf.active, NOW()
     FROM new_scenario ns
     CROSS JOIN source_parameter_fields spf
 ),
 -- Link existing objectives
 copy_objectives AS (
-    INSERT INTO scenario_objectives_junction (scenario_id, objective_id, created_at)
-    SELECT ns.id, so.objective_id, NOW()
+    INSERT INTO scenario_objectives_junction (scenario_id, objectives_id, created_at)
+    SELECT ns.id, so.objectives_id, NOW()
     FROM new_scenario ns
     CROSS JOIN source_objectives so
 ),

@@ -35,8 +35,8 @@ WITH params AS (
 original_tool AS (
     SELECT 
         t.id,
-        (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
-        (SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1) as description,
+        (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.names_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
+        (SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.descriptions_id = d.id WHERE td.tool_id = t.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true) as active
     FROM params x
     JOIN tool_artifact t ON t.id = x.tool_id
@@ -75,13 +75,13 @@ new_tool_name AS (
         false
     FROM original_tool ot
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id
+    RETURNING id as names_id
 ),
 link_new_tool_name AS (
-    INSERT INTO tool_names_junction (tool_id, name_id, created_at, generated, mcp)
+    INSERT INTO tool_names_junction (tool_id, names_id, created_at, generated, mcp)
     SELECT 
         nt.id,
-        ntn.name_id,
+        ntn.names_id,
         NOW(),
         false,
         false
@@ -101,13 +101,13 @@ new_tool_description AS (
     FROM original_tool ot
     WHERE ot.description IS NOT NULL
     ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as description_id
+    RETURNING id as descriptions_id
 ),
 link_new_tool_description AS (
-    INSERT INTO tool_descriptions_junction (tool_id, description_id, created_at, generated, mcp)
+    INSERT INTO tool_descriptions_junction (tool_id, descriptions_id, created_at, generated, mcp)
     SELECT 
         nt.id,
-        ntd.description_id,
+        ntd.descriptions_id,
         NOW(),
         false,
         false

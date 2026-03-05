@@ -45,12 +45,12 @@ auth_exists_check AS (
 actor_profile AS (
     SELECT 
         x.profile_id as profile_id,
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 auth_info AS (
-    SELECT id, (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = auth_artifact.id LIMIT 1) as name
+    SELECT id, (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.names_id = n.id WHERE an.auth_id = auth_artifact.id LIMIT 1) as name
     FROM params x
     JOIN auth_artifact ON auth_artifact.id = x.auth_id
 ),

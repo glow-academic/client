@@ -69,9 +69,9 @@ agent_entry_types AS (
     FROM accessible_agents aa
     JOIN agent_tools_junction atj ON atj.agent_id = aa.agent_id AND atj.active = true
     JOIN tools_resource tr ON tr.id = atj.tool_id
-    JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
     JOIN tool_entries_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
-    JOIN entries_resource b ON b.id = tbj.entry_id AND b.active = true 
+    JOIN entries_resource b ON b.id = tbj.entries_id AND b.active = true 
     WHERE b.entry::text = ANY(p_entry_types)
 ),
 -- Count how many entry types each agent covers (breadth score)

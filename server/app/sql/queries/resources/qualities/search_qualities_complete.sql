@@ -48,7 +48,7 @@ FROM (
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (qr.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT model OR EXISTS (SELECT 1 FROM model_qualities_junction j WHERE j.quality_id = qr.id AND j.active = true))
+      AND (NOT model OR EXISTS (SELECT 1 FROM model_qualities_junction j WHERE j.qualities_id = qr.id AND j.active = true))
     ORDER BY qr.quality ASC
     LIMIT limit_count
     OFFSET offset_count

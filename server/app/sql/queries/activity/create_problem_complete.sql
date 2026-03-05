@@ -18,7 +18,7 @@ AS $$
 WITH actor_profile AS (
     SELECT nr.name
     FROM profile_names_junction pnj
-    JOIN names_resource nr ON nr.id = pnj.name_id AND nr.active = true
+    JOIN names_resource nr ON nr.id = pnj.names_id AND nr.active = true
     WHERE pnj.profile_id = p_profile_id AND pnj.active = true
     LIMIT 1
 ),

@@ -47,7 +47,7 @@ auth_artifact_id_lookup AS (
         CASE
             WHEN (SELECT auth_id FROM params) IS NULL THEN NULL::uuid
             ELSE COALESCE(
-                (SELECT aaj.auth_id FROM auths_resource ar JOIN auth_auths_junction aaj ON aaj.auths_id = ar.id WHERE ar.id = (SELECT auth_id FROM params)),
+                (SELECT aaj.auth_id FROM auths_resource ar JOIN auth_auths_junction aaj ON aaj.auth_id = ar.id WHERE ar.id = (SELECT auth_id FROM params)),
                 (SELECT auth_id FROM params)
             )
         END as auth_artifact_id

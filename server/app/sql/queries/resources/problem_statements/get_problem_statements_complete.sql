@@ -50,7 +50,7 @@ END $$;
 
 -- Create composite type for problem statement item
 CREATE TYPE types.q_get_problem_statements_v4_item AS (
-    problem_statement_id uuid,
+    problem_statements_id uuid,
     name text,
     problem_statement text,
     generated boolean

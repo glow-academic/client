@@ -7,7 +7,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.profile_resource_action CASCADE;
     CREATE TYPE types.profile_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -86,9 +86,9 @@ DECLARE
 BEGIN
     -- Assign parameters to local variables (extract from composites)
     v_actor_profile_id := profile_id;
-    v_name_id := (names).resource_id;
-    v_active_flag_id := (flags).resource_id;
-    v_request_limit_id := (request_limits).resource_id;
+    v_name_id := (names).resources_id;
+    v_active_flag_id := (flags).resources_id;
+    v_request_limit_id := (request_limits).resources_id;
     v_email_ids := COALESCE((emails).resource_ids, ARRAY[]::uuid[]);
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_role := role;
@@ -119,14 +119,14 @@ BEGIN
         FROM unnest(v_department_ids) WITH ORDINALITY AS input_id(id, ord)
         LEFT JOIN departments_resource dr ON dr.id = input_id.id
         LEFT JOIN department_departments_junction ddj ON ddj.department_id = input_id.id
-        LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.departments_id;
+        LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.department_id;
 
         IF EXISTS (
             SELECT 1
             FROM unnest(v_department_ids) WITH ORDINALITY AS input_id(id, ord)
             LEFT JOIN departments_resource dr ON dr.id = input_id.id
             LEFT JOIN department_departments_junction ddj ON ddj.department_id = input_id.id
-            LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.departments_id
+            LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.department_id
             WHERE dr.id IS NULL AND dr_by_artifact.id IS NULL
         ) THEN
             RAISE EXCEPTION 'Department resource not found';
@@ -135,8 +135,8 @@ BEGIN
 
     IF COALESCE(array_length(v_email_ids, 1), 0) > 0 AND EXISTS (
         SELECT 1
-        FROM unnest(v_email_ids) AS email_id
-        WHERE NOT EXISTS (SELECT 1 FROM emails_resource WHERE id = email_id)
+        FROM unnest(v_email_ids) AS emails_id
+        WHERE NOT EXISTS (SELECT 1 FROM emails_resource WHERE id = emails_id)
     ) THEN
         RAISE EXCEPTION 'Email resource not found';
     END IF;
@@ -175,7 +175,7 @@ BEGIN
         SELECT r.id, r.role::text
         INTO v_role_id, v_role
         FROM profile_roles_junction pr
-        JOIN roles_resource r ON pr.role_id = r.id
+        JOIN roles_resource r ON pr.roles_id = r.id
         WHERE pr.profile_id = input_profile_id
           AND pr.active = true
         LIMIT 1;
@@ -213,7 +213,7 @@ BEGIN
     -- Get actor name
     SELECT
         COALESCE(
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1),
             ''
         ) INTO v_actor_name
     FROM profile_artifact p
@@ -228,7 +228,7 @@ BEGIN
         -- Check if primary email already exists (only for create)
         IF EXISTS (
             SELECT 1 FROM profile_emails_junction pe
-            JOIN emails_resource e ON pe.email_id = e.id
+            JOIN emails_resource e ON pe.emails_id = e.id
             WHERE e.email = v_email_texts[v_primary_email_index + 1]
               AND pe.active = true
         ) THEN
@@ -353,11 +353,11 @@ BEGIN
         SELECT
             v_profile_id AS target_profile_id,
             v_name AS name,
-            v_name_id AS name_id,
+            v_name_id AS names_id,
             COALESCE(v_email_texts, ARRAY[]::text[]) AS email_texts,
             v_email_ids AS email_ids,
             v_role AS role,
-            v_role_id AS role_id,
+            v_role_id AS roles_id,
             COALESCE(v_active, true) AS active,
             COALESCE(v_department_ids, ARRAY[]::uuid[]) AS department_ids,
             v_primary_email_index AS primary_email_index,
@@ -365,7 +365,7 @@ BEGIN
             is_create AS is_create,
             v_requests_per_day AS requests_per_day,
             v_active_flag_id AS active_flag_id,
-            v_request_limit_id AS request_limit_id,
+            v_request_limit_id AS request_limits_id,
             v_actor_profile_id AS actor_profile_id
     ),
     -- Insert/update name in names table if provided
@@ -375,7 +375,7 @@ BEGIN
         FROM params
         WHERE name IS NOT NULL AND name != ''
         ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-        RETURNING id as name_id, name
+        RETURNING id as names_id, name
     ),
     -- Delete old name links if updating
     delete_old_names AS (
@@ -386,23 +386,23 @@ BEGIN
     ),
     -- Link profile to name
     link_profile_name AS (
-        INSERT INTO profile_names_junction (profile_id, name_id, created_at)
+        INSERT INTO profile_names_junction (profile_id, names_id, created_at)
         SELECT
             x.target_profile_id,
-            nr.name_id,
+            nr.names_id,
             NOW()
         FROM params x
         CROSS JOIN name_resource nr
         WHERE x.name IS NOT NULL AND x.name != ''
         ON CONFLICT (profile_id) DO UPDATE SET
-            name_id = EXCLUDED.name_id
+            names_id = EXCLUDED.names_id
     ),
     -- Look up role from roles_resource
     role_resource AS (
-        SELECT id as role_id
+        SELECT id as roles_id
         FROM roles_resource
         WHERE id = COALESCE(
-            (SELECT role_id FROM params),
+            (SELECT roles_id FROM params),
             (SELECT id FROM roles_resource WHERE role = (SELECT role FROM params)::profile_type AND active = true ORDER BY created_at LIMIT 1)
         )
         LIMIT 1
@@ -415,16 +415,16 @@ BEGIN
         RETURNING profile_id
     ),
     profile_type_insert AS (
-        INSERT INTO profile_roles_junction (profile_id, role_id, created_at, generated, mcp)
-        SELECT x.target_profile_id, rr.role_id, NOW(), false, false
+        INSERT INTO profile_roles_junction (profile_id, roles_id, created_at, generated, mcp)
+        SELECT x.target_profile_id, rr.roles_id, NOW(), false, false
         FROM params x
         CROSS JOIN role_resource rr
         WHERE x.role IS NOT NULL
-        ON CONFLICT (profile_id, role_id) DO NOTHING
+        ON CONFLICT (profile_id, roles_id) DO NOTHING
     ),
     -- Link/update profile active flag
     link_profile_active_flag AS (
-        INSERT INTO profile_flags_junction (profile_id, flag_id, created_at)
+        INSERT INTO profile_flags_junction (profile_id, flags_id, created_at)
         SELECT x.target_profile_id,
             f.id,
             NOW()
@@ -462,21 +462,21 @@ BEGIN
         FROM all_emails_data aed
         WHERE array_length((SELECT email_texts FROM params), 1) > 0
         ON CONFLICT (email) DO UPDATE SET created_at = EXCLUDED.created_at
-        RETURNING id as email_id, email
+        RETURNING id as emails_id, email
     ),
     email_insert AS (
-        INSERT INTO profile_emails_junction (profile_id, email, email_id, is_primary, active)
+        INSERT INTO profile_emails_junction (profile_id, email, emails_id, is_primary, active)
         SELECT
             x.target_profile_id,
             er.email,
-            er.email_id,
+            er.emails_id,
             aed.is_primary,
             true
         FROM params x
         CROSS JOIN all_emails_data aed
         JOIN email_resources er ON er.email = aed.email
         WHERE array_length(x.email_texts, 1) > 0
-        ON CONFLICT (profile_id, email_id) DO UPDATE SET
+        ON CONFLICT (profile_id, emails_id) DO UPDATE SET
             email = EXCLUDED.email,
             is_primary = EXCLUDED.is_primary,
             active = true
@@ -491,11 +491,11 @@ BEGIN
           AND array_length((SELECT department_ids FROM params), 1) >= 0
           AND (
               array_length((SELECT department_ids FROM params), 1) IS NULL
-              OR department_id NOT IN (SELECT unnest((SELECT department_ids FROM params)))
+              OR departments_id NOT IN (SELECT unnest((SELECT department_ids FROM params)))
           )
     ),
     department_insert AS (
-        INSERT INTO profile_departments_junction (profile_id, department_id, is_primary, active)
+        INSERT INTO profile_departments_junction (profile_id, departments_id, is_primary, active)
         SELECT
             x.target_profile_id,
             dept.dept_id,
@@ -504,7 +504,7 @@ BEGIN
         FROM params x
         CROSS JOIN unnest(x.department_ids) WITH ORDINALITY AS dept(dept_id, ord)
         WHERE array_length(x.department_ids, 1) > 0
-        ON CONFLICT (profile_id, department_id) DO UPDATE SET
+        ON CONFLICT (profile_id, departments_id) DO UPDATE SET
             is_primary = EXCLUDED.is_primary,
             active = true
     ),
@@ -517,7 +517,7 @@ BEGIN
             NOW()
         FROM params x
         WHERE x.requests_per_day IS NOT NULL
-        RETURNING id as request_limit_id, requests_per_day
+        RETURNING id as request_limits_id, requests_per_day
     ),
     request_limit_delete AS (
         DELETE FROM profile_request_limits_junction
@@ -528,14 +528,14 @@ BEGIN
     request_limit_insert AS (
         INSERT INTO profile_request_limits_junction (
             profile_id,
-            request_limit_id,
+            request_limits_id,
             requests_per_day,
             active,
             created_at
         )
         SELECT
             x.target_profile_id,
-            rlr.request_limit_id,
+            rlr.request_limits_id,
             rlr.requests_per_day,
             true,
             NOW()
@@ -550,7 +550,7 @@ BEGIN
         FROM profile_profiles_junction j
         CROSS JOIN params p
         LEFT JOIN name_resource nr ON true
-        WHERE j.profiles_id = r.id
+        WHERE j.profile_id = r.id
           AND j.profile_id = p.target_profile_id
         RETURNING r.id
     )

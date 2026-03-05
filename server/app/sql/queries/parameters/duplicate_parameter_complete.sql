@@ -25,14 +25,14 @@ WITH params AS (
 actor_profile AS (
     SELECT
         (SELECT profile_id FROM params) as profile_id,
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_parameter AS (
     SELECT
-        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = pa.id LIMIT 1) as name,
-        (SELECT pd.description_id FROM parameter_descriptions_junction pd WHERE pd.parameter_id = pa.id LIMIT 1) as description_id,
+        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.parameter_id = pa.id LIMIT 1) as name,
+        (SELECT pd.descriptions_id FROM parameter_descriptions_junction pd WHERE pd.parameter_id = pa.id LIMIT 1) as descriptions_id,
         COALESCE((SELECT f.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = pa.id AND f.name = 'parameter_simulation' LIMIT 1), false) as simulation_parameter,
         COALESCE((SELECT f.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = pa.id AND f.name = 'parameter_document' LIMIT 1), false) as document_parameter,
         COALESCE((SELECT f.value FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = pa.id AND f.name = 'parameter_persona' LIMIT 1), false) as persona_parameter,
@@ -48,7 +48,7 @@ new_name_resource AS (
     FROM original_parameter
     WHERE name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id
+    RETURNING id as names_id
 ),
 new_parameter AS (
     -- Insert parameter without name/description/active/flag columns
@@ -59,20 +59,20 @@ new_parameter AS (
 ),
 -- Link parameter to name
 link_parameter_name AS (
-    INSERT INTO parameter_names_junction (parameter_id, name_id, created_at)
-    SELECT np.parameter_id, nnr.name_id, NOW()
+    INSERT INTO parameter_names_junction (parameter_id, names_id, created_at)
+    SELECT np.parameter_id, nnr.names_id, NOW()
     FROM new_parameter np
     CROSS JOIN new_name_resource nnr
-    ON CONFLICT (parameter_id, name_id) DO NOTHING
+    ON CONFLICT (parameter_id, names_id) DO NOTHING
 ),
 -- Link parameter to existing description (no new resource created)
 link_parameter_description AS (
-    INSERT INTO parameter_descriptions_junction (parameter_id, description_id, created_at)
-    SELECT np.parameter_id, op.description_id, NOW()
+    INSERT INTO parameter_descriptions_junction (parameter_id, descriptions_id, created_at)
+    SELECT np.parameter_id, op.descriptions_id, NOW()
     FROM new_parameter np
     CROSS JOIN original_parameter op
-    WHERE op.description_id IS NOT NULL
-    ON CONFLICT (parameter_id, description_id) DO NOTHING
+    WHERE op.descriptions_id IS NOT NULL
+    ON CONFLICT (parameter_id, descriptions_id) DO NOTHING
 ),
 -- Link parameter active flag (set to false for duplicate)
 link_parameter_active_flag AS (
@@ -148,8 +148,8 @@ link_parameter_video_flag AS (
 original_fields AS (
     SELECT
         f.id as original_field_id,
-        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-        (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1)
+        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+        (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.descriptions_id = d.id WHERE fd.field_id = f.id LIMIT 1)
     FROM params x
     JOIN parameter_fields_junction pfj ON pfj.parameter_id = x.parameter_id
     JOIN field_artifact f ON f.id = pfj.field_id
@@ -170,7 +170,7 @@ field_names_resources AS (
     FROM original_fields of
     WHERE of.name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id, name
+    RETURNING id as names_id, name
 ),
 -- Insert field descriptions INTO descriptions_resource table
 field_descriptions_resources AS (
@@ -179,7 +179,7 @@ field_descriptions_resources AS (
     FROM original_fields of
     WHERE of.description IS NOT NULL AND of.description != ''
     ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as description_id, description
+    RETURNING id as descriptions_id, description
 ),
 new_fields AS (
     -- Create all fields (without name/description/parameter_id columns)
@@ -191,27 +191,27 @@ new_fields AS (
 ),
 -- Link fields to names
 link_field_names AS (
-    INSERT INTO field_names_junction (field_id, name_id, created_at)
+    INSERT INTO field_names_junction (field_id, names_id, created_at)
     SELECT
         nf.field_id,
-        fnr.name_id,
+        fnr.names_id,
         NOW()
     FROM new_fields nf
     CROSS JOIN original_fields of
     JOIN field_names_resources fnr ON fnr.name = of.name
-    ON CONFLICT (field_id, name_id) DO NOTHING
+    ON CONFLICT (field_id, names_id) DO NOTHING
 ),
 -- Link fields to descriptions
 link_field_descriptions AS (
-    INSERT INTO field_descriptions_junction (field_id, description_id, created_at)
+    INSERT INTO field_descriptions_junction (field_id, descriptions_id, created_at)
     SELECT
         nf.field_id,
-        fdr.description_id,
+        fdr.descriptions_id,
         NOW()
     FROM new_fields nf
     CROSS JOIN original_fields of
     JOIN field_descriptions_resources fdr ON fdr.description = of.description
-    ON CONFLICT (field_id, description_id) DO NOTHING
+    ON CONFLICT (field_id, descriptions_id) DO NOTHING
 ),
 -- Link fields to parameter via parameter_fields_junction junction table
 link_fields_to_parameter AS (

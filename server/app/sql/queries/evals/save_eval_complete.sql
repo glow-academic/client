@@ -26,8 +26,8 @@ CREATE OR REPLACE FUNCTION api_save_eval_v4(
     profile_id uuid,
     group_id uuid,
     input_eval_id uuid DEFAULT NULL,
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
+    names_id uuid DEFAULT NULL,
+    descriptions_id uuid DEFAULT NULL,
     flag_ids uuid[] DEFAULT ARRAY[]::uuid[],
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     rubric_ids uuid[] DEFAULT ARRAY[]::uuid[],
@@ -47,18 +47,18 @@ DECLARE
     v_evals_id uuid;
     v_is_create boolean;
 BEGIN
-    IF name_id IS NULL THEN
-        RAISE EXCEPTION 'name_id is required';
+    IF names_id IS NULL THEN
+        RAISE EXCEPTION 'names_id is required';
     END IF;
 
-    IF NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    IF NOT EXISTS (SELECT 1 FROM names_resource WHERE id = names_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', names_id;
     END IF;
 
-    IF description_id IS NOT NULL AND NOT EXISTS (
-        SELECT 1 FROM descriptions_resource WHERE id = description_id
+    IF descriptions_id IS NOT NULL AND NOT EXISTS (
+        SELECT 1 FROM descriptions_resource WHERE id = descriptions_id
     ) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
+        RAISE EXCEPTION 'Description resource not found: %', descriptions_id;
     END IF;
 
     v_is_create := (input_eval_id IS NULL);
@@ -88,14 +88,14 @@ BEGIN
         DELETE FROM eval_model_positions_junction WHERE eval_id = v_eval_id;
     END IF;
 
-    INSERT INTO eval_names_junction (eval_id, name_id, created_at)
-    VALUES (v_eval_id, name_id, NOW())
+    INSERT INTO eval_names_junction (eval_id, names_id, created_at)
+    VALUES (v_eval_id, names_id, NOW())
     ON CONFLICT ON CONSTRAINT eval_names_pkey DO UPDATE
     SET active = TRUE;
 
-    IF description_id IS NOT NULL THEN
-        INSERT INTO eval_descriptions_junction (eval_id, description_id, created_at)
-        VALUES (v_eval_id, description_id, NOW())
+    IF descriptions_id IS NOT NULL THEN
+        INSERT INTO eval_descriptions_junction (eval_id, descriptions_id, created_at)
+        VALUES (v_eval_id, descriptions_id, NOW())
         ON CONFLICT ON CONSTRAINT eval_descriptions_pkey DO UPDATE
         SET active = TRUE;
     END IF;
@@ -133,21 +133,21 @@ BEGIN
     SET active = TRUE;
 
     -- Model flag junctions
-    INSERT INTO eval_model_flags_junction (eval_id, model_flag_id, active, created_at)
+    INSERT INTO eval_model_flags_junction (eval_id, model_flags_id, active, created_at)
     SELECT v_eval_id, mf_id, TRUE, NOW()
     FROM UNNEST(COALESCE(model_flag_ids, ARRAY[]::uuid[])) AS mf_id
     ON CONFLICT ON CONSTRAINT eval_model_flags_junction_pkey DO UPDATE
     SET active = TRUE;
 
     -- Model rubric junctions
-    INSERT INTO eval_model_rubrics_junction (eval_id, model_rubric_id, active, created_at)
+    INSERT INTO eval_model_rubrics_junction (eval_id, model_rubrics_id, active, created_at)
     SELECT v_eval_id, mr_id, TRUE, NOW()
     FROM UNNEST(COALESCE(model_rubric_ids, ARRAY[]::uuid[])) AS mr_id
     ON CONFLICT ON CONSTRAINT eval_model_rubrics_junction_pkey DO UPDATE
     SET active = TRUE;
 
     -- Model position junctions
-    INSERT INTO eval_model_positions_junction (eval_id, model_position_id, active, created_at)
+    INSERT INTO eval_model_positions_junction (eval_id, model_positions_id, active, created_at)
     SELECT v_eval_id, mp_id, TRUE, NOW()
     FROM UNNEST(COALESCE(model_position_ids, ARRAY[]::uuid[])) AS mp_id
     ON CONFLICT ON CONSTRAINT eval_model_positions_junction_pkey DO UPDATE

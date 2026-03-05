@@ -42,7 +42,7 @@ DECLARE
     v_roles_resource_id uuid;
 BEGIN
     -- Resolve profile resource
-    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    SELECT ppj.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = p_profile_id
       AND ppj.active = true
@@ -75,7 +75,7 @@ BEGIN
 
     IF v_practice_id IS NOT NULL THEN
         v_is_practice := true;
-        SELECT psc.simulations_id INTO v_simulations_resource_id
+        SELECT psc.simulation_id INTO v_simulations_resource_id
         FROM practice_simulations_connection psc
         WHERE psc.practice_id = v_practice_id AND psc.active = true
         LIMIT 1;
@@ -91,7 +91,7 @@ BEGIN
 
         IF v_home_id IS NOT NULL THEN
             v_is_practice := false;
-            SELECT hsc.simulations_id INTO v_simulations_resource_id
+            SELECT hsc.simulation_id INTO v_simulations_resource_id
             FROM home_simulations_connection hsc
             WHERE hsc.home_id = v_home_id AND hsc.active = true
             LIMIT 1;

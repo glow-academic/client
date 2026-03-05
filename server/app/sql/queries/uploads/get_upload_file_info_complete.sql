@@ -50,7 +50,7 @@ upload_info AS (
     WHERE u.id = (SELECT upload_id FROM params)
 ),
 actor_profile AS (
-    SELECT COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = profile_artifact.id LIMIT 1), 'System') as actor_name
+    SELECT COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = profile_artifact.id LIMIT 1), 'System') as actor_name
     FROM profile_artifact
     WHERE id = (SELECT profile_id FROM params)
 ),

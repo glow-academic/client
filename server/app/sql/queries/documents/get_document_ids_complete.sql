@@ -30,8 +30,8 @@ CREATE OR REPLACE FUNCTION api_get_document_ids_v4(
 )
 RETURNS TABLE (
     -- Single-select resource IDs (from draft or document junction)
-    name_id uuid,
-    description_id uuid,
+    names_id uuid,
+    descriptions_id uuid,
     active_flag_id uuid,
 
     -- Multi-select resource IDs
@@ -80,7 +80,7 @@ document_fields_data AS (
         CASE
             WHEN (SELECT document_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(dpfj.parameter_field_id ORDER BY dpfj.created_at)
+                (SELECT ARRAY_AGG(dpfj.parameter_fields_id ORDER BY dpfj.created_at)
                  FROM document_parameter_fields_junction dpfj
                  WHERE dpfj.document_id = (SELECT document_id FROM params) AND dpfj.active = true),
                 ARRAY[]::uuid[]
@@ -108,7 +108,7 @@ document_images_data AS (
         CASE
             WHEN (SELECT document_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(di.images_id ORDER BY di.created_at)
+                (SELECT ARRAY_AGG(di.image_id ORDER BY di.created_at)
                  FROM document_images_junction di
                  WHERE di.document_id = (SELECT document_id FROM params) AND di.active = true),
                 ARRAY[]::uuid[]
@@ -134,12 +134,12 @@ document_texts_data AS (
 -- Single-select resource IDs (canonical only).
 name_resource_data AS (
     SELECT
-        (SELECT dn.name_id FROM document_names_junction dn WHERE dn.document_id = (SELECT document_id FROM params) AND dn.active = true LIMIT 1) as name_id
+        (SELECT dn.names_id FROM document_names_junction dn WHERE dn.document_id = (SELECT document_id FROM params) AND dn.active = true LIMIT 1) as names_id
     FROM params
 ),
 description_resource_data AS (
     SELECT
-        (SELECT dd.description_id FROM document_descriptions_junction dd WHERE dd.document_id = (SELECT document_id FROM params) AND dd.active = true LIMIT 1) as description_id
+        (SELECT dd.descriptions_id FROM document_descriptions_junction dd WHERE dd.document_id = (SELECT document_id FROM params) AND dd.active = true LIMIT 1) as descriptions_id
     FROM params
 ),
 flag_resource_data AS (
@@ -156,8 +156,8 @@ flag_resource_data AS (
 )
 SELECT
     -- Single-select resource IDs
-    (SELECT name_id FROM name_resource_data) as name_id,
-    (SELECT description_id FROM description_resource_data) as description_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
+    (SELECT descriptions_id FROM description_resource_data) as descriptions_id,
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
 
     -- Multi-select resource IDs

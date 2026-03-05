@@ -29,8 +29,8 @@ CREATE OR REPLACE FUNCTION api_get_rubric_ids_v4(
 )
 RETURNS TABLE (
     -- Single-select resource IDs (from draft or rubric junction)
-    name_id uuid,
-    description_id uuid,
+    names_id uuid,
+    descriptions_id uuid,
     active_flag_id uuid,
     total_points_id uuid,
     pass_points_id uuid,
@@ -70,7 +70,7 @@ rubric_standard_groups_data AS (
         CASE
             WHEN (SELECT rubric_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(rsg.standard_group_id ORDER BY rsg.created_at)
+                (SELECT ARRAY_AGG(rsg.standard_groups_id ORDER BY rsg.created_at)
                  FROM rubric_standard_groups_junction rsg
                  WHERE rsg.rubric_id = (SELECT rubric_id FROM params) AND rsg.active = true),
                 ARRAY[]::uuid[]
@@ -96,12 +96,12 @@ rubric_standards_data AS (
 -- Single-select resource IDs (canonical only).
 name_resource_data AS (
     SELECT
-        (SELECT rn.name_id FROM rubric_names_junction rn WHERE rn.rubric_id = (SELECT rubric_id FROM params) LIMIT 1) as name_id
+        (SELECT rn.names_id FROM rubric_names_junction rn WHERE rn.rubric_id = (SELECT rubric_id FROM params) LIMIT 1) as names_id
     FROM params
 ),
 description_resource_data AS (
     SELECT
-        (SELECT rd.description_id FROM rubric_descriptions_junction rd WHERE rd.rubric_id = (SELECT rubric_id FROM params) LIMIT 1) as description_id
+        (SELECT rd.descriptions_id FROM rubric_descriptions_junction rd WHERE rd.rubric_id = (SELECT rubric_id FROM params) LIMIT 1) as descriptions_id
     FROM params
 ),
 flag_resource_data AS (
@@ -117,9 +117,9 @@ flag_resource_data AS (
 ),
 total_points_resource_data AS (
     SELECT
-        (SELECT rp.point_id
+        (SELECT rp.points_id
          FROM rubric_points_junction rp
-         JOIN points_resource p ON rp.point_id = p.id
+         JOIN points_resource p ON rp.points_id = p.id
          WHERE rp.rubric_id = (SELECT rubric_id FROM params)
            AND p.type = 'total'::point_type
          LIMIT 1) as total_points_id
@@ -127,9 +127,9 @@ total_points_resource_data AS (
 ),
 pass_points_resource_data AS (
     SELECT
-        (SELECT rp.point_id
+        (SELECT rp.points_id
          FROM rubric_points_junction rp
-         JOIN points_resource p ON rp.point_id = p.id
+         JOIN points_resource p ON rp.points_id = p.id
          WHERE rp.rubric_id = (SELECT rubric_id FROM params)
            AND p.type = 'pass'::point_type
          LIMIT 1) as pass_points_id
@@ -137,8 +137,8 @@ pass_points_resource_data AS (
 )
 SELECT
     -- Single-select resource IDs
-    (SELECT name_id FROM name_resource_data) as name_id,
-    (SELECT description_id FROM description_resource_data) as description_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
+    (SELECT descriptions_id FROM description_resource_data) as descriptions_id,
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
     (SELECT total_points_id FROM total_points_resource_data) as total_points_id,
     (SELECT pass_points_id FROM pass_points_resource_data) as pass_points_id,

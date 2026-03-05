@@ -20,15 +20,15 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_agent AS (
     SELECT 
         a.id as source_id,
-        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
-        (SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1),
+        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.names_id = n.id WHERE an.agent_id = a.id LIMIT 1),
+        (SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions_junction ad JOIN descriptions_resource d ON ad.descriptions_id = d.id WHERE NULL::uuid = a.id LIMIT 1),
         COALESCE(NULL::artifact_type::text, '') as role,  -- Derive from agent_artifact's tools via inline resource map
         NULL::artifact_type  -- Need artifact for linking
     FROM params x
@@ -37,9 +37,9 @@ source_agent AS (
         SELECT DISTINCT ar.artifact::text
         FROM agent_tools_junction at
         JOIN tools_resource tr ON tr.id = at.tool_id
-        JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+        JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
         JOIN tool_resources_junction tdj ON tdj.tool_id = ttj.tool_id AND tdj.active = true
-        JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+        JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
         JOIN (VALUES
             ('agent'::artifact_type, 'agents'::resource_type),
             ('agent'::artifact_type, 'departments'::resource_type),
@@ -212,7 +212,7 @@ name_resource AS (
     FROM source_agent sa
     WHERE sa.name IS NOT NULL AND sa.name != ''
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id
+    RETURNING id as names_id
 ),
 -- Insert description INTO descriptions_resource table and get ID
 description_resource AS (
@@ -221,7 +221,7 @@ description_resource AS (
     FROM source_agent sa
     WHERE sa.description IS NOT NULL AND sa.description != ''
     ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as description_id
+    RETURNING id as descriptions_id
 ),
 new_agent AS (
     -- Create agent (without name/description/model_id/active columns)
@@ -234,25 +234,25 @@ new_agent AS (
 ),
 -- Link agent to name
 link_agent_name AS (
-    INSERT INTO agent_names_junction (agent_id, name_id, created_at)
+    INSERT INTO agent_names_junction (agent_id, names_id, created_at)
     SELECT 
         na.agent_id::uuid,
-        nr.name_id,
+        nr.names_id,
         NOW()
     FROM new_agent na
     CROSS JOIN name_resource nr
-    ON CONFLICT (agent_id, name_id) DO NOTHING
+    ON CONFLICT (agent_id, names_id) DO NOTHING
 ),
 -- Link agent to description
 link_agent_description AS (
-    INSERT INTO agent_descriptions_junction (agent_id, description_id, created_at)
+    INSERT INTO agent_descriptions_junction (agent_id, descriptions_id, created_at)
     SELECT 
         na.agent_id::uuid,
-        dr.description_id,
+        dr.descriptions_id,
         NOW()
     FROM new_agent na
     CROSS JOIN description_resource dr
-    ON CONFLICT (agent_id, description_id) DO NOTHING
+    ON CONFLICT (agent_id, descriptions_id) DO NOTHING
 ),
 -- Link agent active flag (defaults to false)
 link_agent_active_flag AS (

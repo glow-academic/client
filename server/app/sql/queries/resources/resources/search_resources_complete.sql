@@ -48,7 +48,7 @@ FROM (
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
       AND (api_search_resources_v4.resource IS NULL OR r.resource::text = api_search_resources_v4.resource)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT tool OR EXISTS (SELECT 1 FROM tool_resources_junction j WHERE j.resource_id = r.id AND j.active = true))
+      AND (NOT tool OR EXISTS (SELECT 1 FROM tool_resources_junction j WHERE j.resources_id = r.id AND j.active = true))
     ORDER BY r.resource::text
     LIMIT limit_count
     OFFSET offset_count

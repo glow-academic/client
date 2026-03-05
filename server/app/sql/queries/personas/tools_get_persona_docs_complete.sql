@@ -21,12 +21,12 @@ CREATE OR REPLACE FUNCTION tools_get_persona_docs_v4(
     p_entity_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    name_id uuid
+    names_id uuid
 )
 LANGUAGE sql
 STABLE
 AS $$
-SELECT j.name_id
+SELECT j.names_id
 FROM persona_names_junction j
 WHERE p_entity_id IS NOT NULL
   AND j.persona_id = p_entity_id

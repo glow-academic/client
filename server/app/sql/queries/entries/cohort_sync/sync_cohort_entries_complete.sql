@@ -34,7 +34,7 @@ END $$;
 
 -- Simulation-level input composite
 CREATE TYPE types.i_sync_sim_v4 AS (
-    resource_id uuid,
+    resources_id uuid,
     practice boolean,
     "position" int,
     start_time timestamptz,
@@ -107,7 +107,7 @@ BEGIN
     FOR v_sim IN
         SELECT s.*, ordinality AS sim_ord
         FROM UNNEST(p_simulations) WITH ORDINALITY AS s(
-            resource_id, practice, "position", start_time, end_time,
+            resources_id, practice, "position", start_time, end_time,
             position_resource_ids, availability_resource_ids
         )
     LOOP
@@ -123,7 +123,7 @@ BEGIN
 
             -- practice_simulations_connection
             INSERT INTO practice_simulations_connection (practice_id, simulations_id, created_at)
-            VALUES (v_parent_id, v_sim.resource_id, v_now);
+            VALUES (v_parent_id, v_sim.resources_id, v_now);
 
             -- practice_simulation_positions_connection
             IF v_sim.position_resource_ids IS NOT NULL THEN
@@ -175,7 +175,7 @@ BEGIN
 
             -- home_simulations_connection
             INSERT INTO home_simulations_connection (home_id, simulations_id, created_at)
-            VALUES (v_parent_id, v_sim.resource_id, v_now);
+            VALUES (v_parent_id, v_sim.resources_id, v_now);
 
             -- home_simulation_positions_connection
             IF v_sim.position_resource_ids IS NOT NULL THEN

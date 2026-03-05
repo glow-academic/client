@@ -41,8 +41,8 @@ AS $$
 SELECT COALESCE(
     ARRAY_AGG(
         (
-            pfj.field_resource_id,
-            pfj.field_resource_id,
+            pfj.fields_id,
+            pfj.fields_id,
             ppj.parameters_id,
             fr.name,
             COALESCE(fr.description, ''),
@@ -58,11 +58,11 @@ JOIN parameter_parameters_junction ppj ON ppj.parameter_id = pfj.parameter_id
 -- Join parameters_resource to filter by persona_parameter
 JOIN parameters_resource pr ON pr.id = ppj.parameters_id
 -- Get field name/description directly from fields_resource (denormalized)
-JOIN fields_resource fr ON fr.id = pfj.field_resource_id
--- Left join to get conditional_parameter_id (the "next" parameter to explore)
+JOIN fields_resource fr ON fr.id = pfj.fields_id
+-- Left join to get conditional_parameters_id (the "next" parameter to explore)
 -- Uses denormalized fr.conditional_parameter_ids → conditional_parameters_resource.parameter_id
 LEFT JOIN LATERAL (
-    SELECT cpr.parameter_id as conditional_parameter_id
+    SELECT cpr.parameter_id as conditional_parameters_id
     FROM conditional_parameters_resource cpr
     WHERE cpr.id = ANY(fr.conditional_parameter_ids)
       AND cpr.active = true
@@ -78,10 +78,10 @@ WHERE pfj.active = true
       (COALESCE(array_length(p_parameter_ids, 1), 0) = 0 AND pr.persona_parameter = true)
       OR ppj.parameters_id = ANY(p_parameter_ids)
   )
-  AND (COALESCE(array_length(p_field_ids, 1), 0) = 0 OR pfj.field_resource_id = ANY(p_field_ids))
-  AND (COALESCE(array_length(p_conditional_parameter_ids, 1), 0) = 0 OR cp_lookup.conditional_parameter_id = ANY(p_conditional_parameter_ids))
+  AND (COALESCE(array_length(p_field_ids, 1), 0) = 0 OR pfj.fields_id = ANY(p_field_ids))
+  AND (COALESCE(array_length(p_conditional_parameter_ids, 1), 0) = 0 OR cp_lookup.conditional_parameters_id = ANY(p_conditional_parameter_ids))
   -- Artifact boolean filters
-  AND (NOT document OR EXISTS (SELECT 1 FROM document_parameter_fields_junction j WHERE j.parameter_field_id = pfj.field_resource_id AND j.active = true))
-  AND (NOT persona OR EXISTS (SELECT 1 FROM persona_parameter_fields_junction j WHERE j.parameter_field_id = pfj.field_resource_id AND j.active = true))
-  AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_parameter_fields_junction j WHERE j.parameter_field_id = pfj.field_resource_id AND j.active = true));
+  AND (NOT document OR EXISTS (SELECT 1 FROM document_parameter_fields_junction j WHERE j.parameter_fields_id = pfj.fields_id AND j.active = true))
+  AND (NOT persona OR EXISTS (SELECT 1 FROM persona_parameter_fields_junction j WHERE j.parameter_fields_id = pfj.fields_id AND j.active = true))
+  AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_parameter_fields_junction j WHERE j.parameter_fields_id = pfj.fields_id AND j.active = true));
 $$;

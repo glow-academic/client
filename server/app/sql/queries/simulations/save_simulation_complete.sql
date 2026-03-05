@@ -20,8 +20,8 @@ END $$;
 CREATE OR REPLACE FUNCTION api_save_simulation_v4(
     profile_id uuid,
     input_simulation_id uuid DEFAULT NULL,
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
+    names_id uuid DEFAULT NULL,
+    descriptions_id uuid DEFAULT NULL,
     flag_ids uuid[] DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
     scenario_ids uuid[] DEFAULT NULL,
@@ -47,7 +47,7 @@ BEGIN
 
     -- Validate required fields (only on create)
     IF is_create THEN
-        IF name_id IS NULL THEN
+        IF names_id IS NULL THEN
             RAISE EXCEPTION 'Name resource is required';
         END IF;
     END IF;
@@ -69,11 +69,11 @@ BEGIN
 
         -- COALESCE: fill NULL params from existing active junctions (partial update support)
         -- Single-select resources
-        IF name_id IS NULL THEN
-            name_id := (SELECT j.name_id FROM simulation_names_junction j WHERE j.simulation_id = v_simulation_id AND j.active LIMIT 1);
+        IF names_id IS NULL THEN
+            names_id := (SELECT j.names_id FROM simulation_names_junction j WHERE j.simulation_id = v_simulation_id AND j.active LIMIT 1);
         END IF;
-        IF description_id IS NULL THEN
-            description_id := (SELECT j.description_id FROM simulation_descriptions_junction j WHERE j.simulation_id = v_simulation_id AND j.active LIMIT 1);
+        IF descriptions_id IS NULL THEN
+            descriptions_id := (SELECT j.descriptions_id FROM simulation_descriptions_junction j WHERE j.simulation_id = v_simulation_id AND j.active LIMIT 1);
         END IF;
 
         -- Multi-select arrays: preserve existing if NULL passed
@@ -87,16 +87,16 @@ BEGIN
             scenario_ids := COALESCE((SELECT ARRAY_AGG(j.scenario_id) FROM simulation_scenarios_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF scenario_flag_ids IS NULL THEN
-            scenario_flag_ids := COALESCE((SELECT ARRAY_AGG(j.scenario_flag_id) FROM simulation_scenario_flags_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
+            scenario_flag_ids := COALESCE((SELECT ARRAY_AGG(j.scenario_flags_id) FROM simulation_scenario_flags_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF scenario_position_ids IS NULL THEN
-            scenario_position_ids := COALESCE((SELECT ARRAY_AGG(j.scenario_position_id) FROM simulation_scenario_positions_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
+            scenario_position_ids := COALESCE((SELECT ARRAY_AGG(j.scenario_positions_id) FROM simulation_scenario_positions_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF scenario_rubric_ids IS NULL THEN
-            scenario_rubric_ids := COALESCE((SELECT ARRAY_AGG(j.scenario_rubric_id) FROM simulation_scenario_rubrics_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
+            scenario_rubric_ids := COALESCE((SELECT ARRAY_AGG(j.scenario_rubrics_id) FROM simulation_scenario_rubrics_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF scenario_time_limit_ids IS NULL THEN
-            scenario_time_limit_ids := COALESCE((SELECT ARRAY_AGG(j.scenario_time_limit_id) FROM simulation_scenario_time_limits_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
+            scenario_time_limit_ids := COALESCE((SELECT ARRAY_AGG(j.scenario_time_limits_id) FROM simulation_scenario_time_limits_junction j WHERE j.simulation_id = v_simulation_id AND j.active), ARRAY[]::uuid[]);
         END IF;
     END IF;
 
@@ -113,8 +113,8 @@ BEGIN
             false,
             false
         FROM (SELECT 1) AS dummy
-        LEFT JOIN names_resource n ON n.id = api_save_simulation_v4.name_id
-        LEFT JOIN descriptions_resource d ON d.id = api_save_simulation_v4.description_id
+        LEFT JOIN names_resource n ON n.id = api_save_simulation_v4.names_id
+        LEFT JOIN descriptions_resource d ON d.id = api_save_simulation_v4.descriptions_id
         RETURNING id INTO simulations_resource_id;
     END IF;
 
@@ -136,8 +136,8 @@ BEGIN
     WITH params AS (
         SELECT
             v_simulation_id AS simulation_id,
-            api_save_simulation_v4.name_id AS name_id,
-            api_save_simulation_v4.description_id AS description_id,
+            api_save_simulation_v4.names_id AS names_id,
+            api_save_simulation_v4.descriptions_id AS descriptions_id,
             api_save_simulation_v4.flag_ids AS flag_ids,
             api_save_simulation_v4.department_ids AS department_ids,
             api_save_simulation_v4.scenario_ids AS scenario_ids,
@@ -149,18 +149,18 @@ BEGIN
     ),
     -- Link name
     link_name AS (
-        INSERT INTO simulation_names_junction (simulation_id, name_id, active, created_at, generated, mcp)
-        SELECT x.simulation_id, x.name_id, true, NOW(), false, false
+        INSERT INTO simulation_names_junction (simulation_id, names_id, active, created_at, generated, mcp)
+        SELECT x.simulation_id, x.names_id, true, NOW(), false, false
         FROM params x
-        WHERE x.name_id IS NOT NULL
+        WHERE x.names_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT simulation_names_pkey DO UPDATE SET active = true, generated = false, mcp = false
     ),
     -- Link description
     link_description AS (
-        INSERT INTO simulation_descriptions_junction (simulation_id, description_id, active, created_at, generated, mcp)
-        SELECT x.simulation_id, x.description_id, true, NOW(), false, false
+        INSERT INTO simulation_descriptions_junction (simulation_id, descriptions_id, active, created_at, generated, mcp)
+        SELECT x.simulation_id, x.descriptions_id, true, NOW(), false, false
         FROM params x
-        WHERE x.description_id IS NOT NULL
+        WHERE x.descriptions_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT simulation_descriptions_pkey DO UPDATE SET active = true, generated = false, mcp = false
     ),
     -- Link flags
@@ -192,7 +192,7 @@ BEGIN
     ),
     -- Link scenario flags
     link_scenario_flags AS (
-        INSERT INTO simulation_scenario_flags_junction (simulation_id, scenario_flag_id, active, created_at, generated, mcp)
+        INSERT INTO simulation_scenario_flags_junction (simulation_id, scenario_flags_id, active, created_at, generated, mcp)
         SELECT x.simulation_id, sfid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.scenario_flag_ids) AS sfid
@@ -201,7 +201,7 @@ BEGIN
     ),
     -- Link scenario positions
     link_scenario_positions AS (
-        INSERT INTO simulation_scenario_positions_junction (simulation_id, scenario_position_id, active, created_at, generated, mcp)
+        INSERT INTO simulation_scenario_positions_junction (simulation_id, scenario_positions_id, active, created_at, generated, mcp)
         SELECT x.simulation_id, spid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.scenario_position_ids) AS spid
@@ -210,7 +210,7 @@ BEGIN
     ),
     -- Link scenario rubrics
     link_scenario_rubrics AS (
-        INSERT INTO simulation_scenario_rubrics_junction (simulation_id, scenario_rubric_id, active, created_at, generated, mcp)
+        INSERT INTO simulation_scenario_rubrics_junction (simulation_id, scenario_rubrics_id, active, created_at, generated, mcp)
         SELECT x.simulation_id, srid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.scenario_rubric_ids) AS srid
@@ -219,7 +219,7 @@ BEGIN
     ),
     -- Link scenario time limits
     link_scenario_time_limits AS (
-        INSERT INTO simulation_scenario_time_limits_junction (simulation_id, scenario_time_limit_id, active, created_at, generated, mcp)
+        INSERT INTO simulation_scenario_time_limits_junction (simulation_id, scenario_time_limits_id, active, created_at, generated, mcp)
         SELECT x.simulation_id, stid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.scenario_time_limit_ids) AS stid

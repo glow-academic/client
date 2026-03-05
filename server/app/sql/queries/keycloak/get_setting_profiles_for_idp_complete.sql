@@ -30,9 +30,9 @@ AS $$
         -- Department settings via resource-first: departments_resource.setting_ids -> settings_resource -> setting_settings_junction
         SELECT
             ddj.department_id,
-            ssj.setting_id as artifact_id
+            ssj.setting_id as artifacts_id
         FROM departments_resource dr
-        JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
+        JOIN department_departments_junction ddj ON ddj.department_id = dr.id
         CROSS JOIN LATERAL UNNEST(dr.setting_ids) AS s_id
         JOIN settings_resource sr ON sr.id = s_id AND sr.active = true
         JOIN setting_settings_junction ssj ON ssj.settings_id = s_id
@@ -40,7 +40,7 @@ AS $$
     ),
     default_settings AS (
         -- Default settings: active setting artifacts not linked to any department
-        SELECT ssj.setting_id as artifact_id
+        SELECT ssj.setting_id as artifacts_id
         FROM settings_resource sr
         JOIN setting_settings_junction ssj ON ssj.settings_id = sr.id
         WHERE sr.active = true
@@ -56,15 +56,15 @@ AS $$
     ),
     profile_details AS (
         SELECT
-            ppj.profiles_id as profile_id,
+            ppj.profile_id as profile_id,
             COALESCE(
                 (SELECT n.name
                  FROM profile_names_junction pn
-                 JOIN names_resource n ON n.id = pn.name_id
+                 JOIN names_resource n ON n.id = pn.names_id
                  WHERE pn.profile_id = ppj.profile_id
                    AND pn.active = true
                  LIMIT 1),
-                ppj.profiles_id::text
+                ppj.profile_id::text
             ) as profile_name,
             COALESCE(
                 (SELECT r.role
@@ -76,7 +76,7 @@ AS $$
                 pr.role
             ) as role
         FROM profiles_resource pr
-        JOIN profile_profiles_junction ppj ON ppj.profiles_id = pr.id
+        JOIN profile_profiles_junction ppj ON ppj.profile_id = pr.id
         WHERE pr.active = true
     )
     -- Department-scoped profiles
@@ -87,7 +87,7 @@ AS $$
         sp.setting_id,
         ds.department_id
     FROM settings_profiles sp
-    JOIN dept_settings ds ON ds.artifact_id = sp.setting_id
+    JOIN dept_settings ds ON ds.artifacts_id = sp.setting_id
     JOIN profile_details pd ON pd.profile_id = sp.profile_id
     UNION ALL
     -- Default (non-department) profiles
@@ -98,6 +98,6 @@ AS $$
         sp.setting_id,
         NULL::uuid as department_id
     FROM settings_profiles sp
-    JOIN default_settings ds ON ds.artifact_id = sp.setting_id
+    JOIN default_settings ds ON ds.artifacts_id = sp.setting_id
     JOIN profile_details pd ON pd.profile_id = sp.profile_id
 $$;

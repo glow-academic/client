@@ -13,7 +13,7 @@ BEGIN
           AND t.typname = 'scenario_resource_action'
     ) THEN
         CREATE TYPE types.scenario_resource_action AS (
-            resource_id uuid,
+            resources_id uuid,
             create_tool_id uuid,
             link_tool_id uuid
         );
@@ -86,9 +86,9 @@ DECLARE
     v_profiles_resource_id uuid;      -- This is profiles_resource.id (for FK)
     v_group_id uuid;
     -- Resource IDs extracted from actions
-    name_id uuid;
-    description_id uuid;
-    problem_statement_id uuid;
+    names_id uuid;
+    descriptions_id uuid;
+    problem_statements_id uuid;
     active_flag_id uuid;
     objectives_enabled_flag_id uuid;
     images_enabled_flag_id uuid;
@@ -110,9 +110,9 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
-    name_id := (names).resource_id;
-    description_id := (descriptions).resource_id;
-    problem_statement_id := (problem_statements).resource_id;
+    names_id := (names).resources_id;
+    descriptions_id := (descriptions).resources_id;
+    problem_statements_id := (problem_statements).resources_id;
     active_flag_id := (
         SELECT fr.id FROM flags_resource fr
         WHERE fr.type = 'scenario_active'
@@ -163,7 +163,7 @@ BEGIN
 
     -- Resolve profile_artifact.id to profiles_resource.id via junction table
     -- scenario_drafts_profiles_connection has FK to profiles_resource, not profile_artifact
-    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    SELECT ppj.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = v_profile_id
     LIMIT 1;
@@ -172,12 +172,12 @@ BEGIN
         RAISE EXCEPTION 'No profiles_resource linked to profile_artifact: %', v_profile_id;
     END IF;
     -- Validate resource IDs exist (error if missing and provided)
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    IF names_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = names_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', names_id;
     END IF;
     
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    IF descriptions_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = descriptions_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', descriptions_id;
     END IF;
     
     IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
@@ -204,8 +204,8 @@ BEGIN
         RAISE EXCEPTION 'Flag resource not found: %', problem_statement_enabled_flag_id;
     END IF;
 
-    IF problem_statement_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM problem_statements_resource WHERE id = problem_statement_id) THEN
-        RAISE EXCEPTION 'Problem statement resource not found: %', problem_statement_id;
+    IF problem_statements_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM problem_statements_resource WHERE id = problem_statements_id) THEN
+        RAISE EXCEPTION 'Problem statement resource not found: %', problem_statements_id;
     END IF;
 
     IF department_ids IS NOT NULL THEN
@@ -225,7 +225,7 @@ BEGIN
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, session_id)
-            VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
+            VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profile_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
             RETURNING id INTO v_group_id;
         END IF;
         
@@ -234,7 +234,7 @@ BEGIN
             updated_at = now(),
             group_id = COALESCE(scenario_drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM scenario_drafts_profiles_connection pdj WHERE pdj.draft_id = scenario_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
+          AND EXISTS (SELECT 1 FROM scenario_drafts_profiles_connection pdj WHERE pdj.draft_id = scenario_drafts_entry.id AND pdj.profile_id = v_profiles_resource_id)
           AND scenario_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
         
@@ -258,15 +258,15 @@ BEGIN
             DELETE FROM scenario_drafts_options_connection WHERE scenario_drafts_options_connection.draft_id = v_draft_id;
 
             -- Insert new resource links
-            IF name_id IS NOT NULL THEN
+            IF names_id IS NOT NULL THEN
                 INSERT INTO scenario_drafts_names_connection (draft_id, names_id, version)
-                VALUES (v_draft_id, name_id, v_new_version)
+                VALUES (v_draft_id, names_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT scenario_drafts_names_connection_pkey DO UPDATE SET version = v_new_version;
             END IF;
             
-            IF description_id IS NOT NULL THEN
+            IF descriptions_id IS NOT NULL THEN
                 INSERT INTO scenario_drafts_descriptions_connection (draft_id, descriptions_id, version)
-                VALUES (v_draft_id, description_id, v_new_version)
+                VALUES (v_draft_id, descriptions_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT scenario_drafts_descriptions_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
@@ -357,15 +357,15 @@ BEGIN
 
             IF objective_ids IS NOT NULL THEN
                 INSERT INTO scenario_drafts_objectives_connection (draft_id, objectives_id, version)
-                SELECT v_draft_id, objective_id, v_new_version
-                FROM unnest(objective_ids) as objective_id
+                SELECT v_draft_id, objectives_id, v_new_version
+                FROM unnest(objective_ids) as objectives_id
                 ON CONFLICT ON CONSTRAINT scenario_drafts_objectives_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
 
-            IF problem_statement_id IS NOT NULL THEN
+            IF problem_statements_id IS NOT NULL THEN
                 INSERT INTO scenario_drafts_problem_statements_connection (draft_id, problem_statements_id, version)
-                VALUES (v_draft_id, problem_statement_id, v_new_version)
+                VALUES (v_draft_id, problem_statements_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT scenario_drafts_problem_statements_connection_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
@@ -400,7 +400,7 @@ BEGIN
     IF v_draft_id IS NULL THEN
         -- Create new group for draft
         INSERT INTO groups_entry (created_at, session_id)
-        VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
+        VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profile_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
         RETURNING id INTO v_group_id;
 
         -- Create draft
@@ -415,16 +415,16 @@ BEGIN
         v_draft_exists := false;
         
         -- Insert resource links for new draft
-        IF name_id IS NOT NULL THEN
+        IF names_id IS NOT NULL THEN
             INSERT INTO scenario_drafts_names_connection (draft_id, names_id, version)
-            VALUES (v_draft_id, name_id, v_new_version)
+            VALUES (v_draft_id, names_id, v_new_version)
             ON CONFLICT ON CONSTRAINT scenario_drafts_names_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
         
-        IF description_id IS NOT NULL THEN
+        IF descriptions_id IS NOT NULL THEN
             INSERT INTO scenario_drafts_descriptions_connection (draft_id, descriptions_id, version)
-            VALUES (v_draft_id, description_id, v_new_version)
+            VALUES (v_draft_id, descriptions_id, v_new_version)
             ON CONFLICT ON CONSTRAINT scenario_drafts_descriptions_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
@@ -515,15 +515,15 @@ BEGIN
 
         IF objective_ids IS NOT NULL THEN
             INSERT INTO scenario_drafts_objectives_connection (draft_id, objectives_id, version)
-            SELECT v_draft_id, objective_id, v_new_version
-            FROM unnest(objective_ids) as objective_id
+            SELECT v_draft_id, objectives_id, v_new_version
+            FROM unnest(objective_ids) as objectives_id
             ON CONFLICT ON CONSTRAINT scenario_drafts_objectives_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
 
-        IF problem_statement_id IS NOT NULL THEN
+        IF problem_statements_id IS NOT NULL THEN
             INSERT INTO scenario_drafts_problem_statements_connection (draft_id, problem_statements_id, version)
-            VALUES (v_draft_id, problem_statement_id, v_new_version)
+            VALUES (v_draft_id, problem_statements_id, v_new_version)
             ON CONFLICT ON CONSTRAINT scenario_drafts_problem_statements_connection_pkey DO UPDATE
             SET version = v_new_version;
         END IF;
@@ -562,56 +562,56 @@ BEGIN
         );
 
         -- names
-        IF name_id IS NOT NULL THEN
+        IF names_id IS NOT NULL THEN
             IF (names).create_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
                 VALUES (v_call_id, 'scenario_draft_create_names_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((names).create_tool_id, v_call_id);
-                INSERT INTO names_calls_connection (names_id, call_id) VALUES (name_id, v_call_id);
+                INSERT INTO names_calls_connection (names_id, call_id) VALUES (names_id, v_call_id);
             END IF;
             IF (names).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
                 VALUES (v_call_id, 'scenario_draft_link_names_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((names).link_tool_id, v_call_id);
-                INSERT INTO names_calls_connection (names_id, call_id) VALUES (name_id, v_call_id);
+                INSERT INTO names_calls_connection (names_id, call_id) VALUES (names_id, v_call_id);
             END IF;
         END IF;
 
         -- descriptions
-        IF description_id IS NOT NULL THEN
+        IF descriptions_id IS NOT NULL THEN
             IF (descriptions).create_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
                 VALUES (v_call_id, 'scenario_draft_create_descriptions_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((descriptions).create_tool_id, v_call_id);
-                INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (description_id, v_call_id);
+                INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (descriptions_id, v_call_id);
             END IF;
             IF (descriptions).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
                 VALUES (v_call_id, 'scenario_draft_link_descriptions_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((descriptions).link_tool_id, v_call_id);
-                INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (description_id, v_call_id);
+                INSERT INTO descriptions_calls_connection (descriptions_id, call_id) VALUES (descriptions_id, v_call_id);
             END IF;
         END IF;
 
         -- problem statements
-        IF problem_statement_id IS NOT NULL THEN
+        IF problem_statements_id IS NOT NULL THEN
             IF (problem_statements).create_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
                 VALUES (v_call_id, 'scenario_draft_create_problem_statements_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((problem_statements).create_tool_id, v_call_id);
-                INSERT INTO problem_statements_calls_connection (problem_statements_id, call_id) VALUES (problem_statement_id, v_call_id);
+                INSERT INTO problem_statements_calls_connection (problem_statements_id, call_id) VALUES (problem_statements_id, v_call_id);
             END IF;
             IF (problem_statements).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
                 INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
                 VALUES (v_call_id, 'scenario_draft_link_problem_statements_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((problem_statements).link_tool_id, v_call_id);
-                INSERT INTO problem_statements_calls_connection (problem_statements_id, call_id) VALUES (problem_statement_id, v_call_id);
+                INSERT INTO problem_statements_calls_connection (problem_statements_id, call_id) VALUES (problem_statements_id, v_call_id);
             END IF;
         END IF;
 
@@ -767,7 +767,7 @@ BEGIN
                 VALUES (v_call_id, 'scenario_draft_create_objectives_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((objectives).create_tool_id, v_call_id);
                 INSERT INTO objectives_calls_connection (objectives_id, call_id)
-                SELECT x.objective_id, v_call_id FROM UNNEST(objective_ids) AS x(objective_id);
+                SELECT x.objectives_id, v_call_id FROM UNNEST(objective_ids) AS x(objectives_id);
             END IF;
             IF (objectives).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
@@ -775,7 +775,7 @@ BEGIN
                 VALUES (v_call_id, 'scenario_draft_link_objectives_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((objectives).link_tool_id, v_call_id);
                 INSERT INTO objectives_calls_connection (objectives_id, call_id)
-                SELECT x.objective_id, v_call_id FROM UNNEST(objective_ids) AS x(objective_id);
+                SELECT x.objectives_id, v_call_id FROM UNNEST(objective_ids) AS x(objectives_id);
             END IF;
         END IF;
 

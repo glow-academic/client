@@ -84,7 +84,7 @@ BEGIN
     key_ids := COALESCE((keys).resource_ids, ARRAY[]::uuid[]);
 
     -- Resolve profile_artifact.id to profiles_resource.id via junction table
-    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    SELECT ppj.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = v_profile_id
     LIMIT 1;
@@ -99,7 +99,7 @@ BEGIN
 
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, session_id)
-            VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
+            VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profile_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
             RETURNING id INTO v_group_id;
         END IF;
 
@@ -108,7 +108,7 @@ BEGIN
             updated_at = now(),
             group_id = COALESCE(invocation_drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM invocation_drafts_profiles_connection pdj WHERE pdj.draft_id = invocation_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
+          AND EXISTS (SELECT 1 FROM invocation_drafts_profiles_connection pdj WHERE pdj.draft_id = invocation_drafts_entry.id AND pdj.profile_id = v_profiles_resource_id)
           AND invocation_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
 
@@ -195,7 +195,7 @@ BEGIN
     -- Create new draft if update failed or input_draft_id was NULL
     IF v_draft_id IS NULL THEN
         INSERT INTO groups_entry (created_at, session_id)
-        VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
+        VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profile_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
         RETURNING id INTO v_group_id;
 
         INSERT INTO invocation_drafts_entry (group_id)
@@ -349,7 +349,7 @@ BEGIN
                 VALUES (v_call_id, 'benchmark_draft_create_instructions_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((instructions).create_tool_id, v_call_id);
                 INSERT INTO instructions_calls_connection (instructions_id, call_id)
-                SELECT x.instruction_id, v_call_id FROM UNNEST(instruction_ids) AS x(instruction_id);
+                SELECT x.instructions_id, v_call_id FROM UNNEST(instruction_ids) AS x(instructions_id);
             END IF;
             IF (instructions).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
@@ -357,7 +357,7 @@ BEGIN
                 VALUES (v_call_id, 'benchmark_draft_link_instructions_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((instructions).link_tool_id, v_call_id);
                 INSERT INTO instructions_calls_connection (instructions_id, call_id)
-                SELECT x.instruction_id, v_call_id FROM UNNEST(instruction_ids) AS x(instruction_id);
+                SELECT x.instructions_id, v_call_id FROM UNNEST(instruction_ids) AS x(instructions_id);
             END IF;
         END IF;
 

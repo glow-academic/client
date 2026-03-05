@@ -72,9 +72,9 @@ user_departments AS (
 ),
 -- Map departments_resource IDs → department_artifact IDs via department_departments_junction
 user_department_artifacts AS (
-    SELECT ddj.department_id as artifact_id, ddj.departments_id as resource_id
+    SELECT ddj.department_id as artifacts_id, ddj.department_id as resources_id
     FROM department_departments_junction ddj
-    WHERE ddj.departments_id IN (SELECT department_id FROM user_departments)
+    WHERE ddj.department_id IN (SELECT department_id FROM user_departments)
 ),
 -- Get each profile's role for role-based staff count filtering
 profile_roles_cte AS (
@@ -87,9 +87,9 @@ profile_roles_cte AS (
 -- Count visible profiles per department based on requesting user's role hierarchy
 -- profile_departments_junction.department_id = departments_resource.id
 department_staff_count AS (
-    SELECT uda.artifact_id as department_id, COUNT(DISTINCT pd.profile_id)::int as staff_count
+    SELECT uda.artifacts_id as department_id, COUNT(DISTINCT pd.profile_id)::int as staff_count
     FROM profile_departments_junction pd
-    JOIN user_department_artifacts uda ON uda.resource_id = pd.department_id
+    JOIN user_department_artifacts uda ON uda.resources_id = pd.department_id
     WHERE pd.active = true
     AND pd.profile_id IN (
         SELECT pr.profile_id FROM profile_roles_cte pr
@@ -99,18 +99,18 @@ department_staff_count AS (
            OR (user_role = 'member' AND pr.role IN ('member','guest'))
            OR (user_role = 'guest' AND pr.role = 'guest')
     )
-    GROUP BY uda.artifact_id
+    GROUP BY uda.artifacts_id
 ),
 -- Count usage across 5 junction tables (same as delete access check)
 -- These junction tables use departments_resource IDs
 department_usage AS (
-    SELECT uda.artifact_id as department_id,
+    SELECT uda.artifacts_id as department_id,
         (
-            (SELECT COUNT(*) FROM simulation_departments_junction WHERE department_id = uda.resource_id AND active = true) +
-            (SELECT COUNT(*) FROM scenario_departments_junction WHERE department_id = uda.resource_id AND active = true) +
-            (SELECT COUNT(*) FROM persona_departments_junction WHERE department_id = uda.resource_id AND active = true) +
-            (SELECT COUNT(*) FROM document_departments_junction WHERE department_id = uda.resource_id AND active = true) +
-            (SELECT COUNT(*) FROM cohort_departments_junction WHERE department_id = uda.resource_id AND active = true)
+            (SELECT COUNT(*) FROM simulation_departments_junction WHERE department_id = uda.resources_id AND active = true) +
+            (SELECT COUNT(*) FROM scenario_departments_junction WHERE department_id = uda.resources_id AND active = true) +
+            (SELECT COUNT(*) FROM persona_departments_junction WHERE department_id = uda.resources_id AND active = true) +
+            (SELECT COUNT(*) FROM document_departments_junction WHERE department_id = uda.resources_id AND active = true) +
+            (SELECT COUNT(*) FROM cohort_departments_junction WHERE department_id = uda.resources_id AND active = true)
         )::bigint as total_usage
     FROM user_department_artifacts uda
 ),
@@ -118,14 +118,14 @@ department_usage AS (
 departments_data AS (
     SELECT
         d.id as department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
-        COALESCE((SELECT desc_r.description FROM department_descriptions_junction dd JOIN descriptions_resource desc_r ON dd.description_id = desc_r.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = d.id LIMIT 1) as name,
+        COALESCE((SELECT desc_r.description FROM department_descriptions_junction dd JOIN descriptions_resource desc_r ON dd.descriptions_id = desc_r.id WHERE dd.department_id = d.id LIMIT 1), '') as description,
         NOT EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true) as is_inactive,
         d.updated_at,
         COALESCE(dsc.staff_count, 0) as staff_count,
         COALESCE(du.total_usage, 0) as total_usage
     FROM department_artifact d
-    JOIN user_department_artifacts uda ON uda.artifact_id = d.id
+    JOIN user_department_artifacts uda ON uda.artifacts_id = d.id
     LEFT JOIN department_staff_count dsc ON dsc.department_id = d.id
     LEFT JOIN department_usage du ON du.department_id = d.id
 ),

@@ -79,7 +79,7 @@ access_check AS (
           ON ppj.profile_id = p.profile_id
          AND ppj.active = true
         JOIN cohort_profiles_junction cpj
-          ON cpj.profiles_id = ppj.profiles_id
+          ON cpj.profile_id = ppj.profile_id
          AND cpj.active = true
         JOIN cohort_cohorts_junction ccj
           ON ccj.cohort_id = cpj.cohort_id

@@ -45,7 +45,7 @@ FROM (
     WHERE r.active = true
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_thresholds_junction j WHERE j.threshold_id = r.id AND j.active = true))
+      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_thresholds_junction j WHERE j.thresholds_id = r.id AND j.active = true))
     ORDER BY r.value
     LIMIT limit_count
     OFFSET offset_count

@@ -43,7 +43,7 @@ BEGIN
     -- Get persona name
     SELECT n.name INTO v_name
     FROM persona_names_junction pn
-    JOIN names_resource n ON pn.name_id = n.id
+    JOIN names_resource n ON pn.names_id = n.id
     WHERE pn.persona_id = api_delete_persona_v4.persona_id
     LIMIT 1;
 

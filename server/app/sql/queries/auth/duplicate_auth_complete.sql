@@ -46,18 +46,18 @@ auth_exists_check AS (
 actor_profile AS (
     SELECT 
         x.profile_id as profile_id,
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_auth AS (
     SELECT 
         id, 
-        (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = auth_artifact.id LIMIT 1) as name, 
-        (SELECT d.description FROM auth_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.auth_id = auth_artifact.id LIMIT 1) as description, 
+        (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.names_id = n.id WHERE an.auth_id = auth_artifact.id LIMIT 1) as name, 
+        (SELECT d.description FROM auth_descriptions_junction ad JOIN descriptions_resource d ON ad.descriptions_id = d.id WHERE ad.auth_id = auth_artifact.id LIMIT 1) as description, 
         EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = auth_artifact.id AND f.name = 'auth_active' AND f.value = TRUE) as active,
-        (SELECT p.value FROM auth_protocols_junction ap JOIN protocols_resource p ON p.id = ap.protocol_id WHERE ap.auth_id = auth_artifact.id LIMIT 1) as auth_type, 
-        (SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = auth_artifact.id LIMIT 1) as slug
+        (SELECT p.value FROM auth_protocols_junction ap JOIN protocols_resource p ON p.id = ap.protocols_id WHERE ap.auth_id = auth_artifact.id LIMIT 1) as auth_type, 
+        (SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slugs_id WHERE as_j.auth_id = auth_artifact.id LIMIT 1) as slug
     FROM params x
     JOIN auth_artifact ON auth_artifact.id = x.auth_id
 ),
@@ -68,11 +68,11 @@ name_resource AS (
     FROM source_auth
     WHERE name IS NOT NULL AND name != ''
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id
+    RETURNING id as names_id
 ),
--- Get existing description_id from junction (link, don't create new)
+-- Get existing descriptions_id from junction (link, don't create new)
 original_description_id AS (
-    SELECT ad.description_id
+    SELECT ad.descriptions_id
     FROM auth_descriptions_junction ad
     WHERE ad.auth_id = (SELECT id FROM source_auth)
     LIMIT 1
@@ -84,7 +84,7 @@ protocol_resource AS (
     FROM source_auth
     WHERE auth_type IS NOT NULL AND auth_type != ''
     ON CONFLICT (value) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as protocol_id
+    RETURNING id as protocols_id
 ),
 -- Insert or get slug for new auth
 slug_resource AS (
@@ -93,7 +93,7 @@ slug_resource AS (
     FROM source_auth
     WHERE slug IS NOT NULL AND slug != ''
     ON CONFLICT (value) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as slug_id
+    RETURNING id as slugs_id
 ),
 new_auth AS (
     -- Create auth (no columns needed - all data in junction tables)
@@ -104,47 +104,47 @@ new_auth AS (
 ),
 -- Link auth to protocol
 link_auth_protocol AS (
-    INSERT INTO auth_protocols_junction (auth_id, protocol_id, created_at)
+    INSERT INTO auth_protocols_junction (auth_id, protocols_id, created_at)
     SELECT 
         na.auth_id,
-        pr.protocol_id,
+        pr.protocols_id,
         NOW()
     FROM new_auth na
     CROSS JOIN protocol_resource pr
-    ON CONFLICT (auth_id, protocol_id) DO NOTHING
+    ON CONFLICT (auth_id, protocols_id) DO NOTHING
 ),
 -- Link auth to slug
 link_auth_slug AS (
-    INSERT INTO auth_slugs_junction (auth_id, slug_id, created_at)
+    INSERT INTO auth_slugs_junction (auth_id, slugs_id, created_at)
     SELECT 
         na.auth_id,
-        sr.slug_id,
+        sr.slugs_id,
         NOW()
     FROM new_auth na
     CROSS JOIN slug_resource sr
-    ON CONFLICT (auth_id, slug_id) DO NOTHING
+    ON CONFLICT (auth_id, slugs_id) DO NOTHING
 ),
 -- Link auth to name
 link_auth_name AS (
-    INSERT INTO auth_names_junction (auth_id, name_id, created_at)
+    INSERT INTO auth_names_junction (auth_id, names_id, created_at)
     SELECT 
         na.auth_id,
-        nr.name_id,
+        nr.names_id,
         NOW()
     FROM new_auth na
     CROSS JOIN name_resource nr
-    ON CONFLICT (auth_id, name_id) DO NOTHING
+    ON CONFLICT (auth_id, names_id) DO NOTHING
 ),
--- Link auth to description (link existing description_id)
+-- Link auth to description (link existing descriptions_id)
 link_auth_description AS (
-    INSERT INTO auth_descriptions_junction (auth_id, description_id, created_at)
+    INSERT INTO auth_descriptions_junction (auth_id, descriptions_id, created_at)
     SELECT
         na.auth_id,
-        odi.description_id,
+        odi.descriptions_id,
         NOW()
     FROM new_auth na
     CROSS JOIN original_description_id odi
-    ON CONFLICT (auth_id, description_id) DO NOTHING
+    ON CONFLICT (auth_id, descriptions_id) DO NOTHING
 ),
 -- Link auth active flag
 link_auth_active_flag AS (

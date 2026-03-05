@@ -1,5 +1,5 @@
 -- Create denormalized scenarios_resource from resolved resource IDs
--- Parameters: name_id, description_id, department_ids, persona_ids, parameter_field_ids,
+-- Parameters: names_id, descriptions_id, department_ids, persona_ids, parameter_field_ids,
 --             document_ids, objective_ids, image_ids, video_ids, question_ids, option_ids, problem_statement_ids,
 --             problem_statement_enabled, objectives_enabled, video_enabled, images_enabled, questions_enabled
 -- Returns: scenarios_resource_id (uuid)
@@ -20,8 +20,8 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_create_scenarios_v4(
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
+    names_id uuid DEFAULT NULL,
+    descriptions_id uuid DEFAULT NULL,
     department_ids uuid[] DEFAULT ARRAY[]::uuid[],
     persona_ids uuid[] DEFAULT ARRAY[]::uuid[],
     parameter_field_ids uuid[] DEFAULT ARRAY[]::uuid[],
@@ -91,8 +91,8 @@ BEGIN
         api_create_scenarios_v4.mcp,
         api_create_scenarios_v4.mcp
     FROM (SELECT 1) AS dummy
-    LEFT JOIN names_resource n ON n.id = api_create_scenarios_v4.name_id
-    LEFT JOIN descriptions_resource d ON d.id = api_create_scenarios_v4.description_id
+    LEFT JOIN names_resource n ON n.id = api_create_scenarios_v4.names_id
+    LEFT JOIN descriptions_resource d ON d.id = api_create_scenarios_v4.descriptions_id
     RETURNING id INTO v_resource_id;
 
     RETURN QUERY SELECT v_resource_id;

@@ -84,8 +84,8 @@ CREATE TYPE types.q_get_test_invocation_view_v4_item AS (
     -- Singular resource IDs
     model_id uuid,
     voice_id uuid,
-    temperature_level_id uuid,
-    reasoning_level_id uuid,
+    temperature_levels_id uuid,
+    reasoning_levels_id uuid,
     key_id uuid,
 
     -- Historical runs
@@ -139,8 +139,8 @@ AS $$
                     group_agent_ids,
                     model_id,
                     voice_id,
-                    temperature_level_id,
-                    reasoning_level_id,
+                    temperature_levels_id,
+                    reasoning_levels_id,
                     key_id,
                     historical_run_ids
                 )::types.q_get_test_invocation_view_v4_item

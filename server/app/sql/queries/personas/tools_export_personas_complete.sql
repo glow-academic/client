@@ -35,9 +35,9 @@ END $$;
 CREATE TYPE types.q_tools_export_personas_v4_row AS (
     persona_id uuid,
     -- Single-select: ID + value
-    name_id uuid,
+    names_id uuid,
     name text,
-    description_id uuid,
+    descriptions_id uuid,
     description text,
     color_id uuid,
     color text,
@@ -86,7 +86,7 @@ persona_scenarios AS (
         ppj.persona_id,
         ARRAY_AGG(DISTINCT sr.id) as scenario_ids
     FROM persona_personas_junction ppj
-    JOIN personas_resource pr ON pr.id = ppj.personas_id
+    JOIN personas_resource pr ON pr.id = ppj.persona_id
     JOIN scenarios_resource sr ON pr.id = ANY(sr.persona_ids)
     GROUP BY ppj.persona_id
 ),
@@ -96,7 +96,7 @@ persona_fields_data AS (
         ppfj.persona_id,
         ARRAY_AGG(DISTINCT fr.id) as field_ids
     FROM persona_parameter_fields_junction ppfj
-    JOIN parameter_fields_resource pfr ON pfr.id = ppfj.parameter_field_id
+    JOIN parameter_fields_resource pfr ON pfr.id = ppfj.parameter_fields_id
     JOIN fields_resource fr ON fr.id = pfr.field_id
     WHERE ppfj.active = true
     GROUP BY ppfj.persona_id
@@ -105,20 +105,20 @@ persona_fields_data AS (
 persona_departments_data AS (
     SELECT
         pd.persona_id,
-        ARRAY_AGG(pd.department_id ORDER BY pd.created_at) as department_ids,
+        ARRAY_AGG(pd.departments_id ORDER BY pd.created_at) as department_ids,
         ARRAY_AGG(dr.name ORDER BY pd.created_at) as department_names
     FROM persona_departments_junction pd
-    JOIN departments_resource dr ON dr.id = pd.department_id
+    JOIN departments_resource dr ON dr.id = pd.departments_id
     GROUP BY pd.persona_id
 ),
 -- Example data
 persona_examples_data AS (
     SELECT
         pej.persona_id,
-        ARRAY_AGG(pej.example_id ORDER BY pej.created_at) as example_ids,
+        ARRAY_AGG(pej.examples_id ORDER BY pej.created_at) as example_ids,
         ARRAY_AGG(er.example ORDER BY pej.created_at) as example_values
     FROM persona_examples_junction pej
-    JOIN examples_resource er ON er.id = pej.example_id
+    JOIN examples_resource er ON er.id = pej.examples_id
     WHERE pej.active = true
     GROUP BY pej.persona_id
 ),
@@ -126,10 +126,10 @@ persona_examples_data AS (
 persona_pf_data AS (
     SELECT
         ppfj.persona_id,
-        ARRAY_AGG(ppfj.parameter_field_id ORDER BY ppfj.created_at) as parameter_field_ids,
+        ARRAY_AGG(ppfj.parameter_fields_id ORDER BY ppfj.created_at) as parameter_field_ids,
         ARRAY_AGG(fr.name ORDER BY ppfj.created_at) as parameter_field_names
     FROM persona_parameter_fields_junction ppfj
-    JOIN parameter_fields_resource pfr ON pfr.id = ppfj.parameter_field_id
+    JOIN parameter_fields_resource pfr ON pfr.id = ppfj.parameter_fields_id
     JOIN fields_resource fr ON fr.id = pfr.field_id
     WHERE ppfj.active = true
     GROUP BY ppfj.persona_id
@@ -138,10 +138,10 @@ persona_pf_data AS (
 persona_voices_data AS (
     SELECT
         pvj.persona_id,
-        ARRAY_AGG(pvj.voice_id ORDER BY pvj.created_at) as voice_ids,
+        ARRAY_AGG(pvj.voices_id ORDER BY pvj.created_at) as voice_ids,
         ARRAY_AGG(vr.voice ORDER BY pvj.created_at) as voice_values
     FROM persona_voices_junction pvj
-    JOIN voices_resource vr ON vr.id = pvj.voice_id
+    JOIN voices_resource vr ON vr.id = pvj.voices_id
     WHERE pvj.active = true
     GROUP BY pvj.persona_id
 ),
@@ -149,22 +149,22 @@ persona_data AS (
     SELECT
         p.id as persona_id,
         -- Name
-        (SELECT pn.name_id FROM persona_names_junction pn WHERE pn.persona_id = p.id LIMIT 1) as name_id,
-        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name,
+        (SELECT pn.names_id FROM persona_names_junction pn WHERE pn.persona_id = p.id LIMIT 1) as names_id,
+        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name,
         -- Description
-        (SELECT pd.description_id FROM persona_descriptions_junction pd WHERE pd.persona_id = p.id LIMIT 1) as description_id,
-        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1) as description,
+        (SELECT pd.descriptions_id FROM persona_descriptions_junction pd WHERE pd.persona_id = p.id LIMIT 1) as descriptions_id,
+        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.descriptions_id = d.id WHERE pd.persona_id = p.id LIMIT 1) as description,
         -- Color (name, not hex_code — save matches on name)
-        (SELECT pc.color_id FROM persona_colors_junction pc WHERE pc.persona_id = p.id LIMIT 1) as color_id,
-        (SELECT c.name FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
+        (SELECT pc.colors_id FROM persona_colors_junction pc WHERE pc.persona_id = p.id LIMIT 1) as color_id,
+        (SELECT c.name FROM persona_colors_junction pc JOIN colors_resource c ON pc.colors_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
         -- Icon (name, not value — save matches on name)
-        (SELECT pi.icon_id FROM persona_icons_junction pi WHERE pi.persona_id = p.id LIMIT 1) as icon_id,
-        (SELECT i.name FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
+        (SELECT pi.icons_id FROM persona_icons_junction pi WHERE pi.persona_id = p.id LIMIT 1) as icon_id,
+        (SELECT i.name FROM persona_icons_junction pi JOIN icons_resource i ON pi.icons_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
         -- Instructions
-        (SELECT pij.instruction_id FROM persona_instructions_junction pij WHERE pij.persona_id = p.id LIMIT 1) as instructions_id,
-        (SELECT ir.template FROM persona_instructions_junction pij JOIN instructions_resource ir ON pij.instruction_id = ir.id WHERE pij.persona_id = p.id LIMIT 1) as instructions,
+        (SELECT pij.instructions_id FROM persona_instructions_junction pij WHERE pij.persona_id = p.id LIMIT 1) as instructions_id,
+        (SELECT ir.template FROM persona_instructions_junction pij JOIN instructions_resource ir ON pij.instructions_id = ir.id WHERE pij.persona_id = p.id LIMIT 1) as instructions,
         -- Flag
-        NOT EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.type = 'persona_active' AND f.value = TRUE) as is_inactive,
+        NOT EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flags_id = f.id WHERE pf.persona_id = p.id AND f.type = 'persona_active' AND f.value = TRUE) as is_inactive,
         -- Multi-select
         pdd.department_ids,
         pdd.department_names as departments,
@@ -178,8 +178,8 @@ persona_data AS (
         COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
         COALESCE(pfd.field_ids, ARRAY[]::uuid[]) as f_field_ids,
         p.updated_at,
-        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name_for_search,
-        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1) as description_for_search
+        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name_for_search,
+        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.descriptions_id = d.id WHERE pd.persona_id = p.id LIMIT 1) as description_for_search
     FROM persona_artifact p
     LEFT JOIN persona_scenarios ps ON ps.persona_id = p.id
     LEFT JOIN persona_fields_data pfd ON pfd.persona_id = p.id
@@ -188,7 +188,7 @@ persona_data AS (
     LEFT JOIN persona_pf_data ppfd ON ppfd.persona_id = p.id
     LEFT JOIN persona_voices_data pvd ON pvd.persona_id = p.id
     -- Access check: user shares at least one department (or persona has no departments)
-    LEFT JOIN persona_departments_junction pdj ON pdj.persona_id = p.id AND pdj.department_id IN (SELECT department_id FROM user_departments)
+    LEFT JOIN persona_departments_junction pdj ON pdj.persona_id = p.id AND pdj.departments_id IN (SELECT department_id FROM user_departments)
     WHERE p.active = true
     GROUP BY p.id, p.updated_at,
         pdd.department_ids, pdd.department_names,
@@ -214,8 +214,8 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
             (fp.persona_id,
-             fp.name_id, fp.name,
-             fp.description_id, fp.description,
+             fp.names_id, fp.name,
+             fp.descriptions_id, fp.description,
              fp.color_id, fp.color,
              fp.icon_id, fp.icon,
              fp.instructions_id, fp.instructions,

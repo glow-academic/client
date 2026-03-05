@@ -35,14 +35,14 @@ WITH params AS (
         profile_id AS profile_id
 ),
 usage_check AS (
-    SELECT COUNT(fcpj.conditional_parameter_id)::bigint as usage_count
+    SELECT COUNT(fcpj.conditional_parameters_id)::bigint as usage_count
     FROM params x
     LEFT JOIN field_conditional_parameters_junction fcpj
         ON fcpj.field_id = x.field_id AND fcpj.active = true
 ),
 field_info AS (
     SELECT
-        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1) as name
+        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = f.id LIMIT 1) as name
     FROM params x
     JOIN field_artifact f ON f.id = x.field_id
 ),

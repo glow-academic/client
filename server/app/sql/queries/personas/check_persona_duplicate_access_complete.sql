@@ -33,5 +33,5 @@ AS $$
 -- User context (role, actor_name, department_ids) comes from get_profile_context_internal() in Python
 SELECT
     true::text as user_role,
-    (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = api_check_persona_duplicate_access_v4.persona_id LIMIT 1) as original_name;
+    (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.persona_id = api_check_persona_duplicate_access_v4.persona_id LIMIT 1) as original_name;
 $$;

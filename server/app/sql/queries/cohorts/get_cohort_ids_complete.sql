@@ -30,8 +30,8 @@ CREATE OR REPLACE FUNCTION api_get_cohort_ids_v4(
 )
 RETURNS TABLE (
     -- Single-select resource IDs (from draft or cohort junction)
-    name_id uuid,
-    description_id uuid,
+    names_id uuid,
+    descriptions_id uuid,
     active_flag_id uuid,
 
     -- Multi-select resource IDs
@@ -69,13 +69,13 @@ WITH params AS (
 ),
 -- Draft multi-select resource IDs
 draft_departments_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.departments_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as department_ids
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dd.department_id ORDER BY dd.created_at), NULL), ARRAY[]::uuid[]) as department_ids
     FROM params x
     LEFT JOIN cohort_drafts_departments_connection dd ON dd.draft_id = x.draft_id
     LIMIT 1
 ),
 draft_simulations_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(ds.simulations_id ORDER BY ds.created_at), NULL), ARRAY[]::uuid[]) as simulation_ids
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(ds.simulation_id ORDER BY ds.created_at), NULL), ARRAY[]::uuid[]) as simulation_ids
     FROM params x
     LEFT JOIN cohort_drafts_simulations_connection ds ON ds.draft_id = x.draft_id
     LIMIT 1
@@ -140,20 +140,20 @@ cohort_simulations_combined_data AS (
 name_resource_data AS (
     SELECT COALESCE(
         (SELECT n.id FROM cohort_drafts_names_connection dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-        (SELECT cn.name_id FROM cohort_names_junction cn WHERE cn.cohort_id = (SELECT cohort_id FROM params) LIMIT 1)
-    ) as name_id
+        (SELECT cn.names_id FROM cohort_names_junction cn WHERE cn.cohort_id = (SELECT cohort_id FROM params) LIMIT 1)
+    ) as names_id
     FROM params
 ),
 description_resource_data AS (
     SELECT COALESCE(
         (SELECT dd.descriptions_id FROM cohort_drafts_descriptions_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-        (SELECT cd.description_id FROM cohort_descriptions_junction cd WHERE cd.cohort_id = (SELECT cohort_id FROM params) LIMIT 1)
-    ) as description_id
+        (SELECT cd.descriptions_id FROM cohort_descriptions_junction cd WHERE cd.cohort_id = (SELECT cohort_id FROM params) LIMIT 1)
+    ) as descriptions_id
     FROM params
 ),
 flag_resource_data AS (
     SELECT COALESCE(
-        (SELECT df.flags_id FROM cohort_drafts_flags_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+        (SELECT df.flag_id FROM cohort_drafts_flags_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
         (SELECT cf.flag_id FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = (SELECT cohort_id FROM params) AND f.type = 'cohort_active' AND f.value = TRUE LIMIT 1)
     ) as active_flag_id
     FROM params
@@ -177,7 +177,7 @@ cohort_simulation_positions_data AS (
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(spr.value ORDER BY spr.value)
                  FROM cohort_simulation_positions_junction csp
-                 JOIN simulation_positions_resource spr ON spr.id = csp.simulation_position_id
+                 JOIN simulation_positions_resource spr ON spr.id = csp.simulation_positions_id
                  WHERE csp.cohort_id = (SELECT cohort_id FROM params)
                    AND csp.active = true),
                 '{}'::int[]
@@ -235,10 +235,10 @@ simulation_availability_combined_data AS (
 ),
 -- Profiles (from draft or cohort junction)
 draft_profiles_data AS (
-    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.profiles_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as profile_ids
+    SELECT COALESCE(ARRAY_REMOVE(ARRAY_AGG(dp.profile_id ORDER BY dp.created_at), NULL), ARRAY[]::uuid[]) as profile_ids
     FROM params x
-    LEFT JOIN cohort_drafts_profiles_connection dp ON dp.draft_id = x.draft_id AND dp.active = true AND dp.profiles_id != (
-        SELECT pp.profiles_id FROM profile_profiles_junction pp WHERE pp.profile_id = x.profile_id LIMIT 1
+    LEFT JOIN cohort_drafts_profiles_connection dp ON dp.draft_id = x.draft_id AND dp.active = true AND dp.profile_id != (
+        SELECT pp.profile_id FROM profile_profiles_junction pp WHERE pp.profile_id = x.profile_id LIMIT 1
     )
     LIMIT 1
 ),
@@ -247,7 +247,7 @@ cohort_profiles_data AS (
         CASE
             WHEN (SELECT cohort_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(cp.profiles_id ORDER BY cp.created_at)
+                (SELECT ARRAY_AGG(cp.profile_id ORDER BY cp.created_at)
                  FROM cohort_profiles_junction cp
                  WHERE cp.cohort_id = (SELECT cohort_id FROM params) AND cp.active = true),
                 ARRAY[]::uuid[]
@@ -281,7 +281,7 @@ cohort_profile_personas_data AS (
         CASE
             WHEN (SELECT cohort_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(cpp.profile_persona_id ORDER BY cpp.created_at)
+                (SELECT ARRAY_AGG(cpp.profile_personas_id ORDER BY cpp.created_at)
                  FROM cohort_profile_personas_junction cpp
                  WHERE cpp.cohort_id = (SELECT cohort_id FROM params) AND cpp.active = true),
                 ARRAY[]::uuid[]
@@ -305,8 +305,8 @@ profile_personas_combined_data AS (
 )
 SELECT
     -- Single-select resource IDs
-    (SELECT name_id FROM name_resource_data) as name_id,
-    (SELECT description_id FROM description_resource_data) as description_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
+    (SELECT descriptions_id FROM description_resource_data) as descriptions_id,
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
 
     -- Multi-select resource IDs

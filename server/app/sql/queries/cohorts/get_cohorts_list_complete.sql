@@ -101,14 +101,14 @@ user_profile AS (
 ),
 -- Bridge: cohort_artifact.id -> cohorts_resource.id
 cohort_resource_bridge AS (
-    SELECT ccj.cohort_id, ccj.cohorts_id as resource_id
+    SELECT ccj.cohort_id, ccj.cohorts_id as resources_id
     FROM cohort_cohorts_junction ccj
 ),
 -- User's own profile resource (for is_member check)
 user_profile_resource AS (
-    SELECT pr.id as resource_id
+    SELECT pr.id as resources_id
     FROM profile_profiles_junction ppj
-    JOIN profiles_resource pr ON pr.id = ppj.profiles_id
+    JOIN profiles_resource pr ON pr.id = ppj.profile_id
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
     LIMIT 1
 ),
@@ -127,9 +127,9 @@ cohort_usage AS (
         crb.cohort_id,
         COUNT(DISTINCT a.id)::bigint as usage_count
     FROM cohort_resource_bridge crb
-    LEFT JOIN home_cohorts_connection hcc ON hcc.cohorts_id = crb.resource_id AND hcc.active = true
+    LEFT JOIN home_cohorts_connection hcc ON hcc.cohorts_id = crb.resources_id AND hcc.active = true
     LEFT JOIN attempt_home_entry ahe ON ahe.home_id = hcc.home_id AND ahe.active = true
-    LEFT JOIN practice_cohorts_connection pcc ON pcc.cohorts_id = crb.resource_id AND pcc.active = true
+    LEFT JOIN practice_cohorts_connection pcc ON pcc.cohorts_id = crb.resources_id AND pcc.active = true
     LEFT JOIN attempt_practice_entry ape ON ape.practice_id = pcc.practice_id AND ape.active = true
     LEFT JOIN attempt_entry a ON (a.id = ahe.attempt_id OR a.id = ape.attempt_id) AND a.active = true
     GROUP BY crb.cohort_id
@@ -140,7 +140,7 @@ cohort_profiles_agg AS (
         crb.cohort_id,
         ARRAY_AGG(pr.id ORDER BY pr.name) as profile_ids
     FROM cohort_resource_bridge crb
-    JOIN cohorts_resource cr ON cr.id = crb.resource_id
+    JOIN cohorts_resource cr ON cr.id = crb.resources_id
     JOIN profiles_resource pr ON pr.id = ANY(cr.profile_ids)
     GROUP BY crb.cohort_id
 ),
@@ -156,7 +156,7 @@ cohort_profiles_role_filtered AS (
                 (up.role = 'guest'::profile_type AND pr.role = 'guest')
         ) as profile_ids
     FROM cohort_resource_bridge crb
-    JOIN cohorts_resource cr ON cr.id = crb.resource_id
+    JOIN cohorts_resource cr ON cr.id = crb.resources_id
     JOIN profiles_resource pr ON pr.id = ANY(cr.profile_ids)
     CROSS JOIN user_profile up
     GROUP BY crb.cohort_id
@@ -167,15 +167,15 @@ cohort_simulations_agg AS (
         crb.cohort_id,
         cr.simulation_ids
     FROM cohort_resource_bridge crb
-    JOIN cohorts_resource cr ON cr.id = crb.resource_id
+    JOIN cohorts_resource cr ON cr.id = crb.resources_id
     WHERE cr.simulation_ids IS NOT NULL AND array_length(cr.simulation_ids, 1) > 0
 ),
 -- Main cohort data — permissions computed in Python
 cohorts_data AS (
     SELECT
         c.id as cohort_id,
-        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
-        COALESCE((SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description,
+        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.names_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
+        COALESCE((SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.descriptions_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), '') as description,
         NOT EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.type = 'cohort_active' AND f.value = TRUE) as is_inactive,
         c.updated_at,
         cdd.department_ids as department_ids,
@@ -185,7 +185,7 @@ cohorts_data AS (
         COALESCE(array_length(cprf.profile_ids, 1), 0) as num_members,
         -- is_member: needed for Python compute_can_leave (check if user's profile_id is in cohort's profile_ids)
         CASE
-            WHEN upr.resource_id IS NOT NULL AND cr_res.profile_ids IS NOT NULL AND upr.resource_id = ANY(cr_res.profile_ids) THEN true
+            WHEN upr.resources_id IS NOT NULL AND cr_res.profile_ids IS NOT NULL AND upr.resources_id = ANY(cr_res.profile_ids) THEN true
             ELSE false
         END as is_member,
         c.generated,
@@ -200,15 +200,15 @@ cohorts_data AS (
     LEFT JOIN cohort_profiles_role_filtered cprf ON cprf.cohort_id = c.id
     LEFT JOIN cohort_simulations_agg csa ON csa.cohort_id = c.id
     LEFT JOIN user_profile_resource upr ON true
-    LEFT JOIN cohorts_resource cr_res ON cr_res.id = crb.resource_id
+    LEFT JOIN cohorts_resource cr_res ON cr_res.id = crb.resources_id
     CROSS JOIN user_profile up
     WHERE (
-        (up.role = 'instructional'::profile_type AND upr.resource_id IS NOT NULL AND cr_res.profile_ids IS NOT NULL AND upr.resource_id = ANY(cr_res.profile_ids))
+        (up.role = 'instructional'::profile_type AND upr.resources_id IS NOT NULL AND cr_res.profile_ids IS NOT NULL AND upr.resources_id = ANY(cr_res.profile_ids))
         OR
         up.role != 'instructional'
     )
-    GROUP BY c.id, (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1), (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.type = 'cohort_active' AND f.value = TRUE), c.updated_at,
-             cdd.department_ids, cp.profile_ids, cprf.profile_ids, csa.simulation_ids, cu.usage_count, up.role, upr.resource_id, cr_res.profile_ids, crb.resource_id, c.generated, c.mcp
+    GROUP BY c.id, (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.names_id = n.id WHERE cn.cohort_id = c.id LIMIT 1), (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.descriptions_id = d.id WHERE cd.cohort_id = c.id LIMIT 1), EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.type = 'cohort_active' AND f.value = TRUE), c.updated_at,
+             cdd.department_ids, cp.profile_ids, cprf.profile_ids, csa.simulation_ids, cu.usage_count, up.role, upr.resources_id, cr_res.profile_ids, crb.resources_id, c.generated, c.mcp
     HAVING
         COUNT(cd.cohort_id) FILTER (WHERE cd.department_id IN (SELECT department_id FROM user_departments)) > 0
         OR NOT EXISTS (SELECT 1 FROM cohort_departments_junction cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true)

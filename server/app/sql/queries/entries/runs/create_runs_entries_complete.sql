@@ -31,9 +31,9 @@ BEGIN
     RETURNING runs_entry.id INTO v_id;
 
     -- Link run → profiles_resource if provided
-    IF api_create_runs_entry_v4.profiles_id IS NOT NULL THEN
+    IF api_create_runs_entry_v4.profile_id IS NOT NULL THEN
         INSERT INTO profiles_runs_connection (profiles_id, run_id)
-        VALUES (api_create_runs_entry_v4.profiles_id, v_id);
+        VALUES (api_create_runs_entry_v4.profile_id, v_id);
     END IF;
 
     -- Link run → agents_resource if provided

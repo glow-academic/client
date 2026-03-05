@@ -68,14 +68,14 @@ FROM (
                       SELECT colors_id, draft_id FROM persona_drafts_colors_connection WHERE active = true
                       UNION ALL SELECT colors_id, draft_id FROM setting_drafts_colors_connection WHERE active = true
                   ) dc
-                  WHERE dc.colors_id = c.id
+                  WHERE dc.color_id = c.id
                     AND dc.draft_id = api_search_colors_v4.draft_id
               )
           )
       )
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_colors_junction j WHERE j.color_id = c.id AND j.active = true))
-      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_colors_junction j WHERE j.color_id = c.id AND j.active = true))
+      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_colors_junction j WHERE j.colors_id = c.id AND j.active = true))
+      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_colors_junction j WHERE j.colors_id = c.id AND j.active = true))
     ORDER BY c.name, c.id
     LIMIT limit_count
     OFFSET offset_count

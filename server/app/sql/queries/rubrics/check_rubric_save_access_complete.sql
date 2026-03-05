@@ -51,11 +51,11 @@ rubric_active_simulations AS (
         (SELECT COUNT(DISTINCT ss.simulation_id)
          FROM simulation_scenarios_junction ss
          JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
-         JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubric_id AND srr.scenario_id = ss.scenario_id
+         JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubrics_id AND srr.scenario_id = ss.scenario_id
          WHERE srr.rubric_id = (SELECT rubric_id FROM params)
            AND EXISTS (
                SELECT 1 FROM simulation_scenario_flags_junction ssf
-               JOIN scenario_flags_resource sfr ON ssf.scenario_flag_id = sfr.id
+               JOIN scenario_flags_resource sfr ON ssf.scenario_flags_id = sfr.id
                JOIN flags_resource f ON sfr.flag_id = f.id
                WHERE ssf.simulation_id = ss.simulation_id
                  AND sfr.scenario_id = ss.scenario_id

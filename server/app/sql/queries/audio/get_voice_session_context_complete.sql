@@ -40,7 +40,7 @@ WITH chat_info AS (
     SELECT
         c.id as chat_id,
         ac.attempt_id,
-        COALESCE(home_sim.simulations_id, prac_sim.simulations_id) as simulation_id
+        COALESCE(home_sim.simulation_id, prac_sim.simulation_id) as simulation_id
     FROM attempt_chat_entry c
     JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id
     JOIN attempt_entry a ON a.id = ac.attempt_id
@@ -57,7 +57,7 @@ openai_provider AS (
     FROM providers_resource pr
     JOIN provider_providers_junction ppj ON ppj.providers_id = pr.id
     JOIN provider_names_junction pnj ON pnj.provider_id = ppj.provider_id
-    JOIN names_resource n ON n.id = pnj.name_id
+    JOIN names_resource n ON n.id = pnj.names_id
     WHERE LOWER(n.name) = 'openai'
       AND pr.key IS NOT NULL AND pr.key != ''
     LIMIT 1

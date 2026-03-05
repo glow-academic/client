@@ -72,7 +72,7 @@ BEGIN
     v_is_practice := p_practice_id IS NOT NULL;
 
     -- Resolve profiles_resource_id
-    SELECT pp.profiles_id INTO v_profiles_resource_id
+    SELECT pp.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction pp
     WHERE pp.profile_id = p_profile_id AND pp.active = true
     LIMIT 1;
@@ -125,14 +125,14 @@ BEGIN
         SELECT sr.name, sr.description
         INTO v_simulation_name, v_simulation_description
         FROM practice_simulations_connection psc
-        JOIN simulations_resource sr ON sr.id = psc.simulations_id AND sr.active = true
+        JOIN simulations_resource sr ON sr.id = psc.simulation_id AND sr.active = true
         WHERE psc.practice_id = p_practice_id AND psc.active = true
         LIMIT 1;
     ELSE
         SELECT sr.name, sr.description
         INTO v_simulation_name, v_simulation_description
         FROM home_simulations_connection hsc
-        JOIN simulations_resource sr ON sr.id = hsc.simulations_id AND sr.active = true
+        JOIN simulations_resource sr ON sr.id = hsc.simulation_id AND sr.active = true
         WHERE hsc.home_id = p_home_id AND hsc.active = true
         LIMIT 1;
     END IF;

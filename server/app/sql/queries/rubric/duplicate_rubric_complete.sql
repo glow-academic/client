@@ -35,17 +35,17 @@ WITH params AS (
 actor_profile AS (
     SELECT
         x.profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 original_rubric AS (
     SELECT 
         r.id,
-        (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) as name,
-        (SELECT d.description FROM rubric_descriptions_junction rd JOIN descriptions_resource d ON rd.description_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) as description,
-        (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND p.type = 'total'::point_type LIMIT 1) as points,
-        (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = r.id AND p.type = 'pass'::point_type LIMIT 1) as pass_points
+        (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.names_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) as name,
+        (SELECT d.description FROM rubric_descriptions_junction rd JOIN descriptions_resource d ON rd.descriptions_id = d.id WHERE rd.rubric_id = r.id LIMIT 1) as description,
+        (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.points_id = p.id WHERE rp.rubric_id = r.id AND p.type = 'total'::point_type LIMIT 1) as points,
+        (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON rp.points_id = p.id WHERE rp.rubric_id = r.id AND p.type = 'pass'::point_type LIMIT 1) as pass_points
     FROM rubric_artifact r
     WHERE r.id = (SELECT original_rubric_id FROM params)
 ),
@@ -64,21 +64,21 @@ original_groups AS (
         sg.pass_points,
         ROW_NUMBER() OVER (ORDER BY sg.name) as group_order
     FROM rubric_standard_groups_junction rsg
-    JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
+    JOIN standard_groups_resource sg ON sg.id = rsg.standard_groups_id
     WHERE rsg.rubric_id = (SELECT original_rubric_id FROM params)
       AND rsg.active = true
 ),
 original_standards AS (
     SELECT 
         s.id,
-        s.standard_group_id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
-        (SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id LIMIT 1),
+        s.standard_groups_id,
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
+        (SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.scenario_id = s.id LIMIT 1),
         s.points,
         og.group_order
     FROM standards_resource s
-    JOIN original_groups og ON s.standard_group_id = og.id
-    ORDER BY og.group_order, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
+    JOIN original_groups og ON s.standard_groups_id = og.id
+    ORDER BY og.group_order, (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1)
 ),
 -- Insert name INTO names_resource table
 new_name_resource AS (
@@ -87,11 +87,11 @@ new_name_resource AS (
     FROM original_rubric
     WHERE name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id
+    RETURNING id as names_id
 ),
--- Get existing description_id from junction (link existing, don't create new)
+-- Get existing descriptions_id from junction (link existing, don't create new)
 original_description_id AS (
-    SELECT rd.description_id
+    SELECT rd.descriptions_id
     FROM rubric_descriptions_junction rd
     WHERE rd.rubric_id = (SELECT original_rubric_id FROM params)
     LIMIT 1
@@ -143,20 +143,20 @@ new_rubric AS (
 ),
 -- Link rubric to name
 link_rubric_name AS (
-    INSERT INTO rubric_names_junction (rubric_id, name_id, created_at)
-    SELECT nr.rubric_id, nnr.name_id, NOW()
+    INSERT INTO rubric_names_junction (rubric_id, names_id, created_at)
+    SELECT nr.rubric_id, nnr.names_id, NOW()
     FROM new_rubric nr
     CROSS JOIN new_name_resource nnr
-    ON CONFLICT (rubric_id, name_id) DO NOTHING
+    ON CONFLICT (rubric_id, names_id) DO NOTHING
 ),
 -- Link rubric to description (link existing description from original rubric)
 link_rubric_description AS (
-    INSERT INTO rubric_descriptions_junction (rubric_id, description_id, created_at)
-    SELECT nr.rubric_id, odi.description_id, NOW()
+    INSERT INTO rubric_descriptions_junction (rubric_id, descriptions_id, created_at)
+    SELECT nr.rubric_id, odi.descriptions_id, NOW()
     FROM new_rubric nr
     CROSS JOIN original_description_id odi
-    WHERE odi.description_id IS NOT NULL
-    ON CONFLICT (rubric_id, description_id) DO NOTHING
+    WHERE odi.descriptions_id IS NOT NULL
+    ON CONFLICT (rubric_id, descriptions_id) DO NOTHING
 ),
 -- Link rubric active flag (set to false for duplicate)
 link_rubric_active_flag AS (
@@ -170,19 +170,19 @@ link_rubric_active_flag AS (
 ),
 -- Link rubric points
 link_rubric_points AS (
-    INSERT INTO rubric_points_junction (rubric_id, point_id, created_at)
+    INSERT INTO rubric_points_junction (rubric_id, points_id, created_at)
     SELECT nr.rubric_id, ap.points_id, NOW()
     FROM new_rubric nr
     CROSS JOIN all_points ap
-    ON CONFLICT (rubric_id, point_id) DO NOTHING
+    ON CONFLICT (rubric_id, points_id) DO NOTHING
 ),
 -- Link rubric pass_points
 link_rubric_pass_points AS (
-    INSERT INTO rubric_points_junction (rubric_id, point_id, created_at)
+    INSERT INTO rubric_points_junction (rubric_id, points_id, created_at)
     SELECT nr.rubric_id, app.pass_points_id, NOW()
     FROM new_rubric nr
     CROSS JOIN all_pass_points app
-    ON CONFLICT (rubric_id, point_id) DO NOTHING
+    ON CONFLICT (rubric_id, points_id) DO NOTHING
 ),
 link_departments AS (
     INSERT INTO rubric_departments_junction (rubric_id, department_id, active, created_at)
@@ -215,7 +215,7 @@ new_standard_groups AS (
     RETURNING id, name, short_name, description, points, pass_points
 ),
 link_standard_groups AS (
-    INSERT INTO rubric_standard_groups_junction (rubric_id, standard_group_id, active, created_at)
+    INSERT INTO rubric_standard_groups_junction (rubric_id, standard_groups_id, active, created_at)
     SELECT
         nr.rubric_id,
         nsg.id,
@@ -257,21 +257,21 @@ groups_mapping AS (
     ORDER BY og.id, ngwo.id
 ),
 standard_call_context AS (
-    SELECT tcj.tools_id, 1 as priority
+    SELECT tcj.tool_id, 1 as priority
     FROM calls_entry c
     JOIN tools_calls_connection tcj ON tcj.call_id = c.id
-    JOIN tool_names_junction tn ON tn.tool_id = tcj.tools_id
-    JOIN names_resource n ON tn.name_id = n.id
+    JOIN tool_names_junction tn ON tn.tool_id = tcj.tool_id
+    JOIN names_resource n ON tn.names_id = n.id
     WHERE n.name = 'create_standard_group'
     UNION ALL
-    SELECT tcj.tools_id, 2 as priority
+    SELECT tcj.tool_id, 2 as priority
     FROM calls_entry c
     JOIN tools_calls_connection tcj ON tcj.call_id = c.id
-    JOIN tool_names_junction tn ON tn.tool_id = tcj.tools_id
-    JOIN names_resource n ON tn.name_id = n.id
+    JOIN tool_names_junction tn ON tn.tool_id = tcj.tool_id
+    JOIN names_resource n ON tn.names_id = n.id
     WHERE n.name = 'create_rubrics'
     UNION ALL
-    SELECT tcj.tools_id, 3 as priority
+    SELECT tcj.tool_id, 3 as priority
     FROM calls_entry c
     JOIN tools_calls_connection tcj ON tcj.call_id = c.id
 ),
@@ -285,7 +285,7 @@ standard_calls AS (
     SELECT
         os.id as standard_id,
         uuidv7() as call_id,
-        scp.tools_id
+        scp.tool_id
     FROM original_standards os
     CROSS JOIN standard_call_params scp
 ),
@@ -305,13 +305,13 @@ insert_standard_calls AS (
 ),
 insert_standard_call_tool_junctions AS (
     INSERT INTO tools_calls_connection (tools_id, call_id)
-    SELECT sc.tools_id, sc.call_id
+    SELECT sc.tool_id, sc.call_id
     FROM standard_calls sc
     JOIN insert_standard_calls isc ON isc.id = sc.call_id
 ),
 new_standards AS (
     INSERT INTO standards_resource (
-        standard_group_id,
+        standard_groups_id,
         name,
         description,
         points,
@@ -330,7 +330,7 @@ new_standards AS (
         false,
         false
     FROM original_standards os
-    JOIN groups_mapping gm ON os.standard_group_id = gm.old_group_id
+    JOIN groups_mapping gm ON os.standard_groups_id = gm.old_group_id
     JOIN standard_calls sc ON sc.standard_id = os.id
     JOIN insert_standard_calls isc ON isc.id = sc.call_id
     RETURNING id

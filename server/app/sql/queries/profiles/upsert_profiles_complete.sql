@@ -161,7 +161,7 @@ names_resources AS (
     FROM profile_upsert_with_idx pwi
     WHERE pwi.name IS NOT NULL AND pwi.name != ''
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id, name
+    RETURNING id as names_id, name
 ),
 new_groups AS (
     SELECT
@@ -224,17 +224,17 @@ delete_old_names AS (
 ),
 -- Link profiles to names
 link_profile_names AS (
-    INSERT INTO profile_names_junction (profile_id, name_id, created_at)
+    INSERT INTO profile_names_junction (profile_id, names_id, created_at)
     SELECT 
         pu.id,
-        nr.name_id,
+        nr.names_id,
         NOW()
     FROM profile_upsert pu
     JOIN profile_upsert_with_idx pwi ON pwi.profile_id = pu.id
     JOIN names_resources nr ON nr.name = pwi.name
     WHERE pwi.name IS NOT NULL AND pwi.name != ''
     ON CONFLICT (profile_id) DO UPDATE SET
-        name_id = EXCLUDED.name_id
+        names_id = EXCLUDED.names_id
 ),
 -- Link profile active flags
 link_profile_active_flags AS (

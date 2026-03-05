@@ -148,7 +148,7 @@ BEGIN
 
     IF v_dept_count = 1 THEN
         -- Exactly one department — use it
-        SELECT cdc.departments_id INTO v_department_id
+        SELECT cdc.department_id INTO v_department_id
         FROM chat_departments_connection cdc
         WHERE cdc.chat_id = v_next_chat_entry_id AND cdc.active = true
         LIMIT 1;
@@ -167,7 +167,7 @@ BEGIN
                 FROM chat_departments_connection cdc
                 WHERE cdc.chat_id = v_next_chat_entry_id
                   AND cdc.active = true
-                  AND cdc.departments_id = v_profile_dept_id
+                  AND cdc.department_id = v_profile_dept_id
             ) THEN
                 RAISE EXCEPTION 'Profile department % not in chat department list', v_profile_dept_id;
             END IF;

@@ -38,15 +38,15 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id,
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_simulation AS (
     SELECT 
         s.id as source_id,
-        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as title,
-        COALESCE((SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1), '') as description
+        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as title,
+        COALESCE((SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.simulation_id = s.id LIMIT 1), '') as description
     FROM params x
     JOIN simulation_artifact s ON s.id = x.simulation_id
 ),
@@ -61,7 +61,7 @@ get_or_create_description AS (
     FROM source_simulation ss
     CROSS JOIN default_call dc
     WHERE ss.description IS NOT NULL AND ss.description != ''
-    RETURNING id as description_id
+    RETURNING id as descriptions_id
 ),
 get_flag_ids AS (
     SELECT 
@@ -78,18 +78,18 @@ new_simulation AS (
     RETURNING id as simulation_id
 ),
 link_name AS (
-    INSERT INTO simulation_names_junction (simulation_id, name_id, created_at)
+    INSERT INTO simulation_names_junction (simulation_id, names_id, created_at)
     SELECT ns.simulation_id, x.name_resource_id, NOW()
     FROM new_simulation ns
     CROSS JOIN params x
     WHERE x.name_resource_id IS NOT NULL
 ),
 link_description AS (
-    INSERT INTO simulation_descriptions_junction (simulation_id, description_id, created_at)
-    SELECT ns.simulation_id, gocd.description_id, NOW()
+    INSERT INTO simulation_descriptions_junction (simulation_id, descriptions_id, created_at)
+    SELECT ns.simulation_id, gocd.descriptions_id, NOW()
     FROM new_simulation ns
     CROSS JOIN get_or_create_description gocd
-    WHERE gocd.description_id IS NOT NULL
+    WHERE gocd.descriptions_id IS NOT NULL
 ),
 link_flags AS (
     INSERT INTO simulation_flags_junction (simulation_id, flag_id, created_at) SELECT ns.simulation_id, gfi.active_flag_id, NOW()
@@ -111,7 +111,7 @@ copy_scenarios AS (
     CROSS JOIN new_simulation ns
 ),
 copy_scenario_positions AS (
-    INSERT INTO simulation_scenario_positions_junction (simulation_id, scenario_position_id, active, created_at)
+    INSERT INTO simulation_scenario_positions_junction (simulation_id, scenario_positions_id, active, created_at)
     SELECT 
         ns.simulation_id,
         spr.id,
@@ -119,14 +119,14 @@ copy_scenario_positions AS (
         NOW()
     FROM source_simulation ssim
     JOIN simulation_scenario_positions_junction ssp ON ssp.simulation_id = ssim.source_id
-    JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_position_id
+    JOIN scenario_positions_resource spr ON spr.id = ssp.scenario_positions_id
     CROSS JOIN new_simulation ns
 ),
 copy_scenario_flags AS (
-    INSERT INTO simulation_scenario_flags_junction (simulation_id, scenario_flag_id, created_at, generated, mcp)
+    INSERT INTO simulation_scenario_flags_junction (simulation_id, scenario_flags_id, created_at, generated, mcp)
     SELECT
         ns.simulation_id,
-        ssf.scenario_flag_id,
+        ssf.scenario_flags_id,
         NOW(),
         ssf.generated,
         ssf.mcp
@@ -135,10 +135,10 @@ copy_scenario_flags AS (
     CROSS JOIN new_simulation ns
 ),
 copy_rubric_links AS (
-    INSERT INTO simulation_scenario_rubrics_junction (simulation_id, scenario_rubric_id, active, created_at)
+    INSERT INTO simulation_scenario_rubrics_junction (simulation_id, scenario_rubrics_id, active, created_at)
     SELECT 
         ns.simulation_id,
-        ssr.scenario_rubric_id,
+        ssr.scenario_rubrics_id,
         ssr.active,
         NOW()
     FROM source_simulation ssim

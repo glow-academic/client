@@ -38,7 +38,7 @@ source_profile AS (
             (
                 SELECT n.name
                 FROM profile_names_junction pn
-                JOIN names_resource n ON n.id = pn.name_id
+                JOIN names_resource n ON n.id = pn.names_id
                 WHERE pn.profile_id = p.id
                 ORDER BY pn.created_at DESC
                 LIMIT 1
@@ -62,7 +62,7 @@ new_name_resource AS (
     RETURNING id
 ),
 copy_name AS (
-    INSERT INTO profile_names_junction (profile_id, name_id, created_at)
+    INSERT INTO profile_names_junction (profile_id, names_id, created_at)
     SELECT
         np.id,
         nnr.id,
@@ -71,51 +71,51 @@ copy_name AS (
     CROSS JOIN new_name_resource nnr
 ),
 copy_role AS (
-    INSERT INTO profile_roles_junction (profile_id, role_id, created_at, generated, mcp, active)
+    INSERT INTO profile_roles_junction (profile_id, roles_id, created_at, generated, mcp, active)
     SELECT
         np.id,
-        pr.role_id,
+        pr.roles_id,
         NOW(),
         COALESCE(pr.generated, false),
         COALESCE(pr.mcp, false),
         COALESCE(pr.active, true)
     FROM new_profile np
     JOIN profile_roles_junction pr ON pr.profile_id = (SELECT id FROM source_profile)
-    ON CONFLICT (profile_id, role_id) DO UPDATE SET active = EXCLUDED.active
+    ON CONFLICT (profile_id, roles_id) DO UPDATE SET active = EXCLUDED.active
 ),
 copy_flags AS (
-    INSERT INTO profile_flags_junction (profile_id, flag_id, created_at)
+    INSERT INTO profile_flags_junction (profile_id, flags_id, created_at)
     SELECT
         np.id,
-        pf.flag_id,
+        pf.flags_id,
         NOW()
     FROM new_profile np
     JOIN profile_flags_junction pf ON pf.profile_id = (SELECT id FROM source_profile)
     ON CONFLICT ON CONSTRAINT profile_flags_pkey DO NOTHING
 ),
 copy_departments AS (
-    INSERT INTO profile_departments_junction (profile_id, department_id, is_primary, active)
+    INSERT INTO profile_departments_junction (profile_id, departments_id, is_primary, active)
     SELECT
         np.id,
-        pd.department_id,
+        pd.departments_id,
         pd.is_primary,
         pd.active
     FROM new_profile np
     JOIN profile_departments_junction pd ON pd.profile_id = (SELECT id FROM source_profile)
-    ON CONFLICT (profile_id, department_id) DO UPDATE
+    ON CONFLICT (profile_id, departments_id) DO UPDATE
     SET is_primary = EXCLUDED.is_primary, active = EXCLUDED.active
 ),
 copy_request_limits AS (
     INSERT INTO profile_request_limits_junction (
         profile_id,
-        request_limit_id,
+        request_limits_id,
         requests_per_day,
         active,
         created_at
     )
     SELECT
         np.id,
-        prl.request_limit_id,
+        prl.request_limits_id,
         prl.requests_per_day,
         prl.active,
         NOW()

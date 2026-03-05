@@ -61,8 +61,8 @@ WITH params AS (
 scope AS (
     SELECT
         tb.id AS chat_entry_id,
-        scj_conn.scenarios_id,
-        COALESCE(hsc.simulations_id, psc.simulations_id) AS simulations_id,
+        scj_conn.scenario_id,
+        COALESCE(hsc.simulation_id, psc.simulation_id) AS simulations_id,
         COALESCE(hcc.cohorts_id, pcc.cohorts_id) AS cohorts_id,
         COALESCE(he.active, pe.active, false) AS training_active,
         sa.id AS simulation_artifact_id,
@@ -85,14 +85,14 @@ scope AS (
       ON scj_conn.chat_id = tb.id
      AND scj_conn.active = true
     LEFT JOIN simulation_simulations_junction ssj
-      ON ssj.simulations_id = COALESCE(hsc.simulations_id, psc.simulations_id)
+      ON ssj.simulation_id = COALESCE(hsc.simulation_id, psc.simulation_id)
      AND ssj.active = true
     LEFT JOIN simulation_artifact sa
       ON sa.id = ssj.simulation_id
     LEFT JOIN simulations_resource s
-      ON s.id = COALESCE(hsc.simulations_id, psc.simulations_id)
+      ON s.id = COALESCE(hsc.simulation_id, psc.simulation_id)
     LEFT JOIN scenario_scenarios_junction scj
-      ON scj.scenarios_id = scj_conn.scenarios_id
+      ON scj.scenario_id = scj_conn.scenario_id
      AND scj.active = true
     LEFT JOIN scenario_artifact sc
       ON sc.id = scj.scenario_id
@@ -134,7 +134,7 @@ agent_data AS (
         TRUE AS agent_exists,
         (SELECT n.name
          FROM agent_names_junction an
-         JOIN names_resource n ON n.id = an.name_id
+         JOIN names_resource n ON n.id = an.names_id
          WHERE an.agent_id = sa.agent_id
          LIMIT 1) AS agent_name,
         TRUE AS agent_is_active
@@ -162,7 +162,7 @@ provider_data AS (
         (SELECT n.name
          FROM provider_providers_junction ppj
          JOIN provider_names_junction pn ON pn.provider_id = ppj.provider_id
-         JOIN names_resource n ON n.id = pn.name_id
+         JOIN names_resource n ON n.id = pn.names_id
          WHERE ppj.providers_id = pr.id
            AND ppj.active = true
          LIMIT 1) AS provider_name
@@ -182,12 +182,12 @@ rate_limit_data AS (
       ON prl.profile_id = prof.id
      AND prl.active = true
     LEFT JOIN request_limits_resource rl
-      ON rl.id = prl.request_limit_id
+      ON rl.id = prl.request_limits_id
 ),
 runs_today_data AS (
     SELECT COUNT(*)::bigint AS runs_today
     FROM params p
-    JOIN profiles_runs_connection prj ON prj.profiles_id = p.profile_id
+    JOIN profiles_runs_connection prj ON prj.profile_id = p.profile_id
     JOIN runs_entry vr ON vr.id = prj.run_id
     WHERE vr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
@@ -208,7 +208,7 @@ access_data AS (
           ON ppj.profile_id = p.profile_id
          AND ppj.active = true
         JOIN cohort_profiles_junction cpj
-          ON cpj.profiles_id = ppj.profiles_id
+          ON cpj.profile_id = ppj.profile_id
          AND cpj.active = true
         JOIN cohort_cohorts_junction ccj
           ON ccj.cohort_id = cpj.cohort_id
@@ -222,7 +222,7 @@ scenario_content AS (
         EXISTS (
             SELECT 1
             FROM scenario_problem_statements_junction spj
-            JOIN problem_statements_resource psr ON psr.id = spj.problem_statement_id
+            JOIN problem_statements_resource psr ON psr.id = spj.problem_statements_id
             WHERE spj.scenario_id = s.scenario_artifact_id
               AND spj.active = true
         ) AS has_problem_statement,
@@ -241,25 +241,25 @@ scenario_content AS (
         END AS has_persona,
         (SELECT psr.problem_statement
          FROM scenario_problem_statements_junction spj
-         JOIN problem_statements_resource psr ON psr.id = spj.problem_statement_id
+         JOIN problem_statements_resource psr ON psr.id = spj.problem_statements_id
          WHERE spj.scenario_id = s.scenario_artifact_id
            AND spj.active = true
          LIMIT 1) AS problem_statement,
         (SELECT jsonb_agg(jsonb_build_object('id', o.id, 'objective', o.objective))
          FROM scenario_objectives_junction soj
-         JOIN objectives_resource o ON o.id = soj.objective_id
+         JOIN objectives_resource o ON o.id = soj.objectives_id
          WHERE soj.scenario_id = s.scenario_artifact_id
            AND soj.active = true) AS objectives,
         (
             SELECT jsonb_build_object(
                 'id', pa.id,
-                'name', (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON n.id = pn.name_id WHERE pn.persona_id = pa.id LIMIT 1),
-                'description', (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON d.id = pd.description_id WHERE pd.persona_id = pa.id LIMIT 1)
+                'name', (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON n.id = pn.names_id WHERE pn.persona_id = pa.id LIMIT 1),
+                'description', (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON d.id = pd.descriptions_id WHERE pd.persona_id = pa.id LIMIT 1)
             )
             FROM persona_artifact pa
             WHERE pa.id = COALESCE(
                 (
-                    SELECT pdc.personas_id
+                    SELECT pdc.persona_id
                     FROM chat_drafts_personas_connection pdc
                     WHERE p.draft_id IS NOT NULL
                       AND pdc.draft_id = p.draft_id

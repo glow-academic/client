@@ -30,7 +30,7 @@ STABLE
 AS $$
     SELECT
         c.id,
-        tcj.tools_id,
+        tcj.tool_id,
         cue.upload_id,
         ue.file_path
     FROM calls_entry c

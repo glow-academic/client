@@ -45,7 +45,7 @@ FROM (
     WHERE p.active = true
       AND (exclude_ids IS NULL OR NOT (p.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT rubric OR EXISTS (SELECT 1 FROM rubric_points_junction j WHERE j.point_id = p.id AND j.active = true))
+      AND (NOT rubric OR EXISTS (SELECT 1 FROM rubric_points_junction j WHERE j.points_id = p.id AND j.active = true))
     ORDER BY p.id
     LIMIT limit_count
     OFFSET offset_count

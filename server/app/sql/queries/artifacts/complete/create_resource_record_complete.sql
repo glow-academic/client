@@ -50,7 +50,7 @@ BEGIN
     -- Validate resource_type exists in tool_resources_junction + resources_resource
     IF NOT EXISTS (
         SELECT 1 FROM tool_resources_junction tdj
-        JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+        JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
         WHERE dr.resource = resource_type::resource_type
     ) THEN
         RAISE EXCEPTION 'Invalid resource type: %', resource_type;

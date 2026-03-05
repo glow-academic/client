@@ -39,7 +39,7 @@ agent_links AS (
     SELECT COALESCE(COUNT(DISTINCT atj.agent_id), 0)::bigint as active_count
     FROM params x
     LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = x.tool_id
-    LEFT JOIN agent_tools_junction atj ON atj.tool_id = ttj.tools_id AND atj.active = true
+    LEFT JOIN agent_tools_junction atj ON atj.tool_id = ttj.tool_id AND atj.active = true
 )
 SELECT
     (SELECT active_count FROM agent_links) as active_agent_count

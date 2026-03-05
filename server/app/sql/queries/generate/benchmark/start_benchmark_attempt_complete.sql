@@ -40,7 +40,7 @@ BEGIN
     END IF;
 
     -- Resolve profile_artifact ID → profiles_resource ID
-    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    SELECT ppj.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = p_profile_id AND ppj.active = true
     LIMIT 1;

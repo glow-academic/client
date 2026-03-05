@@ -51,7 +51,7 @@ FROM (
       AND (exclude_ids IS NULL OR NOT (ps.id = ANY(exclude_ids)))
       AND (search IS NULL OR search = '' OR LOWER(ps.name) LIKE '%' || LOWER(search) || '%' OR LOWER(ps.problem_statement) LIKE '%' || LOWER(search) || '%')
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_problem_statements_junction j WHERE j.problem_statement_id = ps.id AND j.active = true))
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_problem_statements_junction j WHERE j.problem_statements_id = ps.id AND j.active = true))
     ORDER BY ps.name
     LIMIT limit_count
     OFFSET offset_count

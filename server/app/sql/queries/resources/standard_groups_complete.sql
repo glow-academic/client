@@ -2,7 +2,7 @@
 -- SIMPLIFIED: No agent_id required, optional tool_id for tracking
 -- Get or create operation (returns existing ID if name already exists)
 -- Parameters: name (text), short_name (text), description (text), points (numeric), pass_points (numeric), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
--- Returns: standard_group_id (uuid)
+-- Returns: standard_groups_id (uuid)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -30,7 +30,7 @@ CREATE OR REPLACE FUNCTION api_create_standard_groups_v4(
     tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    standard_group_id uuid
+    standard_groups_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE

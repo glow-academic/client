@@ -121,8 +121,8 @@ providers_data AS (
     SELECT
         COALESCE(
             ARRAY_AGG(
-                ((SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1)::text, (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1)::text, ''::text, EXISTS (SELECT 1 FROM default_auths da WHERE da.id = a.id))::types.q_get_login_data_v4_provider
-                ORDER BY (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1)
+                ((SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slugs_id WHERE as_j.auth_id = a.id LIMIT 1)::text, (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.names_id = n.id WHERE an.auth_id = a.id LIMIT 1)::text, ''::text, EXISTS (SELECT 1 FROM default_auths da WHERE da.id = a.id))::types.q_get_login_data_v4_provider
+                ORDER BY (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.names_id = n.id WHERE an.auth_id = a.id LIMIT 1)
             ),
             '{}'::types.q_get_login_data_v4_provider[]
         ) as providers
@@ -151,10 +151,10 @@ departments_data AS (
     SELECT
         COALESCE(
             ARRAY_AGG(
-                (d.id::text, (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)::text, COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '')::text)::types.q_get_login_data_v4_department
+                (d.id::text, (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = d.id LIMIT 1)::text, COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.descriptions_id = d2.id WHERE dd.department_id = d.id LIMIT 1), '')::text)::types.q_get_login_data_v4_department
                 ORDER BY
                     -- Alphabetical by title
-                    (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1)
+                    (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = d.id LIMIT 1)
             ),
             '{}'::types.q_get_login_data_v4_department[]
         ) as departments

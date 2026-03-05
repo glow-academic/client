@@ -93,7 +93,7 @@ key_departments_data AS (
         pkr.key_id,
         ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id::text) as department_ids
     FROM setting_provider_keys_junction spk
-    JOIN provider_keys_resource pkr ON pkr.id = spk.provider_key_id
+    JOIN provider_keys_resource pkr ON pkr.id = spk.provider_keys_id
     JOIN setting_artifact s ON s.id = spk.setting_id AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND f.value = true)
     JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
     WHERE spk.active = true
@@ -125,7 +125,7 @@ settings_keys_data AS (
         -- Include keys with matching department links OR default keys (no department links) OR superadmin can see all
         EXISTS (
             SELECT 1 FROM setting_provider_keys_junction spk
-            JOIN provider_keys_resource pkr ON pkr.id = spk.provider_key_id
+            JOIN provider_keys_resource pkr ON pkr.id = spk.provider_keys_id
             JOIN setting_artifact s ON s.id = spk.setting_id AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND f.value = true)
             JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
             JOIN user_departments ud ON ud.department_id = ds.department_id
@@ -137,7 +137,7 @@ settings_keys_data AS (
 SELECT
     COALESCE(
         ARRAY_AGG(
-            (s.id, s.created_at, EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND f.value = TRUE), (SELECT n.name FROM setting_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.setting_id = s.id LIMIT 1), (SELECT d.description FROM setting_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.setting_id = s.id LIMIT 1),
+            (s.id, s.created_at, EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND f.value = TRUE), (SELECT n.name FROM setting_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.setting_id = s.id LIMIT 1), (SELECT d.description FROM setting_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.setting_id = s.id LIMIT 1),
              COALESCE(sdd.department_ids, ARRAY[]::text[])
             )::types.q_get_settings_list_v4_setting
             ORDER BY s.created_at DESC

@@ -42,29 +42,29 @@ WITH params AS (
 original_persona AS (
     SELECT
         p.id,
-        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name,
-        (SELECT pd.description_id FROM persona_descriptions_junction pd WHERE pd.persona_id = p.id LIMIT 1) as description_id,
-        (SELECT pc.color_id FROM persona_colors_junction pc WHERE pc.persona_id = p.id LIMIT 1) as color_id,
-        (SELECT pi.icon_id FROM persona_icons_junction pi WHERE pi.persona_id = p.id LIMIT 1) as icon_id,
-        (SELECT pij.instruction_id FROM persona_instructions_junction pij WHERE pij.persona_id = p.id LIMIT 1) as instruction_id
+        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as name,
+        (SELECT pd.descriptions_id FROM persona_descriptions_junction pd WHERE pd.persona_id = p.id LIMIT 1) as descriptions_id,
+        (SELECT pc.colors_id FROM persona_colors_junction pc WHERE pc.persona_id = p.id LIMIT 1) as color_id,
+        (SELECT pi.icons_id FROM persona_icons_junction pi WHERE pi.persona_id = p.id LIMIT 1) as icon_id,
+        (SELECT pij.instructions_id FROM persona_instructions_junction pij WHERE pij.persona_id = p.id LIMIT 1) as instructions_id
     FROM params x
     JOIN persona_artifact p ON p.id = x.persona_id
 ),
 original_departments AS (
     -- Get department IDs from original persona
-    SELECT department_id
+    SELECT departments_id
     FROM params x
     JOIN persona_departments_junction pd ON pd.persona_id = x.persona_id AND pd.active = true
 ),
 original_fields AS (
     -- Get parameter_field IDs from original persona
-    SELECT ppfj.parameter_field_id
+    SELECT ppfj.parameter_fields_id
     FROM params x
     JOIN persona_parameter_fields_junction ppfj ON ppfj.persona_id = x.persona_id AND ppfj.active = true
 ),
 original_examples AS (
     -- Get example IDs from original persona
-    SELECT pej.example_id
+    SELECT pej.examples_id
     FROM params x
     JOIN persona_examples_junction pej ON pej.persona_id = x.persona_id AND pej.active = true
 ),
@@ -84,7 +84,7 @@ new_persona AS (
 ),
 -- Link persona to name (created by Python, passed as name_resource_id)
 link_persona_name AS (
-    INSERT INTO persona_names_junction (persona_id, name_id, created_at)
+    INSERT INTO persona_names_junction (persona_id, names_id, created_at)
     SELECT
         np.id,
         x.name_resource_id,
@@ -95,18 +95,18 @@ link_persona_name AS (
 ),
 -- Link persona to existing description
 link_persona_description AS (
-    INSERT INTO persona_descriptions_junction (persona_id, description_id, created_at)
+    INSERT INTO persona_descriptions_junction (persona_id, descriptions_id, created_at)
     SELECT
         np.id,
-        op.description_id,
+        op.descriptions_id,
         NOW()
     FROM new_persona np
     CROSS JOIN original_persona op
-    WHERE op.description_id IS NOT NULL
+    WHERE op.descriptions_id IS NOT NULL
 ),
 -- Link persona to existing color
 link_persona_color AS (
-    INSERT INTO persona_colors_junction (persona_id, color_id, created_at)
+    INSERT INTO persona_colors_junction (persona_id, colors_id, created_at)
     SELECT
         np.id,
         op.color_id,
@@ -117,7 +117,7 @@ link_persona_color AS (
 ),
 -- Link persona to existing icon
 link_persona_icon AS (
-    INSERT INTO persona_icons_junction (persona_id, icon_id, created_at)
+    INSERT INTO persona_icons_junction (persona_id, icons_id, created_at)
     SELECT
         np.id,
         op.icon_id,
@@ -128,18 +128,18 @@ link_persona_icon AS (
 ),
 -- Link persona to existing instruction
 link_persona_instruction AS (
-    INSERT INTO persona_instructions_junction (persona_id, instruction_id, created_at)
+    INSERT INTO persona_instructions_junction (persona_id, instructions_id, created_at)
     SELECT
         np.id,
-        op.instruction_id,
+        op.instructions_id,
         NOW()
     FROM new_persona np
     CROSS JOIN original_persona op
-    WHERE op.instruction_id IS NOT NULL
+    WHERE op.instructions_id IS NOT NULL
 ),
 -- Link persona active flag (set to false for duplicate)
 link_persona_active_flag AS (
-    INSERT INTO persona_flags_junction (persona_id, flag_id, created_at)
+    INSERT INTO persona_flags_junction (persona_id, flags_id, created_at)
     SELECT
         np.id,
         f.id,
@@ -150,10 +150,10 @@ link_persona_active_flag AS (
 ),
 copy_departments AS (
     -- Link to existing department IDs from original persona
-    INSERT INTO persona_departments_junction (persona_id, department_id, active, created_at)
+    INSERT INTO persona_departments_junction (persona_id, departments_id, active, created_at)
     SELECT
         np.id,
-        od.department_id,
+        od.departments_id,
         active_value,
         NOW()
     FROM new_persona np
@@ -162,10 +162,10 @@ copy_departments AS (
 ),
 copy_fields AS (
     -- Link to existing parameter_field IDs from original persona
-    INSERT INTO persona_parameter_fields_junction (persona_id, parameter_field_id, active, created_at)
+    INSERT INTO persona_parameter_fields_junction (persona_id, parameter_fields_id, active, created_at)
     SELECT
         np.id,
-        ofi.parameter_field_id,
+        ofi.parameter_fields_id,
         active_value,
         NOW()
     FROM new_persona np
@@ -174,10 +174,10 @@ copy_fields AS (
 ),
 copy_examples AS (
     -- Link to existing example IDs from original persona
-    INSERT INTO persona_examples_junction (persona_id, example_id, active, created_at)
+    INSERT INTO persona_examples_junction (persona_id, examples_id, active, created_at)
     SELECT
         np.id,
-        oe.example_id,
+        oe.examples_id,
         active_value,
         NOW()
     FROM new_persona np

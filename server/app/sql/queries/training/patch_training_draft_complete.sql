@@ -93,7 +93,7 @@ BEGIN
     objective_ids := COALESCE((objectives).resource_ids, ARRAY[]::uuid[]);
 
     -- Resolve profile_artifact.id to profiles_resource.id via junction table
-    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    SELECT ppj.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = v_profile_id
     LIMIT 1;
@@ -108,7 +108,7 @@ BEGIN
 
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, session_id)
-            VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
+            VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profile_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
             RETURNING id INTO v_group_id;
         END IF;
 
@@ -117,7 +117,7 @@ BEGIN
             updated_at = now(),
             group_id = COALESCE(chat_drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM chat_drafts_profiles_connection pdj WHERE pdj.draft_id = chat_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
+          AND EXISTS (SELECT 1 FROM chat_drafts_profiles_connection pdj WHERE pdj.draft_id = chat_drafts_entry.id AND pdj.profile_id = v_profiles_resource_id)
           AND chat_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
 
@@ -217,8 +217,8 @@ BEGIN
 
             IF objective_ids IS NOT NULL THEN
                 INSERT INTO chat_drafts_objectives_connection (draft_id, objectives_id, version)
-                SELECT v_draft_id, objective_id, v_new_version
-                FROM unnest(objective_ids) as objective_id
+                SELECT v_draft_id, objectives_id, v_new_version
+                FROM unnest(objective_ids) as objectives_id
                 ON CONFLICT ON CONSTRAINT objectives_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
         END IF;
@@ -227,7 +227,7 @@ BEGIN
     -- Create new draft if update failed or input_draft_id was NULL
     IF v_draft_id IS NULL THEN
         INSERT INTO groups_entry (created_at, session_id)
-        VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
+        VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profile_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
         RETURNING id INTO v_group_id;
 
         INSERT INTO chat_drafts_entry (group_id)
@@ -319,8 +319,8 @@ BEGIN
 
         IF objective_ids IS NOT NULL THEN
             INSERT INTO chat_drafts_objectives_connection (draft_id, objectives_id, version)
-            SELECT v_draft_id, objective_id, v_new_version
-            FROM unnest(objective_ids) as objective_id
+            SELECT v_draft_id, objectives_id, v_new_version
+            FROM unnest(objective_ids) as objectives_id
             ON CONFLICT ON CONSTRAINT objectives_draft_pkey DO UPDATE SET version = v_new_version;
         END IF;
     END IF;
@@ -566,7 +566,7 @@ BEGIN
                 VALUES (v_call_id, 'training_draft_create_objectives_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((objectives).create_tool_id, v_call_id);
                 INSERT INTO objectives_calls_connection (objectives_id, call_id)
-                SELECT x.objective_id, v_call_id FROM UNNEST(objective_ids) AS x(objective_id);
+                SELECT x.objectives_id, v_call_id FROM UNNEST(objective_ids) AS x(objectives_id);
             END IF;
             IF (objectives).link_tool_id IS NOT NULL THEN
                 v_call_id := uuidv7();
@@ -574,7 +574,7 @@ BEGIN
                 VALUES (v_call_id, 'training_draft_link_objectives_' || v_call_id::text, v_run_id, NOW());
                 INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((objectives).link_tool_id, v_call_id);
                 INSERT INTO objectives_calls_connection (objectives_id, call_id)
-                SELECT x.objective_id, v_call_id FROM UNNEST(objective_ids) AS x(objective_id);
+                SELECT x.objectives_id, v_call_id FROM UNNEST(objective_ids) AS x(objectives_id);
             END IF;
         END IF;
     END IF;

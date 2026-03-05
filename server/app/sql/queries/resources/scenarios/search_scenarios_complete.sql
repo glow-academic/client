@@ -98,8 +98,8 @@ FROM (
           OR suggest_source IS NULL
       )
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_scenarios_junction j WHERE j.scenario_id = s.id AND j.active = true))
-      AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenarios_junction j WHERE j.scenario_id = s.id AND j.active = true))
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_scenarios_junction j WHERE j.scenarios_id = s.id AND j.active = true))
+      AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenarios_junction j WHERE j.scenarios_id = s.id AND j.active = true))
     ORDER BY s.name
     LIMIT limit_count
     OFFSET offset_count

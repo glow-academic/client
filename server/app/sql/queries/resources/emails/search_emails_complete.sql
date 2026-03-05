@@ -50,7 +50,7 @@ FROM (
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (e.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT profile OR EXISTS (SELECT 1 FROM profile_emails_junction j WHERE j.email_id = e.id AND j.active = true))
+      AND (NOT profile OR EXISTS (SELECT 1 FROM profile_emails_junction j WHERE j.emails_id = e.id AND j.active = true))
     ORDER BY e.email
     LIMIT limit_count
     OFFSET offset_count

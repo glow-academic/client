@@ -33,11 +33,11 @@ END $$;
 CREATE TYPE types.q_export_scenarios_v4_row AS (
     scenario_id uuid,
     -- Single-select: ID + value
-    name_id uuid,
+    names_id uuid,
     name text,
-    description_id uuid,
+    descriptions_id uuid,
     description text,
-    problem_statement_id uuid,
+    problem_statements_id uuid,
     problem_statement text,
     -- Boolean flags (derived from scenario_flags_junction)
     is_inactive boolean,
@@ -120,14 +120,14 @@ scenario_documents_data AS (
     WHERE sdj.active = true
     GROUP BY sdj.scenario_id
 ),
--- Parameter field data (parameter_field_id -> fields_resource.name via parameter_fields_resource.field_id)
+-- Parameter field data (parameter_fields_id -> fields_resource.name via parameter_fields_resource.field_id)
 scenario_pf_data AS (
     SELECT
         spfj.scenario_id,
-        ARRAY_AGG(spfj.parameter_field_id ORDER BY spfj.created_at) as parameter_field_ids,
+        ARRAY_AGG(spfj.parameter_fields_id ORDER BY spfj.created_at) as parameter_field_ids,
         ARRAY_AGG(fr.name ORDER BY spfj.created_at) as parameter_field_names
     FROM scenario_parameter_fields_junction spfj
-    JOIN parameter_fields_resource pfr ON pfr.id = spfj.parameter_field_id
+    JOIN parameter_fields_resource pfr ON pfr.id = spfj.parameter_fields_id
     JOIN fields_resource fr ON fr.id = pfr.field_id
     WHERE spfj.active = true
     GROUP BY spfj.scenario_id
@@ -136,10 +136,10 @@ scenario_pf_data AS (
 scenario_objectives_data AS (
     SELECT
         soj.scenario_id,
-        ARRAY_AGG(soj.objective_id) as objective_ids,
+        ARRAY_AGG(soj.objectives_id) as objective_ids,
         ARRAY_AGG(obr.objective) as objective_values
     FROM scenario_objectives_junction soj
-    JOIN objectives_resource obr ON obr.id = soj.objective_id
+    JOIN objectives_resource obr ON obr.id = soj.objectives_id
     WHERE soj.active = true
     GROUP BY soj.scenario_id
 ),
@@ -204,7 +204,7 @@ scenario_simulations AS (
         ssj.scenario_id,
         ARRAY_AGG(DISTINCT sim_r.id) as simulation_ids
     FROM scenario_scenarios_junction ssj
-    JOIN scenarios_resource sr ON sr.id = ssj.scenarios_id
+    JOIN scenarios_resource sr ON sr.id = ssj.scenario_id
     JOIN simulations_resource sim_r ON sr.id = ANY(sim_r.scenario_ids)
     GROUP BY ssj.scenario_id
 ),
@@ -213,14 +213,14 @@ scenario_data AS (
     SELECT
         s.id as scenario_id,
         -- Name
-        (SELECT sn.name_id FROM scenario_names_junction sn WHERE sn.scenario_id = s.id AND sn.active = true LIMIT 1) as name_id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id AND sn.active = true LIMIT 1) as name,
+        (SELECT sn.names_id FROM scenario_names_junction sn WHERE sn.scenario_id = s.id AND sn.active = true LIMIT 1) as names_id,
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id AND sn.active = true LIMIT 1) as name,
         -- Description
-        (SELECT sd.description_id FROM scenario_descriptions_junction sd WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as description_id,
-        (SELECT d.description FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as description,
+        (SELECT sd.descriptions_id FROM scenario_descriptions_junction sd WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as descriptions_id,
+        (SELECT d.description FROM scenario_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.scenario_id = s.id AND sd.active = true LIMIT 1) as description,
         -- Problem statement
-        (SELECT sps.problem_statement_id FROM scenario_problem_statements_junction sps WHERE sps.scenario_id = s.id AND sps.active = true LIMIT 1) as problem_statement_id,
-        (SELECT ps.problem_statement FROM scenario_problem_statements_junction sps JOIN problem_statements_resource ps ON ps.id = sps.problem_statement_id WHERE sps.scenario_id = s.id AND sps.active = true LIMIT 1) as problem_statement,
+        (SELECT sps.problem_statements_id FROM scenario_problem_statements_junction sps WHERE sps.scenario_id = s.id AND sps.active = true LIMIT 1) as problem_statements_id,
+        (SELECT ps.problem_statement FROM scenario_problem_statements_junction sps JOIN problem_statements_resource ps ON ps.id = sps.problem_statements_id WHERE sps.scenario_id = s.id AND sps.active = true LIMIT 1) as problem_statement,
         -- Flags
         NOT EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = TRUE AND sf.active = true) as is_inactive,
         sfd.flag_ids,
@@ -291,9 +291,9 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
             (fs.scenario_id,
-             fs.name_id, fs.name,
-             fs.description_id, fs.description,
-             fs.problem_statement_id, fs.problem_statement,
+             fs.names_id, fs.name,
+             fs.descriptions_id, fs.description,
+             fs.problem_statements_id, fs.problem_statement,
              fs.is_inactive,
              fs.flag_ids, fs.flags,
              fs.department_ids, fs.departments,

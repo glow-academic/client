@@ -11,7 +11,7 @@ BEGIN
           AND t.typname = 'cohort_resource_action'
     ) THEN
         CREATE TYPE types.cohort_resource_action AS (
-            resource_id uuid,
+            resources_id uuid,
             create_tool_id uuid,
             link_tool_id uuid
         );
@@ -78,9 +78,9 @@ DECLARE
     v_profile_resource_id uuid;
     v_group_id uuid := group_id;
 
-    v_name_id uuid := (names).resource_id;
-    v_description_id uuid := (descriptions).resource_id;
-    v_active_flag_id uuid := (flags).resource_id;
+    v_name_id uuid := (names).resources_id;
+    v_description_id uuid := (descriptions).resources_id;
+    v_active_flag_id uuid := (flags).resources_id;
     v_department_ids uuid[] := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_simulation_ids uuid[] := COALESCE((simulations).resource_ids, ARRAY[]::uuid[]);
     v_simulation_position_ids uuid[] := COALESCE((simulation_positions).resource_ids, ARRAY[]::uuid[]);
@@ -91,7 +91,7 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
-    SELECT pp.profiles_id INTO v_profile_resource_id
+    SELECT pp.profile_id INTO v_profile_resource_id
     FROM profile_profiles_junction pp
     WHERE pp.profile_id = v_profile_artifact_id
     LIMIT 1;
@@ -132,7 +132,7 @@ BEGIN
                 (
                     SELECT s.id
                     FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-                    WHERE psc.profiles_id = v_profile_artifact_id
+                    WHERE psc.profile_id = v_profile_artifact_id
                       AND s.active = true
                     ORDER BY s.created_at DESC
                     LIMIT 1
@@ -150,7 +150,7 @@ BEGIN
               SELECT 1
               FROM cohort_drafts_profiles_connection pdc
               WHERE pdc.draft_id = cohort_drafts_entry.id
-                AND pdc.profiles_id = v_profile_resource_id
+                AND pdc.profile_id = v_profile_resource_id
           )
           AND cohort_drafts_entry.version = expected_version
         RETURNING cohort_drafts_entry.id, cohort_drafts_entry.version
@@ -169,7 +169,7 @@ BEGIN
                 (
                     SELECT s.id
                     FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-                    WHERE psc.profiles_id = v_profile_artifact_id
+                    WHERE psc.profile_id = v_profile_artifact_id
                       AND s.active = true
                     ORDER BY s.created_at DESC
                     LIMIT 1
@@ -193,7 +193,7 @@ BEGIN
     DELETE FROM cohort_drafts_simulations_connection WHERE cohort_drafts_simulations_connection.draft_id = v_draft_id;
     DELETE FROM cohort_drafts_simulation_positions_connection WHERE cohort_drafts_simulation_positions_connection.draft_id = v_draft_id;
     DELETE FROM cohort_drafts_simulation_availability_connection WHERE cohort_drafts_simulation_availability_connection.draft_id = v_draft_id;
-    DELETE FROM cohort_drafts_profiles_connection WHERE cohort_drafts_profiles_connection.draft_id = v_draft_id AND cohort_drafts_profiles_connection.profiles_id != v_profile_resource_id;
+    DELETE FROM cohort_drafts_profiles_connection WHERE cohort_drafts_profiles_connection.draft_id = v_draft_id AND cohort_drafts_profiles_connection.profile_id != v_profile_resource_id;
     DELETE FROM cohort_drafts_profile_personas_connection WHERE cohort_drafts_profile_personas_connection.draft_id = v_draft_id;
 
     IF v_name_id IS NOT NULL THEN

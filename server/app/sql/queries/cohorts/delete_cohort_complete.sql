@@ -38,7 +38,7 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id AS profile_id,
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
@@ -49,7 +49,7 @@ usage_check AS (
 ),
 cohort_name AS (
     -- Get cohort name before deletion
-    SELECT (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name
+    SELECT (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.names_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name
     FROM params x
     JOIN cohort_artifact c ON c.id = x.cohort_id
 ),

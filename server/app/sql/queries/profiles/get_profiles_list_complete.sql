@@ -133,7 +133,7 @@ staff_rows AS (
                         pe2.is_primary,
                         pe2.created_at
                     FROM profile_emails_junction pe2
-                    JOIN emails_resource e2 ON pe2.email_id = e2.id
+                    JOIN emails_resource e2 ON pe2.emails_id = e2.id
                     WHERE pe2.profile_id = p.id AND pe2.active = true
                     ORDER BY e2.email, pe2.is_primary DESC, pe2.created_at
                 ) distinct_emails
@@ -141,14 +141,14 @@ staff_rows AS (
             ),
             ARRAY[]::text[]
         ) as emails,
-        (SELECT e2.email FROM profile_emails_junction pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as name,
+        (SELECT e2.email FROM profile_emails_junction pe2 JOIN emails_resource e2 ON pe2.emails_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as name,
         (SELECT r.role FROM profile_roles_junction pr_j
          JOIN roles_resource r ON pr_j.role_id = r.id
          WHERE pr_j.profile_id = p.id
          LIMIT 1) as role,
-        COALESCE(SUBSTRING((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) FROM 1 FOR 1), '') ||
-        COALESCE(NULLIF(SUBSTRING(SPLIT_PART((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ' ', 2) FROM 1 FOR 1), ''), '') as initials,
+        COALESCE(SUBSTRING((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1) FROM 1 FOR 1), '') ||
+        COALESCE(NULLIF(SUBSTRING(SPLIT_PART((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ' ', 2) FROM 1 FOR 1), ''), '') as initials,
         rl.requests_per_day,
         COALESCE(pda.department_ids, ARRAY[]::text[]) as department_ids,
         COALESCE(ppd.department_id, '') as primary_department_id,
@@ -160,7 +160,7 @@ staff_rows AS (
     LEFT JOIN profile_departments_agg pda ON pda.profile_id = p.id
     LEFT JOIN profile_primary_department ppd ON ppd.profile_id = p.id
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
-    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
+    LEFT JOIN request_limits_resource rl ON prl.request_limits_id = rl.id
     CROSS JOIN user_profile up
     WHERE (
         -- Superadmins see all profiles (bypass department filter)
@@ -180,7 +180,7 @@ staff_rows AS (
         rl.requests_per_day,
         pda.department_ids, ppd.department_id,
         up.role
-    ORDER BY p.id, (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
+    ORDER BY p.id, (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
 ),
 -- Apply server-side filters
 filtered_staff AS (
@@ -245,8 +245,8 @@ SELECT
             ORDER BY dn_name.name
          )
          FROM departments_resource dr
-         JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
-         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
+         JOIN department_departments_junction ddj ON ddj.department_id = dr.id
+         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
          WHERE dr.id IN (SELECT department_id FROM all_department_ids)
            AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_profiles_v4_option[]

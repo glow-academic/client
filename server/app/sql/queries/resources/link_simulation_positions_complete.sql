@@ -1,7 +1,7 @@
 -- Link simulation_positions resource (tool call tracking for non-creatable resources)
 -- Records a tool call linking an existing simulation_positions resource to a run/call chain
--- Parameters: resource_id (uuid), group_id (uuid), tool_id (uuid)
--- Returns: resource_id (uuid)
+-- Parameters: resources_id (uuid), group_id (uuid), tool_id (uuid)
+-- Returns: resources_id (uuid)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -19,7 +19,7 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_link_simulation_positions_v4(
-    resource_id uuid DEFAULT NULL,
+    resources_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,
     tool_id uuid DEFAULT NULL
 )
@@ -35,8 +35,8 @@ DECLARE
     v_run_id uuid;
 BEGIN
     -- Validate resource exists
-    IF resource_id IS NULL THEN
-        RAISE EXCEPTION 'resource_id is required';
+    IF resources_id IS NULL THEN
+        RAISE EXCEPTION 'resources_id is required';
     END IF;
 
     -- If tool_id and group_id provided, create run and call for tracking
@@ -57,9 +57,9 @@ BEGIN
 
         -- Link resource to call
         INSERT INTO simulation_positions_calls_connection (simulation_positions_id, call_id)
-        VALUES (api_link_simulation_positions_v4.resource_id, v_call_id);
+        VALUES (api_link_simulation_positions_v4.resources_id, v_call_id);
     END IF;
 
-    RETURN QUERY SELECT api_link_simulation_positions_v4.resource_id;
+    RETURN QUERY SELECT api_link_simulation_positions_v4.resources_id;
 END;
 $$;

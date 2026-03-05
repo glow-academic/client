@@ -34,18 +34,18 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.objective_id, q.objective, q.generated)::types.q_get_objectives_v4_item
-        ORDER BY q.objective_id
+        (q.objectives_id, q.objective, q.generated)::types.q_get_objectives_v4_item
+        ORDER BY q.objectives_id
     ),
     ARRAY[]::types.q_get_objectives_v4_item[]
 ) as items
 FROM (
-    SELECT r.id AS objective_id, r.objective, COALESCE(r.generated, false) AS generated
+    SELECT r.id AS objectives_id, r.objective, COALESCE(r.generated, false) AS generated
     FROM objectives_resource r
     WHERE (search IS NULL OR search = '' OR LOWER(r.objective) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_objectives_junction j WHERE j.objective_id = r.id AND j.active = true))
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_objectives_junction j WHERE j.objectives_id = r.id AND j.active = true))
     ORDER BY r.id
     LIMIT limit_count
     OFFSET offset_count

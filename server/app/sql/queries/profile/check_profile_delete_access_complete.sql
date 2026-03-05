@@ -40,7 +40,7 @@ WITH params AS (
 -- Get target profile departments
 target_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(pd.department_id::text) FILTER (WHERE pd.department_id IS NOT NULL),
+        ARRAY_AGG(pd.departments_id::text) FILTER (WHERE pd.departments_id IS NOT NULL),
         ARRAY[]::text[]
     ) as department_ids
     FROM params x
@@ -51,7 +51,7 @@ profile_name_data AS (
     SELECT n.name
     FROM params x
     JOIN profile_names_junction pn ON pn.profile_id = x.target_profile_id
-    JOIN names_resource n ON n.id = pn.name_id
+    JOIN names_resource n ON n.id = pn.names_id
     LIMIT 1
 ),
 -- Get target profile role
@@ -59,7 +59,7 @@ target_role_data AS (
     SELECT r.role::text as role
     FROM params x
     JOIN profile_roles_junction prj ON prj.profile_id = x.target_profile_id
-    JOIN roles_resource r ON r.id = prj.role_id
+    JOIN roles_resource r ON r.id = prj.roles_id
     LIMIT 1
 )
 SELECT

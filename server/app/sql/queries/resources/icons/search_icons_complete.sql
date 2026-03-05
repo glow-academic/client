@@ -66,13 +66,13 @@ FROM (
                   SELECT 1 FROM (
                       SELECT icons_id, draft_id FROM persona_drafts_icons_connection WHERE active = true
                   ) dc
-                  WHERE dc.icons_id = i.id
+                  WHERE dc.icon_id = i.id
                     AND dc.draft_id = api_search_icons_v4.draft_id
               )
           )
       )
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_icons_junction j WHERE j.icon_id = i.id AND j.active = true))
+      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_icons_junction j WHERE j.icons_id = i.id AND j.active = true))
     ORDER BY i.name
     LIMIT limit_count
     OFFSET offset_count

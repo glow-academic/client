@@ -44,7 +44,7 @@ department_exists_check AS (
 ),
 actor_profile AS (
     SELECT 
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), 'System') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), 'System') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
@@ -52,7 +52,7 @@ department_info AS (
     -- Check if department exists and get usage counts
     SELECT 
         d.id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1),
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = d.id LIMIT 1),
         (SELECT COUNT(*) FROM simulation_departments_junction WHERE department_id = d.id AND active = true) as simulation_count,
         (SELECT COUNT(*) FROM scenario_departments_junction WHERE department_id = d.id AND active = true) as scenario_count,
         (SELECT COUNT(*) FROM persona_departments_junction WHERE department_id = d.id AND active = true) as persona_count,
@@ -65,7 +65,7 @@ usage_summary AS (
     -- Calculate total usage
     SELECT 
         id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = di.id LIMIT 1) as title,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = di.id LIMIT 1) as title,
         simulation_count,
         scenario_count,
         persona_count,

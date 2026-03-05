@@ -66,8 +66,8 @@ FROM (
       AND (COALESCE(array_length(voice_ids, 1), 0) = 0 OR m.voice_ids && voice_ids)
       AND (COALESCE(array_length(modality_ids, 1), 0) = 0 OR m.modality_ids && modality_ids)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_models_junction amj WHERE amj.model_id = m.id AND amj.active = true))
-      AND (NOT model OR EXISTS (SELECT 1 FROM model_models_junction j WHERE j.model_id = m.id AND j.active = true))
+      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_models_junction amj WHERE amj.models_id = m.id AND amj.active = true))
+      AND (NOT model OR EXISTS (SELECT 1 FROM model_models_junction j WHERE j.models_id = m.id AND j.active = true))
     ORDER BY m.name
     LIMIT limit_count
     OFFSET offset_count

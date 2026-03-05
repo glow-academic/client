@@ -60,9 +60,9 @@ SELECT
     (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND c.type = 'chart3'::color_type LIMIT 1) as chart3,
     (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND c.type = 'chart4'::color_type LIMIT 1) as chart4,
     (SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND c.type = 'chart5'::color_type LIMIT 1) as chart5,
-    (SELECT t.value FROM setting_thresholds_junction st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND t.type = 'success'::threshold_type LIMIT 1) as success_threshold,
-    (SELECT t.value FROM setting_thresholds_junction st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND t.type = 'warning'::threshold_type LIMIT 1) as warning_threshold,
-    (SELECT t.value FROM setting_thresholds_junction st JOIN thresholds_resource t ON st.threshold_id = t.id WHERE st.setting_id = s.id AND t.type = 'danger'::threshold_type LIMIT 1) as danger_threshold
+    (SELECT t.value FROM setting_thresholds_junction st JOIN thresholds_resource t ON st.thresholds_id = t.id WHERE st.setting_id = s.id AND t.type = 'success'::threshold_type LIMIT 1) as success_threshold,
+    (SELECT t.value FROM setting_thresholds_junction st JOIN thresholds_resource t ON st.thresholds_id = t.id WHERE st.setting_id = s.id AND t.type = 'warning'::threshold_type LIMIT 1) as warning_threshold,
+    (SELECT t.value FROM setting_thresholds_junction st JOIN thresholds_resource t ON st.thresholds_id = t.id WHERE st.setting_id = s.id AND t.type = 'danger'::threshold_type LIMIT 1) as danger_threshold
 FROM setting_artifact s
 WHERE s.id = settings_id_param
   AND EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND f.value = TRUE);

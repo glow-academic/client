@@ -13,7 +13,7 @@ STABLE
 AS $$
 -- Map auth_artifact.id -> auths_resource.id (needed for auth_item_keys_resource)
 WITH auth_resource_mapping AS (
-    SELECT aaj.auth_id as artifact_id, aaj.auths_id as resource_id
+    SELECT aaj.auth_id as artifacts_id, aaj.auth_id as resources_id
     FROM auth_auths_junction aaj
     WHERE aaj.auth_id = api_get_auth_items_v4.auth_id
     LIMIT 1
@@ -22,7 +22,7 @@ WITH auth_resource_mapping AS (
 dept_settings AS (
     SELECT DISTINCT ssj.setting_id as settings_id
     FROM departments_resource dr
-    JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
+    JOIN department_departments_junction ddj ON ddj.department_id = dr.id
     CROSS JOIN LATERAL UNNEST(dr.setting_ids) AS s_id
     JOIN settings_resource sr ON sr.id = s_id AND sr.active = true
     JOIN setting_settings_junction ssj ON ssj.settings_id = s_id
@@ -45,14 +45,14 @@ default_settings AS (
 dept_encrypted_items AS (
     SELECT DISTINCT ON (i.name) i.name, kr.key as value, i.encrypted
     FROM auth_resource_mapping arm
-    JOIN auth_items_junction ai_j ON ai_j.auth_id = arm.artifact_id
+    JOIN auth_items_junction ai_j ON ai_j.auth_id = arm.artifacts_id
     JOIN items_resource i ON i.id = ai_j.item_id
     JOIN setting_auth_item_keys_junction sak ON sak.active = true
     JOIN dept_settings ds ON sak.setting_id = ds.settings_id
     JOIN auth_item_keys_resource akr ON akr.id = sak.auth_item_keys_id AND akr.active = true
     JOIN keys_resource kr ON kr.id = akr.key_id AND kr.active
     WHERE i.encrypted = true
-      AND akr.auth_id = arm.resource_id
+      AND akr.auth_id = arm.resources_id
       AND akr.item_id = ai_j.item_id
     ORDER BY i.name, kr.created_at DESC
 ),
@@ -60,14 +60,14 @@ dept_encrypted_items AS (
 default_encrypted_items AS (
     SELECT DISTINCT ON (i.name) i.name, kr.key as value, i.encrypted
     FROM auth_resource_mapping arm
-    JOIN auth_items_junction ai_j ON ai_j.auth_id = arm.artifact_id
+    JOIN auth_items_junction ai_j ON ai_j.auth_id = arm.artifacts_id
     JOIN items_resource i ON i.id = ai_j.item_id
     JOIN setting_auth_item_keys_junction sak ON sak.active = true
     JOIN default_settings ds ON sak.setting_id = ds.settings_id
     JOIN auth_item_keys_resource akr ON akr.id = sak.auth_item_keys_id AND akr.active = true
     JOIN keys_resource kr ON kr.id = akr.key_id AND kr.active
     WHERE i.encrypted = true
-      AND akr.auth_id = arm.resource_id
+      AND akr.auth_id = arm.resources_id
       AND akr.item_id = ai_j.item_id
       AND NOT EXISTS (
           SELECT 1 FROM dept_encrypted_items dei
@@ -84,9 +84,9 @@ encrypted_items AS (
 dept_non_encrypted_items AS (
     SELECT DISTINCT ON (i.name) i.name, aiv.value, i.encrypted
     FROM auth_resource_mapping arm
-    JOIN auth_items_junction ai_j ON ai_j.auth_id = arm.artifact_id
+    JOIN auth_items_junction ai_j ON ai_j.auth_id = arm.artifacts_id
     JOIN items_resource i ON i.id = ai_j.item_id
-    JOIN auth_item_values_resource aiv ON aiv.auth_id = arm.resource_id AND aiv.item_id = ai_j.item_id AND aiv.active = true
+    JOIN auth_item_values_resource aiv ON aiv.auth_id = arm.resources_id AND aiv.item_id = ai_j.item_id AND aiv.active = true
     JOIN setting_auth_item_values_junction saiv ON saiv.auth_item_values_id = aiv.id AND saiv.active = true
     JOIN dept_settings ds ON saiv.setting_id = ds.settings_id
     WHERE i.encrypted = false
@@ -95,9 +95,9 @@ dept_non_encrypted_items AS (
 default_non_encrypted_items AS (
     SELECT DISTINCT ON (i.name) i.name, aiv.value, i.encrypted
     FROM auth_resource_mapping arm
-    JOIN auth_items_junction ai_j ON ai_j.auth_id = arm.artifact_id
+    JOIN auth_items_junction ai_j ON ai_j.auth_id = arm.artifacts_id
     JOIN items_resource i ON i.id = ai_j.item_id
-    JOIN auth_item_values_resource aiv ON aiv.auth_id = arm.resource_id AND aiv.item_id = ai_j.item_id AND aiv.active = true
+    JOIN auth_item_values_resource aiv ON aiv.auth_id = arm.resources_id AND aiv.item_id = ai_j.item_id AND aiv.active = true
     JOIN setting_auth_item_values_junction saiv ON saiv.auth_item_values_id = aiv.id AND saiv.active = true
     JOIN default_settings ds ON saiv.setting_id = ds.settings_id
     WHERE i.encrypted = false

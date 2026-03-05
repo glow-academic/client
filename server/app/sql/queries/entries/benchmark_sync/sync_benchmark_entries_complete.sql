@@ -33,7 +33,7 @@ END $$;
 
 -- Input type for model configuration per eval
 CREATE TYPE types.i_sync_model_v4 AS (
-    resource_id uuid,
+    resources_id uuid,
     position integer,
     position_resource_ids uuid[],
     rubric_resource_ids uuid[],
@@ -94,7 +94,7 @@ BEGIN
         -- Resolve model from index
         IF v_invocation.model_index > 0 AND v_invocation.model_index <= array_length(models, 1) THEN
             v_model := models[v_invocation.model_index];
-            v_model_resource_id := v_model.resource_id;
+            v_model_resource_id := v_model.resources_id;
 
             -- invocation_models_connection
             IF v_model_resource_id IS NOT NULL THEN

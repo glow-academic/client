@@ -47,7 +47,7 @@ FROM (
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (cp.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT field OR EXISTS (SELECT 1 FROM field_conditional_parameters_junction j WHERE j.conditional_parameter_id = cp.id AND j.active = true))
+      AND (NOT field OR EXISTS (SELECT 1 FROM field_conditional_parameters_junction j WHERE j.conditional_parameters_id = cp.id AND j.active = true))
     ORDER BY cp.id
     LIMIT limit_count
     OFFSET offset_count

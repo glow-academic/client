@@ -29,12 +29,12 @@ CREATE OR REPLACE FUNCTION api_get_agent_ids_v4(
 )
 RETURNS TABLE (
     -- Single-select resource IDs (from draft or agent junction)
-    name_id uuid,
-    description_id uuid,
+    names_id uuid,
+    descriptions_id uuid,
     model_id uuid,
     active_flag_id uuid,
-    temperature_level_id uuid,
-    reasoning_level_id uuid,
+    temperature_levels_id uuid,
+    reasoning_levels_id uuid,
 
     -- Multi-select resource IDs
     department_ids uuid[],
@@ -57,18 +57,18 @@ name_resource_data AS (
     SELECT
         COALESCE(
             (SELECT dn.names_id FROM agent_drafts_names_connection dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT an.name_id FROM agent_names_junction an WHERE an.agent_id = (SELECT agent_id FROM params) LIMIT 1),
+            (SELECT an.names_id FROM agent_names_junction an WHERE an.agent_id = (SELECT agent_id FROM params) LIMIT 1),
             NULL::uuid
-        ) as name_id
+        ) as names_id
     FROM params
 ),
 description_resource_data AS (
     SELECT
         COALESCE(
             (SELECT dd.descriptions_id FROM agent_drafts_descriptions_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT ad.description_id FROM agent_descriptions_junction ad WHERE ad.agent_id = (SELECT agent_id FROM params) LIMIT 1),
+            (SELECT ad.descriptions_id FROM agent_descriptions_junction ad WHERE ad.agent_id = (SELECT agent_id FROM params) LIMIT 1),
             NULL::uuid
-        ) as description_id
+        ) as descriptions_id
     FROM params
 ),
 model_resource_data AS (
@@ -86,7 +86,7 @@ model_resource_data AS (
 flag_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT df.flags_id
+            (SELECT df.flag_id
              FROM agent_drafts_flags_connection df
              WHERE df.draft_id = (SELECT draft_id FROM params)
              LIMIT 1),
@@ -110,7 +110,7 @@ temperature_level_resource_data AS (
              WHERE ar.id = (SELECT agent_id FROM params)
              LIMIT 1),
             NULL::uuid
-        ) as temperature_level_id
+        ) as temperature_levels_id
     FROM params
 ),
 reasoning_level_resource_data AS (
@@ -122,14 +122,14 @@ reasoning_level_resource_data AS (
              WHERE ar.id = (SELECT agent_id FROM params)
              LIMIT 1),
             NULL::uuid
-        ) as reasoning_level_id
+        ) as reasoning_levels_id
     FROM params
 ),
 -- Multi-select resource IDs
 department_ids_data AS (
     SELECT
         COALESCE(
-            (SELECT ARRAY_AGG(dd.departments_id ORDER BY dd.created_at)
+            (SELECT ARRAY_AGG(dd.department_id ORDER BY dd.created_at)
              FROM agent_drafts_departments_connection dd
              WHERE dd.draft_id = (SELECT draft_id FROM params)
                AND dd.active = true),
@@ -148,7 +148,7 @@ tool_ids_data AS (
             (SELECT ARRAY_AGG(ttj.tool_id ORDER BY at.created_at)
              FROM agent_tools_junction at
              JOIN tools_resource tr ON tr.id = at.tool_id
-             JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+             JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
              JOIN tool_artifact t ON t.id = ttj.tool_id
              WHERE at.agent_id = (SELECT agent_id FROM params)
                AND at.active = true
@@ -173,12 +173,12 @@ voice_ids_data AS (
 )
 SELECT
     -- Single-select resource IDs
-    (SELECT name_id FROM name_resource_data) as name_id,
-    (SELECT description_id FROM description_resource_data) as description_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
+    (SELECT descriptions_id FROM description_resource_data) as descriptions_id,
     (SELECT model_id FROM model_resource_data) as model_id,
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
-    (SELECT temperature_level_id FROM temperature_level_resource_data) as temperature_level_id,
-    (SELECT reasoning_level_id FROM reasoning_level_resource_data) as reasoning_level_id,
+    (SELECT temperature_levels_id FROM temperature_level_resource_data) as temperature_levels_id,
+    (SELECT reasoning_levels_id FROM reasoning_level_resource_data) as reasoning_levels_id,
 
     -- Multi-select resource IDs
     (SELECT department_ids FROM department_ids_data) as department_ids,

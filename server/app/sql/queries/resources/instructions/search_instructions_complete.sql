@@ -72,7 +72,7 @@ FROM (
       )
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
       AND (NOT agent OR EXISTS (SELECT 1 FROM agents_resource ar WHERE i.id = ANY(ar.instruction_ids) AND ar.active = true))
-      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_instructions_junction j WHERE j.instruction_id = i.id AND j.active = true))
+      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_instructions_junction j WHERE j.instructions_id = i.id AND j.active = true))
     ORDER BY i.template
     LIMIT limit_count
     OFFSET offset_count

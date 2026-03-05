@@ -50,7 +50,7 @@ CREATE TYPE types.q_get_training_config_v4_item AS (
     -- Singular picks
     scenario_id uuid,
     rubric_id uuid,
-    problem_statement_id uuid,
+    problem_statements_id uuid,
     persona_ids uuid[],
     -- Plural sets
     objective_ids uuid[],
@@ -85,19 +85,19 @@ AS $$
             COALESCE(MAX(stlr.time_limit_seconds), 0)::int AS time_limit_seconds,
             COALESCE(BOOL_OR(stlr.negative), false) AS negative,
             -- singular picks (first by created_at)
-            (ARRAY_AGG(tsc.scenarios_id ORDER BY tsc.created_at) FILTER (WHERE tsc.scenarios_id IS NOT NULL))[1] AS scenario_id,
-            (ARRAY_AGG(trc.rubrics_id ORDER BY trc.created_at) FILTER (WHERE trc.rubrics_id IS NOT NULL))[1] AS rubric_id,
-            (ARRAY_AGG(tpsc.problem_statements_id ORDER BY tpsc.created_at) FILTER (WHERE tpsc.problem_statements_id IS NOT NULL))[1] AS problem_statement_id,
+            (ARRAY_AGG(tsc.scenario_id ORDER BY tsc.created_at) FILTER (WHERE tsc.scenario_id IS NOT NULL))[1] AS scenario_id,
+            (ARRAY_AGG(trc.rubric_id ORDER BY trc.created_at) FILTER (WHERE trc.rubric_id IS NOT NULL))[1] AS rubric_id,
+            (ARRAY_AGG(tpsc.problem_statements_id ORDER BY tpsc.created_at) FILTER (WHERE tpsc.problem_statements_id IS NOT NULL))[1] AS problem_statements_id,
             COALESCE(ARRAY_AGG(DISTINCT ppr.persona_id ORDER BY ppr.persona_id) FILTER (WHERE ppr.persona_id IS NOT NULL), ARRAY[]::uuid[]) AS persona_ids,
             -- plural sets
             COALESCE(ARRAY_AGG(DISTINCT toc.objectives_id ORDER BY toc.objectives_id) FILTER (WHERE toc.objectives_id IS NOT NULL), ARRAY[]::uuid[]) AS objective_ids,
-            COALESCE(ARRAY_AGG(DISTINCT tqc.questions_id ORDER BY tqc.questions_id) FILTER (WHERE tqc.questions_id IS NOT NULL), ARRAY[]::uuid[]) AS question_ids,
-            COALESCE(ARRAY_AGG(DISTINCT topt.options_id ORDER BY topt.options_id) FILTER (WHERE topt.options_id IS NOT NULL), ARRAY[]::uuid[]) AS option_ids,
-            COALESCE(ARRAY_AGG(DISTINCT tic.images_id ORDER BY tic.images_id) FILTER (WHERE tic.images_id IS NOT NULL), ARRAY[]::uuid[]) AS image_ids,
-            COALESCE(ARRAY_AGG(DISTINCT tvc.videos_id ORDER BY tvc.videos_id) FILTER (WHERE tvc.videos_id IS NOT NULL), ARRAY[]::uuid[]) AS video_ids,
-            COALESCE(ARRAY_AGG(DISTINCT tdc.documents_id ORDER BY tdc.documents_id) FILTER (WHERE tdc.documents_id IS NOT NULL), ARRAY[]::uuid[]) AS document_ids,
+            COALESCE(ARRAY_AGG(DISTINCT tqc.question_id ORDER BY tqc.question_id) FILTER (WHERE tqc.question_id IS NOT NULL), ARRAY[]::uuid[]) AS question_ids,
+            COALESCE(ARRAY_AGG(DISTINCT topt.option_id ORDER BY topt.option_id) FILTER (WHERE topt.option_id IS NOT NULL), ARRAY[]::uuid[]) AS option_ids,
+            COALESCE(ARRAY_AGG(DISTINCT tic.image_id ORDER BY tic.image_id) FILTER (WHERE tic.image_id IS NOT NULL), ARRAY[]::uuid[]) AS image_ids,
+            COALESCE(ARRAY_AGG(DISTINCT tvc.video_id ORDER BY tvc.video_id) FILTER (WHERE tvc.video_id IS NOT NULL), ARRAY[]::uuid[]) AS video_ids,
+            COALESCE(ARRAY_AGG(DISTINCT tdc.document_id ORDER BY tdc.document_id) FILTER (WHERE tdc.document_id IS NOT NULL), ARRAY[]::uuid[]) AS document_ids,
             COALESCE(ARRAY_AGG(DISTINCT tsgc.standard_groups_id ORDER BY tsgc.standard_groups_id) FILTER (WHERE tsgc.standard_groups_id IS NOT NULL), ARRAY[]::uuid[]) AS standard_group_ids,
-            COALESCE(ARRAY_AGG(DISTINCT tsc2.standards_id ORDER BY tsc2.standards_id) FILTER (WHERE tsc2.standards_id IS NOT NULL), ARRAY[]::uuid[]) AS standard_ids
+            COALESCE(ARRAY_AGG(DISTINCT tsc2.standard_id ORDER BY tsc2.standard_id) FILTER (WHERE tsc2.standard_id IS NOT NULL), ARRAY[]::uuid[]) AS standard_ids
         FROM attempt_chat_entry tbd
         JOIN chat_entry tb ON tb.id = tbd.chat_id
         LEFT JOIN home_chat_entry hte ON hte.chat_id = tb.id
@@ -133,7 +133,7 @@ AS $$
                     copy_paste_allowed, text_enabled, audio_enabled, hints_enabled,
                     show_images, show_objectives, show_problem_statement,
                     time_limit_seconds, negative,
-                    scenario_id, rubric_id, problem_statement_id, persona_ids,
+                    scenario_id, rubric_id, problem_statements_id, persona_ids,
                     objective_ids, question_ids, option_ids,
                     image_ids, video_ids, document_ids,
                     standard_group_ids, standard_ids

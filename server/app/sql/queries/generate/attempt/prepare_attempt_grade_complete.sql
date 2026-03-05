@@ -51,7 +51,7 @@ BEGIN
 
     -- Link run to profile
     INSERT INTO profiles_runs_connection (profiles_id, run_id)
-    SELECT ppj.profiles_id, v_run_id
+    SELECT ppj.profile_id, v_run_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = p_profile_id
     LIMIT 1;

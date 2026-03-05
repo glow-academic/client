@@ -2,7 +2,7 @@
 -- SIMPLIFIED: No agent_id required, optional tool_id for tracking
 -- Get or create operation (returns existing ID if objective already exists)
 -- Parameters: objective (text), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
--- Returns: objective_id (uuid)
+-- Returns: objectives_id (uuid)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -26,7 +26,7 @@ CREATE OR REPLACE FUNCTION api_create_objectives_v4(
     tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    objective_id uuid
+    objectives_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE

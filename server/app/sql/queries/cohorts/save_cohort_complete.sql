@@ -20,8 +20,8 @@ END $$;
 CREATE OR REPLACE FUNCTION api_save_cohort_v4(
     profile_id uuid,
     input_cohort_id uuid DEFAULT NULL,
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
+    names_id uuid DEFAULT NULL,
+    descriptions_id uuid DEFAULT NULL,
     active_flag_id uuid DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
     simulation_ids uuid[] DEFAULT NULL,
@@ -47,7 +47,7 @@ BEGIN
 
     -- Validate required fields (only on create)
     IF is_create THEN
-        IF name_id IS NULL THEN
+        IF names_id IS NULL THEN
             RAISE EXCEPTION 'Name resource is required';
         END IF;
     END IF;
@@ -69,11 +69,11 @@ BEGIN
 
         -- COALESCE: fill NULL params from existing active junctions (partial update support)
         -- Single-select resources
-        IF name_id IS NULL THEN
-            name_id := (SELECT j.name_id FROM cohort_names_junction j WHERE j.cohort_id = v_cohort_id AND j.active LIMIT 1);
+        IF names_id IS NULL THEN
+            names_id := (SELECT j.names_id FROM cohort_names_junction j WHERE j.cohort_id = v_cohort_id AND j.active LIMIT 1);
         END IF;
-        IF description_id IS NULL THEN
-            description_id := (SELECT j.description_id FROM cohort_descriptions_junction j WHERE j.cohort_id = v_cohort_id AND j.active LIMIT 1);
+        IF descriptions_id IS NULL THEN
+            descriptions_id := (SELECT j.descriptions_id FROM cohort_descriptions_junction j WHERE j.cohort_id = v_cohort_id AND j.active LIMIT 1);
         END IF;
 
         -- Multi-select arrays: preserve existing if NULL passed
@@ -84,16 +84,16 @@ BEGIN
             simulation_ids := COALESCE((SELECT ARRAY_AGG(j.simulation_id) FROM cohort_simulations_junction j WHERE j.cohort_id = v_cohort_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF simulation_position_ids IS NULL THEN
-            simulation_position_ids := COALESCE((SELECT ARRAY_AGG(j.simulation_position_id) FROM cohort_simulation_positions_junction j WHERE j.cohort_id = v_cohort_id AND j.active), ARRAY[]::uuid[]);
+            simulation_position_ids := COALESCE((SELECT ARRAY_AGG(j.simulation_positions_id) FROM cohort_simulation_positions_junction j WHERE j.cohort_id = v_cohort_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF simulation_availability_ids IS NULL THEN
             simulation_availability_ids := COALESCE((SELECT ARRAY_AGG(j.simulation_availability_id) FROM cohort_simulation_availability_junction j WHERE j.cohort_id = v_cohort_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF profile_ids IS NULL THEN
-            profile_ids := COALESCE((SELECT ARRAY_AGG(j.profiles_id) FROM cohort_profiles_junction j WHERE j.cohort_id = v_cohort_id AND j.active), ARRAY[]::uuid[]);
+            profile_ids := COALESCE((SELECT ARRAY_AGG(j.profile_id) FROM cohort_profiles_junction j WHERE j.cohort_id = v_cohort_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF profile_persona_ids IS NULL THEN
-            profile_persona_ids := COALESCE((SELECT ARRAY_AGG(j.profile_persona_id) FROM cohort_profile_personas_junction j WHERE j.cohort_id = v_cohort_id AND j.active), ARRAY[]::uuid[]);
+            profile_persona_ids := COALESCE((SELECT ARRAY_AGG(j.profile_personas_id) FROM cohort_profile_personas_junction j WHERE j.cohort_id = v_cohort_id AND j.active), ARRAY[]::uuid[]);
         END IF;
 
         -- Flag: preserve existing active flag if not provided
@@ -118,8 +118,8 @@ BEGIN
             false,
             false
         FROM (SELECT 1) AS dummy
-        LEFT JOIN names_resource n ON n.id = api_save_cohort_v4.name_id
-        LEFT JOIN descriptions_resource d ON d.id = api_save_cohort_v4.description_id
+        LEFT JOIN names_resource n ON n.id = api_save_cohort_v4.names_id
+        LEFT JOIN descriptions_resource d ON d.id = api_save_cohort_v4.descriptions_id
         RETURNING id INTO cohorts_resource_id;
     END IF;
 
@@ -141,8 +141,8 @@ BEGIN
     WITH params AS (
         SELECT
             v_cohort_id AS cohort_id,
-            api_save_cohort_v4.name_id AS name_id,
-            api_save_cohort_v4.description_id AS description_id,
+            api_save_cohort_v4.names_id AS names_id,
+            api_save_cohort_v4.descriptions_id AS descriptions_id,
             api_save_cohort_v4.active_flag_id AS active_flag_id,
             api_save_cohort_v4.department_ids AS department_ids,
             api_save_cohort_v4.simulation_ids AS simulation_ids,
@@ -154,18 +154,18 @@ BEGIN
     ),
     -- Link name
     link_name AS (
-        INSERT INTO cohort_names_junction (cohort_id, name_id, active, created_at)
-        SELECT x.cohort_id, x.name_id, true, NOW()
+        INSERT INTO cohort_names_junction (cohort_id, names_id, active, created_at)
+        SELECT x.cohort_id, x.names_id, true, NOW()
         FROM params x
-        WHERE x.name_id IS NOT NULL
+        WHERE x.names_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT cohort_names_pkey DO UPDATE SET active = true
     ),
     -- Link description
     link_description AS (
-        INSERT INTO cohort_descriptions_junction (cohort_id, description_id, active, created_at)
-        SELECT x.cohort_id, x.description_id, true, NOW()
+        INSERT INTO cohort_descriptions_junction (cohort_id, descriptions_id, active, created_at)
+        SELECT x.cohort_id, x.descriptions_id, true, NOW()
         FROM params x
-        WHERE x.description_id IS NOT NULL
+        WHERE x.descriptions_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT cohort_descriptions_pkey DO UPDATE SET active = true
     ),
     -- Upsert active flag
@@ -202,7 +202,7 @@ BEGIN
     ),
     -- Link simulation positions
     link_simulation_positions AS (
-        INSERT INTO cohort_simulation_positions_junction (cohort_id, simulation_position_id, active, created_at, generated, mcp)
+        INSERT INTO cohort_simulation_positions_junction (cohort_id, simulation_positions_id, active, created_at, generated, mcp)
         SELECT x.cohort_id, sp_id, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.simulation_position_ids) AS sp_id
@@ -229,7 +229,7 @@ BEGIN
     ),
     -- Link profile personas
     link_profile_personas AS (
-        INSERT INTO cohort_profile_personas_junction (cohort_id, profile_persona_id, active, created_at, generated, mcp)
+        INSERT INTO cohort_profile_personas_junction (cohort_id, profile_personas_id, active, created_at, generated, mcp)
         SELECT x.cohort_id, pp_id, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.profile_persona_ids) AS pp_id

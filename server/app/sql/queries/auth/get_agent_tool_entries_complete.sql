@@ -40,10 +40,10 @@ FROM agent_agents_junction aaj
 JOIN agent_artifact a ON a.id = aaj.agent_id
 JOIN agent_tools_junction atj ON atj.agent_id = a.id AND atj.active = true
 JOIN tools_resource tr ON tr.id = atj.tool_id
-JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
 JOIN tool_artifact ta ON ta.id = ttj.tool_id
 JOIN tool_resources_junction tdj ON tdj.tool_id = ta.id AND tdj.active = true
-JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
 LEFT JOIN tool_flags_junction tf_active ON tf_active.tool_id = ta.id
 LEFT JOIN flags_resource f_active ON f_active.id = tf_active.flag_id AND f_active.name = 'tool_active'
 LEFT JOIN agent_flags_junction af_agent ON af_agent.agent_id = a.id

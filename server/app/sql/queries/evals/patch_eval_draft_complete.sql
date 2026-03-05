@@ -18,8 +18,8 @@ CREATE OR REPLACE FUNCTION api_patch_eval_draft_v4(
     profile_id uuid,
     input_draft_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
+    names_id uuid DEFAULT NULL,
+    descriptions_id uuid DEFAULT NULL,
     flag_ids uuid[] DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
     agent_ids uuid[] DEFAULT NULL,
@@ -46,7 +46,7 @@ DECLARE
     v_profiles_resource_id uuid;
     v_group_id uuid := group_id;
 BEGIN
-    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    SELECT ppj.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = v_profile_id
     LIMIT 1;
@@ -67,7 +67,7 @@ BEGIN
                 (
                     SELECT s.id
                     FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-                    WHERE psc.profiles_id = v_profile_id
+                    WHERE psc.profile_id = v_profile_id
                       AND s.active = TRUE
                     ORDER BY s.created_at DESC
                     LIMIT 1
@@ -86,7 +86,7 @@ BEGIN
                 SELECT 1
                 FROM eval_drafts_profiles_connection pdc
                 WHERE pdc.draft_id = eval_drafts_entry.id
-                  AND pdc.profiles_id = v_profiles_resource_id
+                  AND pdc.profile_id = v_profiles_resource_id
           )
         RETURNING id, version INTO v_draft_id, v_new_version;
 
@@ -103,7 +103,7 @@ BEGIN
                 (
                     SELECT s.id
                     FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-                    WHERE psc.profiles_id = v_profile_id
+                    WHERE psc.profile_id = v_profile_id
                       AND s.active = TRUE
                     ORDER BY s.created_at DESC
                     LIMIT 1
@@ -130,16 +130,16 @@ BEGIN
     DELETE FROM eval_drafts_run_positions_connection WHERE draft_id = v_draft_id;
     DELETE FROM eval_drafts_group_positions_connection WHERE draft_id = v_draft_id;
 
-    IF name_id IS NOT NULL THEN
+    IF names_id IS NOT NULL THEN
         INSERT INTO eval_drafts_names_connection (draft_id, names_id, version)
-        VALUES (v_draft_id, name_id, v_new_version)
+        VALUES (v_draft_id, names_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
-    IF description_id IS NOT NULL THEN
+    IF descriptions_id IS NOT NULL THEN
         INSERT INTO eval_drafts_descriptions_connection (draft_id, descriptions_id, version)
-        VALUES (v_draft_id, description_id, v_new_version)
+        VALUES (v_draft_id, descriptions_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;

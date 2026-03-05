@@ -32,7 +32,7 @@ parameter_exists_check AS (
 actor_profile AS (
     SELECT 
         (SELECT profile_id FROM params) as profile_id,
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
@@ -40,11 +40,11 @@ usage_check AS (
     SELECT COUNT(DISTINCT spf.scenario_id) as usage_count
     FROM params x
     JOIN parameter_fields_resource pfr ON pfr.parameter_id = x.parameter_id
-    JOIN scenario_parameter_fields_junction spf ON spf.parameter_field_id = pfr.id AND spf.active = true
+    JOIN scenario_parameter_fields_junction spf ON spf.parameter_fields_id = pfr.id AND spf.active = true
 ),
 parameter_info AS (
     SELECT
-        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = pa.id LIMIT 1) as name,
+        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.parameter_id = pa.id LIMIT 1) as name,
         COALESCE(uc.usage_count, 0) as usage_count
     FROM params x
     JOIN parameter_artifact pa ON pa.id = x.parameter_id

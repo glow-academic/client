@@ -102,7 +102,7 @@ selected_agent AS (
 ),
 -- Get profile FROM runs_entry
 run_profile AS (
-    SELECT prj.profiles_id
+    SELECT prj.profile_id
     FROM runs_entry r
     JOIN profiles_runs_connection prj ON prj.run_id = r.id
     CROSS JOIN params p
@@ -114,8 +114,8 @@ profile_rate_limit AS (
     SELECT 
         rl.requests_per_day as req_per_day
     FROM run_profile rp
-    LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = rp.profiles_id AND prl.active = true
-    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
+    LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = rp.profile_id AND prl.active = true
+    LEFT JOIN request_limits_resource rl ON prl.request_limits_id = rl.id
 ),
 runs_today AS (
     SELECT
@@ -124,14 +124,14 @@ runs_today AS (
     FROM runs_entry mr
     JOIN profiles_runs_connection prj2 ON prj2.run_id = mr.id
     CROSS JOIN run_profile rp
-    WHERE prj2.profiles_id = rp.profiles_id
+    WHERE prj2.profile_id = rp.profile_id
       AND mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),
 -- Get profile's primary department for department name resolution
 profile_primary_department AS (
     SELECT pd.department_id
     FROM run_profile rp
-    JOIN profile_departments_junction pd ON pd.profile_id = rp.profiles_id
+    JOIN profile_departments_junction pd ON pd.profile_id = rp.profile_id
     WHERE pd.is_primary = TRUE
       AND pd.active = true
     LIMIT 1
@@ -209,8 +209,8 @@ agent_tools_data AS (
         sa.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(dr.resource::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
-                ORDER BY COALESCE(dr.resource::text, ''), (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
+                (t.id, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.names_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.descriptions_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(dr.resource::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
+                ORDER BY COALESCE(dr.resource::text, ''), (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.names_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
             ) FILTER (WHERE t.id IS NOT NULL AND (
                 p.resources IS NULL  -- Backward compatibility: include all tools
                 OR dr.resource IS NULL  -- Global tools always included
@@ -225,11 +225,11 @@ agent_tools_data AS (
     CROSS JOIN params p
     LEFT JOIN agent_tools_junction at ON at.agent_id = sa.agent_id AND at.active = true
     LEFT JOIN tools_resource tr ON tr.id = at.tool_id
-    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
     LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
     LEFT JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-    LEFT JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+    LEFT JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
 
 
     GROUP BY sa.agent_id
@@ -263,8 +263,8 @@ names_resources AS (
         ) as resources
     FROM params p
     CROSS JOIN LATERAL unnest(COALESCE(p.resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
-    CROSS JOIN LATERAL unnest(r.resource_ids) AS name_id
-    JOIN names_resource n ON n.id = name_id
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS names_id
+    JOIN names_resource n ON n.id = names_id
     WHERE r.resource_type = 'names'
 ),
 descriptions_resources AS (
@@ -363,8 +363,8 @@ departments_resources AS (
             jsonb_agg(
                 jsonb_build_object(
                     'id', d.id::text,
-                    'name', (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1),
-                    'description', (SELECT desc_data.description FROM department_descriptions_junction dd JOIN descriptions_resource desc_data ON dd.description_id = desc_data.id WHERE dd.department_id = d.id LIMIT 1)
+                    'name', (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = d.id LIMIT 1),
+                    'description', (SELECT desc_data.description FROM department_descriptions_junction dd JOIN descriptions_resource desc_data ON dd.descriptions_id = desc_data.id WHERE dd.department_id = d.id LIMIT 1)
                 )
             ),
             '[]'::jsonb
@@ -381,8 +381,8 @@ fields_resources AS (
             jsonb_agg(
                 jsonb_build_object(
                     'id', ffj.field_id::text,
-                    'name', (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
-                    'description', (SELECT desc_data.description FROM field_descriptions_junction fd JOIN descriptions_resource desc_data ON fd.description_id = desc_data.id WHERE fd.field_id = ffj.field_id LIMIT 1)
+                    'name', (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = ffj.field_id LIMIT 1),
+                    'description', (SELECT desc_data.description FROM field_descriptions_junction fd JOIN descriptions_resource desc_data ON fd.descriptions_id = desc_data.id WHERE fd.field_id = ffj.field_id LIMIT 1)
                 )
             ),
             '[]'::jsonb
@@ -407,8 +407,8 @@ examples_resources AS (
         ) as resources
     FROM params p
     CROSS JOIN LATERAL unnest(COALESCE(p.resources, ARRAY[]::types.i_persona_resource_v4[])) AS r
-    CROSS JOIN LATERAL unnest(r.resource_ids) AS example_id
-    JOIN examples_resource e ON e.id = example_id
+    CROSS JOIN LATERAL unnest(r.resource_ids) AS examples_id
+    JOIN examples_resource e ON e.id = examples_id
     WHERE r.resource_type = 'examples'
 ),
 -- Combine all resources into single JSONB object
@@ -437,7 +437,7 @@ department_data AS (
         ) as department_id
 ),
 department_name_data AS (
-    SELECT (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = d.id LIMIT 1) as department_name
+    SELECT (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = d.id LIMIT 1) as department_name
     FROM department_data dd
     LEFT JOIN departments_resource d ON d.id = dd.department_id
 ),
@@ -459,7 +459,7 @@ context_data AS (
     SELECT 
         -- Agent data
         a.id::text as agent_id,
-        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
+        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.names_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         COALESCE(NULL::artifact_type::text, '') as agent_role,  -- Derive from domain_artifacts via agent_domains
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,  -- Don't append developer instructions here - Python will handle it
         COALESCE(a.temperature, 0.0) as temperature,
@@ -473,7 +473,7 @@ context_data AS (
         pr_prov_res.key as api_key,
         
         -- Profile data
-        rp.profiles_id::text as profile_id,
+        rp.profile_id::text as profile_id,
         
         -- Rate limit data (for display)
         prl.req_per_day,
@@ -506,7 +506,7 @@ context_data AS (
     LEFT JOIN provider_providers_junction ppj_prov ON ppj_prov.providers_id = pr_prov_res.id AND ppj_prov.active = true
     LEFT JOIN provider_artifact pr_prov ON pr_prov.id = ppj_prov.provider_id
     LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
-    LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
+    LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.names_id
     CROSS JOIN profile_rate_limit prl
     CROSS JOIN runs_today rt
     -- JOIN tools_resource data

@@ -2,7 +2,7 @@
 -- SIMPLIFIED: No agent_id required, optional tool_id for tracking
 -- Always INSERT operation
 -- Parameters: mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
--- Returns: items_id (uuid)
+-- Returns: item_id (uuid)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -25,7 +25,7 @@ CREATE OR REPLACE FUNCTION api_create_items_v4(
     tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    items_id uuid
+    item_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE
@@ -56,7 +56,7 @@ BEGIN
         INSERT INTO tools_calls_connection (tools_id, call_id) VALUES (api_create_items_v4.tool_id, v_call_id);
 
         -- Link resource to call
-        INSERT INTO items_calls_connection (items_id, call_id)
+        INSERT INTO items_calls_connection (item_id, call_id)
         VALUES (v_items_id, v_call_id);
     END IF;
 

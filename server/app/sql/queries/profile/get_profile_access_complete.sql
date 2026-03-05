@@ -70,7 +70,7 @@ user_profile AS (
     SELECT COALESCE(r.role, 'member'::profile_type) as role,
            ''::text as actor_name
     FROM profile_roles_junction prj
-    JOIN roles_resource r ON prj.role_id = r.id
+    JOIN roles_resource r ON prj.roles_id = r.id
     WHERE prj.profile_id = (SELECT profile_id FROM params)
     LIMIT 1
 ),
@@ -91,7 +91,7 @@ target_role_data AS (
                 ELSE (
                     SELECT r.role::text
                     FROM profile_roles_junction pr
-                    JOIN roles_resource r ON pr.role_id = r.id
+                    JOIN roles_resource r ON pr.roles_id = r.id
                     WHERE pr.profile_id = (SELECT resolved_target_profile_id FROM resolve_target_profile_id)
                       AND pr.active = true
                     LIMIT 1
@@ -104,7 +104,7 @@ target_role_data AS (
 -- Get target profile departments
 target_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(pd.department_id ORDER BY pd.created_at) FILTER (WHERE pd.department_id IS NOT NULL),
+        ARRAY_AGG(pd.departments_id ORDER BY pd.created_at) FILTER (WHERE pd.departments_id IS NOT NULL),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM params x

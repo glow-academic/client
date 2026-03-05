@@ -59,7 +59,7 @@ get_or_create_name AS (
     CROSS JOIN default_call dc
     WHERE p.name IS NOT NULL AND p.name != ''
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id, name as name_value
+    RETURNING id as names_id, name as name_value
 ),
 get_flag_ids AS (
     SELECT 
@@ -82,11 +82,11 @@ new_scenario AS (
     RETURNING id
 ),
 link_name AS (
-    INSERT INTO scenario_names_junction (scenario_id, name_id, created_at)
-    SELECT ns.id, gocn.name_id, NOW()
+    INSERT INTO scenario_names_junction (scenario_id, names_id, created_at)
+    SELECT ns.id, gocn.names_id, NOW()
     FROM new_scenario ns
     CROSS JOIN get_or_create_name gocn
-    WHERE gocn.name_id IS NOT NULL
+    WHERE gocn.names_id IS NOT NULL
 ),
 link_flags AS (
     INSERT INTO scenario_flags_junction (scenario_id, flag_id, created_at) SELECT ns.id, gfi.active_flag_id, NOW()
@@ -121,5 +121,5 @@ SELECT
     (SELECT sd.department_id FROM scenario_departments_junction sd WHERE sd.scenario_id = ns.id AND sd.active = true LIMIT 1) as department_id
 FROM new_scenario ns
 CROSS JOIN params p
-LEFT JOIN get_or_create_name gocn ON gocn.name_id IS NOT NULL
+LEFT JOIN get_or_create_name gocn ON gocn.names_id IS NOT NULL
 $$;

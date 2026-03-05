@@ -104,7 +104,7 @@ user_profile AS (
 scenario_objectives_agg AS (
     SELECT
         so.scenario_id,
-        ARRAY_AGG(so.objective_id::text) as objective_ids
+        ARRAY_AGG(so.objectives_id::text) as objective_ids
     FROM scenario_objectives_junction so
     WHERE so.active = true
     GROUP BY so.scenario_id
@@ -115,7 +115,7 @@ scenario_fields_data AS (
         spfj.scenario_id,
         ARRAY_AGG(DISTINCT fr.id::text) as field_ids
     FROM scenario_parameter_fields_junction spfj
-    JOIN parameter_fields_resource pfr ON pfr.id = spfj.parameter_field_id
+    JOIN parameter_fields_resource pfr ON pfr.id = spfj.parameter_fields_id
     JOIN fields_resource fr ON fr.id = pfr.field_id
     WHERE spfj.active = true
     GROUP BY spfj.scenario_id
@@ -128,7 +128,7 @@ scenario_simulations AS (
         ARRAY_AGG(DISTINCT sim_r.id::text) as simulation_ids,
         COUNT(DISTINCT sim_r.id)::int as num_simulations
     FROM scenario_scenarios_junction ssj
-    JOIN simulations_resource sim_r ON ssj.scenarios_id = ANY(sim_r.scenario_ids)
+    JOIN simulations_resource sim_r ON ssj.scenario_id = ANY(sim_r.scenario_ids)
     WHERE sim_r.active = true
     GROUP BY ssj.scenario_id
 ),
@@ -138,7 +138,7 @@ scenario_cohorts AS (
         ssj.scenario_id,
         ARRAY_AGG(DISTINCT cr.id::text) as cohort_ids
     FROM scenario_scenarios_junction ssj
-    JOIN simulations_resource sim_r ON ssj.scenarios_id = ANY(sim_r.scenario_ids)
+    JOIN simulations_resource sim_r ON ssj.scenario_id = ANY(sim_r.scenario_ids)
     JOIN cohorts_resource cr ON sim_r.id = ANY(cr.simulation_ids)
     WHERE sim_r.active = true AND cr.active = true
     GROUP BY ssj.scenario_id
@@ -159,14 +159,14 @@ scenario_usage AS (
         ssj.scenario_id,
         COUNT(DISTINCT sim_r.id)::int as active_simulation_count
     FROM scenario_scenarios_junction ssj
-    LEFT JOIN simulations_resource sim_r ON ssj.scenarios_id = ANY(sim_r.scenario_ids) AND sim_r.active = true
+    LEFT JOIN simulations_resource sim_r ON ssj.scenario_id = ANY(sim_r.scenario_ids) AND sim_r.active = true
     GROUP BY ssj.scenario_id
 ),
 -- Main scenario data with permissions
 scenario_data AS (
     SELECT
         s.id as scenario_id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name,
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1) as name,
         COALESCE(ps.problem_statement, '') as problem_statement,
         NOT EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = TRUE) as is_inactive,
         s.generated as generated,
@@ -184,14 +184,14 @@ scenario_data AS (
     FROM scenario_artifact s
     -- Bridge to scenarios_resource for denormalized persona_ids + root check + parent linkage
     JOIN scenario_scenarios_junction ssj ON ssj.scenario_id = s.id
-    JOIN scenarios_resource sr ON sr.id = ssj.scenarios_id
+    JOIN scenarios_resource sr ON sr.id = ssj.scenario_id
     -- Department scoping (for HAVING clause)
     LEFT JOIN scenario_departments_junction sd ON sd.scenario_id = s.id AND sd.active = true
     LEFT JOIN scenario_departments_data sdd ON sdd.scenario_id = s.id
     -- Parent-child linkage (from scenarios_resource.parent_id, already joined as sr)
     -- Problem statement
     LEFT JOIN scenario_problem_statements_junction sps_j ON sps_j.scenario_id = s.id AND sps_j.active = true
-    LEFT JOIN problem_statements_resource ps ON ps.id = sps_j.problem_statement_id
+    LEFT JOIN problem_statements_resource ps ON ps.id = sps_j.problem_statements_id
     -- Pre-aggregated data
     LEFT JOIN scenario_objectives_agg so ON so.scenario_id = s.id
     LEFT JOIN scenario_fields_data sfd ON sfd.scenario_id = s.id
@@ -200,7 +200,7 @@ scenario_data AS (
     LEFT JOIN scenario_usage su ON su.scenario_id = s.id
     CROSS JOIN user_profile up
     GROUP BY s.id,
-        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
+        (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = s.id LIMIT 1),
         ps.problem_statement,
         EXISTS (SELECT 1 FROM scenario_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.scenario_id = s.id AND f.type = 'scenario_active' AND f.value = TRUE),
         s.generated, s.mcp, s.updated_at, sr.persona_ids,
@@ -268,8 +268,8 @@ SELECT
             ORDER BY pn_name.name
          )
          FROM personas_resource pr
-         JOIN persona_personas_junction ppj ON ppj.personas_id = pr.id
-         JOIN (SELECT pn.persona_id, n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id) pn_name ON pn_name.persona_id = ppj.persona_id
+         JOIN persona_personas_junction ppj ON ppj.persona_id = pr.id
+         JOIN (SELECT pn.persona_id, n.name FROM persona_names_junction pn JOIN names_resource n ON pn.names_id = n.id) pn_name ON pn_name.persona_id = ppj.persona_id
          WHERE pr.id IN (SELECT persona_id FROM all_persona_ids_options)
            AND (persona_search IS NULL OR LOWER(pn_name.name) LIKE '%' || LOWER(persona_search) || '%')),
         '{}'::types.q_list_scenarios_v4_option[]

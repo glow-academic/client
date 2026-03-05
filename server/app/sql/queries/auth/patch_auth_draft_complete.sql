@@ -4,7 +4,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.auth_resource_action CASCADE;
     CREATE TYPE types.auth_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -89,9 +89,9 @@ DECLARE
     v_profile_id uuid := profile_id;
     v_group_id uuid := group_id;
 
-    v_name_id uuid := (names).resource_id;
-    v_description_id uuid := (descriptions).resource_id;
-    v_active_flag_id uuid := (flags).resource_id;
+    v_name_id uuid := (names).resources_id;
+    v_description_id uuid := (descriptions).resources_id;
+    v_active_flag_id uuid := (flags).resources_id;
     v_protocol_ids uuid[] := COALESCE((protocols).resource_ids, ARRAY[]::uuid[]);
     v_slug_ids uuid[] := COALESCE((slugs).resource_ids, ARRAY[]::uuid[]);
     v_items types.auth_item_input[] := COALESCE((items).items, ARRAY[]::types.auth_item_input[]);
@@ -113,16 +113,16 @@ BEGIN
 
     IF v_protocol_ids IS NOT NULL AND EXISTS (
         SELECT 1
-        FROM unnest(v_protocol_ids) AS protocol_id
-        WHERE NOT EXISTS (SELECT 1 FROM protocols_resource WHERE id = protocol_id)
+        FROM unnest(v_protocol_ids) AS protocols_id
+        WHERE NOT EXISTS (SELECT 1 FROM protocols_resource WHERE id = protocols_id)
     ) THEN
         RAISE EXCEPTION 'One or more protocol resources not found';
     END IF;
 
     IF v_slug_ids IS NOT NULL AND EXISTS (
         SELECT 1
-        FROM unnest(v_slug_ids) AS slug_id
-        WHERE NOT EXISTS (SELECT 1 FROM slugs_resource WHERE id = slug_id)
+        FROM unnest(v_slug_ids) AS slugs_id
+        WHERE NOT EXISTS (SELECT 1 FROM slugs_resource WHERE id = slugs_id)
     ) THEN
         RAISE EXCEPTION 'One or more slug resources not found';
     END IF;
@@ -143,7 +143,7 @@ BEGIN
               SELECT 1
               FROM auth_drafts_profiles_connection pdc
               WHERE pdc.draft_id = auth_drafts_entry.id
-                AND pdc.profiles_id = v_profile_id
+                AND pdc.profile_id = v_profile_id
           )
           AND auth_drafts_entry.version = expected_version
         RETURNING auth_drafts_entry.id, auth_drafts_entry.version INTO v_draft_id, v_new_version;
@@ -161,7 +161,7 @@ BEGIN
                 (
                     SELECT s.id
                     FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-                    WHERE psc.profiles_id = v_profile_id
+                    WHERE psc.profile_id = v_profile_id
                       AND s.active = true
                     ORDER BY s.created_at DESC
                     LIMIT 1
@@ -208,16 +208,16 @@ BEGIN
 
     IF COALESCE(array_length(v_protocol_ids, 1), 0) > 0 THEN
         INSERT INTO auth_drafts_protocols_connection (draft_id, protocols_id, version)
-        SELECT v_draft_id, protocol_id, v_new_version
-        FROM unnest(v_protocol_ids) AS protocol_id
+        SELECT v_draft_id, protocols_id, v_new_version
+        FROM unnest(v_protocol_ids) AS protocols_id
         ON CONFLICT ON CONSTRAINT protocols_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
 
     IF COALESCE(array_length(v_slug_ids, 1), 0) > 0 THEN
         INSERT INTO auth_drafts_slugs_connection (draft_id, slugs_id, version)
-        SELECT v_draft_id, slug_id, v_new_version
-        FROM unnest(v_slug_ids) AS slug_id
+        SELECT v_draft_id, slugs_id, v_new_version
+        FROM unnest(v_slug_ids) AS slugs_id
         ON CONFLICT ON CONSTRAINT slugs_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
@@ -256,7 +256,7 @@ BEGIN
             SELECT row_number() OVER (ORDER BY id) AS item_idx, id
             FROM created_items
         )
-        INSERT INTO auth_drafts_items_connection (draft_id, items_id, version, created_at, active)
+        INSERT INTO auth_drafts_items_connection (draft_id, item_id, version, created_at, active)
         SELECT v_draft_id, ii.id, v_new_version, NOW(), true
         FROM indexed_items ii
         ON CONFLICT ON CONSTRAINT items_draft_pkey DO UPDATE
@@ -327,7 +327,7 @@ BEGIN
             VALUES (v_call_id, 'auth_draft_create_protocols_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((protocols).create_tool_id, v_call_id);
             INSERT INTO protocols_calls_connection (protocols_id, call_id)
-            SELECT protocol_id, v_call_id FROM unnest(v_protocol_ids) AS protocol_id;
+            SELECT protocols_id, v_call_id FROM unnest(v_protocol_ids) AS protocols_id;
         END IF;
         IF (protocols).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
@@ -335,7 +335,7 @@ BEGIN
             VALUES (v_call_id, 'auth_draft_link_protocols_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((protocols).link_tool_id, v_call_id);
             INSERT INTO protocols_calls_connection (protocols_id, call_id)
-            SELECT protocol_id, v_call_id FROM unnest(v_protocol_ids) AS protocol_id;
+            SELECT protocols_id, v_call_id FROM unnest(v_protocol_ids) AS protocols_id;
         END IF;
     END IF;
 
@@ -346,7 +346,7 @@ BEGIN
             VALUES (v_call_id, 'auth_draft_create_slugs_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((slugs).create_tool_id, v_call_id);
             INSERT INTO slugs_calls_connection (slugs_id, call_id)
-            SELECT slug_id, v_call_id FROM unnest(v_slug_ids) AS slug_id;
+            SELECT slugs_id, v_call_id FROM unnest(v_slug_ids) AS slugs_id;
         END IF;
         IF (slugs).link_tool_id IS NOT NULL THEN
             v_call_id := uuidv7();
@@ -354,7 +354,7 @@ BEGIN
             VALUES (v_call_id, 'auth_draft_link_slugs_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((slugs).link_tool_id, v_call_id);
             INSERT INTO slugs_calls_connection (slugs_id, call_id)
-            SELECT slug_id, v_call_id FROM unnest(v_slug_ids) AS slug_id;
+            SELECT slugs_id, v_call_id FROM unnest(v_slug_ids) AS slugs_id;
         END IF;
     END IF;
 
@@ -364,8 +364,8 @@ BEGIN
             INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
             VALUES (v_call_id, 'auth_draft_create_items_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((items).create_tool_id, v_call_id);
-            INSERT INTO items_calls_connection (items_id, call_id)
-            SELECT idc.items_id, v_call_id
+            INSERT INTO items_calls_connection (item_id, call_id)
+            SELECT idc.item_id, v_call_id
             FROM auth_drafts_items_connection idc
             WHERE idc.draft_id = v_draft_id;
         END IF;
@@ -374,8 +374,8 @@ BEGIN
             INSERT INTO calls_entry (id, external_call_id, run_id, created_at)
             VALUES (v_call_id, 'auth_draft_link_items_' || v_call_id::text, v_run_id, NOW());
             INSERT INTO tools_calls_connection (tools_id, call_id) VALUES ((items).link_tool_id, v_call_id);
-            INSERT INTO items_calls_connection (items_id, call_id)
-            SELECT idc.items_id, v_call_id
+            INSERT INTO items_calls_connection (item_id, call_id)
+            SELECT idc.item_id, v_call_id
             FROM auth_drafts_items_connection idc
             WHERE idc.draft_id = v_draft_id;
         END IF;

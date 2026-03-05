@@ -102,7 +102,7 @@ simulation_scenarios_data AS (
         ARRAY_AGG(sr.id::text ORDER BY sr.name) as scenario_ids,
         COUNT(sr.id) as num_scenarios
     FROM simulation_simulations_junction ssj
-    JOIN simulations_resource sim_r ON sim_r.id = ssj.simulations_id
+    JOIN simulations_resource sim_r ON sim_r.id = ssj.simulation_id
     JOIN LATERAL unnest(sim_r.scenario_ids) AS scen_id ON true
     JOIN scenarios_resource sr ON sr.id = scen_id
     GROUP BY ssj.simulation_id
@@ -113,9 +113,9 @@ attempt_counts AS (
         ssj.simulation_id,
         COUNT(DISTINCT a.id) as attempt_count
     FROM simulation_simulations_junction ssj
-    LEFT JOIN home_simulations_connection hsc ON hsc.simulations_id = ssj.simulations_id AND hsc.active = true
+    LEFT JOIN home_simulations_connection hsc ON hsc.simulation_id = ssj.simulation_id AND hsc.active = true
     LEFT JOIN attempt_home_entry ahe ON ahe.home_id = hsc.home_id AND ahe.active = true
-    LEFT JOIN practice_simulations_connection psc ON psc.simulations_id = ssj.simulations_id AND psc.active = true
+    LEFT JOIN practice_simulations_connection psc ON psc.simulation_id = ssj.simulation_id AND psc.active = true
     LEFT JOIN attempt_practice_entry ape ON ape.practice_id = psc.practice_id AND ape.active = true
     LEFT JOIN attempt_entry a ON (a.id = ahe.attempt_id OR a.id = ape.attempt_id) AND a.active = true
     GROUP BY ssj.simulation_id
@@ -128,7 +128,7 @@ simulation_cohorts_data AS (
         COUNT(DISTINCT ccj.cohort_id)::int as num_cohorts,
         COUNT(DISTINCT ccj.cohort_id)::int as total_cohort_links
     FROM simulation_simulations_junction ssj
-    JOIN cohorts_resource cr ON ssj.simulations_id = ANY(cr.simulation_ids) AND cr.active = true
+    JOIN cohorts_resource cr ON ssj.simulation_id = ANY(cr.simulation_ids) AND cr.active = true
     JOIN cohort_cohorts_junction ccj ON ccj.cohorts_id = cr.id
     GROUP BY ssj.simulation_id
 ),
@@ -145,11 +145,11 @@ simulation_departments_data AS (
 simulation_data AS (
     SELECT
         s.id as simulation_id,
-        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
+        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
         COALESCE(
             NULLIF(
                 REGEXP_REPLACE(
-                    TRIM((SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1)),
+                    TRIM((SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1)),
                     '^0$|\\s0$',
                     ''
                 ),
@@ -175,8 +175,8 @@ simulation_data AS (
     LEFT JOIN simulation_cohorts_data scd ON scd.simulation_id = s.id
     CROSS JOIN user_profile up
     GROUP BY s.id,
-        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1),
-        (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1),
+        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.simulation_id = s.id LIMIT 1),
+        (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1),
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'simulation_active' AND f.value = TRUE),
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'practice' AND f.value = TRUE),
         s.updated_at, sdd.department_ids, ssd.scenario_ids,

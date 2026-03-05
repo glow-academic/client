@@ -4,7 +4,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.tool_resource_action CASCADE;
     CREATE TYPE types.tool_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -67,9 +67,9 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
-    v_name_id := (names).resource_id;
-    v_description_id := (descriptions).resource_id;
-    v_active_flag_id := (flags).resource_id;
+    v_name_id := (names).resources_id;
+    v_description_id := (descriptions).resources_id;
+    v_active_flag_id := (flags).resources_id;
     v_args_ids := COALESCE((args).resource_ids, ARRAY[]::uuid[]);
     v_arg_position_ids := COALESCE((arg_positions).resource_ids, ARRAY[]::uuid[]);
     v_args_outputs_ids := COALESCE((args_outputs).resource_ids, ARRAY[]::uuid[]);
@@ -139,13 +139,13 @@ BEGIN
         DELETE FROM tool_args_outputs_junction WHERE tool_id = v_tool_id;
     END IF;
 
-    INSERT INTO tool_names_junction (tool_id, name_id, created_at, generated, mcp, active)
+    INSERT INTO tool_names_junction (tool_id, names_id, created_at, generated, mcp, active)
     VALUES (v_tool_id, v_name_id, NOW(), false, false, true)
     ON CONFLICT ON CONSTRAINT tool_names_pkey DO UPDATE
     SET active = true;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO tool_descriptions_junction (tool_id, description_id, created_at, generated, mcp, active)
+        INSERT INTO tool_descriptions_junction (tool_id, descriptions_id, created_at, generated, mcp, active)
         VALUES (v_tool_id, v_description_id, NOW(), false, false, true)
         ON CONFLICT ON CONSTRAINT tool_descriptions_pkey DO UPDATE
         SET active = true;
@@ -200,7 +200,7 @@ BEGIN
         args_output_ids = v_args_outputs_ids
     FROM tool_tools_junction ttj
     WHERE ttj.tool_id = v_tool_id
-    AND tools_resource.id = ttj.tools_id;
+    AND tools_resource.id = ttj.tool_id;
 
     -- Tool call lineage for save
     v_run_id := uuidv7();

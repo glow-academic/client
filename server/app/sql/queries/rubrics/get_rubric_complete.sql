@@ -75,7 +75,7 @@ CREATE TYPE types.q_get_rubric_v4_points_option AS (
 );
 
 CREATE TYPE types.q_get_rubric_v4_standard_group_resource AS (
-    standard_group_id uuid,
+    standard_groups_id uuid,
     name text,
     description text,
     points int,
@@ -87,7 +87,7 @@ CREATE TYPE types.q_get_rubric_v4_standard_group_resource AS (
 
 CREATE TYPE types.q_get_rubric_v4_standard_resource AS (
     standard_id uuid,
-    standard_group_id uuid,
+    standard_groups_id uuid,
     name text,
     description text,
     points int,
@@ -113,7 +113,7 @@ RETURNS TABLE (
     draft_version int,
     group_id uuid,
     -- Single-select resources: name
-    name_id uuid,
+    names_id uuid,
     name_resource types.q_get_rubric_v4_name_resource,
     show_name boolean,
     name_agent_id uuid,
@@ -121,7 +121,7 @@ RETURNS TABLE (
     name_suggestions uuid[],
     names types.q_get_rubric_v4_name_resource[],
     -- Single-select resources: description
-    description_id uuid,
+    descriptions_id uuid,
     description_resource types.q_get_rubric_v4_description_resource,
     show_description boolean,
     description_agent_id uuid,
@@ -230,8 +230,8 @@ rubric_departments_data AS (
 department_mapping_data AS (
     SELECT
         d.id as department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1), '') as description,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.descriptions_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1), '') as description,
         COALESCE(d.generated, false) as generated
     FROM params x
     CROSS JOIN user_profile up
@@ -241,7 +241,7 @@ department_mapping_data AS (
         AND
         EXISTS (SELECT 1 FROM profile_departments_junction pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
-    JOIN department_departments_junction ddj ON ddj.departments_id = d.id
+    JOIN department_departments_junction ddj ON ddj.department_id = d.id
 ),
 -- Departments aggregation CTE
 departments_agg AS (
@@ -275,8 +275,8 @@ name_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dn.names_id FROM rubric_drafts_names_connection dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT rn.name_id FROM rubric_names_junction rn WHERE rn.rubric_id = (SELECT rubric_id FROM params) LIMIT 1)
-        ) as name_id,
+            (SELECT rn.names_id FROM rubric_names_junction rn WHERE rn.rubric_id = (SELECT rubric_id FROM params) LIMIT 1)
+        ) as names_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_rubric_v4_name_resource 
             FROM (
@@ -287,7 +287,7 @@ name_resource_data AS (
                 UNION ALL
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 2 as priority
                 FROM rubric_names_junction rn 
-                JOIN names_resource n ON rn.name_id = n.id 
+                JOIN names_resource n ON rn.names_id = n.id 
                 WHERE rn.rubric_id = (SELECT rubric_id FROM params)
             ) n
             ORDER BY priority
@@ -299,8 +299,8 @@ description_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dd.descriptions_id FROM rubric_drafts_descriptions_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT rd.description_id FROM rubric_descriptions_junction rd WHERE rd.rubric_id = (SELECT rubric_id FROM params) LIMIT 1)
-        ) as description_id,
+            (SELECT rd.descriptions_id FROM rubric_descriptions_junction rd WHERE rd.rubric_id = (SELECT rubric_id FROM params) LIMIT 1)
+        ) as descriptions_id,
         (
             SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_rubric_v4_description_resource 
             FROM (
@@ -311,7 +311,7 @@ description_resource_data AS (
                 UNION ALL
                 SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 2 as priority
                 FROM rubric_descriptions_junction rd 
-                JOIN descriptions_resource d ON rd.description_id = d.id 
+                JOIN descriptions_resource d ON rd.descriptions_id = d.id 
                 WHERE rd.rubric_id = (SELECT rubric_id FROM params)
             ) d
             ORDER BY priority
@@ -320,7 +320,7 @@ description_resource_data AS (
         (
             SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_rubric_v4_description_resource 
             FROM rubric_descriptions_junction rd 
-            JOIN descriptions_resource d ON rd.description_id = d.id 
+            JOIN descriptions_resource d ON rd.descriptions_id = d.id 
             WHERE rd.rubric_id = (SELECT rubric_id FROM params)
             LIMIT 1
         ) as rubric_description_resource
@@ -329,7 +329,7 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM rubric_drafts_flags_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT df.flag_id FROM rubric_drafts_flags_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT rf.flag_id FROM rubric_flags_junction rf JOIN flags_resource f ON rf.flag_id = f.id WHERE rf.rubric_id = (SELECT rubric_id FROM params) AND f.name = 'rubric_active' AND f.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
@@ -337,7 +337,7 @@ flag_resource_data AS (
             FROM (
                 SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 1 as priority
                 FROM rubric_drafts_flags_connection df 
-                JOIN flags_resource f ON df.flags_id = f.id 
+                JOIN flags_resource f ON df.flag_id = f.id 
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
                 SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 2 as priority
@@ -364,7 +364,7 @@ total_points_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dp.points_id FROM rubric_drafts_points_connection dp WHERE dp.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT rp.point_id FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND p.type = 'total'::point_type LIMIT 1)
+            (SELECT rp.points_id FROM rubric_points_junction rp JOIN points_resource p ON rp.points_id = p.id WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND p.type = 'total'::point_type LIMIT 1)
         ) as total_points_id,
         (
             SELECT ROW(p.id, p.value, COALESCE(p.generated, false))::types.q_get_rubric_v4_points_resource 
@@ -376,7 +376,7 @@ total_points_resource_data AS (
                 UNION ALL
                 SELECT p.id, p.value, COALESCE(p.generated, false) as generated, 2 as priority
                 FROM rubric_points_junction rp 
-                JOIN points_resource p ON rp.point_id = p.id 
+                JOIN points_resource p ON rp.points_id = p.id 
                 WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND p.type = 'total'::point_type
             ) p
             ORDER BY priority
@@ -389,7 +389,7 @@ pass_points_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dp.points_id FROM rubric_drafts_points_connection dp WHERE dp.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT rp.point_id FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND p.type = 'pass'::point_type LIMIT 1)
+            (SELECT rp.points_id FROM rubric_points_junction rp JOIN points_resource p ON rp.points_id = p.id WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND p.type = 'pass'::point_type LIMIT 1)
         ) as pass_points_id,
         (
             SELECT ROW(p.id, p.value, COALESCE(p.generated, false))::types.q_get_rubric_v4_points_resource 
@@ -401,7 +401,7 @@ pass_points_resource_data AS (
                 UNION ALL
                 SELECT p.id, p.value, COALESCE(p.generated, false) as generated, 2 as priority
                 FROM rubric_points_junction rp 
-                JOIN points_resource p ON rp.point_id = p.id 
+                JOIN points_resource p ON rp.points_id = p.id 
                 WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND p.type = 'pass'::point_type
             ) p
             ORDER BY priority
@@ -412,7 +412,7 @@ pass_points_resource_data AS (
 -- Standard groups_entry resource data (draft-first)
 standard_group_links_data AS (
     SELECT
-        dsg.standard_groups_id as standard_group_id,
+        dsg.standard_groups_id as standard_groups_id,
         true as active,
         COALESCE(dsg.generated, false) as generated
     FROM params x
@@ -420,7 +420,7 @@ standard_group_links_data AS (
     WHERE x.draft_id IS NOT NULL
     UNION ALL
     SELECT
-        rsg.standard_group_id,
+        rsg.standard_groups_id,
         rsg.active,
         COALESCE(rsg.generated, false) as generated
     FROM params x
@@ -434,7 +434,7 @@ standard_group_links_data AS (
 standard_group_ids_data AS (
     SELECT 
         COALESCE(
-            ARRAY_AGG(sgld.standard_group_id),
+            ARRAY_AGG(sgld.standard_groups_id),
             ARRAY[]::uuid[]
         ) as standard_group_ids
     FROM standard_group_links_data sgld
@@ -448,7 +448,7 @@ standard_ids_data AS (
         COALESCE(
             (SELECT ARRAY_AGG(s.id ORDER BY s.created_at)
              FROM rubric_drafts_standard_groups_connection dsg
-             JOIN standards_resource s ON s.standard_group_id = dsg.standard_groups_id
+             JOIN standards_resource s ON s.standard_groups_id = dsg.standard_groups_id
              WHERE dsg.draft_id = (SELECT draft_id FROM params)),
             (SELECT ARRAY_AGG(rs.standard_id ORDER BY rs.created_at)
              FROM rubric_standards_junction rs
@@ -463,13 +463,13 @@ standard_ids_data AS (
 name_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(rn.name_id ORDER BY rn.created_at DESC)
+            (SELECT ARRAY_AGG(rn.names_id ORDER BY rn.created_at DESC)
              FROM (
-                 SELECT DISTINCT rn.name_id, MAX(rn.created_at) as created_at
+                 SELECT DISTINCT rn.names_id, MAX(rn.created_at) as created_at
                  FROM rubric_names_junction rn
-                 JOIN names_resource n ON n.id = rn.name_id
+                 JOIN names_resource n ON n.id = rn.names_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE rn.name_id IS NOT NULL
+                 WHERE rn.names_id IS NOT NULL
                    AND n.name IS NOT NULL
                    AND n.name != ''
                    AND (
@@ -482,7 +482,7 @@ name_suggestions_data AS (
                            AND n.generated = true
                        )
                    )
-                 GROUP BY rn.name_id
+                 GROUP BY rn.names_id
                  ORDER BY MAX(rn.created_at) DESC
                  LIMIT 20
              ) rn),
@@ -496,13 +496,13 @@ name_suggestions_data AS (
 description_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(rd.description_id ORDER BY rd.created_at DESC)
+            (SELECT ARRAY_AGG(rd.descriptions_id ORDER BY rd.created_at DESC)
              FROM (
-                 SELECT DISTINCT rd.description_id, MAX(rd.created_at) as created_at
+                 SELECT DISTINCT rd.descriptions_id, MAX(rd.created_at) as created_at
                  FROM rubric_descriptions_junction rd
-                 JOIN descriptions_resource d ON d.id = rd.description_id
+                 JOIN descriptions_resource d ON d.id = rd.descriptions_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE rd.description_id IS NOT NULL
+                 WHERE rd.descriptions_id IS NOT NULL
                    AND d.description IS NOT NULL
                    AND d.description != ''
                    AND (
@@ -519,7 +519,7 @@ description_suggestions_data AS (
                            AND d.generated = true
                        )
                    )
-                 GROUP BY rd.description_id
+                 GROUP BY rd.descriptions_id
                  ORDER BY MAX(rd.created_at) DESC
                  LIMIT 20
              ) rd),
@@ -565,13 +565,13 @@ department_suggestions_data AS (
 points_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(rp.point_id ORDER BY rp.created_at DESC)
+            (SELECT ARRAY_AGG(rp.points_id ORDER BY rp.created_at DESC)
              FROM (
-                 SELECT DISTINCT rp.point_id, MAX(rp.created_at) as created_at
+                 SELECT DISTINCT rp.points_id, MAX(rp.created_at) as created_at
                  FROM rubric_points_junction rp
-                 JOIN points_resource p ON p.id = rp.point_id
+                 JOIN points_resource p ON p.id = rp.points_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE rp.point_id IS NOT NULL
+                 WHERE rp.points_id IS NOT NULL
                    AND (
                        -- Option 1: Linked to rubrics (rubric_points_junction junction table means it's validated/used)
                        -- Option 2: OR linked to same group with generated=true (show generated items from current group)
@@ -582,7 +582,7 @@ points_suggestions_data AS (
                            AND p.generated = true
                        )
                    )
-                 GROUP BY rp.point_id
+                 GROUP BY rp.points_id
                  ORDER BY MAX(rp.created_at) DESC
                  LIMIT 20
              ) rp),
@@ -596,13 +596,13 @@ points_suggestions_data AS (
 standard_group_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(rsg.standard_group_id ORDER BY rsg.created_at DESC)
+            (SELECT ARRAY_AGG(rsg.standard_groups_id ORDER BY rsg.created_at DESC)
              FROM (
-                 SELECT DISTINCT rsg.standard_group_id, MAX(rsg.created_at) as created_at
+                 SELECT DISTINCT rsg.standard_groups_id, MAX(rsg.created_at) as created_at
                  FROM rubric_standard_groups_junction rsg
-                 JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id
+                 JOIN standard_groups_resource sg ON sg.id = rsg.standard_groups_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE rsg.standard_group_id IS NOT NULL
+                 WHERE rsg.standard_groups_id IS NOT NULL
                    AND (
                        (SELECT standard_group_search FROM params LIMIT 1) IS NULL
                        OR LOWER(sg.name) LIKE '%' || LOWER((SELECT standard_group_search FROM params LIMIT 1)) || '%'
@@ -618,7 +618,7 @@ standard_group_suggestions_data AS (
                            AND sg.generated = true
                        )
                    )
-                 GROUP BY rsg.standard_group_id
+                 GROUP BY rsg.standard_groups_id
                  ORDER BY MAX(rsg.created_at) DESC
                  LIMIT 20
              ) rsg),
@@ -737,14 +737,14 @@ agent_artifact_tool_counts AS (
     FROM agent_artifact a
     LEFT JOIN agent_tools_junction at ON at.agent_id = a.id AND at.active = true
     LEFT JOIN tools_resource tr ON tr.id = at.tool_id
-    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
     LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (
         SELECT 1 FROM tool_flags_junction tf
         JOIN flags_resource f ON tf.flag_id = f.id
         WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true
     )
     LEFT JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = t.id AND tdj_rt.active = true
-    LEFT JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+    LEFT JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
     GROUP BY a.id
 ),
 
@@ -761,9 +761,9 @@ name_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
@@ -782,10 +782,10 @@ name_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'names'::resource_type
         )
@@ -846,9 +846,9 @@ description_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
@@ -867,10 +867,10 @@ description_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'descriptions'::resource_type
         )
@@ -931,9 +931,9 @@ departments_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
@@ -952,10 +952,10 @@ departments_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'departments'::resource_type
         )
@@ -1008,9 +1008,9 @@ flag_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
@@ -1029,10 +1029,10 @@ flag_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'flags'::resource_type
         )
@@ -1093,9 +1093,9 @@ points_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
@@ -1114,10 +1114,10 @@ points_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'points'::resource_type
         )
@@ -1178,9 +1178,9 @@ standard_groups_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
@@ -1199,10 +1199,10 @@ standard_groups_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'standard_groups'::resource_type
         )
@@ -1263,9 +1263,9 @@ standards_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['departments','descriptions','flags','names','points','rubrics','standard_groups','standards']::resource_type[])
@@ -1284,10 +1284,10 @@ standards_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'standards'::resource_type
         )
@@ -1364,7 +1364,7 @@ tools_existence_check AS (
     SELECT 
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'names'::resource_type 
@@ -1372,7 +1372,7 @@ tools_existence_check AS (
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'descriptions'::resource_type 
@@ -1380,7 +1380,7 @@ tools_existence_check AS (
         ) as descriptions_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'departments'::resource_type 
@@ -1388,7 +1388,7 @@ tools_existence_check AS (
         ) as departments_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'flags'::resource_type 
@@ -1396,7 +1396,7 @@ tools_existence_check AS (
         ) as flags_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'points'::resource_type 
@@ -1404,7 +1404,7 @@ tools_existence_check AS (
         ) as points_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'standard_groups'::resource_type 
@@ -1412,7 +1412,7 @@ tools_existence_check AS (
         ) as standard_groups_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'standards'::resource_type 
@@ -1503,8 +1503,8 @@ names_data AS (
     CROSS JOIN params p
     CROSS JOIN name_suggestions_data nsd
     WHERE 
-        -- Always include selected name_id if it exists
-        n.id = (SELECT name_id FROM name_resource_data)
+        -- Always include selected names_id if it exists
+        n.id = (SELECT names_id FROM name_resource_data)
         OR n.id = ANY(nsd.name_suggestions)
     ORDER BY n.name
 ),
@@ -1532,8 +1532,8 @@ descriptions_data AS (
     CROSS JOIN params p
     CROSS JOIN description_suggestions_data dsd
     WHERE 
-        -- Always include selected description_id if it exists
-        d.id = (SELECT description_id FROM description_resource_data)
+        -- Always include selected descriptions_id if it exists
+        d.id = (SELECT descriptions_id FROM description_resource_data)
         OR (
             d.id = ANY(dsd.description_suggestions)
             AND d.description IS NOT NULL
@@ -1620,7 +1620,7 @@ points_agg AS (
 -- Standard groups_entry data (for selected standard groups_entry - only when rubric_id provided)
 standard_groups_selected_data AS (
     SELECT 
-        sg.id as standard_group_id,
+        sg.id as standard_groups_id,
         sg.name,
         sg.description,
         sg.points,
@@ -1629,14 +1629,14 @@ standard_groups_selected_data AS (
         ARRAY_AGG(s.id ORDER BY s.name) FILTER (WHERE s.id IS NOT NULL) as standard_ids,
         COALESCE(sgld.generated, false) as generated
     FROM standard_group_links_data sgld
-    JOIN standard_groups_resource sg ON sg.id = sgld.standard_group_id
-    LEFT JOIN standards_resource s ON s.standard_group_id = sg.id
+    JOIN standard_groups_resource sg ON sg.id = sgld.standard_groups_id
+    LEFT JOIN standards_resource s ON s.standard_groups_id = sg.id
     GROUP BY sg.id, sg.name, sg.description, sg.points, sg.pass_points, sgld.active, sgld.generated
 ),
 -- Standard groups_entry data (all available standard groups_entry for options array)
 standard_groups_all_data AS (
     SELECT
-        sg.id as standard_group_id,
+        sg.id as standard_groups_id,
         sg.name,
         sg.description,
         sg.points,
@@ -1646,8 +1646,8 @@ standard_groups_all_data AS (
         COALESCE(sg.generated, false) as generated
     FROM params x
     CROSS JOIN standard_groups_resource sg
-    LEFT JOIN standard_group_links_data sgld ON sgld.standard_group_id = sg.id
-    LEFT JOIN standards_resource s ON s.standard_group_id = sg.id
+    LEFT JOIN standard_group_links_data sgld ON sgld.standard_groups_id = sg.id
+    LEFT JOIN standards_resource s ON s.standard_groups_id = sg.id
     WHERE sg.active = true
       AND (
           (SELECT standard_group_search FROM params LIMIT 1) IS NULL
@@ -1661,7 +1661,7 @@ standard_groups_selected_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
+                (sg.standard_groups_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
                 ORDER BY sg.name
             ),
             '{}'::types.q_get_rubric_v4_standard_group_resource[]
@@ -1675,7 +1675,7 @@ standard_groups_all_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
+                (sg.standard_groups_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
                 ORDER BY sg.name
             ),
             '{}'::types.q_get_rubric_v4_standard_group_resource[]
@@ -1688,7 +1688,7 @@ standard_groups_all_aggregated AS (
 standards_selected_data AS (
     SELECT 
         s.id as standard_id,
-        s.standard_group_id,
+        s.standard_groups_id,
         s.name,
         s.description,
         s.points,
@@ -1697,14 +1697,14 @@ standards_selected_data AS (
     JOIN standards_resource s ON s.id IN (
         SELECT unnest(standard_ids) FROM standard_ids_data
     )
-    LEFT JOIN rubric_drafts_standard_groups_connection dsg ON dsg.draft_id = x.draft_id AND dsg.standard_groups_id = s.standard_group_id
+    LEFT JOIN rubric_drafts_standard_groups_connection dsg ON dsg.draft_id = x.draft_id AND dsg.standard_groups_id = s.standard_groups_id
     LEFT JOIN rubric_standards_junction rs ON rs.rubric_id = x.rubric_id AND rs.standard_id = s.id AND rs.active = true
 ),
 -- Standards data (all available standards for selected groups_entry)
 standards_all_data AS (
     SELECT 
         s.id as standard_id,
-        s.standard_group_id,
+        s.standard_groups_id,
         s.name,
         s.description,
         s.points,
@@ -1712,15 +1712,15 @@ standards_all_data AS (
     FROM standards_resource s
     CROSS JOIN standard_group_ids_data sgid
     WHERE s.active = true
-      AND s.standard_group_id = ANY(sgid.standard_group_ids)
+      AND s.standard_groups_id = ANY(sgid.standard_group_ids)
 ),
 -- Standards aggregated (selected standards for standard_resources)
 standards_selected_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (s.standard_id, s.standard_group_id, s.name, COALESCE(s.description, ''), s.points, s.generated)::types.q_get_rubric_v4_standard_resource
-                ORDER BY s.standard_group_id, s.name
+                (s.standard_id, s.standard_groups_id, s.name, COALESCE(s.description, ''), s.points, s.generated)::types.q_get_rubric_v4_standard_resource
+                ORDER BY s.standard_groups_id, s.name
             ),
             '{}'::types.q_get_rubric_v4_standard_resource[]
         ) as standard_resources
@@ -1733,8 +1733,8 @@ standards_all_aggregated AS (
     SELECT 
         COALESCE(
             ARRAY_AGG(
-                (s.standard_id, s.standard_group_id, s.name, COALESCE(s.description, ''), s.points, s.generated)::types.q_get_rubric_v4_standard_resource
-                ORDER BY s.standard_group_id, s.name
+                (s.standard_id, s.standard_groups_id, s.name, COALESCE(s.description, ''), s.points, s.generated)::types.q_get_rubric_v4_standard_resource
+                ORDER BY s.standard_groups_id, s.name
             ),
             '{}'::types.q_get_rubric_v4_standard_resource[]
         ) as standards
@@ -1751,7 +1751,7 @@ SELECT
     -- Group ID for linking resources
     dgd.group_id,
     -- Single-select resources: name
-    (SELECT name_id FROM name_resource_data) as name_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
     nrd.name_resource,
     CASE 
         WHEN NOT tec.names_has_tools THEN false
@@ -1762,7 +1762,7 @@ SELECT
     COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
     (SELECT names FROM names_agg) as names,
     -- Single-select resources: description
-    (SELECT description_id FROM description_resource_data) as description_id,
+    (SELECT descriptions_id FROM description_resource_data) as descriptions_id,
     (SELECT desc_res FROM (SELECT drd.draft_description_resource as desc_res UNION ALL SELECT drd.rubric_description_resource LIMIT 1) sub WHERE desc_res IS NOT NULL LIMIT 1) as description_resource,
     CASE 
         WHEN NOT tec.descriptions_has_tools THEN false
@@ -1847,11 +1847,11 @@ SELECT
     -- Standard group resources (selected standard groups_entry filtered by standard_group_ids)
     COALESCE(
         (SELECT ARRAY_AGG(
-            (sg.standard_group_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
+            (sg.standard_groups_id, sg.name, COALESCE(sg.description, ''), sg.points, sg.pass_points, sg.active, COALESCE(sg.standard_ids, ARRAY[]::uuid[]), sg.generated)::types.q_get_rubric_v4_standard_group_resource
             ORDER BY sg.name
         )
         FROM standard_groups_selected_data sg
-        WHERE sg.standard_group_id = ANY(COALESCE((SELECT standard_group_ids FROM standard_group_ids_data), ARRAY[]::uuid[]))),
+        WHERE sg.standard_groups_id = ANY(COALESCE((SELECT standard_group_ids FROM standard_group_ids_data), ARRAY[]::uuid[]))),
         '{}'::types.q_get_rubric_v4_standard_group_resource[]
     ) as standard_group_resources,
     CASE 

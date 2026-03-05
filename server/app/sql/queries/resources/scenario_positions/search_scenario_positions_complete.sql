@@ -45,5 +45,5 @@ WHERE spr.active = true
     OR spr.scenario_id = ANY(scenario_ids)
   )
   -- Artifact boolean filters
-  AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenario_positions_junction j WHERE j.scenario_position_id = spr.id AND j.active = true));
+  AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenario_positions_junction j WHERE j.scenario_positions_id = spr.id AND j.active = true));
 $$;

@@ -1,5 +1,5 @@
 -- Get standards resources by IDs (batch)
--- Simple data fetching with standard_group_id lookup
+-- Simple data fetching with standard_groups_id lookup
 -- Parameters: p_ids (uuid[])
 -- Returns: items (array of standard resources)
 
@@ -51,7 +51,7 @@ END $$;
 -- Create composite type for standard item
 CREATE TYPE types.q_get_standards_v4_item AS (
     standard_id uuid,
-    standard_group_id uuid,
+    standard_groups_id uuid,
     name text,
     description text,
     points float
@@ -71,7 +71,7 @@ SELECT COALESCE(
     ARRAY_AGG(
         (
             s.id,
-            s.standard_group_id,
+            s.standard_groups_id,
             s.name,
             COALESCE(s.description, ''),
             COALESCE(s.points, 0)::float

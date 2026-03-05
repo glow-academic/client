@@ -61,7 +61,7 @@ cohort_departments_data AS (
 ),
 -- Get usage count (profile_cohort links for disabled_reason)
 usage_count_data AS (
-    SELECT COUNT(DISTINCT cpj.profiles_id)::int as usage_count
+    SELECT COUNT(DISTINCT cpj.profile_id)::int as usage_count
     FROM params x
     LEFT JOIN cohort_profiles_junction cpj ON cpj.cohort_id = x.cohort_id AND cpj.active = true
     WHERE x.cohort_id IS NOT NULL

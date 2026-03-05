@@ -20,12 +20,12 @@ CREATE OR REPLACE FUNCTION api_get_field_docs_v4(
     p_entity_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    name_id uuid
+    names_id uuid
 )
 LANGUAGE sql
 STABLE
 AS $$
-SELECT j.name_id
+SELECT j.names_id
 FROM field_names_junction j
 WHERE p_entity_id IS NOT NULL
   AND j.field_id = p_entity_id

@@ -113,15 +113,15 @@ agent_tools_data AS (
         ARRAY_AGG(DISTINCT ttj.tool_id) as tool_ids
     FROM agent_tools_junction atj
     JOIN tools_resource tr ON tr.id = atj.tool_id AND tr.active = true
-    JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
     WHERE atj.active = true
     GROUP BY atj.agent_id
 ),
 agent_data AS (
     SELECT
         a.id as agent_id,
-        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
-        (SELECT d.description FROM agent_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.agent_id = a.id LIMIT 1) as description,
+        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.names_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
+        (SELECT d.description FROM agent_descriptions_junction ad JOIN descriptions_resource d ON ad.descriptions_id = d.id WHERE ad.agent_id = a.id LIMIT 1) as description,
         -- Model from agents_resource
         (SELECT ar.model_id FROM agents_resource ar
          WHERE ar.id = a.id AND ar.model_id IS NOT NULL LIMIT 1) as model_id,
@@ -173,12 +173,12 @@ paginated_agents AS (
 department_option_data AS (
     SELECT
         dr.id::text as value,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
         (SELECT COUNT(*) FROM agent_data ad WHERE dr.id::text = ANY(ad.department_ids)) as count
     FROM departments_resource dr
-    JOIN department_departments_junction dd ON dd.departments_id = dr.id
+    JOIN department_departments_junction dd ON dd.department_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)
-      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
+      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
 ),
 -- Model options with names resolved in SQL
 all_model_ids AS (
@@ -189,12 +189,12 @@ all_model_ids AS (
 model_option_data AS (
     SELECT
         mr.id::text as value,
-        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON n.id = mn.name_id WHERE mn.model_id = mm.model_id LIMIT 1) as label,
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON n.id = mn.names_id WHERE mn.model_id = mm.model_id LIMIT 1) as label,
         (SELECT COUNT(*) FROM agent_data ad WHERE mr.id = ad.model_id) as count
     FROM models_resource mr
-    JOIN model_models_junction mm ON mm.models_id = mr.id
+    JOIN model_models_junction mm ON mm.model_id = mr.id
     WHERE mr.id IN (SELECT model_id FROM all_model_ids)
-      AND (model_search IS NULL OR LOWER((SELECT n.name FROM model_names_junction mn JOIN names_resource n ON n.id = mn.name_id WHERE mn.model_id = mm.model_id LIMIT 1)) LIKE '%' || LOWER(model_search) || '%')
+      AND (model_search IS NULL OR LOWER((SELECT n.name FROM model_names_junction mn JOIN names_resource n ON n.id = mn.names_id WHERE mn.model_id = mm.model_id LIMIT 1)) LIKE '%' || LOWER(model_search) || '%')
 ),
 -- Tool options with names resolved in SQL
 all_tool_ids AS (
@@ -205,11 +205,11 @@ all_tool_ids AS (
 tool_option_data AS (
     SELECT
         ta.id::text as value,
-        (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON n.id = tn.name_id WHERE tn.tool_id = ta.id LIMIT 1) as label,
+        (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON n.id = tn.names_id WHERE tn.tool_id = ta.id LIMIT 1) as label,
         (SELECT COUNT(*) FROM agent_data ad WHERE ta.id = ANY(ad.tool_ids)) as count
     FROM tool_artifact ta
     WHERE ta.id IN (SELECT tool_id FROM all_tool_ids)
-      AND (tool_search IS NULL OR LOWER((SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON n.id = tn.name_id WHERE tn.tool_id = ta.id LIMIT 1)) LIKE '%' || LOWER(tool_search) || '%')
+      AND (tool_search IS NULL OR LOWER((SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON n.id = tn.names_id WHERE tn.tool_id = ta.id LIMIT 1)) LIKE '%' || LOWER(tool_search) || '%')
 )
 SELECT
     -- Aggregate paginated agents

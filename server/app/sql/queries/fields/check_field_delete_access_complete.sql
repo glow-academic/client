@@ -46,7 +46,7 @@ field_departments_data AS (
 ),
 -- Count active parameter links (fields linked to parameters via field_conditional_parameters_junction)
 parameter_links AS (
-    SELECT COUNT(fcpj.conditional_parameter_id)::bigint as active_count
+    SELECT COUNT(fcpj.conditional_parameters_id)::bigint as active_count
     FROM params x
     LEFT JOIN field_conditional_parameters_junction fcpj ON fcpj.field_id = x.field_id AND fcpj.active = true
 )

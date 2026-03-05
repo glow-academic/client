@@ -43,12 +43,12 @@ rate_limit_data AS (
     FROM params p
     JOIN profile_artifact prof ON prof.id = p.profile_id
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = prof.id AND prl.active = true
-    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
+    LEFT JOIN request_limits_resource rl ON prl.request_limits_id = rl.id
 ),
 runs_today_data AS (
     SELECT COUNT(*)::bigint as runs_today
     FROM params p
-    JOIN profiles_runs_connection prj ON prj.profiles_id = p.profile_id
+    JOIN profiles_runs_connection prj ON prj.profile_id = p.profile_id
     JOIN runs_entry mr ON mr.id = prj.run_id
     WHERE mr.created_at >= date_trunc('day', NOW() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
 ),

@@ -37,7 +37,7 @@ END $$;
 
 CREATE TYPE types.q_get_rubric_scores_v4_item AS (
     chat_id uuid,
-    standard_group_id uuid,
+    standard_groups_id uuid,
     rubric_id uuid,
     score_percent float8,
     simulation_id uuid,
@@ -91,7 +91,7 @@ AS $$
     chat_rubric AS (
         SELECT DISTINCT ON (acrc.attempt_chat_id)
             acrc.attempt_chat_id,
-            acrc.rubrics_id AS rubric_id
+            acrc.rubric_id AS rubric_id
         FROM attempt_chat_rubrics_connection acrc
         WHERE acrc.active = TRUE
         ORDER BY acrc.attempt_chat_id, acrc.created_at DESC
@@ -100,7 +100,7 @@ AS $$
     scored AS (
         SELECT
             ch.chat_id,
-            sg.id AS standard_group_id,
+            sg.id AS standard_groups_id,
             gr.rubric_id,
             CASE WHEN sg.points > 0
                  THEN TRUNC((100.0 * SUM(fe.total)::numeric / sg.points::numeric), 2)::float8
@@ -121,11 +121,11 @@ AS $$
         JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
         JOIN standards_resource s ON s.id = fsc.standard_id
         JOIN rubric_rubrics_junction rrj
-            ON rrj.rubrics_id = gr.rubric_id AND rrj.active = TRUE
+            ON rrj.rubric_id = gr.rubric_id AND rrj.active = TRUE
         JOIN rubric_standard_groups_junction rsg
             ON rsg.rubric_id = rrj.rubric_id AND rsg.active = TRUE
         JOIN standard_groups_resource sg
-            ON sg.id = rsg.standard_group_id AND sg.id = s.standard_group_id
+            ON sg.id = rsg.standard_groups_id AND sg.id = s.standard_groups_id
         WHERE
             (profile_id_filter IS NULL OR ch.profile_id = profile_id_filter)
             AND (cohort_ids IS NULL OR cardinality(cohort_ids) = 0 OR ch.cohort_id = ANY(cohort_ids))
@@ -152,7 +152,7 @@ AS $$
     items_agg AS (
         SELECT COALESCE(
             ARRAY_AGG(
-                (chat_id, standard_group_id, rubric_id, score_percent,
+                (chat_id, standard_groups_id, rubric_id, score_percent,
                  simulation_id, profile_id, cohort_id, department_id,
                  attempt_date, attempt_type, is_archived
                 )::types.q_get_rubric_scores_v4_item
@@ -198,10 +198,10 @@ AS $$
         ) AS options FROM simulation_options_cte
     ),
     standard_group_options_cte AS (
-        SELECT standard_group_id::text AS value, standard_group_id::text AS label,
+        SELECT standard_groups_id::text AS value, standard_groups_id::text AS label,
                COUNT(DISTINCT chat_id)::int AS count
-        FROM scored WHERE standard_group_id IS NOT NULL
-        GROUP BY standard_group_id ORDER BY count DESC, value
+        FROM scored WHERE standard_groups_id IS NOT NULL
+        GROUP BY standard_groups_id ORDER BY count DESC, value
     ),
     standard_group_options_agg AS (
         SELECT COALESCE(

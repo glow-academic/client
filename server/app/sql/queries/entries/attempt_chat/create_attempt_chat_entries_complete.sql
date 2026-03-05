@@ -177,16 +177,16 @@ BEGIN
             RETURNING id
         ),
         paired AS (
-            SELECT ne.id AS entry_id, pr.personas_id
+            SELECT ne.id AS entries_id, pr.persona_id
             FROM (SELECT id, ROW_NUMBER() OVER () AS rn FROM new_entries) ne
             JOIN (SELECT personas_id, ROW_NUMBER() OVER () AS rn FROM persona_resources) pr
                 ON ne.rn = pr.rn
         ),
         link_entries AS (
             INSERT INTO personas_personas_connection (personas_entry_id, personas_id)
-            SELECT entry_id, personas_id FROM paired
+            SELECT entries_id, personas_id FROM paired
         )
-        SELECT ARRAY_AGG(entry_id) INTO v_persona_entry_ids FROM paired;
+        SELECT ARRAY_AGG(entries_id) INTO v_persona_entry_ids FROM paired;
 
         UPDATE attempt_chat_entry
         SET assistant_persona_ids = v_persona_entry_ids

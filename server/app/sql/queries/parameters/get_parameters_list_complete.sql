@@ -105,7 +105,7 @@ parameter_active_scenario_links AS (
     JOIN parameters_resource pr ON pr.id = ppj.parameters_id
     JOIN parameter_fields_resource pfr ON pfr.parameter_id = pr.id
     JOIN scenarios_resource sr ON pfr.id = ANY(sr.parameter_field_ids)
-    JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = sr.id
+    JOIN scenario_scenarios_junction ssj ON ssj.scenario_id = sr.id
     JOIN scenario_flags_junction sf ON sf.scenario_id = ssj.scenario_id
     JOIN flags_resource f ON sf.flag_id = f.id AND f.type = 'scenario_active' AND f.value = true
     GROUP BY ppj.parameter_id
@@ -147,9 +147,9 @@ parameter_sample_items_data AS (
         SELECT
             pfj.parameter_id,
             pfj.field_id,
-            (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = pfj.field_id LIMIT 1) as name,
-            (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = pfj.field_id LIMIT 1) as description,
-            ROW_NUMBER() OVER (PARTITION BY pfj.parameter_id ORDER BY (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = pfj.field_id LIMIT 1)) as rn
+            (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = pfj.field_id LIMIT 1) as name,
+            (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.descriptions_id = d.id WHERE fd.field_id = pfj.field_id LIMIT 1) as description,
+            ROW_NUMBER() OVER (PARTITION BY pfj.parameter_id ORDER BY (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = pfj.field_id LIMIT 1)) as rn
         FROM parameter_fields_junction pfj
         JOIN field_flags_junction ff ON ff.field_id = pfj.field_id
         JOIN flags_resource fl ON ff.flag_id = fl.id AND fl.name = 'field_active' AND fl.value = true
@@ -159,8 +159,8 @@ parameter_sample_items_data AS (
 parameter_data_base AS (
     SELECT
         p.id as parameter_id,
-        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) as parameter_name,
-        (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1) as description,
+        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.parameter_id = p.id LIMIT 1) as parameter_name,
+        (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.descriptions_id = d.id WHERE pd.parameter_id = p.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND f.value = TRUE) as active,
         p.updated_at,
         COALESCE(pdd.department_ids, NULL) as department_ids,
@@ -182,8 +182,8 @@ parameter_data_base AS (
     LEFT JOIN parameter_active_scenario_links pasl ON pasl.parameter_id = p.id
     LEFT JOIN parameter_departments_junction pd ON pd.parameter_id = p.id AND pd.active = true AND pd.department_id IN (SELECT department_id FROM user_departments)
     GROUP BY p.id,
-        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
-        (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1),
+        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
+        (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.descriptions_id = d.id WHERE pd.parameter_id = p.id LIMIT 1),
         EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND f.value = TRUE),
         p.updated_at,
         pdd.department_ids, ps.scenario_ids, pfa.field_ids, pic.num_items,
@@ -254,8 +254,8 @@ SELECT
             ORDER BY sn_name.name
          )
          FROM scenarios_resource sr
-         JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = sr.id
-         JOIN (SELECT sn.scenario_id, n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id) sn_name ON sn_name.scenario_id = ssj.scenario_id
+         JOIN scenario_scenarios_junction ssj ON ssj.scenario_id = sr.id
+         JOIN (SELECT sn.scenario_id, n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id) sn_name ON sn_name.scenario_id = ssj.scenario_id
          WHERE sr.id IN (SELECT scenario_id FROM all_scenario_ids)
            AND (scenario_search IS NULL OR LOWER(sn_name.name) LIKE '%' || LOWER(scenario_search) || '%')),
         '{}'::types.q_list_parameters_v4_option[]
@@ -268,7 +268,7 @@ SELECT
          )
          FROM fields_resource fr
          JOIN field_fields_junction ffj ON ffj.fields_id = fr.id
-         JOIN (SELECT fn.field_id, n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id) fn_name ON fn_name.field_id = ffj.field_id
+         JOIN (SELECT fn.field_id, n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id) fn_name ON fn_name.field_id = ffj.field_id
          WHERE fr.id IN (SELECT field_id FROM all_field_ids)
            AND (field_search IS NULL OR LOWER(fn_name.name) LIKE '%' || LOWER(field_search) || '%')),
         '{}'::types.q_list_parameters_v4_option[]
@@ -280,8 +280,8 @@ SELECT
             ORDER BY dn_name.name
          )
          FROM departments_resource dr
-         JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
-         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
+         JOIN department_departments_junction ddj ON ddj.department_id = dr.id
+         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
          WHERE dr.id IN (SELECT department_id FROM all_department_ids)
            AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_parameters_v4_option[]

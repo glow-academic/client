@@ -15,7 +15,7 @@ BEGIN
           AND t.typname = 'persona_resource_action'
     ) THEN
         CREATE TYPE types.persona_resource_action AS (
-            resource_id uuid,
+            resources_id uuid,
             create_tool_id uuid,
             link_tool_id uuid
         );
@@ -86,12 +86,12 @@ DECLARE
     v_call_id uuid;
 BEGIN
     -- Extract resource IDs from composites
-    v_name_id := (names).resource_id;
-    v_description_id := (descriptions).resource_id;
-    v_color_id := (colors).resource_id;
-    v_icon_id := (icons).resource_id;
-    v_instructions_id := (instructions).resource_id;
-    v_active_flag_id := (flags).resource_id;
+    v_name_id := (names).resources_id;
+    v_description_id := (descriptions).resources_id;
+    v_color_id := (colors).resources_id;
+    v_icon_id := (icons).resources_id;
+    v_instructions_id := (instructions).resources_id;
+    v_active_flag_id := (flags).resources_id;
     v_department_ids := (departments).resource_ids;
     v_parameter_field_ids := (parameter_fields).resource_ids;
     v_example_ids := (examples).resource_ids;
@@ -100,7 +100,7 @@ BEGIN
 
     -- Resolve profile_artifact.id to profiles_resource.id via junction table
     -- persona_drafts_profiles_connection has FK to profiles_resource, not profile_artifact
-    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    SELECT ppj.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = v_profile_id
     LIMIT 1;
@@ -179,7 +179,7 @@ BEGIN
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, session_id)
-            VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
+            VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profile_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
             RETURNING id INTO v_group_id;
         END IF;
 
@@ -190,7 +190,7 @@ BEGIN
                 updated_at = now(),
                 group_id = COALESCE(persona_drafts_entry.group_id, v_group_id)
             WHERE id = input_draft_id
-              AND EXISTS (SELECT 1 FROM persona_drafts_profiles_connection pdj WHERE pdj.draft_id = persona_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
+              AND EXISTS (SELECT 1 FROM persona_drafts_profiles_connection pdj WHERE pdj.draft_id = persona_drafts_entry.id AND pdj.profile_id = v_profiles_resource_id)
               AND persona_drafts_entry.version = expected_version
             RETURNING id, version INTO v_draft_id, v_new_version;
         ELSE
@@ -200,7 +200,7 @@ BEGIN
                 updated_at = now(),
                 group_id = COALESCE(persona_drafts_entry.group_id, v_group_id)
             WHERE id = input_draft_id
-              AND EXISTS (SELECT 1 FROM persona_drafts_profiles_connection pdj WHERE pdj.draft_id = persona_drafts_entry.id AND pdj.profiles_id = v_profiles_resource_id)
+              AND EXISTS (SELECT 1 FROM persona_drafts_profiles_connection pdj WHERE pdj.draft_id = persona_drafts_entry.id AND pdj.profile_id = v_profiles_resource_id)
             RETURNING id, version INTO v_draft_id, v_new_version;
         END IF;
 
@@ -524,7 +524,7 @@ BEGIN
     -- Create new draft with group
     -- First create a group for this draft
     INSERT INTO groups_entry (created_at, session_id)
-    VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
+    VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profile_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
     RETURNING id INTO v_group_id;
 
     -- Create new draft with group_id

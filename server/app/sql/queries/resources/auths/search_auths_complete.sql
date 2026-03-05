@@ -55,8 +55,8 @@ FROM (
       AND (exclude_ids IS NULL OR NOT (a.id = ANY(exclude_ids)))
       AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR a.department_ids && department_ids)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT auth OR EXISTS (SELECT 1 FROM auth_auths_junction j WHERE j.auth_id = a.id AND j.active = true))
-      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_auths_junction j WHERE j.auth_id = a.id AND j.active = true))
+      AND (NOT auth OR EXISTS (SELECT 1 FROM auth_auths_junction j WHERE j.auths_id = a.id AND j.active = true))
+      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_auths_junction j WHERE j.auths_id = a.id AND j.active = true))
     ORDER BY a.name
     LIMIT limit_count
     OFFSET offset_count

@@ -33,7 +33,7 @@ AS $$
     FROM settings_resource sr
     CROSS JOIN LATERAL UNNEST(sr.auth_ids) AS a_id
     JOIN auths_resource ar ON ar.id = a_id AND ar.active = true
-    JOIN auth_auths_junction aaj ON aaj.auths_id = ar.id
+    JOIN auth_auths_junction aaj ON aaj.auth_id = ar.id
     WHERE sr.active = true
       AND NOT EXISTS (
           SELECT 1 FROM departments_resource dr

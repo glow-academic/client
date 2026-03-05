@@ -29,9 +29,9 @@ CREATE OR REPLACE FUNCTION api_get_model_ids_v4(
 )
 RETURNS TABLE (
     -- Single-select resource IDs (from draft or model junction)
-    name_id uuid,
-    description_id uuid,
-    value_id uuid,
+    names_id uuid,
+    descriptions_id uuid,
+    values_id uuid,
     provider_id uuid,
 
     -- Flag IDs
@@ -65,17 +65,17 @@ WITH params AS (
 -- Single-select resource IDs (canonical only).
 name_resource_data AS (
     SELECT
-        (SELECT mn.name_id FROM model_names_junction mn WHERE mn.model_id = (SELECT model_id FROM params) LIMIT 1) as name_id
+        (SELECT mn.names_id FROM model_names_junction mn WHERE mn.model_id = (SELECT model_id FROM params) LIMIT 1) as names_id
     FROM params
 ),
 description_resource_data AS (
     SELECT
-        (SELECT md.description_id FROM model_descriptions_junction md WHERE md.model_id = (SELECT model_id FROM params) LIMIT 1) as description_id
+        (SELECT md.descriptions_id FROM model_descriptions_junction md WHERE md.model_id = (SELECT model_id FROM params) LIMIT 1) as descriptions_id
     FROM params
 ),
 value_resource_data AS (
     SELECT
-        (SELECT mv.value_id FROM model_values_junction mv WHERE mv.model_id = (SELECT model_id FROM params) LIMIT 1) as value_id
+        (SELECT mv.values_id FROM model_values_junction mv WHERE mv.model_id = (SELECT model_id FROM params) LIMIT 1) as values_id
     FROM params
 ),
 provider_resource_data AS (
@@ -142,9 +142,9 @@ modality_ids_data AS (
         CASE
             WHEN (SELECT model_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(mm.modality_id ORDER BY mr.modality::text)
+                (SELECT ARRAY_AGG(mm.modalities_id ORDER BY mr.modality::text)
                  FROM model_modalities_junction mm
-                 JOIN modalities_resource mr ON mr.id = mm.modality_id
+                 JOIN modalities_resource mr ON mr.id = mm.modalities_id
                  WHERE mm.model_id = (SELECT model_id FROM params)
                  AND mm.active = true AND mr.active = true),
                 ARRAY[]::uuid[]
@@ -160,7 +160,7 @@ temperature_level_ids_data AS (
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(tl.id ORDER BY tl.temperature)
                  FROM model_temperature_levels_junction mtl
-                 JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_level_id
+                 JOIN temperature_levels_resource tl ON tl.id = mtl.temperature_levels_id
                  WHERE mtl.model_id = (SELECT model_id FROM params)
                  AND mtl.active = true AND tl.active = true),
                 ARRAY[]::uuid[]
@@ -200,7 +200,7 @@ reasoning_level_ids_data AS (
                     END
                 )
                  FROM model_reasoning_levels_junction mrl
-                 JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_level_id
+                 JOIN reasoning_levels_resource rl ON rl.id = mrl.reasoning_levels_id
                  WHERE mrl.model_id = (SELECT model_id FROM params)
                  AND mrl.active = true AND rl.active = true),
                 ARRAY[]::uuid[]
@@ -249,9 +249,9 @@ voice_ids_data AS (
 )
 SELECT
     -- Single-select resource IDs
-    (SELECT name_id FROM name_resource_data) as name_id,
-    (SELECT description_id FROM description_resource_data) as description_id,
-    (SELECT value_id FROM value_resource_data) as value_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
+    (SELECT descriptions_id FROM description_resource_data) as descriptions_id,
+    (SELECT values_id FROM value_resource_data) as values_id,
     (SELECT provider_id FROM provider_resource_data) as provider_id,
 
     -- Flag IDs

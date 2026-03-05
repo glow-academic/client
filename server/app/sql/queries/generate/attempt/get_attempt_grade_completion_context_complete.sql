@@ -32,7 +32,7 @@ SELECT
     g.id AS grade_id,
     g.chat_id,
     ac.attempt_id,
-    COALESCE(home_sim.simulations_id, prac_sim.simulations_id) AS simulation_id
+    COALESCE(home_sim.simulation_id, prac_sim.simulation_id) AS simulation_id
 FROM attempt_grade_entry g
 JOIN attempt_chat_entry c ON c.id = g.chat_id
 JOIN attempt_chat_bridge_entry ac ON ac.attempt_chat_id = c.id

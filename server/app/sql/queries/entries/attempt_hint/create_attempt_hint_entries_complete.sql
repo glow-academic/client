@@ -22,7 +22,7 @@ CREATE OR REPLACE FUNCTION public.api_create_attempt_hint_entry_v4(
     upload_id uuid DEFAULT NULL,
     session_id uuid DEFAULT NULL,
     mcp boolean DEFAULT false
-) RETURNS TABLE (entry_id uuid, entry_call_id uuid, entry_message_id uuid)
+) RETURNS TABLE (entries_id uuid, entry_call_id uuid, entry_message_id uuid)
 LANGUAGE plpgsql AS $$
 DECLARE
     v_entry_id uuid;

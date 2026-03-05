@@ -126,9 +126,9 @@ reason_computed AS (
 actor_name_computed AS (
     SELECT
         COALESCE(
-            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
+            (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1)
             || ' ' ||
-            (SELECT n2.name FROM profile_names_junction pn2 JOIN names_resource n2 ON pn2.name_id = n2.id WHERE pn2.profile_id = p.id LIMIT 1),
+            (SELECT n2.name FROM profile_names_junction pn2 JOIN names_resource n2 ON pn2.names_id = n2.id WHERE pn2.profile_id = p.id LIMIT 1),
             ''
         ) as actor_name
     FROM profile_artifact p
@@ -146,7 +146,7 @@ grant_insert AS (
         NOW() + ((SELECT ttl_minutes FROM params) || ' minutes')::interval,
         (SELECT s.id FROM sessions_entry s
          JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-         WHERE psc.profiles_id = (SELECT requester_profile_id FROM params) AND s.active = true
+         WHERE psc.profile_id = (SELECT requester_profile_id FROM params) AND s.active = true
          ORDER BY s.created_at DESC LIMIT 1),
         NOW()
     WHERE (SELECT allowed FROM allowed_check) = true
@@ -168,7 +168,7 @@ emulation_insert AS (
         gi.id,
         (SELECT s.id FROM sessions_entry s
          JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-         WHERE psc.profiles_id = (SELECT target_profile_id FROM params) AND s.active = true
+         WHERE psc.profile_id = (SELECT target_profile_id FROM params) AND s.active = true
          ORDER BY s.created_at DESC LIMIT 1)
     FROM grant_insert gi
     RETURNING id

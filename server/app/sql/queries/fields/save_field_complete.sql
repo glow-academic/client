@@ -5,7 +5,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.field_resource_action CASCADE;
     CREATE TYPE types.field_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -75,9 +75,9 @@ BEGIN
     v_group_id := group_id;
     v_input_field_id := input_field_id;
 
-    v_name_id := (names).resource_id;
-    v_description_id := (descriptions).resource_id;
-    v_active_flag_id := (flags).resource_id;
+    v_name_id := (names).resources_id;
+    v_description_id := (descriptions).resources_id;
+    v_active_flag_id := (flags).resources_id;
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_conditional_parameter_ids := COALESCE((conditional_parameters).resource_ids, ARRAY[]::uuid[]);
 
@@ -246,25 +246,25 @@ BEGIN
     WITH params AS (
         SELECT
             v_field_id AS field_id,
-            v_name_id AS name_id,
-            v_description_id AS description_id,
+            v_name_id AS names_id,
+            v_description_id AS descriptions_id,
             v_active_flag_id AS active_flag_id,
             v_conditional_parameter_ids AS conditional_parameter_ids,
             v_department_ids AS department_ids
     ),
     link_field_name AS (
-        INSERT INTO field_names_junction (field_id, name_id, created_at)
-        SELECT x.field_id, x.name_id, NOW()
+        INSERT INTO field_names_junction (field_id, names_id, created_at)
+        SELECT x.field_id, x.names_id, NOW()
         FROM params x
-        WHERE x.name_id IS NOT NULL
-        ON CONFLICT (field_id, name_id) DO NOTHING
+        WHERE x.names_id IS NOT NULL
+        ON CONFLICT (field_id, names_id) DO NOTHING
     ),
     link_field_description AS (
-        INSERT INTO field_descriptions_junction (field_id, description_id, created_at)
-        SELECT x.field_id, x.description_id, NOW()
+        INSERT INTO field_descriptions_junction (field_id, descriptions_id, created_at)
+        SELECT x.field_id, x.descriptions_id, NOW()
         FROM params x
-        WHERE x.description_id IS NOT NULL
-        ON CONFLICT (field_id, description_id) DO NOTHING
+        WHERE x.descriptions_id IS NOT NULL
+        ON CONFLICT (field_id, descriptions_id) DO NOTHING
     ),
     insert_field_active_flag AS (
         INSERT INTO field_flags_junction (field_id, flag_id, type, created_at)
@@ -288,7 +288,7 @@ BEGIN
         ON CONFLICT (parameter_id) DO NOTHING
     ),
     link_conditional_parameters AS (
-        INSERT INTO field_conditional_parameters_junction (field_id, conditional_parameter_id, active, created_at)
+        INSERT INTO field_conditional_parameters_junction (field_id, conditional_parameters_id, active, created_at)
         SELECT
             x.field_id,
             cpr.id,
@@ -298,7 +298,7 @@ BEGIN
         CROSS JOIN UNNEST(x.conditional_parameter_ids) as param_id
         JOIN conditional_parameters_resource cpr ON cpr.parameter_id = param_id
         WHERE COALESCE(array_length(x.conditional_parameter_ids, 1), 0) > 0
-        ON CONFLICT (field_id, conditional_parameter_id) DO UPDATE SET
+        ON CONFLICT (field_id, conditional_parameters_id) DO UPDATE SET
             active = true
     ),
     link_departments AS (
@@ -317,8 +317,8 @@ BEGIN
             d.description,
             p.conditional_parameter_ids
         FROM params p
-        LEFT JOIN names_resource n ON n.id = p.name_id
-        LEFT JOIN descriptions_resource d ON d.id = p.description_id
+        LEFT JOIN names_resource n ON n.id = p.names_id
+        LEFT JOIN descriptions_resource d ON d.id = p.descriptions_id
         RETURNING id AS new_fields_resource_id
     ),
     link_new_resource AS (

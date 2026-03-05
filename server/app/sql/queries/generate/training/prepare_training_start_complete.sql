@@ -53,7 +53,7 @@ DECLARE
     v_draft_parameter_field_ids uuid[] := ARRAY[]::uuid[];
 BEGIN
     -- Resolve profile resource and optional role.
-    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    SELECT ppj.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = p_profile_id
       AND ppj.active = true
@@ -74,21 +74,21 @@ BEGIN
     -- scenario via chat_scenarios_connection, simulation/cohort via parent connections.
     SELECT
         tb.id,
-        scj_conn.scenarios_id,
-        COALESCE(hsc.simulations_id, psc.simulations_id),
+        scj_conn.scenario_id,
+        COALESCE(hsc.simulation_id, psc.simulation_id),
         COALESCE(hcc.cohorts_id, pcc.cohorts_id),
         (pte.practice_id IS NOT NULL),
         (
             SELECT ssj.simulation_id
             FROM simulation_simulations_junction ssj
-            WHERE ssj.simulations_id = COALESCE(hsc.simulations_id, psc.simulations_id)
+            WHERE ssj.simulation_id = COALESCE(hsc.simulation_id, psc.simulation_id)
               AND ssj.active = true
             LIMIT 1
         ),
         (
             SELECT scj.scenario_id
             FROM scenario_scenarios_junction scj
-            WHERE scj.scenarios_id = scj_conn.scenarios_id
+            WHERE scj.scenario_id = scj_conn.scenario_id
               AND scj.active = true
             LIMIT 1
         )
@@ -134,14 +134,14 @@ BEGIN
     SELECT srr.id, rrj.rubric_id
     INTO v_rubrics_resource_id, v_rubric_artifact_id
     FROM simulation_scenario_rubrics_junction ssrj
-    JOIN scenario_rubrics_resource srr ON srr.id = ssrj.scenario_rubric_id
-    LEFT JOIN rubric_rubrics_junction rrj ON rrj.rubrics_id = srr.rubric_id
+    JOIN scenario_rubrics_resource srr ON srr.id = ssrj.scenario_rubrics_id
+    LEFT JOIN rubric_rubrics_junction rrj ON rrj.rubric_id = srr.rubric_id
     WHERE ssrj.simulation_id = v_simulation_artifact_id
       AND srr.scenario_id = v_scenarios_resource_id
       AND ssrj.active = true
     LIMIT 1;
 
-    SELECT spsj.problem_statement_id INTO v_problem_statements_resource_id
+    SELECT spsj.problem_statements_id INTO v_problem_statements_resource_id
     FROM scenario_problem_statements_junction spsj
     WHERE spsj.scenario_id = v_scenario_artifact_id
       AND spsj.active = true
@@ -149,7 +149,7 @@ BEGIN
 
     -- Resolve optional draft overrides (scenario-style draft selections).
     IF p_draft_id IS NOT NULL THEN
-        SELECT ARRAY_AGG(DISTINCT ddc.documents_id)
+        SELECT ARRAY_AGG(DISTINCT ddc.document_id)
         INTO v_draft_document_ids
         FROM chat_drafts_documents_connection ddc
         WHERE ddc.draft_id = p_draft_id;
@@ -159,7 +159,7 @@ BEGIN
         FROM chat_drafts_parameter_fields_connection pfdc
         WHERE pfdc.draft_id = p_draft_id;
 
-        SELECT ddc.departments_id
+        SELECT ddc.department_id
         INTO v_selected_department_id
         FROM chat_drafts_departments_connection ddc
         WHERE ddc.draft_id = p_draft_id
@@ -173,7 +173,7 @@ BEGIN
     SELECT cre.id INTO v_attempt_chat_id
     FROM attempt_chat_entry cre
     WHERE cre.chat_id = p_chat_entry_id
-      AND cre.departments_id = v_selected_department_id
+      AND cre.department_id = v_selected_department_id
       AND cre.active = true
     ORDER BY cre.created_at
     LIMIT 1;
@@ -223,7 +223,7 @@ BEGIN
         false
     FROM simulation_scenario_time_limits_junction sstl
     JOIN scenario_time_limits_resource stlr
-      ON stlr.id = sstl.scenario_time_limit_id
+      ON stlr.id = sstl.scenario_time_limits_id
      AND stlr.active = true
     WHERE sstl.simulation_id = v_simulation_artifact_id
       AND sstl.active = true
@@ -275,7 +275,7 @@ BEGIN
         false,
         false
     FROM (
-        SELECT spfj.parameter_field_id AS field_id
+        SELECT spfj.parameter_fields_id AS field_id
         FROM scenario_parameter_fields_junction spfj
         WHERE spfj.scenario_id = v_scenario_artifact_id
           AND spfj.active = true
@@ -287,7 +287,7 @@ BEGIN
     ON CONFLICT (attempt_chat_id, parameter_fields_id) DO NOTHING;
 
     INSERT INTO attempt_chat_objectives_connection (attempt_chat_id, objectives_id, created_at, active, generated, mcp)
-    SELECT DISTINCT v_attempt_chat_id, soj.objective_id, NOW(), true, false, false
+    SELECT DISTINCT v_attempt_chat_id, soj.objectives_id, NOW(), true, false, false
     FROM scenario_objectives_junction soj
     WHERE soj.scenario_id = v_scenario_artifact_id
       AND soj.active = true
@@ -337,7 +337,7 @@ BEGIN
         JOIN cohort_profile_personas_junction cpj
           ON cpj.cohort_id = ccj.cohort_id AND cpj.active = true
         JOIN profile_personas_resource ppr
-          ON ppr.id = cpj.profile_persona_id AND ppr.active = true
+          ON ppr.id = cpj.profile_personas_id AND ppr.active = true
         WHERE ccj.cohorts_id = v_cohorts_resource_id
           AND ccj.active = true
           AND ppr.profile_id = v_profiles_resource_id
@@ -353,7 +353,7 @@ BEGIN
         ON CONFLICT (attempt_chat_id, standards_id) DO NOTHING;
 
         INSERT INTO attempt_chat_standard_groups_connection (attempt_chat_id, standard_groups_id, created_at, active, generated, mcp)
-        SELECT DISTINCT v_attempt_chat_id, rsgj.standard_group_id, NOW(), true, false, false
+        SELECT DISTINCT v_attempt_chat_id, rsgj.standard_groups_id, NOW(), true, false, false
         FROM rubric_standard_groups_junction rsgj
         WHERE rsgj.rubric_id = v_rubric_artifact_id
           AND rsgj.active = true

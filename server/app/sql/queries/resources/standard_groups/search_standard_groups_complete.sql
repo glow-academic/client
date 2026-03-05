@@ -34,14 +34,14 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.standard_group_id, q.name, q.description, q.points, q.pass_points)::types.q_get_standard_groups_v4_item
+        (q.standard_groups_id, q.name, q.description, q.points, q.pass_points)::types.q_get_standard_groups_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_standard_groups_v4_item[]
 ) as items
 FROM (
     SELECT
-        r.id AS standard_group_id,
+        r.id AS standard_groups_id,
         r.name,
         COALESCE(r.description, '') AS description,
         COALESCE(r.points, 0)::float AS points,
@@ -51,7 +51,7 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(r.name) LIKE '%' || LOWER(search) || '%' OR LOWER(COALESCE(r.description, '')) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT rubric OR EXISTS (SELECT 1 FROM rubric_standard_groups_junction j WHERE j.standard_group_id = r.id AND j.active = true))
+      AND (NOT rubric OR EXISTS (SELECT 1 FROM rubric_standard_groups_junction j WHERE j.standard_groups_id = r.id AND j.active = true))
     ORDER BY r.name
     LIMIT limit_count
     OFFSET offset_count

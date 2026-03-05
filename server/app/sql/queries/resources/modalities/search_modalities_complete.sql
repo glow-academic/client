@@ -52,7 +52,7 @@ FROM (
       AND (api_search_modalities_v4.modality IS NULL OR m.modality::text = api_search_modalities_v4.modality)
       AND (is_input IS NULL OR m.is_input = is_input)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT model OR EXISTS (SELECT 1 FROM model_modalities_junction j WHERE j.modality_id = m.id AND j.active = true))
+      AND (NOT model OR EXISTS (SELECT 1 FROM model_modalities_junction j WHERE j.modalities_id = m.id AND j.active = true))
     ORDER BY m.modality ASC
     LIMIT limit_count
     OFFSET offset_count

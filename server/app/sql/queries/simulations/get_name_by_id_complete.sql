@@ -1,4 +1,4 @@
--- Get name by name_id
+-- Get name by names_id
 -- Returns name text for audit context
 -- 1) Drop function first (breaks dependency on types)
 DO $$
@@ -17,7 +17,7 @@ END $$;
 
 -- 2) Recreate function
 CREATE OR REPLACE FUNCTION api_get_name_by_id_v4(
-    name_id uuid
+    names_id uuid
 )
 RETURNS TABLE (
     name text

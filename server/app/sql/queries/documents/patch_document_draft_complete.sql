@@ -5,7 +5,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.document_resource_action CASCADE;
     CREATE TYPE types.document_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -82,16 +82,16 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
-    v_name_id := (names).resource_id;
-    v_description_id := (descriptions).resource_id;
-    v_flag_id := (flags).resource_id;
+    v_name_id := (names).resources_id;
+    v_description_id := (descriptions).resources_id;
+    v_flag_id := (flags).resources_id;
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_field_ids := COALESCE((fields).resource_ids, ARRAY[]::uuid[]);
     v_upload_ids := COALESCE((uploads).resource_ids, ARRAY[]::uuid[]);
     v_image_ids := COALESCE((images).resource_ids, ARRAY[]::uuid[]);
     v_text_ids := COALESCE((texts).resource_ids, ARRAY[]::uuid[]);
 
-    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    SELECT ppj.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = v_profile_id
     LIMIT 1;
@@ -159,7 +159,7 @@ BEGIN
             VALUES (
                 NOW(),
                 (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-                 WHERE psc.profiles_id = v_profile_id
+                 WHERE psc.profile_id = v_profile_id
                    AND s.active = true
                  ORDER BY s.created_at DESC
                  LIMIT 1)
@@ -176,7 +176,7 @@ BEGIN
               SELECT 1
               FROM document_drafts_profiles_connection pdc
               WHERE pdc.draft_id = document_drafts_entry.id
-                AND pdc.profiles_id = v_profiles_resource_id
+                AND pdc.profile_id = v_profiles_resource_id
           )
           AND document_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
@@ -193,7 +193,7 @@ BEGIN
             VALUES (
                 NOW(),
                 (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-                 WHERE psc.profiles_id = v_profile_id
+                 WHERE psc.profile_id = v_profile_id
                    AND s.active = true
                  ORDER BY s.created_at DESC
                  LIMIT 1)

@@ -37,9 +37,9 @@ WITH params AS (
 original_provider AS (
     SELECT
         pr.id,
-        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = pr.id LIMIT 1) as name,
-        (SELECT pd.description_id FROM provider_descriptions_junction pd WHERE pd.provider_id = pr.id LIMIT 1) as description_id,
-        (SELECT pv.values_id FROM provider_values_junction pv WHERE pv.provider_id = pr.id AND pv.active = true LIMIT 1) as value_id
+        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.provider_id = pr.id LIMIT 1) as name,
+        (SELECT pd.descriptions_id FROM provider_descriptions_junction pd WHERE pd.provider_id = pr.id LIMIT 1) as descriptions_id,
+        (SELECT pv.values_id FROM provider_values_junction pv WHERE pv.provider_id = pr.id AND pv.active = true LIMIT 1) as values_id
     FROM params x
     JOIN provider_artifact pr ON pr.id = x.provider_id
 ),
@@ -56,7 +56,7 @@ new_name_resource AS (
     FROM original_provider
     WHERE name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id, name
+    RETURNING id as names_id, name
 ),
 new_provider AS (
     INSERT INTO provider_artifact (
@@ -71,26 +71,26 @@ new_provider AS (
 ),
 -- Link provider to name (new name with " Copy" suffix)
 link_provider_name AS (
-    INSERT INTO provider_names_junction (provider_id, name_id, created_at)
+    INSERT INTO provider_names_junction (provider_id, names_id, created_at)
     SELECT
         np.id,
-        nnr.name_id,
+        nnr.names_id,
         NOW()
     FROM new_provider np
     CROSS JOIN new_name_resource nnr
-    ON CONFLICT (provider_id, name_id) DO NOTHING
+    ON CONFLICT (provider_id, names_id) DO NOTHING
 ),
 -- Link provider to existing description
 link_provider_description AS (
-    INSERT INTO provider_descriptions_junction (provider_id, description_id, created_at)
+    INSERT INTO provider_descriptions_junction (provider_id, descriptions_id, created_at)
     SELECT
         np.id,
-        op.description_id,
+        op.descriptions_id,
         NOW()
     FROM new_provider np
     CROSS JOIN original_provider op
-    WHERE op.description_id IS NOT NULL
-    ON CONFLICT (provider_id, description_id) DO NOTHING
+    WHERE op.descriptions_id IS NOT NULL
+    ON CONFLICT (provider_id, descriptions_id) DO NOTHING
 ),
 -- Link provider active flag (set to false for duplicate)
 link_provider_active_flag AS (
@@ -108,11 +108,11 @@ link_provider_value AS (
     INSERT INTO provider_values_junction (provider_id, values_id, created_at)
     SELECT
         np.id,
-        op.value_id,
+        op.values_id,
         NOW()
     FROM new_provider np
     CROSS JOIN original_provider op
-    WHERE op.value_id IS NOT NULL
+    WHERE op.values_id IS NOT NULL
     ON CONFLICT ON CONSTRAINT provider_values_pkey DO NOTHING
 ),
 -- Link provider to existing departments

@@ -35,8 +35,8 @@ WITH params AS (
 original_setting AS (
     SELECT
         s.id,
-        (SELECT n.name FROM setting_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.setting_id = s.id LIMIT 1) as name,
-        (SELECT sd.description_id FROM setting_descriptions_junction sd WHERE sd.setting_id = s.id LIMIT 1) as description_id
+        (SELECT n.name FROM setting_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.setting_id = s.id LIMIT 1) as name,
+        (SELECT sd.descriptions_id FROM setting_descriptions_junction sd WHERE sd.setting_id = s.id LIMIT 1) as descriptions_id
     FROM params x
     JOIN setting_artifact s ON s.id = x.setting_id
 ),
@@ -55,7 +55,7 @@ new_name_resource AS (
     FROM original_setting
     WHERE name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id, name
+    RETURNING id as names_id, name
 ),
 new_setting AS (
     INSERT INTO setting_artifact (
@@ -70,25 +70,25 @@ new_setting AS (
 ),
 -- Link setting to name
 link_setting_name AS (
-    INSERT INTO setting_names_junction (setting_id, name_id, created_at)
+    INSERT INTO setting_names_junction (setting_id, names_id, created_at)
     SELECT 
         ns.id,
-        nnr.name_id,
+        nnr.names_id,
         NOW()
     FROM new_setting ns
     CROSS JOIN new_name_resource nnr
-    ON CONFLICT (setting_id, name_id) DO NOTHING
+    ON CONFLICT (setting_id, names_id) DO NOTHING
 ),
 -- Link setting to existing description (like personas pattern)
 link_setting_description AS (
-    INSERT INTO setting_descriptions_junction (setting_id, description_id, created_at)
+    INSERT INTO setting_descriptions_junction (setting_id, descriptions_id, created_at)
     SELECT
         ns.id,
-        os.description_id,
+        os.descriptions_id,
         NOW()
     FROM new_setting ns
     CROSS JOIN original_setting os
-    WHERE os.description_id IS NOT NULL
+    WHERE os.descriptions_id IS NOT NULL
 ),
 -- Link setting active flag (set to false for duplicate)
 link_setting_active_flag AS (

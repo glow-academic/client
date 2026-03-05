@@ -60,7 +60,7 @@ user_cohorts AS (
     SELECT ARRAY_AGG(DISTINCT ccj.cohorts_id) AS cohort_ids
     FROM profile_profiles_junction ppj
     JOIN cohort_profiles_junction cpj
-      ON cpj.profiles_id = ppj.profiles_id
+      ON cpj.profile_id = ppj.profile_id
      AND cpj.active = true
     JOIN cohort_cohorts_junction ccj
       ON ccj.cohort_id = cpj.cohort_id
@@ -90,7 +90,7 @@ active_simulations AS (
     FROM accessible_training at2
     CROSS JOIN LATERAL unnest(at2.simulation_ids) sid(simulation_id)
     JOIN simulation_simulations_junction ssj
-      ON ssj.simulations_id = sid.simulation_id AND ssj.active = true
+      ON ssj.simulation_id = sid.simulation_id AND ssj.active = true
     JOIN simulation_artifact sa
       ON sa.id = ssj.simulation_id
     WHERE EXISTS (
@@ -116,8 +116,8 @@ simulation_scope AS (
             FILTER (WHERE at2.parent_id IS NOT NULL) AS practice_ids,
         ARRAY_AGG(DISTINCT rid.rubric_id ORDER BY rid.rubric_id)
             FILTER (WHERE rid.rubric_id IS NOT NULL) AS rubric_ids,
-        ARRAY_AGG(DISTINCT stlid.scenario_time_limit_id ORDER BY stlid.scenario_time_limit_id)
-            FILTER (WHERE stlid.scenario_time_limit_id IS NOT NULL) AS scenario_time_limit_ids
+        ARRAY_AGG(DISTINCT stlid.scenario_time_limits_id ORDER BY stlid.scenario_time_limits_id)
+            FILTER (WHERE stlid.scenario_time_limits_id IS NOT NULL) AS scenario_time_limit_ids
     FROM active_simulations asim
     JOIN accessible_training at2
       ON asim.simulation_id = ANY(at2.simulation_ids)
@@ -125,7 +125,7 @@ simulation_scope AS (
     LEFT JOIN LATERAL unnest(at2.scenario_ids) scid(scenario_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.cohort_ids) coid(cohort_id) ON TRUE
     LEFT JOIN LATERAL unnest(at2.rubric_ids) rid(rubric_id) ON TRUE
-    LEFT JOIN LATERAL unnest(at2.scenario_time_limit_ids) stlid(scenario_time_limit_id) ON TRUE
+    LEFT JOIN LATERAL unnest(at2.scenario_time_limit_ids) stlid(scenario_time_limits_id) ON TRUE
     GROUP BY asim.simulation_id
 )
 SELECT

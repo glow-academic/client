@@ -104,7 +104,7 @@ FROM (
                    UNION ALL SELECT departments_id, draft_id FROM invocation_drafts_departments_connection WHERE active = true
                    UNION ALL SELECT departments_id, draft_id FROM tool_drafts_departments_connection WHERE active = true
                    UNION ALL SELECT departments_id, draft_id FROM chat_drafts_departments_connection WHERE active = true) dc
-                  WHERE dc.departments_id = d.id
+                  WHERE dc.department_id = d.id
                     AND dc.draft_id = api_search_departments_v4.draft_id
               )
           )
@@ -120,23 +120,23 @@ FROM (
           OR LOWER(COALESCE(d.description, '')) LIKE '%' || LOWER(search) || '%'
       )
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT auth OR EXISTS (SELECT 1 FROM auth_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT department OR EXISTS (SELECT 1 FROM department_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT document OR EXISTS (SELECT 1 FROM document_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT eval OR EXISTS (SELECT 1 FROM eval_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT field OR EXISTS (SELECT 1 FROM field_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT model OR EXISTS (SELECT 1 FROM model_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT parameter OR EXISTS (SELECT 1 FROM parameter_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT profile OR EXISTS (SELECT 1 FROM profile_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT provider OR EXISTS (SELECT 1 FROM provider_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT rubric OR EXISTS (SELECT 1 FROM rubric_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_departments_junction j WHERE j.department_id = d.id AND j.active = true))
-      AND (NOT tool OR EXISTS (SELECT 1 FROM tool_departments_junction j WHERE j.department_id = d.id AND j.active = true))
+      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT auth OR EXISTS (SELECT 1 FROM auth_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT department OR EXISTS (SELECT 1 FROM department_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT document OR EXISTS (SELECT 1 FROM document_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT eval OR EXISTS (SELECT 1 FROM eval_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT field OR EXISTS (SELECT 1 FROM field_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT model OR EXISTS (SELECT 1 FROM model_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT parameter OR EXISTS (SELECT 1 FROM parameter_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT profile OR EXISTS (SELECT 1 FROM profile_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT provider OR EXISTS (SELECT 1 FROM provider_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT rubric OR EXISTS (SELECT 1 FROM rubric_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT setting OR EXISTS (SELECT 1 FROM setting_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
+      AND (NOT tool OR EXISTS (SELECT 1 FROM tool_departments_junction j WHERE j.departments_id = d.id AND j.active = true))
     ORDER BY d.name
     LIMIT limit_count
     OFFSET offset_count

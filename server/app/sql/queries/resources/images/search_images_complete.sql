@@ -51,7 +51,7 @@ FROM (
            iue.upload_id,
            COALESCE(i.generated, false) AS generated
     FROM images_resource i
-    LEFT JOIN images_images_connection iic ON iic.images_id = i.id AND iic.active = true
+    LEFT JOIN images_images_connection iic ON iic.image_id = i.id AND iic.active = true
     LEFT JOIN images_entry ie ON ie.id = iic.image_id AND ie.active = true
     LEFT JOIN image_uploads_entry iue ON iue.image_id = ie.id AND iue.active = true
     WHERE i.active = true
@@ -59,7 +59,7 @@ FROM (
       AND (COALESCE(array_length(upload_ids, 1), 0) = 0 OR iue.upload_id = ANY(upload_ids))
       AND (search IS NULL OR search = '' OR LOWER(i.name) LIKE '%' || LOWER(search) || '%')
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_images_junction j WHERE j.image_id = i.id AND j.active = true))
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_images_junction j WHERE j.images_id = i.id AND j.active = true))
     ORDER BY i.name
     LIMIT limit_count
     OFFSET offset_count

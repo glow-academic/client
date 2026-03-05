@@ -6,7 +6,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.rubric_resource_action CASCADE;
     CREATE TYPE types.rubric_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -84,17 +84,17 @@ DECLARE
     v_call_id uuid;
 BEGIN
     -- Extract IDs from composites
-    v_name_id := (names).resource_id;
-    v_description_id := (descriptions).resource_id;
-    v_active_flag_id := (flags).resource_id;
-    v_total_points_id := (points).resource_id;
-    v_pass_points_id := (pass_points).resource_id;
+    v_name_id := (names).resources_id;
+    v_description_id := (descriptions).resources_id;
+    v_active_flag_id := (flags).resources_id;
+    v_total_points_id := (points).resources_id;
+    v_pass_points_id := (pass_points).resources_id;
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_standard_group_ids := COALESCE((standard_groups).resource_ids, ARRAY[]::uuid[]);
     v_standard_ids := COALESCE((standards).resource_ids, ARRAY[]::uuid[]);
 
     -- Resolve profile_artifact.id to profiles_resource.id for rubric_drafts_profiles_connection FK
-    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    SELECT ppj.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = v_profile_id
     LIMIT 1;
@@ -159,7 +159,7 @@ BEGIN
                 (
                     SELECT s.id
                     FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-                    WHERE psc.profiles_id = v_profile_id
+                    WHERE psc.profile_id = v_profile_id
                       AND s.active = true
                     ORDER BY s.created_at DESC
                     LIMIT 1
@@ -177,7 +177,7 @@ BEGIN
               SELECT 1
               FROM rubric_drafts_profiles_connection pdj
               WHERE pdj.draft_id = rubric_drafts_entry.id
-                AND pdj.profiles_id = v_profiles_resource_id
+                AND pdj.profile_id = v_profiles_resource_id
           )
           AND rubric_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
@@ -401,7 +401,7 @@ BEGIN
             (
                 SELECT s.id
                 FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-                WHERE psc.profiles_id = v_profile_id
+                WHERE psc.profile_id = v_profile_id
                   AND s.active = true
                 ORDER BY s.created_at DESC
                 LIMIT 1

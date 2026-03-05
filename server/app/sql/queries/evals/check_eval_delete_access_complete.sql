@@ -44,7 +44,7 @@ eval_departments AS (
     LEFT JOIN eval_departments_junction ed ON ed.eval_id = x.eval_id AND ed.active = true
 ),
 eval_name_data AS (
-    SELECT (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = (SELECT eval_id FROM params) LIMIT 1) as eval_name
+    SELECT (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.names_id = n.id WHERE en.eval_id = (SELECT eval_id FROM params) LIMIT 1) as eval_name
 )
 SELECT
     (SELECT department_ids FROM eval_departments) as eval_department_ids,

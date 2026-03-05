@@ -30,8 +30,8 @@ CREATE OR REPLACE FUNCTION api_get_parameter_ids_v4(
 )
 RETURNS TABLE (
     -- Single-select resource IDs (from draft or parameter junction)
-    name_id uuid,
-    description_id uuid,
+    names_id uuid,
+    descriptions_id uuid,
     active_flag_id uuid,
 
     -- Multi-select resource IDs
@@ -103,12 +103,12 @@ parameter_flags_data AS (
 -- Single-select resource IDs (canonical only).
 name_resource_data AS (
     SELECT
-        (SELECT pn.name_id FROM parameter_names_junction pn WHERE pn.parameter_id = (SELECT parameter_id FROM params) AND pn.active = true LIMIT 1) as name_id
+        (SELECT pn.names_id FROM parameter_names_junction pn WHERE pn.parameter_id = (SELECT parameter_id FROM params) AND pn.active = true LIMIT 1) as names_id
     FROM params
 ),
 description_resource_data AS (
     SELECT
-        (SELECT pd.description_id FROM parameter_descriptions_junction pd WHERE pd.parameter_id = (SELECT parameter_id FROM params) AND pd.active = true LIMIT 1) as description_id
+        (SELECT pd.descriptions_id FROM parameter_descriptions_junction pd WHERE pd.parameter_id = (SELECT parameter_id FROM params) AND pd.active = true LIMIT 1) as descriptions_id
     FROM params
 ),
 flag_resource_data AS (
@@ -125,8 +125,8 @@ flag_resource_data AS (
 )
 SELECT
     -- Single-select resource IDs
-    (SELECT name_id FROM name_resource_data) as name_id,
-    (SELECT description_id FROM description_resource_data) as description_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
+    (SELECT descriptions_id FROM description_resource_data) as descriptions_id,
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
 
     -- Multi-select resource IDs

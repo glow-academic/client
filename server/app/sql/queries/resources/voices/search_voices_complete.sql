@@ -50,9 +50,9 @@ FROM (
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (v.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_voices_junction avj WHERE avj.voice_id = v.id AND avj.active = true))
-      AND (NOT model OR EXISTS (SELECT 1 FROM model_voices_junction j WHERE j.voice_id = v.id AND j.active = true))
-      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_voices_junction j WHERE j.voice_id = v.id AND j.active = true))
+      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_voices_junction avj WHERE avj.voices_id = v.id AND avj.active = true))
+      AND (NOT model OR EXISTS (SELECT 1 FROM model_voices_junction j WHERE j.voices_id = v.id AND j.active = true))
+      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_voices_junction j WHERE j.voices_id = v.id AND j.active = true))
     ORDER BY v.voice
     LIMIT limit_count
     OFFSET offset_count

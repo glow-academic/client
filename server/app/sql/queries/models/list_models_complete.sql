@@ -126,15 +126,15 @@ image_model_check AS (
         mm.model_id,
         CASE WHEN COUNT(*) > 0 THEN true ELSE false END as image_model
     FROM model_modalities_junction mm
-    JOIN modalities_resource mr ON mr.id = mm.modality_id
+    JOIN modalities_resource mr ON mr.id = mm.modalities_id
     WHERE mr.modality = 'image' AND mr.is_input = false AND mm.active = true
     GROUP BY mm.model_id
 ),
 model_data_base AS (
     SELECT
         m.id as model_id,
-        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
-        (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.names_id = n.id WHERE mn.model_id = m.id LIMIT 1) as model_name,
+        (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.descriptions_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND f.value = TRUE) as active,
         COALESCE(imc.image_model, false) as image_model,
         m.updated_at,
@@ -150,8 +150,8 @@ model_data_base AS (
     LEFT JOIN model_agents_data mad ON mad.model_id = m.id
     LEFT JOIN model_departments_junction md ON md.model_id = m.id AND md.department_id IN (SELECT department_id FROM user_departments)
     GROUP BY m.id,
-        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1),
-        (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1),
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.names_id = n.id WHERE mn.model_id = m.id LIMIT 1),
+        (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.descriptions_id = d.id WHERE md.model_id = m.id LIMIT 1),
         EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND f.value = TRUE),
         imc.image_model, m.updated_at, mpd.provider_id, mdd.department_ids, au.active_agent_count, mad.agent_ids
     HAVING COUNT(md.model_id) > 0 OR NOT EXISTS (
@@ -196,23 +196,23 @@ all_provider_ids AS (
 provider_option_data AS (
     SELECT
         pr.id::text as value,
-        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON n.id = pn.name_id WHERE pn.provider_id = pp.provider_id LIMIT 1) as label,
+        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON n.id = pn.names_id WHERE pn.provider_id = pp.provider_id LIMIT 1) as label,
         (SELECT COUNT(*) FROM model_data md WHERE md.provider_id = pr.id) as count
     FROM providers_resource pr
     JOIN provider_providers_junction pp ON pp.providers_id = pr.id
     WHERE pr.id IN (SELECT provider_id FROM all_provider_ids)
-      AND (provider_search IS NULL OR LOWER((SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON n.id = pn.name_id WHERE pn.provider_id = pp.provider_id LIMIT 1)) LIKE '%' || LOWER(provider_search) || '%')
+      AND (provider_search IS NULL OR LOWER((SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON n.id = pn.names_id WHERE pn.provider_id = pp.provider_id LIMIT 1)) LIKE '%' || LOWER(provider_search) || '%')
 ),
 -- Department options with names resolved in SQL
 department_option_data AS (
     SELECT
         dr.id::text as value,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
         (SELECT COUNT(*) FROM model_data) as count
     FROM departments_resource dr
-    JOIN department_departments_junction dd ON dd.departments_id = dr.id
+    JOIN department_departments_junction dd ON dd.department_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)
-      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
+      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
 ),
 -- Agent options with names resolved in SQL
 all_agent_ids AS (
@@ -223,11 +223,11 @@ all_agent_ids AS (
 agent_option_data AS (
     SELECT
         aa.id::text as value,
-        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON n.id = an.name_id WHERE an.agent_id = aa.id LIMIT 1) as label,
+        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON n.id = an.names_id WHERE an.agent_id = aa.id LIMIT 1) as label,
         (SELECT COUNT(*) FROM model_data md WHERE aa.id = ANY(md.agent_ids)) as count
     FROM agent_artifact aa
     WHERE aa.id IN (SELECT agent_id FROM all_agent_ids)
-      AND (agent_search IS NULL OR LOWER((SELECT n.name FROM agent_names_junction an JOIN names_resource n ON n.id = an.name_id WHERE an.agent_id = aa.id LIMIT 1)) LIKE '%' || LOWER(agent_search) || '%')
+      AND (agent_search IS NULL OR LOWER((SELECT n.name FROM agent_names_junction an JOIN names_resource n ON n.id = an.names_id WHERE an.agent_id = aa.id LIMIT 1)) LIKE '%' || LOWER(agent_search) || '%')
 )
 SELECT
     -- Aggregate paginated models

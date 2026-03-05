@@ -6,7 +6,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.document_resource_action CASCADE;
     CREATE TYPE types.document_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -84,9 +84,9 @@ BEGIN
     v_input_document_id := input_document_id;
     v_group_id := group_id;
 
-    v_name_id := (names).resource_id;
-    v_description_id := (descriptions).resource_id;
-    v_flag_id := (flags).resource_id;
+    v_name_id := (names).resources_id;
+    v_description_id := (descriptions).resources_id;
+    v_flag_id := (flags).resources_id;
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_field_ids := COALESCE((fields).resource_ids, ARRAY[]::uuid[]);
     v_upload_ids := COALESCE((uploads).resource_ids, ARRAY[]::uuid[]);
@@ -342,13 +342,13 @@ BEGIN
 
     -- Upsert active links
     IF v_name_id IS NOT NULL THEN
-        INSERT INTO document_names_junction (document_id, name_id, created_at)
+        INSERT INTO document_names_junction (document_id, names_id, created_at)
         VALUES (v_document_id, v_name_id, NOW())
         ON CONFLICT ON CONSTRAINT document_names_pkey DO NOTHING;
     END IF;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO document_descriptions_junction (document_id, description_id, created_at)
+        INSERT INTO document_descriptions_junction (document_id, descriptions_id, created_at)
         VALUES (v_document_id, v_description_id, NOW())
         ON CONFLICT ON CONSTRAINT document_descriptions_pkey DO NOTHING;
     END IF;
@@ -374,12 +374,12 @@ BEGIN
         active = true;
 
     -- Link fields
-    INSERT INTO document_parameter_fields_junction (document_id, parameter_field_id, active, created_at)
+    INSERT INTO document_parameter_fields_junction (document_id, parameter_fields_id, active, created_at)
     SELECT v_document_id, pfr.id, true, NOW()
-    FROM UNNEST(v_field_ids) AS field_resource_id
-    JOIN parameter_fields_resource pfr ON pfr.field_id = field_resource_id
+    FROM UNNEST(v_field_ids) AS fields_id
+    JOIN parameter_fields_resource pfr ON pfr.field_id = fields_id
     WHERE COALESCE(array_length(v_field_ids, 1), 0) > 0
-    ON CONFLICT (document_id, parameter_field_id) DO NOTHING;
+    ON CONFLICT (document_id, parameter_fields_id) DO NOTHING;
 
     -- Link uploads
     INSERT INTO document_files_junction (document_id, files_id, active, created_at)
@@ -412,7 +412,7 @@ BEGIN
     FROM document_documents_junction j
     LEFT JOIN names_resource n ON n.id = v_name_id
     LEFT JOIN descriptions_resource d ON d.id = v_description_id
-    WHERE j.documents_id = r.id
+    WHERE j.document_id = r.id
       AND j.document_id = v_document_id;
 
     RETURN QUERY SELECT v_document_id;

@@ -46,7 +46,7 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(r.base_url) LIKE '%' || LOWER(search) || '%')
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT provider OR EXISTS (SELECT 1 FROM provider_endpoints_junction j WHERE j.endpoint_id = r.id AND j.active = true))
+      AND (NOT provider OR EXISTS (SELECT 1 FROM provider_endpoints_junction j WHERE j.endpoints_id = r.id AND j.active = true))
     ORDER BY r.id
     LIMIT limit_count
     OFFSET offset_count

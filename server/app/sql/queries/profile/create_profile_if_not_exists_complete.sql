@@ -40,7 +40,7 @@ WITH params AS (
 existing_profile AS (
     SELECT pe.profile_id as id
     FROM profile_emails_junction pe
-    JOIN emails_resource e ON pe.email_id = e.id
+    JOIN emails_resource e ON pe.emails_id = e.id
     WHERE e.email = (SELECT email FROM params)
       AND pe.active = true
     LIMIT 1
@@ -52,7 +52,7 @@ existing_result AS (
         false as created,
         (SELECT n.name
          FROM profile_names_junction pn
-         JOIN names_resource n ON pn.name_id = n.id
+         JOIN names_resource n ON pn.names_id = n.id
          WHERE pn.profile_id = ep.id
          LIMIT 1) as actor_name
     FROM existing_profile ep
@@ -76,14 +76,14 @@ name_resource AS (
       AND (SELECT name FROM params) IS NOT NULL
       AND (SELECT name FROM params) != ''
     ON CONFLICT (name) DO NOTHING
-    RETURNING id as name_id, name
+    RETURNING id as names_id, name
 ),
--- Get name_id (either from insert or existing)
+-- Get names_id (either from insert or existing)
 name_id_lookup AS (
     SELECT COALESCE(
-        (SELECT name_id FROM name_resource),
+        (SELECT names_id FROM name_resource),
         (SELECT id FROM names_resource WHERE name = (SELECT name FROM params))
-    ) as name_id
+    ) as names_id
 ),
 -- Insert profile (only if creating)
 profile_insert AS (
@@ -97,7 +97,7 @@ profile_insert AS (
 ),
 -- Look up role (only if creating)
 role_resource AS (
-    SELECT id as role_id
+    SELECT id as roles_id
     FROM roles_resource
     WHERE role = (SELECT role FROM params)::profile_type
       AND active = true
@@ -105,31 +105,31 @@ role_resource AS (
     LIMIT 1
 ),
 profile_type_insert AS (
-    INSERT INTO profile_roles_junction (profile_id, role_id, created_at, generated, mcp)
-    SELECT pi.id, rr.role_id, NOW(), false, false
+    INSERT INTO profile_roles_junction (profile_id, roles_id, created_at, generated, mcp)
+    SELECT pi.id, rr.roles_id, NOW(), false, false
     FROM profile_insert pi
     CROSS JOIN role_resource rr
-    WHERE rr.role_id IS NOT NULL
-    ON CONFLICT (profile_id, role_id) DO NOTHING
+    WHERE rr.roles_id IS NOT NULL
+    ON CONFLICT (profile_id, roles_id) DO NOTHING
     RETURNING profile_id
 ),
 -- Link profile to name (only if creating)
 link_profile_name AS (
-    INSERT INTO profile_names_junction (profile_id, name_id, created_at)
-    SELECT pi.id, nl.name_id, NOW()
+    INSERT INTO profile_names_junction (profile_id, names_id, created_at)
+    SELECT pi.id, nl.names_id, NOW()
     FROM profile_insert pi
     CROSS JOIN name_id_lookup nl
-    WHERE nl.name_id IS NOT NULL
+    WHERE nl.names_id IS NOT NULL
     ON CONFLICT (profile_id) DO NOTHING
 ),
 -- Set profile active flag (only if creating)
 set_profile_active AS (
-    INSERT INTO profile_flags_junction (profile_id, flag_id, created_at)
+    INSERT INTO profile_flags_junction (profile_id, flags_id, created_at)
     SELECT pi.id, f.id, NOW()
     FROM profile_insert pi
     CROSS JOIN flags_resource f
     WHERE f.name = 'profile_active'
-    ON CONFLICT (profile_id, flag_id) DO NOTHING
+    ON CONFLICT (profile_id, flags_id) DO NOTHING
 ),
 -- Insert email resource (only if creating)
 email_resource AS (
@@ -137,22 +137,22 @@ email_resource AS (
     SELECT (SELECT email FROM params), NOW()
     WHERE EXISTS (SELECT 1 FROM profile_insert)
     ON CONFLICT (email) DO NOTHING
-    RETURNING id as email_id, email
+    RETURNING id as emails_id, email
 ),
 email_id_lookup AS (
     SELECT COALESCE(
-        (SELECT email_id FROM email_resource),
+        (SELECT emails_id FROM email_resource),
         (SELECT id FROM emails_resource WHERE email = (SELECT email FROM params))
-    ) as email_id
+    ) as emails_id
 ),
 -- Link email to profile (only if creating)
 email_insert AS (
-    INSERT INTO profile_emails_junction (profile_id, email, email_id, is_primary, active)
-    SELECT pi.id, (SELECT email FROM params), el.email_id, true, true
+    INSERT INTO profile_emails_junction (profile_id, email, emails_id, is_primary, active)
+    SELECT pi.id, (SELECT email FROM params), el.emails_id, true, true
     FROM profile_insert pi
     CROSS JOIN email_id_lookup el
-    WHERE el.email_id IS NOT NULL
-    ON CONFLICT (profile_id, email_id) DO NOTHING
+    WHERE el.emails_id IS NOT NULL
+    ON CONFLICT (profile_id, emails_id) DO NOTHING
 ),
 -- Return result from new profile creation
 new_result AS (

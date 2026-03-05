@@ -43,7 +43,7 @@ cohort_exists_check AS (
 cohort_name_data AS (
     SELECT n.name as original_name
     FROM cohort_names_junction cn
-    JOIN names_resource n ON cn.name_id = n.id
+    JOIN names_resource n ON cn.names_id = n.id
     WHERE cn.cohort_id = (SELECT p_cohort_id FROM params)
     LIMIT 1
 ),

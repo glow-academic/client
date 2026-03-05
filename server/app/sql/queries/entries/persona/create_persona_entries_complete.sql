@@ -57,9 +57,9 @@ BEGIN
     RETURNING personas_entry.id INTO v_entry_id;
 
     -- 5. Link to personas_resource if provided
-    IF api_create_persona_entry_v4.personas_id IS NOT NULL THEN
+    IF api_create_persona_entry_v4.persona_id IS NOT NULL THEN
         INSERT INTO personas_personas_connection (personas_entry_id, personas_id)
-        VALUES (v_entry_id, api_create_persona_entry_v4.personas_id);
+        VALUES (v_entry_id, api_create_persona_entry_v4.persona_id);
     END IF;
 
     -- 6. Create message

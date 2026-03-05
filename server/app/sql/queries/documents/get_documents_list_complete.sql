@@ -111,7 +111,7 @@ document_fields_cte AS (
         dpfj.document_id,
         ARRAY_AGG(pfr.field_id) as field_ids
     FROM document_parameter_fields_junction dpfj
-    JOIN parameter_fields_resource pfr ON pfr.id = dpfj.parameter_field_id
+    JOIN parameter_fields_resource pfr ON pfr.id = dpfj.parameter_fields_id
     WHERE dpfj.active = true
     GROUP BY dpfj.document_id
 ),
@@ -134,7 +134,7 @@ document_uploads_cte AS (
 document_data AS (
     SELECT
         d.id as document_id,
-        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1) as document_name,
+        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.document_id = d.id LIMIT 1) as document_name,
         EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND f.value = TRUE) as active,
         d.updated_at,
         COALESCE(ddd.department_ids, NULL) as department_ids,
@@ -150,7 +150,7 @@ document_data AS (
     LEFT JOIN document_uploads_cte duc ON duc.document_id = d.id
     LEFT JOIN document_active_scenario_links dasl ON dasl.document_id = d.id
     GROUP BY d.id,
-        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
+        (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.document_id = d.id LIMIT 1),
         EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND f.value = TRUE),
         d.updated_at,
         ddd.department_ids, ds.scenario_ids, dfc.field_ids, duc.upload_ids, dasl.active_scenario_count
@@ -218,8 +218,8 @@ SELECT
             ORDER BY sn_name.name
          )
          FROM scenarios_resource sr
-         JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = sr.id
-         JOIN (SELECT sn.scenario_id, n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id) sn_name ON sn_name.scenario_id = ssj.scenario_id
+         JOIN scenario_scenarios_junction ssj ON ssj.scenario_id = sr.id
+         JOIN (SELECT sn.scenario_id, n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id) sn_name ON sn_name.scenario_id = ssj.scenario_id
          WHERE sr.id IN (SELECT scenario_id FROM all_scenario_ids)
            AND (scenario_search IS NULL OR LOWER(sn_name.name) LIKE '%' || LOWER(scenario_search) || '%')),
         '{}'::types.q_list_documents_v4_option[]
@@ -232,7 +232,7 @@ SELECT
          )
          FROM fields_resource fr
          JOIN field_fields_junction ffj ON ffj.fields_id = fr.id
-         JOIN (SELECT fn.field_id, n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id) fn_name ON fn_name.field_id = ffj.field_id
+         JOIN (SELECT fn.field_id, n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id) fn_name ON fn_name.field_id = ffj.field_id
          WHERE fr.id IN (SELECT field_id FROM all_field_ids)
            AND (field_search IS NULL OR LOWER(fn_name.name) LIKE '%' || LOWER(field_search) || '%')),
         '{}'::types.q_list_documents_v4_option[]
@@ -244,8 +244,8 @@ SELECT
             ORDER BY dn_name.name
          )
          FROM departments_resource dr
-         JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
-         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
+         JOIN department_departments_junction ddj ON ddj.department_id = dr.id
+         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
          WHERE dr.id IN (SELECT department_id FROM all_department_ids)
            AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_documents_v4_option[]

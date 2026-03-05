@@ -20,7 +20,7 @@ AS $$
 WITH actor_profile AS (
     SELECT nr.name
     FROM profile_names_junction pnj
-    JOIN names_resource nr ON nr.id = pnj.name_id AND nr.active = true
+    JOIN names_resource nr ON nr.id = pnj.names_id AND nr.active = true
     WHERE pnj.profile_id = p_profile_id AND pnj.active = true
     LIMIT 1
 ),
@@ -30,7 +30,7 @@ inserted AS (
     WHERE EXISTS (
         SELECT 1 FROM profiles_problems_connection ppj
         WHERE ppj.problem_id = p_problem_id
-          AND ppj.profiles_id = p_profile_id
+          AND ppj.profile_id = p_profile_id
     )
     RETURNING resolves_entry.problem_id, resolves_entry.resolved, resolves_entry.created_at
 )

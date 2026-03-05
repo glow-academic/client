@@ -36,7 +36,7 @@ WITH params AS (
 ),
 eval_info AS (
     SELECT
-        (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1) as name
+        (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.names_id = n.id WHERE en.eval_id = e.id LIMIT 1) as name
     FROM params x
     JOIN eval_artifact e ON e.id = x.eval_id
 ),

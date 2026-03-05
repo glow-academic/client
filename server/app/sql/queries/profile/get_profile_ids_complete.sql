@@ -30,8 +30,8 @@ CREATE OR REPLACE FUNCTION api_get_profile_ids_v4(
 )
 RETURNS TABLE (
     -- Single-select resource IDs (from draft or profile junction)
-    name_id uuid,
-    request_limit_id uuid,
+    names_id uuid,
+    request_limits_id uuid,
     active_flag_id uuid,
 
     -- Multi-select resource IDs
@@ -57,9 +57,9 @@ name_resource_data AS (
     SELECT
         COALESCE(
             (SELECT dn.names_id FROM profile_drafts_names_connection dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT pn.name_id FROM profile_names_junction pn WHERE pn.profile_id = (SELECT target_profile_id FROM params) LIMIT 1),
+            (SELECT pn.names_id FROM profile_names_junction pn WHERE pn.profile_id = (SELECT target_profile_id FROM params) LIMIT 1),
             NULL::uuid
-        ) as name_id
+        ) as names_id
     FROM params
 ),
 request_limit_resource_data AS (
@@ -69,14 +69,14 @@ request_limit_resource_data AS (
              FROM profile_drafts_request_limits_connection drl
              WHERE drl.draft_id = (SELECT draft_id FROM params)
              LIMIT 1),
-            (SELECT prl.request_limit_id
+            (SELECT prl.request_limits_id
              FROM profile_request_limits_junction prl
              WHERE prl.profile_id = (SELECT target_profile_id FROM params)
                AND prl.active = true
              ORDER BY prl.created_at DESC
              LIMIT 1),
             NULL::uuid
-        ) as request_limit_id
+        ) as request_limits_id
     FROM params
 ),
 flag_resource_data AS (
@@ -86,9 +86,9 @@ flag_resource_data AS (
              FROM profile_drafts_flags_connection df
              WHERE df.draft_id = (SELECT draft_id FROM params)
              LIMIT 1),
-            (SELECT pf.flag_id
+            (SELECT pf.flags_id
              FROM profile_flags_junction pf
-             JOIN flags_resource f ON pf.flag_id = f.id
+             JOIN flags_resource f ON pf.flags_id = f.id
              WHERE pf.profile_id = (SELECT target_profile_id FROM params)
                AND f.name = 'profile_active'
                AND f.value = true
@@ -105,7 +105,7 @@ email_ids_data AS (
              FROM profile_drafts_emails_connection de
              WHERE de.draft_id = (SELECT draft_id FROM params)
                AND de.active = true),
-            (SELECT ARRAY_AGG(pe.email_id ORDER BY pe.is_primary DESC, pe.created_at)
+            (SELECT ARRAY_AGG(pe.emails_id ORDER BY pe.is_primary DESC, pe.created_at)
              FROM profile_emails_junction pe
              WHERE pe.profile_id = (SELECT target_profile_id FROM params)
                AND pe.active = true),
@@ -121,7 +121,7 @@ department_ids_data AS (
              FROM profile_drafts_departments_connection dd
              WHERE dd.draft_id = (SELECT draft_id FROM params)
                AND dd.active = true),
-            (SELECT ARRAY_AGG(pd.department_id ORDER BY pd.created_at)
+            (SELECT ARRAY_AGG(pd.departments_id ORDER BY pd.created_at)
              FROM profile_departments_junction pd
              WHERE pd.profile_id = (SELECT target_profile_id FROM params)
                AND pd.active = true),
@@ -147,7 +147,7 @@ target_role_data AS (
                 ELSE (
                     SELECT r.role::text
                     FROM profile_roles_junction pr
-                    JOIN roles_resource r ON pr.role_id = r.id
+                    JOIN roles_resource r ON pr.roles_id = r.id
                     WHERE pr.profile_id = (SELECT target_profile_id FROM params)
                       AND pr.active = true
                     LIMIT 1
@@ -159,8 +159,8 @@ target_role_data AS (
 )
 SELECT
     -- Single-select resource IDs
-    (SELECT name_id FROM name_resource_data) as name_id,
-    (SELECT request_limit_id FROM request_limit_resource_data) as request_limit_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
+    (SELECT request_limits_id FROM request_limit_resource_data) as request_limits_id,
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
 
     -- Multi-select resource IDs

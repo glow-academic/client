@@ -30,8 +30,8 @@ CREATE OR REPLACE FUNCTION api_get_auth_ids_v4(
 )
 RETURNS TABLE (
     -- Single-select resource IDs (from draft or auth junction)
-    name_id uuid,
-    description_id uuid,
+    names_id uuid,
+    descriptions_id uuid,
     active_flag_id uuid,
 
     -- Multi-select resource IDs
@@ -58,28 +58,28 @@ auth_artifact_id_lookup AS (
         CASE
             WHEN (SELECT auth_id FROM params) IS NULL THEN NULL::uuid
             ELSE COALESCE(
-                (SELECT aaj.auth_id FROM auths_resource ar JOIN auth_auths_junction aaj ON aaj.auths_id = ar.id WHERE ar.id = (SELECT auth_id FROM params)),
+                (SELECT aaj.auth_id FROM auths_resource ar JOIN auth_auths_junction aaj ON aaj.auth_id = ar.id WHERE ar.id = (SELECT auth_id FROM params)),
                 (SELECT auth_id FROM params)
             )
         END as auth_artifact_id
 ),
 -- Draft resource IDs (if draft_id is provided)
 draft_name_data AS (
-    SELECT ndc.names_id as name_id
+    SELECT ndc.names_id as names_id
     FROM auth_drafts_names_connection ndc
     WHERE ndc.draft_id = (SELECT draft_id FROM params)
     ORDER BY ndc.version DESC
     LIMIT 1
 ),
 draft_description_data AS (
-    SELECT ddc.descriptions_id as description_id
+    SELECT ddc.descriptions_id as descriptions_id
     FROM auth_drafts_descriptions_connection ddc
     WHERE ddc.draft_id = (SELECT draft_id FROM params)
     ORDER BY ddc.version DESC
     LIMIT 1
 ),
 draft_flag_data AS (
-    SELECT fdc.flags_id as flag_id
+    SELECT fdc.flag_id as flag_id
     FROM auth_drafts_flags_connection fdc
     WHERE fdc.draft_id = (SELECT draft_id FROM params)
     ORDER BY fdc.version DESC
@@ -99,17 +99,17 @@ draft_slug_data AS (
 name_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT name_id FROM draft_name_data),
-            (SELECT an.name_id FROM auth_names_junction an WHERE an.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) LIMIT 1)
-        ) as name_id
+            (SELECT names_id FROM draft_name_data),
+            (SELECT an.names_id FROM auth_names_junction an WHERE an.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) LIMIT 1)
+        ) as names_id
     FROM params
 ),
 description_resource_data AS (
     SELECT
         COALESCE(
-            (SELECT description_id FROM draft_description_data),
-            (SELECT ad.description_id FROM auth_descriptions_junction ad WHERE ad.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) LIMIT 1)
-        ) as description_id
+            (SELECT descriptions_id FROM draft_description_data),
+            (SELECT ad.descriptions_id FROM auth_descriptions_junction ad WHERE ad.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) LIMIT 1)
+        ) as descriptions_id
     FROM params
 ),
 flag_resource_data AS (
@@ -134,7 +134,7 @@ protocol_ids_data AS (
                 THEN (SELECT protocol_ids FROM draft_protocol_data)
             WHEN (SELECT auth_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(ap.protocol_id ORDER BY ap.created_at)
+                (SELECT ARRAY_AGG(ap.protocols_id ORDER BY ap.created_at)
                  FROM auth_protocols_junction ap
                  WHERE ap.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup)),
                 ARRAY[]::uuid[]
@@ -150,7 +150,7 @@ slug_ids_data AS (
                 THEN (SELECT slug_ids FROM draft_slug_data)
             WHEN (SELECT auth_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(asj.slug_id ORDER BY asj.created_at)
+                (SELECT ARRAY_AGG(asj.slugs_id ORDER BY asj.created_at)
                  FROM auth_slugs_junction asj
                  WHERE asj.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup)),
                 ARRAY[]::uuid[]
@@ -170,9 +170,9 @@ auth_item_ids_data AS (
             )
                 THEN COALESCE(
                     (
-                        SELECT ARRAY_AGG(idc.items_id ORDER BY i.position)
+                        SELECT ARRAY_AGG(idc.item_id ORDER BY i.position)
                         FROM auth_drafts_items_connection idc
-                        JOIN items_resource i ON i.id = idc.items_id
+                        JOIN items_resource i ON i.id = idc.item_id
                         WHERE idc.draft_id = (SELECT draft_id FROM params)
                     ),
                     ARRAY[]::uuid[]
@@ -191,8 +191,8 @@ auth_item_ids_data AS (
 )
 SELECT
     -- Single-select resource IDs
-    (SELECT name_id FROM name_resource_data) as name_id,
-    (SELECT description_id FROM description_resource_data) as description_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
+    (SELECT descriptions_id FROM description_resource_data) as descriptions_id,
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
 
     -- Multi-select resource IDs

@@ -65,7 +65,7 @@ user_cohorts AS (
     SELECT ARRAY_AGG(DISTINCT ccj.cohorts_id) AS cohort_ids
     FROM profile_profiles_junction ppj
     JOIN cohort_profiles_junction cpj
-      ON cpj.profiles_id = ppj.profiles_id
+      ON cpj.profile_id = ppj.profile_id
      AND cpj.active = true
     JOIN cohort_cohorts_junction ccj
       ON ccj.cohort_id = cpj.cohort_id
@@ -102,7 +102,7 @@ active_simulations AS (
     FROM accessible_training at2
     CROSS JOIN LATERAL unnest(at2.simulation_ids) sid(simulation_id)
     JOIN simulation_simulations_junction ssj
-      ON ssj.simulations_id = sid.simulation_id AND ssj.active = true
+      ON ssj.simulation_id = sid.simulation_id AND ssj.active = true
     JOIN simulation_artifact sa
       ON sa.id = ssj.simulation_id
     WHERE EXISTS (
@@ -135,7 +135,7 @@ first_scenario_persona AS (
         (
             SELECT sp.persona_id
             FROM unnest(COALESCE(sd.scenario_ids, ARRAY[]::uuid[])) WITH ORDINALITY sid(scenarios_id, ord)
-            JOIN scenario_scenarios_junction ssj ON ssj.scenarios_id = sid.scenarios_id AND ssj.active = true
+            JOIN scenario_scenarios_junction ssj ON ssj.scenario_id = sid.scenario_id AND ssj.active = true
             JOIN scenario_personas_junction sp ON sp.scenario_id = ssj.scenario_id AND sp.active = true
             ORDER BY sid.ord
             LIMIT 1
@@ -169,15 +169,15 @@ rubric_ids AS (
      AND srr.active = true
 ),
 standard_group_data AS (
-    SELECT DISTINCT sg.id AS standard_group_id
+    SELECT DISTINCT sg.id AS standard_groups_id
     FROM rubric_ids ri
     JOIN rubric_standard_groups_junction rsg ON rsg.rubric_id = ri.rubric_id AND rsg.active = true
-    JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.active = true
+    JOIN standard_groups_resource sg ON sg.id = rsg.standard_groups_id AND sg.active = true
 ),
 standard_data AS (
     SELECT DISTINCT s.id AS standard_id
     FROM standard_group_data sgd
-    JOIN standards_resource s ON s.standard_group_id = sgd.standard_group_id AND s.active = true
+    JOIN standards_resource s ON s.standard_groups_id = sgd.standard_groups_id AND s.active = true
 ),
 simulation_rubric_data AS (
     SELECT
@@ -189,11 +189,11 @@ simulation_rubric_data AS (
     CROSS JOIN LATERAL unnest(COALESCE(sd.scenario_ids, ARRAY[]::uuid[])) AS sid(scenario_id)
     JOIN scenario_rubrics_resource srr ON srr.scenario_id = sid.scenario_id AND srr.active = true
     JOIN rubric_standard_groups_junction rsg ON rsg.rubric_id = srr.rubric_id AND rsg.active = true
-    JOIN standard_groups_resource sg ON sg.id = rsg.standard_group_id AND sg.active = true
+    JOIN standard_groups_resource sg ON sg.id = rsg.standard_groups_id AND sg.active = true
     GROUP BY sd.simulation_id
 ),
 profile_resource AS (
-    SELECT ppj.profiles_id
+    SELECT ppj.profile_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
       AND ppj.active = true
@@ -218,13 +218,13 @@ latest_attempt_grades AS (
 ),
 simulation_stats AS (
     SELECT
-        COALESCE(hsc.simulations_id, psc.simulations_id) AS simulation_id,
+        COALESCE(hsc.simulation_id, psc.simulation_id) AS simulation_id,
         COUNT(DISTINCT a.id)::int AS attempt_count,
         MAX(lag.score_percent) AS highest_score_percent,
         BOOL_OR(COALESCE(lag.has_passed, false)) AS has_passed
     FROM profile_resource pr
     JOIN attempt_profiles_connection apc
-      ON apc.profiles_id = pr.profiles_id
+      ON apc.profile_id = pr.profile_id
      AND apc.active = true
     JOIN attempt_entry a
       ON a.id = apc.attempt_id
@@ -243,7 +243,7 @@ simulation_stats AS (
           ((SELECT practice FROM params) = false AND ahc.attempt_id IS NOT NULL)
           OR ((SELECT practice FROM params) = true AND ape.attempt_id IS NOT NULL)
       )
-    GROUP BY COALESCE(hsc.simulations_id, psc.simulations_id)
+    GROUP BY COALESCE(hsc.simulation_id, psc.simulation_id)
 ),
 simulation_data_with_stats AS (
     SELECT
@@ -289,7 +289,7 @@ SELECT
         ARRAY[]::types.q_get_training_simulations_v4_item[]
     ) AS items,
     COALESCE(
-        (SELECT ARRAY_AGG(DISTINCT sgd.standard_group_id ORDER BY sgd.standard_group_id)
+        (SELECT ARRAY_AGG(DISTINCT sgd.standard_groups_id ORDER BY sgd.standard_groups_id)
          FROM standard_group_data sgd),
         ARRAY[]::uuid[]
     ) AS standard_group_ids,

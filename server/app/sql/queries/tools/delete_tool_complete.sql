@@ -37,16 +37,16 @@ usage_check AS (
     SELECT COUNT(*)::bigint as usage_count
     FROM params x
     WHERE EXISTS (
-        SELECT 1 FROM tools_calls_connection tcj WHERE tcj.tools_id = x.tool_id
+        SELECT 1 FROM tools_calls_connection tcj WHERE tcj.tool_id = x.tool_id
         UNION ALL
-        SELECT 1 FROM agent_tools_junction at JOIN tools_resource tr ON tr.id = at.tool_id JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id WHERE ttj.tool_id = x.tool_id AND at.active = true
+        SELECT 1 FROM agent_tools_junction at JOIN tools_resource tr ON tr.id = at.tool_id JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id WHERE ttj.tool_id = x.tool_id AND at.active = true
         UNION ALL
         SELECT 1 FROM tool_resources_junction tdj WHERE tdj.tool_id = x.tool_id AND tdj.active = true
     )
 ),
 tool_info AS (
     SELECT 
-        (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
+        (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.names_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
     FROM params x
     JOIN tool_artifact t ON t.id = x.tool_id
 ),

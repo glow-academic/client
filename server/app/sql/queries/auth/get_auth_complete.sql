@@ -93,7 +93,7 @@ RETURNS TABLE (
     disabled_reason text,
     group_id uuid,
     -- Single-select resources: name
-    name_id uuid,
+    names_id uuid,
     name_resource types.q_get_auth_v4_name_resource,
     show_name boolean,
     name_agent_id uuid,
@@ -101,7 +101,7 @@ RETURNS TABLE (
     name_suggestions uuid[],
     names types.q_get_auth_v4_name_resource[],
     -- Single-select resources: description
-    description_id uuid,
+    descriptions_id uuid,
     description_resource types.q_get_auth_v4_description_resource,
     show_description boolean,
     description_agent_id uuid,
@@ -155,7 +155,7 @@ auth_artifact_id_lookup AS (
         CASE
             WHEN (SELECT auth_id FROM params) IS NULL THEN NULL::uuid
             ELSE COALESCE(
-                (SELECT aaj.auth_id FROM auths_resource ar JOIN auth_auths_junction aaj ON aaj.auths_id = ar.id WHERE ar.id = (SELECT auth_id FROM params)),
+                (SELECT aaj.auth_id FROM auths_resource ar JOIN auth_auths_junction aaj ON aaj.auth_id = ar.id WHERE ar.id = (SELECT auth_id FROM params)),
                 (SELECT auth_id FROM params)  -- Fallback: assume it's already auth_artifact.id if not found in resource table
             )
         END as auth_artifact_id
@@ -198,8 +198,8 @@ name_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dn.names_id FROM auth_drafts_names_connection dn WHERE dn.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT an.name_id FROM auth_names_junction an WHERE an.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) LIMIT 1)
-        ) as name_id,
+            (SELECT an.names_id FROM auth_names_junction an WHERE an.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) LIMIT 1)
+        ) as names_id,
         (
             SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_auth_v4_name_resource 
             FROM (
@@ -210,7 +210,7 @@ name_resource_data AS (
                 UNION ALL
                 SELECT n.id, n.name, COALESCE(n.generated, false) as generated, 2 as priority
                 FROM auth_names_junction an 
-                JOIN names_resource n ON an.name_id = n.id 
+                JOIN names_resource n ON an.names_id = n.id 
                 WHERE an.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup)
             ) n
             ORDER BY priority
@@ -222,8 +222,8 @@ description_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dd.descriptions_id FROM auth_drafts_descriptions_connection dd WHERE dd.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT ad.description_id FROM auth_descriptions_junction ad WHERE ad.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) LIMIT 1)
-        ) as description_id,
+            (SELECT ad.descriptions_id FROM auth_descriptions_junction ad WHERE ad.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) LIMIT 1)
+        ) as descriptions_id,
         (
             SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_auth_v4_description_resource 
             FROM (
@@ -234,7 +234,7 @@ description_resource_data AS (
                 UNION ALL
                 SELECT d.id, d.description, COALESCE(d.generated, false) as generated, 2 as priority
                 FROM auth_descriptions_junction ad 
-                JOIN descriptions_resource d ON ad.description_id = d.id 
+                JOIN descriptions_resource d ON ad.descriptions_id = d.id 
                 WHERE ad.auth_id = (SELECT auth_id FROM params)
             ) d
             ORDER BY priority
@@ -245,7 +245,7 @@ description_resource_data AS (
 flag_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT df.flags_id FROM auth_drafts_flags_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
+            (SELECT df.flag_id FROM auth_drafts_flags_connection df WHERE df.draft_id = (SELECT draft_id FROM params) LIMIT 1),
             (SELECT af.flag_id FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup) AND f.name = 'auth_active' AND f.value = TRUE LIMIT 1)
         ) as active_flag_id,
         (
@@ -253,7 +253,7 @@ flag_resource_data AS (
             FROM (
                 SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 1 as priority
                 FROM auth_drafts_flags_connection df 
-                JOIN flags_resource f ON df.flags_id = f.id 
+                JOIN flags_resource f ON df.flag_id = f.id 
                 WHERE df.draft_id = (SELECT draft_id FROM params)
                 UNION ALL
                 SELECT f.id, f.name, f.description, f.icon, COALESCE(f.generated, false) as generated, 2 as priority
@@ -274,7 +274,7 @@ protocol_ids_data AS (
             CASE 
                 WHEN (SELECT auth_id FROM params) IS NULL THEN ARRAY[]::uuid[]
                 ELSE (
-                    SELECT ARRAY_AGG(ap.protocol_id ORDER BY ap.created_at)
+                    SELECT ARRAY_AGG(ap.protocols_id ORDER BY ap.created_at)
                     FROM auth_protocols_junction ap
                     WHERE ap.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup)
                 )
@@ -292,7 +292,7 @@ slug_ids_data AS (
             CASE 
                 WHEN (SELECT auth_id FROM params) IS NULL THEN ARRAY[]::uuid[]
                 ELSE (
-                    SELECT ARRAY_AGG(as_j.slug_id ORDER BY as_j.created_at)
+                    SELECT ARRAY_AGG(as_j.slugs_id ORDER BY as_j.created_at)
                     FROM auth_slugs_junction as_j
                     WHERE as_j.auth_id = (SELECT auth_artifact_id FROM auth_artifact_id_lookup)
                 )
@@ -329,13 +329,13 @@ slug_mapping_data AS (
 name_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(an.name_id ORDER BY an.created_at DESC)
+            (SELECT ARRAY_AGG(an.names_id ORDER BY an.created_at DESC)
              FROM (
-                 SELECT DISTINCT an.name_id, MAX(an.created_at) as created_at
+                 SELECT DISTINCT an.names_id, MAX(an.created_at) as created_at
                  FROM auth_names_junction an
-                 JOIN names_resource n ON n.id = an.name_id
+                 JOIN names_resource n ON n.id = an.names_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE an.name_id IS NOT NULL
+                 WHERE an.names_id IS NOT NULL
                    AND n.name IS NOT NULL
                    AND n.name != ''
                    AND (
@@ -347,7 +347,7 @@ name_suggestions_data AS (
                            n.generated = true
                        )
                    )
-                 GROUP BY an.name_id
+                 GROUP BY an.names_id
                  ORDER BY MAX(an.created_at) DESC
                  LIMIT 20
              ) an),
@@ -361,13 +361,13 @@ name_suggestions_data AS (
 description_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(ad.description_id ORDER BY ad.created_at DESC)
+            (SELECT ARRAY_AGG(ad.descriptions_id ORDER BY ad.created_at DESC)
              FROM (
-                 SELECT DISTINCT ad.description_id, MAX(ad.created_at) as created_at
+                 SELECT DISTINCT ad.descriptions_id, MAX(ad.created_at) as created_at
                  FROM auth_descriptions_junction ad
-                 JOIN descriptions_resource d ON d.id = ad.description_id
+                 JOIN descriptions_resource d ON d.id = ad.descriptions_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE ad.description_id IS NOT NULL
+                 WHERE ad.descriptions_id IS NOT NULL
                    AND d.description IS NOT NULL
                    AND d.description != ''
                    AND (
@@ -379,7 +379,7 @@ description_suggestions_data AS (
                            d.generated = true
                        )
                    )
-                 GROUP BY ad.description_id
+                 GROUP BY ad.descriptions_id
                  ORDER BY MAX(ad.created_at) DESC
                  LIMIT 20
              ) ad),
@@ -393,13 +393,13 @@ description_suggestions_data AS (
 protocol_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(ap.protocol_id ORDER BY ap.created_at DESC)
+            (SELECT ARRAY_AGG(ap.protocols_id ORDER BY ap.created_at DESC)
              FROM (
-                 SELECT DISTINCT ap.protocol_id, MAX(ap.created_at) as created_at
+                 SELECT DISTINCT ap.protocols_id, MAX(ap.created_at) as created_at
                  FROM auth_protocols_junction ap
-                 JOIN protocols_resource p ON p.id = ap.protocol_id
+                 JOIN protocols_resource p ON p.id = ap.protocols_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE ap.protocol_id IS NOT NULL
+                 WHERE ap.protocols_id IS NOT NULL
                    AND p.value IS NOT NULL
                    AND p.value != ''
                    AND (
@@ -411,7 +411,7 @@ protocol_suggestions_data AS (
                            p.generated = true
                        )
                    )
-                 GROUP BY ap.protocol_id
+                 GROUP BY ap.protocols_id
                  ORDER BY MAX(ap.created_at) DESC
                  LIMIT 20
              ) ap),
@@ -425,13 +425,13 @@ protocol_suggestions_data AS (
 slug_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(as_j.slug_id ORDER BY as_j.created_at DESC)
+            (SELECT ARRAY_AGG(as_j.slugs_id ORDER BY as_j.created_at DESC)
              FROM (
-                 SELECT DISTINCT as_j.slug_id, MAX(as_j.created_at) as created_at
+                 SELECT DISTINCT as_j.slugs_id, MAX(as_j.created_at) as created_at
                  FROM auth_slugs_junction as_j
-                 JOIN slugs_resource s ON s.id = as_j.slug_id
+                 JOIN slugs_resource s ON s.id = as_j.slugs_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE as_j.slug_id IS NOT NULL
+                 WHERE as_j.slugs_id IS NOT NULL
                    AND s.value IS NOT NULL
                    AND s.value != ''
                    AND (
@@ -443,7 +443,7 @@ slug_suggestions_data AS (
                            s.generated = true
                        )
                    )
-                 GROUP BY as_j.slug_id
+                 GROUP BY as_j.slugs_id
                  ORDER BY MAX(as_j.created_at) DESC
                  LIMIT 20
              ) as_j),
@@ -590,14 +590,14 @@ agent_artifact_tool_counts AS (
     FROM agent_artifact a
     LEFT JOIN agent_tools_junction at ON at.agent_id = a.id AND at.active = true
     LEFT JOIN tools_resource tr ON tr.id = at.tool_id
-    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
     LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (
         SELECT 1 FROM tool_flags_junction tf
         JOIN flags_resource f ON tf.flag_id = f.id
         WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true
     )
     LEFT JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = t.id AND tdj_rt.active = true
-    LEFT JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+    LEFT JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
     GROUP BY a.id
 ),
 
@@ -625,10 +625,10 @@ name_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'names'::resource_type
         )
@@ -700,10 +700,10 @@ description_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'descriptions'::resource_type
         )
@@ -775,10 +775,10 @@ flag_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'flags'::resource_type
         )
@@ -850,10 +850,10 @@ protocols_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'protocols'::resource_type
         )
@@ -925,10 +925,10 @@ slugs_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'slugs'::resource_type
         )
@@ -1002,7 +1002,7 @@ tools_existence_check AS (
     SELECT 
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'names'::resource_type 
@@ -1010,7 +1010,7 @@ tools_existence_check AS (
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'protocols'::resource_type 
@@ -1018,7 +1018,7 @@ tools_existence_check AS (
         ) as protocols_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'slugs'::resource_type 
@@ -1094,7 +1094,7 @@ SELECT
     perm_final.disabled_reason,
     dgd.group_id,
     -- Single-select resources: name
-    (SELECT name_id FROM name_resource_data) as name_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
     nrd.name_resource,
     CASE 
         WHEN NOT tec.names_has_tools THEN false
@@ -1105,7 +1105,7 @@ SELECT
     COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
     COALESCE((SELECT names FROM names_suggestions_objects), ARRAY[]::types.q_get_auth_v4_name_resource[]) as names,
     -- Single-select resources: description
-    (SELECT description_id FROM description_resource_data) as description_id,
+    (SELECT descriptions_id FROM description_resource_data) as descriptions_id,
     drd.description_resource,
     uf.show_description,
     (SELECT agent_id FROM description_agent_data) as description_agent_id,
@@ -1231,7 +1231,7 @@ GROUP BY
     perm_final.can_edit,
     perm_final.disabled_reason,
     dgd.group_id,
-    nrd.name_id,
+    nrd.names_id,
     nrd.name_resource,
     uf.show_name,
     uf.show_description,
@@ -1241,7 +1241,7 @@ GROUP BY
     tec.names_has_tools,
     tec.protocols_has_tools,
     tec.slugs_has_tools,
-    drd.description_id,
+    drd.descriptions_id,
     drd.description_resource,
     frd.active_flag_id,
     frd.flag_resource,

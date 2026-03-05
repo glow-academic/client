@@ -48,13 +48,13 @@ CREATE TYPE types.q_get_field_v4_parameter AS (
 );
 
 CREATE TYPE types.q_get_field_v4_name_resource AS (
-    name_id uuid,
+    names_id uuid,
     name text,
     generated boolean
 );
 
 CREATE TYPE types.q_get_field_v4_description_resource AS (
-    description_id uuid,
+    descriptions_id uuid,
     description text,
     generated boolean
 );
@@ -87,7 +87,7 @@ RETURNS TABLE (
     draft_version int,
     group_id uuid,
     -- Single-select resources: name
-    name_id uuid,
+    names_id uuid,
     name_resource types.q_get_field_v4_name_resource,
     show_name boolean,
     name_agent_id uuid,
@@ -95,7 +95,7 @@ RETURNS TABLE (
     name_suggestions uuid[],
     names types.q_get_field_v4_name_resource[],
     -- Single-select resources: description
-    description_id uuid,
+    descriptions_id uuid,
     description_resource types.q_get_field_v4_description_resource,
     show_description boolean,
     description_agent_id uuid,
@@ -213,8 +213,8 @@ field_parameters_data AS (
 department_mapping_data AS (
     SELECT
         d.id as department_id,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1) as name,
-        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.description_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1), '') as description,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.department_id = ddj.department_id LIMIT 1) as name,
+        COALESCE((SELECT d2.description FROM department_descriptions_junction dd JOIN descriptions_resource d2 ON dd.descriptions_id = d2.id WHERE dd.department_id = ddj.department_id LIMIT 1), '') as description,
         COALESCE(d.generated, false) as generated
     FROM params x
     CROSS JOIN user_profile up
@@ -224,14 +224,14 @@ department_mapping_data AS (
         AND
         EXISTS (SELECT 1 FROM profile_departments_junction pd WHERE pd.department_id = d.id AND pd.profile_id = x.profile_id AND pd.active = true)
     )
-    JOIN department_departments_junction ddj ON ddj.departments_id = d.id
+    JOIN department_departments_junction ddj ON ddj.department_id = d.id
 ),
 -- Parameter mapping data (only active parameters)
 parameter_mapping_data AS (
     SELECT
         p.id as parameter_id,
-        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
-        COALESCE((SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), '') as description,
+        (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
+        COALESCE((SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.descriptions_id = d.id WHERE pd.parameter_id = p.id LIMIT 1), '') as description,
         COALESCE(pr.generated, false) as generated
     FROM parameter_artifact p
     LEFT JOIN parameters_resource pr ON TRUE
@@ -276,18 +276,18 @@ field_parameter_ids_data AS (
 name_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT fn.name_id FROM field_names_junction fn WHERE fn.field_id = (SELECT field_id FROM params) LIMIT 1),
+            (SELECT fn.names_id FROM field_names_junction fn WHERE fn.field_id = (SELECT field_id FROM params) LIMIT 1),
             NULL::uuid
-        ) as name_id
+        ) as names_id
     FROM params
 ),
 -- Description resource data
 description_resource_data AS (
     SELECT 
         COALESCE(
-            (SELECT fd.description_id FROM field_descriptions_junction fd WHERE fd.field_id = (SELECT field_id FROM params) LIMIT 1),
+            (SELECT fd.descriptions_id FROM field_descriptions_junction fd WHERE fd.field_id = (SELECT field_id FROM params) LIMIT 1),
             NULL::uuid
-        ) as description_id
+        ) as descriptions_id
     FROM params
 ),
 -- Active flag resource data
@@ -309,13 +309,13 @@ flag_resource_data AS (
 name_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(fn.name_id ORDER BY fn.created_at DESC)
+            (SELECT ARRAY_AGG(fn.names_id ORDER BY fn.created_at DESC)
              FROM (
-                 SELECT DISTINCT fn.name_id, MAX(fn.created_at) as created_at
+                 SELECT DISTINCT fn.names_id, MAX(fn.created_at) as created_at
                  FROM field_names_junction fn
-                 JOIN names_resource n ON n.id = fn.name_id
+                 JOIN names_resource n ON n.id = fn.names_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE fn.name_id IS NOT NULL
+                 WHERE fn.names_id IS NOT NULL
                    AND n.name IS NOT NULL
                    AND n.name != ''
                    AND (
@@ -327,7 +327,7 @@ name_suggestions_data AS (
                            COALESCE(n.generated, false) = true
                        )
                    )
-                 GROUP BY fn.name_id
+                 GROUP BY fn.names_id
                  ORDER BY MAX(fn.created_at) DESC
                  LIMIT 20
              ) fn),
@@ -360,13 +360,13 @@ names_suggestions_objects AS (
 description_suggestions_data AS (
     SELECT 
         COALESCE(
-            (SELECT ARRAY_AGG(fd.description_id ORDER BY fd.created_at DESC)
+            (SELECT ARRAY_AGG(fd.descriptions_id ORDER BY fd.created_at DESC)
              FROM (
-                 SELECT DISTINCT fd.description_id, MAX(fd.created_at) as created_at
+                 SELECT DISTINCT fd.descriptions_id, MAX(fd.created_at) as created_at
                  FROM field_descriptions_junction fd
-                 JOIN descriptions_resource d ON d.id = fd.description_id
+                 JOIN descriptions_resource d ON d.id = fd.descriptions_id
                  CROSS JOIN draft_group_data dgd
-                 WHERE fd.description_id IS NOT NULL
+                 WHERE fd.descriptions_id IS NOT NULL
                    AND d.description IS NOT NULL
                    AND d.description != ''
                    AND (
@@ -378,7 +378,7 @@ description_suggestions_data AS (
                            COALESCE(d.generated, false) = true
                        )
                    )
-                 GROUP BY fd.description_id
+                 GROUP BY fd.descriptions_id
                  ORDER BY MAX(fd.created_at) DESC
                  LIMIT 20
              ) fd),
@@ -533,14 +533,14 @@ agent_artifact_tool_counts AS (
     FROM agent_artifact a
     LEFT JOIN agent_tools_junction at ON at.agent_id = a.id AND at.active = true
     LEFT JOIN tools_resource tr ON tr.id = at.tool_id
-    JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
     LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (
         SELECT 1 FROM tool_flags_junction tf
         JOIN flags_resource f ON tf.flag_id = f.id
         WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true
     )
     LEFT JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = t.id AND tdj_rt.active = true
-    LEFT JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+    LEFT JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
     GROUP BY a.id
 ),
 
@@ -557,9 +557,9 @@ name_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['conditional_parameters','departments','descriptions','fields','flags','names']::resource_type[])
@@ -578,10 +578,10 @@ name_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'names'::resource_type
         )
@@ -642,9 +642,9 @@ description_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['conditional_parameters','departments','descriptions','fields','flags','names']::resource_type[])
@@ -663,10 +663,10 @@ description_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'descriptions'::resource_type
         )
@@ -727,9 +727,9 @@ active_flag_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['conditional_parameters','departments','descriptions','fields','flags','names']::resource_type[])
@@ -748,10 +748,10 @@ active_flag_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'flags'::resource_type
         )
@@ -812,9 +812,9 @@ departments_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['conditional_parameters','departments','descriptions','fields','flags','names']::resource_type[])
@@ -833,10 +833,10 @@ departments_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'departments'::resource_type
         )
@@ -897,9 +897,9 @@ parameters_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
-            JOIN tool_tools_junction ttj_rt ON ttj_rt.tools_id = tr_rt.id
+            JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
-            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resource_id AND dr_rt.active = true
+            JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
             WHERE at.agent_id = a.id
               AND at.active = TRUE
               AND dr_rt.resource = ANY(ARRAY['conditional_parameters','departments','descriptions','fields','flags','names']::resource_type[])
@@ -918,10 +918,10 @@ parameters_agent_data AS (
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
             JOIN tools_resource tr ON tr.id = at.tool_id
-            JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
             JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
               AND dr.resource = 'parameters'::resource_type
         )
@@ -976,7 +976,7 @@ tools_existence_check AS (
     SELECT 
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'names'::resource_type 
@@ -984,7 +984,7 @@ tools_existence_check AS (
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'departments'::resource_type 
@@ -992,7 +992,7 @@ tools_existence_check AS (
         ) as departments_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
-            JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+            JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'parameters'::resource_type 
@@ -1140,11 +1140,11 @@ SELECT
     -- Group ID for linking resources
     dgd.group_id,
     -- Single-select resources: name
-    (SELECT name_id FROM name_resource_data) as name_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
     (
         SELECT ROW(n.id, n.name, COALESCE(n.generated, false))::types.q_get_field_v4_name_resource
         FROM name_resource_data nrd
-        JOIN names_resource n ON n.id = nrd.name_id
+        JOIN names_resource n ON n.id = nrd.names_id
         LIMIT 1
     ) as name_resource,
     CASE 
@@ -1156,11 +1156,11 @@ SELECT
     COALESCE((SELECT name_suggestions FROM name_suggestions_data), ARRAY[]::uuid[]) as name_suggestions,
     COALESCE((SELECT names FROM names_suggestions_objects), ARRAY[]::types.q_get_field_v4_name_resource[]) as names,
     -- Single-select resources: description
-    (SELECT description_id FROM description_resource_data) as description_id,
+    (SELECT descriptions_id FROM description_resource_data) as descriptions_id,
     (
         SELECT ROW(d.id, d.description, COALESCE(d.generated, false))::types.q_get_field_v4_description_resource
         FROM description_resource_data drd
-        JOIN descriptions_resource d ON d.id = drd.description_id
+        JOIN descriptions_resource d ON d.id = drd.descriptions_id
         LIMIT 1
     ) as description_resource,
     uf.show_description,

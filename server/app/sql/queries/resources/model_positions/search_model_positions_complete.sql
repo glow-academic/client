@@ -45,5 +45,5 @@ WHERE mpr.active = true
     OR mpr.model_id = ANY(model_ids)
   )
   -- Artifact boolean filters
-  AND (NOT eval OR EXISTS (SELECT 1 FROM eval_model_positions_junction j WHERE j.model_position_id = mpr.id AND j.active = true));
+  AND (NOT eval OR EXISTS (SELECT 1 FROM eval_model_positions_junction j WHERE j.model_positions_id = mpr.id AND j.active = true));
 $$;

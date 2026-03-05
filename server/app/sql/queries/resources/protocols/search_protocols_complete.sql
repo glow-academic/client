@@ -69,7 +69,7 @@ FROM (
           )
       )
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT auth OR EXISTS (SELECT 1 FROM auth_protocols_junction j WHERE j.protocol_id = p.id AND j.active = true))
+      AND (NOT auth OR EXISTS (SELECT 1 FROM auth_protocols_junction j WHERE j.protocols_id = p.id AND j.active = true))
     ORDER BY p.value
     LIMIT limit_count
     OFFSET offset_count

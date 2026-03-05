@@ -29,7 +29,7 @@ AS $$
             -- Try direct match on profile_artifact first
             (SELECT pa.id FROM profile_artifact pa WHERE pa.id = p_profile_id),
             -- Fall back to resolving via profile_profiles_junction (profiles_resource.id -> profile_artifact.id)
-            (SELECT ppj.profile_id FROM profile_profiles_junction ppj WHERE ppj.profiles_id = p_profile_id LIMIT 1)
+            (SELECT ppj.profile_id FROM profile_profiles_junction ppj WHERE ppj.profile_id = p_profile_id LIMIT 1)
         ) as resolved_profile_id
         WHERE p_profile_id IS NOT NULL
     ),
@@ -39,7 +39,7 @@ AS $$
             -- Get primary email (must match exactly what's in profile_emails_junction table)
             (SELECT e.email
              FROM profile_emails_junction pe
-             JOIN emails_resource e ON pe.email_id = e.id
+             JOIN emails_resource e ON pe.emails_id = e.id
              WHERE pe.profile_id = rp.resolved_profile_id
                AND pe.is_primary = true
                AND pe.active = true
@@ -47,7 +47,7 @@ AS $$
             -- Get name
             (SELECT n.name
              FROM profile_names_junction pn
-             JOIN names_resource n ON pn.name_id = n.id
+             JOIN names_resource n ON pn.names_id = n.id
              WHERE pn.profile_id = rp.resolved_profile_id
              LIMIT 1) as name,
             -- Get role

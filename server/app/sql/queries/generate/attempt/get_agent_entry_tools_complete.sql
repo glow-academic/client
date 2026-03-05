@@ -53,8 +53,8 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (t.id, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(et.entry::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
-        ORDER BY COALESCE(et.entry::text, ''), (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
+        (t.id, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.names_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.descriptions_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(et.entry::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
+        ORDER BY COALESCE(et.entry::text, ''), (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.names_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
     ) FILTER (WHERE t.id IS NOT NULL AND (
         p_entry_types IS NULL
         OR et.entry IS NULL
@@ -64,7 +64,7 @@ SELECT COALESCE(
 ) as tools
 FROM agent_tools_junction atj
 LEFT JOIN tools_resource tr ON tr.id = atj.tool_id
-LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
 LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
 LEFT JOIN (
     SELECT

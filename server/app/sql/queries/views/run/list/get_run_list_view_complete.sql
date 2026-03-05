@@ -103,7 +103,7 @@ AS $$
             AND (date_to IS NULL OR mv.run_created_at < date_to)
             AND (profile_id_filter IS NULL OR EXISTS (
                 SELECT 1 FROM profiles_runs_connection prc
-                WHERE prc.run_id = mv.run_id AND prc.profiles_id = profile_id_filter
+                WHERE prc.run_id = mv.run_id AND prc.profile_id = profile_id_filter
             ))
     ),
     counted AS (

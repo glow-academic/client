@@ -117,10 +117,10 @@ field_departments_data AS (
 field_conditional_parameters_agg AS (
     SELECT
         fcpj.field_id,
-        ARRAY_AGG(cpr.parameter_id::text ORDER BY (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = pr.id LIMIT 1)) as conditional_parameter_ids,
+        ARRAY_AGG(cpr.parameter_id::text ORDER BY (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.parameter_id = pr.id LIMIT 1)) as conditional_parameter_ids,
         COUNT(*)::bigint as active_parameter_count
     FROM field_conditional_parameters_junction fcpj
-    JOIN conditional_parameters_resource cpr ON cpr.id = fcpj.conditional_parameter_id
+    JOIN conditional_parameters_resource cpr ON cpr.id = fcpj.conditional_parameters_id
     JOIN parameters_resource pr ON pr.id = cpr.parameter_id
     WHERE fcpj.active = true
     GROUP BY fcpj.field_id
@@ -133,15 +133,15 @@ field_personas_data AS (
     FROM field_fields_junction ffj
     JOIN fields_resource fr ON fr.id = ffj.fields_id
     JOIN parameter_fields_resource pfr ON pfr.field_id = fr.id
-    JOIN persona_parameter_fields_junction ppfj ON ppfj.parameter_field_id = pfr.id AND ppfj.active = true
+    JOIN persona_parameter_fields_junction ppfj ON ppfj.parameter_fields_id = pfr.id AND ppfj.active = true
     WHERE ffj.active = true
     GROUP BY ffj.field_id
 ),
 fields_data AS (
     SELECT
         f.id as field_id,
-        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-        (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
+        (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+        (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.descriptions_id = d.id WHERE fd.field_id = f.id LIMIT 1),
         EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = TRUE) as active,
         f.created_at,
         f.updated_at,
@@ -174,7 +174,7 @@ fields_data AS (
             AND fd.active = true
         )
     )
-    GROUP BY f.id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1), EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = TRUE), f.created_at, f.updated_at, fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, fcpa.active_parameter_count, up.role, fpd.persona_ids
+    GROUP BY f.id, (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = f.id LIMIT 1), (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.descriptions_id = d.id WHERE fd.field_id = f.id LIMIT 1), EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = TRUE), f.created_at, f.updated_at, fdd.department_ids, fpa.parameter_ids, fcpa.conditional_parameter_ids, fcpa.active_parameter_count, up.role, fpd.persona_ids
 ),
 -- Apply server-side filters
 filtered_fields AS (
@@ -232,7 +232,7 @@ SELECT
          )
          FROM parameters_resource pr
          JOIN parameter_parameters_junction ppj ON ppj.parameters_id = pr.id
-         JOIN (SELECT pn.parameter_id, n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id) pn_name ON pn_name.parameter_id = ppj.parameter_id
+         JOIN (SELECT pn.parameter_id, n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.names_id = n.id) pn_name ON pn_name.parameter_id = ppj.parameter_id
          WHERE pr.id IN (SELECT parameter_id FROM all_parameter_ids_options)
            AND (parameter_search IS NULL OR LOWER(pn_name.name) LIKE '%' || LOWER(parameter_search) || '%')),
         '{}'::types.q_list_fields_v4_option[]
@@ -244,8 +244,8 @@ SELECT
             ORDER BY pn_name.name
          )
          FROM personas_resource pr
-         JOIN persona_personas_junction ppj ON ppj.personas_id = pr.id
-         JOIN (SELECT pn.persona_id, n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id) pn_name ON pn_name.persona_id = ppj.persona_id
+         JOIN persona_personas_junction ppj ON ppj.persona_id = pr.id
+         JOIN (SELECT pn.persona_id, n.name FROM persona_names_junction pn JOIN names_resource n ON pn.names_id = n.id) pn_name ON pn_name.persona_id = ppj.persona_id
          WHERE pr.id IN (SELECT persona_id FROM all_persona_ids_options)
            AND (persona_search IS NULL OR LOWER(pn_name.name) LIKE '%' || LOWER(persona_search) || '%')),
         '{}'::types.q_list_fields_v4_option[]
@@ -257,8 +257,8 @@ SELECT
             ORDER BY dn_name.name
          )
          FROM departments_resource dr
-         JOIN department_departments_junction ddj ON ddj.departments_id = dr.id
-         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.name_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
+         JOIN department_departments_junction ddj ON ddj.department_id = dr.id
+         JOIN (SELECT dn.department_id, n.name FROM department_names_junction dn JOIN names_resource n ON dn.names_id = n.id) dn_name ON dn_name.department_id = ddj.department_id
          WHERE dr.id IN (SELECT department_id FROM all_department_ids_options)
            AND (department_search IS NULL OR LOWER(dn_name.name) LIKE '%' || LOWER(department_search) || '%')),
         '{}'::types.q_list_fields_v4_option[]

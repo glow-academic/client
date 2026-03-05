@@ -46,7 +46,7 @@ setting_data AS (
             (
                 SELECT n.name
                 FROM setting_names_junction sn
-                JOIN names_resource n ON n.id = sn.name_id
+                JOIN names_resource n ON n.id = sn.names_id
                 WHERE sn.setting_id = s.id
                 ORDER BY sn.created_at DESC
                 LIMIT 1

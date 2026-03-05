@@ -33,9 +33,9 @@ END $$;
 CREATE TYPE types.q_export_simulations_v4_row AS (
     simulation_id uuid,
     -- Single-select: ID + value
-    name_id uuid,
+    names_id uuid,
     name text,
-    description_id uuid,
+    descriptions_id uuid,
     description text,
     -- Flags
     is_inactive boolean,
@@ -84,7 +84,7 @@ simulation_scenarios_data AS (
         ARRAY_AGG(sr.id ORDER BY sr.name) as scenario_ids,
         ARRAY_AGG(sr.name ORDER BY sr.name) as scenario_names
     FROM simulation_simulations_junction ssj
-    JOIN simulations_resource sim_r ON sim_r.id = ssj.simulations_id
+    JOIN simulations_resource sim_r ON sim_r.id = ssj.simulation_id
     JOIN LATERAL unnest(sim_r.scenario_ids) AS scen_id ON true
     JOIN scenarios_resource sr ON sr.id = scen_id
     GROUP BY ssj.simulation_id
@@ -104,10 +104,10 @@ simulation_departments_data AS (
 simulation_scenario_flags_data AS (
     SELECT
         ssfj.simulation_id,
-        ARRAY_AGG(ssfj.scenario_flag_id ORDER BY ssfj.created_at) as flag_ids,
+        ARRAY_AGG(ssfj.scenario_flags_id ORDER BY ssfj.created_at) as flag_ids,
         ARRAY_AGG(fr.name ORDER BY ssfj.created_at) as flag_names
     FROM simulation_scenario_flags_junction ssfj
-    JOIN scenario_flags_resource sfr ON sfr.id = ssfj.scenario_flag_id
+    JOIN scenario_flags_resource sfr ON sfr.id = ssfj.scenario_flags_id
     JOIN flags_resource fr ON fr.id = sfr.flag_id
     WHERE ssfj.active = true
     GROUP BY ssfj.simulation_id
@@ -116,10 +116,10 @@ simulation_scenario_flags_data AS (
 simulation_scenario_positions_data AS (
     SELECT
         sspj.simulation_id,
-        ARRAY_AGG(sspj.scenario_position_id ORDER BY spr.value) as position_ids,
+        ARRAY_AGG(sspj.scenario_positions_id ORDER BY spr.value) as position_ids,
         ARRAY_AGG(spr.value::text ORDER BY spr.value) as position_values
     FROM simulation_scenario_positions_junction sspj
-    JOIN scenario_positions_resource spr ON spr.id = sspj.scenario_position_id
+    JOIN scenario_positions_resource spr ON spr.id = sspj.scenario_positions_id
     WHERE sspj.active = true
     GROUP BY sspj.simulation_id
 ),
@@ -127,10 +127,10 @@ simulation_scenario_positions_data AS (
 simulation_scenario_rubrics_data AS (
     SELECT
         ssrj.simulation_id,
-        ARRAY_AGG(ssrj.scenario_rubric_id ORDER BY ssrj.created_at) as rubric_ids,
+        ARRAY_AGG(ssrj.scenario_rubrics_id ORDER BY ssrj.created_at) as rubric_ids,
         ARRAY_AGG(rr.name ORDER BY ssrj.created_at) as rubric_names
     FROM simulation_scenario_rubrics_junction ssrj
-    JOIN scenario_rubrics_resource srr ON srr.id = ssrj.scenario_rubric_id
+    JOIN scenario_rubrics_resource srr ON srr.id = ssrj.scenario_rubrics_id
     JOIN rubrics_resource rr ON rr.id = srr.rubric_id
     WHERE ssrj.active = true
     GROUP BY ssrj.simulation_id
@@ -139,10 +139,10 @@ simulation_scenario_rubrics_data AS (
 simulation_scenario_time_limits_data AS (
     SELECT
         sstlj.simulation_id,
-        ARRAY_AGG(sstlj.scenario_time_limit_id ORDER BY stlr.time_limit_seconds) as time_limit_ids,
+        ARRAY_AGG(sstlj.scenario_time_limits_id ORDER BY stlr.time_limit_seconds) as time_limit_ids,
         ARRAY_AGG(stlr.time_limit_seconds::text ORDER BY stlr.time_limit_seconds) as time_limit_values
     FROM simulation_scenario_time_limits_junction sstlj
-    JOIN scenario_time_limits_resource stlr ON stlr.id = sstlj.scenario_time_limit_id
+    JOIN scenario_time_limits_resource stlr ON stlr.id = sstlj.scenario_time_limits_id
     WHERE sstlj.active = true
     GROUP BY sstlj.simulation_id
 ),
@@ -152,7 +152,7 @@ simulation_cohorts_data AS (
         ssj.simulation_id,
         ARRAY_AGG(DISTINCT ccj.cohort_id) as cohort_ids
     FROM simulation_simulations_junction ssj
-    JOIN cohorts_resource cr ON ssj.simulations_id = ANY(cr.simulation_ids) AND cr.active = true
+    JOIN cohorts_resource cr ON ssj.simulation_id = ANY(cr.simulation_ids) AND cr.active = true
     JOIN cohort_cohorts_junction ccj ON ccj.cohorts_id = cr.id
     GROUP BY ssj.simulation_id
 ),
@@ -161,11 +161,11 @@ simulation_data AS (
     SELECT
         s.id as simulation_id,
         -- Name
-        (SELECT sn.name_id FROM simulation_names_junction sn WHERE sn.simulation_id = s.id LIMIT 1) as name_id,
-        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
+        (SELECT sn.names_id FROM simulation_names_junction sn WHERE sn.simulation_id = s.id LIMIT 1) as names_id,
+        (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.simulation_id = s.id LIMIT 1) as name,
         -- Description
-        (SELECT sd.description_id FROM simulation_descriptions_junction sd WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1) as description_id,
-        (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1) as description,
+        (SELECT sd.descriptions_id FROM simulation_descriptions_junction sd WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1) as descriptions_id,
+        (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.simulation_id = s.id AND sd.active = true LIMIT 1) as description,
         -- Flags
         NOT EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'simulation_active' AND f.value = TRUE) as is_inactive,
         EXISTS (SELECT 1 FROM simulation_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.simulation_id = s.id AND f.type = 'practice' AND f.value = TRUE) as is_practice,
@@ -220,8 +220,8 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
             (fs.simulation_id,
-             fs.name_id, fs.name,
-             fs.description_id, fs.description,
+             fs.names_id, fs.name,
+             fs.descriptions_id, fs.description,
              fs.is_inactive, fs.is_practice,
              fs.department_ids, fs.departments,
              fs.scenario_ids, fs.scenarios,

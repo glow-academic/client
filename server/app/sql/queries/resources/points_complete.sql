@@ -2,7 +2,7 @@
 -- SIMPLIFIED: No agent_id required, optional tool_id for tracking
 -- Get or create operation (returns existing ID if value already exists)
 -- Parameters: value (numeric), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
--- Returns: point_id (uuid)
+-- Returns: points_id (uuid)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -26,7 +26,7 @@ CREATE OR REPLACE FUNCTION api_create_points_v4(
     tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    point_id uuid
+    points_id uuid
 )
 LANGUAGE plpgsql
 VOLATILE

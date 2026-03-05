@@ -84,7 +84,7 @@ FROM (
                       SELECT documents_id, draft_id FROM scenario_drafts_documents_connection WHERE active = true
                       UNION ALL SELECT documents_id, draft_id FROM chat_drafts_documents_connection WHERE active = true
                   ) dc
-                  WHERE dc.documents_id = d.id
+                  WHERE dc.document_id = d.id
                     AND dc.draft_id = api_search_documents_v4.draft_id
               )
           )
@@ -103,8 +103,8 @@ FROM (
           OR LOWER(COALESCE(d.description, '')) LIKE '%' || LOWER(search) || '%'
       )
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT document OR EXISTS (SELECT 1 FROM document_documents_junction j WHERE j.document_id = d.id AND j.active = true))
-      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_documents_junction j WHERE j.document_id = d.id AND j.active = true))
+      AND (NOT document OR EXISTS (SELECT 1 FROM document_documents_junction j WHERE j.documents_id = d.id AND j.active = true))
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_documents_junction j WHERE j.documents_id = d.id AND j.active = true))
     ORDER BY d.name
     LIMIT limit_count
     OFFSET offset_count

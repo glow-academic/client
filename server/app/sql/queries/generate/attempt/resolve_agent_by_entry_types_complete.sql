@@ -49,9 +49,9 @@ agent_tool_entries AS (
     JOIN agent_artifact a ON a.id = aid.id
     LEFT JOIN agent_tools_junction atj ON atj.agent_id = a.id AND atj.active = true
     LEFT JOIN tools_resource tr ON tr.id = atj.tool_id
-    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
     LEFT JOIN tool_entries_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
-    LEFT JOIN entries_resource b ON b.id = tbj.entry_id
+    LEFT JOIN entries_resource b ON b.id = tbj.entries_id
     GROUP BY a.id
 ),
 

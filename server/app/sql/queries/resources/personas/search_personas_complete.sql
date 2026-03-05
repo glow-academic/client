@@ -80,7 +80,7 @@ FROM (
                       SELECT personas_id, draft_id FROM scenario_drafts_personas_connection WHERE active = true
                       UNION ALL SELECT personas_id, draft_id FROM chat_drafts_personas_connection WHERE active = true
                   ) dc
-                  WHERE dc.personas_id = p.id
+                  WHERE dc.persona_id = p.id
                     AND dc.draft_id = api_search_personas_v4.draft_id
               )
           )
@@ -90,8 +90,8 @@ FROM (
       -- Optional search filter
       AND (search IS NULL OR search = '' OR LOWER(p.name) LIKE '%' || LOWER(search) || '%')
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_personas_junction j WHERE j.persona_id = p.id AND j.active = true))
-      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_personas_junction j WHERE j.persona_id = p.id AND j.active = true))
+      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_personas_junction j WHERE j.personas_id = p.id AND j.active = true))
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_personas_junction j WHERE j.personas_id = p.id AND j.active = true))
     ORDER BY p.name
     LIMIT limit_count
     OFFSET offset_count

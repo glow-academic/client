@@ -29,8 +29,8 @@ CREATE OR REPLACE FUNCTION api_get_setting_ids_v4(
 )
 RETURNS TABLE (
     -- Single-select resource IDs (merged: draft overrides canonical)
-    name_id uuid,
-    description_id uuid,
+    names_id uuid,
+    descriptions_id uuid,
     active_flag_id uuid,
 
     -- Multi-select resource IDs (merged: draft overrides canonical)
@@ -59,13 +59,13 @@ WITH params AS (
 -- ========== CANONICAL IDs (from setting junctions) ==========
 -- Single-select
 canonical_name AS (
-    SELECT pn.name_id
+    SELECT pn.names_id
     FROM setting_names_junction pn
     WHERE pn.setting_id = (SELECT setting_id FROM params) AND pn.active = true
     LIMIT 1
 ),
 canonical_description AS (
-    SELECT pd.description_id
+    SELECT pd.descriptions_id
     FROM setting_descriptions_junction pd
     WHERE pd.setting_id = (SELECT setting_id FROM params) AND pd.active = true
     LIMIT 1
@@ -115,7 +115,7 @@ canonical_auths AS (
 ),
 canonical_provider_keys AS (
     SELECT COALESCE(
-        ARRAY_AGG(spk.provider_key_id ORDER BY spk.created_at),
+        ARRAY_AGG(spk.provider_keys_id ORDER BY spk.created_at),
         ARRAY[]::uuid[]
     ) as provider_key_ids
     FROM setting_provider_keys_junction spk
@@ -131,26 +131,26 @@ canonical_auth_item_keys AS (
 ),
 -- ========== DRAFT IDs (override canonical when draft exists) ==========
 draft_name AS (
-    SELECT ndc.names_id as name_id
+    SELECT ndc.names_id as names_id
     FROM setting_drafts_names_connection ndc
     WHERE ndc.draft_id = (SELECT draft_id FROM params)
     LIMIT 1
 ),
 draft_description AS (
-    SELECT ddc.descriptions_id as description_id
+    SELECT ddc.descriptions_id as descriptions_id
     FROM setting_drafts_descriptions_connection ddc
     WHERE ddc.draft_id = (SELECT draft_id FROM params)
     LIMIT 1
 ),
 draft_flag AS (
-    SELECT fdc.flags_id as active_flag_id
+    SELECT fdc.flag_id as active_flag_id
     FROM setting_drafts_flags_connection fdc
     WHERE fdc.draft_id = (SELECT draft_id FROM params)
     LIMIT 1
 ),
 draft_colors AS (
     SELECT COALESCE(
-        ARRAY_AGG(cdc.colors_id),
+        ARRAY_AGG(cdc.color_id),
         ARRAY[]::uuid[]
     ) as color_ids
     FROM setting_drafts_colors_connection cdc
@@ -158,7 +158,7 @@ draft_colors AS (
 ),
 draft_departments AS (
     SELECT COALESCE(
-        ARRAY_AGG(ddc.departments_id),
+        ARRAY_AGG(ddc.department_id),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM setting_drafts_departments_connection ddc
@@ -166,12 +166,12 @@ draft_departments AS (
 ),
 draft_profiles AS (
     SELECT COALESCE(
-        ARRAY_AGG(pdc.profiles_id),
+        ARRAY_AGG(pdc.profile_id),
         ARRAY[]::uuid[]
     ) as profile_ids
     FROM setting_drafts_profiles_connection pdc
     WHERE pdc.draft_id = (SELECT draft_id FROM params)
-      AND pdc.profiles_id != (SELECT profile_id FROM params)  -- Exclude the owner profile
+      AND pdc.profile_id != (SELECT profile_id FROM params)  -- Exclude the owner profile
 ),
 draft_provider_keys AS (
     SELECT COALESCE(
@@ -193,8 +193,8 @@ draft_auth_item_keys AS (
 merged_ids AS (
     SELECT
         -- Single-select: COALESCE draft over canonical
-        COALESCE((SELECT name_id FROM draft_name), (SELECT name_id FROM canonical_name)) as name_id,
-        COALESCE((SELECT description_id FROM draft_description), (SELECT description_id FROM canonical_description)) as description_id,
+        COALESCE((SELECT names_id FROM draft_name), (SELECT names_id FROM canonical_name)) as names_id,
+        COALESCE((SELECT descriptions_id FROM draft_description), (SELECT descriptions_id FROM canonical_description)) as descriptions_id,
         COALESCE((SELECT active_flag_id FROM draft_flag), (SELECT active_flag_id FROM canonical_flag)) as active_flag_id,
         -- Multi-select: use draft if draft has entries, else canonical
         CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_colors_connection WHERE draft_id = (SELECT draft_id FROM params))
@@ -205,7 +205,7 @@ merged_ids AS (
             THEN (SELECT department_ids FROM draft_departments)
             ELSE (SELECT department_ids FROM canonical_departments)
         END as department_ids,
-        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_profiles_connection pdc WHERE pdc.draft_id = (SELECT draft_id FROM params) AND pdc.profiles_id != (SELECT profile_id FROM params))
+        CASE WHEN (SELECT draft_id FROM params) IS NOT NULL AND EXISTS (SELECT 1 FROM setting_drafts_profiles_connection pdc WHERE pdc.draft_id = (SELECT draft_id FROM params) AND pdc.profile_id != (SELECT profile_id FROM params))
             THEN (SELECT profile_ids FROM draft_profiles)
             ELSE (SELECT profile_ids FROM canonical_profiles)
         END as profile_ids,
@@ -276,8 +276,8 @@ config_provider_resource_ids_data AS (
 )
 SELECT
     -- Single-select merged IDs
-    m.name_id,
-    m.description_id,
+    m.names_id,
+    m.descriptions_id,
     m.active_flag_id,
 
     -- Multi-select merged IDs

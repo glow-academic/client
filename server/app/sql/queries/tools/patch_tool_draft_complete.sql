@@ -4,7 +4,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.tool_resource_action CASCADE;
     CREATE TYPE types.tool_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -71,14 +71,14 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
-    v_name_id := (names).resource_id;
-    v_description_id := (descriptions).resource_id;
-    v_active_flag_id := (flags).resource_id;
+    v_name_id := (names).resources_id;
+    v_description_id := (descriptions).resources_id;
+    v_active_flag_id := (flags).resources_id;
     v_args_ids := COALESCE((args).resource_ids, ARRAY[]::uuid[]);
     v_arg_position_ids := COALESCE((arg_positions).resource_ids, ARRAY[]::uuid[]);
     v_args_outputs_ids := COALESCE((args_outputs).resource_ids, ARRAY[]::uuid[]);
 
-    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    SELECT ppj.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = api_patch_tool_draft_v4.profile_id
     LIMIT 1;
@@ -157,7 +157,7 @@ BEGIN
               SELECT 1
               FROM tool_drafts_profiles_connection pdj
               WHERE pdj.draft_id = tool_drafts_entry.id
-                AND pdj.profiles_id = v_profiles_resource_id
+                AND pdj.profile_id = v_profiles_resource_id
           )
           AND tool_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;

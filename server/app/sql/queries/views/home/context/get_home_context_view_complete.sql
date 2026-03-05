@@ -58,7 +58,7 @@ user_cohorts AS (
     SELECT ARRAY_AGG(DISTINCT ccj.cohorts_id) AS cohort_ids
     FROM profile_profiles_junction ppj
     JOIN cohort_profiles_junction cpj
-      ON cpj.profiles_id = ppj.profiles_id
+      ON cpj.profile_id = ppj.profile_id
      AND cpj.active = true
     JOIN cohort_cohorts_junction ccj
       ON ccj.cohort_id = cpj.cohort_id
@@ -86,7 +86,7 @@ active_simulations AS (
     FROM accessible_training at2
     CROSS JOIN LATERAL unnest(at2.simulation_ids) sid(simulation_id)
     JOIN simulation_simulations_junction ssj
-      ON ssj.simulations_id = sid.simulation_id AND ssj.active = true
+      ON ssj.simulation_id = sid.simulation_id AND ssj.active = true
     JOIN simulation_artifact sa
       ON sa.id = ssj.simulation_id
     WHERE EXISTS (

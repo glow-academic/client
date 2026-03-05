@@ -48,7 +48,7 @@ WITH filtered AS (
       AND (COALESCE(array_length(exclude_ids, 1), 0) = 0 OR sfr.id != ALL(exclude_ids))
       AND (COALESCE(array_length(flag_ids, 1), 0) = 0 OR sfr.flag_id = ANY(flag_ids))
       -- Artifact boolean filters
-      AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenario_flags_junction j WHERE j.scenario_flag_id = sfr.id AND j.active = true))
+      AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenario_flags_junction j WHERE j.scenario_flags_id = sfr.id AND j.active = true))
     ORDER BY f.name, sfr.scenario_id
     LIMIT limit_count
     OFFSET offset_count

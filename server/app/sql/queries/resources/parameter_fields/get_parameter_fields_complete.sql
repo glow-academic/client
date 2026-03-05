@@ -1,6 +1,6 @@
 -- Get parameter fields resources by IDs
 -- CLEAN PATTERN: Query parameter_fields_resource with join to fields_resource for name/description
--- Uses denormalized conditional_parameter_id on parameter_fields_resource
+-- Uses denormalized conditional_parameters_id on parameter_fields_resource
 -- Parameters: ids (uuid[])
 -- Returns: items (array of parameter field resources with parameter_id)
 

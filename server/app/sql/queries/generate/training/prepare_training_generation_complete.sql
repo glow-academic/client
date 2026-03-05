@@ -74,19 +74,19 @@ AS $$
 WITH scope AS (
     SELECT
         tb.id AS chat_entry_id,
-        scj_conn.scenarios_id AS scenarios_resource_id,
-        COALESCE(hsc.simulations_id, psc.simulations_id) AS simulations_id,
+        scj_conn.scenario_id AS scenarios_resource_id,
+        COALESCE(hsc.simulation_id, psc.simulation_id) AS simulations_id,
         (
             SELECT ssj.simulation_id
             FROM simulation_simulations_junction ssj
-            WHERE ssj.simulations_id = COALESCE(hsc.simulations_id, psc.simulations_id)
+            WHERE ssj.simulation_id = COALESCE(hsc.simulation_id, psc.simulation_id)
               AND ssj.active = true
             LIMIT 1
         ) AS simulation_artifact_id,
         (
             SELECT scj.scenario_id
             FROM scenario_scenarios_junction scj
-            WHERE scj.scenarios_id = scj_conn.scenarios_id
+            WHERE scj.scenario_id = scj_conn.scenario_id
               AND scj.active = true
             LIMIT 1
         ) AS scenario_artifact_id
@@ -123,11 +123,11 @@ params AS (
                 LEFT JOIN tools_resource tr
                   ON tr.id = at.tool_id
                 LEFT JOIN tool_tools_junction ttj
-                  ON ttj.tools_id = tr.id
+                  ON ttj.tool_id = tr.id
                 LEFT JOIN tool_resources_junction tdj
                   ON tdj.tool_id = ttj.tool_id AND tdj.active = true
                 LEFT JOIN resources_resource dr
-                  ON dr.id = tdj.resource_id AND dr.active = true
+                  ON dr.id = tdj.resources_id AND dr.active = true
                 WHERE EXISTS (
                     SELECT 1
                     FROM agent_flags_junction af
@@ -181,7 +181,7 @@ create_group AS (
     SELECT NOW(), (
         SELECT s.id FROM sessions_entry s
         JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-        WHERE psc.profiles_id = p_profile_id
+        WHERE psc.profile_id = p_profile_id
           AND s.active = true
         ORDER BY s.created_at DESC
         LIMIT 1
@@ -207,7 +207,7 @@ create_run AS (
 ),
 link_run_to_profile AS (
     INSERT INTO profiles_runs_connection (profiles_id, run_id)
-    SELECT ppj.profiles_id, cr.run_id
+    SELECT ppj.profile_id, cr.run_id
     FROM params p
     JOIN profile_profiles_junction ppj ON ppj.profile_id = p.profile_id
     CROSS JOIN create_run cr
@@ -281,8 +281,8 @@ agent_tools_data AS (
         sa.agent_id,
         COALESCE(
             ARRAY_AGG(
-                (t.id, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(dr.resource::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
-                ORDER BY COALESCE(dr.resource::text, ''), (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
+                (t.id, (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.names_id = n.id WHERE tn.tool_id = t.id LIMIT 1), COALESCE((SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.descriptions_id = d.id WHERE td.tool_id = t.id LIMIT 1), ''), COALESCE(dr.resource::text, ''), COALESCE(NULL::artifact_type::text, ''), COALESCE(tsd.arguments, '{}'::jsonb), COALESCE(tsd.argument_descriptions, '{}'::jsonb), COALESCE(tsd.argument_defaults, '{}'::jsonb), EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true))::types.i_get_text_run_context_and_create_run_v4_tool
+                ORDER BY COALESCE(dr.resource::text, ''), (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.names_id = n.id WHERE tn.tool_id = t.id LIMIT 1)
             ) FILTER (WHERE t.id IS NOT NULL AND (
                 p.resource_types IS NULL
                 OR dr.resource IS NULL
@@ -294,11 +294,11 @@ agent_tools_data AS (
     CROSS JOIN params p
     LEFT JOIN agent_tools_junction at ON at.agent_id = sa.agent_id AND at.active = true
     LEFT JOIN tools_resource tr ON tr.id = at.tool_id
-    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
     LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
     LEFT JOIN tool_schema_data tsd ON tsd.tool_id = t.id
     LEFT JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
-    LEFT JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+    LEFT JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
     GROUP BY sa.agent_id
 ),
 -- Get developer instruction templates (array)
@@ -322,8 +322,8 @@ simulation_context AS (
     SELECT
         jsonb_build_object(
             'id', s.id::text,
-            'name', (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.simulation_id = s.id LIMIT 1),
-            'description', (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.simulation_id = s.id LIMIT 1)
+            'name', (SELECT n.name FROM simulation_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.simulation_id = s.id LIMIT 1),
+            'description', (SELECT d.description FROM simulation_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.simulation_id = s.id LIMIT 1)
         ) as simulation_data
     FROM params p
     JOIN simulation_artifact s ON s.id = p.simulation_id
@@ -334,7 +334,7 @@ scenario_context AS (
         sc.id as scenario_id,
         jsonb_build_object(
             'id', sc.id::text,
-            'name', (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.scenario_id = sc.id LIMIT 1)
+            'name', (SELECT n.name FROM scenario_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.scenario_id = sc.id LIMIT 1)
         ) as scenario_data
     FROM resolved_scenario rs
     JOIN scenario_artifact sc ON sc.id = rs.scenario_id
@@ -348,7 +348,7 @@ current_content AS (
             'problem_statement', psr.problem_statement
          )
          FROM scenario_problem_statements_junction spj
-         JOIN problem_statements_resource psr ON psr.id = spj.problem_statement_id
+         JOIN problem_statements_resource psr ON psr.id = spj.problem_statements_id
          WHERE spj.scenario_id = rs.scenario_id AND spj.active = true
          LIMIT 1) as problem_statement,
         -- Current objectives (if exist)
@@ -358,7 +358,7 @@ current_content AS (
                 'objective', o.objective
              ))
              FROM scenario_objectives_junction soj
-             JOIN objectives_resource o ON o.id = soj.objective_id
+             JOIN objectives_resource o ON o.id = soj.objectives_id
              WHERE soj.scenario_id = rs.scenario_id AND soj.active = true),
             '[]'::jsonb
         ) as objectives,
@@ -366,13 +366,13 @@ current_content AS (
         (
             SELECT jsonb_build_object(
                 'id', pa.id::text,
-                'name', (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = pa.id LIMIT 1),
-                'description', (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = pa.id LIMIT 1)
+                'name', (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.persona_id = pa.id LIMIT 1),
+                'description', (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.descriptions_id = d.id WHERE pd.persona_id = pa.id LIMIT 1)
              )
             FROM persona_artifact pa
             WHERE pa.id = COALESCE(
                 (
-                    SELECT pdc.personas_id
+                    SELECT pdc.persona_id
                     FROM chat_drafts_personas_connection pdc
                     WHERE p_draft_id IS NOT NULL
                       AND pdc.draft_id = p_draft_id
@@ -419,8 +419,8 @@ available_resources AS (
         COALESCE(
             (SELECT jsonb_agg(jsonb_build_object(
                 'id', pa.id::text,
-                'name', (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = pa.id LIMIT 1),
-                'description', (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = pa.id LIMIT 1)
+                'name', (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.persona_id = pa.id LIMIT 1),
+                'description', (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.descriptions_id = d.id WHERE pd.persona_id = pa.id LIMIT 1)
              ))
              FROM persona_artifact pa
              WHERE EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = pa.id AND f.type = 'persona_active' AND f.value = true)
@@ -450,7 +450,7 @@ combined_context AS (
 context_data AS (
     SELECT
         -- Agent data
-        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
+        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.names_id = n.id WHERE an.agent_id = a.id LIMIT 1) as agent_name,
         COALESCE(pr_prompt.system_prompt, '') as system_prompt,
         COALESCE(ar.temperature, 0.0) as temperature,
         ar.reasoning as reasoning,
@@ -485,7 +485,7 @@ context_data AS (
     LEFT JOIN provider_providers_junction ppj_prov ON ppj_prov.providers_id = pr_prov_res.id AND ppj_prov.active = true
     LEFT JOIN provider_artifact pr_prov ON pr_prov.id = ppj_prov.provider_id
     LEFT JOIN provider_names_junction pn_prov ON pn_prov.provider_id = pr_prov.id
-    LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.name_id
+    LEFT JOIN names_resource n_prov ON n_prov.id = pn_prov.names_id
 
     -- Tools
     LEFT JOIN agent_tools_data atd ON atd.agent_id = sa.agent_id

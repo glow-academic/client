@@ -5,7 +5,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.parameter_resource_action CASCADE;
     CREATE TYPE types.parameter_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -82,8 +82,8 @@ BEGIN
     v_group_id := group_id;
     v_input_parameter_id := input_parameter_id;
 
-    v_name_id := (names).resource_id;
-    v_description_id := (descriptions).resource_id;
+    v_name_id := (names).resources_id;
+    v_description_id := (descriptions).resources_id;
     v_flag_ids := COALESCE((flags).resource_ids, ARRAY[]::uuid[]);
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_field_ids := COALESCE((fields).resource_ids, ARRAY[]::uuid[]);
@@ -286,8 +286,8 @@ BEGIN
     WITH params AS (
         SELECT
             v_parameter_id AS parameter_id,
-            v_name_id AS name_id,
-            v_description_id AS description_id,
+            v_name_id AS names_id,
+            v_description_id AS descriptions_id,
             v_flag_ids AS flag_ids,
             v_department_ids AS department_ids,
             v_field_ids AS field_ids,
@@ -298,17 +298,17 @@ BEGIN
             v_video_parameter AS video_parameter
     ),
     link_parameter_name AS (
-        INSERT INTO parameter_names_junction (parameter_id, name_id, created_at)
-        SELECT x.parameter_id, x.name_id, NOW()
+        INSERT INTO parameter_names_junction (parameter_id, names_id, created_at)
+        SELECT x.parameter_id, x.names_id, NOW()
         FROM params x
-        WHERE x.name_id IS NOT NULL
+        WHERE x.names_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT parameter_names_pkey DO NOTHING
     ),
     link_parameter_description AS (
-        INSERT INTO parameter_descriptions_junction (parameter_id, description_id, created_at)
-        SELECT x.parameter_id, x.description_id, NOW()
+        INSERT INTO parameter_descriptions_junction (parameter_id, descriptions_id, created_at)
+        SELECT x.parameter_id, x.descriptions_id, NOW()
         FROM params x
-        WHERE x.description_id IS NOT NULL
+        WHERE x.descriptions_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT parameter_descriptions_pkey DO NOTHING
     ),
     -- Active flag is always present; true iff parameter_active was selected.
@@ -398,8 +398,8 @@ BEGIN
                 WHERE f.name = 'parameter_active'
             )
         FROM params x
-        LEFT JOIN names_resource n ON n.id = x.name_id
-        LEFT JOIN descriptions_resource d ON d.id = x.description_id
+        LEFT JOIN names_resource n ON n.id = x.names_id
+        LEFT JOIN descriptions_resource d ON d.id = x.descriptions_id
         RETURNING id AS new_parameters_resource_id
     ),
     link_new_resource AS (

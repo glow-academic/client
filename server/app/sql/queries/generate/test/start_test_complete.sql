@@ -60,7 +60,7 @@ BEGIN
     END IF;
 
     -- Resolve profiles_resource_id
-    SELECT pp.profiles_id INTO v_profiles_resource_id
+    SELECT pp.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction pp
     WHERE pp.profile_id = p_profile_id AND pp.active = true
     LIMIT 1;

@@ -26,8 +26,8 @@ CREATE OR REPLACE FUNCTION api_get_eval_ids_v4(
 )
 RETURNS TABLE (
     -- Single-select resource IDs
-    name_id uuid,
-    description_id uuid,
+    names_id uuid,
+    descriptions_id uuid,
     active_flag_id uuid,
     dynamic_flag_id uuid,
     groups_flag_id uuid,
@@ -60,8 +60,8 @@ name_id_data AS (
     SELECT
         COALESCE(
             (SELECT dn.names_id FROM eval_drafts_names_connection dn WHERE dn.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) LIMIT 1),
-            (SELECT en.name_id FROM eval_names_junction en WHERE en.eval_id = (SELECT eval_id FROM params) LIMIT 1)
-        ) as name_id
+            (SELECT en.names_id FROM eval_names_junction en WHERE en.eval_id = (SELECT eval_id FROM params) LIMIT 1)
+        ) as names_id
     FROM params
     LIMIT 1
 ),
@@ -70,8 +70,8 @@ description_id_data AS (
     SELECT
         COALESCE(
             (SELECT dd.descriptions_id FROM eval_drafts_descriptions_connection dd WHERE dd.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) LIMIT 1),
-            (SELECT ed.description_id FROM eval_descriptions_junction ed WHERE ed.eval_id = (SELECT eval_id FROM params) LIMIT 1)
-        ) as description_id
+            (SELECT ed.descriptions_id FROM eval_descriptions_junction ed WHERE ed.eval_id = (SELECT eval_id FROM params) LIMIT 1)
+        ) as descriptions_id
     FROM params
     LIMIT 1
 ),
@@ -79,7 +79,7 @@ description_id_data AS (
 active_flag_id_data AS (
     SELECT
         COALESCE(
-            (SELECT df.flags_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'active' LIMIT 1),
+            (SELECT df.flag_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'active' LIMIT 1),
             (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'eval_active' AND f.value = TRUE LIMIT 1)
         ) as active_flag_id
     FROM params
@@ -89,7 +89,7 @@ active_flag_id_data AS (
 dynamic_flag_id_data AS (
     SELECT
         COALESCE(
-            (SELECT df.flags_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'dynamic' LIMIT 1),
+            (SELECT df.flag_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = 'dynamic' LIMIT 1),
             (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = 'dynamic' AND f.value = TRUE LIMIT 1)
         ) as dynamic_flag_id
     FROM params
@@ -99,7 +99,7 @@ dynamic_flag_id_data AS (
 groups_flag_id_data AS (
     SELECT
         COALESCE(
-            (SELECT df.flags_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flags_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = '' LIMIT 1),
+            (SELECT df.flag_id FROM eval_drafts_flags_connection df JOIN flags_resource f ON df.flag_id = f.id WHERE df.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x) AND f.name = '' LIMIT 1),
             (SELECT ef.flag_id FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = (SELECT eval_id FROM params) AND f.name = '' AND f.value = TRUE LIMIT 1)
         ) as groups_flag_id
     FROM params
@@ -126,7 +126,7 @@ eval_rubric_ids_data AS (
         CASE
             WHEN (SELECT eval_id FROM params) IS NULL THEN
                 COALESCE(
-                    (SELECT ARRAY_AGG(dr.rubrics_id ORDER BY dr.created_at)
+                    (SELECT ARRAY_AGG(dr.rubric_id ORDER BY dr.created_at)
                      FROM eval_drafts_rubrics_connection dr
                      WHERE dr.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x)),
                     ARRAY[]::uuid[]
@@ -147,7 +147,7 @@ eval_model_ids_data AS (
         CASE
             WHEN (SELECT eval_id FROM params) IS NULL THEN
                 COALESCE(
-                    (SELECT ARRAY_AGG(dm.models_id ORDER BY dm.created_at)
+                    (SELECT ARRAY_AGG(dm.model_id ORDER BY dm.created_at)
                      FROM eval_drafts_models_connection dm
                      WHERE dm.draft_id = (SELECT draft_id FROM (SELECT api_get_eval_ids_v4.draft_id) x)),
                     ARRAY[]::uuid[]
@@ -168,7 +168,7 @@ eval_model_flag_ids_data AS (
         CASE
             WHEN (SELECT eval_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(emf.model_flag_id ORDER BY emf.created_at)
+                (SELECT ARRAY_AGG(emf.model_flags_id ORDER BY emf.created_at)
                  FROM eval_model_flags_junction emf
                  WHERE emf.eval_id = (SELECT eval_id FROM params) AND emf.active = true),
                 ARRAY[]::uuid[]
@@ -183,7 +183,7 @@ eval_model_rubric_ids_data AS (
         CASE
             WHEN (SELECT eval_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(emr.model_rubric_id ORDER BY emr.created_at)
+                (SELECT ARRAY_AGG(emr.model_rubrics_id ORDER BY emr.created_at)
                  FROM eval_model_rubrics_junction emr
                  WHERE emr.eval_id = (SELECT eval_id FROM params) AND emr.active = true),
                 ARRAY[]::uuid[]
@@ -198,7 +198,7 @@ eval_model_position_ids_data AS (
         CASE
             WHEN (SELECT eval_id FROM params) IS NULL THEN ARRAY[]::uuid[]
             ELSE COALESCE(
-                (SELECT ARRAY_AGG(emp.model_position_id ORDER BY emp.created_at)
+                (SELECT ARRAY_AGG(emp.model_positions_id ORDER BY emp.created_at)
                  FROM eval_model_positions_junction emp
                  WHERE emp.eval_id = (SELECT eval_id FROM params) AND emp.active = true),
                 ARRAY[]::uuid[]
@@ -211,13 +211,13 @@ eval_model_position_ids_data AS (
 name_suggestions_data AS (
     SELECT
         COALESCE(
-            (SELECT ARRAY_AGG(en.name_id ORDER BY en.created_at DESC)
+            (SELECT ARRAY_AGG(en.names_id ORDER BY en.created_at DESC)
              FROM (
-                 SELECT DISTINCT en.name_id, MAX(en.created_at) as created_at
+                 SELECT DISTINCT en.names_id, MAX(en.created_at) as created_at
                  FROM eval_names_junction en
-                 JOIN names_resource n ON n.id = en.name_id
-                 WHERE en.name_id IS NOT NULL AND n.name IS NOT NULL AND n.name != ''
-                 GROUP BY en.name_id
+                 JOIN names_resource n ON n.id = en.names_id
+                 WHERE en.names_id IS NOT NULL AND n.name IS NOT NULL AND n.name != ''
+                 GROUP BY en.names_id
                  ORDER BY MAX(en.created_at) DESC
                  LIMIT 20
              ) en),
@@ -230,13 +230,13 @@ name_suggestions_data AS (
 description_suggestions_data AS (
     SELECT
         COALESCE(
-            (SELECT ARRAY_AGG(ed.description_id ORDER BY ed.created_at DESC)
+            (SELECT ARRAY_AGG(ed.descriptions_id ORDER BY ed.created_at DESC)
              FROM (
-                 SELECT DISTINCT ed.description_id, MAX(ed.created_at) as created_at
+                 SELECT DISTINCT ed.descriptions_id, MAX(ed.created_at) as created_at
                  FROM eval_descriptions_junction ed
-                 JOIN descriptions_resource d ON d.id = ed.description_id
-                 WHERE ed.description_id IS NOT NULL AND d.description IS NOT NULL AND d.description != ''
-                 GROUP BY ed.description_id
+                 JOIN descriptions_resource d ON d.id = ed.descriptions_id
+                 WHERE ed.descriptions_id IS NOT NULL AND d.description IS NOT NULL AND d.description != ''
+                 GROUP BY ed.descriptions_id
                  ORDER BY MAX(ed.created_at) DESC
                  LIMIT 20
              ) ed),
@@ -292,8 +292,8 @@ rubric_suggestions_data AS (
 )
 SELECT
     -- Single-select IDs
-    (SELECT name_id FROM name_id_data) as name_id,
-    (SELECT description_id FROM description_id_data) as description_id,
+    (SELECT names_id FROM name_id_data) as names_id,
+    (SELECT descriptions_id FROM description_id_data) as descriptions_id,
     (SELECT active_flag_id FROM active_flag_id_data) as active_flag_id,
     (SELECT dynamic_flag_id FROM dynamic_flag_id_data) as dynamic_flag_id,
     (SELECT groups_flag_id FROM groups_flag_id_data) as groups_flag_id,

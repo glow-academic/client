@@ -84,14 +84,14 @@ FROM (
                   SELECT 1 FROM (
                       SELECT simulations_id, draft_id FROM cohort_drafts_simulations_connection WHERE active = true
                   ) dc
-                  WHERE dc.simulations_id = s.id
+                  WHERE dc.simulation_id = s.id
                     AND dc.draft_id = api_search_simulations_v4.draft_id
               )
           )
       )
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_simulations_junction j WHERE j.simulation_id = s.id AND j.active = true))
-      AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_simulations_junction j WHERE j.simulation_id = s.id AND j.active = true))
+      AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_simulations_junction j WHERE j.simulations_id = s.id AND j.active = true))
+      AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_simulations_junction j WHERE j.simulations_id = s.id AND j.active = true))
     ORDER BY s.name
     LIMIT limit_count
     OFFSET offset_count

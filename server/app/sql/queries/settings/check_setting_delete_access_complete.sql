@@ -46,7 +46,7 @@ setting_name_data AS (
     SELECT n.name
     FROM params x
     JOIN setting_names_junction sn ON sn.setting_id = x.setting_id
-    JOIN names_resource n ON n.id = sn.name_id
+    JOIN names_resource n ON n.id = sn.names_id
     LIMIT 1
 )
 SELECT

@@ -4,7 +4,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.provider_resource_action CASCADE;
     CREATE TYPE types.provider_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -63,15 +63,15 @@ DECLARE
     v_draft_exists boolean := false;
     v_profiles_resource_id uuid;
     v_group_id uuid;
-    v_name_id uuid := (names).resource_id;
-    v_description_id uuid := (descriptions).resource_id;
-    v_active_flag_id uuid := (flags).resource_id;
-    v_value_id uuid := (values_action).resource_id;
-    v_endpoint_id uuid := (endpoints).resource_id;
-    v_key_id uuid := (keys).resource_id;
+    v_name_id uuid := (names).resources_id;
+    v_description_id uuid := (descriptions).resources_id;
+    v_active_flag_id uuid := (flags).resources_id;
+    v_value_id uuid := (values_action).resources_id;
+    v_endpoint_id uuid := (endpoints).resources_id;
+    v_key_id uuid := (keys).resources_id;
     v_department_ids uuid[] := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
 BEGIN
-    SELECT ppj.profiles_id INTO v_profiles_resource_id
+    SELECT ppj.profile_id INTO v_profiles_resource_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = api_patch_provider_draft_v4.profile_id
     LIMIT 1;
@@ -144,7 +144,7 @@ BEGIN
               SELECT 1
               FROM provider_drafts_profiles_connection pdj
               WHERE pdj.draft_id = provider_drafts_entry.id
-                AND pdj.profiles_id = v_profiles_resource_id
+                AND pdj.profile_id = v_profiles_resource_id
           )
           AND provider_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;

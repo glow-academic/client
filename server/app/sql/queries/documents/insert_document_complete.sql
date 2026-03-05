@@ -39,7 +39,7 @@ name_resource AS (
     SELECT name, NOW()
     WHERE name IS NOT NULL AND name != ''
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id
+    RETURNING id as names_id
 ),
 -- Insert description INTO descriptions_resource table and get ID
 description_resource AS (
@@ -47,7 +47,7 @@ description_resource AS (
     SELECT COALESCE(description, ''), NOW()
     WHERE description IS NOT NULL AND description != ''
     ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as description_id
+    RETURNING id as descriptions_id
 ),
 insert_doc AS (
     -- Create document (without name/description/active/template columns)
@@ -70,14 +70,14 @@ link_document_agent_domain AS (
 ),
 -- Link document to description
 link_document_description AS (
-    INSERT INTO document_descriptions_junction (document_id, description_id, created_at)
+    INSERT INTO document_descriptions_junction (document_id, descriptions_id, created_at)
     SELECT 
         id.document_id,
-        dr.description_id,
+        dr.descriptions_id,
         NOW()
     FROM insert_doc id
     CROSS JOIN description_resource dr
-    ON CONFLICT (document_id, description_id) DO NOTHING
+    ON CONFLICT (document_id, descriptions_id) DO NOTHING
 ),
 -- Link document active flag
 link_document_active_flag AS (
@@ -128,13 +128,13 @@ insert_depts AS (
 ),
 insert_fields AS (
     -- Insert into document_parameter_fields_junction (link document to parameter_fields_resource entries)
-    INSERT INTO document_parameter_fields_junction (document_id, parameter_field_id, active, created_at)
+    INSERT INTO document_parameter_fields_junction (document_id, parameter_fields_id, active, created_at)
     SELECT id.document_id, pfr.id, true, NOW()
     FROM insert_doc id
-    CROSS JOIN unnest(field_ids) as field_resource_id
-    JOIN parameter_fields_resource pfr ON pfr.field_id = field_resource_id
+    CROSS JOIN unnest(field_ids) as fields_id
+    JOIN parameter_fields_resource pfr ON pfr.field_id = fields_id
     WHERE cardinality(field_ids) > 0
-    ON CONFLICT (document_id, parameter_field_id) DO NOTHING
+    ON CONFLICT (document_id, parameter_fields_id) DO NOTHING
     RETURNING document_id
 )
 SELECT

@@ -47,5 +47,5 @@ WHERE stlr.active = true
   )
   AND (negative IS NULL OR stlr.negative = negative)
   -- Artifact boolean filters
-  AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenario_time_limits_junction j WHERE j.scenario_time_limit_id = stlr.id AND j.active = true));
+  AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenario_time_limits_junction j WHERE j.scenario_time_limits_id = stlr.id AND j.active = true));
 $$;

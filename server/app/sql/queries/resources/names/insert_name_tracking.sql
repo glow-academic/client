@@ -1,5 +1,5 @@
 -- Insert run, call, and connection records for name tracking
--- Parameters: $1 = group_id (uuid), $2 = tool_id (uuid), $3 = name_id (uuid)
+-- Parameters: $1 = group_id (uuid), $2 = tool_id (uuid), $3 = names_id (uuid)
 
 WITH new_run AS (
     INSERT INTO runs_entry (id, group_id, created_at, updated_at)

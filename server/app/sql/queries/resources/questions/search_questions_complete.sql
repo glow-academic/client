@@ -54,7 +54,7 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(qr.question_text) LIKE '%' || LOWER(search) || '%')
       AND (api_search_questions_v4.allow_multiple IS NULL OR qr.allow_multiple = api_search_questions_v4.allow_multiple)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_questions_junction j WHERE j.question_id = qr.id AND j.active = true))
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_questions_junction j WHERE j.questions_id = qr.id AND j.active = true))
     ORDER BY qr.question_text
     LIMIT limit_count
     OFFSET offset_count

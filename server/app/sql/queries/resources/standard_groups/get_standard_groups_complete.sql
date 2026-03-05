@@ -50,7 +50,7 @@ END $$;
 
 -- Create composite type for standard_group item
 CREATE TYPE types.q_get_standard_groups_v4_item AS (
-    standard_group_id uuid,
+    standard_groups_id uuid,
     name text,
     description text,
     points float,

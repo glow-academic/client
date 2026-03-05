@@ -40,7 +40,7 @@ scenario_exists_check AS (
 scenario_name_data AS (
     SELECT n.name as scenario_name
     FROM scenario_names_junction sn
-    JOIN names_resource n ON sn.name_id = n.id
+    JOIN names_resource n ON sn.names_id = n.id
     WHERE sn.scenario_id = (SELECT p_scenario_id FROM params)
     LIMIT 1
 ),

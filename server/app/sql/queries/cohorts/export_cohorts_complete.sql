@@ -33,9 +33,9 @@ END $$;
 CREATE TYPE types.q_export_cohorts_v4_row AS (
     cohort_id uuid,
     -- Single-select: ID + value
-    name_id uuid,
+    names_id uuid,
     name text,
-    description_id uuid,
+    descriptions_id uuid,
     description text,
     -- Flag
     is_inactive boolean,
@@ -85,14 +85,14 @@ user_profile AS (
 ),
 -- Bridge: cohort_artifact.id -> cohorts_resource.id
 cohort_resource_bridge AS (
-    SELECT ccj.cohort_id, ccj.cohorts_id as resource_id
+    SELECT ccj.cohort_id, ccj.cohorts_id as resources_id
     FROM cohort_cohorts_junction ccj
 ),
 -- User's own profile resource (for instructional visibility)
 user_profile_resource AS (
-    SELECT pr.id as resource_id
+    SELECT pr.id as resources_id
     FROM profile_profiles_junction ppj
-    JOIN profiles_resource pr ON pr.id = ppj.profiles_id
+    JOIN profiles_resource pr ON pr.id = ppj.profile_id
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
     LIMIT 1
 ),
@@ -122,10 +122,10 @@ cohort_simulations_data AS (
 cohort_sim_positions_data AS (
     SELECT
         cspj.cohort_id,
-        ARRAY_AGG(cspj.simulation_position_id ORDER BY cspj.created_at) as position_ids,
+        ARRAY_AGG(cspj.simulation_positions_id ORDER BY cspj.created_at) as position_ids,
         ARRAY_AGG(spr.value::text ORDER BY cspj.created_at) as position_values
     FROM cohort_simulation_positions_junction cspj
-    JOIN simulation_positions_resource spr ON spr.id = cspj.simulation_position_id
+    JOIN simulation_positions_resource spr ON spr.id = cspj.simulation_positions_id
     WHERE cspj.active = true
     GROUP BY cspj.cohort_id
 ),
@@ -144,10 +144,10 @@ cohort_sim_availability_data AS (
 cohort_profiles_data AS (
     SELECT
         cpj.cohort_id,
-        ARRAY_AGG(cpj.profiles_id ORDER BY cpj.created_at) as profile_ids,
+        ARRAY_AGG(cpj.profile_id ORDER BY cpj.created_at) as profile_ids,
         ARRAY_AGG(pr.name ORDER BY cpj.created_at) as profile_names
     FROM cohort_profiles_junction cpj
-    JOIN profiles_resource pr ON pr.id = cpj.profiles_id
+    JOIN profiles_resource pr ON pr.id = cpj.profile_id
     WHERE cpj.active = true
     GROUP BY cpj.cohort_id
 ),
@@ -155,13 +155,13 @@ cohort_profiles_data AS (
 cohort_profile_personas_data AS (
     SELECT
         cppj.cohort_id,
-        ARRAY_AGG(cppj.profile_persona_id ORDER BY cppj.created_at) as profile_persona_ids,
+        ARRAY_AGG(cppj.profile_personas_id ORDER BY cppj.created_at) as profile_persona_ids,
         ARRAY_AGG(COALESCE(pr.name, '') || ' → ' || COALESCE(
-            (SELECT n.name FROM persona_names_junction pnj JOIN names_resource n ON pnj.name_id = n.id WHERE pnj.persona_id = ppr.persona_id LIMIT 1),
+            (SELECT n.name FROM persona_names_junction pnj JOIN names_resource n ON pnj.names_id = n.id WHERE pnj.persona_id = ppr.persona_id LIMIT 1),
             ''
         ) ORDER BY cppj.created_at) as profile_persona_names
     FROM cohort_profile_personas_junction cppj
-    JOIN profile_personas_resource ppr ON ppr.id = cppj.profile_persona_id
+    JOIN profile_personas_resource ppr ON ppr.id = cppj.profile_personas_id
     JOIN profiles_resource pr ON pr.id = ppr.profile_id
     WHERE cppj.active = true
     GROUP BY cppj.cohort_id
@@ -171,11 +171,11 @@ cohort_data AS (
     SELECT
         c.id as cohort_id,
         -- Name
-        (SELECT cn.name_id FROM cohort_names_junction cn WHERE cn.cohort_id = c.id LIMIT 1) as name_id,
-        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
+        (SELECT cn.names_id FROM cohort_names_junction cn WHERE cn.cohort_id = c.id LIMIT 1) as names_id,
+        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.names_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
         -- Description
-        (SELECT cd.description_id FROM cohort_descriptions_junction cd WHERE cd.cohort_id = c.id LIMIT 1) as description_id,
-        (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description,
+        (SELECT cd.descriptions_id FROM cohort_descriptions_junction cd WHERE cd.cohort_id = c.id LIMIT 1) as descriptions_id,
+        (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.descriptions_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description,
         -- Flag
         NOT EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = c.id AND f.type = 'cohort_active' AND f.value = TRUE) as is_inactive,
         -- Multi-select
@@ -193,11 +193,11 @@ cohort_data AS (
         cppd.profile_persona_names as profile_personas,
         -- For filtering
         c.updated_at,
-        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name_for_search,
-        (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description_for_search
+        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.names_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name_for_search,
+        (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.descriptions_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description_for_search
     FROM cohort_artifact c
     LEFT JOIN cohort_resource_bridge crb ON crb.cohort_id = c.id
-    LEFT JOIN cohorts_resource cr_res ON cr_res.id = crb.resource_id
+    LEFT JOIN cohorts_resource cr_res ON cr_res.id = crb.resources_id
     LEFT JOIN cohort_departments_data cdd ON cdd.cohort_id = c.id
     LEFT JOIN cohort_simulations_data csd ON csd.cohort_id = c.id
     LEFT JOIN cohort_sim_positions_data cspd ON cspd.cohort_id = c.id
@@ -208,7 +208,7 @@ cohort_data AS (
     LEFT JOIN user_profile_resource upr ON true
     CROSS JOIN user_profile up
     WHERE (
-        (up.role = 'instructional'::profile_type AND upr.resource_id IS NOT NULL AND cr_res.profile_ids IS NOT NULL AND upr.resource_id = ANY(cr_res.profile_ids))
+        (up.role = 'instructional'::profile_type AND upr.resources_id IS NOT NULL AND cr_res.profile_ids IS NOT NULL AND upr.resources_id = ANY(cr_res.profile_ids))
         OR
         up.role != 'instructional'
     )
@@ -219,7 +219,7 @@ cohort_data AS (
         csad.availability_ids, csad.availability_values,
         cpd.profile_ids, cpd.profile_names,
         cppd.profile_persona_ids, cppd.profile_persona_names,
-        up.role, upr.resource_id, cr_res.profile_ids, crb.resource_id
+        up.role, upr.resources_id, cr_res.profile_ids, crb.resources_id
     HAVING
         COUNT(cdj.cohort_id) > 0
         OR NOT EXISTS (SELECT 1 FROM cohort_departments_junction cd2 WHERE cd2.cohort_id = c.id AND cd2.active = true)
@@ -238,8 +238,8 @@ SELECT
     COALESCE(
         (SELECT ARRAY_AGG(
             (fc.cohort_id,
-             fc.name_id, fc.name,
-             fc.description_id, fc.description,
+             fc.names_id, fc.name,
+             fc.descriptions_id, fc.description,
              fc.is_inactive,
              fc.department_ids, fc.departments,
              fc.simulation_ids, fc.simulations,

@@ -69,7 +69,7 @@ tool_usage_data AS (
             (SELECT COUNT(DISTINCT at.agent_id)::int
              FROM agent_tools_junction at
              JOIN tools_resource tr ON tr.id = at.tool_id
-             JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+             JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
              WHERE ttj.tool_id = (SELECT tool_id FROM params)
                AND at.active = true),
             0

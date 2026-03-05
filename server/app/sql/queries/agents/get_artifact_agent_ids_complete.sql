@@ -242,7 +242,7 @@ artifact_entries AS (
                 WHERE b.entry = e.entry::entry_type
                 AND EXISTS (
                     SELECT 1 FROM tool_entries_junction tbj
-                    WHERE tbj.entry_id = b.id AND tbj.active = true
+                    WHERE tbj.entries_id = b.id AND tbj.active = true
                 )
             )
         ) as required_entries
@@ -301,9 +301,9 @@ agent_tool_resources AS (
         ) as tool_resources
     FROM eligible_agents ea
     LEFT JOIN agent_tools_junction at ON at.agent_id = ea.agent_id AND at.active = true
-    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = at.tool_id
+    LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = at.tool_id
     LEFT JOIN tool_resources_junction tdj ON tdj.tool_id = ttj.tool_id AND tdj.active = true
-    LEFT JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+    LEFT JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
     GROUP BY ea.agent_id, ea.updated_at
 ),
 
@@ -320,9 +320,9 @@ agent_tool_entries AS (
     FROM eligible_agents ea
     LEFT JOIN agent_tools_junction atj ON atj.agent_id = ea.agent_id AND atj.active = true
     LEFT JOIN tools_resource tr ON tr.id = atj.tool_id
-    LEFT JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+    LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
     LEFT JOIN tool_entries_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
-    LEFT JOIN entries_resource b ON b.id = tbj.entry_id
+    LEFT JOIN entries_resource b ON b.id = tbj.entries_id
     GROUP BY ea.agent_id, ea.updated_at
 ),
 

@@ -20,8 +20,8 @@ END $$;
 CREATE OR REPLACE FUNCTION api_patch_agent_draft_v4(
     profile_id uuid,
     input_draft_id uuid DEFAULT NULL,
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
+    names_id uuid DEFAULT NULL,
+    descriptions_id uuid DEFAULT NULL,
     active_flag_id uuid DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
     expected_version int DEFAULT 0
@@ -42,12 +42,12 @@ DECLARE
     v_group_id uuid;
 BEGIN
     -- Validate resource IDs exist (error if missing and provided)
-    IF name_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = name_id) THEN
-        RAISE EXCEPTION 'Name resource not found: %', name_id;
+    IF names_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM names_resource WHERE id = names_id) THEN
+        RAISE EXCEPTION 'Name resource not found: %', names_id;
     END IF;
     
-    IF description_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = description_id) THEN
-        RAISE EXCEPTION 'Description resource not found: %', description_id;
+    IF descriptions_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM descriptions_resource WHERE id = descriptions_id) THEN
+        RAISE EXCEPTION 'Description resource not found: %', descriptions_id;
     END IF;
     
     IF active_flag_id IS NOT NULL AND NOT EXISTS (SELECT 1 FROM flags_resource WHERE id = active_flag_id) THEN
@@ -62,7 +62,7 @@ BEGIN
         -- Create group if draft doesn't have one (shouldn't happen after migration, but safety check)
         IF v_group_id IS NULL THEN
             INSERT INTO groups_entry (created_at, session_id)
-            VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
+            VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profile_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
             RETURNING id INTO v_group_id;
         END IF;
         
@@ -71,7 +71,7 @@ BEGIN
             updated_at = now(),
             group_id = COALESCE(agent_drafts_entry.group_id, v_group_id)
         WHERE id = input_draft_id
-          AND EXISTS (SELECT 1 FROM agent_drafts_profiles_connection pdj WHERE pdj.draft_id = agent_drafts_entry.id AND pdj.profiles_id = v_profile_id)
+          AND EXISTS (SELECT 1 FROM agent_drafts_profiles_connection pdj WHERE pdj.draft_id = agent_drafts_entry.id AND pdj.profile_id = v_profile_id)
           AND agent_drafts_entry.version = expected_version
         RETURNING id, version INTO v_draft_id, v_new_version;
         
@@ -85,15 +85,15 @@ BEGIN
             DELETE FROM agent_drafts_departments_connection WHERE agent_drafts_departments_connection.draft_id = v_draft_id;
             
             -- Insert new resource links
-            IF name_id IS NOT NULL THEN
+            IF names_id IS NOT NULL THEN
                 INSERT INTO agent_drafts_names_connection (draft_id, names_id, version)
-                VALUES (v_draft_id, name_id, v_new_version)
+                VALUES (v_draft_id, names_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE SET version = v_new_version;
             END IF;
             
-            IF description_id IS NOT NULL THEN
+            IF descriptions_id IS NOT NULL THEN
                 INSERT INTO agent_drafts_descriptions_connection (draft_id, descriptions_id, version)
-                VALUES (v_draft_id, description_id, v_new_version)
+                VALUES (v_draft_id, descriptions_id, v_new_version)
                 ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
                 SET version = v_new_version;
             END IF;
@@ -123,7 +123,7 @@ BEGIN
     -- Create new draft with group
     -- First create a group for this draft
     INSERT INTO groups_entry (created_at, session_id)
-    VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
+    VALUES (NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profile_id = v_profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1))
     RETURNING id INTO v_group_id;
     
     -- Create new draft with group_id
@@ -136,16 +136,16 @@ BEGIN
     VALUES (v_draft_id, v_profile_id, v_new_version);
     
     -- Link resources to draft
-    IF name_id IS NOT NULL THEN
+    IF names_id IS NOT NULL THEN
         INSERT INTO agent_drafts_names_connection (draft_id, names_id, version)
-        VALUES (v_draft_id, name_id, v_new_version)
+        VALUES (v_draft_id, names_id, v_new_version)
         ON CONFLICT ON CONSTRAINT names_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;
     
-    IF description_id IS NOT NULL THEN
+    IF descriptions_id IS NOT NULL THEN
         INSERT INTO agent_drafts_descriptions_connection (draft_id, descriptions_id, version)
-        VALUES (v_draft_id, description_id, v_new_version)
+        VALUES (v_draft_id, descriptions_id, v_new_version)
         ON CONFLICT ON CONSTRAINT descriptions_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;

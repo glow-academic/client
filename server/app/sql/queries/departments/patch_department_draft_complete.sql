@@ -4,7 +4,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.department_resource_action CASCADE;
     CREATE TYPE types.department_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -62,9 +62,9 @@ DECLARE
     v_profile_id uuid := profile_id;
     v_group_id uuid := group_id;
 
-    v_name_id uuid := (names).resource_id;
-    v_description_id uuid := (descriptions).resource_id;
-    v_active_flag_id uuid := (flags).resource_id;
+    v_name_id uuid := (names).resources_id;
+    v_description_id uuid := (descriptions).resources_id;
+    v_active_flag_id uuid := (flags).resources_id;
     v_settings_ids uuid[] := COALESCE((settings).resource_ids, ARRAY[]::uuid[]);
 
     v_run_id uuid;
@@ -103,7 +103,7 @@ BEGIN
               SELECT 1
               FROM department_drafts_profiles_connection pdc
               WHERE pdc.draft_id = department_drafts_entry.id
-                AND pdc.profiles_id = v_profile_id
+                AND pdc.profile_id = v_profile_id
           )
           AND department_drafts_entry.version = expected_version
         RETURNING department_drafts_entry.id, department_drafts_entry.version INTO v_draft_id, v_new_version;
@@ -121,7 +121,7 @@ BEGIN
                 (
                     SELECT s.id
                     FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-                    WHERE psc.profiles_id = v_profile_id
+                    WHERE psc.profile_id = v_profile_id
                       AND s.active = true
                     ORDER BY s.created_at DESC
                     LIMIT 1

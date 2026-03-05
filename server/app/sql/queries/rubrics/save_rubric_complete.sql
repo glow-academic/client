@@ -6,7 +6,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.rubric_resource_action CASCADE;
     CREATE TYPE types.rubric_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -85,11 +85,11 @@ BEGIN
     v_group_id := group_id;
     v_input_rubric_id := input_rubric_id;
 
-    v_name_id := (names).resource_id;
-    v_description_id := (descriptions).resource_id;
-    v_active_flag_id := (flags).resource_id;
-    v_total_points_id := (points).resource_id;
-    v_pass_points_id := (pass_points).resource_id;
+    v_name_id := (names).resources_id;
+    v_description_id := (descriptions).resources_id;
+    v_active_flag_id := (flags).resources_id;
+    v_total_points_id := (points).resources_id;
+    v_pass_points_id := (pass_points).resources_id;
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_standard_group_ids := COALESCE((standard_groups).resource_ids, ARRAY[]::uuid[]);
     v_standard_ids := COALESCE((standards).resource_ids, ARRAY[]::uuid[]);
@@ -337,13 +337,13 @@ BEGIN
     END IF;
 
     -- Link rubric to name
-    INSERT INTO rubric_names_junction (rubric_id, name_id, created_at)
+    INSERT INTO rubric_names_junction (rubric_id, names_id, created_at)
     VALUES (v_rubric_id, v_name_id, NOW())
     ON CONFLICT ON CONSTRAINT rubric_names_pkey DO NOTHING;
 
     -- Link rubric to description
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO rubric_descriptions_junction (rubric_id, description_id, created_at)
+        INSERT INTO rubric_descriptions_junction (rubric_id, descriptions_id, created_at)
         VALUES (v_rubric_id, v_description_id, NOW())
         ON CONFLICT ON CONSTRAINT rubric_descriptions_pkey DO NOTHING;
     END IF;
@@ -361,16 +361,16 @@ BEGIN
 
     -- Link total points
     IF v_total_points_id IS NOT NULL THEN
-        INSERT INTO rubric_points_junction (rubric_id, point_id, created_at)
+        INSERT INTO rubric_points_junction (rubric_id, points_id, created_at)
         VALUES (v_rubric_id, v_total_points_id, NOW())
-        ON CONFLICT (rubric_id, point_id) DO NOTHING;
+        ON CONFLICT (rubric_id, points_id) DO NOTHING;
     END IF;
 
     -- Link pass points
     IF v_pass_points_id IS NOT NULL THEN
-        INSERT INTO rubric_points_junction (rubric_id, point_id, created_at)
+        INSERT INTO rubric_points_junction (rubric_id, points_id, created_at)
         VALUES (v_rubric_id, v_pass_points_id, NOW())
-        ON CONFLICT (rubric_id, point_id) DO NOTHING;
+        ON CONFLICT (rubric_id, points_id) DO NOTHING;
     END IF;
 
     -- Link departments
@@ -387,7 +387,7 @@ BEGIN
     -- Link standard groups
     INSERT INTO rubric_standard_groups_junction (
         rubric_id,
-        standard_group_id,
+        standard_groups_id,
         active,
         created_at
     )
@@ -418,7 +418,7 @@ BEGIN
     FROM rubric_rubrics_junction j
     LEFT JOIN names_resource n ON n.id = v_name_id
     LEFT JOIN descriptions_resource d ON d.id = v_description_id
-    WHERE j.rubrics_id = r.id
+    WHERE j.rubric_id = r.id
       AND j.rubric_id = v_rubric_id;
 
     RETURN QUERY SELECT v_rubric_id;

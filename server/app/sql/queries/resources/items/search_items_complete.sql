@@ -48,7 +48,7 @@ FROM (
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
       AND (encrypted IS NULL OR r.encrypted = encrypted)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT auth OR EXISTS (SELECT 1 FROM auth_items_junction j WHERE j.item_id = r.id AND j.active = true))
+      AND (NOT auth OR EXISTS (SELECT 1 FROM auth_items_junction j WHERE j.items_id = r.id AND j.active = true))
     ORDER BY r.name
     LIMIT limit_count
     OFFSET offset_count

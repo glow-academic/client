@@ -72,9 +72,9 @@ BEGIN
     RETURNING attempt_entry.id INTO v_entry_id;
 
     -- 5. Link attempt → profiles_resource if provided
-    IF api_create_attempt_entry_v4.profiles_id IS NOT NULL THEN
+    IF api_create_attempt_entry_v4.profile_id IS NOT NULL THEN
         INSERT INTO attempt_profiles_connection (attempt_id, profiles_id)
-        VALUES (v_entry_id, api_create_attempt_entry_v4.profiles_id);
+        VALUES (v_entry_id, api_create_attempt_entry_v4.profile_id);
     END IF;
 
     -- 6. Create message

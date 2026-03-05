@@ -87,7 +87,7 @@ agent_model_modalities AS (
     JOIN agent_agents_junction aaj ON aaj.agent_id = a.id AND aaj.active = true
     JOIN agents_resource ar ON ar.id = aaj.agents_id AND ar.active = true
     JOIN model_modalities_junction mm ON mm.model_id = ar.model_id
-    JOIN modalities_resource mr ON mr.id = mm.modality_id
+    JOIN modalities_resource mr ON mr.id = mm.modalities_id
     CROSS JOIN params p
     WHERE a.id = p.agent_id
       AND mr.is_input = false
@@ -105,7 +105,7 @@ existing_group_from_param AS (
 create_group_if_needed AS (
     -- Create new group if needed (only if group_id not provided)
     INSERT INTO groups_entry (created_at, session_id)
-    SELECT NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profiles_id = socket_get_generation_run_context_and_create_run_v4.profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1)
+    SELECT NOW(), (SELECT s.id FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id WHERE psc.profile_id = socket_get_generation_run_context_and_create_run_v4.profile_id AND s.active = true ORDER BY s.created_at DESC LIMIT 1)
     FROM params p
     WHERE p.group_id IS NULL
     RETURNING id as group_id
@@ -131,7 +131,7 @@ create_run AS (
 link_run_to_profile AS (
     -- Link run to profile via junction table
     INSERT INTO profiles_runs_connection (profiles_id, run_id)
-    SELECT ppj.profiles_id, cr.run_id
+    SELECT ppj.profile_id, cr.run_id
     FROM params p
     JOIN profile_profiles_junction ppj ON ppj.profile_id = p.profile_id
     CROSS JOIN create_run cr

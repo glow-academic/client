@@ -96,7 +96,7 @@ WITH resolved_resources AS (
 settings_auths_data AS (
     -- Get auth details from auths_resource using auth_ids on settings_resource
     SELECT
-        rr.id as resource_id,
+        rr.id as resources_id,
         ARRAY_AGG(a.id::text ORDER BY COALESCE(a.name, '')) as auth_ids,
         COALESCE(
             ARRAY_AGG(
@@ -129,5 +129,5 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_settings_v4_item[]
 ) as items
 FROM resolved_resources rr
-LEFT JOIN settings_auths_data sad ON sad.resource_id = rr.id;
+LEFT JOIN settings_auths_data sad ON sad.resources_id = rr.id;
 $$;

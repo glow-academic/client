@@ -2,7 +2,7 @@
 -- SIMPLIFIED: No agent_id required, optional tool_id for tracking
 -- Get or create operation (returns existing ID if name already exists)
 -- Parameters: name (text), problem_statement (text), mcp (boolean), group_id (uuid, optional), tool_id (uuid, optional)
--- Returns: problem_statement_id (uuid)
+-- Returns: problem_statements_id (uuid)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -27,7 +27,7 @@ CREATE OR REPLACE FUNCTION api_create_problem_statements_v4(
     tool_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    problem_statement_id uuid,
+    problem_statements_id uuid,
     call_id uuid
 )
 LANGUAGE plpgsql

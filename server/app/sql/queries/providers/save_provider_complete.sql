@@ -4,7 +4,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.provider_resource_action CASCADE;
     CREATE TYPE types.provider_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -67,12 +67,12 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
-    v_name_id := (names).resource_id;
-    v_description_id := (descriptions).resource_id;
-    v_active_flag_id := (flags).resource_id;
-    v_value_id := (values_action).resource_id;
-    v_endpoint_id := (endpoints).resource_id;
-    v_key_id := (keys).resource_id;
+    v_name_id := (names).resources_id;
+    v_description_id := (descriptions).resources_id;
+    v_active_flag_id := (flags).resources_id;
+    v_value_id := (values_action).resources_id;
+    v_endpoint_id := (endpoints).resources_id;
+    v_key_id := (keys).resources_id;
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
 
     IF group_id IS NULL THEN
@@ -150,13 +150,13 @@ BEGIN
         UPDATE provider_departments_junction SET active = false WHERE provider_id = v_provider_id AND active = true;
     END IF;
 
-    INSERT INTO provider_names_junction (provider_id, name_id, created_at, active)
+    INSERT INTO provider_names_junction (provider_id, names_id, created_at, active)
     VALUES (v_provider_id, v_name_id, NOW(), true)
     ON CONFLICT ON CONSTRAINT provider_names_pkey DO UPDATE
     SET active = true, created_at = NOW();
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO provider_descriptions_junction (provider_id, description_id, created_at, active)
+        INSERT INTO provider_descriptions_junction (provider_id, descriptions_id, created_at, active)
         VALUES (v_provider_id, v_description_id, NOW(), true)
         ON CONFLICT ON CONSTRAINT provider_descriptions_pkey DO UPDATE
         SET active = true, created_at = NOW();
@@ -180,7 +180,7 @@ BEGIN
     SET active = true, created_at = NOW();
 
     IF v_endpoint_id IS NOT NULL THEN
-        INSERT INTO provider_endpoints_junction (provider_id, endpoint_id, created_at, active)
+        INSERT INTO provider_endpoints_junction (provider_id, endpoints_id, created_at, active)
         VALUES (v_provider_id, v_endpoint_id, NOW(), true)
         ON CONFLICT ON CONSTRAINT provider_endpoints_junction_pkey DO UPDATE
         SET active = true, created_at = NOW();

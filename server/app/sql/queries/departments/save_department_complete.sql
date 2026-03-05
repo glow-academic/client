@@ -4,7 +4,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.department_resource_action CASCADE;
     CREATE TYPE types.department_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -57,9 +57,9 @@ DECLARE
     v_group_id uuid := group_id;
     v_input_department_id uuid := input_department_id;
 
-    v_name_id uuid := (names).resource_id;
-    v_description_id uuid := (descriptions).resource_id;
-    v_active_flag_id uuid := (flags).resource_id;
+    v_name_id uuid := (names).resources_id;
+    v_description_id uuid := (descriptions).resources_id;
+    v_active_flag_id uuid := (flags).resources_id;
     v_settings_ids uuid[] := COALESCE((settings).resource_ids, ARRAY[]::uuid[]);
 
     v_run_id uuid;
@@ -112,12 +112,12 @@ BEGIN
     DELETE FROM department_descriptions_junction WHERE department_id = v_department_id;
     DELETE FROM department_settings_junction WHERE department_id = v_department_id;
 
-    INSERT INTO department_names_junction (department_id, name_id, created_at)
+    INSERT INTO department_names_junction (department_id, names_id, created_at)
     VALUES (v_department_id, v_name_id, NOW())
     ON CONFLICT ON CONSTRAINT department_names_pkey DO NOTHING;
 
     IF v_description_id IS NOT NULL THEN
-        INSERT INTO department_descriptions_junction (department_id, description_id, created_at)
+        INSERT INTO department_descriptions_junction (department_id, descriptions_id, created_at)
         VALUES (v_department_id, v_description_id, NOW())
         ON CONFLICT ON CONSTRAINT department_descriptions_pkey DO NOTHING;
     END IF;
@@ -146,7 +146,7 @@ BEGIN
     FROM department_departments_junction j
     LEFT JOIN names_resource n ON n.id = v_name_id
     LEFT JOIN descriptions_resource d ON d.id = v_description_id
-    WHERE j.departments_id = r.id
+    WHERE j.department_id = r.id
       AND j.department_id = v_department_id;
 
     -- Tool-call lineage

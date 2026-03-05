@@ -51,7 +51,7 @@ FROM (
            vue.upload_id,
            COALESCE(v.generated, false) AS generated
     FROM videos_resource v
-    LEFT JOIN videos_videos_connection vvc ON vvc.videos_id = v.id AND vvc.active = true
+    LEFT JOIN videos_videos_connection vvc ON vvc.video_id = v.id AND vvc.active = true
     LEFT JOIN videos_entry ve ON ve.id = vvc.video_id AND ve.active = true
     LEFT JOIN video_uploads_entry vue ON vue.video_id = ve.id AND vue.active = true
     WHERE v.active = true
@@ -59,7 +59,7 @@ FROM (
       AND (search IS NULL OR search = '' OR LOWER(v.name) LIKE '%' || LOWER(search) || '%')
       AND (COALESCE(array_length(upload_ids, 1), 0) = 0 OR vue.upload_id = ANY(upload_ids))
       -- Artifact boolean filters
-      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_videos_junction j WHERE j.video_id = v.id AND j.active = true))
+      AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_videos_junction j WHERE j.videos_id = v.id AND j.active = true))
     ORDER BY v.name
     LIMIT limit_count
     OFFSET offset_count

@@ -1,5 +1,5 @@
 -- Link colors resource (tool call tracking for selecting existing resources)
--- Parameters: resource_id (uuid), group_id (uuid), tool_id (uuid)
+-- Parameters: resources_id (uuid), group_id (uuid), tool_id (uuid)
 -- Returns: color_id (uuid)
 
 DO $$
@@ -17,7 +17,7 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_link_colors_v4(
-    resource_id uuid DEFAULT NULL,
+    resources_id uuid DEFAULT NULL,
     group_id uuid DEFAULT NULL,
     tool_id uuid DEFAULT NULL
 )
@@ -32,8 +32,8 @@ DECLARE
     v_call_id uuid;
     v_run_id uuid;
 BEGIN
-    IF resource_id IS NULL THEN
-        RAISE EXCEPTION 'resource_id is required';
+    IF resources_id IS NULL THEN
+        RAISE EXCEPTION 'resources_id is required';
     END IF;
 
     IF tool_id IS NOT NULL AND group_id IS NOT NULL THEN
@@ -49,9 +49,9 @@ BEGIN
         VALUES (api_link_colors_v4.tool_id, v_call_id);
 
         INSERT INTO colors_calls_connection (colors_id, call_id)
-        VALUES (api_link_colors_v4.resource_id, v_call_id);
+        VALUES (api_link_colors_v4.resources_id, v_call_id);
     END IF;
 
-    RETURN QUERY SELECT api_link_colors_v4.resource_id;
+    RETURN QUERY SELECT api_link_colors_v4.resources_id;
 END;
 $$;

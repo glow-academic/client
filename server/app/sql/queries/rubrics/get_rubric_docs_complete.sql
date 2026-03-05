@@ -20,12 +20,12 @@ CREATE OR REPLACE FUNCTION api_get_rubric_docs_v4(
     p_entity_id uuid DEFAULT NULL
 )
 RETURNS TABLE (
-    name_id uuid
+    names_id uuid
 )
 LANGUAGE sql
 STABLE
 AS $$
-SELECT j.name_id
+SELECT j.names_id
 FROM rubric_names_junction j
 WHERE p_entity_id IS NOT NULL
   AND j.rubric_id = p_entity_id

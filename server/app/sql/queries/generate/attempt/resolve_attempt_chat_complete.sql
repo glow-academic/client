@@ -97,14 +97,14 @@ BEGIN
 
     -- Rubrics
     INSERT INTO attempt_chat_rubrics_connection (attempt_chat_id, rubrics_id)
-    SELECT v_attempt_chat_id, c.rubrics_id
+    SELECT v_attempt_chat_id, c.rubric_id
     FROM chat_rubrics_connection c
     WHERE c.chat_id = p_chat_entry_id AND c.active = true
     ON CONFLICT DO NOTHING;
 
     -- Standards
     INSERT INTO attempt_chat_standards_connection (attempt_chat_id, standards_id)
-    SELECT v_attempt_chat_id, c.standards_id
+    SELECT v_attempt_chat_id, c.standard_id
     FROM chat_standards_connection c
     WHERE c.chat_id = p_chat_entry_id AND c.active = true
     ON CONFLICT DO NOTHING;
@@ -118,7 +118,7 @@ BEGIN
 
     -- Departments
     INSERT INTO attempt_chat_departments_connection (attempt_chat_id, departments_id)
-    SELECT v_attempt_chat_id, c.departments_id
+    SELECT v_attempt_chat_id, c.department_id
     FROM chat_departments_connection c
     WHERE c.chat_id = p_chat_entry_id AND c.active = true
     ON CONFLICT DO NOTHING;
@@ -128,7 +128,7 @@ BEGIN
     IF NOT p_generate_personas THEN
         -- Copy resource-level persona connections
         INSERT INTO attempt_chat_personas_connection (attempt_chat_id, personas_id)
-        SELECT v_attempt_chat_id, c.personas_id
+        SELECT v_attempt_chat_id, c.persona_id
         FROM chat_personas_connection c
         WHERE c.chat_id = p_chat_entry_id AND c.active = true
         ON CONFLICT DO NOTHING;
@@ -136,7 +136,7 @@ BEGIN
         -- Create personas_entry for each persona resource, link via connection,
         -- and populate assistant_persona_ids on attempt_chat_entry
         WITH persona_resources AS (
-            SELECT c.personas_id
+            SELECT c.persona_id
             FROM chat_personas_connection c
             WHERE c.chat_id = p_chat_entry_id AND c.active = true
         ),
@@ -147,17 +147,17 @@ BEGIN
             RETURNING id
         ),
         paired AS (
-            SELECT ne.id AS entry_id, pr.personas_id
+            SELECT ne.id AS entries_id, pr.persona_id
             FROM (SELECT id, ROW_NUMBER() OVER () AS rn FROM new_entries) ne
             JOIN (SELECT personas_id, ROW_NUMBER() OVER () AS rn FROM persona_resources) pr
                 ON ne.rn = pr.rn
         ),
         link_entries AS (
             INSERT INTO personas_personas_connection (personas_entry_id, personas_id)
-            SELECT entry_id, personas_id FROM paired
+            SELECT entries_id, personas_id FROM paired
         )
         UPDATE attempt_chat_entry
-        SET assistant_persona_ids = (SELECT ARRAY_AGG(entry_id) FROM paired)
+        SET assistant_persona_ids = (SELECT ARRAY_AGG(entries_id) FROM paired)
         WHERE id = v_attempt_chat_id;
     END IF;
 
@@ -179,7 +179,7 @@ BEGIN
 
     IF NOT p_generate_questions THEN
         INSERT INTO attempt_chat_questions_connection (attempt_chat_id, questions_id)
-        SELECT v_attempt_chat_id, c.questions_id
+        SELECT v_attempt_chat_id, c.question_id
         FROM chat_questions_connection c
         WHERE c.chat_id = p_chat_entry_id AND c.active = true
         ON CONFLICT DO NOTHING;
@@ -187,7 +187,7 @@ BEGIN
 
     IF NOT p_generate_options THEN
         INSERT INTO attempt_chat_options_connection (attempt_chat_id, options_id)
-        SELECT v_attempt_chat_id, c.options_id
+        SELECT v_attempt_chat_id, c.option_id
         FROM chat_options_connection c
         WHERE c.chat_id = p_chat_entry_id AND c.active = true
         ON CONFLICT DO NOTHING;
@@ -195,7 +195,7 @@ BEGIN
 
     IF NOT p_generate_videos THEN
         INSERT INTO attempt_chat_videos_connection (attempt_chat_id, videos_id)
-        SELECT v_attempt_chat_id, c.videos_id
+        SELECT v_attempt_chat_id, c.video_id
         FROM chat_videos_connection c
         WHERE c.chat_id = p_chat_entry_id AND c.active = true
         ON CONFLICT DO NOTHING;
@@ -203,7 +203,7 @@ BEGIN
 
     IF NOT p_generate_images THEN
         INSERT INTO attempt_chat_images_connection (attempt_chat_id, images_id)
-        SELECT v_attempt_chat_id, c.images_id
+        SELECT v_attempt_chat_id, c.image_id
         FROM chat_images_connection c
         WHERE c.chat_id = p_chat_entry_id AND c.active = true
         ON CONFLICT DO NOTHING;
@@ -211,7 +211,7 @@ BEGIN
 
     IF NOT p_generate_documents THEN
         INSERT INTO attempt_chat_documents_connection (attempt_chat_id, documents_id)
-        SELECT v_attempt_chat_id, c.documents_id
+        SELECT v_attempt_chat_id, c.document_id
         FROM chat_documents_connection c
         WHERE c.chat_id = p_chat_entry_id AND c.active = true
         ON CONFLICT DO NOTHING;

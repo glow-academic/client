@@ -59,7 +59,7 @@ FROM (
           OR LOWER(v.value) LIKE '%' || LOWER(search) || '%'
       )
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT model OR EXISTS (SELECT 1 FROM model_values_junction j WHERE j.value_id = v.id AND j.active = true))
+      AND (NOT model OR EXISTS (SELECT 1 FROM model_values_junction j WHERE j.values_id = v.id AND j.active = true))
       AND (NOT provider OR EXISTS (SELECT 1 FROM provider_values_junction j WHERE j.values_id = v.id AND j.active = true))
     ORDER BY v.value
     LIMIT limit_count

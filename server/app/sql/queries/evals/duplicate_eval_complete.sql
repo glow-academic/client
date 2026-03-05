@@ -35,8 +35,8 @@ WITH params AS (
 original_eval AS (
     SELECT 
         e.id,
-        (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = e.id LIMIT 1),
-        (SELECT d.description FROM eval_descriptions_junction ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = e.id LIMIT 1)
+        (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.names_id = n.id WHERE en.eval_id = e.id LIMIT 1),
+        (SELECT d.description FROM eval_descriptions_junction ed JOIN descriptions_resource d ON ed.descriptions_id = d.id WHERE ed.eval_id = e.id LIMIT 1)
     FROM params x
     JOIN eval_artifact e ON e.id = x.eval_id
 ),
@@ -61,7 +61,7 @@ new_name_resource AS (
     FROM original_eval
     WHERE name IS NOT NULL
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id, name
+    RETURNING id as names_id, name
 ),
 -- Insert description INTO descriptions_resource table
 new_description_resource AS (
@@ -70,7 +70,7 @@ new_description_resource AS (
     FROM original_eval
     WHERE description IS NOT NULL AND description != ''
     ON CONFLICT (description) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as description_id, description
+    RETURNING id as descriptions_id, description
 ),
 new_eval AS (
     INSERT INTO eval_artifact (
@@ -85,25 +85,25 @@ new_eval AS (
 ),
 -- Link eval to name
 link_eval_name AS (
-    INSERT INTO eval_names_junction (eval_id, name_id, created_at)
+    INSERT INTO eval_names_junction (eval_id, names_id, created_at)
     SELECT 
         ne.id,
-        nnr.name_id,
+        nnr.names_id,
         NOW()
     FROM new_eval ne
     CROSS JOIN new_name_resource nnr
-    ON CONFLICT (eval_id, name_id) DO NOTHING
+    ON CONFLICT (eval_id, names_id) DO NOTHING
 ),
 -- Link eval to description
 link_eval_description AS (
-    INSERT INTO eval_descriptions_junction (eval_id, description_id, created_at)
+    INSERT INTO eval_descriptions_junction (eval_id, descriptions_id, created_at)
     SELECT 
         ne.id,
-        ndr.description_id,
+        ndr.descriptions_id,
         NOW()
     FROM new_eval ne
     CROSS JOIN new_description_resource ndr
-    ON CONFLICT (eval_id, description_id) DO NOTHING
+    ON CONFLICT (eval_id, descriptions_id) DO NOTHING
 ),
 -- Link eval active flag (set to false for duplicate)
 link_eval_active_flag AS (

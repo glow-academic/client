@@ -60,7 +60,7 @@ FROM (
           OR EXISTS (
               SELECT 1 FROM persona_examples_junction pe
               JOIN personas_resource pr ON pr.id = pe.persona_id
-              WHERE pe.example_id = e.id
+              WHERE pe.examples_id = e.id
                 AND pe.active = true
                 AND (
                     COALESCE(array_length(department_ids, 1), 0) = 0
@@ -86,7 +86,7 @@ FROM (
           )
       )
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_examples_junction j WHERE j.example_id = e.id AND j.active = true))
+      AND (NOT persona OR EXISTS (SELECT 1 FROM persona_examples_junction j WHERE j.examples_id = e.id AND j.active = true))
     ORDER BY e.example
     LIMIT limit_count
     OFFSET offset_count

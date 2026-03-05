@@ -57,7 +57,7 @@ position_data AS (
     -- Exclude specified IDs
     AND (exclude_ids IS NULL OR NOT (spr.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_simulation_positions_junction j WHERE j.simulation_position_id = spr.id AND j.active = true))
+      AND (NOT cohort OR EXISTS (SELECT 1 FROM cohort_simulation_positions_junction j WHERE j.simulation_positions_id = spr.id AND j.active = true))
     ORDER BY spr.value, spr.simulation_id
 )
 SELECT COALESCE(

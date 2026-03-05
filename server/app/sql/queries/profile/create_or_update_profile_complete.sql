@@ -55,16 +55,16 @@ user_profile AS (
     SELECT COALESCE(r.role, 'member'::profile_type) as role,
            ''::text as actor_name
     FROM profile_roles_junction prj
-    JOIN roles_resource r ON prj.role_id = r.id
+    JOIN roles_resource r ON prj.roles_id = r.id
     WHERE prj.profile_id = (SELECT profile_id FROM params)
     LIMIT 1
 ),
 current_user_role AS (
     -- Get current user's role for validation (if provided)
-    SELECT (SELECT r.role FROM profile_roles_junction pr_j 
-            JOIN roles_resource r ON pr_j.role_id = r.id 
-            WHERE pr_j.profile_id = p.id 
-            LIMIT 1) as role 
+    SELECT (SELECT r.role FROM profile_roles_junction pr_j
+            JOIN roles_resource r ON pr_j.roles_id = r.id
+            WHERE pr_j.profile_id = p.id
+            LIMIT 1) as role
     FROM params x JOIN profile_artifact p ON p.id = x.current_profile_id WHERE x.current_profile_id IS NOT NULL
 ),
 role_validation AS (
@@ -96,7 +96,7 @@ existing_profile AS (
     -- Find existing profile by primary email in profile_emails_junction table
     SELECT pe.profile_id as id
     FROM profile_emails_junction pe
-    JOIN emails_resource e ON pe.email_id = e.id
+    JOIN emails_resource e ON pe.emails_id = e.id
     JOIN profile_artifact p ON p.id = pe.profile_id
     WHERE e.email = (SELECT email FROM primary_email)
       AND pe.active = true
@@ -119,7 +119,7 @@ name_resource AS (
     FROM params
     WHERE name IS NOT NULL AND name != ''
     ON CONFLICT (name) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as name_id, name
+    RETURNING id as names_id, name
 ),
 profile_upsert AS (
     -- Insert or UPDATE profile_artifact without first_name, last_name, active columns
@@ -136,7 +136,7 @@ profile_upsert AS (
 ),
 -- Look up role from roles_resource by profile_type
 role_resource AS (
-    SELECT id as role_id
+    SELECT id as roles_id
     FROM roles_resource
     WHERE role = (SELECT role FROM params)::profile_type
       AND active = true
@@ -148,37 +148,37 @@ profile_type_upsert AS (
     RETURNING profile_id
 ),
 profile_type_insert AS (
-    INSERT INTO profile_roles_junction (profile_id, role_id, created_at, generated, mcp)
-    SELECT pu.id, rr.role_id, NOW(), false, false
+    INSERT INTO profile_roles_junction (profile_id, roles_id, created_at, generated, mcp)
+    SELECT pu.id, rr.roles_id, NOW(), false, false
     FROM profile_upsert pu
     CROSS JOIN role_resource rr
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
-    ON CONFLICT (profile_id, role_id) DO NOTHING
+    ON CONFLICT (profile_id, roles_id) DO NOTHING
     RETURNING profile_id
 ),
 -- Link profile to name
 link_profile_name AS (
-    INSERT INTO profile_names_junction (profile_id, name_id, created_at)
+    INSERT INTO profile_names_junction (profile_id, names_id, created_at)
     SELECT 
         pu.id,
-        nr.name_id,
+        nr.names_id,
         NOW()
     FROM profile_upsert pu
     CROSS JOIN name_resource nr
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     ON CONFLICT (profile_id) DO UPDATE SET
-        name_id = EXCLUDED.name_id
+        names_id = EXCLUDED.names_id
 ),
 -- UPDATE profile_artifact active flag
 update_profile_active_flag AS (
-    INSERT INTO profile_flags_junction (profile_id, flag_id, created_at) SELECT pu.id,
+    INSERT INTO profile_flags_junction (profile_id, flags_id, created_at) SELECT pu.id,
         f.id,
         NOW()
     FROM profile_upsert pu
     CROSS JOIN flags_resource f
     WHERE f.name = 'profile_active'
       AND EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
-    ON CONFLICT (profile_id, flag_id) DO NOTHING
+    ON CONFLICT (profile_id, flags_id) DO NOTHING
 ),
 email_deactivate_all AS (
     -- Deactivate all existing emails for this profile
@@ -203,22 +203,22 @@ email_resources AS (
     FROM all_emails_data aed
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
     ON CONFLICT (email) DO UPDATE SET created_at = EXCLUDED.created_at
-    RETURNING id as email_id, email
+    RETURNING id as emails_id, email
 ),
 email_upsert AS (
     -- Link emails to profile via profile_emails_junction junction table
-    INSERT INTO profile_emails_junction (profile_id, email, email_id, is_primary, active)
+    INSERT INTO profile_emails_junction (profile_id, email, emails_id, is_primary, active)
     SELECT 
         pu.id,
         er.email,
-        er.email_id,
+        er.emails_id,
         aed.is_primary,
         true
     FROM profile_upsert pu
     CROSS JOIN all_emails_data aed
     JOIN email_resources er ON er.email = aed.email
     WHERE EXISTS (SELECT 1 FROM role_validation WHERE can_assign = true)
-    ON CONFLICT (profile_id, email_id) DO UPDATE SET
+    ON CONFLICT (profile_id, emails_id) DO UPDATE SET
         email = EXCLUDED.email,
         is_primary = EXCLUDED.is_primary,
         active = true
@@ -231,8 +231,8 @@ dept_cleanup AS (
 ),
 dept_insert AS (
     -- Insert department relationships (first one as primary)
-    INSERT INTO profile_departments_junction (profile_id, department_id, is_primary, active, created_at)
-    SELECT 
+    INSERT INTO profile_departments_junction (profile_id, departments_id, is_primary, active, created_at)
+    SELECT
         pu.id,
         dept_id,
         (ROW_NUMBER() OVER (ORDER BY dept_id) = 1) as is_primary,
@@ -242,7 +242,7 @@ dept_insert AS (
     CROSS JOIN unnest((SELECT department_ids FROM params)) as dept_id
     WHERE cardinality((SELECT department_ids FROM params)) > 0
       AND EXISTS (SELECT 1 FROM profile_upsert)
-    ON CONFLICT (profile_id, department_id) DO UPDATE SET
+    ON CONFLICT (profile_id, departments_id) DO UPDATE SET
         is_primary = EXCLUDED.is_primary,
         active = true
 ),
@@ -252,7 +252,7 @@ deactivate_old_sessions AS (
     WHERE id IN (
         SELECT psc.session_id
         FROM profiles_sessions_connection psc
-        WHERE psc.profiles_id = (SELECT id FROM profile_upsert)
+        WHERE psc.profile_id = (SELECT id FROM profile_upsert)
     )
       AND active = true
 ),

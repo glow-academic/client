@@ -4,7 +4,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.setting_resource_action CASCADE;
     CREATE TYPE types.setting_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -73,9 +73,9 @@ DECLARE
     v_run_id uuid;
     v_call_id uuid;
 BEGIN
-    v_name_id := (names).resource_id;
-    v_description_id := (descriptions).resource_id;
-    v_active_flag_id := (flags).resource_id;
+    v_name_id := (names).resources_id;
+    v_description_id := (descriptions).resources_id;
+    v_active_flag_id := (flags).resources_id;
     v_color_ids := COALESCE((colors).resource_ids, ARRAY[]::uuid[]);
     v_department_ids := COALESCE((departments).resource_ids, ARRAY[]::uuid[]);
     v_profile_ids := COALESCE((profiles).resource_ids, ARRAY[]::uuid[]);
@@ -338,8 +338,8 @@ BEGIN
         SELECT
             v_setting_id AS setting_id,
             api_save_setting_v4.profile_id AS profile_id,
-            v_name_id AS name_id,
-            v_description_id AS description_id,
+            v_name_id AS names_id,
+            v_description_id AS descriptions_id,
             v_active_flag_id AS active_flag_id,
             v_color_ids AS color_ids,
             v_department_ids AS department_ids,
@@ -352,18 +352,18 @@ BEGIN
     -- NOTE: Department permission validation is handled in Python (save.py)
     -- via compute_can_edit() before this SQL function is called.
     link_setting_name AS (
-        INSERT INTO setting_names_junction (setting_id, name_id, active, created_at)
-        SELECT x.setting_id, x.name_id, true, NOW()
+        INSERT INTO setting_names_junction (setting_id, names_id, active, created_at)
+        SELECT x.setting_id, x.names_id, true, NOW()
         FROM params x
-        WHERE x.name_id IS NOT NULL
+        WHERE x.names_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT setting_names_pkey DO UPDATE SET
             active = true
     ),
     link_setting_description AS (
-        INSERT INTO setting_descriptions_junction (setting_id, description_id, active, created_at)
-        SELECT x.setting_id, x.description_id, true, NOW()
+        INSERT INTO setting_descriptions_junction (setting_id, descriptions_id, active, created_at)
+        SELECT x.setting_id, x.descriptions_id, true, NOW()
         FROM params x
-        WHERE x.description_id IS NOT NULL
+        WHERE x.descriptions_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT setting_descriptions_pkey DO UPDATE SET
             active = true
     ),
@@ -416,10 +416,10 @@ BEGIN
             active = true
     ),
     link_provider_keys AS (
-        INSERT INTO setting_provider_keys_junction (setting_id, provider_key_id, active, created_at)
-        SELECT x.setting_id, provider_key_id, true, NOW()
+        INSERT INTO setting_provider_keys_junction (setting_id, provider_keys_id, active, created_at)
+        SELECT x.setting_id, provider_keys_id, true, NOW()
         FROM params x
-        CROSS JOIN UNNEST(x.provider_key_ids) as provider_key_id
+        CROSS JOIN UNNEST(x.provider_key_ids) as provider_keys_id
         WHERE COALESCE(array_length(x.provider_key_ids, 1), 0) > 0
         ON CONFLICT ON CONSTRAINT setting_provider_keys_junction_pkey DO UPDATE SET
             active = true
@@ -456,8 +456,8 @@ BEGIN
             description = d.description
         FROM setting_settings_junction j
         CROSS JOIN params p
-        LEFT JOIN names_resource n ON n.id = p.name_id
-        LEFT JOIN descriptions_resource d ON d.id = p.description_id
+        LEFT JOIN names_resource n ON n.id = p.names_id
+        LEFT JOIN descriptions_resource d ON d.id = p.descriptions_id
         WHERE j.settings_id = r.id
           AND j.setting_id = p.setting_id
         RETURNING r.id

@@ -79,7 +79,7 @@ parameter_edit_state AS (
         COALESCE(COUNT(DISTINCT spf.scenario_id), 0)::int as active_scenario_count
     FROM params x
     LEFT JOIN parameter_fields_resource pfr ON pfr.parameter_id = x.parameter_id AND pfr.active = true
-    LEFT JOIN scenario_parameter_fields_junction spf ON spf.parameter_field_id = pfr.id AND spf.active = true
+    LEFT JOIN scenario_parameter_fields_junction spf ON spf.parameter_fields_id = pfr.id AND spf.active = true
     WHERE x.parameter_id IS NOT NULL
 )
 SELECT

@@ -44,8 +44,8 @@ BEGIN
             'model_id', m.model_id,
             'prompt_id', m.prompt_id,
             'voice_id', m.voice_id,
-            'temperature_level_id', m.temperature_level_id,
-            'reasoning_level_id', m.reasoning_level_id,
+            'temperature_levels_id', m.temperature_levels_id,
+            'reasoning_levels_id', m.reasoning_levels_id,
             'key_id', m.key_id,
             'historical_run_ids', m.historical_run_ids
         )

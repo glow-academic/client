@@ -53,8 +53,8 @@ FROM (
       AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR t.department_ids && department_ids)
       AND (operation IS NULL OR t.operation = operation)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_tools_junction j WHERE j.tool_id = t.id AND j.active = true))
-      AND (NOT tool OR EXISTS (SELECT 1 FROM tool_tools_junction j WHERE j.tool_id = t.id AND j.active = true))
+      AND (NOT agent OR EXISTS (SELECT 1 FROM agent_tools_junction j WHERE j.tools_id = t.id AND j.active = true))
+      AND (NOT tool OR EXISTS (SELECT 1 FROM tool_tools_junction j WHERE j.tools_id = t.id AND j.active = true))
     ORDER BY t.name
     LIMIT limit_count
     OFFSET offset_count

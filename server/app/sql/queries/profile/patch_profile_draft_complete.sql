@@ -4,7 +4,7 @@ DO $$
 BEGIN
     DROP TYPE IF EXISTS types.profile_resource_action CASCADE;
     CREATE TYPE types.profile_resource_action AS (
-        resource_id uuid,
+        resources_id uuid,
         create_tool_id uuid,
         link_tool_id uuid
     );
@@ -65,9 +65,9 @@ DECLARE
     v_group_id uuid := group_id;
     v_role_id uuid;
 
-    v_name_id uuid := (names).resource_id;
-    v_active_flag_id uuid := (flags).resource_id;
-    v_request_limit_id uuid := (request_limits).resource_id;
+    v_name_id uuid := (names).resources_id;
+    v_active_flag_id uuid := (flags).resources_id;
+    v_request_limit_id uuid := (request_limits).resources_id;
     v_department_ids uuid[] := (departments).resource_ids;
     v_email_ids uuid[] := (emails).resource_ids;
 
@@ -92,14 +92,14 @@ BEGIN
         FROM unnest(v_department_ids) WITH ORDINALITY AS input_id(id, ord)
         LEFT JOIN departments_resource dr ON dr.id = input_id.id
         LEFT JOIN department_departments_junction ddj ON ddj.department_id = input_id.id
-        LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.departments_id;
+        LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.department_id;
 
         IF EXISTS (
             SELECT 1
             FROM unnest(v_department_ids) WITH ORDINALITY AS input_id(id, ord)
             LEFT JOIN departments_resource dr ON dr.id = input_id.id
             LEFT JOIN department_departments_junction ddj ON ddj.department_id = input_id.id
-            LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.departments_id
+            LEFT JOIN departments_resource dr_by_artifact ON dr_by_artifact.id = ddj.department_id
             WHERE dr.id IS NULL AND dr_by_artifact.id IS NULL
         ) THEN
             RAISE EXCEPTION 'Department resource not found';
@@ -108,8 +108,8 @@ BEGIN
 
     IF v_email_ids IS NOT NULL AND EXISTS (
         SELECT 1
-        FROM unnest(v_email_ids) AS email_id
-        WHERE NOT EXISTS (SELECT 1 FROM emails_resource WHERE id = email_id)
+        FROM unnest(v_email_ids) AS emails_id
+        WHERE NOT EXISTS (SELECT 1 FROM emails_resource WHERE id = emails_id)
     ) THEN
         RAISE EXCEPTION 'Email resource not found';
     END IF;
@@ -137,7 +137,7 @@ BEGIN
                 (
                     SELECT s.id
                     FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-                    WHERE psc.profiles_id = v_profile_id
+                    WHERE psc.profile_id = v_profile_id
                       AND s.active = true
                     ORDER BY s.created_at DESC
                     LIMIT 1
@@ -155,7 +155,7 @@ BEGIN
               SELECT 1
               FROM profile_drafts_profiles_connection pdc
               WHERE pdc.draft_id = profile_drafts_entry.id
-                AND pdc.profiles_id = v_profile_id
+                AND pdc.profile_id = v_profile_id
           )
           AND profile_drafts_entry.version = expected_version
         RETURNING profile_drafts_entry.id, profile_drafts_entry.version
@@ -174,7 +174,7 @@ BEGIN
                 (
                     SELECT s.id
                     FROM sessions_entry s JOIN profiles_sessions_connection psc ON psc.session_id = s.id
-                    WHERE psc.profiles_id = v_profile_id
+                    WHERE psc.profile_id = v_profile_id
                       AND s.active = true
                     ORDER BY s.created_at DESC
                     LIMIT 1
@@ -226,8 +226,8 @@ BEGIN
 
     IF v_email_ids IS NOT NULL THEN
         INSERT INTO profile_drafts_emails_connection (draft_id, emails_id, version)
-        SELECT v_draft_id, email_id, v_new_version
-        FROM UNNEST(v_email_ids) AS email_id
+        SELECT v_draft_id, emails_id, v_new_version
+        FROM UNNEST(v_email_ids) AS emails_id
         ON CONFLICT ON CONSTRAINT emails_draft_pkey DO UPDATE
         SET version = v_new_version;
     END IF;

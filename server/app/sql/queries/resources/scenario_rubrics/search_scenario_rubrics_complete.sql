@@ -47,5 +47,5 @@ WHERE srr.active = true
   )
   AND (COALESCE(array_length(rubric_ids, 1), 0) = 0 OR srr.rubric_id = ANY(rubric_ids))
   -- Artifact boolean filters
-  AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenario_rubrics_junction j WHERE j.scenario_rubric_id = srr.id AND j.active = true));
+  AND (NOT simulation OR EXISTS (SELECT 1 FROM simulation_scenario_rubrics_junction j WHERE j.scenario_rubrics_id = srr.id AND j.active = true));
 $$;

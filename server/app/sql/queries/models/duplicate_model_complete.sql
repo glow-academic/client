@@ -42,23 +42,23 @@ model_exists_check AS (
 actor_profile AS (
     SELECT
         x.profile_id,
-        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
+        COALESCE(COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), ''), 'System') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
 source_model AS (
     SELECT
-        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.name_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
-        (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.description_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
+        (SELECT n.name FROM model_names_junction mn JOIN names_resource n ON mn.names_id = n.id WHERE mn.model_id = m.id LIMIT 1) as name,
+        (SELECT d.description FROM model_descriptions_junction md JOIN descriptions_resource d ON md.descriptions_id = d.id WHERE md.model_id = m.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM model_flags_junction mf JOIN flags_resource f ON mf.flag_id = f.id WHERE mf.model_id = m.id AND f.name = 'model_active' AND f.value = TRUE) as active,
         NULL::uuid as domain_id,  -- Domain no longer exists, use NULL
         (SELECT mpj.providers_id FROM model_providers_junction mpj WHERE mpj.model_id = m.id AND mpj.active = true LIMIT 1) as provider_id
     FROM params x
     JOIN model_artifact m ON m.id = x.model_id
 ),
--- Get existing description_id from junction and link (instead of creating new)
+-- Get existing descriptions_id from junction and link (instead of creating new)
 original_description_id AS (
-    SELECT md.description_id
+    SELECT md.descriptions_id
     FROM model_descriptions_junction md
     WHERE md.model_id = (SELECT model_id FROM params)
     LIMIT 1
@@ -81,10 +81,10 @@ duplicated_model AS (
 ),
 -- Copy active value junction from source model (link to same existing value resource)
 link_model_value AS (
-    INSERT INTO model_values_junction (model_id, value_id, created_at, generated, mcp)
+    INSERT INTO model_values_junction (model_id, values_id, created_at, generated, mcp)
     SELECT
         dm.id,
-        mv.value_id,
+        mv.values_id,
         NOW(),
         false,
         false
@@ -120,7 +120,7 @@ link_model_models_junction AS (
 ),
 -- Link model to name (created by Python, passed as name_resource_id)
 link_model_name AS (
-    INSERT INTO model_names_junction (model_id, name_id, created_at)
+    INSERT INTO model_names_junction (model_id, names_id, created_at)
     SELECT
         dm.id,
         x.name_resource_id,
@@ -128,19 +128,19 @@ link_model_name AS (
     FROM duplicated_model dm
     CROSS JOIN params x
     WHERE x.name_resource_id IS NOT NULL
-    ON CONFLICT (model_id, name_id) DO NOTHING
+    ON CONFLICT (model_id, names_id) DO NOTHING
 ),
 -- Link model to existing description
 link_model_description AS (
-    INSERT INTO model_descriptions_junction (model_id, description_id, created_at)
+    INSERT INTO model_descriptions_junction (model_id, descriptions_id, created_at)
     SELECT
         dm.id,
-        od.description_id,
+        od.descriptions_id,
         NOW()
     FROM duplicated_model dm
     CROSS JOIN original_description_id od
-    WHERE od.description_id IS NOT NULL
-    ON CONFLICT (model_id, description_id) DO NOTHING
+    WHERE od.descriptions_id IS NOT NULL
+    ON CONFLICT (model_id, descriptions_id) DO NOTHING
 ),
 -- Link model to provider (via model_providers_junction)
 link_model_provider AS (

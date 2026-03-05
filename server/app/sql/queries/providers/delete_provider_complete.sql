@@ -49,7 +49,7 @@ usage_check AS (
 ),
 provider_info AS (
     SELECT
-        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.provider_id = p.id LIMIT 1) as name
+        (SELECT n.name FROM provider_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.provider_id = p.id LIMIT 1) as name
     FROM params x
     JOIN provider_artifact p ON p.id = x.provider_id
 ),

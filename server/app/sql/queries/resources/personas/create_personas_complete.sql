@@ -1,5 +1,5 @@
 -- Create denormalized personas_resource from resolved resource IDs
--- Parameters: name_id, description_id, color_id, icon_id, instructions_id,
+-- Parameters: names_id, descriptions_id, color_id, icon_id, instructions_id,
 --             department_ids, example_ids, parameter_field_ids
 -- Returns: personas_resource_id (uuid)
 
@@ -19,8 +19,8 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION api_create_personas_v4(
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
+    names_id uuid DEFAULT NULL,
+    descriptions_id uuid DEFAULT NULL,
     color_id uuid DEFAULT NULL,
     icon_id uuid DEFAULT NULL,
     instructions_id uuid DEFAULT NULL,
@@ -68,8 +68,8 @@ BEGIN
         api_create_personas_v4.mcp,
         api_create_personas_v4.mcp
     FROM (SELECT 1) AS dummy
-    LEFT JOIN names_resource n ON n.id = api_create_personas_v4.name_id
-    LEFT JOIN descriptions_resource d ON d.id = api_create_personas_v4.description_id
+    LEFT JOIN names_resource n ON n.id = api_create_personas_v4.names_id
+    LEFT JOIN descriptions_resource d ON d.id = api_create_personas_v4.descriptions_id
     LEFT JOIN icons_resource ic ON ic.id = api_create_personas_v4.icon_id
     LEFT JOIN colors_resource c ON c.id = api_create_personas_v4.color_id
     LEFT JOIN instructions_resource ins ON ins.id = api_create_personas_v4.instructions_id

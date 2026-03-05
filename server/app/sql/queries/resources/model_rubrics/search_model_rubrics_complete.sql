@@ -47,5 +47,5 @@ WHERE mrr.active = true
   )
   AND (COALESCE(array_length(rubric_ids, 1), 0) = 0 OR mrr.rubric_id = ANY(rubric_ids))
   -- Artifact boolean filters
-  AND (NOT eval OR EXISTS (SELECT 1 FROM eval_model_rubrics_junction j WHERE j.model_rubric_id = mrr.id AND j.active = true));
+  AND (NOT eval OR EXISTS (SELECT 1 FROM eval_model_rubrics_junction j WHERE j.model_rubrics_id = mrr.id AND j.active = true));
 $$;

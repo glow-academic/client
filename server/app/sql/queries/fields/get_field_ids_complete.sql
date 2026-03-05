@@ -30,8 +30,8 @@ CREATE OR REPLACE FUNCTION api_get_field_ids_v4(
 )
 RETURNS TABLE (
     -- Single-select resource IDs (from draft or field junction)
-    name_id uuid,
-    description_id uuid,
+    names_id uuid,
+    descriptions_id uuid,
     active_flag_id uuid,
 
     -- Multi-select resource IDs
@@ -76,7 +76,7 @@ field_parameters_data AS (
             ELSE COALESCE(
                 (SELECT ARRAY_AGG(cpr.parameter_id ORDER BY fcpj.created_at)
                  FROM field_conditional_parameters_junction fcpj
-                 JOIN conditional_parameters_resource cpr ON cpr.id = fcpj.conditional_parameter_id
+                 JOIN conditional_parameters_resource cpr ON cpr.id = fcpj.conditional_parameters_id
                  WHERE fcpj.field_id = (SELECT field_id FROM params) AND fcpj.active = true),
                 ARRAY[]::uuid[]
             )
@@ -87,12 +87,12 @@ field_parameters_data AS (
 -- Single-select resource IDs (canonical only).
 name_resource_data AS (
     SELECT
-        (SELECT fn.name_id FROM field_names_junction fn WHERE fn.field_id = (SELECT field_id FROM params) AND fn.active = true LIMIT 1) as name_id
+        (SELECT fn.names_id FROM field_names_junction fn WHERE fn.field_id = (SELECT field_id FROM params) AND fn.active = true LIMIT 1) as names_id
     FROM params
 ),
 description_resource_data AS (
     SELECT
-        (SELECT fd.description_id FROM field_descriptions_junction fd WHERE fd.field_id = (SELECT field_id FROM params) AND fd.active = true LIMIT 1) as description_id
+        (SELECT fd.descriptions_id FROM field_descriptions_junction fd WHERE fd.field_id = (SELECT field_id FROM params) AND fd.active = true LIMIT 1) as descriptions_id
     FROM params
 ),
 flag_resource_data AS (
@@ -109,8 +109,8 @@ flag_resource_data AS (
 )
 SELECT
     -- Single-select resource IDs
-    (SELECT name_id FROM name_resource_data) as name_id,
-    (SELECT description_id FROM description_resource_data) as description_id,
+    (SELECT names_id FROM name_resource_data) as names_id,
+    (SELECT descriptions_id FROM description_resource_data) as descriptions_id,
     (SELECT active_flag_id FROM flag_resource_data) as active_flag_id,
 
     -- Multi-select resource IDs

@@ -87,15 +87,15 @@ profile_data AS (
     -- Fetch the profile basic info
     SELECT
         p.id,
-        (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) as name,
+        (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1) as name,
         (SELECT r.role FROM profile_roles_junction pr_j
-         JOIN roles_resource r ON pr_j.role_id = r.id
+         JOIN roles_resource r ON pr_j.roles_id = r.id
          WHERE pr_j.profile_id = p.id
          LIMIT 1) as role,
-        EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND f.value = TRUE) as active,
-        pd.department_id as primary_department_id,
+        EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flags_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND f.value = TRUE) as active,
+        pd.departments_id as primary_department_id,
         (SELECT r.artifacts FROM profile_roles_junction pr_j
-         JOIN roles_resource r ON pr_j.role_id = r.id
+         JOIN roles_resource r ON pr_j.roles_id = r.id
          WHERE pr_j.profile_id = p.id LIMIT 1) as artifacts
     FROM profile_artifact p
     LEFT JOIN profile_departments_junction pd ON p.id = pd.profile_id AND pd.is_primary = TRUE
@@ -128,17 +128,17 @@ scoped_roles_computed AS (
 department_ids_data AS (
     -- Get department IDs for the profile
     SELECT COALESCE(
-        ARRAY_AGG(pd.department_id ORDER BY pd.is_primary DESC, pd.created_at),
+        ARRAY_AGG(pd.departments_id ORDER BY pd.is_primary DESC, pd.created_at),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM profile_departments_junction pd
-    JOIN departments_resource d ON d.id = pd.department_id
+    JOIN departments_resource d ON d.id = pd.departments_id
     WHERE pd.profile_id = (SELECT profile_id FROM params)
       AND pd.active = true
       AND EXISTS (
           SELECT 1 FROM department_flags_junction df
           JOIN flags_resource f ON df.flag_id = f.id
-          JOIN department_departments_junction ddj ON ddj.departments_id = d.id
+          JOIN department_departments_junction ddj ON ddj.department_id = d.id
           WHERE df.department_id = ddj.department_id
             AND f.name = 'department_active'
             AND f.value = true
@@ -149,11 +149,11 @@ cohort_ids_internal AS (
     -- Goes through profile_profiles_junction -> cohort_profiles_junction (reverse)
     -- Then joins cohort_cohorts_junction for resource IDs (analytics)
     SELECT
-        cpj.cohort_id AS artifact_id,
-        ccj.cohorts_id AS resource_id,
+        cpj.cohort_id AS artifacts_id,
+        ccj.cohorts_id AS resources_id,
         cpj.created_at
     FROM profile_profiles_junction ppj
-    JOIN cohort_profiles_junction cpj ON cpj.profiles_id = ppj.profiles_id AND cpj.active = true
+    JOIN cohort_profiles_junction cpj ON cpj.profile_id = ppj.profile_id AND cpj.active = true
     JOIN cohort_cohorts_junction ccj ON ccj.cohort_id = cpj.cohort_id AND ccj.active = true
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
       AND EXISTS (SELECT 1 FROM cohort_flags_junction cf JOIN flags_resource f ON cf.flag_id = f.id WHERE cf.cohort_id = cpj.cohort_id AND f.name = 'cohort_active' AND f.value = true)
@@ -161,7 +161,7 @@ cohort_ids_internal AS (
 cohort_ids_data AS (
     -- Return resource IDs for analytics (matches mv_chat_facts.cohort_id)
     SELECT COALESCE(
-        ARRAY_AGG(resource_id ORDER BY created_at),
+        ARRAY_AGG(resources_id ORDER BY created_at),
         ARRAY[]::uuid[]
     ) as cohort_ids
     FROM cohort_ids_internal
@@ -179,7 +179,7 @@ settings_resolution AS (
         LIMIT 1
     ),
     profile_department AS (
-        SELECT pd.department_id
+        SELECT pd.departments_id
         FROM params p
         JOIN profile_departments_junction pd ON pd.profile_id = p.profile_id
         WHERE p.profile_id IS NOT NULL
@@ -189,7 +189,7 @@ settings_resolution AS (
     ),
     resolved_department_id AS (
         SELECT COALESCE(
-            (SELECT department_id FROM profile_department),
+            (SELECT departments_id FROM profile_department),
             (SELECT CASE
                 WHEN department_id IS NOT NULL AND department_id != '' THEN department_id::uuid
                 ELSE NULL::uuid
@@ -221,7 +221,7 @@ draft_ids_data AS (
         ARRAY[]::uuid[]
     ) as draft_ids
     FROM profile_profiles_junction ppj
-    JOIN profiles_sessions_connection psc ON psc.profiles_id = ppj.profiles_id
+    JOIN profiles_sessions_connection psc ON psc.profile_id = ppj.profile_id
     JOIN (SELECT id, session_id, created_at, active FROM agent_drafts_entry
      UNION ALL SELECT id, session_id, created_at, active FROM auth_drafts_entry
      UNION ALL SELECT id, session_id, created_at, active FROM cohort_drafts_entry
@@ -455,9 +455,9 @@ artifact_agent_ids_data AS (
                 EXCEPT
                 SELECT dr.resource
                 FROM agent_tools_junction at
-                JOIN tool_tools_junction ttj ON ttj.tools_id = at.tool_id
+                JOIN tool_tools_junction ttj ON ttj.tool_id = at.tool_id
                 JOIN tool_resources_junction tdj ON tdj.tool_id = ttj.tool_id AND tdj.active = true
-                JOIN resources_resource dr ON dr.id = tdj.resource_id AND dr.active = true
+                JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
                 WHERE at.agent_id = ea.agent_id AND at.active = true
             )
         )
@@ -469,14 +469,14 @@ artifact_agent_ids_data AS (
         JOIN entries_resource br ON br.entry = e.entry::entry_type AND br.active = true
         WHERE EXISTS (
             SELECT 1 FROM tool_entries_junction tbj
-            WHERE tbj.entry_id = br.id AND tbj.active = true
+            WHERE tbj.entries_id = br.id AND tbj.active = true
         )
         AND EXISTS (
             SELECT 1 FROM eligible_agents ea
             JOIN agent_tools_junction at ON at.agent_id = ea.agent_id AND at.active = true
-            JOIN tool_tools_junction ttj ON ttj.tools_id = at.tool_id
+            JOIN tool_tools_junction ttj ON ttj.tool_id = at.tool_id
             JOIN tool_entries_junction tbj ON tbj.tool_id = ttj.tool_id AND tbj.active = true
-            JOIN entries_resource br2 ON br2.id = tbj.entry_id AND br2.active = true
+            JOIN entries_resource br2 ON br2.id = tbj.entries_id AND br2.active = true
             WHERE br2.entry = e.entry::entry_type
         )
     )
@@ -491,7 +491,7 @@ artifact_agent_ids_data AS (
 ),
 profiles_id_data AS (
     -- Resolve profiles_resource_id from profile_profiles_junction
-    SELECT ppj.profiles_id
+    SELECT ppj.profile_id
     FROM profile_profiles_junction ppj
     WHERE ppj.profile_id = (SELECT profile_id FROM params)
       AND ppj.active = true
@@ -499,7 +499,7 @@ profiles_id_data AS (
 ),
 actor_name_computed AS (
     SELECT
-        (SELECT COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '')
+        (SELECT COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '')
          FROM profile_artifact p
          WHERE p.id = (SELECT profile_id FROM params) LIMIT 1) as actor_name
 )

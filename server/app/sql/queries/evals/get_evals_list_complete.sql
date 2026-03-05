@@ -116,13 +116,13 @@ filtered_evals AS (
             (SELECT search FROM params) IS NULL
             OR EXISTS (
                 SELECT 1 FROM eval_names_junction en
-                JOIN names_resource n ON en.name_id = n.id
+                JOIN names_resource n ON en.names_id = n.id
                 WHERE en.eval_id = ae.id
                 AND LOWER(n.name) LIKE '%' || LOWER((SELECT search FROM params)) || '%'
             )
             OR EXISTS (
                 SELECT 1 FROM eval_descriptions_junction ed
-                JOIN descriptions_resource d ON ed.description_id = d.id
+                JOIN descriptions_resource d ON ed.descriptions_id = d.id
                 WHERE ed.eval_id = ae.id
                 AND LOWER(d.description) LIKE '%' || LOWER((SELECT search FROM params)) || '%'
             )
@@ -156,8 +156,8 @@ eval_objects AS (
         ARRAY_AGG(
             (
                 pe.id,
-                (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.name_id = n.id WHERE en.eval_id = pe.id LIMIT 1),
-                COALESCE((SELECT d.description FROM eval_descriptions_junction ed JOIN descriptions_resource d ON ed.description_id = d.id WHERE ed.eval_id = pe.id LIMIT 1), ''),
+                (SELECT n.name FROM eval_names_junction en JOIN names_resource n ON en.names_id = n.id WHERE en.eval_id = pe.id LIMIT 1),
+                COALESCE((SELECT d.description FROM eval_descriptions_junction ed JOIN descriptions_resource d ON ed.descriptions_id = d.id WHERE ed.eval_id = pe.id LIMIT 1), ''),
                 COALESCE((SELECT ARRAY_AGG(ed.department_id::text) FROM eval_departments_junction ed WHERE ed.eval_id = pe.id AND ed.active = true), ARRAY[]::text[]),
                 NOT COALESCE((SELECT f.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'eval_active' LIMIT 1), false),
                 COALESCE((SELECT f.value FROM eval_flags_junction ef JOIN flags_resource f ON ef.flag_id = f.id WHERE ef.eval_id = pe.id AND f.name = 'dynamic' LIMIT 1), false),
@@ -176,15 +176,15 @@ eval_objects AS (
 department_option_data AS (
     SELECT
         dr.id::text as value,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
         COUNT(DISTINCT ae.id) as count
     FROM departments_resource dr
-    JOIN department_departments_junction dd ON dd.departments_id = dr.id
+    JOIN department_departments_junction dd ON dd.department_id = dr.id
     JOIN accessible_evals ae ON EXISTS (
         SELECT 1 FROM eval_departments_junction ed WHERE ed.eval_id = ae.id AND ed.active = true AND ed.department_id = dr.id
     )
     WHERE dr.id IN (SELECT department_id FROM user_departments)
-      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
+      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
     GROUP BY dr.id, dd.department_id
 )
 SELECT

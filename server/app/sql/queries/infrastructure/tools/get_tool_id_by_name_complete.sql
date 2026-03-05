@@ -24,10 +24,10 @@ RETURNS TABLE (
 LANGUAGE sql
 STABLE
 AS $$
-    SELECT tt.tools_id as tool_id
+    SELECT tt.tool_id as tool_id
     FROM tool_artifact t
     JOIN tool_names_junction tn ON tn.tool_id = t.id
-    JOIN names_resource n ON n.id = tn.name_id
+    JOIN names_resource n ON n.id = tn.names_id
     JOIN tool_tools_junction tt ON tt.tool_id = t.id
     WHERE n.name = tool_name
       AND EXISTS (

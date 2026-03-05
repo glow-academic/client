@@ -51,7 +51,7 @@ persona_exists_check AS (
 -- Get persona departments (for access check)
 persona_departments_data AS (
     SELECT COALESCE(
-        ARRAY_AGG(pd.department_id ORDER BY pd.created_at) FILTER (WHERE pd.department_id IS NOT NULL),
+        ARRAY_AGG(pd.departments_id ORDER BY pd.created_at) FILTER (WHERE pd.departments_id IS NOT NULL),
         ARRAY[]::uuid[]
     ) as department_ids
     FROM params x
@@ -63,7 +63,7 @@ persona_edit_state AS (
     SELECT
         COALESCE(COUNT(DISTINCT spj.scenario_id), 0)::int as active_scenario_count
     FROM params x
-    LEFT JOIN scenario_personas_junction spj ON spj.persona_id = x.persona_id AND spj.active = true
+    LEFT JOIN scenario_personas_junction spj ON spj.personas_id = x.persona_id AND spj.active = true
     WHERE x.persona_id IS NOT NULL
 )
 SELECT

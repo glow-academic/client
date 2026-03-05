@@ -94,14 +94,14 @@ persona_scenarios AS (
         ARRAY_AGG(DISTINCT sr.id) as scenario_ids,
         COUNT(DISTINCT sr.id)::int as num_scenarios
     FROM persona_personas_junction ppj
-    JOIN personas_resource pr ON pr.id = ppj.personas_id
+    JOIN personas_resource pr ON pr.id = ppj.persona_id
     JOIN scenarios_resource sr ON pr.id = ANY(sr.persona_ids)
     GROUP BY ppj.persona_id
 ),
 persona_departments_data AS (
     SELECT
         pd.persona_id,
-        ARRAY_AGG(pd.department_id::text ORDER BY pd.created_at) as department_ids
+        ARRAY_AGG(pd.departments_id::text ORDER BY pd.created_at) as department_ids
     FROM persona_departments_junction pd
     GROUP BY pd.persona_id
 ),
@@ -111,7 +111,7 @@ persona_fields_data AS (
         ppfj.persona_id,
         ARRAY_AGG(DISTINCT fr.id) as field_ids
     FROM persona_parameter_fields_junction ppfj
-    JOIN parameter_fields_resource pfr ON pfr.id = ppfj.parameter_field_id
+    JOIN parameter_fields_resource pfr ON pfr.id = ppfj.parameter_fields_id
     JOIN fields_resource fr ON fr.id = pfr.field_id
     WHERE ppfj.active = true
     GROUP BY ppfj.persona_id
@@ -122,7 +122,7 @@ persona_cohorts AS (
         ppj.persona_id,
         COUNT(DISTINCT cr.id)::int as num_profiles
     FROM persona_personas_junction ppj
-    JOIN personas_resource pr ON pr.id = ppj.personas_id
+    JOIN personas_resource pr ON pr.id = ppj.persona_id
     JOIN profile_personas_resource ppr ON ppr.persona_id = pr.id AND ppr.active = true
     JOIN cohorts_resource cr ON ppr.id = ANY(cr.profile_persona_ids) AND cr.active = true
     GROUP BY ppj.persona_id
@@ -130,11 +130,11 @@ persona_cohorts AS (
 persona_data_base AS (
     SELECT
         p.id as persona_id,
-        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
-        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1) as description,
-        (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
-        (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
-        EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.type = 'persona_active' AND f.value = TRUE) as active,
+        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.persona_id = p.id LIMIT 1) as persona_name,
+        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.descriptions_id = d.id WHERE pd.persona_id = p.id LIMIT 1) as description,
+        (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.colors_id = c.id WHERE pc.persona_id = p.id LIMIT 1) as color,
+        (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icons_id = i.id WHERE pi.persona_id = p.id LIMIT 1) as icon,
+        EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flags_id = f.id WHERE pf.persona_id = p.id AND f.type = 'persona_active' AND f.value = TRUE) as active,
         p.updated_at,
         COALESCE(pdd.department_ids, NULL) as department_ids,
         COALESCE(ps.scenario_ids, ARRAY[]::uuid[]) as scenario_ids,
@@ -149,14 +149,14 @@ persona_data_base AS (
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
     LEFT JOIN persona_fields_data pfd ON pfd.persona_id = p.id
     LEFT JOIN persona_cohorts pc ON pc.persona_id = p.id
-    LEFT JOIN persona_departments_junction pd ON pd.persona_id = p.id AND pd.department_id IN (SELECT department_id FROM user_departments)
+    LEFT JOIN persona_departments_junction pd ON pd.persona_id = p.id AND pd.departments_id IN (SELECT department_id FROM user_departments)
     WHERE p.active = true
     GROUP BY p.id,
-        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
-        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
-        (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.color_id = c.id WHERE pc.persona_id = p.id LIMIT 1),
-        (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icon_id = i.id WHERE pi.persona_id = p.id LIMIT 1),
-        EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.persona_id = p.id AND f.type = 'persona_active' AND f.value = TRUE),
+        (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
+        (SELECT d.description FROM persona_descriptions_junction pd JOIN descriptions_resource d ON pd.descriptions_id = d.id WHERE pd.persona_id = p.id LIMIT 1),
+        (SELECT c.hex_code FROM persona_colors_junction pc JOIN colors_resource c ON pc.colors_id = c.id WHERE pc.persona_id = p.id LIMIT 1),
+        (SELECT i.value FROM persona_icons_junction pi JOIN icons_resource i ON pi.icons_id = i.id WHERE pi.persona_id = p.id LIMIT 1),
+        EXISTS (SELECT 1 FROM persona_flags_junction pf JOIN flags_resource f ON pf.flags_id = f.id WHERE pf.persona_id = p.id AND f.type = 'persona_active' AND f.value = TRUE),
         p.updated_at,
         pdd.department_ids, ps.scenario_ids, pfd.field_ids, ps.num_scenarios, pc.num_profiles, p.generated, p.mcp
     HAVING COUNT(pd.persona_id) > 0 OR NOT EXISTS (

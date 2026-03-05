@@ -144,9 +144,9 @@ settings_auths_with_items AS (
     -- Get linked auths for this settings with nested auth_items_junction
     SELECT 
         a.id as auth_id,
-        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.agent_id = a.id LIMIT 1),
-        COALESCE((SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE NULL::uuid = a.id LIMIT 1), '') as description,
-        (SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1) as slug,
+        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON an.names_id = n.id WHERE an.agent_id = a.id LIMIT 1),
+        COALESCE((SELECT (SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.document_id = d.id LIMIT 1) FROM agent_descriptions_junction ad JOIN descriptions_resource d ON ad.descriptions_id = d.id WHERE NULL::uuid = a.id LIMIT 1), '') as description,
+        (SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slugs_id WHERE as_j.auth_id = a.id LIMIT 1) as slug,
         EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' AND f.value = TRUE) AS active,
         COALESCE(
             ARRAY_AGG(
@@ -160,7 +160,7 @@ settings_auths_with_items AS (
     JOIN auths_resource a ON a.id = sa.auth_id AND EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND f.value = true)
     LEFT JOIN auth_items_junction ai_j ON ai_j.auth_id = a.id
     LEFT JOIN items_resource ai ON ai.id = ai_j.item_id
-    GROUP BY a.id, (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.name_id = n.id WHERE an.auth_id = a.id LIMIT 1), (SELECT d.description FROM auth_descriptions_junction ad JOIN descriptions_resource d ON ad.description_id = d.id WHERE ad.auth_id = a.id LIMIT 1), (SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slug_id WHERE as_j.auth_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND f.value = TRUE)
+    GROUP BY a.id, (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.names_id = n.id WHERE an.auth_id = a.id LIMIT 1), (SELECT d.description FROM auth_descriptions_junction ad JOIN descriptions_resource d ON ad.descriptions_id = d.id WHERE ad.auth_id = a.id LIMIT 1), (SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slugs_id WHERE as_j.auth_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND f.value = TRUE)
 ),
 settings_auths_data AS (
     -- Aggregate linked auths into array
@@ -188,8 +188,8 @@ SELECT
     s.id as settings_id,
     s.created_at,
     EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND f.value = TRUE),
-    (SELECT n.name FROM setting_names_junction sn JOIN names_resource n ON sn.name_id = n.id WHERE sn.setting_id = s.id LIMIT 1),
-    (SELECT d.description FROM setting_descriptions_junction sd JOIN descriptions_resource d ON sd.description_id = d.id WHERE sd.setting_id = s.id LIMIT 1),
+    (SELECT n.name FROM setting_names_junction sn JOIN names_resource n ON sn.names_id = n.id WHERE sn.setting_id = s.id LIMIT 1),
+    (SELECT d.description FROM setting_descriptions_junction sd JOIN descriptions_resource d ON sd.descriptions_id = d.id WHERE sd.setting_id = s.id LIMIT 1),
     COALESCE((SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND c.type = 'primary'::color_type LIMIT 1), '#171717'),
     COALESCE((SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND c.type = 'accent'::color_type LIMIT 1), '#f5f5f5'),
     COALESCE((SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND c.type = 'background'::color_type LIMIT 1), '#ffffff'),
@@ -205,9 +205,9 @@ SELECT
     COALESCE((SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND c.type = 'chart4'::color_type LIMIT 1), '#ffb900'),
     COALESCE((SELECT c.hex_code FROM setting_colors_junction sc JOIN colors_resource c ON sc.color_id = c.id WHERE sc.setting_id = s.id AND c.type = 'chart5'::color_type LIMIT 1), '#fe9a00'),
     EXISTS (SELECT 1 FROM setting_flags_junction sf JOIN flags_resource f ON sf.flag_id = f.id WHERE sf.setting_id = s.id AND f.name = 'guest_login_enabled' AND f.value = TRUE),
-    COALESCE((SELECT p.value FROM setting_thresholds_junction st JOIN thresholds_resource p ON st.threshold_id = p.id WHERE st.setting_id = s.id AND p.type = 'success'::threshold_type LIMIT 1), 85),
-    COALESCE((SELECT p.value FROM setting_thresholds_junction st JOIN thresholds_resource p ON st.threshold_id = p.id WHERE st.setting_id = s.id AND p.type = 'warning'::threshold_type LIMIT 1), 80),
-    COALESCE((SELECT p.value FROM setting_thresholds_junction st JOIN thresholds_resource p ON st.threshold_id = p.id WHERE st.setting_id = s.id AND p.type = 'danger'::threshold_type LIMIT 1), 70),
+    COALESCE((SELECT p.value FROM setting_thresholds_junction st JOIN thresholds_resource p ON st.thresholds_id = p.id WHERE st.setting_id = s.id AND p.type = 'success'::threshold_type LIMIT 1), 85),
+    COALESCE((SELECT p.value FROM setting_thresholds_junction st JOIN thresholds_resource p ON st.thresholds_id = p.id WHERE st.setting_id = s.id AND p.type = 'warning'::threshold_type LIMIT 1), 80),
+    COALESCE((SELECT p.value FROM setting_thresholds_junction st JOIN thresholds_resource p ON st.thresholds_id = p.id WHERE st.setting_id = s.id AND p.type = 'danger'::threshold_type LIMIT 1), 70),
     COALESCE(sad.auth_ids, ARRAY[]::text[]) as auth_ids,
     COALESCE(sad.auths, '{}'::types.q_get_settings_detail_v4_auth[]) as auths,
     COALESCE(spkd.provider_key_ids, ARRAY[]::uuid[]) as provider_key_ids

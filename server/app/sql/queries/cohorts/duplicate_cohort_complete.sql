@@ -39,7 +39,7 @@ WITH params AS (
 actor_profile AS (
     SELECT 
         x.profile_id AS profile_id,
-        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
+        COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1), '') as actor_name
     FROM params x
     JOIN profile_artifact p ON p.id = x.profile_id
 ),
@@ -47,8 +47,8 @@ original_cohort AS (
     -- Get original cohort data
     SELECT 
         c.id,
-        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.name_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
-        (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.description_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description
+        (SELECT n.name FROM cohort_names_junction cn JOIN names_resource n ON cn.names_id = n.id WHERE cn.cohort_id = c.id LIMIT 1) as name,
+        (SELECT d.description FROM cohort_descriptions_junction cd JOIN descriptions_resource d ON cd.descriptions_id = d.id WHERE cd.cohort_id = c.id LIMIT 1) as description
     FROM params x
     JOIN cohort_artifact c ON c.id = x.cohort_id
 ),
@@ -59,7 +59,7 @@ default_call AS (
 ),
 -- Insert description INTO descriptions_resource table
 existing_description_resource AS (
-    SELECT d.id as description_id, d.description
+    SELECT d.id as descriptions_id, d.description
     FROM original_cohort oc
     JOIN descriptions_resource d ON d.description = oc.description
     WHERE oc.description IS NOT NULL AND oc.description != ''
@@ -72,12 +72,12 @@ new_description_resource AS (
     CROSS JOIN default_call dc
     WHERE description IS NOT NULL AND description != ''
       AND NOT EXISTS (SELECT 1 FROM existing_description_resource)
-    RETURNING id as description_id, description
+    RETURNING id as descriptions_id, description
 ),
 description_resource AS (
-    SELECT description_id, description FROM new_description_resource
+    SELECT descriptions_id, description FROM new_description_resource
     UNION ALL
-    SELECT description_id, description FROM existing_description_resource
+    SELECT descriptions_id, description FROM existing_description_resource
     LIMIT 1
 ),
 new_group AS (
@@ -93,7 +93,7 @@ new_cohort AS (
 ),
 -- Link cohort to title (name resource created by Python)
 link_cohort_title AS (
-    INSERT INTO cohort_names_junction (cohort_id, name_id, created_at)
+    INSERT INTO cohort_names_junction (cohort_id, names_id, created_at)
     SELECT
         nc.id,
         name_resource_id,
@@ -103,10 +103,10 @@ link_cohort_title AS (
 ),
 -- Link cohort to description
 link_cohort_description AS (
-    INSERT INTO cohort_descriptions_junction (cohort_id, description_id, created_at)
+    INSERT INTO cohort_descriptions_junction (cohort_id, descriptions_id, created_at)
     SELECT 
         nc.id,
-        dr.description_id,
+        dr.descriptions_id,
         NOW()
     FROM new_cohort nc
     CROSS JOIN description_resource dr
@@ -142,7 +142,7 @@ copy_simulations AS (
 copy_simulation_positions AS (
     INSERT INTO cohort_simulation_positions_junction (
         cohort_id,
-        simulation_position_id,
+        simulation_positions_id,
         active,
         created_at,
         generated,
@@ -150,7 +150,7 @@ copy_simulation_positions AS (
     )
     SELECT
         nc.id,
-        csp.simulation_position_id,
+        csp.simulation_positions_id,
         csp.active,
         NOW(),
         csp.generated,

@@ -20,9 +20,9 @@ END $$;
 CREATE OR REPLACE FUNCTION api_save_scenario_v4(
     profile_id uuid,
     input_scenario_id uuid DEFAULT NULL,
-    name_id uuid DEFAULT NULL,
-    description_id uuid DEFAULT NULL,
-    problem_statement_id uuid DEFAULT NULL,
+    names_id uuid DEFAULT NULL,
+    descriptions_id uuid DEFAULT NULL,
+    problem_statements_id uuid DEFAULT NULL,
     flag_ids uuid[] DEFAULT NULL,
     department_ids uuid[] DEFAULT NULL,
     persona_ids uuid[] DEFAULT NULL,
@@ -52,7 +52,7 @@ BEGIN
 
     -- Validate required fields (only on create)
     IF is_create THEN
-        IF name_id IS NULL THEN
+        IF names_id IS NULL THEN
             RAISE EXCEPTION 'Name resource is required';
         END IF;
     END IF;
@@ -74,14 +74,14 @@ BEGIN
 
         -- COALESCE: fill NULL params from existing active junctions (partial update support)
         -- Single-select resources
-        IF name_id IS NULL THEN
-            name_id := (SELECT j.name_id FROM scenario_names_junction j WHERE j.scenario_id = v_scenario_id AND j.active LIMIT 1);
+        IF names_id IS NULL THEN
+            names_id := (SELECT j.names_id FROM scenario_names_junction j WHERE j.scenario_id = v_scenario_id AND j.active LIMIT 1);
         END IF;
-        IF description_id IS NULL THEN
-            description_id := (SELECT j.description_id FROM scenario_descriptions_junction j WHERE j.scenario_id = v_scenario_id AND j.active LIMIT 1);
+        IF descriptions_id IS NULL THEN
+            descriptions_id := (SELECT j.descriptions_id FROM scenario_descriptions_junction j WHERE j.scenario_id = v_scenario_id AND j.active LIMIT 1);
         END IF;
-        IF problem_statement_id IS NULL THEN
-            problem_statement_id := (SELECT j.problem_statement_id FROM scenario_problem_statements_junction j WHERE j.scenario_id = v_scenario_id AND j.active LIMIT 1);
+        IF problem_statements_id IS NULL THEN
+            problem_statements_id := (SELECT j.problem_statements_id FROM scenario_problem_statements_junction j WHERE j.scenario_id = v_scenario_id AND j.active LIMIT 1);
         END IF;
 
         -- Multi-select arrays: preserve existing if NULL passed
@@ -99,13 +99,13 @@ BEGIN
         END IF;
         -- parameter_ids: no junction (scenario_parameters_junction was dropped), preserve as NULL
         IF parameter_field_ids IS NULL THEN
-            parameter_field_ids := COALESCE((SELECT ARRAY_AGG(j.parameter_field_id) FROM scenario_parameter_fields_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
+            parameter_field_ids := COALESCE((SELECT ARRAY_AGG(j.parameter_fields_id) FROM scenario_parameter_fields_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF image_ids IS NULL THEN
             image_ids := COALESCE((SELECT ARRAY_AGG(j.image_id) FROM scenario_images_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF objective_ids IS NULL THEN
-            objective_ids := COALESCE((SELECT ARRAY_AGG(j.objective_id) FROM scenario_objectives_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
+            objective_ids := COALESCE((SELECT ARRAY_AGG(j.objectives_id) FROM scenario_objectives_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
         END IF;
         IF video_ids IS NULL THEN
             video_ids := COALESCE((SELECT ARRAY_AGG(j.video_id) FROM scenario_videos_junction j WHERE j.scenario_id = v_scenario_id AND j.active), ARRAY[]::uuid[]);
@@ -140,8 +140,8 @@ BEGIN
             false,
             false
         FROM (SELECT 1) AS dummy
-        LEFT JOIN names_resource n ON n.id = api_save_scenario_v4.name_id
-        LEFT JOIN descriptions_resource d ON d.id = api_save_scenario_v4.description_id
+        LEFT JOIN names_resource n ON n.id = api_save_scenario_v4.names_id
+        LEFT JOIN descriptions_resource d ON d.id = api_save_scenario_v4.descriptions_id
         RETURNING id INTO scenarios_resource_id;
     END IF;
 
@@ -167,9 +167,9 @@ BEGIN
     WITH params AS (
         SELECT
             v_scenario_id AS scenario_id,
-            api_save_scenario_v4.name_id AS name_id,
-            api_save_scenario_v4.description_id AS description_id,
-            api_save_scenario_v4.problem_statement_id AS problem_statement_id,
+            api_save_scenario_v4.names_id AS names_id,
+            api_save_scenario_v4.descriptions_id AS descriptions_id,
+            api_save_scenario_v4.problem_statements_id AS problem_statements_id,
             api_save_scenario_v4.flag_ids AS flag_ids,
             api_save_scenario_v4.department_ids AS department_ids,
             api_save_scenario_v4.persona_ids AS persona_ids,
@@ -184,26 +184,26 @@ BEGIN
     ),
     -- Link name
     link_name AS (
-        INSERT INTO scenario_names_junction (scenario_id, name_id, active, created_at, generated, mcp)
-        SELECT x.scenario_id, x.name_id, true, NOW(), false, false
+        INSERT INTO scenario_names_junction (scenario_id, names_id, active, created_at, generated, mcp)
+        SELECT x.scenario_id, x.names_id, true, NOW(), false, false
         FROM params x
-        WHERE x.name_id IS NOT NULL
+        WHERE x.names_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT scenario_names_pkey DO UPDATE SET active = true, generated = false, mcp = false
     ),
     -- Link description
     link_description AS (
-        INSERT INTO scenario_descriptions_junction (scenario_id, description_id, active, created_at, generated, mcp)
-        SELECT x.scenario_id, x.description_id, true, NOW(), false, false
+        INSERT INTO scenario_descriptions_junction (scenario_id, descriptions_id, active, created_at, generated, mcp)
+        SELECT x.scenario_id, x.descriptions_id, true, NOW(), false, false
         FROM params x
-        WHERE x.description_id IS NOT NULL
+        WHERE x.descriptions_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT scenario_descriptions_pkey DO UPDATE SET active = true, generated = false, mcp = false
     ),
     -- Link problem statement
     link_problem_statement AS (
-        INSERT INTO scenario_problem_statements_junction (scenario_id, problem_statement_id, active, created_at, generated, mcp)
-        SELECT x.scenario_id, x.problem_statement_id, true, NOW(), false, false
+        INSERT INTO scenario_problem_statements_junction (scenario_id, problem_statements_id, active, created_at, generated, mcp)
+        SELECT x.scenario_id, x.problem_statements_id, true, NOW(), false, false
         FROM params x
-        WHERE x.problem_statement_id IS NOT NULL
+        WHERE x.problem_statements_id IS NOT NULL
         ON CONFLICT ON CONSTRAINT scenario_problem_statements_pkey DO UPDATE SET active = true, generated = false, mcp = false
     ),
     -- Link flags
@@ -244,7 +244,7 @@ BEGIN
     ),
     -- Link parameter fields (parameter_field_ids passed directly, already resolved)
     link_parameter_fields AS (
-        INSERT INTO scenario_parameter_fields_junction (scenario_id, parameter_field_id, active, created_at, generated, mcp)
+        INSERT INTO scenario_parameter_fields_junction (scenario_id, parameter_fields_id, active, created_at, generated, mcp)
         SELECT x.scenario_id, pfid, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.parameter_field_ids) AS pfid
@@ -262,7 +262,7 @@ BEGIN
     ),
     -- Link objectives
     link_objectives AS (
-        INSERT INTO scenario_objectives_junction (scenario_id, objective_id, active, created_at, generated, mcp)
+        INSERT INTO scenario_objectives_junction (scenario_id, objectives_id, active, created_at, generated, mcp)
         SELECT x.scenario_id, obj, true, NOW(), false, false
         FROM params x
         CROSS JOIN UNNEST(x.objective_ids) AS obj

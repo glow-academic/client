@@ -81,7 +81,7 @@ SELECT COALESCE(
     ARRAY[]::types.q_get_videos_v4_item[]
 ) as items
 FROM videos_resource v
-LEFT JOIN videos_videos_connection vvc ON vvc.videos_id = v.id AND vvc.active = true
+LEFT JOIN videos_videos_connection vvc ON vvc.video_id = v.id AND vvc.active = true
 LEFT JOIN videos_entry ve ON ve.id = vvc.video_id AND ve.active = true
 LEFT JOIN video_uploads_entry vue ON vue.video_id = ve.id AND vue.active = true
 WHERE v.id = ANY(p_ids);

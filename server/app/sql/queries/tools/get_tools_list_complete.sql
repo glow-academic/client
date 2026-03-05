@@ -97,7 +97,7 @@ tool_agent_counts AS (
         COALESCE(
             (SELECT COUNT(DISTINCT atj.agent_id) FROM agent_tools_junction atj
                 JOIN tools_resource tr ON tr.id = atj.tool_id
-                JOIN tool_tools_junction ttj ON ttj.tools_id = tr.id
+                JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
                 WHERE ttj.tool_id = t.id AND atj.active = true),
             0
         )::bigint as active_agent_count
@@ -109,7 +109,7 @@ tool_agents_data AS (
         ttj.tool_id,
         ARRAY_AGG(DISTINCT atj.agent_id) as agent_ids
     FROM tool_tools_junction ttj
-    JOIN tools_resource tr ON tr.id = ttj.tools_id AND tr.active = true
+    JOIN tools_resource tr ON tr.id = ttj.tool_id AND tr.active = true
     JOIN agent_tools_junction atj ON atj.tool_id = tr.id AND atj.active = true
     GROUP BY ttj.tool_id
 ),
@@ -119,14 +119,14 @@ tool_creatable_data AS (
         ttj.tool_id,
         (tr.operation = 'create') as is_creatable
     FROM tool_tools_junction ttj
-    JOIN tools_resource tr ON tr.id = ttj.tools_id AND tr.active = true
+    JOIN tools_resource tr ON tr.id = ttj.tool_id AND tr.active = true
 ),
 -- Core tool data
 tool_data AS (
     SELECT
         t.id as tool_id,
-        (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.name_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
-        (SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.description_id = d.id WHERE td.tool_id = t.id LIMIT 1) as description,
+        (SELECT n.name FROM tool_names_junction tn JOIN names_resource n ON tn.names_id = n.id WHERE tn.tool_id = t.id LIMIT 1) as name,
+        (SELECT d.description FROM tool_descriptions_junction td JOIN descriptions_resource d ON td.descriptions_id = d.id WHERE td.tool_id = t.id LIMIT 1) as description,
         EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true) as active,
         t.updated_at,
         COALESCE(tac.active_agent_count, 0)::bigint as active_agent_count,
@@ -167,12 +167,12 @@ paginated_tools AS (
 department_option_data AS (
     SELECT
         dr.id::text as value,
-        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
+        (SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1) as label,
         (SELECT COUNT(*) FROM tool_data td WHERE dr.id::text = ANY(td.department_ids)) as count
     FROM departments_resource dr
-    JOIN department_departments_junction dd ON dd.departments_id = dr.id
+    JOIN department_departments_junction dd ON dd.department_id = dr.id
     WHERE dr.id IN (SELECT department_id FROM user_departments)
-      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.name_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
+      AND (department_search IS NULL OR LOWER((SELECT n.name FROM department_names_junction dn JOIN names_resource n ON n.id = dn.names_id WHERE dn.department_id = dd.department_id LIMIT 1)) LIKE '%' || LOWER(department_search) || '%')
 ),
 -- Agent options with names resolved in SQL
 all_agent_ids AS (
@@ -183,11 +183,11 @@ all_agent_ids AS (
 agent_option_data AS (
     SELECT
         aa.id::text as value,
-        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON n.id = an.name_id WHERE an.agent_id = aa.id LIMIT 1) as label,
+        (SELECT n.name FROM agent_names_junction an JOIN names_resource n ON n.id = an.names_id WHERE an.agent_id = aa.id LIMIT 1) as label,
         (SELECT COUNT(*) FROM tool_data td WHERE aa.id = ANY(td.agent_ids)) as count
     FROM agent_artifact aa
     WHERE aa.id IN (SELECT agent_id FROM all_agent_ids)
-      AND (agent_search IS NULL OR LOWER((SELECT n.name FROM agent_names_junction an JOIN names_resource n ON n.id = an.name_id WHERE an.agent_id = aa.id LIMIT 1)) LIKE '%' || LOWER(agent_search) || '%')
+      AND (agent_search IS NULL OR LOWER((SELECT n.name FROM agent_names_junction an JOIN names_resource n ON n.id = an.names_id WHERE an.agent_id = aa.id LIMIT 1)) LIKE '%' || LOWER(agent_search) || '%')
 ),
 -- Creatable options with counts
 creatable_option_data AS (

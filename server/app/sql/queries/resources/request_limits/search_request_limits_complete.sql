@@ -49,7 +49,7 @@ FROM (
       -- Exclude filter
       AND (exclude_ids IS NULL OR NOT (r.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT profile OR EXISTS (SELECT 1 FROM profile_request_limits_junction j WHERE j.request_limit_id = r.id AND j.active = true))
+      AND (NOT profile OR EXISTS (SELECT 1 FROM profile_request_limits_junction j WHERE j.request_limits_id = r.id AND j.active = true))
     ORDER BY r.requests_per_day
     LIMIT limit_count
     OFFSET offset_count

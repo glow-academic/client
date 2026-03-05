@@ -49,8 +49,8 @@ scenario_parameters_data AS (
                     jsonb_agg(
                         jsonb_build_object(
                             'id', p.id::text,
-                            'name', (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
-                            'description', (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.description_id = d.id WHERE pd.parameter_id = p.id LIMIT 1),
+                            'name', (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.parameter_id = p.id LIMIT 1),
+                            'description', (SELECT d.description FROM parameter_descriptions_junction pd JOIN descriptions_resource d ON pd.descriptions_id = d.id WHERE pd.parameter_id = p.id LIMIT 1),
                             'active', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'parameter_active' AND f.value = TRUE),
                             'document_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'document_parameter' AND f.value = TRUE),
                             'persona_parameter', EXISTS (SELECT 1 FROM parameter_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.parameter_id = p.id AND f.name = 'persona_parameter' AND f.value = TRUE),
@@ -60,7 +60,7 @@ scenario_parameters_data AS (
                             'created_at', p.created_at::text,
                             'updated_at', p.created_at::text
                         )
-                        ORDER BY (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)
+                        ORDER BY (SELECT n.name FROM parameter_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.parameter_id = p.id LIMIT 1)
                     ),
                     '[]'::jsonb
                 )
@@ -69,7 +69,7 @@ scenario_parameters_data AS (
     FROM (
         SELECT DISTINCT pfr.parameter_id
         FROM scenario_parameter_fields_junction spf
-        JOIN parameter_fields_resource pfr ON pfr.id = spf.parameter_field_id
+        JOIN parameter_fields_resource pfr ON pfr.id = spf.parameter_fields_id
         WHERE spf.scenario_id = p_scenario_id
           AND spf.active = true
           AND pfr.parameter_id IS NOT NULL
@@ -89,21 +89,21 @@ scenario_fields_data AS (
                     jsonb_agg(
                         jsonb_build_object(
                             'id', f.id::text,
-                            'name', (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1),
-                            'description', (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.description_id = d.id WHERE fd.field_id = f.id LIMIT 1),
+                            'name', (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = f.id LIMIT 1),
+                            'description', (SELECT d.description FROM field_descriptions_junction fd JOIN descriptions_resource d ON fd.descriptions_id = d.id WHERE fd.field_id = f.id LIMIT 1),
                             'parameter_id', pfr.parameter_id::text,
                             'active', EXISTS (SELECT 1 FROM field_flags_junction ff JOIN flags_resource fl ON ff.flag_id = fl.id WHERE ff.field_id = f.id AND fl.name = 'field_active' AND fl.value = TRUE),
                             'created_at', f.created_at::text,
                             'updated_at', f.created_at::text
                         )
-                        ORDER BY (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.name_id = n.id WHERE fn.field_id = f.id LIMIT 1)
+                        ORDER BY (SELECT n.name FROM field_names_junction fn JOIN names_resource n ON fn.names_id = n.id WHERE fn.field_id = f.id LIMIT 1)
                     ),
                     '[]'::jsonb
                 )
             ELSE '[]'::jsonb
         END as fields
     FROM scenario_parameter_fields_junction spf
-    JOIN parameter_fields_resource pfr ON pfr.id = spf.parameter_field_id
+    JOIN parameter_fields_resource pfr ON pfr.id = spf.parameter_fields_id
     JOIN fields_resource f ON f.id = pfr.field_id
     WHERE (p_scenario_id IS NOT NULL AND spf.scenario_id = p_scenario_id)
       AND spf.active = true
@@ -120,14 +120,14 @@ scenario_documents_data AS (
                     jsonb_agg(
                         jsonb_build_object(
                             'id', d.id::text,
-                            'name', (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1),
-                            'description', COALESCE((SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.description_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''),
+                            'name', (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.document_id = d.id LIMIT 1),
+                            'description', COALESCE((SELECT d.description FROM document_descriptions_junction dd JOIN descriptions_resource d ON dd.descriptions_id = d.id WHERE dd.document_id = d.id LIMIT 1), ''),
                             'content', '',  -- document_content table was removed, content now accessed via message_documents → message_contents
                             'active', EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND f.value = TRUE),
                             'created_at', d.created_at::text,
                             'updated_at', d.created_at::text
                         )
-                        ORDER BY (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.name_id = n.id WHERE dn.document_id = d.id LIMIT 1)
+                        ORDER BY (SELECT n.name FROM document_names_junction dn JOIN names_resource n ON dn.names_id = n.id WHERE dn.document_id = d.id LIMIT 1)
                     ),
                     '[]'::jsonb
                 )

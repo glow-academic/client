@@ -51,7 +51,7 @@ actor_name_computed AS (
         CASE 
             WHEN (SELECT profile_id FROM params) IS NOT NULL THEN
                 COALESCE(
-                    (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
+                    (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = (SELECT profile_id FROM params) LIMIT 1),
                     ''
                 )
             ELSE NULL
@@ -60,29 +60,29 @@ actor_name_computed AS (
 target_profile AS (
     SELECT 
         p.id,
-        (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.name_id = n.id WHERE pn.profile_id = p.id LIMIT 1) as name,
+        (SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = p.id LIMIT 1) as name,
         ARRAY_AGG(e.email ORDER BY pe.is_primary DESC, pe.created_at) FILTER (WHERE pe.active = true) as emails,
-        (SELECT e2.email FROM profile_emails_junction pe2 JOIN emails_resource e2 ON pe2.email_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
+        (SELECT e2.email FROM profile_emails_junction pe2 JOIN emails_resource e2 ON pe2.emails_id = e2.id WHERE pe2.profile_id = p.id AND pe2.is_primary = true AND pe2.active = true LIMIT 1) as primary_email,
         (SELECT r.role FROM profile_roles_junction pr_j 
-         JOIN roles_resource r ON pr_j.role_id = r.id 
+         JOIN roles_resource r ON pr_j.roles_id = r.id 
          WHERE pr_j.profile_id = p.id 
          LIMIT 1) as role,
-        EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND f.value = TRUE) as active,
+        EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flags_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND f.value = TRUE) as active,
         rl.requests_per_day as req_per_day,
         p.created_at,
         p.updated_at,
-        pd.department_id as primary_department_id
+        pd.departments_id as primary_department_id
     FROM profile_artifact p
     JOIN profile_emails_junction pe_match ON pe_match.profile_id = p.id AND pe_match.active = true
-    JOIN emails_resource e_match ON pe_match.email_id = e_match.id AND e_match.email = (SELECT email FROM params)
+    JOIN emails_resource e_match ON pe_match.emails_id = e_match.id AND e_match.email = (SELECT email FROM params)
     LEFT JOIN profile_emails_junction pe ON pe.profile_id = p.id AND pe.active = true
-    LEFT JOIN emails_resource e ON pe.email_id = e.id
+    LEFT JOIN emails_resource e ON pe.emails_id = e.id
     LEFT JOIN profile_departments_junction pd ON p.id = pd.profile_id AND pd.is_primary = TRUE AND pd.active = true
     LEFT JOIN profile_request_limits_junction prl ON prl.profile_id = p.id AND prl.active = true
-    LEFT JOIN request_limits_resource rl ON prl.request_limit_id = rl.id
-    GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.role_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flag_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND f.value = TRUE),
+    LEFT JOIN request_limits_resource rl ON prl.request_limits_id = rl.id
+    GROUP BY p.id, (SELECT r.role FROM profile_roles_junction pr_j JOIN roles_resource r ON pr_j.roles_id = r.id WHERE pr_j.profile_id = p.id LIMIT 1), EXISTS (SELECT 1 FROM profile_flags_junction pf JOIN flags_resource f ON pf.flags_id = f.id WHERE pf.profile_id = p.id AND f.name = 'profile_active' AND f.value = TRUE),
              rl.requests_per_day,
-             p.created_at, p.updated_at, pd.department_id
+             p.created_at, p.updated_at, pd.departments_id
 )
 SELECT 
     tp.id as profile_id,

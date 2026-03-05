@@ -25,8 +25,8 @@ CREATE OR REPLACE FUNCTION public.api_search_test_invocation_entries_v4(
     model_id uuid DEFAULT NULL,
     prompt_id uuid DEFAULT NULL,
     voice_id uuid DEFAULT NULL,
-    temperature_level_id uuid DEFAULT NULL,
-    reasoning_level_id uuid DEFAULT NULL,
+    temperature_levels_id uuid DEFAULT NULL,
+    reasoning_levels_id uuid DEFAULT NULL,
     key_id uuid DEFAULT NULL
 ) RETURNS TABLE(
     items jsonb
@@ -58,8 +58,8 @@ BEGIN
             'model_id', m.model_id,
             'prompt_id', m.prompt_id,
             'voice_id', m.voice_id,
-            'temperature_level_id', m.temperature_level_id,
-            'reasoning_level_id', m.reasoning_level_id,
+            'temperature_levels_id', m.temperature_levels_id,
+            'reasoning_levels_id', m.reasoning_levels_id,
             'key_id', m.key_id,
             'historical_run_ids', m.historical_run_ids
         ) AS row_data
@@ -72,8 +72,8 @@ BEGIN
           AND (model_id IS NULL OR m.model_id = model_id)
           AND (prompt_id IS NULL OR m.prompt_id = prompt_id)
           AND (voice_id IS NULL OR m.voice_id = voice_id)
-          AND (temperature_level_id IS NULL OR m.temperature_level_id = temperature_level_id)
-          AND (reasoning_level_id IS NULL OR m.reasoning_level_id = reasoning_level_id)
+          AND (temperature_levels_id IS NULL OR m.temperature_levels_id = temperature_levels_id)
+          AND (reasoning_levels_id IS NULL OR m.reasoning_levels_id = reasoning_levels_id)
           AND (key_id IS NULL OR m.key_id = key_id)
         ORDER BY m.invocation_created_at DESC
         LIMIT limit_count

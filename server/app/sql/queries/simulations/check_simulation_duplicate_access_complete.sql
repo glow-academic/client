@@ -43,7 +43,7 @@ simulation_exists_check AS (
 simulation_name_data AS (
     SELECT n.name as simulation_name
     FROM simulation_names_junction sn
-    JOIN names_resource n ON sn.name_id = n.id
+    JOIN names_resource n ON sn.names_id = n.id
     WHERE sn.simulation_id = (SELECT p_simulation_id FROM params)
     LIMIT 1
 ),
