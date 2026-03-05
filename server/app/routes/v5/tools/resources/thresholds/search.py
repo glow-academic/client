@@ -1,77 +1,108 @@
-"""thresholds/search internal — reusable data-access layer."""
+"""Thresholds SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    QGetThresholdsV4Item,
-    SearchThresholdsSqlParams,
-    SearchThresholdsSqlRow,
-)
+from app.routes.v5.tools.resources.thresholds.get import get_thresholds
+from app.routes.v5.tools.resources.thresholds.types import GetThresholdResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/thresholds/search_thresholds_complete.sql"
+JUNCTION_ARTIFACTS = ["setting"]
 
 
-async def search_thresholds_internal(
+async def search_thresholds(
     conn: asyncpg.Connection,
+    redis: Redis,
     search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
+    limit_count: int = 20,
+    offset_count: int = 0,
+    draft_id: UUID | None = None,
+    suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     setting: bool = False,
-) -> list[QGetThresholdsV4Item]:
-    """Internal function to search thresholds."""
-    if limit_count is not None and limit_count <= 0:
+) -> list[GetThresholdResponse]:
+    """Search thresholds with optional artifact filters.
+
+    Note: thresholds_resource has no text columns (only integer value),
+    so this uses a direct query rather than search_resource_ids.
+    """
+    if limit_count <= 0:
         return []
 
+    artifact_filters = {
+        "setting": setting,
+    }
+
     tags = ["resources", "thresholds"]
-    cache_key_val = cache_key(
+    key = cache_key(
         "/api/v5/resources/thresholds/search",
         {
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "exclude_ids": [str(id) for id in (exclude_ids or [])],
-            "setting": setting,
+            "draft_id": str(draft_id) if draft_id else None,
+            "suggest_source": suggest_source,
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
+            **artifact_filters,
         },
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetThresholdsV4Item.model_validate(item)
-                for item in cached.get("items", [])
+                GetThresholdResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = SearchThresholdsSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        exclude_ids=exclude_ids or [],
-        setting=setting,
-    )
-    result = cast(
-        SearchThresholdsSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
+    # Build dynamic WHERE for ID search
+    # thresholds has no text columns, so we use a direct query
+    alias = "r"
+    conditions: list[str] = [f"{alias}.active = true"]
+    params: list[object] = []
+    idx = 1
 
-    items: list[QGetThresholdsV4Item] = result.items if result and result.items else []
+    # Exclude filter
+    if exclude_ids:
+        conditions.append(f"NOT ({alias}.id = ANY(${idx}))")
+        params.append(exclude_ids)
+        idx += 1
+
+    # Artifact junction filters
+    if artifact_filters.get("setting"):
+        conditions.append(
+            f"EXISTS (SELECT 1 FROM setting_thresholds_junction j WHERE j.thresholds_id = {alias}.id AND j.active = true)"
+        )
+
+    where = " AND ".join(conditions)
+    query = f"""
+        SELECT {alias}.id
+        FROM thresholds_resource {alias}
+        WHERE {where}
+        ORDER BY {alias}.value
+        LIMIT ${idx} OFFSET ${idx + 1}
+    """
+    params.extend([limit_count, offset_count])
+
+    rows = await conn.fetch(query, *params)
+    ids = [row["id"] for row in rows]
+
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
+
+    items = await get_thresholds(conn, ids, redis, bypass_cache=True)
 
     await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items

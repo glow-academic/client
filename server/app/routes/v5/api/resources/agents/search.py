@@ -5,16 +5,14 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
-from app.routes.v5.tools.resources.agents.search import SQL_PATH, search_agents_internal
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.resources.agents.search import search_agents as search_agents_fn
 from app.sql.types import (
     SearchAgentsApiRequest,
     SearchAgentsApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
-# Load SQL with types at module level
 router = APIRouter()
 
 
@@ -33,12 +31,19 @@ async def search_agents(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await search_agents_internal(
+        items = await search_agents_fn(
             conn,
-            request.search,
-            request.limit_count,
-            request.offset_count,
-            request.exclude_ids,
+            get_redis_client(),
+            search=request.search,
+            limit_count=request.limit_count or 20,
+            offset_count=request.offset_count or 0,
+            exclude_ids=request.exclude_ids,
+            department_ids=request.department_ids,
+            tool_ids=request.tool_ids,
+            instruction_ids=request.instruction_ids,
+            model_ids=request.model_ids,
+            prompt_ids=request.prompt_ids,
+            quality=request.quality,
             bypass_cache=bypass_cache,
             agent=request.agent or False,
             setting=request.setting or False,
@@ -54,7 +59,7 @@ async def search_agents(
             error=e,
             route_path=http_request.url.path,
             operation="search_agents",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

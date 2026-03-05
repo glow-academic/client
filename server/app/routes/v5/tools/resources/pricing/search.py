@@ -1,83 +1,95 @@
-"""pricing/search internal — reusable data-access layer."""
+"""Pricing SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    QGetPricingV4Item,
-    SearchPricingSqlParams,
-    SearchPricingSqlRow,
-)
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.pricing.get import get_pricing
+from app.routes.v5.tools.resources.pricing.types import GetPricingResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/pricing/search_pricing_complete.sql"
+JUNCTION_ARTIFACTS = ["model"]
 
 
-async def search_pricing_internal(
+async def search_pricing(
     conn: asyncpg.Connection,
+    redis: Redis,
     search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
+    limit_count: int = 20,
+    offset_count: int = 0,
     exclude_ids: list[UUID] | None = None,
     pricing_type: str | None = None,
     unit_names: list[str] | None = None,
     bypass_cache: bool = False,
     *,
     model: bool = False,
-) -> list[QGetPricingV4Item]:
-    """Internal function to search pricing."""
-    if limit_count is not None and limit_count <= 0:
+) -> list[GetPricingResponse]:
+    """Search pricing with optional artifact filters."""
+    if limit_count <= 0:
         return []
 
+    artifact_filters = {"model": model}
+
+    extra_conditions: list[tuple[str, object]] = []
+    if pricing_type is not None:
+        extra_conditions.append(("{alias}.pricing_type::text = ${idx}", pricing_type))
+    if unit_names:
+        extra_conditions.append(
+            ("(COALESCE(array_length(${idx}::text[], 1), 0) = 0 OR {alias}.unit_name = ANY(${idx}::text[]))", unit_names)
+        )
+
     tags = ["resources", "pricing"]
-    cache_key_val = cache_key(
+    key = cache_key(
         "/api/v5/resources/pricing/search",
         {
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
             "pricing_type": pricing_type,
             "unit_names": sorted(unit_names or []),
-            "model": model,
+            **artifact_filters,
         },
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetPricingV4Item.model_validate(item)
+                GetPricingResponse.model_validate(item)
                 for item in cached.get("items", [])
             ]
 
-    params = SearchPricingSqlParams(
+    ids = await search_resource_ids(
+        conn,
+        table="pricing_resource",
+        resource="pricing",
+        search_column="pricing_type::text",
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
-        exclude_ids=exclude_ids or [],
-        pricing_type=pricing_type,
-        unit_names=unit_names or [],
-        model=model,
-    )
-    result = cast(
-        SearchPricingSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+        exclude_ids=exclude_ids,
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
+        order_column="id",
+        extra_conditions=extra_conditions if extra_conditions else None,
     )
 
-    items: list[QGetPricingV4Item] = result.items if result and result.items else []
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
+
+    items = await get_pricing(conn, ids, redis, bypass_cache=True)
 
     await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items

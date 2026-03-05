@@ -96,27 +96,27 @@ from app.routes.v5.tools.resources.instructions.search import (
     search_instructions,
 )
 from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.models.search import search_models_internal
+from app.routes.v5.tools.resources.models.search import search_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.prompts.get import get_prompts
-from app.routes.v5.tools.resources.prompts.search import search_prompts_internal
+from app.routes.v5.tools.resources.prompts.search import search_prompts
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.reasoning_levels.get import (
     get_reasoning_levels,
 )
 from app.routes.v5.tools.resources.reasoning_levels.search import (
-    search_reasoning_levels_internal,
+    search_reasoning_levels,
 )
 from app.routes.v5.tools.resources.temperature_levels.get import (
     get_temperature_levels,
 )
 from app.routes.v5.tools.resources.temperature_levels.search import (
-    search_temperature_levels_internal,
+    search_temperature_levels,
 )
 from app.routes.v5.tools.resources.tools.get import get_tools
-from app.routes.v5.tools.resources.tools.search import search_tools_internal
+from app.routes.v5.tools.resources.tools.search import search_tools
 from app.routes.v5.tools.resources.voices.get import get_voices
 from app.routes.v5.tools.resources.voices.search import search_voices
 from app.sql.types import (
@@ -441,13 +441,14 @@ async def get_agent_internal(
     async def fetch_models():
         async with pool.acquire() as c:
             selected = await get_models(c, model_ids, get_redis_client(), bypass_cache)
-            suggestions = await search_models_internal(
+            suggestions = await search_models(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
                 exclude_ids=model_ids,
-                cache=cache,
+                bypass_cache=bypass_cache,
                 agent=True,
             )
             return (selected, suggestions)
@@ -457,13 +458,14 @@ async def get_agent_internal(
             selected = await get_prompts(
                 c, prompt_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_prompts_internal(
+            suggestions = await search_prompts(
                 c,
-                None,
-                20,
-                0,
-                prompt_ids,
-                bypass_cache,
+                get_redis_client(),
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=prompt_ids,
+                bypass_cache=bypass_cache,
                 agent=True,
             )
             return (selected, suggestions)
@@ -522,13 +524,14 @@ async def get_agent_internal(
             selected = await get_tools(
                 c, tool_ids_list, get_redis_client(), bypass_cache=bypass_cache
             )
-            suggestions = await search_tools_internal(
+            suggestions = await search_tools(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
                 exclude_ids=tool_ids_list,
-                cache=cache,
+                bypass_cache=bypass_cache,
                 agent=True,
             )
             return (selected, suggestions)
@@ -538,8 +541,14 @@ async def get_agent_internal(
             selected = await get_temperature_levels(
                 c, temperature_level_ids, get_redis_client(), cache
             )
-            suggestions = await search_temperature_levels_internal(
-                c, None, 20, 0, temperature_level_ids, bypass_cache
+            suggestions = await search_temperature_levels(
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=temperature_level_ids,
+                bypass_cache=bypass_cache,
             )
             return (selected, suggestions)
 
@@ -548,8 +557,14 @@ async def get_agent_internal(
             selected = await get_reasoning_levels(
                 c, reasoning_level_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_reasoning_levels_internal(
-                c, None, 20, 0, reasoning_level_ids, bypass_cache
+            suggestions = await search_reasoning_levels(
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=reasoning_level_ids,
+                bypass_cache=bypass_cache,
             )
             return (selected, suggestions)
 

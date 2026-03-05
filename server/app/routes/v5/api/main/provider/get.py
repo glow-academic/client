@@ -74,7 +74,7 @@ from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.values.get import get_values
-from app.routes.v5.tools.resources.values.search import search_values_internal
+from app.routes.v5.tools.resources.values.search import search_values
 from app.sql.types import (
     GetProviderAccessSqlParams,
     GetProviderAccessSqlRow,
@@ -305,15 +305,12 @@ async def get_provider_internal(
     async def fetch_values():
         async with pool.acquire() as c:
             selected = await get_values(c, value_ids, get_redis_client(), bypass_cache)
-            suggestions = await search_values_internal(
+            suggestions = await search_values(
                 c,
-                None,
-                20,
-                0,
-                effective_group_id,
-                "recent",
-                value_ids,
-                bypass_cache,
+                get_redis_client(),
+                suggest_source="recent",
+                exclude_ids=value_ids,
+                bypass_cache=bypass_cache,
                 provider=True,
             )
             return (selected, suggestions)

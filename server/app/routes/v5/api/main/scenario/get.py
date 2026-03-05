@@ -118,7 +118,7 @@ from app.routes.v5.tools.resources.problem_statements.get import (
     get_problem_statements,
 )
 from app.routes.v5.tools.resources.problem_statements.search import (
-    search_problem_statements_internal,
+    search_problem_statements,
 )
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.questions.get import get_questions
@@ -480,13 +480,14 @@ async def get_scenario_internal(
             selected = await get_problem_statements(
                 c, selected_problem_statement_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_problem_statements_internal(
+            suggestions = await search_problem_statements(
                 c,
-                problem_statement_search,
-                20,
-                0,
-                selected_problem_statement_ids,
-                bypass_cache,
+                get_redis_client(),
+                search=problem_statement_search,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=selected_problem_statement_ids,
+                bypass_cache=bypass_cache,
             )
             return (selected, suggestions)
 
@@ -830,7 +831,7 @@ async def get_scenario_internal(
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
     problem_statements = _dedupe_by_id(
         problem_statements_selected + problem_statements_suggestions,
-        "problem_statement_id",
+        "id",
     )
     all_scenario_flags = _dedupe_by_id(flags_selected + flags_suggestions, "name")
     departments = _dedupe_by_id(
@@ -1017,7 +1018,7 @@ async def get_scenario_internal(
         (
             ps
             for ps in problem_statements
-            if ps.problem_statement_id in set(selected_problem_statement_ids)
+            if ps.id in set(selected_problem_statement_ids)
         ),
         None,
     )
@@ -1096,7 +1097,7 @@ async def get_scenario_internal(
         "names": [n.id for n in names_suggestions],
         "descriptions": [d.id for d in descriptions_suggestions],
         "problem_statements": [
-            ps.problem_statement_id for ps in problem_statements_suggestions
+            ps.id for ps in problem_statements_suggestions
         ],
         "departments": [d.id for d in departments_suggestions],
         "personas": [p.id for p in personas_suggestions],

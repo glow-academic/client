@@ -1,28 +1,26 @@
-"""cohorts/search internal — reusable data-access layer."""
+"""Cohorts SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.routes.v5.api.resources.cohorts.types import (
-    QGetCohortsV4Item,
-    SearchCohortsSqlRow,
-)
-from app.sql.types import SearchCohortsSqlParams
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.cohorts.get import get_cohorts
+from app.routes.v5.tools.resources.cohorts.types import GetCohortResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/cohorts/search_cohorts_complete.sql"
+JUNCTION_ARTIFACTS = ["cohort", "profile"]
 
 
-async def search_cohorts_internal(
+async def search_cohorts(
     conn: asyncpg.Connection,
+    redis: Redis,
     search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
+    limit_count: int = 20,
+    offset_count: int = 0,
     exclude_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
     simulation_ids: list[UUID] | None = None,
@@ -30,66 +28,70 @@ async def search_cohorts_internal(
     *,
     cohort: bool = False,
     profile: bool = False,
-) -> list[QGetCohortsV4Item]:
-    """Internal function to search cohorts."""
-    if limit_count is not None and limit_count <= 0:
+) -> list[GetCohortResponse]:
+    """Search cohorts with optional artifact filters."""
+    if limit_count <= 0:
         return []
 
+    artifact_filters = {"cohort": cohort, "profile": profile}
+
+    extra_conditions: list[tuple[str, object]] = []
+    if department_ids:
+        extra_conditions.append(
+            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.department_ids && ${idx}::uuid[])", department_ids)
+        )
+    if simulation_ids:
+        extra_conditions.append(
+            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.simulation_ids && ${idx}::uuid[])", simulation_ids)
+        )
+
     tags = ["resources", "cohorts"]
-    cache_key_val = cache_key(
+    key = cache_key(
         "/api/v5/resources/cohorts/search",
         {
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "exclude_ids": [str(id) for id in (exclude_ids or [])],
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
             "department_ids": sorted(str(i) for i in (department_ids or [])),
             "simulation_ids": sorted(str(i) for i in (simulation_ids or [])),
-            "cohort": cohort,
-            "profile": profile,
+            **artifact_filters,
         },
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetCohortsV4Item.model_validate(item)
+                GetCohortResponse.model_validate(item)
                 for item in cached.get("items", [])
             ]
 
-    params = SearchCohortsSqlParams(
+    ids = await search_resource_ids(
+        conn,
+        table="cohorts_resource",
+        resource="cohorts",
+        search_column="name",
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
-        exclude_ids=exclude_ids or [],
-        department_ids=department_ids or [],
-        simulation_ids=simulation_ids or [],
-        cohort=cohort,
-        profile=profile,
-    )
-    result = cast(
-        SearchCohortsSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+        exclude_ids=exclude_ids,
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
+        extra_conditions=extra_conditions if extra_conditions else None,
     )
 
-    items: list[QGetCohortsV4Item] = (
-        [
-            QGetCohortsV4Item.model_validate(
-                item.model_dump() if hasattr(item, "model_dump") else item
-            )
-            for item in (result.items or [])
-        ]
-        if result
-        else []
-    )
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
+
+    items = await get_cohorts(conn, ids, redis, bypass_cache=True)
 
     await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items

@@ -5,12 +5,11 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
-from app.routes.v5.tools.resources.evals.search import SQL_PATH, search_evals_internal
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.resources.evals.search import search_evals as search_evals_fn
 from app.sql.types import (
     SearchEvalsApiRequest,
     SearchEvalsApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -27,16 +26,19 @@ async def search_evals(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SearchEvalsApiResponse:
+    """Search evals resources."""
     tags = ["resources", "evals"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await search_evals_internal(
+        items = await search_evals_fn(
             conn,
-            request.search,
-            request.limit_count,
-            request.offset_count,
-            request.exclude_ids,
+            get_redis_client(),
+            search=request.search,
+            limit_count=request.limit_count or 20,
+            offset_count=request.offset_count or 0,
+            exclude_ids=request.exclude_ids,
+            department_ids=request.department_ids,
             bypass_cache=bypass_cache,
             eval=request.eval or False,
         )
@@ -51,7 +53,7 @@ async def search_evals(
             error=e,
             route_path=http_request.url.path,
             operation="search_evals",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

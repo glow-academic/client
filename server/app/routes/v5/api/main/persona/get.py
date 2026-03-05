@@ -91,7 +91,7 @@ from app.routes.v5.tools.resources.descriptions.search import (
     search_descriptions,
 )
 from app.routes.v5.tools.resources.examples.get import get_examples
-from app.routes.v5.tools.resources.examples.search import search_examples_internal
+from app.routes.v5.tools.resources.examples.search import search_examples
 from app.routes.v5.tools.resources.fields.search import search_fields
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
@@ -556,17 +556,18 @@ async def get_persona_internal(
     async def fetch_examples():
         async with pool.acquire() as c:
             selected = await get_examples(c, example_ids, get_redis_client(), bypass_cache)
-            suggestions = await search_examples_internal(
+            suggestions = await search_examples(
                 c,
-                None,
-                20,
-                0,
-                persona_id,
-                user_department_ids,
-                effective_group_id,
-                "all",
-                example_ids,
-                bypass_cache,
+                get_redis_client(),
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                persona_id=persona_id,
+                department_ids=user_department_ids,
+                draft_id=effective_group_id,
+                suggest_source="all",
+                exclude_ids=example_ids,
+                bypass_cache=bypass_cache,
                 persona=True,
             )
             return (selected, suggestions)

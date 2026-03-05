@@ -5,12 +5,11 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
-from app.routes.v5.tools.resources.values.search import SQL_PATH, search_values_internal
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.resources.values.search import search_values as search_values_fn
 from app.sql.types import (
     SearchValuesApiRequest,
     SearchValuesApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -31,14 +30,15 @@ async def search_values(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await search_values_internal(
+        items = await search_values_fn(
             conn,
-            request.search,
-            request.limit_count,
-            request.offset_count,
-            request.suggest_source,
-            request.exclude_ids,
-            bypass_cache,
+            get_redis_client(),
+            search=request.search,
+            limit_count=request.limit_count or 20,
+            offset_count=request.offset_count or 0,
+            suggest_source=request.suggest_source,
+            exclude_ids=request.exclude_ids,
+            bypass_cache=bypass_cache,
             model=request.model or False,
             provider=request.provider or False,
         )
@@ -53,7 +53,7 @@ async def search_values(
             error=e,
             route_path=http_request.url.path,
             operation="search_values",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

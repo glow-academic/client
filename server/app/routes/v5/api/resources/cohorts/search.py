@@ -5,21 +5,15 @@ from typing import Annotated
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
-
-# Import the locally-defined type from get.py
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.resources.cohorts.types import (
     SearchCohortsApiRequest,
     SearchCohortsApiResponse,
 )
-from app.routes.v5.tools.resources.cohorts.search import search_cohorts_internal
+from app.routes.v5.tools.resources.cohorts.search import search_cohorts as search_cohorts_fn
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
-
-# =============================================================================
-# HTTP Endpoint
-# =============================================================================
 
 
 @router.post(
@@ -37,12 +31,13 @@ async def search_cohorts(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await search_cohorts_internal(
+        items = await search_cohorts_fn(
             conn,
-            request.search,
-            request.limit_count,
-            request.offset_count,
-            request.exclude_ids,
+            get_redis_client(),
+            search=request.search,
+            limit_count=request.limit_count or 20,
+            offset_count=request.offset_count or 0,
+            exclude_ids=request.exclude_ids,
             bypass_cache=bypass_cache,
             cohort=request.cohort or False,
             profile=request.profile or False,

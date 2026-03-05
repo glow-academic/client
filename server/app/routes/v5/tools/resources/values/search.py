@@ -1,82 +1,86 @@
-"""values/search internal — reusable data-access layer."""
+"""Values SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    QGetValuesV4Item,
-    SearchValuesSqlParams,
-    SearchValuesSqlRow,
-)
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.values.get import get_values
+from app.routes.v5.tools.resources.values.types import GetValueResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/values/search_values_complete.sql"
+JUNCTION_ARTIFACTS = ["model", "provider"]
 
 
-async def search_values_internal(
+async def search_values(
     conn: asyncpg.Connection,
+    redis: Redis,
     search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
+    limit_count: int = 20,
+    offset_count: int = 0,
     suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     model: bool = False,
     provider: bool = False,
-) -> list[QGetValuesV4Item]:
-    if limit_count is not None and limit_count <= 0:
+) -> list[GetValueResponse]:
+    """Search values with optional artifact filters."""
+    if limit_count <= 0:
         return []
 
+    artifact_filters = {
+        "model": model,
+        "provider": provider,
+    }
+
     tags = ["resources", "values"]
-    cache_key_val = cache_key(
+    key = cache_key(
         "/api/v5/resources/values/search",
         {
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
             "suggest_source": suggest_source,
-            "exclude_ids": [str(id) for id in (exclude_ids or [])],
-            "model": model,
-            "provider": provider,
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
+            **artifact_filters,
         },
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetValuesV4Item.model_validate(item)
-                for item in cached.get("items", [])
+                GetValueResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
-    params = SearchValuesSqlParams(
+    ids = await search_resource_ids(
+        conn,
+        table="values_resource",
+        resource="values",
+        search_column="value",
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
-        suggest_source=suggest_source,
-        exclude_ids=exclude_ids or [],
-        model=model,
-        provider=provider,
-    )
-    result = cast(
-        SearchValuesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+        exclude_ids=exclude_ids,
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
     )
 
-    items: list[QGetValuesV4Item] = result.items if result and result.items else []
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
+
+    items = await get_values(conn, ids, redis, bypass_cache=True)
 
     await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items

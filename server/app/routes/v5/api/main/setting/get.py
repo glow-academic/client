@@ -78,10 +78,10 @@ from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.auth_item_keys.get import get_auth_item_keys
 from app.routes.v5.tools.resources.auth_item_keys.search import (
-    search_auth_item_keys_internal,
+    search_auth_item_keys,
 )
 from app.routes.v5.tools.resources.auths.get import get_auths
-from app.routes.v5.tools.resources.auths.search import search_auths_internal
+from app.routes.v5.tools.resources.auths.search import search_auths
 from app.routes.v5.tools.resources.colors.get import get_colors
 from app.routes.v5.tools.resources.colors.search import search_colors
 from app.routes.v5.tools.resources.departments.get import get_departments
@@ -99,11 +99,11 @@ from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.profiles.search import search_profiles
 from app.routes.v5.tools.resources.provider_keys.get import get_provider_keys
 from app.routes.v5.tools.resources.provider_keys.search import (
-    search_provider_keys_internal,
+    search_provider_keys,
 )
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.roles.get import get_roles
-from app.routes.v5.tools.resources.roles.search import search_roles_internal
+from app.routes.v5.tools.resources.roles.search import search_roles
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetSettingAccessSqlParams,
@@ -369,12 +369,13 @@ async def get_setting_internal(
             selected = await get_auths(
                 c, selected_auth_ids, get_redis_client(), bypass_cache=bypass_cache
             )
-            suggestions = await search_auths_internal(
+            suggestions = await search_auths(
                 c,
-                None,
-                20,
-                0,
-                selected_auth_ids,
+                get_redis_client(),
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=selected_auth_ids,
                 bypass_cache=bypass_cache,
                 setting=True,
             )
@@ -388,12 +389,13 @@ async def get_setting_internal(
                 get_redis_client(),
                 bypass_cache=bypass_cache,
             )
-            suggestions = await search_provider_keys_internal(
+            suggestions = await search_provider_keys(
                 c,
-                None,
-                20,
-                0,
-                selected_provider_key_ids,
+                get_redis_client(),
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=selected_provider_key_ids,
                 bypass_cache=bypass_cache,
                 setting=True,
             )
@@ -404,12 +406,13 @@ async def get_setting_internal(
             selected = await get_auth_item_keys(
                 c, selected_auth_item_key_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_auth_item_keys_internal(
+            suggestions = await search_auth_item_keys(
                 c,
-                None,
-                20,
-                0,
-                selected_auth_item_key_ids,
+                get_redis_client(),
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=selected_auth_item_key_ids,
                 bypass_cache=bypass_cache,
                 setting=True,
             )
@@ -418,13 +421,14 @@ async def get_setting_internal(
     async def fetch_roles():
         async with pool.acquire() as c:
             all_roles = await get_roles(c, None, get_redis_client(), bypass_cache=bypass_cache)
-            suggestions = await search_roles_internal(
+            suggestions = await search_roles(
                 c,
-                None,
-                50,
-                0,
-                None,
-                bypass_cache,
+                get_redis_client(),
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=None,
+                bypass_cache=bypass_cache,
                 setting=True,
             )
             return (all_roles, suggestions)

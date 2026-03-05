@@ -56,10 +56,10 @@ from app.routes.v5.tools.resources.arg_positions.search import (
     search_arg_positions_internal,
 )
 from app.routes.v5.tools.resources.args.get import get_args
-from app.routes.v5.tools.resources.args.search import search_args_internal
+from app.routes.v5.tools.resources.args.search import search_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.args_outputs.search import (
-    search_args_outputs_internal,
+    search_args_outputs,
 )
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import (
@@ -255,15 +255,12 @@ async def get_tool_internal(
             selected = await get_args(
                 c, selected_args_ids, get_redis_client(), bypass_cache=bypass_cache
             )
-            suggestions = await search_args_internal(
+            suggestions = await search_args(
                 c,
-                None,
-                20,
-                0,
-                None,
-                "linked",
-                selected_args_ids,
-                bypass_cache,
+                get_redis_client(),
+                suggest_source="linked",
+                exclude_ids=selected_args_ids,
+                bypass_cache=bypass_cache,
                 tool=True,
             )
             return selected, suggestions
@@ -294,15 +291,12 @@ async def get_tool_internal(
                 selected_args_outputs_ids,
                 bypass_cache,
             )
-            suggestions = await search_args_outputs_internal(
+            suggestions = await search_args_outputs(
                 c,
-                None,
-                20,
-                0,
-                None,
-                "linked",
-                selected_args_outputs_ids,
-                bypass_cache,
+                get_redis_client(),
+                suggest_source="linked",
+                exclude_ids=selected_args_outputs_ids,
+                bypass_cache=bypass_cache,
                 tool=True,
             )
             return selected, suggestions

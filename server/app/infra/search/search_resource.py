@@ -10,7 +10,7 @@ async def search_resource_ids(
     *,
     table: str,
     resource: str,
-    search_column: str,
+    search_column: str | None = None,
     search: str | None = None,
     limit_count: int = 20,
     offset_count: int = 0,
@@ -38,12 +38,17 @@ async def search_resource_ids(
         return []
 
     alias = "r"
-    conditions: list[str] = [f"{alias}.{search_column} IS NOT NULL", f"{alias}.{search_column} != ''"]
+    conditions: list[str] = []
     params: list[object] = []
     idx = 1
 
+    # NOT NULL / non-empty guard on search column (skipped when no text column)
+    if search_column:
+        conditions.append(f"{alias}.{search_column} IS NOT NULL")
+        conditions.append(f"{alias}.{search_column} != ''")
+
     # Search filter
-    if search:
+    if search and search_column:
         all_cols = [search_column] + (additional_search_columns or [])
         if len(all_cols) == 1:
             conditions.append(f"LOWER({alias}.{all_cols[0]}) LIKE '%' || LOWER(${idx}) || '%'")
@@ -90,8 +95,8 @@ async def search_resource_ids(
                     f"EXISTS (SELECT 1 FROM {junction} j WHERE j.{resource}_id = {alias}.id AND j.active = true)"
                 )
 
-    where = " AND ".join(conditions)
-    order = order_column or search_column
+    where = " AND ".join(conditions) if conditions else "true"
+    order = order_column or search_column or "created_at"
 
     query = f"""
         SELECT {alias}.id

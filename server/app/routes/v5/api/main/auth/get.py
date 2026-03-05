@@ -69,10 +69,10 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.protocols.get import get_protocols
-from app.routes.v5.tools.resources.protocols.search import search_protocols_internal
+from app.routes.v5.tools.resources.protocols.search import search_protocols
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.slugs.get import get_slugs
-from app.routes.v5.tools.resources.slugs.search import search_slugs_internal
+from app.routes.v5.tools.resources.slugs.search import search_slugs
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetAuthAccessSqlParams,
@@ -325,15 +325,13 @@ async def get_auth_internal(
             selected = await get_protocols(
                 c, selected_protocol_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_protocols_internal(
+            suggestions = await search_protocols(
                 c,
-                None,
-                20,
-                0,
-                effective_group_id,
-                "recent",
-                selected_protocol_ids,
-                bypass_cache,
+                get_redis_client(),
+                draft_id=effective_group_id,
+                suggest_source="recent",
+                exclude_ids=selected_protocol_ids,
+                bypass_cache=bypass_cache,
                 auth=True,
             )
             return (selected, suggestions)
@@ -343,15 +341,13 @@ async def get_auth_internal(
             selected = await get_slugs(
                 c, selected_slug_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_slugs_internal(
+            suggestions = await search_slugs(
                 c,
-                None,
-                20,
-                0,
-                effective_group_id,
-                "recent",
-                selected_slug_ids,
-                bypass_cache,
+                get_redis_client(),
+                draft_id=effective_group_id,
+                suggest_source="recent",
+                exclude_ids=selected_slug_ids,
+                bypass_cache=bypass_cache,
                 auth=True,
             )
             return (selected, suggestions)

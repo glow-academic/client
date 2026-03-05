@@ -317,16 +317,16 @@ async def _resolve_scenario_values(
 
     if item.objectives is not None and item.objective_ids is None:
         from app.routes.v5.tools.resources.objectives.search import (
-            search_objectives_internal,
+            search_objectives,
         )
 
-        all_objectives = await search_objectives_internal(
-            conn, search=None, limit_count=1000, scenario=True
+        all_objectives = await search_objectives(
+            conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
         obj_name_map = {
-            o.objective.lower(): o.objective_id
+            o.objective.lower(): o.id
             for o in all_objectives
-            if o.objective and o.objective_id
+            if o.objective and o.id
         }
         resolved_ids = []
         for obj_name in item.objectives:

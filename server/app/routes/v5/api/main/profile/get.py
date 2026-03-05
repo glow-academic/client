@@ -64,7 +64,7 @@ from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.emails.get import get_emails
-from app.routes.v5.tools.resources.emails.search import search_emails_internal
+from app.routes.v5.tools.resources.emails.search import search_emails
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.models.get import get_models
@@ -74,7 +74,7 @@ from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.request_limits.get import get_request_limits
 from app.routes.v5.tools.resources.request_limits.search import (
-    search_request_limits_internal,
+    search_request_limits,
 )
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
@@ -372,13 +372,14 @@ async def get_profile_internal(
     async def fetch_emails():
         async with pool.acquire() as c:
             selected = await get_emails(c, email_ids, get_redis_client(), cache)
-            suggestions = await search_emails_internal(
+            suggestions = await search_emails(
                 c,
-                None,
-                20,
-                0,
-                email_ids,
-                bypass_cache,
+                get_redis_client(),
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=email_ids,
+                bypass_cache=bypass_cache,
                 profile=True,
             )
             return (selected, suggestions)
@@ -388,13 +389,14 @@ async def get_profile_internal(
             selected = await get_request_limits(
                 c, request_limit_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_request_limits_internal(
+            suggestions = await search_request_limits(
                 c,
-                None,
-                20,
-                0,
-                request_limit_ids,
-                bypass_cache,
+                get_redis_client(),
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=request_limit_ids,
+                bypass_cache=bypass_cache,
                 profile=True,
             )
             return (selected, suggestions)

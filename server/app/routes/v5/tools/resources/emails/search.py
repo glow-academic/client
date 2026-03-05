@@ -1,77 +1,83 @@
-"""emails/search internal — reusable data-access layer."""
+"""Emails SEARCH — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from redis.asyncio import Redis
 
-from app.sql.types import (
-    QGetEmailsV4Item,
-    SearchEmailsSqlParams,
-    SearchEmailsSqlRow,
-)
+from app.infra.search.search_resource import search_resource_ids
+from app.routes.v5.tools.resources.emails.get import get_emails
+from app.routes.v5.tools.resources.emails.types import GetEmailResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/resources/emails/search_emails_complete.sql"
+JUNCTION_ARTIFACTS = ["profile"]
 
 
-async def search_emails_internal(
+async def search_emails(
     conn: asyncpg.Connection,
+    redis: Redis,
     search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
+    limit_count: int = 20,
+    offset_count: int = 0,
     exclude_ids: list[UUID] | None = None,
     bypass_cache: bool = False,
     *,
     profile: bool = False,
-) -> list[QGetEmailsV4Item]:
-    """Internal function to search emails."""
-    if limit_count is not None and limit_count <= 0:
+) -> list[GetEmailResponse]:
+    """Search emails with optional artifact filters."""
+    if limit_count <= 0:
         return []
 
+    artifact_filters = {
+        "profile": profile,
+    }
+
     tags = ["resources", "emails"]
-    cache_key_val = cache_key(
+    key = cache_key(
         "/api/v5/resources/emails/search",
         {
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "exclude_ids": [str(id) for id in (exclude_ids or [])],
-            "profile": profile,
+            "exclude_ids": [str(i) for i in (exclude_ids or [])],
+            **artifact_filters,
         },
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                QGetEmailsV4Item.model_validate(item)
+                GetEmailResponse.model_validate(item)
                 for item in cached.get("items", [])
             ]
 
-    params = SearchEmailsSqlParams(
+    ids = await search_resource_ids(
+        conn,
+        table="emails_resource",
+        resource="emails",
+        search_column="email",
         search=search,
         limit_count=limit_count,
         offset_count=offset_count,
-        exclude_ids=exclude_ids or [],
-        profile=profile,
-    )
-    result = cast(
-        SearchEmailsSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+        exclude_ids=exclude_ids,
+        artifact_filters=artifact_filters,
+        junction_artifacts=JUNCTION_ARTIFACTS,
     )
 
-    items: list[QGetEmailsV4Item] = result.items if result and result.items else []
+    if not ids:
+        await set_cached(key, {"items": []}, 60, tags, redis=redis)
+        return []
+
+    items = await get_emails(conn, ids, redis, bypass_cache=True)
 
     await set_cached(
-        cache_key_val,
-        {"items": [item.model_dump(mode="json") for item in items]},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
+        key,
+        {"items": [i.model_dump(mode="json") for i in items]},
+        60,
+        tags,
+        redis=redis,
     )
-
     return items
