@@ -8,7 +8,7 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.run_pricing.create import create_run_pricing_entry_internal
 from app.routes.v5.tools.entries.run_pricing.get import get_run_pricing_entries_internal
-from app.routes.v5.tools.entries.run_pricing.refresh import refresh_run_pricing
+from app.routes.v5.tools.entries.run_pricing.refresh import refresh_run_pricing_internal
 from app.routes.v5.tools.entries.run_pricing.search import search_run_pricing_entries_internal
 
 
@@ -39,7 +39,7 @@ async def get_run_pricing_docs(conn: asyncpg.Connection) -> DocsResponse:
                 ),
             ),
             get_operation_info(
-                refresh_run_pricing,
+                refresh_run_pricing_internal,
                 description="Refreshes run_pricing_mv concurrently to reflect latest writes.",
             ),
             get_operation_info(
