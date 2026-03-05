@@ -6,18 +6,17 @@ import pytest
 from app.routes.v5.tools.entries.personas.create import create_personas
 from app.routes.v5.tools.entries.personas.search import search_personas
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _session(conn):
-    return await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _session(conn, profile_id):
+    return await create_session(conn, profile_id=profile_id)
 
 
-async def test_search_finds_created(conn):
-    session = await _session(conn)
+async def test_search_finds_created(conn, profile_id):
+    session = await _session(conn, profile_id)
     result = await create_personas(conn, session_id=session.id)
 
     items = await search_personas(conn, session_id=session.id)
@@ -26,8 +25,8 @@ async def test_search_finds_created(conn):
     assert result.id in ids
 
 
-async def test_search_filters_by_session(conn):
-    session = await _session(conn)
+async def test_search_filters_by_session(conn, profile_id):
+    session = await _session(conn, profile_id)
     await create_personas(conn, session_id=session.id)
 
     items = await search_personas(conn, session_id=nonexistent_id())
@@ -35,8 +34,8 @@ async def test_search_filters_by_session(conn):
     assert items == []
 
 
-async def test_search_returns_connections(conn):
-    session = await _session(conn)
+async def test_search_returns_connections(conn, profile_id):
+    session = await _session(conn, profile_id)
     persona_id = await conn.fetchval("SELECT id FROM personas_resource LIMIT 1")
     assert persona_id is not None, "Need at least one personas_resource row as seed data"
 
@@ -49,8 +48,8 @@ async def test_search_returns_connections(conn):
     assert persona_id in matched[0].persona_ids
 
 
-async def test_search_pagination(conn):
-    session = await _session(conn)
+async def test_search_pagination(conn, profile_id):
+    session = await _session(conn, profile_id)
     await create_personas(conn, session_id=session.id)
     await create_personas(conn, session_id=session.id)
 

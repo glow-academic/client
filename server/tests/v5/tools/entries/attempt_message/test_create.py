@@ -17,14 +17,13 @@ from app.routes.v5.tools.entries.messages.create import create_message
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _attempt_message(conn, **overrides):
+async def _attempt_message(conn, profile_id, **overrides):
     """Create full chain: session → ... → attempt → attempt_chat → bridge → message → attempt_message."""
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -33,7 +32,7 @@ async def _attempt_message(conn, **overrides):
         conn,
         call_id=call.id,
         user_persona_id=persona.id,
-        profiles_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profiles_id=profile_id,
     )
     chat = await create_chat(conn, session_id=session.id)
     call2 = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -54,14 +53,14 @@ async def _attempt_message(conn, **overrides):
     return result, attempt_chat, msg
 
 
-async def test_returns_id(conn):
-    result, _, _ = await _attempt_message(conn)
+async def test_returns_id(conn, profile_id):
+    result, _, _ = await _attempt_message(conn, profile_id)
 
     assert result.id is not None
 
 
-async def test_visible_via_get_after_refresh(conn):
-    result, attempt_chat, _ = await _attempt_message(conn)
+async def test_visible_via_get_after_refresh(conn, profile_id):
+    result, attempt_chat, _ = await _attempt_message(conn, profile_id)
     await refresh_attempt_message(conn)
 
     items = await get_attempt_messages(conn, [result.id])
@@ -71,9 +70,9 @@ async def test_visible_via_get_after_refresh(conn):
     assert items[0].chat_id == attempt_chat.id
 
 
-async def test_message_type_is_query(conn):
+async def test_message_type_is_query(conn, profile_id):
     """User messages show as 'query' type in the MV."""
-    result, _, _ = await _attempt_message(conn)
+    result, _, _ = await _attempt_message(conn, profile_id)
     await refresh_attempt_message(conn)
 
     items = await get_attempt_messages(conn, [result.id])
@@ -82,8 +81,8 @@ async def test_message_type_is_query(conn):
     assert items[0].type == "query"
 
 
-async def test_passes_mcp_flag(conn):
-    result, _, _ = await _attempt_message(conn, mcp=True)
+async def test_passes_mcp_flag(conn, profile_id):
+    result, _, _ = await _attempt_message(conn, profile_id, mcp=True)
 
     row = await conn.fetchrow(
         "SELECT mcp FROM attempt_message_entry WHERE id = $1",

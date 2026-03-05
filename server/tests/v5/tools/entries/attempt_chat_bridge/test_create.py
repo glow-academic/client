@@ -13,13 +13,12 @@ from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _attempt_chat_bridge(conn, **overrides):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _attempt_chat_bridge(conn, profile_id, **overrides):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -28,7 +27,7 @@ async def _attempt_chat_bridge(conn, **overrides):
         conn,
         call_id=call.id,
         user_persona_id=persona.id,
-        profiles_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profiles_id=profile_id,
     )
     chat = await create_chat(conn, session_id=session.id)
     call2 = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -45,15 +44,15 @@ async def _attempt_chat_bridge(conn, **overrides):
     return result, attempt, attempt_chat
 
 
-async def test_returns_ids(conn):
-    result, attempt, attempt_chat = await _attempt_chat_bridge(conn)
+async def test_returns_ids(conn, profile_id):
+    result, attempt, attempt_chat = await _attempt_chat_bridge(conn, profile_id)
 
     assert result.attempt_id == attempt.id
     assert result.attempt_chat_id == attempt_chat.id
 
 
-async def test_row_exists(conn):
-    result, _, _ = await _attempt_chat_bridge(conn)
+async def test_row_exists(conn, profile_id):
+    result, _, _ = await _attempt_chat_bridge(conn, profile_id)
 
     row = await conn.fetchrow(
         "SELECT attempt_id, attempt_chat_id FROM attempt_chat_bridge_entry WHERE attempt_id = $1 AND attempt_chat_id = $2",
@@ -63,8 +62,8 @@ async def test_row_exists(conn):
     assert row is not None
 
 
-async def test_passes_mcp_flag(conn):
-    result, _, _ = await _attempt_chat_bridge(conn, mcp=True)
+async def test_passes_mcp_flag(conn, profile_id):
+    result, _, _ = await _attempt_chat_bridge(conn, profile_id, mcp=True)
 
     row = await conn.fetchrow(
         "SELECT mcp FROM attempt_chat_bridge_entry WHERE attempt_id = $1",

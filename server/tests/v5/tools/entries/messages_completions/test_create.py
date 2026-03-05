@@ -5,13 +5,12 @@ import pytest
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _message(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _message(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, session_id=session.id, group_id=group.id)
     message_id = await conn.fetchval(
@@ -21,8 +20,8 @@ async def _message(conn):
     return session, message_id
 
 
-async def test_create_returns_id(conn):
-    session, message_id = await _message(conn)
+async def test_create_returns_id(conn, profile_id):
+    session, message_id = await _message(conn, profile_id)
 
     entry_id = await conn.fetchval(
         "INSERT INTO messages_completions_entry (message_id, session_id) VALUES ($1, $2) RETURNING id",
@@ -33,8 +32,8 @@ async def test_create_returns_id(conn):
     assert entry_id is not None
 
 
-async def test_roundtrip_via_db(conn):
-    session, message_id = await _message(conn)
+async def test_roundtrip_via_db(conn, profile_id):
+    session, message_id = await _message(conn, profile_id)
 
     entry_id = await conn.fetchval(
         "INSERT INTO messages_completions_entry (message_id, session_id) VALUES ($1, $2) RETURNING id",

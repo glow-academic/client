@@ -8,13 +8,12 @@ from app.routes.v5.tools.entries.uploads_completions.create import (
 from app.routes.v5.tools.entries.uploads_completions.get import get_upload_completion
 from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _upload(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _upload(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
     upload = await create_upload(
         conn,
         session_id=session.id,
@@ -25,8 +24,8 @@ async def _upload(conn):
     return session, upload
 
 
-async def test_creates_upload_completion_entry(conn):
-    session, upload = await _upload(conn)
+async def test_creates_upload_completion_entry(conn, profile_id):
+    session, upload = await _upload(conn, profile_id)
     result = await create_upload_completion(
         conn,
         upload_id=upload.id,
@@ -36,8 +35,8 @@ async def test_creates_upload_completion_entry(conn):
     assert result.id is not None
 
 
-async def test_upload_completion_exists_in_table(conn):
-    session, upload = await _upload(conn)
+async def test_upload_completion_exists_in_table(conn, profile_id):
+    session, upload = await _upload(conn, profile_id)
     result = await create_upload_completion(
         conn,
         upload_id=upload.id,
@@ -52,8 +51,8 @@ async def test_upload_completion_exists_in_table(conn):
     assert completion.active is True
 
 
-async def test_passes_mcp_flag(conn):
-    session, upload = await _upload(conn)
+async def test_passes_mcp_flag(conn, profile_id):
+    session, upload = await _upload(conn, profile_id)
     result = await create_upload_completion(
         conn,
         upload_id=upload.id,

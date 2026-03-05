@@ -13,27 +13,26 @@ from app.routes.v5.tools.entries.grant_consumptions.refresh import (
 )
 from app.routes.v5.tools.entries.grants.create import create_grant
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _setup(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _setup(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
     grant = await create_grant(conn, session_id=session.id)
     return await create_grant_consumption(conn, grant_id=grant.id)
 
 
-async def test_appears_after_refresh(conn):
-    result = await _setup(conn)
+async def test_appears_after_refresh(conn, profile_id):
+    result = await _setup(conn, profile_id)
     await refresh_grant_consumptions(conn)
 
     items = await get_grant_consumptions(conn, ids=[result.id])
     assert len(items) >= 1
 
 
-async def test_not_visible_before_refresh(conn):
-    result = await _setup(conn)
+async def test_not_visible_before_refresh(conn, profile_id):
+    result = await _setup(conn, profile_id)
 
     items = await get_grant_consumptions(conn, ids=[result.id])
     assert len(items) == 0

@@ -6,24 +6,23 @@ from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.groups.get import get_groups
 from app.routes.v5.tools.entries.groups.refresh import refresh_groups
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _session(conn):
-    return await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _session(conn, profile_id):
+    return await create_session(conn, profile_id=profile_id)
 
 
-async def test_returns_id(conn):
-    session = await _session(conn)
+async def test_returns_id(conn, profile_id):
+    session = await _session(conn, profile_id)
     result = await create_group(conn, session_id=session.id)
 
     assert result.id is not None
 
 
-async def test_visible_via_get_after_refresh(conn):
-    session = await _session(conn)
+async def test_visible_via_get_after_refresh(conn, profile_id):
+    session = await _session(conn, profile_id)
     result = await create_group(conn, session_id=session.id)
     await refresh_groups(conn)
 
@@ -36,8 +35,8 @@ async def test_visible_via_get_after_refresh(conn):
     assert items[0].mcp is False
 
 
-async def test_passes_name(conn):
-    session = await _session(conn)
+async def test_passes_name(conn, profile_id):
+    session = await _session(conn, profile_id)
     result = await create_group(conn, session_id=session.id, name="test-group")
     await refresh_groups(conn)
 
@@ -47,8 +46,8 @@ async def test_passes_name(conn):
     assert items[0].name == "test-group"
 
 
-async def test_passes_mcp_flag(conn):
-    session = await _session(conn)
+async def test_passes_mcp_flag(conn, profile_id):
+    session = await _session(conn, profile_id)
     result = await create_group(conn, session_id=session.id, mcp=True)
     await refresh_groups(conn)
 

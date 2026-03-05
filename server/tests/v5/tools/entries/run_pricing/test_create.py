@@ -5,13 +5,12 @@ import pytest
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _run(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _run(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, session_id=session.id, group_id=group.id)
     return session, run
@@ -21,8 +20,8 @@ async def _pricing_type(conn):
     return await conn.fetchval("SELECT unnest(enum_range(NULL::pricing_type)) LIMIT 1")
 
 
-async def test_create_returns_id(conn):
-    session, run = await _run(conn)
+async def test_create_returns_id(conn, profile_id):
+    session, run = await _run(conn, profile_id)
     pricing_type = await _pricing_type(conn)
 
     entry_id = await conn.fetchval(
@@ -36,8 +35,8 @@ async def test_create_returns_id(conn):
     assert entry_id is not None
 
 
-async def test_roundtrip_via_db(conn):
-    session, run = await _run(conn)
+async def test_roundtrip_via_db(conn, profile_id):
+    session, run = await _run(conn, profile_id)
     pricing_type = await _pricing_type(conn)
 
     entry_id = await conn.fetchval(

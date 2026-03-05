@@ -10,13 +10,12 @@ from app.routes.v5.tools.entries.resolves.get import get_resolves
 from app.routes.v5.tools.entries.resolves.refresh import refresh_resolves
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _call(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _call(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -30,8 +29,8 @@ async def _problem(conn, session, call):
     return result.id
 
 
-async def test_returns_id(conn):
-    session, call = await _call(conn)
+async def test_returns_id(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     problem_id = await _problem(conn, session, call)
     result = await create_resolve(
         conn, problem_id=problem_id, resolved=False, call_id=call.id
@@ -40,8 +39,8 @@ async def test_returns_id(conn):
     assert result.id is not None
 
 
-async def test_visible_via_get_after_refresh(conn):
-    session, call = await _call(conn)
+async def test_visible_via_get_after_refresh(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     problem_id = await _problem(conn, session, call)
     result = await create_resolve(
         conn, problem_id=problem_id, resolved=True, call_id=call.id
@@ -57,8 +56,8 @@ async def test_visible_via_get_after_refresh(conn):
     assert items[0].mcp is False
 
 
-async def test_passes_resolved_flag(conn):
-    session, call = await _call(conn)
+async def test_passes_resolved_flag(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     problem_id = await _problem(conn, session, call)
     result = await create_resolve(
         conn, problem_id=problem_id, resolved=True, call_id=call.id
@@ -71,8 +70,8 @@ async def test_passes_resolved_flag(conn):
     assert items[0].resolved is True
 
 
-async def test_passes_mcp_flag(conn):
-    session, call = await _call(conn)
+async def test_passes_mcp_flag(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     problem_id = await _problem(conn, session, call)
     result = await create_resolve(
         conn, problem_id=problem_id, resolved=False, call_id=call.id, mcp=True
@@ -85,8 +84,8 @@ async def test_passes_mcp_flag(conn):
     assert items[0].mcp is True
 
 
-async def test_passes_call_id(conn):
-    session, call = await _call(conn)
+async def test_passes_call_id(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     problem_id = await _problem(conn, session, call)
 
     result = await create_resolve(

@@ -7,24 +7,23 @@ import pytest
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.sessions.refresh import refresh_sessions
 from app.routes.v5.tools.entries.sessions.search import search_sessions
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
 
-async def test_finds_created_session(conn):
-    result = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def test_finds_created_session(conn, profile_id):
+    result = await create_session(conn, profile_id=profile_id)
     await refresh_sessions(conn)
 
-    items = await search_sessions(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+    items = await search_sessions(conn, profile_id=profile_id)
 
     ids = [item.id for item in items]
     assert result.id in ids
 
 
-async def test_filters_by_profile(conn):
-    result = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def test_filters_by_profile(conn, profile_id):
+    result = await create_session(conn, profile_id=profile_id)
     await refresh_sessions(conn)
 
     items = await search_sessions(conn, profile_id=nonexistent_id())
@@ -33,8 +32,8 @@ async def test_filters_by_profile(conn):
     assert result.id not in ids
 
 
-async def test_filters_by_date_from(conn):
-    result = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def test_filters_by_date_from(conn, profile_id):
+    result = await create_session(conn, profile_id=profile_id)
     await refresh_sessions(conn)
 
     # date_from in the future — should exclude everything
@@ -45,8 +44,8 @@ async def test_filters_by_date_from(conn):
     assert result.id not in ids
 
 
-async def test_filters_by_date_to(conn):
-    result = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def test_filters_by_date_to(conn, profile_id):
+    result = await create_session(conn, profile_id=profile_id)
     await refresh_sessions(conn)
 
     # date_to in the past — should exclude newly created
@@ -57,12 +56,12 @@ async def test_filters_by_date_to(conn):
     assert result.id not in ids
 
 
-async def test_filters_by_mcp(conn):
+async def test_filters_by_mcp(conn, profile_id):
     r_mcp = await create_session(
-        conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID, mcp=True
+        conn, profile_id=profile_id, mcp=True
     )
     r_normal = await create_session(
-        conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID, mcp=False
+        conn, profile_id=profile_id, mcp=False
     )
     await refresh_sessions(conn)
 
@@ -73,22 +72,22 @@ async def test_filters_by_mcp(conn):
     assert r_normal.id not in ids
 
 
-async def test_pagination_limit(conn):
-    await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
-    await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def test_pagination_limit(conn, profile_id):
+    await create_session(conn, profile_id=profile_id)
+    await create_session(conn, profile_id=profile_id)
     await refresh_sessions(conn)
 
     items = await search_sessions(
         conn,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profile_id=profile_id,
         limit=1,
     )
 
     assert len(items) == 1
 
 
-async def test_returns_all_without_filter(conn):
-    await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def test_returns_all_without_filter(conn, profile_id):
+    await create_session(conn, profile_id=profile_id)
     await refresh_sessions(conn)
 
     items = await search_sessions(conn)
@@ -96,12 +95,12 @@ async def test_returns_all_without_filter(conn):
     assert len(items) >= 1
 
 
-async def test_bypass_mv_finds_without_refresh(conn):
-    result = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def test_bypass_mv_finds_without_refresh(conn, profile_id):
+    result = await create_session(conn, profile_id=profile_id)
 
     items = await search_sessions(
         conn,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profile_id=profile_id,
         bypass_mv=True,
     )
 

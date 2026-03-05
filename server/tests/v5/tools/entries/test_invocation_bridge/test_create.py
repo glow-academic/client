@@ -13,20 +13,19 @@ from app.routes.v5.tools.entries.test_invocation.create import create_test_invoc
 from app.routes.v5.tools.entries.test_invocation_bridge.create import (
     create_test_invocation_bridge,
 )
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _test_invocation_bridge(conn, **overrides):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _test_invocation_bridge(conn, profile_id, **overrides):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
     test = await create_test(
         conn,
         call_id=call.id,
-        profiles_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profiles_id=profile_id,
     )
     call2 = await create_call(conn, run_id=run.id, session_id=session.id)
     test_invocation = await create_test_invocation(
@@ -44,15 +43,15 @@ async def _test_invocation_bridge(conn, **overrides):
     return result, test_invocation, invocation
 
 
-async def test_returns_ids(conn):
-    result, test_invocation, invocation = await _test_invocation_bridge(conn)
+async def test_returns_ids(conn, profile_id):
+    result, test_invocation, invocation = await _test_invocation_bridge(conn, profile_id)
 
     assert result.test_invocation_id == test_invocation.id
     assert result.invocation_id == invocation.id
 
 
-async def test_row_exists(conn):
-    result, _, _ = await _test_invocation_bridge(conn)
+async def test_row_exists(conn, profile_id):
+    result, _, _ = await _test_invocation_bridge(conn, profile_id)
 
     row = await conn.fetchrow(
         "SELECT test_invocation_id, invocation_id FROM test_invocation_bridge_entry WHERE test_invocation_id = $1 AND invocation_id = $2",
@@ -62,8 +61,8 @@ async def test_row_exists(conn):
     assert row is not None
 
 
-async def test_passes_mcp_flag(conn):
-    result, _, _ = await _test_invocation_bridge(conn, mcp=True)
+async def test_passes_mcp_flag(conn, profile_id):
+    result, _, _ = await _test_invocation_bridge(conn, profile_id, mcp=True)
 
     row = await conn.fetchrow(
         "SELECT mcp FROM test_invocation_bridge_entry WHERE test_invocation_id = $1",

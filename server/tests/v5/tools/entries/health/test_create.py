@@ -4,17 +4,16 @@ import pytest
 
 from app.routes.v5.tools.entries.health.create import create_health
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _session(conn):
-    return await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _session(conn, profile_id):
+    return await create_session(conn, profile_id=profile_id)
 
 
-async def test_create_returns_id(conn):
-    session = await _session(conn)
+async def test_create_returns_id(conn, profile_id):
+    session = await _session(conn, profile_id)
     result = await create_health(
         conn, service="api", ok=True, latency_ms=12.5, session_id=session.id
     )
@@ -22,8 +21,8 @@ async def test_create_returns_id(conn):
     assert result.id is not None
 
 
-async def test_roundtrip_via_db(conn):
-    session = await _session(conn)
+async def test_roundtrip_via_db(conn, profile_id):
+    session = await _session(conn, profile_id)
     result = await create_health(
         conn,
         service="api",
@@ -48,8 +47,8 @@ async def test_roundtrip_via_db(conn):
     assert row["generated"] is True
 
 
-async def test_defaults(conn):
-    session = await _session(conn)
+async def test_defaults(conn, profile_id):
+    session = await _session(conn, profile_id)
     result = await create_health(
         conn, service="db", ok=False, latency_ms=100.0, session_id=session.id
     )

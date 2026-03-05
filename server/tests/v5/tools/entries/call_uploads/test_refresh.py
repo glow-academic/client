@@ -9,13 +9,12 @@ from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.uploads.create import create_upload
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _setup(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _setup(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     parent = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -25,8 +24,8 @@ async def _setup(conn):
     return session, parent, upload
 
 
-async def test_new_upload_appears_in_mv_after_refresh(conn):
-    session, parent, upload = await _setup(conn)
+async def test_new_upload_appears_in_mv_after_refresh(conn, profile_id):
+    session, parent, upload = await _setup(conn, profile_id)
     result = await create_call_upload(
         conn, call_id=parent.id, upload_id=upload.id, session_id=session.id
     )

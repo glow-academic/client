@@ -7,13 +7,12 @@ from app.routes.v5.tools.entries.video_uploads.refresh import refresh_video_uplo
 from app.routes.v5.tools.entries.videos.create import create_video
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.uploads.create import create_upload
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _setup(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _setup(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
     parent = await create_video(conn, session_id=session.id)
     upload = await create_upload(
         conn, session_id=session.id, file_path="test/file.bin", mime_type="application/octet-stream", size=1024
@@ -21,8 +20,8 @@ async def _setup(conn):
     return session, parent, upload
 
 
-async def test_new_upload_appears_in_mv_after_refresh(conn):
-    session, parent, upload = await _setup(conn)
+async def test_new_upload_appears_in_mv_after_refresh(conn, profile_id):
+    session, parent, upload = await _setup(conn, profile_id)
     result = await create_video_upload(
         conn, video_id=parent.id, upload_id=upload.id, session_id=session.id
     )

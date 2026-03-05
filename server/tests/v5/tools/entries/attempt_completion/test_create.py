@@ -17,13 +17,12 @@ from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _attempt_completion(conn, **overrides):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _attempt_completion(conn, profile_id, **overrides):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -32,7 +31,7 @@ async def _attempt_completion(conn, **overrides):
         conn,
         call_id=call.id,
         user_persona_id=persona.id,
-        profiles_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profiles_id=profile_id,
     )
     chat = await create_chat(conn, session_id=session.id)
     call2 = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -48,14 +47,14 @@ async def _attempt_completion(conn, **overrides):
     return await create_attempt_completion(conn, **defaults)
 
 
-async def test_returns_id(conn):
-    result = await _attempt_completion(conn)
+async def test_returns_id(conn, profile_id):
+    result = await _attempt_completion(conn, profile_id)
 
     assert result.id is not None
 
 
-async def test_visible_via_get_after_refresh(conn):
-    result = await _attempt_completion(conn)
+async def test_visible_via_get_after_refresh(conn, profile_id):
+    result = await _attempt_completion(conn, profile_id)
     await refresh_attempt_completion(conn)
 
     items = await get_attempt_completions(conn, [result.id])
@@ -63,8 +62,8 @@ async def test_visible_via_get_after_refresh(conn):
     assert len(items) == 1
 
 
-async def test_passes_mcp_flag(conn):
-    result = await _attempt_completion(conn, mcp=True)
+async def test_passes_mcp_flag(conn, profile_id):
+    result = await _attempt_completion(conn, profile_id, mcp=True)
 
     row = await conn.fetchrow(
         "SELECT mcp FROM attempt_completion_entry WHERE id = $1",

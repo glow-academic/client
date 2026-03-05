@@ -11,22 +11,21 @@ from app.routes.v5.tools.entries.debug_info.search import search_debug_info
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _call(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _call(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
     return run, call
 
 
-async def test_finds_created_debug_info(conn):
-    run, call = await _call(conn)
+async def test_finds_created_debug_info(conn, profile_id):
+    run, call = await _call(conn, profile_id)
     result = await create_debug_info(
         conn, call_id=call.id, content="debug output", run_id=run.id
     )
@@ -38,8 +37,8 @@ async def test_finds_created_debug_info(conn):
     assert result.id in ids
 
 
-async def test_filters_by_call_id(conn):
-    run, call = await _call(conn)
+async def test_filters_by_call_id(conn, profile_id):
+    run, call = await _call(conn, profile_id)
     await create_debug_info(
         conn, call_id=call.id, content="debug output", run_id=run.id
     )
@@ -50,8 +49,8 @@ async def test_filters_by_call_id(conn):
     assert items == []
 
 
-async def test_filters_by_run_id(conn):
-    run, call = await _call(conn)
+async def test_filters_by_run_id(conn, profile_id):
+    run, call = await _call(conn, profile_id)
     result = await create_debug_info(
         conn, call_id=call.id, content="debug output", run_id=run.id
     )
@@ -63,8 +62,8 @@ async def test_filters_by_run_id(conn):
     assert result.id in ids
 
 
-async def test_filters_by_mcp(conn):
-    run, call = await _call(conn)
+async def test_filters_by_mcp(conn, profile_id):
+    run, call = await _call(conn, profile_id)
     r_mcp = await create_debug_info(
         conn, call_id=call.id, content="mcp debug", run_id=run.id, mcp=True
     )
@@ -80,8 +79,8 @@ async def test_filters_by_mcp(conn):
     assert r_normal.id not in ids
 
 
-async def test_filters_by_date_from(conn):
-    run, call = await _call(conn)
+async def test_filters_by_date_from(conn, profile_id):
+    run, call = await _call(conn, profile_id)
     result = await create_debug_info(
         conn, call_id=call.id, content="debug output", run_id=run.id
     )
@@ -94,8 +93,8 @@ async def test_filters_by_date_from(conn):
     assert result.id not in ids
 
 
-async def test_filters_by_date_to(conn):
-    run, call = await _call(conn)
+async def test_filters_by_date_to(conn, profile_id):
+    run, call = await _call(conn, profile_id)
     result = await create_debug_info(
         conn, call_id=call.id, content="debug output", run_id=run.id
     )
@@ -108,8 +107,8 @@ async def test_filters_by_date_to(conn):
     assert result.id not in ids
 
 
-async def test_pagination_limit(conn):
-    run, call = await _call(conn)
+async def test_pagination_limit(conn, profile_id):
+    run, call = await _call(conn, profile_id)
     await create_debug_info(
         conn, call_id=call.id, content="debug output 1", run_id=run.id
     )
@@ -123,8 +122,8 @@ async def test_pagination_limit(conn):
     assert len(items) == 1
 
 
-async def test_returns_all_without_filter(conn):
-    run, call = await _call(conn)
+async def test_returns_all_without_filter(conn, profile_id):
+    run, call = await _call(conn, profile_id)
     await create_debug_info(
         conn, call_id=call.id, content="debug output", run_id=run.id
     )
@@ -135,8 +134,8 @@ async def test_returns_all_without_filter(conn):
     assert len(items) >= 1
 
 
-async def test_bypass_mv(conn):
-    run, call = await _call(conn)
+async def test_bypass_mv(conn, profile_id):
+    run, call = await _call(conn, profile_id)
     result = await create_debug_info(
         conn, call_id=call.id, content="debug output", run_id=run.id
     )

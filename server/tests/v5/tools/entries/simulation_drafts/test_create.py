@@ -8,19 +8,18 @@ from app.routes.v5.tools.entries.simulation_drafts.create import (
 from app.routes.v5.tools.entries.simulation_drafts.get import get_simulation_drafts
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _setup(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _setup(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     return session, group
 
 
-async def test_create_returns_id(conn):
-    session, group = await _setup(conn)
+async def test_create_returns_id(conn, profile_id):
+    session, group = await _setup(conn, profile_id)
     result = await create_simulation_draft(
         conn, group_id=group.id, session_id=session.id
     )
@@ -28,8 +27,8 @@ async def test_create_returns_id(conn):
     assert result.id is not None
 
 
-async def test_roundtrip_base_fields(conn):
-    session, group = await _setup(conn)
+async def test_roundtrip_base_fields(conn, profile_id):
+    session, group = await _setup(conn, profile_id)
     result = await create_simulation_draft(
         conn, group_id=group.id, session_id=session.id, version=2
     )
@@ -46,8 +45,8 @@ async def test_roundtrip_base_fields(conn):
     assert items[0].generated is True
 
 
-async def test_create_without_connections_returns_empty_lists(conn):
-    session, group = await _setup(conn)
+async def test_create_without_connections_returns_empty_lists(conn, profile_id):
+    session, group = await _setup(conn, profile_id)
     result = await create_simulation_draft(
         conn, group_id=group.id, session_id=session.id
     )
@@ -66,8 +65,8 @@ async def test_create_without_connections_returns_empty_lists(conn):
     assert items[0].scenario_ids == []
 
 
-async def test_create_with_connections(conn):
-    session, group = await _setup(conn)
+async def test_create_with_connections(conn, profile_id):
+    session, group = await _setup(conn, profile_id)
 
     # Get real resource IDs from seed data
     name_id = await conn.fetchval("SELECT id FROM names_resource LIMIT 1")
@@ -92,8 +91,8 @@ async def test_create_with_connections(conn):
     assert items[0].flag_ids == []
 
 
-async def test_create_with_multiple_connections(conn):
-    session, group = await _setup(conn)
+async def test_create_with_multiple_connections(conn, profile_id):
+    session, group = await _setup(conn, profile_id)
 
     name_ids = [
         r["id"] for r in await conn.fetch("SELECT id FROM names_resource LIMIT 2")

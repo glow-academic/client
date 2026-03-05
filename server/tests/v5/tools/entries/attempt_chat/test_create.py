@@ -15,14 +15,13 @@ from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _attempt_chat(conn, **overrides):
+async def _attempt_chat(conn, profile_id, **overrides):
     """Create full chain: session → group → run → call → persona → attempt → chat → attempt_chat → bridge."""
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -31,7 +30,7 @@ async def _attempt_chat(conn, **overrides):
         conn,
         call_id=call.id,
         user_persona_id=persona.id,
-        profiles_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profiles_id=profile_id,
     )
     chat = await create_chat(conn, session_id=session.id)
     call2 = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -48,14 +47,14 @@ async def _attempt_chat(conn, **overrides):
     return result, attempt
 
 
-async def test_returns_id(conn):
-    result, _ = await _attempt_chat(conn)
+async def test_returns_id(conn, profile_id):
+    result, _ = await _attempt_chat(conn, profile_id)
 
     assert result.id is not None
 
 
-async def test_visible_via_get_after_refresh(conn):
-    result, attempt = await _attempt_chat(conn)
+async def test_visible_via_get_after_refresh(conn, profile_id):
+    result, attempt = await _attempt_chat(conn, profile_id)
     await refresh_attempt_chat(conn)
 
     items = await get_attempt_chats(conn, [result.id])
@@ -65,8 +64,8 @@ async def test_visible_via_get_after_refresh(conn):
     assert items[0].attempt_id == attempt.id
 
 
-async def test_connections_populated(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def test_connections_populated(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -75,7 +74,7 @@ async def test_connections_populated(conn):
         conn,
         call_id=call.id,
         user_persona_id=persona.id,
-        profiles_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profiles_id=profile_id,
     )
     chat = await create_chat(conn, session_id=session.id)
     call2 = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -99,8 +98,8 @@ async def test_connections_populated(conn):
     assert row["audio_enabled"] is True
 
 
-async def test_passes_mcp_flag(conn):
-    result, _ = await _attempt_chat(conn, mcp=True)
+async def test_passes_mcp_flag(conn, profile_id):
+    result, _ = await _attempt_chat(conn, profile_id, mcp=True)
 
     row = await conn.fetchrow(
         "SELECT mcp FROM attempt_chat_entry WHERE id = $1",

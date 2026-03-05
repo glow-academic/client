@@ -7,18 +7,17 @@ from app.routes.v5.tools.entries.logins.create import create_login
 from app.routes.v5.tools.entries.logins.get import get_logins
 from app.routes.v5.tools.entries.logins.refresh import refresh_logins
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _session(conn):
-    return await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _session(conn, profile_id):
+    return await create_session(conn, profile_id=profile_id)
 
 
-async def test_returns_login_by_id(conn):
-    session = await _session(conn)
+async def test_returns_login_by_id(conn, profile_id):
+    session = await _session(conn, profile_id)
     result = await create_login(conn, session_id=session.id)
     await refresh_logins(conn)
 
@@ -31,8 +30,8 @@ async def test_returns_login_by_id(conn):
     assert items[0].created_at is not None
 
 
-async def test_returns_multiple(conn):
-    session = await _session(conn)
+async def test_returns_multiple(conn, profile_id):
+    session = await _session(conn, profile_id)
     r1 = await create_login(conn, session_id=session.id)
     r2 = await create_login(conn, session_id=session.id)
     await refresh_logins(conn)
@@ -45,20 +44,20 @@ async def test_returns_multiple(conn):
     assert r2.id in ids
 
 
-async def test_returns_empty_for_missing(conn):
+async def test_returns_empty_for_missing(conn, profile_id):
     items = await get_logins(conn, [nonexistent_id()])
 
     assert items == []
 
 
-async def test_returns_empty_for_empty_ids(conn):
+async def test_returns_empty_for_empty_ids(conn, profile_id):
     items = await get_logins(conn, [])
 
     assert items == []
 
 
-async def test_bypass_mv_returns_without_refresh(conn):
-    session = await _session(conn)
+async def test_bypass_mv_returns_without_refresh(conn, profile_id):
+    session = await _session(conn, profile_id)
     result = await create_login(conn, session_id=session.id)
 
     items = await get_logins(conn, [result.id], bypass_mv=True)

@@ -21,13 +21,12 @@ from app.routes.v5.tools.entries.messages.create import create_message
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _attempt_message_tree(conn, **overrides):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _attempt_message_tree(conn, profile_id, **overrides):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -36,7 +35,7 @@ async def _attempt_message_tree(conn, **overrides):
         conn,
         call_id=call.id,
         user_persona_id=persona.id,
-        profiles_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profiles_id=profile_id,
     )
     real_chat = await create_chat(conn, session_id=session.id)
     call2 = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -60,16 +59,16 @@ async def _attempt_message_tree(conn, **overrides):
     return await create_attempt_message_tree(conn, **defaults)
 
 
-async def test_returns_ids(conn):
-    result = await _attempt_message_tree(conn)
+async def test_returns_ids(conn, profile_id):
+    result = await _attempt_message_tree(conn, profile_id)
 
     assert result is not None
     assert result.parent_id is not None
     assert result.child_id is not None
 
 
-async def test_visible_via_get_after_refresh(conn):
-    result = await _attempt_message_tree(conn)
+async def test_visible_via_get_after_refresh(conn, profile_id):
+    result = await _attempt_message_tree(conn, profile_id)
     await refresh_attempt_message_tree(conn)
 
     # get_attempt_message_trees queries by message_id
@@ -78,8 +77,8 @@ async def test_visible_via_get_after_refresh(conn):
     assert len(items) >= 1
 
 
-async def test_passes_mcp_flag(conn):
-    result = await _attempt_message_tree(conn, mcp=True)
+async def test_passes_mcp_flag(conn, profile_id):
+    result = await _attempt_message_tree(conn, profile_id, mcp=True)
 
     row = await conn.fetchrow(
         "SELECT mcp FROM attempt_message_tree_entry WHERE parent_id = $1 AND child_id = $2",

@@ -11,20 +11,19 @@ from app.routes.v5.tools.entries.simulation_drafts.search import (
 )
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _setup(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _setup(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     return session, group
 
 
-async def test_search_finds_created(conn):
-    session, group = await _setup(conn)
+async def test_search_finds_created(conn, profile_id):
+    session, group = await _setup(conn, profile_id)
     result = await create_simulation_draft(
         conn, group_id=group.id, session_id=session.id
     )
@@ -35,8 +34,8 @@ async def test_search_finds_created(conn):
     assert result.id in ids
 
 
-async def test_search_filters_by_group(conn):
-    session, group = await _setup(conn)
+async def test_search_filters_by_group(conn, profile_id):
+    session, group = await _setup(conn, profile_id)
     await create_simulation_draft(conn, group_id=group.id, session_id=session.id)
 
     items = await search_simulation_drafts(conn, group_id=nonexistent_id())
@@ -44,8 +43,8 @@ async def test_search_filters_by_group(conn):
     assert items == []
 
 
-async def test_search_filters_by_session(conn):
-    session, group = await _setup(conn)
+async def test_search_filters_by_session(conn, profile_id):
+    session, group = await _setup(conn, profile_id)
     result = await create_simulation_draft(
         conn, group_id=group.id, session_id=session.id
     )
@@ -56,8 +55,8 @@ async def test_search_filters_by_session(conn):
     assert result.id in ids
 
 
-async def test_search_returns_connections(conn):
-    session, group = await _setup(conn)
+async def test_search_returns_connections(conn, profile_id):
+    session, group = await _setup(conn, profile_id)
 
     name_id = await conn.fetchval("SELECT id FROM names_resource LIMIT 1")
 
@@ -75,8 +74,8 @@ async def test_search_returns_connections(conn):
     assert name_id in match[0].name_ids
 
 
-async def test_search_pagination(conn):
-    session, group = await _setup(conn)
+async def test_search_pagination(conn, profile_id):
+    session, group = await _setup(conn, profile_id)
     await create_simulation_draft(conn, group_id=group.id, session_id=session.id)
     await create_simulation_draft(conn, group_id=group.id, session_id=session.id)
 

@@ -11,22 +11,21 @@ from app.routes.v5.tools.entries.problems.refresh import refresh_problems
 from app.routes.v5.tools.entries.problems.search import search_problems
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID
 from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _call(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _call(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
     return session, call
 
 
-async def test_finds_created_problem(conn):
-    session, call = await _call(conn)
+async def test_finds_created_problem(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     result = await create_problem(
         conn, session_id=session.id, call_id=call.id, type="bug"
     )
@@ -38,8 +37,8 @@ async def test_finds_created_problem(conn):
     assert result.id in ids
 
 
-async def test_filters_by_session(conn):
-    session, call = await _call(conn)
+async def test_filters_by_session(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
     await refresh_problems(conn)
 
@@ -48,25 +47,25 @@ async def test_filters_by_session(conn):
     assert items == []
 
 
-async def test_filters_by_profile(conn):
-    session, call = await _call(conn)
+async def test_filters_by_profile(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     result = await create_problem(
         conn,
         session_id=session.id,
         call_id=call.id,
         type="bug",
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profile_id=profile_id,
     )
     await refresh_problems(conn)
 
-    items = await search_problems(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+    items = await search_problems(conn, profile_id=profile_id)
 
     ids = [item.id for item in items]
     assert result.id in ids
 
 
-async def test_filters_by_type(conn):
-    session, call = await _call(conn)
+async def test_filters_by_type(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     r_bug = await create_problem(
         conn, session_id=session.id, call_id=call.id, type="bug"
     )
@@ -82,8 +81,8 @@ async def test_filters_by_type(conn):
     assert r_feature.id not in ids
 
 
-async def test_filters_by_date_from(conn):
-    session, call = await _call(conn)
+async def test_filters_by_date_from(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     result = await create_problem(
         conn, session_id=session.id, call_id=call.id, type="bug"
     )
@@ -96,8 +95,8 @@ async def test_filters_by_date_from(conn):
     assert result.id not in ids
 
 
-async def test_filters_by_date_to(conn):
-    session, call = await _call(conn)
+async def test_filters_by_date_to(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     result = await create_problem(
         conn, session_id=session.id, call_id=call.id, type="bug"
     )
@@ -110,8 +109,8 @@ async def test_filters_by_date_to(conn):
     assert result.id not in ids
 
 
-async def test_filters_by_mcp(conn):
-    session, call = await _call(conn)
+async def test_filters_by_mcp(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     r_mcp = await create_problem(
         conn, session_id=session.id, call_id=call.id, type="bug", mcp=True
     )
@@ -127,8 +126,8 @@ async def test_filters_by_mcp(conn):
     assert r_normal.id not in ids
 
 
-async def test_pagination_limit(conn):
-    session, call = await _call(conn)
+async def test_pagination_limit(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
     await create_problem(conn, session_id=session.id, call_id=call.id, type="feature")
     await refresh_problems(conn)
@@ -138,8 +137,8 @@ async def test_pagination_limit(conn):
     assert len(items) == 1
 
 
-async def test_returns_all_without_filter(conn):
-    session, call = await _call(conn)
+async def test_returns_all_without_filter(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     await create_problem(conn, session_id=session.id, call_id=call.id, type="bug")
     await refresh_problems(conn)
 
@@ -148,8 +147,8 @@ async def test_returns_all_without_filter(conn):
     assert len(items) >= 1
 
 
-async def test_bypass_mv_finds_without_refresh(conn):
-    session, call = await _call(conn)
+async def test_bypass_mv_finds_without_refresh(conn, profile_id):
+    session, call = await _call(conn, profile_id)
     result = await create_problem(
         conn, session_id=session.id, call_id=call.id, type="question"
     )
