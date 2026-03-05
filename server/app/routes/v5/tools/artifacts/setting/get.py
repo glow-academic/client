@@ -7,10 +7,9 @@ import asyncpg
 from app.routes.v5.tools.artifacts.setting.types import GetSettingsResponse
 
 TABLE = "setting_artifact"
+ARTIFACT_FK = "setting_id"
 
 # (flag_name, junction_table, junction_column, response_field)
-# NOTE: setting_auths_junction and setting_auth_values_junction use settings_id (plural)
-# as their FK back to setting_artifact, not setting_id.
 JUNCTIONS: list[tuple[str, str, str, str]] = [
     ("names", "setting_names_junction", "names_id", "name_ids"),
     ("descriptions", "setting_descriptions_junction", "descriptions_id", "description_ids"),
@@ -24,11 +23,8 @@ JUNCTIONS: list[tuple[str, str, str, str]] = [
     ("systems", "setting_systems_junction", "systems_id", "systems_ids"),
     ("settings", "setting_settings_junction", "settings_id", "setting_ids"),
     ("auths", "setting_auths_junction", "auths_id", "auth_ids"),
-    ("auth_values", "setting_auth_values_junction", "auths_id", "auth_value_ids"),
+    ("auth_item_values", "setting_auth_item_values_junction", "auth_item_values_id", "auth_item_value_ids"),
 ]
-
-# Junctions that use `settings_id` (plural) as the FK back to setting_artifact
-_SETTINGS_ID_TABLES = {"setting_auths_junction", "setting_auth_values_junction"}
 
 
 async def get_settings(
@@ -47,7 +43,7 @@ async def get_settings(
     systems: bool = False,
     settings: bool = False,
     auths: bool = False,
-    auth_values: bool = False,
+    auth_item_values: bool = False,
 ) -> list[GetSettingsResponse]:
     """Get setting artifacts by IDs with optional junction ID fetching."""
     if not ids:
@@ -66,7 +62,7 @@ async def get_settings(
         "systems": systems,
         "settings": settings,
         "auths": auths,
-        "auth_values": auth_values,
+        "auth_item_values": auth_item_values,
     }
 
     active = [(table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]]
@@ -77,8 +73,7 @@ async def get_settings(
 
     for i, (table, col, field) in enumerate(active):
         alias = f"j{i}"
-        fk = "settings_id" if table in _SETTINGS_ID_TABLES else "setting_id"
-        joins.append(f"LEFT JOIN {table} {alias} ON {alias}.{fk} = p.id AND {alias}.active = true")
+        joins.append(f"LEFT JOIN {table} {alias} ON {alias}.{ARTIFACT_FK} = p.id AND {alias}.active = true")
         columns.append(
             f"ARRAY_AGG(DISTINCT {alias}.{col}) FILTER (WHERE {alias}.{col} IS NOT NULL) AS {field}"
         )

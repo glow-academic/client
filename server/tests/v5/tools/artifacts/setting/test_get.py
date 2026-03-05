@@ -68,6 +68,6 @@ async def test_no_junctions_when_all_false(conn):
     for field in [
         "name_ids", "description_ids", "department_ids", "flag_ids",
         "color_ids", "profile_ids", "auth_item_keys_ids", "provider_key_ids",
-        "threshold_ids", "systems_ids", "setting_ids", "auth_ids", "auth_value_ids",
+        "threshold_ids", "systems_ids", "setting_ids", "auth_ids", "auth_item_value_ids",
     ]:
         assert getattr(p, field) is None

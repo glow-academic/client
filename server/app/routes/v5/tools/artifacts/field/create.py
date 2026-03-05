@@ -20,7 +20,7 @@ SINGLE_JUNCTIONS: list[tuple[str, str]] = [
 
 MULTI_JUNCTIONS: list[tuple[str, str]] = [
     ("field_departments_junction", "departments_id"),
-    ("field_conditional_parameters_junction", "conditional_parameter_id"),
+    ("field_conditional_parameters_junction", "conditional_parameters_id"),
     ("field_fields_junction", "fields_id"),
 ]
 

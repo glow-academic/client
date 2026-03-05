@@ -26,7 +26,7 @@ class GetSettingsResponse(BaseModel):
     systems_ids: list[UUID] | None = None
     setting_ids: list[UUID] | None = None
     auth_ids: list[UUID] | None = None
-    auth_value_ids: list[UUID] | None = None
+    auth_item_value_ids: list[UUID] | None = None
 
 
 class CreateSettingResponse(BaseModel):

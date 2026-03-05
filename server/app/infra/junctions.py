@@ -36,7 +36,7 @@ async def upsert_single(
     await conn.execute(
         f"INSERT INTO {table} ({owner_col}, {resource_col}, mcp) VALUES ($1, $2, $3) "
         f"ON CONFLICT ON CONSTRAINT {constraint} "
-        f"DO UPDATE SET active = true, mcp = $3",
+        f"DO UPDATE SET {resource_col} = $2, active = true, mcp = $3",
         owner_id,
         resource_id,
         mcp,
