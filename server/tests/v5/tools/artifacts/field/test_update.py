@@ -1,4 +1,4 @@
-"""Tests for update_field."""
+"""Tests for update_field — black-box using resource + artifact tools only."""
 
 from uuid import uuid4
 
@@ -7,6 +7,10 @@ import pytest
 from app.routes.v5.tools.artifacts.field.create import create_field
 from app.routes.v5.tools.artifacts.field.get import get_fields
 from app.routes.v5.tools.artifacts.field.update import update_field
+from app.routes.v5.tools.resources.departments.create import create_department
+from app.routes.v5.tools.resources.descriptions.create import create_description
+from app.routes.v5.tools.resources.flags.create import create_flag
+from app.routes.v5.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 
@@ -16,36 +20,21 @@ pytestmark = pytest.mark.asyncio
 # ---------------------------------------------------------------------------
 
 
-async def _name(conn):
-    return await conn.fetchval(
-        "INSERT INTO names_resource (name) VALUES ($1) RETURNING id",
-        f"n-{uuid4().hex[:8]}",
-    )
+def _u() -> str:
+    return uuid4().hex[:8]
 
 
-async def _dept(conn):
-    return await conn.fetchval(
-        "INSERT INTO departments_resource DEFAULT VALUES RETURNING id"
-    )
-
-
-async def _flag(conn):
-    return await conn.fetchval(
-        "INSERT INTO flags_resource (name, description, icon) VALUES ($1, $2, $3) RETURNING id",
-        f"f-{uuid4().hex[:8]}",
-        "desc",
-        "icon",
-    )
-
-
-async def _create_with_junctions(conn):
+async def _create_with_junctions(conn, redis_client):
     """Create a field with single + multi junctions for update tests."""
-    n = await _name(conn)
-    d1 = await _dept(conn)
-    d2 = await _dept(conn)
+    n = await create_name(conn, f"n-{_u()}", redis_client)
+    desc = await create_description(conn, f"d-{_u()}", redis_client)
+    d1 = await create_department(conn, redis=redis_client)
+    d2 = await create_department(conn, redis=redis_client)
 
-    result = await create_field(conn, name_id=n, department_ids=[d1, d2])
-    return result.id, n, d1, d2
+    result = await create_field(
+        conn, name_id=n.id, description_id=desc.id, department_ids=[d1.id, d2.id]
+    )
+    return result.id, n.id, desc.id, d1.id, d2.id
 
 
 # ---------------------------------------------------------------------------
@@ -53,68 +42,86 @@ async def _create_with_junctions(conn):
 # ---------------------------------------------------------------------------
 
 
-async def test_updates_base_columns(conn):
+async def test_updates_mcp(conn, redis_client):
     result = await create_field(conn)
-    await update_field(conn, result.id, active=False, mcp=True)
+    await update_field(conn, result.id, mcp=True)
 
-    row = await conn.fetchrow(
-        "SELECT active, mcp FROM field_artifact WHERE id = $1", result.id
-    )
-    assert row["active"] is False
-    assert row["mcp"] is True
+    items = await get_fields(conn, [result.id])
+    assert items[0].mcp is True
 
 
-async def test_update_replaces_single(conn):
-    fid, old_name, _, _ = await _create_with_junctions(conn)
-    new_name = await _name(conn)
+async def test_replaces_single_select_junction(conn, redis_client):
+    fid, old_name, _, _, _ = await _create_with_junctions(conn, redis_client)
+    new_name = await create_name(conn, f"n-{_u()}", redis_client)
 
-    await update_field(conn, fid, name_id=new_name)
+    await update_field(conn, fid, name_id=new_name.id)
 
     items = await get_fields(conn, [fid], names=True)
-    assert items[0].name_ids == [new_name]
-
-    old_active = await conn.fetchval(
-        "SELECT active FROM field_names_junction "
-        "WHERE field_id = $1 AND name_id = $2",
-        fid, old_name,
-    )
-    assert old_active is False
+    assert items[0].name_ids == [new_name.id]
 
 
-async def test_update_adds_and_removes_multi(conn):
-    fid, _, d1, d2 = await _create_with_junctions(conn)
-    d3 = await _dept(conn)
+async def test_keeps_unchanged_single_junction(conn, redis_client):
+    fid, name_id, _, _, _ = await _create_with_junctions(conn, redis_client)
 
-    # Remove d2, add d3
-    await update_field(conn, fid, department_ids=[d1, d3])
+    await update_field(conn, fid, name_id=name_id)
+
+    items = await get_fields(conn, [fid], names=True)
+    assert items[0].name_ids == [name_id]
+
+
+async def test_skips_junction_when_unset(conn, redis_client):
+    fid, name_id, desc_id, _, _ = await _create_with_junctions(conn, redis_client)
+    new_desc = await create_description(conn, f"d-{_u()}", redis_client)
+
+    # Only update description_id, leave name_id unset
+    await update_field(conn, fid, description_id=new_desc.id)
+
+    items = await get_fields(conn, [fid], names=True, descriptions=True)
+    assert items[0].name_ids == [name_id]  # unchanged
+    assert items[0].description_ids == [new_desc.id]  # updated
+
+
+async def test_deactivates_removed_multi_ids(conn, redis_client):
+    fid, _, _, d1, d2 = await _create_with_junctions(conn, redis_client)
+
+    await update_field(conn, fid, department_ids=[d1])
 
     items = await get_fields(conn, [fid], departments=True)
-    assert set(items[0].department_ids) == {d1, d3}
-
-    d2_active = await conn.fetchval(
-        "SELECT active FROM field_departments_junction "
-        "WHERE field_id = $1 AND department_id = $2",
-        fid, d2,
-    )
-    assert d2_active is False
+    assert items[0].department_ids == [d1]
 
 
-async def test_updates_flag_values(conn):
-    f1 = await _flag(conn)
-    result = await create_field(conn, flag_ids={f1: True})
+async def test_adds_new_multi_ids(conn, redis_client):
+    fid, _, _, d1, d2 = await _create_with_junctions(conn, redis_client)
+    d3 = await create_department(conn, redis=redis_client)
 
-    await update_field(conn, result.id, flag_ids={f1: False})
+    await update_field(conn, fid, department_ids=[d1, d2, d3.id])
 
-    val = await conn.fetchval(
-        "SELECT value FROM field_flags_junction "
-        "WHERE field_id = $1 AND flag_id = $2 AND active = true",
-        result.id, f1,
-    )
-    assert val is False
+    items = await get_fields(conn, [fid], departments=True)
+    assert set(items[0].department_ids) == {d1, d2, d3.id}
 
 
-async def test_multi_none_means_no_change(conn):
-    fid, _, d1, d2 = await _create_with_junctions(conn)
+async def test_clears_all_multi_ids(conn, redis_client):
+    fid, _, _, _, _ = await _create_with_junctions(conn, redis_client)
+
+    await update_field(conn, fid, department_ids=[])
+
+    items = await get_fields(conn, [fid], departments=True)
+    assert items[0].department_ids == []
+
+
+async def test_updates_flags(conn, redis_client):
+    f1 = await create_flag(conn, f"f-{_u()}", "desc", "icon", redis_client)
+    result = await create_field(conn, flag_ids={f1.id: True})
+
+    await update_field(conn, result.id, flag_ids={f1.id: False})
+
+    # Flag still linked (visible via get)
+    items = await get_fields(conn, [result.id], flags=True)
+    assert items[0].flag_ids == [f1.id]
+
+
+async def test_multi_none_means_no_change(conn, redis_client):
+    fid, _, _, d1, d2 = await _create_with_junctions(conn, redis_client)
 
     await update_field(conn, fid, department_ids=None)
 

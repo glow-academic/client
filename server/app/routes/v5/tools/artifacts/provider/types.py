@@ -12,6 +12,7 @@ class GetProvidersResponse(BaseModel):
     updated_at: datetime
     generated: bool
     mcp: bool
+    active: bool
     # Junction IDs — None when not requested
     name_ids: list[UUID] | None = None
     description_ids: list[UUID] | None = None

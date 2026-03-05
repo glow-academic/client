@@ -57,7 +57,7 @@ async def get_evals(
 
     active = [(table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]]
 
-    columns = ["p.id", "p.created_at", "p.updated_at", "p.generated", "p.mcp"]
+    columns = ["p.id", "p.created_at", "p.updated_at", "p.generated", "p.mcp", "p.active"]
     joins: list[str] = []
 
     for i, (table, col, field) in enumerate(active):
@@ -72,7 +72,7 @@ async def get_evals(
         FROM {TABLE} p
         {' '.join(joins)}
         WHERE p.id = ANY($1)
-        GROUP BY p.id, p.created_at, p.updated_at, p.generated, p.mcp
+        GROUP BY p.id, p.created_at, p.updated_at, p.generated, p.mcp, p.active
     """
 
     rows = await conn.fetch(query, ids)
@@ -85,6 +85,7 @@ async def get_evals(
             "updated_at": r["updated_at"],
             "generated": r["generated"],
             "mcp": r["mcp"],
+            "active": r["active"],
         }
         for _, _, _, field in JUNCTIONS:
             if field in dict(r):

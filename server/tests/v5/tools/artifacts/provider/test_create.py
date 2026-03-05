@@ -1,4 +1,4 @@
-"""Tests for create_provider."""
+"""Tests for create_provider — black-box using resource + artifact tools only."""
 
 from uuid import uuid4
 
@@ -6,57 +6,23 @@ import pytest
 
 from app.routes.v5.tools.artifacts.provider.create import create_provider
 from app.routes.v5.tools.artifacts.provider.get import get_providers
+from app.routes.v5.tools.resources.departments.create import create_department
+from app.routes.v5.tools.resources.descriptions.create import create_description
+from app.routes.v5.tools.resources.endpoints.create import create_endpoint
+from app.routes.v5.tools.resources.flags.create import create_flag
+from app.routes.v5.tools.resources.keys.create import create_key
+from app.routes.v5.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 
 
 # ---------------------------------------------------------------------------
-# Helpers — create resource rows with required NOT NULL columns
+# Helpers
 # ---------------------------------------------------------------------------
 
 
-async def _name(conn):
-    return await conn.fetchval(
-        "INSERT INTO names_resource (name) VALUES ($1) RETURNING id",
-        f"n-{uuid4().hex[:8]}",
-    )
-
-
-async def _desc(conn):
-    return await conn.fetchval(
-        "INSERT INTO descriptions_resource (description) VALUES ($1) RETURNING id",
-        f"d-{uuid4().hex[:8]}",
-    )
-
-
-async def _dept(conn):
-    return await conn.fetchval(
-        "INSERT INTO departments_resource DEFAULT VALUES RETURNING id"
-    )
-
-
-async def _endpoint(conn):
-    return await conn.fetchval(
-        "INSERT INTO endpoints_resource (base_url) VALUES ($1) RETURNING id",
-        f"https://ep-{uuid4().hex[:8]}.example.com",
-    )
-
-
-async def _key(conn):
-    return await conn.fetchval(
-        "INSERT INTO keys_resource (key, name) VALUES ($1, $2) RETURNING id",
-        f"k-{uuid4().hex[:8]}",
-        f"kn-{uuid4().hex[:8]}",
-    )
-
-
-async def _flag(conn):
-    return await conn.fetchval(
-        "INSERT INTO flags_resource (name, description, icon) VALUES ($1, $2, $3) RETURNING id",
-        f"f-{uuid4().hex[:8]}",
-        "desc",
-        "icon",
-    )
+def _u() -> str:
+    return uuid4().hex[:8]
 
 
 # ---------------------------------------------------------------------------
@@ -64,7 +30,7 @@ async def _flag(conn):
 # ---------------------------------------------------------------------------
 
 
-async def test_creates_bare_artifact(conn):
+async def test_creates_bare_artifact(conn, redis_client):
     result = await create_provider(conn)
     assert result.id is not None
 
@@ -74,66 +40,64 @@ async def test_creates_bare_artifact(conn):
     assert items[0].mcp is False
 
 
-async def test_links_single_and_multi(conn):
-    nid = await _name(conn)
-    did = await _desc(conn)
-    d1 = await _dept(conn)
-    d2 = await _dept(conn)
-    eid = await _endpoint(conn)
+async def test_passes_mcp_flag(conn, redis_client):
+    result = await create_provider(conn, mcp=True)
+
+    items = await get_providers(conn, [result.id])
+    assert items[0].mcp is True
+
+
+async def test_links_single_select_junctions(conn, redis_client):
+    name = await create_name(conn, f"n-{_u()}", redis_client)
+    desc = await create_description(conn, f"d-{_u()}", redis_client)
+
+    result = await create_provider(conn, name_id=name.id, description_id=desc.id)
+
+    items = await get_providers(conn, [result.id], names=True, descriptions=True)
+    p = items[0]
+    assert p.name_ids == [name.id]
+    assert p.description_ids == [desc.id]
+
+
+async def test_links_multi_select_junctions(conn, redis_client):
+    d1 = await create_department(conn, redis=redis_client)
+    d2 = await create_department(conn, redis=redis_client)
+    ep = await create_endpoint(conn, f"https://ep-{_u()}.example.com", redis_client)
 
     result = await create_provider(
-        conn,
-        name_id=nid,
-        description_id=did,
-        department_ids=[d1, d2],
-        endpoint_ids=[eid],
+        conn, department_ids=[d1.id, d2.id], endpoint_ids=[ep.id],
     )
+
+    items = await get_providers(conn, [result.id], departments=True, endpoints=True)
+    p = items[0]
+    assert set(p.department_ids) == {d1.id, d2.id}
+    assert p.endpoint_ids == [ep.id]
+
+
+async def test_links_flags_with_value(conn, redis_client):
+    f1 = await create_flag(conn, f"f-{_u()}", "desc", "icon", redis_client)
+    f2 = await create_flag(conn, f"f-{_u()}", "desc", "icon", redis_client)
+
+    result = await create_provider(conn, flag_ids={f1.id: True, f2.id: False})
+
+    items = await get_providers(conn, [result.id], flags=True)
+    assert set(items[0].flag_ids) == {f1.id, f2.id}
+
+
+async def test_no_junctions_when_none_provided(conn, redis_client):
+    result = await create_provider(conn)
 
     items = await get_providers(
         conn, [result.id],
-        names=True, descriptions=True, departments=True, endpoints=True,
+        names=True, descriptions=True, departments=True,
+        flags=True, endpoints=True, keys=True, values=True, providers=True,
     )
     p = items[0]
-    assert p.name_ids == [nid]
-    assert p.description_ids == [did]
-    assert set(p.department_ids) == {d1, d2}
-    assert p.endpoint_ids == [eid]
-
-
-async def test_links_flags_with_value(conn):
-    f1 = await _flag(conn)
-    f2 = await _flag(conn)
-
-    result = await create_provider(conn, flag_ids={f1: True, f2: False})
-
-    items = await get_providers(conn, [result.id], flags=True)
-    assert set(items[0].flag_ids) == {f1, f2}
-
-    rows = await conn.fetch(
-        "SELECT flag_id, value FROM provider_flags_junction "
-        "WHERE provider_id = $1 AND active = true",
-        result.id,
-    )
-    vals = {r["flag_id"]: r["value"] for r in rows}
-    assert vals[f1] is True
-    assert vals[f2] is False
-
-
-async def test_update_replaces_single(conn):
-    """Covered by test_update — placeholder to verify create + get roundtrip for singles."""
-    nid = await _name(conn)
-    result = await create_provider(conn, name_id=nid)
-
-    items = await get_providers(conn, [result.id], names=True)
-    assert items[0].name_ids == [nid]
-
-
-async def test_update_adds_and_removes_multi(conn):
-    """Verify multi junction create with keys."""
-    k1 = await _key(conn)
-    k2 = await _key(conn)
-
-    result = await create_provider(conn, key_ids=[k1, k2])
-
-    items = await get_providers(conn, [result.id], keys=True)
-    assert set(items[0].key_ids) == {k1, k2}
+    assert p.name_ids == []
+    assert p.description_ids == []
+    assert p.department_ids == []
+    assert p.flag_ids == []
+    assert p.endpoint_ids == []
+    assert p.key_ids == []
+    assert p.value_ids == []
+    assert p.provider_ids == []

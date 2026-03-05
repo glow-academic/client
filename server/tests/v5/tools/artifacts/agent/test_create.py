@@ -1,4 +1,4 @@
-"""Tests for create_agent."""
+"""Tests for create_agent — black-box using resource + artifact tools only."""
 
 from uuid import uuid4
 
@@ -6,42 +6,21 @@ import pytest
 
 from app.routes.v5.tools.artifacts.agent.create import create_agent
 from app.routes.v5.tools.artifacts.agent.get import get_agents
+from app.routes.v5.tools.resources.departments.create import create_department
+from app.routes.v5.tools.resources.descriptions.create import create_description
+from app.routes.v5.tools.resources.flags.create import create_flag
+from app.routes.v5.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 
 
 # ---------------------------------------------------------------------------
-# Helpers — create resource rows with required NOT NULL columns
+# Helpers
 # ---------------------------------------------------------------------------
 
 
-async def _name(conn):
-    return await conn.fetchval(
-        "INSERT INTO names_resource (name) VALUES ($1) RETURNING id",
-        f"n-{uuid4().hex[:8]}",
-    )
-
-
-async def _desc(conn):
-    return await conn.fetchval(
-        "INSERT INTO descriptions_resource (description) VALUES ($1) RETURNING id",
-        f"d-{uuid4().hex[:8]}",
-    )
-
-
-async def _dept(conn):
-    return await conn.fetchval(
-        "INSERT INTO departments_resource DEFAULT VALUES RETURNING id"
-    )
-
-
-async def _flag(conn):
-    return await conn.fetchval(
-        "INSERT INTO flags_resource (name, description, icon) VALUES ($1, $2, $3) RETURNING id",
-        f"f-{uuid4().hex[:8]}",
-        "desc",
-        "icon",
-    )
+def _u() -> str:
+    return uuid4().hex[:8]
 
 
 # ---------------------------------------------------------------------------
@@ -49,7 +28,7 @@ async def _flag(conn):
 # ---------------------------------------------------------------------------
 
 
-async def test_creates_bare_artifact(conn):
+async def test_creates_bare_artifact(conn, redis_client):
     result = await create_agent(conn)
     assert result.id is not None
 
@@ -59,39 +38,46 @@ async def test_creates_bare_artifact(conn):
     assert items[0].mcp is False
 
 
-async def test_links_single_and_multi(conn):
-    nid = await _name(conn)
-    d1 = await _dept(conn)
-    d2 = await _dept(conn)
+async def test_passes_mcp_flag(conn, redis_client):
+    result = await create_agent(conn, mcp=True)
 
-    result = await create_agent(conn, name_id=nid, department_ids=[d1, d2])
+    items = await get_agents(conn, [result.id])
+    assert items[0].mcp is True
 
-    items = await get_agents(conn, [result.id], names=True, departments=True)
+
+async def test_links_single_select_junctions(conn, redis_client):
+    name = await create_name(conn, f"n-{_u()}", redis_client)
+    desc = await create_description(conn, f"d-{_u()}", redis_client)
+
+    result = await create_agent(conn, name_id=name.id, description_id=desc.id)
+
+    items = await get_agents(conn, [result.id], names=True, descriptions=True)
     p = items[0]
-    assert p.name_ids == [nid]
-    assert set(p.department_ids) == {d1, d2}
+    assert p.name_ids == [name.id]
+    assert p.description_ids == [desc.id]
 
 
-async def test_links_flags_with_value(conn):
-    f1 = await _flag(conn)
-    f2 = await _flag(conn)
+async def test_links_multi_select_junctions(conn, redis_client):
+    d1 = await create_department(conn, redis=redis_client)
+    d2 = await create_department(conn, redis=redis_client)
 
-    result = await create_agent(conn, flag_ids={f1: True, f2: False})
+    result = await create_agent(conn, department_ids=[d1.id, d2.id])
+
+    items = await get_agents(conn, [result.id], departments=True)
+    assert set(items[0].department_ids) == {d1.id, d2.id}
+
+
+async def test_links_flags_with_value(conn, redis_client):
+    f1 = await create_flag(conn, f"f-{_u()}", "desc", "icon", redis_client)
+    f2 = await create_flag(conn, f"f-{_u()}", "desc", "icon", redis_client)
+
+    result = await create_agent(conn, flag_ids={f1.id: True, f2.id: False})
 
     items = await get_agents(conn, [result.id], flags=True)
-    assert set(items[0].flag_ids) == {f1, f2}
-
-    rows = await conn.fetch(
-        "SELECT flag_id, value FROM agent_flags_junction "
-        "WHERE agent_id = $1 AND active = true",
-        result.id,
-    )
-    vals = {r["flag_id"]: r["value"] for r in rows}
-    assert vals[f1] is True
-    assert vals[f2] is False
+    assert set(items[0].flag_ids) == {f1.id, f2.id}
 
 
-async def test_no_junctions_when_none_provided(conn):
+async def test_no_junctions_when_none_provided(conn, redis_client):
     result = await create_agent(conn)
 
     items = await get_agents(

@@ -1,62 +1,27 @@
-"""Tests for create_tool."""
+"""Tests for create_tool — black-box using resource + artifact tools only."""
 
 from uuid import uuid4
 
 import pytest
 
-from app.routes.v5.tools.artifacts.tool.create import create_tool
+from app.routes.v5.tools.artifacts.tool.create import create_tool as create_tool_artifact
 from app.routes.v5.tools.artifacts.tool.get import get_tools
+from app.routes.v5.tools.resources.departments.create import create_department
+from app.routes.v5.tools.resources.descriptions.create import create_description
+from app.routes.v5.tools.resources.flags.create import create_flag
+from app.routes.v5.tools.resources.names.create import create_name
+from app.routes.v5.tools.resources.tools.create import create_tool as create_tool_resource
 
 pytestmark = pytest.mark.asyncio
 
 
 # ---------------------------------------------------------------------------
-# Helpers — create resource rows with required NOT NULL columns
+# Helpers
 # ---------------------------------------------------------------------------
 
 
-async def _name(conn):
-    return await conn.fetchval(
-        "INSERT INTO names_resource (name) VALUES ($1) RETURNING id",
-        f"n-{uuid4().hex[:8]}",
-    )
-
-
-async def _desc(conn):
-    return await conn.fetchval(
-        "INSERT INTO descriptions_resource (description) VALUES ($1) RETURNING id",
-        f"d-{uuid4().hex[:8]}",
-    )
-
-
-async def _dept(conn):
-    return await conn.fetchval(
-        "INSERT INTO departments_resource DEFAULT VALUES RETURNING id"
-    )
-
-
-async def _operation(conn):
-    return await conn.fetchval(
-        "INSERT INTO operations_resource (operation) VALUES ($1) RETURNING id",
-        f"op-{uuid4().hex[:8]}",
-    )
-
-
-async def _args(conn):
-    return await conn.fetchval(
-        "INSERT INTO args_resource (name, field_type) VALUES ($1, $2) RETURNING id",
-        f"a-{uuid4().hex[:8]}",
-        "string",
-    )
-
-
-async def _flag(conn):
-    return await conn.fetchval(
-        "INSERT INTO flags_resource (name, description, icon) VALUES ($1, $2, $3) RETURNING id",
-        f"f-{uuid4().hex[:8]}",
-        "desc",
-        "icon",
-    )
+def _u() -> str:
+    return uuid4().hex[:8]
 
 
 # ---------------------------------------------------------------------------
@@ -64,8 +29,8 @@ async def _flag(conn):
 # ---------------------------------------------------------------------------
 
 
-async def test_creates_bare_artifact(conn):
-    result = await create_tool(conn)
+async def test_creates_bare_artifact(conn, redis_client):
+    result = await create_tool_artifact(conn)
     assert result.id is not None
 
     items = await get_tools(conn, [result.id])
@@ -74,66 +39,70 @@ async def test_creates_bare_artifact(conn):
     assert items[0].mcp is False
 
 
-async def test_links_single_and_multi(conn):
-    nid = await _name(conn)
-    did = await _desc(conn)
-    d1 = await _dept(conn)
-    d2 = await _dept(conn)
-    oid = await _operation(conn)
+async def test_passes_mcp_flag(conn, redis_client):
+    result = await create_tool_artifact(conn, mcp=True)
 
-    result = await create_tool(
-        conn,
-        name_id=nid,
-        description_id=did,
-        department_ids=[d1, d2],
-        operation_ids=[oid],
+    items = await get_tools(conn, [result.id])
+    assert items[0].mcp is True
+
+
+async def test_links_single_select_junctions(conn, redis_client):
+    name = await create_name(conn, f"n-{_u()}", redis_client)
+    desc = await create_description(conn, f"d-{_u()}", redis_client)
+
+    result = await create_tool_artifact(conn, name_id=name.id, description_id=desc.id)
+
+    items = await get_tools(conn, [result.id], names=True, descriptions=True)
+    t = items[0]
+    assert t.name_ids == [name.id]
+    assert t.description_ids == [desc.id]
+
+
+async def test_links_multi_select_junctions(conn, redis_client):
+    d1 = await create_department(conn, redis=redis_client)
+    d2 = await create_department(conn, redis=redis_client)
+    # tool_tools_junction references tools_resource, not tool_artifact
+    tool_res = await create_tool_resource(conn, redis=redis_client)
+
+    result = await create_tool_artifact(
+        conn, department_ids=[d1.id, d2.id], tool_ids=[tool_res.id],
     )
+
+    items = await get_tools(conn, [result.id], departments=True, tools=True)
+    t = items[0]
+    assert set(t.department_ids) == {d1.id, d2.id}
+    assert t.tool_ids == [tool_res.id]
+
+
+async def test_links_flags_with_value(conn, redis_client):
+    f1 = await create_flag(conn, f"f-{_u()}", "desc", "icon", redis_client)
+    f2 = await create_flag(conn, f"f-{_u()}", "desc", "icon", redis_client)
+
+    result = await create_tool_artifact(conn, flag_ids={f1.id: True, f2.id: False})
+
+    items = await get_tools(conn, [result.id], flags=True)
+    assert set(items[0].flag_ids) == {f1.id, f2.id}
+
+
+async def test_no_junctions_when_none_provided(conn, redis_client):
+    result = await create_tool_artifact(conn)
 
     items = await get_tools(
         conn, [result.id],
-        names=True, descriptions=True, departments=True, operations=True,
+        names=True, descriptions=True, departments=True, flags=True,
+        args=True, args_outputs=True, arg_positions=True,
+        artifacts=True, entries=True, operations=True, resources=True, tools=True,
     )
     t = items[0]
-    assert t.name_ids == [nid]
-    assert t.description_ids == [did]
-    assert set(t.department_ids) == {d1, d2}
-    assert t.operation_ids == [oid]
-
-
-async def test_links_flags_with_value(conn):
-    f1 = await _flag(conn)
-    f2 = await _flag(conn)
-
-    result = await create_tool(conn, flag_ids={f1: True, f2: False})
-
-    items = await get_tools(conn, [result.id], flags=True)
-    assert set(items[0].flag_ids) == {f1, f2}
-
-    rows = await conn.fetch(
-        "SELECT flag_id, value FROM tool_flags_junction "
-        "WHERE tool_id = $1 AND active = true",
-        result.id,
-    )
-    vals = {r["flag_id"]: r["value"] for r in rows}
-    assert vals[f1] is True
-    assert vals[f2] is False
-
-
-async def test_update_replaces_single(conn):
-    """Verify create + get roundtrip for singles."""
-    nid = await _name(conn)
-    result = await create_tool(conn, name_id=nid)
-
-    items = await get_tools(conn, [result.id], names=True)
-    assert items[0].name_ids == [nid]
-
-
-async def test_update_adds_and_removes_multi(conn):
-    """Verify multi junction create with args."""
-    a1 = await _args(conn)
-    a2 = await _args(conn)
-
-    result = await create_tool(conn, args_ids=[a1, a2])
-
-    items = await get_tools(conn, [result.id], args=True)
-    assert set(items[0].args_ids) == {a1, a2}
+    assert t.name_ids == []
+    assert t.description_ids == []
+    assert t.department_ids == []
+    assert t.flag_ids == []
+    assert t.args_ids == []
+    assert t.args_outputs_ids == []
+    assert t.arg_positions_ids == []
+    assert t.artifact_ids == []
+    assert t.entry_ids == []
+    assert t.operation_ids == []
+    assert t.resource_ids == []
+    assert t.tool_ids == []

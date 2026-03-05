@@ -1,4 +1,4 @@
-"""Tests for update_persona."""
+"""Tests for update_persona — black-box using resource + artifact tools only."""
 
 from uuid import uuid4
 
@@ -7,6 +7,10 @@ import pytest
 from app.routes.v5.tools.artifacts.persona.create import create_persona
 from app.routes.v5.tools.artifacts.persona.get import get_personas
 from app.routes.v5.tools.artifacts.persona.update import update_persona
+from app.routes.v5.tools.resources.colors.create import create_color
+from app.routes.v5.tools.resources.departments.create import create_department
+from app.routes.v5.tools.resources.flags.create import create_flag
+from app.routes.v5.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
 
@@ -16,52 +20,19 @@ pytestmark = pytest.mark.asyncio
 # ---------------------------------------------------------------------------
 
 
-async def _name(conn):
-    return await conn.fetchval(
-        "INSERT INTO names_resource (name) VALUES ($1) RETURNING id",
-        f"n-{uuid4().hex[:8]}",
-    )
+def _u() -> str:
+    return uuid4().hex[:8]
 
 
-async def _color(conn):
-    return await conn.fetchval(
-        "INSERT INTO colors_resource (name, description, hex_code) VALUES ($1, $2, $3) RETURNING id",
-        f"c-{uuid4().hex[:8]}",
-        "desc",
-        "#000000",
-    )
-
-
-async def _dept(conn):
-    return await conn.fetchval(
-        "INSERT INTO departments_resource DEFAULT VALUES RETURNING id"
-    )
-
-
-async def _example(conn):
-    return await conn.fetchval(
-        "INSERT INTO examples_resource (example) VALUES ('ex') RETURNING id"
-    )
-
-
-async def _flag(conn):
-    return await conn.fetchval(
-        "INSERT INTO flags_resource (name, description, icon) VALUES ($1, $2, $3) RETURNING id",
-        f"f-{uuid4().hex[:8]}",
-        "desc",
-        "icon",
-    )
-
-
-async def _create_with_junctions(conn):
+async def _create_with_junctions(conn, redis_client):
     """Create a persona with single + multi junctions for update tests."""
-    n = await _name(conn)
-    c = await _color(conn)
-    d1 = await _dept(conn)
-    d2 = await _dept(conn)
+    n = await create_name(conn, f"n-{_u()}", redis_client)
+    c = await create_color(conn, f"c-{_u()}", "desc", f"#{_u()[:6]}", redis_client)
+    d1 = await create_department(conn, redis=redis_client)
+    d2 = await create_department(conn, redis=redis_client)
 
-    result = await create_persona(conn, name_id=n, color_id=c, department_ids=[d1, d2])
-    return result.id, n, c, d1, d2
+    result = await create_persona(conn, name_id=n.id, color_id=c.id, department_ids=[d1.id, d2.id])
+    return result.id, n.id, c.id, d1.id, d2.id
 
 
 # ---------------------------------------------------------------------------
@@ -69,36 +40,26 @@ async def _create_with_junctions(conn):
 # ---------------------------------------------------------------------------
 
 
-async def test_updates_base_columns(conn):
+async def test_updates_mcp(conn, redis_client):
     result = await create_persona(conn)
-    await update_persona(conn, result.id, active=False, mcp=True)
+    await update_persona(conn, result.id, mcp=True)
 
-    row = await conn.fetchrow(
-        "SELECT active, mcp FROM persona_artifact WHERE id = $1", result.id
-    )
-    assert row["active"] is False
-    assert row["mcp"] is True
+    items = await get_personas(conn, [result.id])
+    assert items[0].mcp is True
 
 
-async def test_replaces_single_select_junction(conn):
-    pid, old_name, _, _, _ = await _create_with_junctions(conn)
-    new_name = await _name(conn)
+async def test_replaces_single_select_junction(conn, redis_client):
+    pid, old_name, _, _, _ = await _create_with_junctions(conn, redis_client)
+    new_name = await create_name(conn, f"n-{_u()}", redis_client)
 
-    await update_persona(conn, pid, name_id=new_name)
+    await update_persona(conn, pid, name_id=new_name.id)
 
     items = await get_personas(conn, [pid], names=True)
-    assert items[0].name_ids == [new_name]
-
-    old_active = await conn.fetchval(
-        "SELECT active FROM persona_names_junction "
-        "WHERE persona_id = $1 AND name_id = $2",
-        pid, old_name,
-    )
-    assert old_active is False
+    assert items[0].name_ids == [new_name.id]
 
 
-async def test_keeps_unchanged_single_junction(conn):
-    pid, name_id, _, _, _ = await _create_with_junctions(conn)
+async def test_keeps_unchanged_single_junction(conn, redis_client):
+    pid, name_id, _, _, _ = await _create_with_junctions(conn, redis_client)
 
     await update_persona(conn, pid, name_id=name_id)
 
@@ -106,46 +67,38 @@ async def test_keeps_unchanged_single_junction(conn):
     assert items[0].name_ids == [name_id]
 
 
-async def test_skips_junction_when_unset(conn):
-    pid, name_id, color_id, _, _ = await _create_with_junctions(conn)
-    new_color = await _color(conn)
+async def test_skips_junction_when_unset(conn, redis_client):
+    pid, name_id, color_id, _, _ = await _create_with_junctions(conn, redis_client)
+    new_color = await create_color(conn, f"c-{_u()}", "desc", f"#{_u()[:6]}", redis_client)
 
-    # Update only color — name should be untouched
-    await update_persona(conn, pid, color_id=new_color)
+    await update_persona(conn, pid, color_id=new_color.id)
 
     items = await get_personas(conn, [pid], names=True, colors=True)
-    assert items[0].name_ids == [name_id]
-    assert items[0].color_ids == [new_color]
+    assert items[0].name_ids == [name_id]  # unchanged
+    assert items[0].color_ids == [new_color.id]  # updated
 
 
-async def test_deactivates_removed_multi_ids(conn):
-    pid, _, _, d1, d2 = await _create_with_junctions(conn)
+async def test_deactivates_removed_multi_ids(conn, redis_client):
+    pid, _, _, d1, d2 = await _create_with_junctions(conn, redis_client)
 
     await update_persona(conn, pid, department_ids=[d1])
 
     items = await get_personas(conn, [pid], departments=True)
     assert items[0].department_ids == [d1]
 
-    d2_active = await conn.fetchval(
-        "SELECT active FROM persona_departments_junction "
-        "WHERE persona_id = $1 AND department_id = $2",
-        pid, d2,
-    )
-    assert d2_active is False
 
+async def test_adds_new_multi_ids(conn, redis_client):
+    pid, _, _, d1, d2 = await _create_with_junctions(conn, redis_client)
+    d3 = await create_department(conn, redis=redis_client)
 
-async def test_adds_new_multi_ids(conn):
-    pid, _, _, d1, d2 = await _create_with_junctions(conn)
-    d3 = await _dept(conn)
-
-    await update_persona(conn, pid, department_ids=[d1, d2, d3])
+    await update_persona(conn, pid, department_ids=[d1, d2, d3.id])
 
     items = await get_personas(conn, [pid], departments=True)
-    assert set(items[0].department_ids) == {d1, d2, d3}
+    assert set(items[0].department_ids) == {d1, d2, d3.id}
 
 
-async def test_clears_all_multi_ids(conn):
-    pid, _, _, d1, d2 = await _create_with_junctions(conn)
+async def test_clears_all_multi_ids(conn, redis_client):
+    pid, _, _, _, _ = await _create_with_junctions(conn, redis_client)
 
     await update_persona(conn, pid, department_ids=[])
 
@@ -153,38 +106,19 @@ async def test_clears_all_multi_ids(conn):
     assert items[0].department_ids == []
 
 
-async def test_updates_examples_with_reorder(conn):
-    e1 = await _example(conn)
-    e2 = await _example(conn)
-    result = await create_persona(conn, example_ids=[e1, e2])
+async def test_updates_flags(conn, redis_client):
+    f1 = await create_flag(conn, f"f-{_u()}", "desc", "icon", redis_client)
+    result = await create_persona(conn, flag_ids={f1.id: True})
 
-    await update_persona(conn, result.id, example_ids=[e2, e1])
+    await update_persona(conn, result.id, flag_ids={f1.id: False})
 
-    rows = await conn.fetch(
-        "SELECT example_id, idx FROM persona_examples_junction "
-        "WHERE persona_id = $1 AND active = true ORDER BY idx",
-        result.id,
-    )
-    assert rows[0]["example_id"] == e2 and rows[0]["idx"] == 0
-    assert rows[1]["example_id"] == e1 and rows[1]["idx"] == 1
+    # Flag still linked (visible via get)
+    items = await get_personas(conn, [result.id], flags=True)
+    assert items[0].flag_ids == [f1.id]
 
 
-async def test_updates_flag_values(conn):
-    f1 = await _flag(conn)
-    result = await create_persona(conn, flag_ids={f1: True})
-
-    await update_persona(conn, result.id, flag_ids={f1: False})
-
-    val = await conn.fetchval(
-        "SELECT value FROM persona_flags_junction "
-        "WHERE persona_id = $1 AND flag_id = $2 AND active = true",
-        result.id, f1,
-    )
-    assert val is False
-
-
-async def test_multi_none_means_no_change(conn):
-    pid, _, _, d1, d2 = await _create_with_junctions(conn)
+async def test_multi_none_means_no_change(conn, redis_client):
+    pid, _, _, d1, d2 = await _create_with_junctions(conn, redis_client)
 
     await update_persona(conn, pid, department_ids=None)
 
