@@ -28,3 +28,11 @@ class GetScenariosResponse(BaseModel):
     question_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
+
+
+class CreateScenarioResponse(BaseModel):
+    id: UUID
+
+
+class UpdateScenarioResponse(BaseModel):
+    id: UUID

@@ -27,3 +27,11 @@ class GetSettingsResponse(BaseModel):
     setting_ids: list[UUID] | None = None
     auth_ids: list[UUID] | None = None
     auth_value_ids: list[UUID] | None = None
+
+
+class CreateSettingResponse(BaseModel):
+    id: UUID
+
+
+class UpdateSettingResponse(BaseModel):
+    id: UUID
