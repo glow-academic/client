@@ -93,7 +93,7 @@ from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.instructions.search import (
-    search_instructions_internal,
+    search_instructions,
 )
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.models.search import search_models_internal
@@ -118,7 +118,7 @@ from app.routes.v5.tools.resources.temperature_levels.search import (
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.tools.search import search_tools_internal
 from app.routes.v5.tools.resources.voices.get import get_voices
-from app.routes.v5.tools.resources.voices.search import search_voices_internal
+from app.routes.v5.tools.resources.voices.search import search_voices
 from app.sql.types import (
     GetAgentAccessSqlParams,
     GetAgentAccessSqlRow,
@@ -473,16 +473,16 @@ async def get_agent_internal(
             selected = await get_instructions(
                 c, instructions_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_instructions_internal(
+            suggestions = await search_instructions(
                 c,
-                None,
-                20,
-                0,
-                None,
-                None,
-                instructions_ids,
-                bypass_cache,
-                agent=True,
+                get_redis_client(),
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                draft_id=None,
+                suggest_source=None,
+                exclude_ids=instructions_ids,
+                bypass_cache=bypass_cache,
             )
             return (selected, suggestions)
 
@@ -558,13 +558,14 @@ async def get_agent_internal(
             selected = await get_voices(
                 c, voice_ids_list, get_redis_client(), bypass_cache
             )
-            suggestions = await search_voices_internal(
+            suggestions = await search_voices(
                 c,
-                None,
-                20,
-                0,
-                voice_ids_list,
-                bypass_cache,
+                get_redis_client(),
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=voice_ids_list,
+                bypass_cache=bypass_cache,
                 agent=True,
             )
             return (selected, suggestions)

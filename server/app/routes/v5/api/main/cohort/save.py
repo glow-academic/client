@@ -267,16 +267,16 @@ async def _resolve_cohort_values(
 
     if item.profiles is not None and item.profile_ids is None:
         from app.routes.v5.tools.resources.profiles.search import (
-            search_profiles_internal,
+            search_profiles,
         )
 
-        all_profiles = await search_profiles_internal(
-            conn, search=None, limit_count=1000
+        all_profiles = await search_profiles(
+            conn, get_redis_client(), search=None, limit_count=1000
         )
         profile_name_map = {
-            p.name.lower(): p.profile_id
+            p.name.lower(): p.id
             for p in all_profiles
-            if p.name and p.profile_id
+            if p.name and p.id
         }
         resolved_ids = []
         for profile_name in item.profiles:

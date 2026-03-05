@@ -14,11 +14,11 @@ from pydantic import BaseModel
 from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
+from app.routes.v5.tools.resources.images.types import GetImageResponse
 from app.sql.types import (
     QGetDepartmentsV4Item,
     QGetDescriptionsV4Item,
     QGetDocumentDraftsEntriesV4Item,
-    QGetImagesV4Item,
     QGetNamesV4Item,
     QGetParameterFieldsV4Item,
     QGetTextsV4Item,
@@ -79,8 +79,8 @@ class DocumentUploadSection(BaseResourceSection):
 
 
 class DocumentImageSection(BaseResourceSection):
-    current: list[QGetImagesV4Item] | None = None
-    resources: list[QGetImagesV4Item] | None = None
+    current: list[GetImageResponse] | None = None
+    resources: list[GetImageResponse] | None = None
 
 
 class DocumentTextSection(BaseResourceSection):
@@ -153,7 +153,7 @@ class DocumentWebsocketResources(BaseModel):
     departments: list[QGetDepartmentsV4Item] | None = None
     fields: list[QGetParameterFieldsV4Item] | None = None
     uploads: list[QGetUploadsV4Item] | None = None
-    images: list[QGetImagesV4Item] | None = None
+    images: list[GetImageResponse] | None = None
     texts: list[QGetTextsV4Item] | None = None
 
 

@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
+from app.routes.v5.tools.resources.profiles.types import GetProfileResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetAuthItemKeysV4Item,
@@ -20,7 +21,6 @@ from app.sql.types import (
     QGetDescriptionsV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
-    QGetProfilesV4Item,
     QGetProviderKeysV4Item,
     QGetProvidersV4Item,
     QGetRolesV4Item,
@@ -75,8 +75,8 @@ class SettingDepartmentSection(BaseResourceSection):
 
 
 class SettingProfileSection(BaseResourceSection):
-    current: list[QGetProfilesV4Item] | None = None
-    resources: list[QGetProfilesV4Item] | None = None
+    current: list[GetProfileResponse] | None = None
+    resources: list[GetProfileResponse] | None = None
 
 
 class SettingAuthSection(BaseResourceSection):
@@ -158,7 +158,7 @@ class SettingWebsocketResources(BaseModel):
     colors: list[QGetColorsV4Item] | None = None
     flags: list[SettingFlagConfig] | None = None
     departments: list[QGetDepartmentsV4Item] | None = None
-    profiles: list[QGetProfilesV4Item] | None = None
+    profiles: list[GetProfileResponse] | None = None
     auths: list[QGetAuthsV4Item] | None = None
     provider_keys: list[QGetProviderKeysV4Item] | None = None
     auth_item_keys: list[QGetAuthItemKeysV4Item] | None = None
@@ -194,7 +194,7 @@ class SettingGenerationCompleteEvent(BaseModel):
     color_resources: list[QGetColorsV4Item] | None = None
     flag_resource: SettingFlagConfig | None = None
     department_resources: list[QGetDepartmentsV4Item] | None = None
-    profile_resources: list[QGetProfilesV4Item] | None = None
+    profile_resources: list[GetProfileResponse] | None = None
     auth_resources: list[QGetAuthsV4Item] | None = None
     provider_key_resources: list[QGetProviderKeysV4Item] | None = None
     auth_item_key_resources: list[QGetAuthItemKeysV4Item] | None = None
@@ -212,7 +212,7 @@ class SettingResourceBucket(BaseModel):
     colors: list[QGetColorsV4Item] | None = None
     flags: list[SettingFlagConfig] | None = None
     departments: list[QGetDepartmentsV4Item] | None = None
-    profiles: list[QGetProfilesV4Item] | None = None
+    profiles: list[GetProfileResponse] | None = None
     auths: list[QGetAuthsV4Item] | None = None
     provider_keys: list[QGetProviderKeysV4Item] | None = None
     auth_item_keys: list[QGetAuthItemKeysV4Item] | None = None

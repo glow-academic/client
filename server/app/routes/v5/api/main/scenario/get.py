@@ -98,7 +98,7 @@ from app.routes.v5.tools.resources.fields.search import search_fields_internal
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.images.get import get_images
-from app.routes.v5.tools.resources.images.search import search_images_internal
+from app.routes.v5.tools.resources.images.search import search_images
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
 from app.routes.v5.tools.resources.objectives.get import get_objectives
@@ -111,9 +111,9 @@ from app.routes.v5.tools.resources.parameter_fields.search import (
     search_parameter_fields_internal,
 )
 from app.routes.v5.tools.resources.parameters.get import get_parameters
-from app.routes.v5.tools.resources.parameters.search import search_parameters_internal
+from app.routes.v5.tools.resources.parameters.search import search_parameters
 from app.routes.v5.tools.resources.personas.get import get_personas
-from app.routes.v5.tools.resources.personas.search import search_personas_internal
+from app.routes.v5.tools.resources.personas.search import search_personas
 from app.routes.v5.tools.resources.problem_statements.get import (
     get_problem_statements,
 )
@@ -556,13 +556,14 @@ async def get_scenario_internal(
             selected = await get_personas(
                 c, selected_persona_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_personas_internal(
+            suggestions = await search_personas(
                 c,
-                persona_search,
-                20,
-                0,
-                user_department_ids,
-                effective_group_id,
+                get_redis_client(),
+                search=persona_search,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_department_ids,
+                draft_id=effective_group_id,
                 suggest_source="selected" if persona_show_selected else None,
                 exclude_ids=selected_persona_ids,
                 bypass_cache=bypass_cache,
@@ -597,8 +598,9 @@ async def get_scenario_internal(
                 get_redis_client(),
                 bypass_cache,
             )
-            suggestions = await search_parameters_internal(
+            suggestions = await search_parameters(
                 c,
+                get_redis_client(),
                 search=parameter_search,
                 limit_count=20,
                 offset_count=0,
@@ -644,12 +646,13 @@ async def get_scenario_internal(
     async def fetch_images():
         async with pool.acquire() as c:
             selected = await get_images(c, selected_image_ids, get_redis_client(), bypass_cache)
-            suggestions = await search_images_internal(
+            suggestions = await search_images(
                 c,
-                image_search,
-                20,
-                0,
-                selected_image_ids,
+                get_redis_client(),
+                search=image_search,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=selected_image_ids,
                 bypass_cache=bypass_cache,
                 scenario=True,
             )
@@ -750,9 +753,9 @@ async def get_scenario_internal(
         }
 
         all_persona_ids_for_video = [
-            p.persona_id
+            p.id
             for p in personas_selected + personas_suggestions
-            if p.persona_id
+            if p.id
         ]
         if all_persona_ids_for_video:
             persona_param_rows = await filter_conn.fetch(
@@ -829,7 +832,7 @@ async def get_scenario_internal(
     departments = _dedupe_by_id(
         departments_selected + departments_suggestions, "id"
     )
-    personas = _dedupe_by_id(personas_selected + personas_suggestions, "persona_id")
+    personas = _dedupe_by_id(personas_selected + personas_suggestions, "id")
     documents = _dedupe_by_id(documents_selected + documents_suggestions, "document_id")
     parameters = _dedupe_by_id(
         parameters_selected + parameters_suggestions,
@@ -838,7 +841,7 @@ async def get_scenario_internal(
 
     # Fetch conditional parameter metadata for any referenced by available fields
     # but not already in the parameter list
-    existing_param_ids = {p.parameter_id for p in parameters if p.parameter_id}
+    existing_param_ids = {p.id for p in parameters if p.id}
     missing_conditional_ids = [
         pid for pid in conditional_param_ids if pid not in existing_param_ids
     ]
@@ -847,12 +850,12 @@ async def get_scenario_internal(
             conditional_params = await get_parameters(
                 c, missing_conditional_ids, get_redis_client(), bypass_cache
             )
-            parameters = _dedupe_by_id(parameters + conditional_params, "parameter_id")
+            parameters = _dedupe_by_id(parameters + conditional_params, "id")
     parameter_fields = _dedupe_by_id(
         parameter_fields_selected + parameter_fields_suggestions, "field_id"
     )
     objectives = objectives_selected
-    images = _dedupe_by_id(images_selected + images_suggestions, "image_id")
+    images = _dedupe_by_id(images_selected + images_suggestions, "id")
     videos = _dedupe_by_id(videos_selected + videos_suggestions, "video_id")
     questions = _dedupe_by_id(questions_selected + questions_suggestions, "question_id")
     options = _dedupe_by_id(options_selected + options_suggestions, "option_id")
@@ -957,17 +960,22 @@ async def get_scenario_internal(
 
     def _persona_to_dict(persona: Any) -> dict[str, Any]:
         d = _to_dict(persona)
-        video_persona, non_video_persona = compute_persona_video_flags(
-            persona.persona_id
-        )
+        pid = getattr(persona, "persona_id", None) or getattr(persona, "id", None)
+        if "id" in d and "persona_id" not in d:
+            d["persona_id"] = d.pop("id")
+        video_persona, non_video_persona = compute_persona_video_flags(pid)
         d["video_persona"] = video_persona
         d["non_video_persona"] = non_video_persona
         return d
 
     def _image_to_dict(image: Any) -> dict[str, Any]:
         d = _to_dict(image)
-        if image.upload_id and image.upload_id in upload_id_map:
-            d["upload_id"] = upload_id_map[image.upload_id]
+        img_id = getattr(image, "image_id", None) or getattr(image, "id", None)
+        if "id" in d and "image_id" not in d:
+            d["image_id"] = d.pop("id")
+        upload_id = getattr(image, "upload_id", None)
+        if upload_id and upload_id in upload_id_map:
+            d["upload_id"] = upload_id_map[upload_id]
         return d
 
     def _video_to_dict(video: Any) -> dict[str, Any]:
@@ -989,6 +997,8 @@ async def get_scenario_internal(
 
     def _parameter_to_dict(param: Any) -> dict[str, Any]:
         d = _to_dict(param)
+        if "id" in d and "parameter_id" not in d:
+            d["parameter_id"] = d.pop("id")
         d["non_video_parameter"] = compute_parameter_non_video_flag(
             param.video_parameter
         )
@@ -1013,7 +1023,7 @@ async def get_scenario_internal(
     persona_resources = personas_selected
     document_resources = documents_selected
     parameter_resources = [
-        p for p in parameters if p.parameter_id in set(selected_parameter_ids)
+        p for p in parameters if p.id in set(selected_parameter_ids)
     ]
     parameter_field_resources = [
         f for f in parameter_fields if f.id in set(selected_parameter_field_ids)
@@ -1085,11 +1095,11 @@ async def get_scenario_internal(
             ps.problem_statement_id for ps in problem_statements_suggestions
         ],
         "departments": [d.id for d in departments_suggestions],
-        "personas": [p.persona_id for p in personas_suggestions],
+        "personas": [p.id for p in personas_suggestions],
         "documents": [d.document_id for d in documents_suggestions],
-        "parameters": [p.parameter_id for p in parameters_suggestions],
+        "parameters": [p.id for p in parameters_suggestions],
         "objectives": [],
-        "images": [i.image_id for i in images_suggestions],
+        "images": [i.id for i in images_suggestions],
         "videos": [v.video_id for v in videos_suggestions],
         "questions": [q.question_id for q in questions_suggestions],
         "options": [o.option_id for o in options_suggestions],

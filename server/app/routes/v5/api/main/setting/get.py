@@ -83,7 +83,7 @@ from app.routes.v5.tools.resources.auth_item_keys.search import (
 from app.routes.v5.tools.resources.auths.get import get_auths
 from app.routes.v5.tools.resources.auths.search import search_auths_internal
 from app.routes.v5.tools.resources.colors.get import get_colors
-from app.routes.v5.tools.resources.colors.search import search_colors_internal
+from app.routes.v5.tools.resources.colors.search import search_colors
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
@@ -96,7 +96,7 @@ from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
 from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.profiles.search import search_profiles_internal
+from app.routes.v5.tools.resources.profiles.search import search_profiles
 from app.routes.v5.tools.resources.provider_keys.get import get_provider_keys
 from app.routes.v5.tools.resources.provider_keys.search import (
     search_provider_keys_internal,
@@ -300,15 +300,16 @@ async def get_setting_internal(
             selected = await get_colors(
                 c, selected_color_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_colors_internal(
+            suggestions = await search_colors(
                 c,
-                color_search,
-                20,
-                0,
-                effective_group_id,
-                "recent",
-                selected_color_ids,
-                bypass_cache,
+                get_redis_client(),
+                search=color_search,
+                limit_count=20,
+                offset_count=0,
+                draft_id=effective_group_id,
+                suggest_source="recent",
+                exclude_ids=selected_color_ids,
+                bypass_cache=bypass_cache,
                 setting=True,
             )
             return (selected, suggestions)
@@ -351,8 +352,9 @@ async def get_setting_internal(
             selected = await get_profiles(
                 c, selected_profile_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_profiles_internal(
+            suggestions = await search_profiles(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
@@ -489,7 +491,7 @@ async def get_setting_internal(
     departments = _dedupe_by_id(
         departments_selected + departments_suggestions, "id"
     )
-    profiles = _dedupe_by_id(profiles_selected + profiles_suggestions, "profile_id")
+    profiles = _dedupe_by_id(profiles_selected + profiles_suggestions, "id")
     auths = _dedupe_by_id(auths_selected + auths_suggestions, "id")
     provider_keys = _dedupe_by_id(
         provider_keys_selected + provider_keys_suggestions, "id"
@@ -521,7 +523,7 @@ async def get_setting_internal(
     department_resources = [
         d for d in departments if d.id in department_id_set
     ]
-    profile_resources = [p for p in profiles if p.profile_id in profile_id_set]
+    profile_resources = [p for p in profiles if p.id in profile_id_set]
     auth_resources = [a for a in auths if a.id in auth_id_set]
     provider_key_resources = [pk for pk in provider_keys if pk.id in pk_id_set]
     auth_item_key_resources = [aik for aik in auth_item_keys if aik.id in aik_id_set]
@@ -533,7 +535,7 @@ async def get_setting_internal(
     description_suggestions_ids = [d.id for d in descriptions_suggestions]
     color_suggestions_ids = [c.id for c in colors_suggestions]
     department_suggestions_ids = [d.id for d in departments_suggestions]
-    profile_suggestions_ids = [p.profile_id for p in profiles_suggestions]
+    profile_suggestions_ids = [p.id for p in profiles_suggestions]
     auth_suggestions_ids = [a.id for a in auths_suggestions]
     pk_suggestions_ids = [pk.id for pk in provider_keys_suggestions]
     aik_suggestions_ids = [aik.id for aik in auth_item_keys_suggestions]

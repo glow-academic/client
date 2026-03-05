@@ -77,7 +77,7 @@ from app.routes.v5.tools.resources.fields.search import search_fields_internal
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.images.get import get_images
-from app.routes.v5.tools.resources.images.search import search_images_internal
+from app.routes.v5.tools.resources.images.search import search_images
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
@@ -442,8 +442,9 @@ async def get_document_internal(
     async def fetch_images():
         async with pool.acquire() as c:
             selected = await get_images(c, image_ids, get_redis_client(), bypass_cache)
-            suggestions = await search_images_internal(
+            suggestions = await search_images(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
@@ -494,7 +495,7 @@ async def get_document_internal(
     )
     fields = _dedupe_by_id(fields_selected, "field_id")
     uploads = _dedupe_by_id(uploads_selected + uploads_suggestions, "files_id")
-    images = _dedupe_by_id(images_selected + images_suggestions, "image_id")
+    images = _dedupe_by_id(images_selected + images_suggestions, "id")
     texts = _dedupe_by_id(texts_selected + texts_suggestions, "texts_id")
 
     # Find selected resources
@@ -510,7 +511,7 @@ async def get_document_internal(
     ]
     field_resources = [f for f in fields if f.field_id in selected_field_ids]
     upload_resources = [u for u in uploads if u.files_id in selected_upload_ids]
-    image_resources = [i for i in images if i.image_id in selected_image_ids]
+    image_resources = [i for i in images if i.id in selected_image_ids]
     text_resources = [t for t in texts if t.texts_id in selected_text_ids]
 
     name_suggestions = [n.id for n in names_suggestions]
@@ -518,7 +519,7 @@ async def get_document_internal(
     department_suggestions = [d.id for d in departments_suggestions]
     field_suggestions = [f.field_id for f in fields_suggestions]
     upload_suggestions = [u.files_id for u in uploads_suggestions]
-    image_suggestions = [i.image_id for i in images_suggestions]
+    image_suggestions = [i.id for i in images_suggestions]
     text_suggestions = [t.texts_id for t in texts_suggestions]
 
     # Compute final show flags based on actual data

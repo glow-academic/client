@@ -239,16 +239,16 @@ async def _resolve_scenario_values(
 
     if item.personas is not None and item.persona_ids is None:
         from app.routes.v5.tools.resources.personas.search import (
-            search_personas_internal,
+            search_personas,
         )
 
-        all_personas = await search_personas_internal(
-            conn, search=None, limit_count=1000, scenario=True
+        all_personas = await search_personas(
+            conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
         persona_name_map = {
-            p.name.lower(): p.persona_id
+            p.name.lower(): p.id
             for p in all_personas
-            if p.name and p.persona_id
+            if p.name and p.id
         }
         resolved_ids = []
         for persona_name in item.personas:
@@ -344,13 +344,13 @@ async def _resolve_scenario_values(
             item.objective_ids = resolved_ids
 
     if item.images is not None and item.image_ids is None:
-        from app.routes.v5.tools.resources.images.search import search_images_internal
+        from app.routes.v5.tools.resources.images.search import search_images
 
-        all_images = await search_images_internal(
-            conn, search=None, limit_count=1000, scenario=True
+        all_images = await search_images(
+            conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
         img_name_map = {
-            i.name.lower(): i.image_id for i in all_images if i.name and i.image_id
+            i.name.lower(): i.id for i in all_images if i.name and i.id
         }
         resolved_ids = []
         for img_name in item.images:

@@ -13,9 +13,9 @@ from pydantic import BaseModel
 from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
+from app.routes.v5.tools.resources.personas.types import GetPersonaResponse
 from app.sql.types import (
     QGetCohortDraftsEntriesV4Item,
-    QGetPersonasV4Item,
 )
 
 # =============================================================================
@@ -127,7 +127,7 @@ class CohortResourceBucket(BaseModel):
     simulation_availability: list[CohortSimulationAvailability] | None = None
     profiles: list[CohortProfile] | None = None
     profile_personas: list[CohortProfilePersona] | None = None
-    personas: list[QGetPersonasV4Item] | None = None
+    personas: list[GetPersonaResponse] | None = None
 
 
 class CohortResources(BaseModel):
@@ -225,7 +225,7 @@ class GetCohortApiResponse(BaseModel):
     simulation_availability: CohortSimulationAvailabilitySection | None = None
     profiles: CohortProfileSection | None = None
     profile_personas: CohortProfilePersonaSection | None = None
-    personas: list[QGetPersonasV4Item] | None = None
+    personas: list[GetPersonaResponse] | None = None
 
 
 class GetCohortWebsocketResponse(InternalResponseBase):
@@ -259,7 +259,7 @@ class CohortWebsocketResources(BaseModel):
     simulation_availability: list[CohortSimulationAvailability] | None = None
     profiles: list[CohortProfile] | None = None
     profile_personas: list[CohortProfilePersona] | None = None
-    personas: list[QGetPersonasV4Item] | None = None
+    personas: list[GetPersonaResponse] | None = None
 
 
 # =============================================================================

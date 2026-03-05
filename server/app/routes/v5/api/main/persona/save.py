@@ -27,14 +27,14 @@ from app.routes.v5.api.main.persona.types import (
     SavePersonaSqlRow,
 )
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.tools.resources.colors.search import search_colors_internal
+from app.routes.v5.tools.resources.colors.search import search_colors
 from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.create import (
     create_descriptions_internal,
 )
 from app.routes.v5.tools.resources.examples.create import create_examples_internal
 from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.icons.search import search_icons_internal
+from app.routes.v5.tools.resources.icons.search import search_icons
 from app.routes.v5.tools.resources.instructions.create import (
     create_instructions_internal,
 )
@@ -43,7 +43,7 @@ from app.routes.v5.tools.resources.parameter_fields.search import (
     search_parameter_fields_internal,
 )
 from app.routes.v5.tools.resources.personas.create import create_personas_internal
-from app.routes.v5.tools.resources.voices.search import search_voices_internal
+from app.routes.v5.tools.resources.voices.search import search_voices
 from app.sql.types import (
     CheckPersonaSaveAccessSqlParams,
     CheckPersonaSaveAccessSqlRow,
@@ -236,8 +236,8 @@ async def _resolve_persona_values(
     # --- Match resources (find existing by name) ---
 
     if item.color is not None and item.color_id is None:
-        results = await search_colors_internal(
-            conn, search=item.color, limit_count=20, persona=True, setting=False
+        results = await search_colors(
+            conn, get_redis_client(), search=item.color, limit_count=20, persona=True, setting=False
         )
         match = next(
             (r for r in results if r.name and r.name.lower() == item.color.lower()),
@@ -253,8 +253,8 @@ async def _resolve_persona_values(
             )
 
     if item.icon is not None and item.icon_id is None:
-        results = await search_icons_internal(
-            conn, search=item.icon, limit_count=20, persona=True
+        results = await search_icons(
+            conn, get_redis_client(), search=item.icon, limit_count=20, persona=True
         )
         match = next(
             (r for r in results if r.name and r.name.lower() == item.icon.lower()),
@@ -315,8 +315,8 @@ async def _resolve_persona_values(
             item.department_ids = resolved_ids
 
     if item.voices is not None and item.voice_ids is None:
-        all_voices = await search_voices_internal(
-            conn, search=None, limit_count=1000, persona=True, agent=False, model=False
+        all_voices = await search_voices(
+            conn, get_redis_client(), search=None, limit_count=1000, persona=True, agent=False, model=False
         )
         voice_name_map = {v.voice.lower(): v.id for v in all_voices if v.voice and v.id}
         resolved_ids = []

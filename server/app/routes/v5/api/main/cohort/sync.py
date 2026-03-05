@@ -103,7 +103,7 @@ async def sync_cohort_entries(
         get_simulation_positions,
     )
     from app.routes.v5.tools.resources.simulations.get import get_simulations
-    from app.routes.v5.tools.resources.standards.search import search_standards_internal
+    from app.routes.v5.tools.resources.standards.search import search_standards
 
     if not simulation_ids:
         return 0
@@ -224,8 +224,9 @@ async def sync_cohort_entries(
         if all_standard_group_ids:
             # Fetch all standards belonging to these groups via search internal
             async with pool.acquire() as std_conn:
-                standards = await search_standards_internal(
+                standards = await search_standards(
                     std_conn,
+                    get_redis_client(),
                     standard_group_ids=all_standard_group_ids,
                     limit_count=10000,
                     bypass_cache=True,
@@ -251,9 +252,9 @@ async def sync_cohort_entries(
     # standard_group_id → list of standard_ids
     sg_standards_map: dict[UUID, list[UUID]] = {}
     for std in standards:
-        if std.standard_group_id and std.standard_id:
+        if std.standard_group_id and std.id:
             sg_standards_map.setdefault(std.standard_group_id, []).append(
-                std.standard_id
+                std.id
             )
 
     # scenario_flag_id → {column_name: True}

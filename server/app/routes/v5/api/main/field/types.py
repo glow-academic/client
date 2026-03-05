@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
+from app.routes.v5.tools.resources.parameters.types import GetParameterResponse
 from app.sql.types import (
     QGetAgentsV4Item,
     QGetDepartmentsV4Item,
@@ -18,7 +19,6 @@ from app.sql.types import (
     QGetFieldDraftsEntriesV4Item,
     QGetModelsV4Item,
     QGetNamesV4Item,
-    QGetParametersV4Item,
     QGetProvidersV4Item,
     QGetToolsV4Item,
 )
@@ -58,8 +58,8 @@ class FieldDepartmentSection(BaseResourceSection):
 
 
 class FieldConditionalParameterSection(BaseResourceSection):
-    current: list[QGetParametersV4Item] | None = None
-    resources: list[QGetParametersV4Item] | None = None
+    current: list[GetParameterResponse] | None = None
+    resources: list[GetParameterResponse] | None = None
 
 
 class GetFieldApiRequest(BaseModel):
@@ -102,7 +102,7 @@ class FieldWebsocketResources(BaseModel):
     descriptions: list[QGetDescriptionsV4Item] | None = None
     flags: list[FieldFlagConfig] | None = None
     departments: list[QGetDepartmentsV4Item] | None = None
-    conditional_parameters: list[QGetParametersV4Item] | None = None
+    conditional_parameters: list[GetParameterResponse] | None = None
 
 
 class GetFieldWebsocketResponse(InternalResponseBase):
@@ -134,8 +134,8 @@ class FieldInternalData:
     all_flags: list[FieldFlagConfig] | None
     selected_departments: list[QGetDepartmentsV4Item] | None
     all_departments: list[QGetDepartmentsV4Item] | None
-    selected_conditional_parameters: list[QGetParametersV4Item] | None
-    all_conditional_parameters: list[QGetParametersV4Item] | None
+    selected_conditional_parameters: list[GetParameterResponse] | None
+    all_conditional_parameters: list[GetParameterResponse] | None
 
     create_tool_ids_map: dict[str, UUID | None]
     link_tool_ids_map: dict[str, UUID | None]

@@ -83,7 +83,7 @@ from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.colors.get import get_colors
-from app.routes.v5.tools.resources.colors.search import search_colors_internal
+from app.routes.v5.tools.resources.colors.search import search_colors
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
@@ -96,10 +96,10 @@ from app.routes.v5.tools.resources.fields.search import search_fields_internal
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.icons.get import get_icons
-from app.routes.v5.tools.resources.icons.search import search_icons_internal
+from app.routes.v5.tools.resources.icons.search import search_icons
 from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.instructions.search import (
-    search_instructions_internal,
+    search_instructions,
 )
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
@@ -111,12 +111,12 @@ from app.routes.v5.tools.resources.parameter_fields.search import (
     search_parameter_fields_internal,
 )
 from app.routes.v5.tools.resources.parameters.get import get_parameters
-from app.routes.v5.tools.resources.parameters.search import search_parameters_internal
+from app.routes.v5.tools.resources.parameters.search import search_parameters
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.voices.get import get_voices
-from app.routes.v5.tools.resources.voices.search import search_voices_internal
+from app.routes.v5.tools.resources.voices.search import search_voices
 from app.sql.types import (
     GetPersonaAccessSqlParams,
     GetPersonaAccessSqlRow,
@@ -431,15 +431,16 @@ async def get_persona_internal(
     async def fetch_colors():
         async with pool.acquire() as c:
             selected = await get_colors(c, color_ids, get_redis_client(), bypass_cache)
-            suggestions = await search_colors_internal(
+            suggestions = await search_colors(
                 c,
-                color_search,
-                20,
-                0,
-                effective_group_id,
-                "selected" if color_show_selected else "all",
-                color_ids,
-                bypass_cache,
+                get_redis_client(),
+                search=color_search,
+                limit_count=20,
+                offset_count=0,
+                draft_id=effective_group_id,
+                suggest_source="selected" if color_show_selected else "all",
+                exclude_ids=color_ids,
+                bypass_cache=bypass_cache,
                 persona=True,
             )
             return (selected, suggestions)
@@ -447,15 +448,16 @@ async def get_persona_internal(
     async def fetch_icons():
         async with pool.acquire() as c:
             selected = await get_icons(c, icon_ids, get_redis_client(), bypass_cache)
-            suggestions = await search_icons_internal(
+            suggestions = await search_icons(
                 c,
-                icon_search,
-                20,
-                0,
-                effective_group_id,
-                "selected" if icon_show_selected else "all",
-                icon_ids,
-                bypass_cache,
+                get_redis_client(),
+                search=icon_search,
+                limit_count=20,
+                offset_count=0,
+                draft_id=effective_group_id,
+                suggest_source="selected" if icon_show_selected else "all",
+                exclude_ids=icon_ids,
+                bypass_cache=bypass_cache,
                 persona=True,
             )
             return (selected, suggestions)
@@ -465,15 +467,16 @@ async def get_persona_internal(
             selected = await get_instructions(
                 c, instructions_ids, get_redis_client(), bypass_cache
             )
-            suggestions = await search_instructions_internal(
+            suggestions = await search_instructions(
                 c,
-                instructions_search,
-                20,
-                0,
-                effective_group_id,
-                "all",
-                instructions_ids,
-                bypass_cache,
+                get_redis_client(),
+                search=instructions_search,
+                limit_count=20,
+                offset_count=0,
+                draft_id=effective_group_id,
+                suggest_source="all",
+                exclude_ids=instructions_ids,
+                bypass_cache=bypass_cache,
                 persona=True,
             )
             return (selected, suggestions)
@@ -577,8 +580,9 @@ async def get_persona_internal(
                 bypass_cache,
             )
             # Suggest persona_parameter=true params not yet expanded
-            suggestions = await search_parameters_internal(
+            suggestions = await search_parameters(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=20,
                 offset_count=0,
@@ -598,13 +602,14 @@ async def get_persona_internal(
             selected = await get_voices(
                 c, voice_ids_list, get_redis_client(), bypass_cache
             )
-            suggestions = await search_voices_internal(
+            suggestions = await search_voices(
                 c,
-                None,
-                20,
-                0,
-                voice_ids_list,
-                bypass_cache,
+                get_redis_client(),
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=voice_ids_list,
+                bypass_cache=bypass_cache,
             )
             return (selected, suggestions)
 
@@ -682,10 +687,10 @@ async def get_persona_internal(
     examples = _dedupe_by_id(examples_selected + examples_suggestions, "id")
     parameters = _dedupe_by_id(
         parameters_selected + parameters_suggestions,
-        "parameter_id",
+        "id",
     )
     # Fetch conditional parameter metadata (names for "next" parameters revealed by fields)
-    existing_param_ids = {p.parameter_id for p in parameters if p.parameter_id}
+    existing_param_ids = {p.id for p in parameters if p.id}
     missing_conditional_ids = [
         pid for pid in conditional_param_ids if pid not in existing_param_ids
     ]
@@ -694,7 +699,7 @@ async def get_persona_internal(
             conditional_params = await get_parameters(
                 c, missing_conditional_ids, get_redis_client(), bypass_cache
             )
-            parameters = _dedupe_by_id(parameters + conditional_params, "parameter_id")
+            parameters = _dedupe_by_id(parameters + conditional_params, "id")
     voices = _dedupe_by_id(voices_selected + voices_suggestions, "id")
 
     # Find selected resources
@@ -719,7 +724,7 @@ async def get_persona_internal(
         {str(pf.parameter_id) for pf in parameter_field_resources if pf.parameter_id}
     )
     example_resources = [e for e in examples if e.id in selected_example_ids]
-    parameter_resources = [p for p in parameters if p.parameter_id in parameter_ids]
+    parameter_resources = [p for p in parameters if p.id in parameter_ids]
     voice_resources = [v for v in voices if v.id in selected_voice_ids]
 
     name_suggestions = [n.id for n in names_suggestions]
@@ -730,7 +735,7 @@ async def get_persona_internal(
     department_suggestions = [d.id for d in departments_suggestions]
     parameter_field_suggestions: list[UUID] = []
     example_suggestions = [e.id for e in examples_suggestions]
-    parameter_suggestions = [p.parameter_id for p in parameters_suggestions]
+    parameter_suggestions = [p.id for p in parameters_suggestions]
     voice_suggestions_ids = [v.id for v in voices_suggestions]
 
     # Compute final show flags based on actual data

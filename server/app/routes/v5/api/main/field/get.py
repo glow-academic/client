@@ -65,7 +65,7 @@ from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
 from app.routes.v5.tools.resources.parameters.get import get_parameters
-from app.routes.v5.tools.resources.parameters.search import search_parameters_internal
+from app.routes.v5.tools.resources.parameters.search import search_parameters
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.tools.get import get_tools
@@ -326,8 +326,9 @@ async def get_field_internal(
                 await get_parameters(
                     c, selected_conditional_parameter_ids, get_redis_client(), bypass_cache
                 ),
-                await search_parameters_internal(
+                await search_parameters(
                     c,
+                    get_redis_client(),
                     search=conditional_parameter_search,
                     limit_count=20,
                     offset_count=0,
@@ -367,7 +368,7 @@ async def get_field_internal(
     )
     all_conditional_parameters = _dedupe_by_id(
         conditional_parameters_selected + conditional_parameters_suggestions,
-        "parameter_id",
+        "id",
     )
 
     name_resource = next((n for n in all_names if n.id == selected_name_id), None)
@@ -386,7 +387,7 @@ async def get_field_internal(
     selected_conditional_parameters = [
         p
         for p in all_conditional_parameters
-        if p.parameter_id in selected_conditional_parameter_ids
+        if p.id in selected_conditional_parameter_ids
     ]
 
     names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
@@ -493,7 +494,7 @@ async def get_field_internal(
             "descriptions": [d.id for d in descriptions_suggestions],
             "departments": [d.id for d in departments_suggestions],
             "conditional_parameters": [
-                p.parameter_id for p in conditional_parameters_suggestions
+                p.id for p in conditional_parameters_suggestions
             ],
         },
         show_ai_generate_map=show_ai_generate_map,

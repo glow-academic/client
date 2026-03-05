@@ -67,7 +67,7 @@ from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.routes.v5.tools.resources.standard_groups.get import (
     get_standard_groups,
 )
-from app.routes.v5.tools.resources.standards.search import search_standards_internal
+from app.routes.v5.tools.resources.standards.search import search_standards
 from app.sql.types import GetPracticeContextViewSqlRow
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -669,8 +669,9 @@ async def get_practice_internal(
         if not standard_group_ids_list:
             return []
         async with pool.acquire() as c:
-            return await search_standards_internal(
+            return await search_standards(
                 c,
+                get_redis_client(),
                 standard_group_ids=standard_group_ids_list,
                 bypass_cache=bypass_cache,
             )
@@ -843,14 +844,14 @@ async def get_practice_internal(
     if std_list:
         standards = [
             StandardMapping(
-                standard_id=st.standard_id,  # type: ignore[arg-type]
+                standard_id=st.id,
                 standard_group_id=st.standard_group_id,
                 name=st.name,
                 description=st.description,
                 points=st.points,
             )
             for st in std_list
-            if st.standard_id
+            if st.id
         ]
 
     return GetPracticeResponse(

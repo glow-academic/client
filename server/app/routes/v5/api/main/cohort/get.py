@@ -92,12 +92,12 @@ from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
-from app.routes.v5.tools.resources.personas.search import search_personas_internal
+from app.routes.v5.tools.resources.personas.search import search_personas
 from app.routes.v5.tools.resources.profile_personas.get import (
     get_profile_personas,
 )
 from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.profiles.search import search_profiles_internal
+from app.routes.v5.tools.resources.profiles.search import search_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.simulation_availability.get import (
     get_simulation_availability,
@@ -503,8 +503,9 @@ async def get_cohort_internal(
                 if profile_ids
                 else []
             )
-            suggestions = await search_profiles_internal(
+            suggestions = await search_profiles(
                 c,
+                get_redis_client(),
                 search=profile_search,
                 limit_count=20,
                 offset_count=0,
@@ -533,8 +534,9 @@ async def get_cohort_internal(
 
     async def fetch_personas() -> list[Any]:
         async with pool.acquire() as c:
-            return await search_personas_internal(
+            return await search_personas(
                 c,
+                get_redis_client(),
                 search=None,
                 limit_count=100,
                 offset_count=0,
@@ -578,7 +580,7 @@ async def get_cohort_internal(
     simulations_raw = _dedupe_by_id(
         simulations_selected + simulations_suggestions, "simulation_id"
     )
-    profiles_raw = _dedupe_by_id(profiles_selected + profiles_suggestions, "profile_id")
+    profiles_raw = _dedupe_by_id(profiles_selected + profiles_suggestions, "id")
 
     # Convert to response types
     names = [
@@ -611,7 +613,7 @@ async def get_cohort_internal(
     ]
     profiles = [
         CohortProfile(
-            profile_id=p.profile_id,
+            profile_id=p.id,
             name=p.name,
             description=p.description,
         )
@@ -656,7 +658,7 @@ async def get_cohort_internal(
     department_suggestions_ids = [d.id for d in departments_suggestions]
     simulation_suggestions_ids = [s.simulation_id for s in simulations_suggestions]
     profile_suggestions_ids = [
-        p.profile_id for p in profiles_suggestions if p.profile_id
+        p.id for p in profiles_suggestions if p.id
     ]
 
     # Compute final show flags based on actual data
