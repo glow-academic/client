@@ -56,7 +56,7 @@ accessible_agents AS (
         -- Agent matches user's departments
         EXISTS (
             SELECT 1 FROM agent_departments_junction ad
-            JOIN user_departments ud ON ud.department_id = ad.departments_id
+            JOIN user_departments ud ON ud.departments_id = ad.departments_id
             WHERE ad.agent_id = a.id AND ad.active = true
         )
     )

@@ -83,7 +83,7 @@ WITH params AS (
     SELECT profile_id AS profile_id
 ),
 user_departments AS (
-    SELECT department_id
+    SELECT departments_id
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
@@ -149,7 +149,7 @@ persona_data_base AS (
     LEFT JOIN persona_departments_data pdd ON pdd.persona_id = p.id
     LEFT JOIN persona_fields_data pfd ON pfd.persona_id = p.id
     LEFT JOIN persona_cohorts pc ON pc.persona_id = p.id
-    LEFT JOIN persona_departments_junction pd ON pd.persona_id = p.id AND pd.departments_id IN (SELECT department_id FROM user_departments)
+    LEFT JOIN persona_departments_junction pd ON pd.persona_id = p.id AND pd.departments_id IN (SELECT departments_id FROM user_departments)
     WHERE p.active = true
     GROUP BY p.id,
         (SELECT n.name FROM persona_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.persona_id = p.id LIMIT 1),
@@ -217,7 +217,7 @@ department_option_data AS (
         dr.id,
         (SELECT COUNT(*) FROM persona_data) as count
     FROM departments_resource dr
-    WHERE dr.id IN (SELECT department_id FROM user_departments)
+    WHERE dr.id IN (SELECT departments_id FROM user_departments)
 )
 SELECT
     COALESCE(

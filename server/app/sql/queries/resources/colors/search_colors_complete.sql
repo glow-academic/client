@@ -68,7 +68,7 @@ FROM (
                       SELECT colors_id, draft_id FROM persona_drafts_colors_connection WHERE active = true
                       UNION ALL SELECT colors_id, draft_id FROM setting_drafts_colors_connection WHERE active = true
                   ) dc
-                  WHERE dc.color_id = c.id
+                  WHERE dc.colors_id = c.id
                     AND dc.draft_id = api_search_colors_v4.draft_id
               )
           )

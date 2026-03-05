@@ -1,0 +1,87 @@
+"""Generic resource search — returns IDs matching filters."""
+
+from uuid import UUID
+
+import asyncpg  # type: ignore
+
+
+async def search_resource_ids(
+    conn: asyncpg.Connection,
+    *,
+    table: str,
+    resource: str,
+    search_column: str,
+    search: str | None = None,
+    limit_count: int = 20,
+    offset_count: int = 0,
+    exclude_ids: list[UUID] | None = None,
+    draft_id: UUID | None = None,
+    suggest_source: str | None = None,
+    artifact_filters: dict[str, bool] | None = None,
+    junction_artifacts: list[str] | None = None,
+    draft_artifacts: list[str] | None = None,
+    order_column: str | None = None,
+) -> list[UUID]:
+    """Search a resource table and return matching IDs.
+
+    Builds a dynamic WHERE clause from the provided filters:
+    - search: ILIKE on search_column
+    - exclude_ids: NOT IN filter
+    - draft_id + suggest_source='draft': EXISTS across draft connection tables
+    - artifact_filters: EXISTS across junction tables for each True filter
+    """
+    if limit_count <= 0:
+        return []
+
+    alias = "r"
+    conditions: list[str] = [f"{alias}.{search_column} IS NOT NULL", f"{alias}.{search_column} != ''"]
+    params: list[object] = []
+    idx = 1
+
+    # Search filter
+    if search:
+        conditions.append(f"LOWER({alias}.{search_column}) LIKE '%' || LOWER(${idx}) || '%'")
+        params.append(search)
+        idx += 1
+
+    # Exclude filter
+    if exclude_ids:
+        conditions.append(f"NOT ({alias}.id = ANY(${idx}))")
+        params.append(exclude_ids)
+        idx += 1
+
+    # Draft filter
+    if suggest_source == "draft" and draft_id is not None and draft_artifacts:
+        unions = " UNION ALL ".join(
+            f"SELECT {resource}_id, draft_id FROM {a}_drafts_{resource}_connection WHERE active = true"
+            for a in draft_artifacts
+        )
+        conditions.append(
+            f"EXISTS (SELECT 1 FROM ({unions}) dc WHERE dc.{resource}_id = {alias}.id AND dc.draft_id = ${idx})"
+        )
+        params.append(draft_id)
+        idx += 1
+
+    # Artifact boolean filters
+    if artifact_filters and junction_artifacts:
+        for artifact in junction_artifacts:
+            if artifact_filters.get(artifact):
+                junction = f"{artifact}_{resource}_junction"
+                conditions.append(
+                    f"EXISTS (SELECT 1 FROM {junction} j WHERE j.{resource}_id = {alias}.id AND j.active = true)"
+                )
+
+    where = " AND ".join(conditions)
+    order = order_column or search_column
+
+    query = f"""
+        SELECT {alias}.id
+        FROM {table} {alias}
+        WHERE {where}
+        ORDER BY {alias}.{order}
+        LIMIT ${idx} OFFSET ${idx + 1}
+    """
+    params.extend([limit_count, offset_count])
+
+    rows = await conn.fetch(query, *params)
+    return [row["id"] for row in rows]

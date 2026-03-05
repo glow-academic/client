@@ -74,7 +74,7 @@ WITH params AS (
     SELECT profile_id AS profile_id
 ),
 user_departments AS (
-    SELECT department_id
+    SELECT departments_id
     FROM params x
     JOIN profile_departments_junction ON profile_departments_junction.profile_id = x.profile_id AND profile_departments_junction.active = true
 ),
@@ -186,7 +186,7 @@ persona_data AS (
     LEFT JOIN persona_pf_data ppfd ON ppfd.persona_id = p.id
     LEFT JOIN persona_voices_data pvd ON pvd.persona_id = p.id
     -- Access check: user shares at least one department (or persona has no departments)
-    LEFT JOIN persona_departments_junction pdj ON pdj.persona_id = p.id AND pdj.departments_id IN (SELECT department_id FROM user_departments)
+    LEFT JOIN persona_departments_junction pdj ON pdj.persona_id = p.id AND pdj.departments_id IN (SELECT departments_id FROM user_departments)
     WHERE p.active = true
     GROUP BY p.id, p.updated_at,
         pdd.department_ids, pdd.department_names,

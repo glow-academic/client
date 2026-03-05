@@ -94,7 +94,7 @@ scenario_departments_data AS (
         ARRAY_AGG(sd.departments_id ORDER BY sd.created_at) as department_ids,
         ARRAY_AGG(dr.name ORDER BY sd.created_at) as department_names
     FROM scenario_departments_junction sd
-    JOIN departments_resource dr ON dr.id = sd.department_id
+    JOIN departments_resource dr ON dr.id = sd.departments_id
     WHERE sd.active = true
     GROUP BY sd.scenario_id
 ),

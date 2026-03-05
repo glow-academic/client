@@ -565,7 +565,7 @@ department_mapping_data AS (
     JOIN departments_resource d ON EXISTS (
         SELECT 1
         FROM department_flags_junction df
-        JOIN flags_resource f ON df.flag_id = f.id
+        JOIN flags_resource f ON df.flags_id = f.id
         WHERE df.department_id = d.id
           AND f.name = 'department_active'
           AND f.value = true
@@ -613,7 +613,7 @@ department_suggestions_data AS (
             (SELECT ARRAY_AGG(d.id ORDER BY d.created_at DESC)
              FROM departments_resource d
              CROSS JOIN group_id_data gid
-             WHERE EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flag_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true)
+             WHERE EXISTS (SELECT 1 FROM department_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.department_id = d.id AND f.name = 'department_active' AND f.value = true)
                AND (
                    -- Option 1: Linked to profiles (profile_departments_junction junction table means it's validated/used)
                    EXISTS (
@@ -676,11 +676,11 @@ agent_artifact_tool_counts AS (
         COUNT(DISTINCT CASE WHEN dr_rt.resource IS NOT NULL AND NOT (dr_rt.resource = ANY(ARRAY['departments','emails','flags','names','profiles','request_limits','roles','routes']::resource_type[])) THEN dr_rt.resource::text END) as extra_outside_count
     FROM agent_artifact a
     LEFT JOIN agent_tools_junction at ON at.agent_id = a.id AND at.active = true
-    LEFT JOIN tools_resource tr ON tr.id = at.tool_id
+    LEFT JOIN tools_resource tr ON tr.id = at.tools_id
     LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
     LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (
         SELECT 1 FROM tool_flags_junction tf
-        JOIN flags_resource f ON tf.flag_id = f.id
+        JOIN flags_resource f ON tf.flags_id = f.id
         WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true
     )
     LEFT JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = t.id AND tdj_rt.active = true
@@ -695,12 +695,12 @@ name_agent_data AS (
         FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
+        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flags_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
               AND f.value = true
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
+            JOIN tools_resource tr_rt ON tr_rt.id = at.tools_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
@@ -711,7 +711,7 @@ name_agent_data AS (
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments_junction ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                JOIN user_departments_for_agents ud ON ad.departments_id = ud.department_id
                 WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
@@ -721,9 +721,9 @@ name_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tools_resource tr ON tr.id = at.tool_id
+            JOIN tools_resource tr ON tr.id = at.tools_id
             JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
-            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
+            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
             JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
@@ -738,7 +738,7 @@ name_agent_data AS (
                      AND EXISTS (
                          SELECT 1 FROM agent_departments_junction ad
                          WHERE ad.agent_id = ea.agent_id 
-                           AND ad.department_id = sd.department_id 
+                           AND ad.departments_id = sd.department_id 
                            AND ad.active = true
                      )
                 THEN 0
@@ -772,12 +772,12 @@ emails_agent_data AS (
         FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
+        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flags_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
               AND f.value = true
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
+            JOIN tools_resource tr_rt ON tr_rt.id = at.tools_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
@@ -788,7 +788,7 @@ emails_agent_data AS (
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments_junction ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                JOIN user_departments_for_agents ud ON ad.departments_id = ud.department_id
                 WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
@@ -798,9 +798,9 @@ emails_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tools_resource tr ON tr.id = at.tool_id
+            JOIN tools_resource tr ON tr.id = at.tools_id
             JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
-            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
+            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
             JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
@@ -815,7 +815,7 @@ emails_agent_data AS (
                      AND EXISTS (
                          SELECT 1 FROM agent_departments_junction ad
                          WHERE ad.agent_id = ea.agent_id 
-                           AND ad.department_id = sd.department_id 
+                           AND ad.departments_id = sd.department_id 
                            AND ad.active = true
                      )
                 THEN 0
@@ -849,12 +849,12 @@ request_limit_agent_data AS (
         FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
+        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flags_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
               AND f.value = true
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
+            JOIN tools_resource tr_rt ON tr_rt.id = at.tools_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
@@ -865,7 +865,7 @@ request_limit_agent_data AS (
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments_junction ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                JOIN user_departments_for_agents ud ON ad.departments_id = ud.department_id
                 WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
@@ -875,9 +875,9 @@ request_limit_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tools_resource tr ON tr.id = at.tool_id
+            JOIN tools_resource tr ON tr.id = at.tools_id
             JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
-            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
+            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
             JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
@@ -892,7 +892,7 @@ request_limit_agent_data AS (
                      AND EXISTS (
                          SELECT 1 FROM agent_departments_junction ad
                          WHERE ad.agent_id = ea.agent_id 
-                           AND ad.department_id = sd.department_id 
+                           AND ad.departments_id = sd.department_id 
                            AND ad.active = true
                      )
                 THEN 0
@@ -926,12 +926,12 @@ flag_agent_data AS (
         FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
+        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flags_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
               AND f.value = true
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
+            JOIN tools_resource tr_rt ON tr_rt.id = at.tools_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
@@ -942,7 +942,7 @@ flag_agent_data AS (
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments_junction ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                JOIN user_departments_for_agents ud ON ad.departments_id = ud.department_id
                 WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
@@ -952,9 +952,9 @@ flag_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tools_resource tr ON tr.id = at.tool_id
+            JOIN tools_resource tr ON tr.id = at.tools_id
             JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
-            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
+            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
             JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
@@ -969,7 +969,7 @@ flag_agent_data AS (
                      AND EXISTS (
                          SELECT 1 FROM agent_departments_junction ad
                          WHERE ad.agent_id = ea.agent_id 
-                           AND ad.department_id = sd.department_id 
+                           AND ad.departments_id = sd.department_id 
                            AND ad.active = true
                      )
                 THEN 0
@@ -1003,12 +1003,12 @@ departments_agent_data AS (
         FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
+        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flags_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
               AND f.value = true
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
+            JOIN tools_resource tr_rt ON tr_rt.id = at.tools_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
@@ -1019,7 +1019,7 @@ departments_agent_data AS (
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments_junction ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                JOIN user_departments_for_agents ud ON ad.departments_id = ud.department_id
                 WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
@@ -1029,9 +1029,9 @@ departments_agent_data AS (
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tools_resource tr ON tr.id = at.tool_id
+            JOIN tools_resource tr ON tr.id = at.tools_id
             JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
-            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
+            JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
             JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
             JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
             WHERE at.agent_id = a.id AND at.active = true
@@ -1046,7 +1046,7 @@ departments_agent_data AS (
                      AND EXISTS (
                          SELECT 1 FROM agent_departments_junction ad
                          WHERE ad.agent_id = ea.agent_id 
-                           AND ad.department_id = sd.department_id 
+                           AND ad.departments_id = sd.department_id 
                            AND ad.active = true
                      )
                 THEN 0
@@ -1080,12 +1080,12 @@ basic_agent_data AS (
         FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
+        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flags_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
               AND f.value = true
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
+            JOIN tools_resource tr_rt ON tr_rt.id = at.tools_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
@@ -1096,7 +1096,7 @@ basic_agent_data AS (
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments_junction ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                JOIN user_departments_for_agents ud ON ad.departments_id = ud.department_id
                 WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
@@ -1115,9 +1115,9 @@ basic_agent_data AS (
             ea.updated_at
         FROM eligible_agents ea
         LEFT JOIN agent_tools_junction at ON at.agent_id = ea.agent_id AND at.active = true
-        LEFT JOIN tools_resource tr ON tr.id = at.tool_id
+        LEFT JOIN tools_resource tr ON tr.id = at.tools_id
         LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
-        LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
+        LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
         LEFT JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
         LEFT JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
         GROUP BY ea.agent_id, ea.updated_at
@@ -1147,7 +1147,7 @@ basic_agent_data AS (
                      AND EXISTS (
                          SELECT 1 FROM agent_departments_junction ad
                          WHERE ad.agent_id = ascores.agent_id 
-                           AND ad.department_id = sd.department_id 
+                           AND ad.departments_id = sd.department_id 
                            AND ad.active = true
                      )
                 THEN 0
@@ -1181,12 +1181,12 @@ general_agent_data AS (
         FROM agent_artifact a
         CROSS JOIN params p
         CROSS JOIN selected_department_for_agents sd
-        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
+        WHERE EXISTS (SELECT 1 FROM agent_flags_junction af JOIN flags_resource f ON af.flags_id = f.id WHERE af.agent_id = a.id AND f.name = 'agent_active' 
               AND f.value = true
         )
         AND EXISTS (
             SELECT 1 FROM agent_tools_junction at
-            JOIN tools_resource tr_rt ON tr_rt.id = at.tool_id
+            JOIN tools_resource tr_rt ON tr_rt.id = at.tools_id
             JOIN tool_tools_junction ttj_rt ON ttj_rt.tool_id = tr_rt.id
             JOIN tool_resources_junction tdj_rt ON tdj_rt.tool_id = ttj_rt.tool_id AND tdj_rt.active = true
             JOIN resources_resource dr_rt ON dr_rt.id = tdj_rt.resources_id AND dr_rt.active = true
@@ -1197,7 +1197,7 @@ general_agent_data AS (
         AND (
             EXISTS (
                 SELECT 1 FROM agent_departments_junction ad
-                JOIN user_departments_for_agents ud ON ad.department_id = ud.department_id
+                JOIN user_departments_for_agents ud ON ad.departments_id = ud.department_id
                 WHERE ad.agent_id = a.id AND ad.active = true
             )
             OR NOT EXISTS (
@@ -1216,9 +1216,9 @@ general_agent_data AS (
             ea.updated_at
         FROM eligible_agents ea
         LEFT JOIN agent_tools_junction at ON at.agent_id = ea.agent_id AND at.active = true
-        LEFT JOIN tools_resource tr ON tr.id = at.tool_id
+        LEFT JOIN tools_resource tr ON tr.id = at.tools_id
         LEFT JOIN tool_tools_junction ttj ON ttj.tool_id = tr.id
-        LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
+        LEFT JOIN tool_artifact t ON t.id = ttj.tool_id AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
         LEFT JOIN tool_resources_junction tdj ON tdj.tool_id = t.id AND tdj.active = true
         LEFT JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
         GROUP BY ea.agent_id, ea.updated_at
@@ -1248,7 +1248,7 @@ general_agent_data AS (
                      AND EXISTS (
                          SELECT 1 FROM agent_departments_junction ad
                          WHERE ad.agent_id = ascores.agent_id 
-                           AND ad.department_id = sd.department_id 
+                           AND ad.departments_id = sd.department_id 
                            AND ad.active = true
                      )
                 THEN 0
@@ -1286,7 +1286,7 @@ tools_existence_check AS (
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'names'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
         ) as names_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
@@ -1294,7 +1294,7 @@ tools_existence_check AS (
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'emails'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
         ) as emails_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
@@ -1302,7 +1302,7 @@ tools_existence_check AS (
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'request_limits'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
         ) as request_limits_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
@@ -1310,7 +1310,7 @@ tools_existence_check AS (
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'flags'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
         ) as flags_has_tools,
         EXISTS (
             SELECT 1 FROM tool_resources_junction tdj
@@ -1318,7 +1318,7 @@ tools_existence_check AS (
             JOIN tool_artifact t ON t.id = tdj.tool_id
             WHERE tdj.active = true
               AND dr.resource = 'departments'::resource_type 
-              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
+              AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)
         ) as departments_has_tools
     FROM params x
 ),

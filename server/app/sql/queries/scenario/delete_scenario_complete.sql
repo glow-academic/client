@@ -56,14 +56,14 @@ usage_check AS (
     SELECT (
         SELECT COUNT(*)
         FROM simulation_scenarios_junction ss
-        WHERE ss.scenario_id = x.scenario_id
+        WHERE ss.scenarios_id = x.scenario_id
           AND EXISTS (
               SELECT 1
               FROM simulation_scenario_flags_junction ssf
               JOIN scenario_flags_resource sfr ON ssf.scenario_flags_id = sfr.id
               JOIN flags_resource f ON sfr.flag_id = f.id
               WHERE ssf.simulation_id = ss.simulation_id
-                AND sfr.scenario_id = ss.scenario_id
+                AND sfr.scenario_id = ss.scenarios_id
                 AND f.type = 'scenario_active'
                 AND f.value = true
           )

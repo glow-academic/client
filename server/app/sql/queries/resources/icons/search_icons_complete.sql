@@ -66,7 +66,7 @@ FROM (
                   SELECT 1 FROM (
                       SELECT icons_id, draft_id FROM persona_drafts_icons_connection WHERE active = true
                   ) dc
-                  WHERE dc.icon_id = i.id
+                  WHERE dc.icons_id = i.id
                     AND dc.draft_id = api_search_icons_v4.draft_id
               )
           )

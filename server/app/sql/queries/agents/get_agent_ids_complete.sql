@@ -152,7 +152,7 @@ tool_ids_data AS (
              JOIN tool_artifact t ON t.id = ttj.tool_id
              WHERE at.agent_id = (SELECT agent_id FROM params)
                AND at.active = true
-               AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flag_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)),
+               AND EXISTS (SELECT 1 FROM tool_flags_junction tf JOIN flags_resource f ON tf.flags_id = f.id WHERE tf.tool_id = t.id AND f.name = 'tool_active' AND f.value = true)),
             ARRAY[]::uuid[]
         ) as tool_ids
     FROM params

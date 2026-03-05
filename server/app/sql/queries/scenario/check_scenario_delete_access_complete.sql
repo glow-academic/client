@@ -36,7 +36,7 @@ user_profile AS (
     SELECT COALESCE(r.role, 'member'::profile_type) as role,
            ''::text as actor_name
     FROM profile_roles_junction prj
-    JOIN roles_resource r ON prj.role_id = r.id
+    JOIN roles_resource r ON prj.roles_id = r.id
     WHERE prj.profile_id = (SELECT profile_id FROM params)
     LIMIT 1
 ),
@@ -60,7 +60,7 @@ scenario_departments AS (
 ),
 -- Get the scenarios_resource.id for this scenario_artifact
 scenario_resource AS (
-    SELECT ssj.scenario_id
+    SELECT ssj.scenarios_id
     FROM scenario_scenarios_junction ssj
     WHERE ssj.scenario_id = (SELECT p_scenario_id FROM params)
     LIMIT 1

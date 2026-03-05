@@ -45,10 +45,10 @@ rubric_info AS (
     SELECT 
         r.id,
         (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.names_id = n.id WHERE rn.rubric_id = r.id LIMIT 1),
-        (SELECT COUNT(DISTINCT ss.simulation_id) FROM simulation_scenarios_junction ss 
+        (SELECT COUNT(DISTINCT ss.simulation_id) FROM simulation_scenarios_junction ss
          JOIN simulation_scenario_rubrics_junction ssr ON ssr.simulation_id = ss.simulation_id
-         JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubrics_id AND srr.scenario_id = ss.scenario_id
-         WHERE srr.rubric_id = r.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flags_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenario_id AND f.type = 'scenario_active' AND f.value = true)) as usage_count
+         JOIN scenario_rubrics_resource srr ON srr.id = ssr.scenario_rubrics_id AND srr.scenario_id = ss.scenarios_id
+         WHERE srr.rubric_id = r.id AND EXISTS (SELECT 1 FROM simulation_scenario_flags_junction ssf JOIN scenario_flags_resource sfr ON ssf.scenario_flags_id = sfr.id JOIN flags_resource f ON sfr.flag_id = f.id WHERE ssf.simulation_id = ss.simulation_id AND sfr.scenario_id = ss.scenarios_id AND f.type = 'scenario_active' AND f.value = true)) as usage_count
     FROM rubric_artifact r
     WHERE r.id = (SELECT rubric_id FROM params)
 ),

@@ -157,10 +157,10 @@ settings_auths_with_items AS (
         ) as auth_items_junction
     FROM selected_settings ss
     JOIN setting_auths_junction sa ON sa.setting_id = ss.settings_id AND sa.active = true
-    JOIN auths_resource a ON a.id = sa.auths_id AND EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND f.value = true)
+    JOIN auths_resource a ON a.id = sa.auths_id AND EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flags_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND f.value = true)
     LEFT JOIN auth_items_junction ai_j ON ai_j.auth_id = a.id
     LEFT JOIN items_resource ai ON ai.id = ai_j.item_id
-    GROUP BY a.id, (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.names_id = n.id WHERE an.auth_id = a.id LIMIT 1), (SELECT d.description FROM auth_descriptions_junction ad JOIN descriptions_resource d ON ad.descriptions_id = d.id WHERE ad.auth_id = a.id LIMIT 1), (SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slugs_id WHERE as_j.auth_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flag_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND f.value = TRUE)
+    GROUP BY a.id, (SELECT n.name FROM auth_names_junction an JOIN names_resource n ON an.names_id = n.id WHERE an.auth_id = a.id LIMIT 1), (SELECT d.description FROM auth_descriptions_junction ad JOIN descriptions_resource d ON ad.descriptions_id = d.id WHERE ad.auth_id = a.id LIMIT 1), (SELECT s.value FROM auth_slugs_junction as_j JOIN slugs_resource s ON s.id = as_j.slugs_id WHERE as_j.auth_id = a.id LIMIT 1), EXISTS (SELECT 1 FROM auth_flags_junction af JOIN flags_resource f ON af.flags_id = f.id WHERE af.auth_id = a.id AND f.name = 'auth_active' AND f.value = TRUE)
 ),
 settings_auths_data AS (
     -- Aggregate linked auths into array

@@ -134,7 +134,7 @@ scenario_documents_data AS (
             ELSE '[]'::jsonb
         END as documents
     FROM scenario_documents_junction sd
-    JOIN documents_resource d ON d.id = sd.document_id
+    JOIN documents_resource d ON d.id = sd.documents_id
     WHERE (p_scenario_id IS NOT NULL AND sd.scenario_id = p_scenario_id)
       AND sd.active = true
       AND EXISTS (SELECT 1 FROM document_flags_junction df JOIN flags_resource f ON df.flags_id = f.id WHERE df.document_id = d.id AND f.name = 'document_active' AND f.value = true)

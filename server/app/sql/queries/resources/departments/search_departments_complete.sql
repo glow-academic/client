@@ -104,7 +104,7 @@ FROM (
                    UNION ALL SELECT departments_id, draft_id FROM invocation_drafts_departments_connection WHERE active = true
                    UNION ALL SELECT departments_id, draft_id FROM tool_drafts_departments_connection WHERE active = true
                    UNION ALL SELECT departments_id, draft_id FROM chat_drafts_departments_connection WHERE active = true) dc
-                  WHERE dc.department_id = d.id
+                  WHERE dc.departments_id = d.id
                     AND dc.draft_id = api_search_departments_v4.draft_id
               )
           )
