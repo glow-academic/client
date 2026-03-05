@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Request, Response
 
 from app.infra.globals import get_db
 from app.routes.v5.tools.entries.provider_drafts.refresh import (
-    refresh_provider_drafts_internal,
+    refresh_provider_drafts as refresh_provider_drafts_impl,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -22,7 +22,7 @@ async def refresh_provider_drafts(
 ) -> dict:
     """Refresh the provider_drafts_mv materialized view."""
     try:
-        result = await refresh_provider_drafts_internal(conn)
+        result = await refresh_provider_drafts_impl(conn)
         response.headers["X-Cache-Tags"] = "entries,provider_drafts"
         return result
     except Exception as e:

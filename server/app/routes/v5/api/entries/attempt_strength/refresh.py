@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Request, Response
 
 from app.infra.globals import get_db
 from app.routes.v5.tools.entries.attempt_strength.refresh import (
-    refresh_attempt_strength_internal,
+    refresh_attempt_strength as refresh_attempt_strength_impl,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -22,7 +22,7 @@ async def refresh_attempt_strength(
 ) -> dict:
     """Refresh the attempt_strength_mv materialized view."""
     try:
-        result = await refresh_attempt_strength_internal(conn)
+        result = await refresh_attempt_strength_impl(conn)
         response.headers["X-Cache-Tags"] = "entries,attempt_strength"
         return result
     except Exception as e:

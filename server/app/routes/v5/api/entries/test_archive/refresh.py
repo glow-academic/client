@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Request, Response
 
 from app.infra.globals import get_db
 from app.routes.v5.tools.entries.test_archive.refresh import (
-    refresh_test_archive_internal,
+    refresh_test_archive as refresh_test_archive_impl,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -22,7 +22,7 @@ async def refresh_test_archive(
 ) -> dict:
     """Refresh the test_archive_mv materialized view."""
     try:
-        result = await refresh_test_archive_internal(conn)
+        result = await refresh_test_archive_impl(conn)
         response.headers["X-Cache-Tags"] = "entries,test_archive"
         return result
     except Exception as e:
