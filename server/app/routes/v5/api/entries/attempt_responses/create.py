@@ -27,8 +27,6 @@ async def create_responses_entry(
 ) -> CreateResponsesEntriesApiResponse:
     """Create responses entry."""
     tags = ["entries", "attempt_responses"]
-    sql_query = load_sql_query(SQL_PATH)
-
     try:
         profile_id = http_request.state.profile_id
         if not profile_id:
@@ -40,7 +38,7 @@ async def create_responses_entry(
         mcp = getattr(http_request.state, "mcp", False) or False
         request_dict = request.model_dump()
 
-        api_response = await create_responses_entry_internal(conn, request_dict, mcp)
+        api_response = await create_attempt_responses(conn, request_dict, mcp)
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
@@ -54,7 +52,7 @@ async def create_responses_entry(
             error=e,
             route_path=http_request.url.path,
             operation="create_responses_entry",
-            sql_query=sql_query,
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

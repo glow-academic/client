@@ -29,8 +29,6 @@ async def create_attempt_improvement_entry(
 ) -> CreateAttemptImprovementEntryResponse:
     """Create attempt_improvement entry."""
     tags = ["entries", "attempt_improvement"]
-    sql_query = load_sql_query(SQL_PATH)
-
     try:
         profile_id = http_request.state.profile_id
         if not profile_id:
@@ -49,7 +47,7 @@ async def create_attempt_improvement_entry(
                 detail="run_id is required",
             )
 
-        api_response = await create_attempt_improvement_entry_internal(
+        api_response = await create_attempt_improvement(
             conn, request_dict, mcp
         )
 
@@ -65,7 +63,7 @@ async def create_attempt_improvement_entry(
             error=e,
             route_path=http_request.url.path,
             operation="create_attempt_improvement_entry",
-            sql_query=sql_query,
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

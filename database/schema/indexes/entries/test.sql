@@ -138,14 +138,6 @@ CREATE INDEX idx_test_archive_entry_call_id ON public.test_archive_entry USING b
 
 --
 
--- Name: idx_test_benchmark_entry_session_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_test_benchmark_entry_session_id ON public.test_benchmark_entry USING btree (session_id);
-
-
---
-
 -- Name: idx_test_completion_entry_call_id; Type: INDEX; Schema: public; Owner: -
 --
 

@@ -27,8 +27,6 @@ async def create_attempt_mutes_entry(
 ) -> CreateMutesEntryResponse:
     """Create attempt_mutes entry."""
     tags = ["entries", "attempt_mutes"]
-    sql_query = load_sql_query(SQL_PATH)
-
     try:
         profile_id = http_request.state.profile_id
         if not profile_id:
@@ -47,7 +45,7 @@ async def create_attempt_mutes_entry(
                 detail="run_id is required",
             )
 
-        api_response = await create_attempt_mutes_entry_internal(conn, request_dict, mcp)
+        api_response = await create_attempt_mutes(conn, request_dict, mcp)
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
@@ -61,7 +59,7 @@ async def create_attempt_mutes_entry(
             error=e,
             route_path=http_request.url.path,
             operation="create_attempt_mutes_entry",
-            sql_query=sql_query,
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

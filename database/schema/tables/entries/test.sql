@@ -19,22 +19,6 @@ CREATE TABLE public.test_archive_entry (
 
 --
 
--- Name: test_benchmark_entry; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.test_benchmark_entry (
-    test_id uuid NOT NULL,
-    benchmark_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    session_id uuid
-);
-
-
---
-
 -- Name: test_completion_entry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -260,15 +244,6 @@ ALTER TABLE ONLY public.test_grade_entry
 
 ALTER TABLE ONLY public.test_stop_entry
     ADD CONSTRAINT benchmark_stops_entry_pkey PRIMARY KEY (id);
-
-
---
-
--- Name: test_benchmark_entry test_benchmark_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.test_benchmark_entry
-    ADD CONSTRAINT test_benchmark_entry_pkey PRIMARY KEY (test_id, benchmark_id);
 
 
 --

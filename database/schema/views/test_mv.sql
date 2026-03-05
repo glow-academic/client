@@ -24,29 +24,21 @@ CREATE MATERIALIZED VIEW public.test_mv AS
            FROM public.test_departments_connection c
           WHERE (c.active = true)
           GROUP BY c.attempt_id
-        ), benchmark_links AS (
-         SELECT tbe.test_id,
-            (array_agg(tbe.benchmark_id ORDER BY tbe.created_at))[1] AS benchmark_id
-           FROM public.test_benchmark_entry tbe
-          WHERE (tbe.active = true)
-          GROUP BY tbe.test_id
         )
  SELECT t.id AS test_id,
     el.eval_id,
     pl.profile_id,
     COALESCE(dl.department_ids, ARRAY[]::uuid[]) AS department_ids,
-    bl.benchmark_id,
     t.name AS test_name,
     t.description AS test_description,
     t.num_invocations,
     t.infinite_mode,
     COALESCE(ba_archive.archived, false) AS archived,
     t.created_at AS test_created_at
-   FROM (((((public.test_entry t
+   FROM ((((public.test_entry t
      LEFT JOIN eval_links el ON ((el.test_id = t.id)))
      LEFT JOIN profile_links pl ON ((pl.test_id = t.id)))
      LEFT JOIN department_links dl ON ((dl.test_id = t.id)))
-     LEFT JOIN benchmark_links bl ON ((bl.test_id = t.id)))
      LEFT JOIN LATERAL ( SELECT test_archive_entry.archived
            FROM public.test_archive_entry
           WHERE ((test_archive_entry.test_id = t.id) AND (test_archive_entry.active = true))

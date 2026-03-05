@@ -27,8 +27,6 @@ async def create_problems_entry(
 ) -> CreateProblemsEntryResponse:
     """Create problems entry."""
     tags = ["entries", "problems"]
-    sql_query = load_sql_query(SQL_PATH)
-
     try:
         profile_id = http_request.state.profile_id
         if not profile_id:
@@ -47,7 +45,7 @@ async def create_problems_entry(
                 detail="run_id is required",
             )
 
-        api_response = await create_problems_entry_internal(conn, request_dict, mcp)
+        api_response = await create_problem(conn, request_dict, mcp)
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
@@ -61,7 +59,7 @@ async def create_problems_entry(
             error=e,
             route_path=http_request.url.path,
             operation="create_problems_entry",
-            sql_query=sql_query,
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

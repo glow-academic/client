@@ -92,24 +92,6 @@ ALTER TABLE ONLY public.test_archive_entry
 
 --
 
--- Name: test_benchmark_entry test_benchmark_entry_benchmark_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.test_benchmark_entry
-    ADD CONSTRAINT test_benchmark_entry_benchmark_id_fkey FOREIGN KEY (benchmark_id) REFERENCES public.benchmark_entry(id);
-
-
---
-
--- Name: test_benchmark_entry test_benchmark_entry_test_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.test_benchmark_entry
-    ADD CONSTRAINT test_benchmark_entry_test_id_fkey FOREIGN KEY (test_id) REFERENCES public.test_entry(id);
-
-
---
-
 -- Name: test_completion_entry test_completion_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
