@@ -6,7 +6,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_redis_client
-from app.routes.v5.tools.resources.uploads.get import get_uploads as get_uploads_resource
+from app.routes.v5.tools.resources.files.get import get_files as get_uploads_resource
 from app.sql.types import (
     GetUploadsApiRequest,
     GetUploadsApiResponse,

@@ -26,7 +26,7 @@ from app.routes.v5.api.main.document.types import (
     ListDocumentApiResponse,
 )
 from app.routes.v5.api.types import ListFilterSection
-from app.routes.v5.tools.resources.uploads.get import get_uploads
+from app.routes.v5.tools.resources.files.get import get_files as get_uploads
 from app.sql.types import (
     GetDocumentsListApiRequest,
     GetDocumentsListSqlParams,
