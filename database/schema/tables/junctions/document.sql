@@ -120,22 +120,6 @@ CREATE TABLE public.document_parameter_fields_junction (
 
 --
 
--- Name: document_parameters_junction; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.document_parameters_junction (
-    document_id uuid CONSTRAINT document_parameters_document_id_not_null NOT NULL,
-    parameter_id uuid CONSTRAINT document_parameters_parameter_id_not_null NOT NULL,
-    type public.link_type DEFAULT 'direct'::public.link_type CONSTRAINT document_parameters_type_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT document_parameters_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT document_parameters_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT document_parameters_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT document_parameters_mcp_not_null NOT NULL
-);
-
-
---
-
 -- Name: document_texts_junction; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -217,15 +201,6 @@ ALTER TABLE ONLY public.document_names_junction
 
 ALTER TABLE ONLY public.document_parameter_fields_junction
     ADD CONSTRAINT document_parameter_fields_junction_pkey PRIMARY KEY (document_id, parameter_field_id);
-
-
---
-
--- Name: document_parameters_junction document_parameters_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_parameters_junction
-    ADD CONSTRAINT document_parameters_pkey PRIMARY KEY (document_id, parameter_id, type);
 
 
 --

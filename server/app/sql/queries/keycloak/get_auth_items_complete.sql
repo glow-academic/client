@@ -82,28 +82,30 @@ encrypted_items AS (
 ),
 -- Same logic for non-encrypted items
 dept_non_encrypted_items AS (
-    SELECT DISTINCT ON (i.name) i.name, sav.value, i.encrypted
+    SELECT DISTINCT ON (i.name) i.name, aiv.value, i.encrypted
     FROM auth_resource_mapping arm
     JOIN auth_items_junction ai_j ON ai_j.auth_id = arm.artifact_id
     JOIN items_resource i ON i.id = ai_j.item_id
-    JOIN setting_auth_values_junction sav ON sav.auth_item_id = i.id
-    JOIN dept_settings ds ON sav.settings_id = ds.settings_id
+    JOIN auth_item_values_resource aiv ON aiv.auth_id = arm.resource_id AND aiv.item_id = ai_j.item_id AND aiv.active = true
+    JOIN setting_auth_item_values_junction saiv ON saiv.auth_item_values_id = aiv.id AND saiv.active = true
+    JOIN dept_settings ds ON saiv.setting_id = ds.settings_id
     WHERE i.encrypted = false
-    ORDER BY i.name, sav.created_at DESC
+    ORDER BY i.name, aiv.created_at DESC
 ),
 default_non_encrypted_items AS (
-    SELECT DISTINCT ON (i.name) i.name, sav.value, i.encrypted
+    SELECT DISTINCT ON (i.name) i.name, aiv.value, i.encrypted
     FROM auth_resource_mapping arm
     JOIN auth_items_junction ai_j ON ai_j.auth_id = arm.artifact_id
     JOIN items_resource i ON i.id = ai_j.item_id
-    JOIN setting_auth_values_junction sav ON sav.auth_item_id = i.id
-    JOIN default_settings ds ON sav.settings_id = ds.settings_id
+    JOIN auth_item_values_resource aiv ON aiv.auth_id = arm.resource_id AND aiv.item_id = ai_j.item_id AND aiv.active = true
+    JOIN setting_auth_item_values_junction saiv ON saiv.auth_item_values_id = aiv.id AND saiv.active = true
+    JOIN default_settings ds ON saiv.setting_id = ds.settings_id
     WHERE i.encrypted = false
       AND NOT EXISTS (
           SELECT 1 FROM dept_non_encrypted_items dni
           WHERE dni.name = i.name
       )
-    ORDER BY i.name, sav.created_at DESC
+    ORDER BY i.name, aiv.created_at DESC
 ),
 non_encrypted_items AS (
     SELECT name, value, encrypted FROM dept_non_encrypted_items

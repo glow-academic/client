@@ -17,18 +17,16 @@ CREATE TABLE public.setting_auth_item_keys_junction (
 
 --
 
--- Name: setting_auth_values_junction; Type: TABLE; Schema: public; Owner: -
+-- Name: setting_auth_item_values_junction; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.setting_auth_values_junction (
-    value text CONSTRAINT setting_auth_values_value_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT setting_auth_values_created_at_not_null NOT NULL,
-    auth_id uuid CONSTRAINT setting_auth_values_auth_id_not_null NOT NULL,
-    auth_item_id uuid CONSTRAINT setting_auth_values_auth_item_id_not_null NOT NULL,
-    settings_id uuid CONSTRAINT setting_auth_values_settings_id_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT setting_auth_values_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT setting_auth_values_mcp_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT setting_auth_values_active_not_null NOT NULL
+CREATE TABLE public.setting_auth_item_values_junction (
+    setting_id uuid NOT NULL,
+    auth_item_values_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -210,11 +208,11 @@ ALTER TABLE ONLY public.setting_auth_item_keys_junction
 
 --
 
--- Name: setting_auth_values_junction setting_auth_values_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: setting_auth_item_values_junction setting_auth_item_values_junction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.setting_auth_values_junction
-    ADD CONSTRAINT setting_auth_values_pkey PRIMARY KEY (settings_id, auth_id, auth_item_id);
+ALTER TABLE ONLY public.setting_auth_item_values_junction
+    ADD CONSTRAINT setting_auth_item_values_junction_pkey PRIMARY KEY (setting_id, auth_item_values_id);
 
 
 --

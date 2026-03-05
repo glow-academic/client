@@ -20,11 +20,46 @@ CREATE TABLE public.auth_item_keys_resource (
 
 --
 
+-- Name: auth_item_values_resource; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.auth_item_values_resource (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    auth_id uuid NOT NULL,
+    item_id uuid NOT NULL,
+    value text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+
 -- Name: auth_item_keys_resource auth_item_keys_resource_auth_id_item_id_key_id_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.auth_item_keys_resource
     ADD CONSTRAINT auth_item_keys_resource_auth_id_item_id_key_id_key UNIQUE (auth_id, item_id, key_id);
+
+
+--
+
+-- Name: auth_item_values_resource auth_item_values_resource_auth_id_item_id_value_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_item_values_resource
+    ADD CONSTRAINT auth_item_values_resource_auth_id_item_id_value_key UNIQUE (auth_id, item_id, value);
+
+
+--
+
+-- Name: auth_item_values_resource auth_item_values_resource_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.auth_item_values_resource
+    ADD CONSTRAINT auth_item_values_resource_pkey PRIMARY KEY (id);
 
 
 --

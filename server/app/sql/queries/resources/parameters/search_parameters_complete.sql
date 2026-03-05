@@ -91,7 +91,7 @@ FROM (
       AND (COALESCE(array_length(department_ids, 1), 0) = 0 OR p.department_ids && department_ids)
       AND (COALESCE(array_length(field_ids, 1), 0) = 0 OR p.field_ids && field_ids)
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)
-      AND (NOT document OR EXISTS (SELECT 1 FROM document_parameters_junction j WHERE j.parameter_id = p.id AND j.active = true))
+      AND (NOT document OR EXISTS (SELECT 1 FROM document_parameter_fields_junction j JOIN parameter_fields_resource pfr ON pfr.id = j.parameter_field_id WHERE pfr.parameter_id = p.id AND j.active = true))
       AND (NOT parameter OR EXISTS (SELECT 1 FROM parameter_parameters_junction j WHERE j.parameter_id = p.id AND j.active = true))
       AND (NOT persona OR EXISTS (SELECT 1 FROM persona_parameter_fields_junction j JOIN parameter_fields_resource pfr ON pfr.id = j.parameter_field_id WHERE pfr.parameter_id = p.id AND j.active = true))
       AND (NOT scenario OR EXISTS (SELECT 1 FROM scenario_parameter_fields_junction j JOIN parameter_fields_resource pfr ON pfr.id = j.parameter_field_id WHERE pfr.parameter_id = p.id AND j.active = true))

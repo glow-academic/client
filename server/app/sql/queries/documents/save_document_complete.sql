@@ -172,7 +172,6 @@ BEGIN
         DELETE FROM document_descriptions_junction WHERE document_id = v_document_id;
         DELETE FROM document_departments_junction WHERE document_id = v_document_id;
         DELETE FROM document_parameter_fields_junction WHERE document_id = v_document_id;
-        DELETE FROM document_parameters_junction WHERE document_id = v_document_id;
         DELETE FROM document_files_junction WHERE document_id = v_document_id;
         DELETE FROM document_images_junction WHERE document_id = v_document_id;
         DELETE FROM document_texts_junction WHERE document_id = v_document_id;
@@ -381,16 +380,6 @@ BEGIN
     JOIN parameter_fields_resource pfr ON pfr.field_id = field_resource_id
     WHERE COALESCE(array_length(v_field_ids, 1), 0) > 0
     ON CONFLICT (document_id, parameter_field_id) DO NOTHING;
-
-    -- Link parameters (derived from field -> parameter relationships)
-    INSERT INTO document_parameters_junction (document_id, parameter_id, type, active, created_at)
-    SELECT DISTINCT v_document_id, pfr.parameter_id, 'direct'::link_type, true, NOW()
-    FROM UNNEST(v_field_ids) AS field_resource_id
-    JOIN parameter_fields_resource pfr ON pfr.field_id = field_resource_id
-    WHERE COALESCE(array_length(v_field_ids, 1), 0) > 0
-      AND pfr.parameter_id IS NOT NULL
-    ON CONFLICT (document_id, parameter_id, type) DO UPDATE SET
-        active = true;
 
     -- Link uploads
     INSERT INTO document_files_junction (document_id, files_id, active, created_at)

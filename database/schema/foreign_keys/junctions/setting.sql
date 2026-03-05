@@ -11,38 +11,29 @@ ALTER TABLE ONLY public.setting_auth_item_keys_junction
 
 --
 
+-- Name: setting_auth_item_values_junction setting_auth_item_values_junction_auth_item_values_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.setting_auth_item_values_junction
+    ADD CONSTRAINT setting_auth_item_values_junction_auth_item_values_id_fkey FOREIGN KEY (auth_item_values_id) REFERENCES public.auth_item_values_resource(id);
+
+
+--
+
+-- Name: setting_auth_item_values_junction setting_auth_item_values_junction_setting_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.setting_auth_item_values_junction
+    ADD CONSTRAINT setting_auth_item_values_junction_setting_id_fkey FOREIGN KEY (setting_id) REFERENCES public.setting_artifact(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: setting_auth_item_keys_junction setting_auth_keys_junction_setting_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.setting_auth_item_keys_junction
     ADD CONSTRAINT setting_auth_keys_junction_setting_id_fkey FOREIGN KEY (setting_id) REFERENCES public.setting_artifact(id) ON DELETE CASCADE;
-
-
---
-
--- Name: setting_auth_values_junction setting_auth_values_auth_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.setting_auth_values_junction
-    ADD CONSTRAINT setting_auth_values_auth_id_fkey FOREIGN KEY (auth_id) REFERENCES public.auth_artifact(id) ON DELETE CASCADE;
-
-
---
-
--- Name: setting_auth_values_junction setting_auth_values_auth_item_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.setting_auth_values_junction
-    ADD CONSTRAINT setting_auth_values_auth_item_id_fkey FOREIGN KEY (auth_item_id) REFERENCES public.items_resource(id) ON DELETE CASCADE;
-
-
---
-
--- Name: setting_auth_values_junction setting_auth_values_settings_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.setting_auth_values_junction
-    ADD CONSTRAINT setting_auth_values_settings_id_fkey FOREIGN KEY (settings_id) REFERENCES public.setting_artifact(id) ON DELETE CASCADE;
 
 
 --

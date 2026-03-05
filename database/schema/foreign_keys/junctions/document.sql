@@ -146,24 +146,6 @@ ALTER TABLE ONLY public.document_parameter_fields_junction
 
 --
 
--- Name: document_parameters_junction document_parameters_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_parameters_junction
-    ADD CONSTRAINT document_parameters_document_id_fkey FOREIGN KEY (document_id) REFERENCES public.document_artifact(id) ON DELETE CASCADE;
-
-
---
-
--- Name: document_parameters_junction document_parameters_parameter_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.document_parameters_junction
-    ADD CONSTRAINT document_parameters_parameter_id_fkey FOREIGN KEY (parameter_id) REFERENCES public.parameters_resource(id) ON DELETE CASCADE;
-
-
---
-
 -- Name: document_texts_junction document_texts_document_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
