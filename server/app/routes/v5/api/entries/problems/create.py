@@ -11,10 +11,8 @@ from app.routes.v5.api.entries.problems.types import (
     CreateProblemsEntryResponse,
 )
 from app.routes.v5.tools.entries.problems.create import (
-    SQL_PATH,
-    create_problems_entry_internal,
+    create_problem,
 )
-from app.sql.types import load_sql_query
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

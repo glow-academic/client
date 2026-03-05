@@ -11,10 +11,8 @@ from app.routes.v5.api.entries.attempt_strength.types import (
     CreateAttemptStrengthEntryResponse,
 )
 from app.routes.v5.tools.entries.attempt_strength.create import (
-    SQL_PATH,
-    create_attempt_strength_entry_internal,
+    create_attempt_strength,
 )
-from app.sql.types import load_sql_query
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

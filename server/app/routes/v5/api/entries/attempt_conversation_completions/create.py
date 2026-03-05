@@ -11,10 +11,8 @@ from app.routes.v5.api.entries.attempt_conversation_completions.types import (
     CreateConversationsCompletionsEntryResponse,
 )
 from app.routes.v5.tools.entries.attempt_conversation_completions.create import (
-    SQL_PATH,
-    create_conversations_completions_entry_internal,
+    create_attempt_conversation_completions,
 )
-from app.sql.types import load_sql_query
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

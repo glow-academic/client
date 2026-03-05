@@ -6,14 +6,10 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db
-from app.routes.v5.tools.entries.uploads.get import (
-    SQL_PATH,
-    get_uploads_entries_internal,
-)
+from app.routes.v5.tools.entries.uploads.get import get_upload
 from app.sql.types import (
     GetUploadsEntriesApiRequest,
     GetUploadsEntriesApiResponse,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -43,7 +39,7 @@ async def get_uploads_entries(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_uploads_entries_internal(conn, request.ids, bypass_cache)
+        items = await get_upload(conn, request.ids, bypass_cache)
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetUploadsEntriesApiResponse(items=items)
     except HTTPException:
@@ -55,7 +51,7 @@ async def get_uploads_entries(
             error=e,
             route_path=http_request.url.path,
             operation="get_uploads_entries",
-            sql_query=load_sql_query(SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )

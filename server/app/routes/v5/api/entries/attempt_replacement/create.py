@@ -11,10 +11,8 @@ from app.routes.v5.api.entries.attempt_replacement.types import (
     CreateAttemptReplacementEntryResponse,
 )
 from app.routes.v5.tools.entries.attempt_replacement.create import (
-    SQL_PATH,
-    create_attempt_replacement_entry_internal,
+    create_attempt_replacement,
 )
-from app.sql.types import load_sql_query
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

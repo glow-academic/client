@@ -11,10 +11,8 @@ from app.routes.v5.api.entries.attempt_content.types import (
     CreateAttemptContentEntryResponse,
 )
 from app.routes.v5.tools.entries.attempt_content.create import (
-    SQL_PATH,
-    create_attempt_content_entry_internal,
+    create_attempt_content,
 )
-from app.sql.types import load_sql_query
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

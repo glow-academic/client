@@ -11,10 +11,8 @@ from app.routes.v5.api.entries.test_archive.types import (
     CreateTestArchiveEntryResponse,
 )
 from app.routes.v5.tools.entries.test_archive.create import (
-    SQL_PATH,
-    create_test_archive_entry_internal,
+    create_test_archive,
 )
-from app.sql.types import load_sql_query
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

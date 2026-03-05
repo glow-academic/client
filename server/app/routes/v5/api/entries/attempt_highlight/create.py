@@ -11,10 +11,8 @@ from app.routes.v5.api.entries.attempt_highlight.types import (
     CreateAttemptHighlightEntryResponse,
 )
 from app.routes.v5.tools.entries.attempt_highlight.create import (
-    SQL_PATH,
-    create_attempt_highlight_entry_internal,
+    create_attempt_highlight,
 )
-from app.sql.types import load_sql_query
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

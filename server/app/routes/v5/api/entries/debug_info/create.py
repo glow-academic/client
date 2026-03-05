@@ -11,10 +11,8 @@ from app.routes.v5.api.entries.debug_info.types import (
     CreateDebugInfoEntryResponse,
 )
 from app.routes.v5.tools.entries.debug_info.create import (
-    SQL_PATH,
-    create_debug_info_entry_internal,
+    create_debug_info,
 )
-from app.sql.types import load_sql_query
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
