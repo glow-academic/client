@@ -5,6 +5,7 @@ import pytest
 from app.routes.v5.tools.entries.benchmark.create import create_benchmark
 from app.routes.v5.tools.entries.invocation.create import create_invocation
 from app.routes.v5.tools.entries.invocation.get import get_invocations
+from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -94,6 +95,12 @@ async def test_get_with_connections(conn):
     item = results[0]
     assert name_id in item.name_ids
     assert dept_id in item.department_ids
+
+
+async def test_returns_empty_for_nonexistent_id(conn):
+    results = await get_invocations(conn, [nonexistent_id()])
+
+    assert results == []
 
 
 async def test_get_empty_ids_returns_empty(conn):
