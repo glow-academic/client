@@ -18,7 +18,7 @@ INSERT INTO public.model_artifact (created_at, updated_at, id, generated, mcp) V
 -- model_descriptions_junction
 INSERT INTO public.model_descriptions_junction (model_id, description_id, created_at, generated, mcp, active) VALUES ('019b3be4-36d1-7723-9b2e-5ea00d22ad62', '019b995c-8ea4-7285-9dd6-2176684ed4a3', '2025-08-12T12:52:09.591583+00:00', false, false, true) ON CONFLICT (model_id, description_id) DO NOTHING;
 -- model_flags_junction
-INSERT INTO public.model_flags_junction (model_id, flag_id, value, created_at, generated, mcp, active) VALUES ('019b3be4-36d1-7723-9b2e-5ea00d22ad62', '019be334-bfc4-7ef6-b18f-7a556d94b225', true, '2025-08-12T12:52:09.591583+00:00', false, false, true) ON CONFLICT (model_id, flag_id) DO NOTHING;
+INSERT INTO public.model_flags_junction (model_id, flag_id, created_at, generated, mcp, active) VALUES ('019b3be4-36d1-7723-9b2e-5ea00d22ad62', '019be334-bfc4-7ef6-b18f-7a556d94b225', '2025-08-12T12:52:09.591583+00:00', false, false, true) ON CONFLICT (model_id, flag_id) DO NOTHING;
 -- model_modalities_junction
 INSERT INTO public.model_modalities_junction (active, created_at, model_id, generated, mcp, modality_id) VALUES (true, '2025-12-02T18:34:42.759389+00:00', '019b3be4-36d1-7723-9b2e-5ea00d22ad62', false, false, '019bbce5-e606-77f1-abf8-78df7462af03') ON CONFLICT (model_id, modality_id) DO NOTHING;
 INSERT INTO public.model_modalities_junction (active, created_at, model_id, generated, mcp, modality_id) VALUES (true, '2026-01-09T16:27:38.918424+00:00', '019b3be4-36d1-7723-9b2e-5ea00d22ad62', false, false, '019bbce5-e609-7efe-8549-87dd267f086a') ON CONFLICT (model_id, modality_id) DO NOTHING;
@@ -26,7 +26,7 @@ INSERT INTO public.model_modalities_junction (active, created_at, model_id, gene
 INSERT INTO public.model_modalities_junction (active, created_at, model_id, generated, mcp, modality_id) VALUES (true, '2025-12-02T18:34:42.759389+00:00', '019b3be4-36d1-7723-9b2e-5ea00d22ad62', false, false, '019c47d6-6c45-754d-9669-73c9882d1a66') ON CONFLICT (model_id, modality_id) DO NOTHING;
 INSERT INTO public.model_modalities_junction (active, created_at, model_id, generated, mcp, modality_id) VALUES (true, '2026-01-09T16:27:38.918424+00:00', '019b3be4-36d1-7723-9b2e-5ea00d22ad62', false, false, '019c47d6-6c45-7602-a2b1-b2a608b0cf31') ON CONFLICT (model_id, modality_id) DO NOTHING;
 -- model_models_junction
-INSERT INTO public.model_models_junction (model_id, models_id, active, created_at, generated, mcp) VALUES ('019b3be4-36d1-7723-9b2e-5ea00d22ad62', '019bb25e-e5ff-7781-b262-7c33d17dec4f', true, '2025-08-12T12:52:09.591583+00:00', false, false) ON CONFLICT (model_id, models_id) DO NOTHING;
+INSERT INTO public.model_models_junction (model_id, models_id, active, created_at, generated, mcp) VALUES ('019b3be4-36d1-7723-9b2e-5ea00d22ad62', '019bb25e-e5ff-7781-b262-7c33d17dec4f', '2025-08-12T12:52:09.591583+00:00', false, false) ON CONFLICT (model_id, models_id) DO NOTHING;
 -- model_names_junction
 INSERT INTO public.model_names_junction (model_id, name_id, created_at, generated, mcp, active) VALUES ('019b3be4-36d1-7723-9b2e-5ea00d22ad62', '019b995c-8ea2-7c93-9553-161d7730f449', '2025-08-12T12:52:09.591583+00:00', false, false, true) ON CONFLICT (model_id, name_id) DO NOTHING;
 -- model_pricing_junction

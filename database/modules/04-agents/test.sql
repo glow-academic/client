@@ -76,7 +76,7 @@ INSERT INTO public.agent_artifact (created_at, updated_at, id, generated, mcp) V
 
 -- Junctions
 -- agent_agents_junction
-INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_at, generated, mcp) VALUES ('ab000004-0000-0000-0000-000000000004', '019c82b8-5d9c-75f6-8468-7af07ed62ce7', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (agent_id, agents_id) DO NOTHING;
+INSERT INTO public.agent_agents_junction (agent_id, agents_id, active, created_at, generated, mcp) VALUES ('ab000004-0000-0000-0000-000000000004', '019c82b8-5d9c-75f6-8468-7af07ed62ce7', '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (agent_id, agents_id) DO NOTHING;
 -- agent_models_junction
 INSERT INTO public.agent_models_junction (agent_id, model_id, active, created_at, generated, mcp)
 SELECT 'ab000004-0000-0000-0000-000000000004', ar.model_id, true, '2026-02-22T00:20:46.593734+00:00', false, false
@@ -118,9 +118,9 @@ ON CONFLICT (agent_id, voice_id) DO NOTHING;
 -- agent_descriptions_junction
 INSERT INTO public.agent_descriptions_junction (agent_id, description_id, created_at, generated, mcp, active) VALUES ('ab000004-0000-0000-0000-000000000004', '019c82b8-5d9c-77ad-9589-47756200136f', '2026-02-22T00:20:46.593734+00:00', false, false, true) ON CONFLICT (agent_id, description_id) DO NOTHING;
 -- agent_flags_junction
-INSERT INTO public.agent_flags_junction (agent_id, flag_id, value, created_at, generated, mcp, active) VALUES ('ab000004-0000-0000-0000-000000000004', '019be334-bfc4-76ac-80d3-c8ba7618bc7a', true, '2026-02-22T00:20:46.593734+00:00', false, false, true) ON CONFLICT (agent_id, flag_id) DO NOTHING;
+INSERT INTO public.agent_flags_junction (agent_id, flag_id, created_at, generated, mcp, active) VALUES ('ab000004-0000-0000-0000-000000000004', '019be334-bfc4-76ac-80d3-c8ba7618bc7a', '2026-02-22T00:20:46.593734+00:00', false, false, true) ON CONFLICT (agent_id, flag_id) DO NOTHING;
 -- agent_names_junction
 INSERT INTO public.agent_names_junction (agent_id, name_id, created_at, generated, mcp, active) VALUES ('ab000004-0000-0000-0000-000000000004', '019c82b8-5d9c-7738-ae5c-8c25724b54be', '2026-02-22T00:20:46.593734+00:00', false, false, true) ON CONFLICT (agent_id, name_id) DO NOTHING;
 -- agent_tools_junction
-INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('ab000004-0000-0000-0000-000000000004', '019bebc4-d436-7ba4-963e-758c7971447d', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
-INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('ab000004-0000-0000-0000-000000000004', '019522a0-0020-7000-8000-00000000000d', true, '2026-02-24T11:27:01.778199+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
+INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('ab000004-0000-0000-0000-000000000004', '019bebc4-d436-7ba4-963e-758c7971447d', '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
+INSERT INTO public.agent_tools_junction (agent_id, tool_id, active, created_at, generated, mcp) VALUES ('ab000004-0000-0000-0000-000000000004', '019522a0-0020-7000-8000-00000000000d', '2026-02-24T11:27:01.778199+00:00', false, false) ON CONFLICT (agent_id, tool_id) DO NOTHING;
