@@ -266,14 +266,6 @@ CREATE INDEX setting_colors_setting_id_idx ON public.setting_colors_junction USI
 
 --
 
--- Name: setting_colors_type_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX setting_colors_type_idx ON public.setting_colors_junction USING btree (type);
-
-
---
-
 -- Name: setting_departments_department_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -406,14 +398,6 @@ CREATE INDEX setting_thresholds_setting_id_idx ON public.setting_thresholds_junc
 --
 
 CREATE INDEX setting_thresholds_threshold_id_idx ON public.setting_thresholds_junction USING btree (threshold_id);
-
-
---
-
--- Name: setting_thresholds_type_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX setting_thresholds_type_idx ON public.setting_thresholds_junction USING btree (type);
 
 
 --

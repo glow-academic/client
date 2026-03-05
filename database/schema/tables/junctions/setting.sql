@@ -53,7 +53,6 @@ CREATE TABLE public.setting_auths_junction (
 CREATE TABLE public.setting_colors_junction (
     setting_id uuid CONSTRAINT setting_colors_setting_id_not_null NOT NULL,
     color_id uuid CONSTRAINT setting_colors_color_id_not_null NOT NULL,
-    type public.color_type CONSTRAINT setting_colors_type_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT setting_colors_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT setting_colors_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT setting_colors_mcp_not_null NOT NULL,
@@ -189,7 +188,6 @@ CREATE TABLE public.setting_systems_junction (
 CREATE TABLE public.setting_thresholds_junction (
     setting_id uuid CONSTRAINT setting_thresholds_setting_id_not_null NOT NULL,
     threshold_id uuid CONSTRAINT setting_thresholds_threshold_id_not_null NOT NULL,
-    type public.threshold_type CONSTRAINT setting_thresholds_type_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT setting_thresholds_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT setting_thresholds_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT setting_thresholds_mcp_not_null NOT NULL,
@@ -230,7 +228,7 @@ ALTER TABLE ONLY public.setting_auths_junction
 --
 
 ALTER TABLE ONLY public.setting_colors_junction
-    ADD CONSTRAINT setting_colors_pkey PRIMARY KEY (setting_id, color_id, type);
+    ADD CONSTRAINT setting_colors_pkey PRIMARY KEY (setting_id, color_id);
 
 
 --
@@ -311,7 +309,7 @@ ALTER TABLE ONLY public.setting_systems_junction
 --
 
 ALTER TABLE ONLY public.setting_thresholds_junction
-    ADD CONSTRAINT setting_thresholds_pkey PRIMARY KEY (setting_id, threshold_id, type);
+    ADD CONSTRAINT setting_thresholds_pkey PRIMARY KEY (setting_id, threshold_id);
 
 
 --

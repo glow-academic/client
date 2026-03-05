@@ -11,7 +11,8 @@ CREATE TABLE public.points_resource (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT points_created_at_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT points_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT points_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT points_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT points_mcp_not_null NOT NULL,
+    type public.point_type DEFAULT 'total'::public.point_type NOT NULL
 );
 
 

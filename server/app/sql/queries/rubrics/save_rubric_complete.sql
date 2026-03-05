@@ -361,16 +361,16 @@ BEGIN
 
     -- Link total points
     IF v_total_points_id IS NOT NULL THEN
-        INSERT INTO rubric_points_junction (rubric_id, point_id, type, created_at)
-        VALUES (v_rubric_id, v_total_points_id, 'total'::point_type, NOW())
-        ON CONFLICT (rubric_id, point_id, type) DO NOTHING;
+        INSERT INTO rubric_points_junction (rubric_id, point_id, created_at)
+        VALUES (v_rubric_id, v_total_points_id, NOW())
+        ON CONFLICT (rubric_id, point_id) DO NOTHING;
     END IF;
 
     -- Link pass points
     IF v_pass_points_id IS NOT NULL THEN
-        INSERT INTO rubric_points_junction (rubric_id, point_id, type, created_at)
-        VALUES (v_rubric_id, v_pass_points_id, 'pass'::point_type, NOW())
-        ON CONFLICT (rubric_id, point_id, type) DO NOTHING;
+        INSERT INTO rubric_points_junction (rubric_id, point_id, created_at)
+        VALUES (v_rubric_id, v_pass_points_id, NOW())
+        ON CONFLICT (rubric_id, point_id) DO NOTHING;
     END IF;
 
     -- Link departments

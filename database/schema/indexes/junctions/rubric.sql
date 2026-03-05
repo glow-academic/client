@@ -194,14 +194,6 @@ CREATE INDEX rubric_points_rubric_id_idx ON public.rubric_points_junction USING 
 
 --
 
--- Name: rubric_points_type_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX rubric_points_type_idx ON public.rubric_points_junction USING btree (type);
-
-
---
-
 -- Name: rubric_rubrics_rubric_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 

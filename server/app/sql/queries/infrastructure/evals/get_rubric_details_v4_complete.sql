@@ -29,8 +29,8 @@ STABLE
 AS $$
     SELECT r.id, 
            (SELECT n.name FROM rubric_names_junction rn JOIN names_resource n ON rn.name_id = n.id WHERE rn.rubric_id = r.id LIMIT 1) as name,
-           (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON p.id = rp.point_id WHERE rp.rubric_id = r.id AND rp.type = 'total'::point_type LIMIT 1)::integer as points,
-           (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON p.id = rp.point_id WHERE rp.rubric_id = r.id AND rp.type = 'pass'::point_type LIMIT 1)::integer as pass_points
+           (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON p.id = rp.point_id WHERE rp.rubric_id = r.id AND p.type = 'total'::point_type LIMIT 1)::integer as points,
+           (SELECT p.value FROM rubric_points_junction rp JOIN points_resource p ON p.id = rp.point_id WHERE rp.rubric_id = r.id AND p.type = 'pass'::point_type LIMIT 1)::integer as pass_points
     FROM rubric_artifact r
     WHERE r.id = $1
 $$;

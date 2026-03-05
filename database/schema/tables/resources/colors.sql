@@ -13,7 +13,8 @@ CREATE TABLE public.colors_resource (
     created_at timestamp with time zone DEFAULT now() CONSTRAINT colors_created_at_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT colors_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT colors_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT colors_mcp_not_null NOT NULL
+    mcp boolean DEFAULT false CONSTRAINT colors_mcp_not_null NOT NULL,
+    type public.color_type DEFAULT 'primary'::public.color_type NOT NULL
 );
 
 

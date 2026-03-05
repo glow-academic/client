@@ -119,8 +119,9 @@ total_points_resource_data AS (
     SELECT
         (SELECT rp.point_id
          FROM rubric_points_junction rp
+         JOIN points_resource p ON rp.point_id = p.id
          WHERE rp.rubric_id = (SELECT rubric_id FROM params)
-           AND rp.type = 'total'::point_type
+           AND p.type = 'total'::point_type
          LIMIT 1) as total_points_id
     FROM params
 ),
@@ -128,8 +129,9 @@ pass_points_resource_data AS (
     SELECT
         (SELECT rp.point_id
          FROM rubric_points_junction rp
+         JOIN points_resource p ON rp.point_id = p.id
          WHERE rp.rubric_id = (SELECT rubric_id FROM params)
-           AND rp.type = 'pass'::point_type
+           AND p.type = 'pass'::point_type
          LIMIT 1) as pass_points_id
     FROM params
 )

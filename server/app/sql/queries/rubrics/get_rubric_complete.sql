@@ -364,7 +364,7 @@ total_points_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dp.points_id FROM rubric_drafts_points_connection dp WHERE dp.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT rp.point_id FROM rubric_points_junction rp WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'total'::point_type LIMIT 1)
+            (SELECT rp.point_id FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND p.type = 'total'::point_type LIMIT 1)
         ) as total_points_id,
         (
             SELECT ROW(p.id, p.value, COALESCE(p.generated, false))::types.q_get_rubric_v4_points_resource 
@@ -377,7 +377,7 @@ total_points_resource_data AS (
                 SELECT p.id, p.value, COALESCE(p.generated, false) as generated, 2 as priority
                 FROM rubric_points_junction rp 
                 JOIN points_resource p ON rp.point_id = p.id 
-                WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'total'::point_type
+                WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND p.type = 'total'::point_type
             ) p
             ORDER BY priority
             LIMIT 1
@@ -389,7 +389,7 @@ pass_points_resource_data AS (
     SELECT 
         COALESCE(
             (SELECT dp.points_id FROM rubric_drafts_points_connection dp WHERE dp.draft_id = (SELECT draft_id FROM params) LIMIT 1),
-            (SELECT rp.point_id FROM rubric_points_junction rp WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'pass'::point_type LIMIT 1)
+            (SELECT rp.point_id FROM rubric_points_junction rp JOIN points_resource p ON rp.point_id = p.id WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND p.type = 'pass'::point_type LIMIT 1)
         ) as pass_points_id,
         (
             SELECT ROW(p.id, p.value, COALESCE(p.generated, false))::types.q_get_rubric_v4_points_resource 
@@ -402,7 +402,7 @@ pass_points_resource_data AS (
                 SELECT p.id, p.value, COALESCE(p.generated, false) as generated, 2 as priority
                 FROM rubric_points_junction rp 
                 JOIN points_resource p ON rp.point_id = p.id 
-                WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND rp.type = 'pass'::point_type
+                WHERE rp.rubric_id = (SELECT rubric_id FROM params) AND p.type = 'pass'::point_type
             ) p
             ORDER BY priority
             LIMIT 1

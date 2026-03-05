@@ -368,8 +368,8 @@ BEGIN
             active = true
     ),
     link_colors AS (
-        INSERT INTO setting_colors_junction (setting_id, color_id, type, active, created_at)
-        SELECT x.setting_id, color_id, 'primary'::color_type, true, NOW()
+        INSERT INTO setting_colors_junction (setting_id, color_id, active, created_at)
+        SELECT x.setting_id, color_id, true, NOW()
         FROM params x
         CROSS JOIN UNNEST(x.color_ids) as color_id
         WHERE COALESCE(array_length(x.color_ids, 1), 0) > 0

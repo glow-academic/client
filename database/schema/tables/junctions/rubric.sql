@@ -68,7 +68,6 @@ CREATE TABLE public.rubric_names_junction (
 CREATE TABLE public.rubric_points_junction (
     rubric_id uuid CONSTRAINT rubric_points_rubric_id_not_null NOT NULL,
     point_id uuid CONSTRAINT rubric_points_point_id_not_null NOT NULL,
-    type public.point_type CONSTRAINT rubric_points_type_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT rubric_points_created_at_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT rubric_points_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT rubric_points_mcp_not_null NOT NULL,
@@ -163,7 +162,7 @@ ALTER TABLE ONLY public.rubric_names_junction
 --
 
 ALTER TABLE ONLY public.rubric_points_junction
-    ADD CONSTRAINT rubric_points_pkey PRIMARY KEY (rubric_id, point_id, type);
+    ADD CONSTRAINT rubric_points_pkey PRIMARY KEY (rubric_id, point_id);
 
 
 --
