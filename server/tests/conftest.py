@@ -5,8 +5,10 @@ Pytest configuration and shared fixtures for real database testing.
 import os
 import sys
 from collections.abc import AsyncGenerator
+from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import urlparse, urlunparse
+from uuid import UUID
 
 import asyncpg  # type: ignore[import]
 import pytest
@@ -365,7 +367,7 @@ async def department_id(conn, redis_client):
     """A fresh departments_resource ID."""
     from app.routes.v5.tools.resources.departments.create import create_department
 
-    dept = await create_department(conn, redis_client)
+    dept = await create_department(conn, redis=redis_client)
     return dept.id
 
 
@@ -403,6 +405,67 @@ async def call_id(conn, run_id, session_id):
 
     call = await create_call(conn, run_id=run_id, session_id=session_id)
     return call.id
+
+
+@dataclass
+class SimulationBundle:
+    """All resource IDs needed for practice/home simulation tests."""
+
+    profile_id: UUID
+    department_id: UUID
+    cohort_id: UUID
+    simulation_id: UUID
+    simulation_position_id: UUID
+    simulation_availability_id: UUID
+    profile_persona_id: UUID
+
+
+@pytest_asyncio.fixture
+async def simulation_bundle(conn, redis_client, profile_id, department_id):
+    """Create all resources needed for practice/home simulation tests."""
+    from datetime import UTC, datetime
+
+    from app.routes.v5.tools.resources.personas.create import (
+        create_persona as create_persona_resource,
+    )
+    from app.routes.v5.tools.resources.cohorts.create import create_cohort
+    from app.routes.v5.tools.resources.profile_personas.create import (
+        create_profile_persona,
+    )
+    from app.routes.v5.tools.resources.simulation_availability.create import (
+        create_simulation_availability,
+    )
+    from app.routes.v5.tools.resources.simulation_positions.create import (
+        create_simulation_position,
+    )
+    from app.routes.v5.tools.resources.simulations.create import create_simulation
+
+    cohort = await create_cohort(conn, redis_client)
+    simulation = await create_simulation(conn, redis_client)
+    sim_position = await create_simulation_position(
+        conn, simulation.id, value=1, redis=redis_client
+    )
+    sim_availability = await create_simulation_availability(
+        conn,
+        simulation.id,
+        time=datetime.now(UTC),
+        availability_type="start",
+        redis=redis_client,
+    )
+    persona_resource = await create_persona_resource(conn, redis=redis_client)
+    profile_persona = await create_profile_persona(
+        conn, profile_id, persona_resource.id, redis=redis_client
+    )
+
+    return SimulationBundle(
+        profile_id=profile_id,
+        department_id=department_id,
+        cohort_id=cohort.id,
+        simulation_id=simulation.id,
+        simulation_position_id=sim_position.id,
+        simulation_availability_id=sim_availability.id,
+        profile_persona_id=profile_persona.id,
+    )
 
 
 # --- OTHER CONFIG ---

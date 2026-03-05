@@ -11,7 +11,7 @@ from app.routes.v5.tools.entries.runs.get import get_run
 from app.routes.v5.tools.entries.calls.get import get_call
 from app.routes.v5.tools.entries.messages.get import get_message
 from app.routes.v5.tools.entries.texts.get import get_text
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID, USE_VOICES_TOOL_ID
+from app.routes.v5.tools.resources.tools.create import create_tool as create_tool_resource
 
 pytestmark = pytest.mark.asyncio
 
@@ -27,8 +27,8 @@ async def _failing_tool(conn, **kwargs):
     raise ValueError("something broke")
 
 
-async def _deps(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _deps(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     return session, group
 
@@ -36,18 +36,19 @@ async def _deps(conn):
 # -- with tool_id --------------------------------------------------------------
 
 
-async def test_with_tool_returns_all_ids(conn, tmp_path):
-    session, group = await _deps(conn)
+async def test_with_tool_returns_all_ids(conn, profile_id, tmp_path):
+    session, group = await _deps(conn, profile_id)
+    tool = await create_tool_resource(conn)
 
     result = await create_tool_call(
         conn,
         group_id=group.id,
         session_id=session.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profile_id=profile_id,
         upload_folder=tmp_path,
         tool_fn=_success_tool,
         arguments={"name": "Dr. Smith"},
-        tool_id=USE_VOICES_TOOL_ID,
+        tool_id=tool.id,
     )
 
     assert result.run_id is not None
@@ -57,18 +58,19 @@ async def test_with_tool_returns_all_ids(conn, tmp_path):
     assert result.call_upload_junction_id is not None
 
 
-async def test_with_tool_writes_both_files(conn, tmp_path):
-    session, group = await _deps(conn)
+async def test_with_tool_writes_both_files(conn, profile_id, tmp_path):
+    session, group = await _deps(conn, profile_id)
+    tool = await create_tool_resource(conn)
 
     await create_tool_call(
         conn,
         group_id=group.id,
         session_id=session.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profile_id=profile_id,
         upload_folder=tmp_path,
         tool_fn=_success_tool,
         arguments={"name": "Dr. Smith"},
-        tool_id=USE_VOICES_TOOL_ID,
+        tool_id=tool.id,
     )
 
     assert (tmp_path / "text").is_dir()
@@ -80,39 +82,41 @@ async def test_with_tool_writes_both_files(conn, tmp_path):
     assert len(json_files) == 1
 
 
-async def test_with_tool_json_has_correct_shape(conn, tmp_path):
-    session, group = await _deps(conn)
+async def test_with_tool_json_has_correct_shape(conn, profile_id, tmp_path):
+    session, group = await _deps(conn, profile_id)
+    tool = await create_tool_resource(conn)
 
     await create_tool_call(
         conn,
         group_id=group.id,
         session_id=session.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profile_id=profile_id,
         upload_folder=tmp_path,
         tool_fn=_success_tool,
         arguments={"name": "Dr. Smith"},
-        tool_id=USE_VOICES_TOOL_ID,
+        tool_id=tool.id,
     )
 
     json_file = list((tmp_path / "call").glob("*.json"))[0]
     data = json.loads(json_file.read_text())
     assert set(data.keys()) == {"call_id", "tool_id", "arguments", "output"}
     assert data["arguments"] == {"name": "Dr. Smith"}
-    assert data["tool_id"] == str(USE_VOICES_TOOL_ID)
+    assert data["tool_id"] == str(tool.id)
 
 
-async def test_with_tool_txt_has_output(conn, tmp_path):
-    session, group = await _deps(conn)
+async def test_with_tool_txt_has_output(conn, profile_id, tmp_path):
+    session, group = await _deps(conn, profile_id)
+    tool = await create_tool_resource(conn)
 
     await create_tool_call(
         conn,
         group_id=group.id,
         session_id=session.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profile_id=profile_id,
         upload_folder=tmp_path,
         tool_fn=_success_tool,
         arguments={"name": "Dr. Smith"},
-        tool_id=USE_VOICES_TOOL_ID,
+        tool_id=tool.id,
     )
 
     txt_file = list((tmp_path / "text").glob("*.txt"))[0]
@@ -120,18 +124,19 @@ async def test_with_tool_txt_has_output(conn, tmp_path):
     assert data["success"] is True
 
 
-async def test_with_tool_creates_db_entries(conn, tmp_path):
-    session, group = await _deps(conn)
+async def test_with_tool_creates_db_entries(conn, profile_id, tmp_path):
+    session, group = await _deps(conn, profile_id)
+    tool = await create_tool_resource(conn)
 
     result = await create_tool_call(
         conn,
         group_id=group.id,
         session_id=session.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profile_id=profile_id,
         upload_folder=tmp_path,
         tool_fn=_success_tool,
         arguments={"name": "Dr. Smith"},
-        tool_id=USE_VOICES_TOOL_ID,
+        tool_id=tool.id,
     )
 
     run = await get_run(conn, result.run_id)
@@ -150,14 +155,14 @@ async def test_with_tool_creates_db_entries(conn, tmp_path):
 # -- without tool_id -----------------------------------------------------------
 
 
-async def test_without_tool_returns_ids(conn, tmp_path):
-    session, group = await _deps(conn)
+async def test_without_tool_returns_ids(conn, profile_id, tmp_path):
+    session, group = await _deps(conn, profile_id)
 
     result = await create_tool_call(
         conn,
         group_id=group.id,
         session_id=session.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profile_id=profile_id,
         upload_folder=tmp_path,
         tool_fn=_success_tool,
         arguments={"prompt": "Summarize"},
@@ -170,14 +175,14 @@ async def test_without_tool_returns_ids(conn, tmp_path):
     assert result.call_upload_junction_id is None
 
 
-async def test_without_tool_writes_txt_only(conn, tmp_path):
-    session, group = await _deps(conn)
+async def test_without_tool_writes_txt_only(conn, profile_id, tmp_path):
+    session, group = await _deps(conn, profile_id)
 
     await create_tool_call(
         conn,
         group_id=group.id,
         session_id=session.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profile_id=profile_id,
         upload_folder=tmp_path,
         tool_fn=_success_tool,
         arguments={"prompt": "Summarize"},
@@ -187,14 +192,14 @@ async def test_without_tool_writes_txt_only(conn, tmp_path):
     assert not (tmp_path / "call").exists()
 
 
-async def test_without_tool_creates_db_entries(conn, tmp_path):
-    session, group = await _deps(conn)
+async def test_without_tool_creates_db_entries(conn, profile_id, tmp_path):
+    session, group = await _deps(conn, profile_id)
 
     result = await create_tool_call(
         conn,
         group_id=group.id,
         session_id=session.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profile_id=profile_id,
         upload_folder=tmp_path,
         tool_fn=_success_tool,
         arguments={"prompt": "Summarize"},
@@ -213,18 +218,19 @@ async def test_without_tool_creates_db_entries(conn, tmp_path):
 # -- error handling ------------------------------------------------------------
 
 
-async def test_failing_tool_still_persists(conn, tmp_path):
-    session, group = await _deps(conn)
+async def test_failing_tool_still_persists(conn, profile_id, tmp_path):
+    session, group = await _deps(conn, profile_id)
+    tool = await create_tool_resource(conn)
 
     result = await create_tool_call(
         conn,
         group_id=group.id,
         session_id=session.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profile_id=profile_id,
         upload_folder=tmp_path,
         tool_fn=_failing_tool,
         arguments={"name": "Dr. Smith"},
-        tool_id=USE_VOICES_TOOL_ID,
+        tool_id=tool.id,
     )
 
     assert result.run_id is not None

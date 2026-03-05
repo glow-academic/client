@@ -13,7 +13,7 @@ from app.routes.v5.tools.entries.texts.get import get_text
 from app.routes.v5.tools.entries.text_uploads.get import get_text_upload
 from app.routes.v5.tools.entries.call_uploads.get import get_call_upload
 from app.routes.v5.tools.entries.message_uploads.get import get_message_upload
-from tests.seed_ids import SUPERADMIN_PROFILES_RESOURCE_ID, USE_VOICES_TOOL_ID
+from app.routes.v5.tools.resources.tools.create import create_tool as create_tool_resource
 
 pytestmark = pytest.mark.asyncio
 
@@ -21,8 +21,8 @@ pytestmark = pytest.mark.asyncio
 # -- helpers -------------------------------------------------------------------
 
 
-async def _deps(conn, *, with_call_upload: bool = True):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _deps(conn, profile_id, *, with_call_upload: bool = True):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     text_upload = await create_upload(
         conn,
@@ -43,28 +43,29 @@ async def _deps(conn, *, with_call_upload: bool = True):
     return session, group, text_upload, call_upload
 
 
-async def _setup_with_tool(conn):
-    session, group, text_upload, call_upload = await _deps(conn)
+async def _setup_with_tool(conn, profile_id):
+    session, group, text_upload, call_upload = await _deps(conn, profile_id)
+    tool = await create_tool_resource(conn)
     result = await create_tool_setup(
         conn,
         group_id=group.id,
         session_id=session.id,
         text_upload_id=text_upload.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
-        tool_id=USE_VOICES_TOOL_ID,
+        profile_id=profile_id,
+        tool_id=tool.id,
         call_upload_id=call_upload.id,
     )
     return session, group, text_upload, call_upload, result
 
 
-async def _setup_without_tool(conn):
-    session, group, text_upload, _ = await _deps(conn, with_call_upload=False)
+async def _setup_without_tool(conn, profile_id):
+    session, group, text_upload, _ = await _deps(conn, profile_id, with_call_upload=False)
     result = await create_tool_setup(
         conn,
         group_id=group.id,
         session_id=session.id,
         text_upload_id=text_upload.id,
-        profile_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profile_id=profile_id,
     )
     return session, group, text_upload, result
 
@@ -72,8 +73,8 @@ async def _setup_without_tool(conn):
 # -- with tool_id (full chain) ------------------------------------------------
 
 
-async def test_returns_all_ids(conn):
-    _, _, _, _, result = await _setup_with_tool(conn)
+async def test_returns_all_ids(conn, profile_id):
+    _, _, _, _, result = await _setup_with_tool(conn, profile_id)
 
     assert result.run_id is not None
     assert result.call_id is not None
@@ -85,8 +86,8 @@ async def test_returns_all_ids(conn):
     assert result.message_call_upload_junction_id is not None
 
 
-async def test_creates_run(conn):
-    session, group, _, _, result = await _setup_with_tool(conn)
+async def test_creates_run(conn, profile_id):
+    session, group, _, _, result = await _setup_with_tool(conn, profile_id)
 
     run = await get_run(conn, result.run_id)
 
@@ -95,8 +96,8 @@ async def test_creates_run(conn):
     assert run.session_id == session.id
 
 
-async def test_creates_call_with_tool(conn):
-    session, _, _, _, result = await _setup_with_tool(conn)
+async def test_creates_call_with_tool(conn, profile_id):
+    session, _, _, _, result = await _setup_with_tool(conn, profile_id)
 
     call = await get_call(conn, result.call_id)
 
@@ -105,8 +106,8 @@ async def test_creates_call_with_tool(conn):
     assert call.session_id == session.id
 
 
-async def test_creates_message(conn):
-    _, _, _, _, result = await _setup_with_tool(conn)
+async def test_creates_message(conn, profile_id):
+    _, _, _, _, result = await _setup_with_tool(conn, profile_id)
 
     message = await get_message(conn, result.message_id)
 
@@ -115,8 +116,8 @@ async def test_creates_message(conn):
     assert message.role == "assistant"
 
 
-async def test_creates_text(conn):
-    session, _, _, _, result = await _setup_with_tool(conn)
+async def test_creates_text(conn, profile_id):
+    session, _, _, _, result = await _setup_with_tool(conn, profile_id)
 
     text = await get_text(conn, result.text_id)
 
@@ -124,8 +125,8 @@ async def test_creates_text(conn):
     assert text.session_id == session.id
 
 
-async def test_links_text_upload_to_text(conn):
-    _, _, text_upload, _, result = await _setup_with_tool(conn)
+async def test_links_text_upload_to_text(conn, profile_id):
+    _, _, text_upload, _, result = await _setup_with_tool(conn, profile_id)
 
     row = await get_text_upload(conn, result.text_upload_junction_id)
 
@@ -134,8 +135,8 @@ async def test_links_text_upload_to_text(conn):
     assert row.upload_id == text_upload.id
 
 
-async def test_links_call_upload_to_call(conn):
-    _, _, _, call_upload, result = await _setup_with_tool(conn)
+async def test_links_call_upload_to_call(conn, profile_id):
+    _, _, _, call_upload, result = await _setup_with_tool(conn, profile_id)
 
     row = await get_call_upload(conn, result.call_upload_junction_id)
 
@@ -144,8 +145,8 @@ async def test_links_call_upload_to_call(conn):
     assert row.upload_id == call_upload.id
 
 
-async def test_links_text_upload_to_message(conn):
-    _, _, text_upload, _, result = await _setup_with_tool(conn)
+async def test_links_text_upload_to_message(conn, profile_id):
+    _, _, text_upload, _, result = await _setup_with_tool(conn, profile_id)
 
     row = await get_message_upload(conn, result.message_text_upload_junction_id)
 
@@ -154,8 +155,8 @@ async def test_links_text_upload_to_message(conn):
     assert row.upload_id == text_upload.id
 
 
-async def test_links_call_upload_to_message(conn):
-    _, _, _, call_upload, result = await _setup_with_tool(conn)
+async def test_links_call_upload_to_message(conn, profile_id):
+    _, _, _, call_upload, result = await _setup_with_tool(conn, profile_id)
 
     row = await get_message_upload(conn, result.message_call_upload_junction_id)
 
@@ -167,8 +168,8 @@ async def test_links_call_upload_to_message(conn):
 # -- without tool_id (text only) ----------------------------------------------
 
 
-async def test_no_tool_returns_ids(conn):
-    _, _, _, result = await _setup_without_tool(conn)
+async def test_no_tool_returns_ids(conn, profile_id):
+    _, _, _, result = await _setup_without_tool(conn, profile_id)
 
     assert result.run_id is not None
     assert result.call_id is None
@@ -180,8 +181,8 @@ async def test_no_tool_returns_ids(conn):
     assert result.message_call_upload_junction_id is None
 
 
-async def test_no_tool_creates_run(conn):
-    session, group, _, result = await _setup_without_tool(conn)
+async def test_no_tool_creates_run(conn, profile_id):
+    session, group, _, result = await _setup_without_tool(conn, profile_id)
 
     run = await get_run(conn, result.run_id)
 
@@ -190,8 +191,8 @@ async def test_no_tool_creates_run(conn):
     assert run.session_id == session.id
 
 
-async def test_no_tool_creates_message(conn):
-    _, _, _, result = await _setup_without_tool(conn)
+async def test_no_tool_creates_message(conn, profile_id):
+    _, _, _, result = await _setup_without_tool(conn, profile_id)
 
     message = await get_message(conn, result.message_id)
 
@@ -199,8 +200,8 @@ async def test_no_tool_creates_message(conn):
     assert message.run_id == result.run_id
 
 
-async def test_no_tool_creates_text(conn):
-    session, _, _, result = await _setup_without_tool(conn)
+async def test_no_tool_creates_text(conn, profile_id):
+    session, _, _, result = await _setup_without_tool(conn, profile_id)
 
     text = await get_text(conn, result.text_id)
 
@@ -208,8 +209,8 @@ async def test_no_tool_creates_text(conn):
     assert text.session_id == session.id
 
 
-async def test_no_tool_links_text_upload_to_text(conn):
-    _, _, text_upload, result = await _setup_without_tool(conn)
+async def test_no_tool_links_text_upload_to_text(conn, profile_id):
+    _, _, text_upload, result = await _setup_without_tool(conn, profile_id)
 
     row = await get_text_upload(conn, result.text_upload_junction_id)
 
@@ -218,8 +219,8 @@ async def test_no_tool_links_text_upload_to_text(conn):
     assert row.upload_id == text_upload.id
 
 
-async def test_no_tool_links_text_upload_to_message(conn):
-    _, _, text_upload, result = await _setup_without_tool(conn)
+async def test_no_tool_links_text_upload_to_message(conn, profile_id):
+    _, _, text_upload, result = await _setup_without_tool(conn, profile_id)
 
     row = await get_message_upload(conn, result.message_text_upload_junction_id)
 

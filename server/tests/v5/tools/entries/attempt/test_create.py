@@ -12,21 +12,12 @@ from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.practice.create import create_practice
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import (
-    PRACTICE_COHORT_RESOURCE_ID,
-    SEED_SIMULATION_AVAILABILITY_ID,
-    SEED_SIMULATION_POSITION_ID,
-    SEED_SIMULATION_RESOURCE_ID,
-    SUPERADMIN_PROFILE_PERSONA_ID,
-    SUPERADMIN_PROFILES_RESOURCE_ID,
-    UNIVERSITY_DEPT_ID,
-)
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _attempt(conn, **overrides):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _attempt(conn, profile_id, **overrides):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -34,21 +25,21 @@ async def _attempt(conn, **overrides):
     defaults = dict(
         call_id=call.id,
         user_persona_id=persona.id,
-        profiles_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profiles_id=profile_id,
     )
     defaults.update(overrides)
     result = await create_attempt(conn, **defaults)
     return session, result
 
 
-async def test_returns_id(conn):
-    _, result = await _attempt(conn)
+async def test_returns_id(conn, profile_id, simulation_bundle):
+    _, result = await _attempt(conn, profile_id)
 
     assert result.id is not None
 
 
-async def test_visible_via_get_after_refresh(conn):
-    _, result = await _attempt(conn)
+async def test_visible_via_get_after_refresh(conn, profile_id, simulation_bundle):
+    _, result = await _attempt(conn, profile_id)
     await refresh_attempt(conn)
 
     items = await get_attempts(conn, [result.id])
@@ -57,19 +48,20 @@ async def test_visible_via_get_after_refresh(conn):
     assert items[0].attempt_id == result.id
 
 
-async def test_num_chats_and_practice(conn):
+async def test_num_chats_and_practice(conn, profile_id, simulation_bundle):
     """practice in MV is derived from attempt_practice_entry existence."""
-    session, result = await _attempt(conn, num_chats=3, practice=True)
+    bundle = simulation_bundle
+    session, result = await _attempt(conn, profile_id, num_chats=3, practice=True)
     practice = await create_practice(
         conn,
         session_id=session.id,
-        cohorts_ids=[PRACTICE_COHORT_RESOURCE_ID],
-        departments_ids=[UNIVERSITY_DEPT_ID],
-        simulations_ids=[SEED_SIMULATION_RESOURCE_ID],
-        profiles_ids=[SUPERADMIN_PROFILES_RESOURCE_ID],
-        profile_personas_ids=[SUPERADMIN_PROFILE_PERSONA_ID],
-        simulation_availability_ids=[SEED_SIMULATION_AVAILABILITY_ID],
-        simulation_positions_ids=[SEED_SIMULATION_POSITION_ID],
+        cohorts_ids=[bundle.cohort_id],
+        departments_ids=[bundle.department_id],
+        simulations_ids=[bundle.simulation_id],
+        profiles_ids=[profile_id],
+        profile_personas_ids=[bundle.profile_persona_id],
+        simulation_availability_ids=[bundle.simulation_availability_id],
+        simulation_positions_ids=[bundle.simulation_position_id],
     )
     await create_attempt_practice(
         conn,
@@ -86,8 +78,8 @@ async def test_num_chats_and_practice(conn):
     assert items[0].practice is True
 
 
-async def test_passes_mcp_flag(conn):
-    _, result = await _attempt(conn, mcp=True)
+async def test_passes_mcp_flag(conn, profile_id, simulation_bundle):
+    _, result = await _attempt(conn, profile_id, mcp=True)
 
     row = await conn.fetchrow(
         "SELECT mcp FROM attempt_entry WHERE id = $1",

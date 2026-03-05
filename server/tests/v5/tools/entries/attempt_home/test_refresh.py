@@ -12,21 +12,12 @@ from app.routes.v5.tools.entries.home.create import create_home
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.seed_ids import (
-    PRACTICE_COHORT_RESOURCE_ID,
-    SEED_SIMULATION_AVAILABILITY_ID,
-    SEED_SIMULATION_POSITION_ID,
-    SEED_SIMULATION_RESOURCE_ID,
-    SUPERADMIN_PROFILE_PERSONA_ID,
-    SUPERADMIN_PROFILES_RESOURCE_ID,
-    UNIVERSITY_DEPT_ID,
-)
 
 pytestmark = pytest.mark.asyncio
 
 
-async def _setup(conn):
-    session = await create_session(conn, profile_id=SUPERADMIN_PROFILES_RESOURCE_ID)
+async def _setup(conn, profile_id, bundle):
+    session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
@@ -35,18 +26,18 @@ async def _setup(conn):
         conn,
         call_id=call.id,
         user_persona_id=persona.id,
-        profiles_id=SUPERADMIN_PROFILES_RESOURCE_ID,
+        profiles_id=profile_id,
     )
     home = await create_home(
         conn,
         session_id=session.id,
-        cohorts_ids=[PRACTICE_COHORT_RESOURCE_ID],
-        departments_ids=[UNIVERSITY_DEPT_ID],
-        simulations_ids=[SEED_SIMULATION_RESOURCE_ID],
-        profiles_ids=[SUPERADMIN_PROFILES_RESOURCE_ID],
-        profile_personas_ids=[SUPERADMIN_PROFILE_PERSONA_ID],
-        simulation_availability_ids=[SEED_SIMULATION_AVAILABILITY_ID],
-        simulation_positions_ids=[SEED_SIMULATION_POSITION_ID],
+        cohorts_ids=[bundle.cohort_id],
+        departments_ids=[bundle.department_id],
+        simulations_ids=[bundle.simulation_id],
+        profiles_ids=[profile_id],
+        profile_personas_ids=[bundle.profile_persona_id],
+        simulation_availability_ids=[bundle.simulation_availability_id],
+        simulation_positions_ids=[bundle.simulation_position_id],
     )
     return await create_attempt_home(
         conn,
@@ -56,16 +47,16 @@ async def _setup(conn):
     )
 
 
-async def test_appears_after_refresh(conn):
-    result = await _setup(conn)
+async def test_appears_after_refresh(conn, profile_id, simulation_bundle):
+    result = await _setup(conn, profile_id, simulation_bundle)
     await refresh_attempt_home(conn)
 
     items = await get_attempt_home(conn, attempt_ids=[result.attempt_id])
     assert len(items) >= 1
 
 
-async def test_not_visible_before_refresh(conn):
-    result = await _setup(conn)
+async def test_not_visible_before_refresh(conn, profile_id, simulation_bundle):
+    result = await _setup(conn, profile_id, simulation_bundle)
 
     items = await get_attempt_home(conn, attempt_ids=[result.attempt_id])
     assert len(items) == 0
