@@ -19,7 +19,11 @@ from __future__ import annotations
 import json
 from typing import Any
 
+import uuid as _uuid
+
+from app.infra.activate.activate import activate_rows
 from app.infra.globals import get_internal_sio, get_redis_client
+from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.run_tracker import (
     cleanup_run,
     fail_unit,
@@ -33,6 +37,12 @@ from app.utils.logging.db_logger import get_logger
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
+
+
+def _table_name(target_type: str, target_name: str) -> str:
+    """Derive DB table from run_tracker target."""
+    suffix = "resource" if target_type == "resource" else "entry"
+    return f"{target_name}_{suffix}"
 
 
 # NOTE: Not registered yet. To activate: import and register.
@@ -111,8 +121,15 @@ async def handle_generation_ended(data: dict[str, Any]) -> None:
                         target_type=target_type,
                         target_name=target_name,
                     )
-                    # TODO: Wire create_tool_call(soft=false) to activate the
-                    # DB record. promote_unit only updates Redis state.
+                    # Activate the dormant DB record
+                    if result_id:
+                        table = _table_name(target_type, target_name)
+                        async with get_db_connection() as conn:
+                            await activate_rows(
+                                conn,
+                                table=table,
+                                ids=[_uuid.UUID(result_id)],
+                            )
                     logger.info(
                         f"Promoted {agent_id}:{target_type}:{target_name} "
                         f"(score={score})"

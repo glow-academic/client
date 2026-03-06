@@ -10,7 +10,6 @@ import asyncpg  # type: ignore
 
 from app.infra.tools.entries.build_call_payload import build_call_payload
 from app.infra.tools.entries.create_run_message import create_run_message
-from app.infra.tools.entries.execute_tool_fn import execute_tool_fn
 from app.infra.tools.entries.save_call_upload import save_call_upload
 from app.infra.tools.entries.save_text_upload import save_text_upload
 from app.infra.tools.entries.types import CreateToolSetupResponse
@@ -43,8 +42,20 @@ async def create_tool_call(
     3. Creates upload DB rows for each file.
     4. Creates run + message entry chain.
     """
-    # 1. Execute
-    output = await execute_tool_fn(tool_fn, conn, arguments)
+    # 1. Execute — call tool_fn and capture both raw result + serialized output
+    raw_result = await tool_fn(conn, **arguments)
+    if isinstance(raw_result, str):
+        output = raw_result
+    else:
+        output = json.dumps(raw_result, default=str)
+
+    # Extract canonical ID from the tool function result
+    result_id: UUID | None = None
+    if hasattr(raw_result, "id"):
+        result_id = raw_result.id
+    elif isinstance(raw_result, dict) and "id" in raw_result:
+        rid = raw_result["id"]
+        result_id = rid if isinstance(rid, UUID) else UUID(str(rid))
 
     # 2. Write .txt (always)
     text_upload_id = uuid4()
@@ -143,6 +154,7 @@ async def create_tool_call(
         message_call_upload_junction_id = msg_call_upload.id
 
     return CreateToolSetupResponse(
+        result_id=result_id,
         run_id=run.id,
         call_id=call_id,
         message_id=msg.message_id,

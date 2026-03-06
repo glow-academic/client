@@ -18,8 +18,6 @@ Promotion activates them (soft=false → active=true).
 TODOs:
   - TODO: Chat special case (MV refresh + invalidate + attempt_chat_started) stays
           as-is. Should be extracted to a post-save hook.
-  - TODO: Wire create_tool_call(soft=false) for promotion activation in DB
-          (currently promote_unit only updates Redis state).
 """
 
 from __future__ import annotations
@@ -28,6 +26,7 @@ import json
 import uuid
 from typing import Any
 
+from app.infra.activate.activate import activate_rows
 from app.infra.globals import get_internal_sio, get_redis_client
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.persist_run_message import persist_run_message
@@ -52,6 +51,12 @@ from app.utils.logging.db_logger import get_logger
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
+
+
+def _table_name(target_type: str, target_name: str) -> str:
+    """Derive DB table from run_tracker target: names → names_resource, contents → contents_entry."""
+    suffix = "resource" if target_type == "resource" else "entry"
+    return f"{target_name}_{suffix}"
 
 
 # NOTE: Not registered as @internal_sio.on("generate_run_complete") yet.
@@ -144,7 +149,7 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
     contested = find_contested_targets(units)
 
     # Step 4: Auto-promote uncontested targets (single agent per target)
-    for (target_type, target_name), (agent_id, _unit_state) in uncontested.items():
+    for (target_type, target_name), (agent_id, unit_state) in uncontested.items():
         try:
             await promote_unit(
                 redis,
@@ -153,10 +158,13 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
                 target_type=target_type,
                 target_name=target_name,
             )
-            # TODO: Wire create_tool_call(soft=false) to activate the DB record.
-            # For now, promote_unit only updates Redis state. The DB record
-            # was created dormant (active=false) during generation and needs
-            # a second create_tool_call or direct SQL UPDATE to activate.
+            # Activate the dormant DB record
+            if unit_state.result_id:
+                table = _table_name(target_type, target_name)
+                async with get_db_connection() as conn:
+                    await activate_rows(
+                        conn, table=table, ids=[uuid.UUID(unit_state.result_id)]
+                    )
         except Exception as e:
             logger.exception(
                 f"Failed to promote uncontested unit "
@@ -233,7 +241,7 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
                 f"Auto-promoting first agent per target."
             )
             for (target_type, target_name), agents in contested.items():
-                agent_id, _unit_state = agents[0]
+                agent_id, unit_state = agents[0]
                 try:
                     await promote_unit(
                         redis,
@@ -242,6 +250,14 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
                         target_type=target_type,
                         target_name=target_name,
                     )
+                    if unit_state.result_id:
+                        table = _table_name(target_type, target_name)
+                        async with get_db_connection() as conn:
+                            await activate_rows(
+                                conn,
+                                table=table,
+                                ids=[uuid.UUID(unit_state.result_id)],
+                            )
                 except Exception:
                     pass
 
