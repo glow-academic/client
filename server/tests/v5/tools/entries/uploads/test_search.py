@@ -26,7 +26,7 @@ async def test_finds_created_entry(conn, profile_id):
     upload = await _setup(conn, profile_id)
     await conn.execute("REFRESH MATERIALIZED VIEW uploads_mv")
 
-    items = await search_uploads(conn, upload_id=upload.id)
+    items = await search_uploads(conn, upload_ids=[upload.id])
 
     ids = [item.upload_id for item in items]
     assert upload.id in ids
@@ -36,7 +36,7 @@ async def test_filters_by_upload_id(conn, profile_id):
     await _setup(conn, profile_id)
     await conn.execute("REFRESH MATERIALIZED VIEW uploads_mv")
 
-    items = await search_uploads(conn, upload_id=nonexistent_id())
+    items = await search_uploads(conn, upload_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -45,7 +45,7 @@ async def test_pagination_limit(conn, profile_id):
     upload = await _setup(conn, profile_id)
     await conn.execute("REFRESH MATERIALIZED VIEW uploads_mv")
 
-    items = await search_uploads(conn, upload_id=upload.id, limit=1)
+    items = await search_uploads(conn, upload_ids=[upload.id], limit=1)
 
     assert len(items) <= 1
 
@@ -62,7 +62,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     upload = await _setup(conn, profile_id)
 
-    items = await search_uploads(conn, upload_id=upload.id, bypass_mv=True)
+    items = await search_uploads(conn, upload_ids=[upload.id], bypass_mv=True)
 
     ids = [item.upload_id for item in items]
     assert upload.id in ids

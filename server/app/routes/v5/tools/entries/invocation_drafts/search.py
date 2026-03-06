@@ -12,8 +12,8 @@ from app.routes.v5.tools.entries.invocation_drafts.types import (
 
 async def search_invocation_drafts(
     conn: asyncpg.Connection,
-    group_id: UUID | None = None,
-    session_id: UUID | None = None,
+    group_ids: list[UUID] | None = None,
+    session_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     mcp: bool | None = None,
@@ -52,8 +52,8 @@ async def search_invocation_drafts(
         LEFT JOIN invocation_drafts_temperature_levels_connection tl ON tl.draft_id = d.id
         LEFT JOIN invocation_drafts_voices_connection v ON v.draft_id = d.id
         WHERE d.active = true
-          AND ($1::uuid IS NULL OR d.group_id = $1)
-          AND ($2::uuid IS NULL OR d.session_id = $2)
+          AND ($1::uuid[] IS NULL OR d.group_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR d.session_id = ANY($2))
           AND ($3::timestamptz IS NULL OR d.created_at >= $3)
           AND ($4::timestamptz IS NULL OR d.created_at <= $4)
           AND ($5::boolean IS NULL OR d.mcp = $5)
@@ -62,8 +62,8 @@ async def search_invocation_drafts(
         ORDER BY d.created_at DESC
         LIMIT $6 OFFSET $7
         """,
-        group_id,
-        session_id,
+        group_ids,
+        session_ids,
         date_from,
         date_to,
         mcp,

@@ -12,8 +12,8 @@ MV_NAME = "calls_mv"
 
 async def search_calls(
     conn: asyncpg.Connection,
-    run_id: UUID | None = None,
-    tool_id: UUID | None = None,
+    run_ids: list[UUID] | None = None,
+    tool_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -26,13 +26,13 @@ async def search_calls(
         SELECT call_id, run_id, call_created_at,
                upload_id, file_path, mime_type, tool_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR run_id = $1)
-          AND ($2::uuid IS NULL OR tool_id = $2)
+        WHERE ($1::uuid[] IS NULL OR run_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR tool_id = ANY($2))
         ORDER BY call_created_at DESC
         LIMIT $3 OFFSET $4
         """,
-        run_id,
-        tool_id,
+        run_ids,
+        tool_ids,
         limit,
         offset,
     )

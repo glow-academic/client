@@ -12,7 +12,7 @@ MV_NAME = "attempt_hint_mv"
 
 async def search_attempt_hints(
     conn: asyncpg.Connection,
-    message_id: UUID | None = None,
+    message_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -24,11 +24,11 @@ async def search_attempt_hints(
         f"""
         SELECT hint_id, message_id, hint, idx, created_at
         FROM {source}
-        WHERE ($1::uuid IS NULL OR message_id = $1)
+        WHERE ($1::uuid[] IS NULL OR message_id = ANY($1))
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         """,
-        message_id,
+        message_ids,
         limit,
         offset,
     )

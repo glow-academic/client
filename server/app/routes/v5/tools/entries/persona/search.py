@@ -12,7 +12,7 @@ MV_NAME = "personas_mv"
 
 async def search_personas(
     conn: asyncpg.Connection,
-    session_id: UUID | None = None,
+    session_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -24,11 +24,11 @@ async def search_personas(
         f"""
         SELECT id, created_at, active, generated, mcp, session_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR session_id = $1)
+        WHERE ($1::uuid[] IS NULL OR session_id = ANY($1))
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         """,
-        session_id,
+        session_ids,
         limit,
         offset,
     )

@@ -1,39 +1,51 @@
-"""Run completion handler (new) — uses new tracker + aggregates entries.
+"""Run completion handler (new) — uses run_tracker triage + promotion.
 
 Replaces generate_run_complete.py.
 
-Differences from generate_run_complete.py:
-  - session_id, profile_id, group_id always in data (propagated from prepare → artifact)
-  - Uses persist_run_message for assistant message persistence (with session_id)
-  - Uses new run_tracker (record_agent_done, cleanup_run) with DI redis
-  - Uses aggregate_tool_results which extracts both resource AND entry actions
-  - Uses db_helpers for extracted SQL
-  - Uses socket_event for event collection
+Flow:
+  1. Save assistant message + token counts (unchanged)
+  2. record_agent_done — wait for all agents
+  3. Triage: get all units, separate contested vs uncontested
+  4. Uncontested targets (1 soft unit) → promote_unit() immediately
+  5. Contested targets (>1 soft units) → emit test_start for grading
+  6. If no contested → emit generation_complete directly
+  7. If contested → return, wait for generation_resolve / generation_ended callbacks
 
-GAPs / TODOs:
-  - TODO: Pass entry_actions to save_artifact (currently only resource_actions used).
+The old save:bool / save_artifact flow is removed. All results are already
+persisted as dormant records (soft=true) via create_tool_call during generation.
+Promotion activates them (soft=false → active=true).
+
+TODOs:
   - TODO: Chat special case (MV refresh + invalidate + attempt_chat_started) stays
           as-is. Should be extracted to a post-save hook.
+  - TODO: Wire create_tool_call(soft=false) for promotion activation in DB
+          (currently promote_unit only updates Redis state).
 """
 
 from __future__ import annotations
 
+import json
 import uuid
 from typing import Any
 
 from app.infra.globals import get_internal_sio, get_redis_client
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.persist_run_message import persist_run_message
-from app.routes.v5.tools.entries.tokens.create import create_token
-from app.infra.websocket.run_tracker import cleanup_run, record_agent_done
+from app.infra.websocket.run_tracker import (
+    cleanup_run,
+    find_contested_targets,
+    find_uncontested_targets,
+    get_all_units,
+    promote_unit,
+    record_agent_done,
+)
 from app.infra.websocket.socket_event import SocketEvent, flush_events, internal_event
 from app.routes.v5.socket.internal.attempt.types import AttemptChatStartedData
-from app.routes.v5.socket.internal.generation_save_registry import save_artifact
 from app.routes.v5.socket.internal.generation_types import (
     GenerationCompleteData,
-    GenerationSavedData,
 )
 from app.routes.v5.socket.internal.prepare_pipeline import aggregate_tool_results
+from app.routes.v5.tools.entries.tokens.create import create_token
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 
@@ -45,7 +57,7 @@ internal_sio = get_internal_sio()
 # NOTE: Not registered as @internal_sio.on("generate_run_complete") yet.
 # To activate: import and swap registration.
 async def handle_run_complete_new(data: dict[str, Any]) -> None:
-    """Handle run_complete — new version with tracker + entry aggregation.
+    """Handle run_complete — triage contested vs uncontested, promote or grade.
 
     Expects session_id, profile_id, group_id in data
     (propagated from prepare → generate_artifact → here).
@@ -125,8 +137,116 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
     if not is_complete:
         return  # More agents pending
 
-    # Step 3: All agents finished — aggregate results (pure)
+    # Step 3: All agents finished — triage contested vs uncontested
     resource_actions, entry_actions = aggregate_tool_results(all_tool_results)
+    units = await get_all_units(redis, run_id=run_id)
+    uncontested = find_uncontested_targets(units)
+    contested = find_contested_targets(units)
+
+    # Step 4: Auto-promote uncontested targets (single agent per target)
+    for (target_type, target_name), (agent_id, _unit_state) in uncontested.items():
+        try:
+            await promote_unit(
+                redis,
+                run_id=run_id,
+                agent_id=agent_id,
+                target_type=target_type,
+                target_name=target_name,
+            )
+            # TODO: Wire create_tool_call(soft=false) to activate the DB record.
+            # For now, promote_unit only updates Redis state. The DB record
+            # was created dormant (active=false) during generation and needs
+            # a second create_tool_call or direct SQL UPDATE to activate.
+        except Exception as e:
+            logger.exception(
+                f"Failed to promote uncontested unit "
+                f"{agent_id}:{target_type}:{target_name}: {e}"
+            )
+
+    # Step 5: Handle contested targets — emit test_start for grading
+    if contested:
+        logger.info(
+            f"Run {run_id} has {len(contested)} contested targets, "
+            f"emitting test_start for grading"
+        )
+        # Store run context in Redis meta so generation_resolve / generation_ended
+        # can link back to this run's identity context.
+        metadata = data.get("metadata") or {}
+
+        # Store generation resolution context in Redis so generation_ended
+        # can look it up after test grading completes.
+        resolution_ctx = {
+            "sid": sid,
+            "run_id": run_id,
+            "artifact_type": artifact_type,
+            "group_id": group_id_str,
+            "profile_id": profile_id_str,
+            "profiles_id": profiles_id_str,
+            "session_id": session_id_str,
+            "resource_actions": resource_actions,
+            "entry_actions": entry_actions,
+            "metadata": metadata,
+            "contested_targets": [
+                {
+                    "target_type": tt,
+                    "target_name": tn,
+                    "agents": [
+                        {"agent_id": aid, "result_id": us.result_id}
+                        for aid, us in agents
+                    ],
+                }
+                for (tt, tn), agents in contested.items()
+            ],
+        }
+        try:
+            await redis.setex(
+                f"generation_resolution:{run_id}",
+                3600,
+                json.dumps(resolution_ctx),
+            )
+        except Exception as e:
+            logger.warning(f"Failed to store resolution context: {e}")
+
+        # TODO: benchmark_id should come from agent/artifact configuration.
+        # For now, metadata.get("resolution_benchmark_id") is the integration point.
+        benchmark_id = metadata.get("resolution_benchmark_id")
+        if benchmark_id:
+            await internal_sio.emit(
+                "test_start",
+                {
+                    "sid": sid,
+                    "profile_id": profile_id_str,
+                    "benchmark_id": benchmark_id,
+                    "infinite_mode": False,
+                    # Pass generation_run_id so test_start stores the
+                    # test_id → generation_run_id link in Redis.
+                    "generation_run_id": run_id,
+                },
+            )
+            # Don't cleanup run — generation_ended will do it after resolution.
+            # Don't emit generation_complete — generation_ended will do it.
+            return
+        else:
+            # No benchmark configured — fall back to auto-promoting first agent
+            logger.warning(
+                f"Run {run_id} has contested targets but no resolution_benchmark_id. "
+                f"Auto-promoting first agent per target."
+            )
+            for (target_type, target_name), agents in contested.items():
+                agent_id, _unit_state = agents[0]
+                try:
+                    await promote_unit(
+                        redis,
+                        run_id=run_id,
+                        agent_id=agent_id,
+                        target_type=target_type,
+                        target_name=target_name,
+                    )
+                except Exception:
+                    pass
+
+    # Step 6: No contested (or fallback) — emit generation_complete
+    events: list[SocketEvent] = []
 
     # Chat special case: inject _attempt_chat_id
     metadata = data.get("metadata") or {}
@@ -135,42 +255,6 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
         if attempt_chat_id_meta:
             resource_actions["_attempt_chat_id"] = attempt_chat_id_meta
 
-    # Step 4: Auto-save
-    artifact_id: str | None = None
-    should_save = data.get("save", True)
-
-    if should_save and profile_id_str and group_id_str:
-        try:
-            profile_id = uuid.UUID(profile_id_str)
-            group_id = uuid.UUID(group_id_str)
-
-            async with get_db_connection() as conn:
-                saved_id = await save_artifact(
-                    artifact_type=artifact_type,
-                    conn=conn,
-                    profile_id=profile_id,
-                    group_id=group_id,
-                    resource_actions=resource_actions,
-                    # TODO: pass entry_actions=entry_actions once save_artifact supports it
-                )
-                if saved_id:
-                    artifact_id = str(saved_id)
-        except Exception as e:
-            logger.exception(f"Failed to auto-save {artifact_type}: {e}")
-
-    # Step 5: Build + flush events
-    events: list[SocketEvent] = []
-
-    if artifact_id:
-        events.append(internal_event(
-            "generation_channel",
-            GenerationSavedData(
-                sid=sid, artifact_type=artifact_type,
-                group_id=group_id_str, run_id=run_id,
-                artifact_id=artifact_id,
-            ).model_dump(mode="json"),
-        ))
-
     events.append(internal_event(
         "generation_channel",
         GenerationCompleteData(
@@ -178,16 +262,15 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
             group_id=group_id_str, run_id=run_id,
             success=True,
             message=f"{artifact_type.capitalize()} generation completed",
-            artifact_id=artifact_id,
             resource_actions=resource_actions,
         ).model_dump(mode="json"),
     ))
 
-    # Step 6: Chat special case (MV refresh + cache invalidation)
+    # Chat special case: MV refresh + cache invalidation
     if artifact_type == "chat":
         attempt_id_data = metadata.get("attempt_id")
         attempt_chat_id_data = metadata.get("attempt_chat_id")
-        if should_save and attempt_id_data and attempt_chat_id_data:
+        if attempt_id_data and attempt_chat_id_data:
             try:
                 async with get_db_connection() as conn:
                     await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
@@ -205,8 +288,6 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
             except Exception as e:
                 logger.exception(f"Failed chat post-save: {e}")
 
-    # Step 7: Cleanup trackers
+    # Step 7: Cleanup trackers + flush
     await cleanup_run(redis, run_id=run_id)
-
-    # Flush
     await flush_events(events, internal_sio=internal_sio)

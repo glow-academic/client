@@ -14,8 +14,8 @@ MV_NAME = "attempt_strength_mv"
 
 async def search_attempt_strengths(
     conn: asyncpg.Connection,
-    message_id: UUID | None = None,
-    grade_id: UUID | None = None,
+    message_ids: list[UUID] | None = None,
+    grade_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -27,13 +27,13 @@ async def search_attempt_strengths(
         f"""
         SELECT strength_id, message_id, grade_id, name, description, created_at
         FROM {source}
-        WHERE ($1::uuid IS NULL OR message_id = $1)
-          AND ($2::uuid IS NULL OR grade_id = $2)
+        WHERE ($1::uuid[] IS NULL OR message_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR grade_id = ANY($2))
         ORDER BY created_at DESC
         LIMIT $3 OFFSET $4
         """,
-        message_id,
-        grade_id,
+        message_ids,
+        grade_ids,
         limit,
         offset,
     )

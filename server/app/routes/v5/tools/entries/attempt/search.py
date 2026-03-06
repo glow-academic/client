@@ -22,10 +22,10 @@ MV_NAME = "attempt_mv"
 
 async def search_attempts(
     conn: asyncpg.Connection,
-    simulation_id: UUID | None = None,
-    profile_id: UUID | None = None,
-    cohort_id: UUID | None = None,
-    department_id: UUID | None = None,
+    simulation_ids: list[UUID] | None = None,
+    profile_ids: list[UUID] | None = None,
+    cohort_ids: list[UUID] | None = None,
+    department_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -40,17 +40,17 @@ async def search_attempts(
                attempt_created_at, infinite_mode, num_chats, is_archived,
                scenario_ids, chat_entry_id, attempt_chat_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR simulation_id = $1)
-          AND ($2::uuid IS NULL OR profile_id = $2)
-          AND ($3::uuid IS NULL OR cohort_id = $3)
-          AND ($4::uuid IS NULL OR department_id = $4)
+        WHERE ($1::uuid[] IS NULL OR simulation_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR profile_id = ANY($2))
+          AND ($3::uuid[] IS NULL OR cohort_id = ANY($3))
+          AND ($4::uuid[] IS NULL OR department_id = ANY($4))
         ORDER BY attempt_created_at DESC
         LIMIT $5 OFFSET $6
         """,
-        simulation_id,
-        profile_id,
-        cohort_id,
-        department_id,
+        simulation_ids,
+        profile_ids,
+        cohort_ids,
+        department_ids,
         limit,
         offset,
     )

@@ -31,7 +31,7 @@ async def test_search_finds_created(conn, profile_id):
         conn, video_id=video.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_video_uploads(conn, video_id=video.id)
+    results = await search_video_uploads(conn, video_ids=[video.id])
 
     assert len(results) == 1
     assert results[0].video_id == video.id
@@ -44,7 +44,7 @@ async def test_search_filters_by_video_id(conn, profile_id):
         conn, video_id=video.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_video_uploads(conn, video_id=nonexistent_id())
+    results = await search_video_uploads(conn, video_ids=[nonexistent_id()])
 
     assert len(results) == 0
 
@@ -55,7 +55,7 @@ async def test_search_filters_by_upload_id(conn, profile_id):
         conn, video_id=video.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_video_uploads(conn, upload_id=nonexistent_id())
+    results = await search_video_uploads(conn, upload_ids=[nonexistent_id()])
 
     assert len(results) == 0
 
@@ -76,6 +76,6 @@ async def test_search_pagination(conn, profile_id):
         conn, video_id=video.id, upload_id=upload2.id, session_id=session.id
     )
 
-    results = await search_video_uploads(conn, video_id=video.id, limit=1)
+    results = await search_video_uploads(conn, video_ids=[video.id], limit=1)
 
     assert len(results) == 1

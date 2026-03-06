@@ -13,8 +13,8 @@ MV_NAME = "tokens_mv"
 
 async def search_tokens(
     conn: asyncpg.Connection,
-    run_id: UUID | None = None,
-    session_id: UUID | None = None,
+    run_ids: list[UUID] | None = None,
+    session_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     mcp: bool | None = None,
@@ -30,16 +30,16 @@ async def search_tokens(
         SELECT id, created_at, generated, mcp, active, run_id,
                input_tokens, output_tokens, cached_input_tokens, session_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR run_id = $1)
-          AND ($2::uuid IS NULL OR session_id = $2)
+        WHERE ($1::uuid[] IS NULL OR run_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR session_id = ANY($2))
           AND ($3::timestamptz IS NULL OR created_at >= $3)
           AND ($4::timestamptz IS NULL OR created_at <= $4)
           AND ($5::boolean IS NULL OR mcp = $5)
         ORDER BY created_at DESC
         LIMIT $6 OFFSET $7
         """,
-        run_id,
-        session_id,
+        run_ids,
+        session_ids,
         date_from,
         date_to,
         mcp,

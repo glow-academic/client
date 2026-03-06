@@ -13,7 +13,7 @@ MV_NAME = "test_invocation_groups_mv"
 
 async def search_test_invocation_groups(
     conn: asyncpg.Connection,
-    test_invocation_id: UUID | None = None,
+    test_invocation_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> list[GetTestInvocationGroupsResponse]:
@@ -22,11 +22,11 @@ async def search_test_invocation_groups(
         f"""
         SELECT *
         FROM {MV_NAME}
-        WHERE ($1::uuid IS NULL OR test_invocation_id = $1)
+        WHERE ($1::uuid[] IS NULL OR test_invocation_id = ANY($1))
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         """,
-        test_invocation_id,
+        test_invocation_ids,
         limit,
         offset,
     )

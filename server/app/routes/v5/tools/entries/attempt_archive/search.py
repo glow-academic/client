@@ -12,7 +12,7 @@ MV_NAME = "attempt_archive_mv"
 
 async def search_attempt_archives(
     conn: asyncpg.Connection,
-    attempt_id: UUID | None = None,
+    attempt_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -24,11 +24,11 @@ async def search_attempt_archives(
         f"""
         SELECT id, created_at, generated, mcp, active, attempt_id, archived, call_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR attempt_id = $1)
+        WHERE ($1::uuid[] IS NULL OR attempt_id = ANY($1))
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         """,
-        attempt_id,
+        attempt_ids,
         limit,
         offset,
     )

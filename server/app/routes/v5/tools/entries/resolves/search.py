@@ -13,8 +13,8 @@ MV_NAME = "resolves_mv"
 
 async def search_resolves(
     conn: asyncpg.Connection,
-    problem_id: UUID | None = None,
-    call_id: UUID | None = None,
+    problem_ids: list[UUID] | None = None,
+    call_ids: list[UUID] | None = None,
     resolved: bool | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
@@ -30,8 +30,8 @@ async def search_resolves(
         f"""
         SELECT id, created_at, generated, mcp, active, problem_id, resolved, call_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR problem_id = $1)
-          AND ($2::uuid IS NULL OR call_id = $2)
+        WHERE ($1::uuid[] IS NULL OR problem_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR call_id = ANY($2))
           AND ($3::boolean IS NULL OR resolved = $3)
           AND ($4::timestamptz IS NULL OR created_at >= $4)
           AND ($5::timestamptz IS NULL OR created_at <= $5)
@@ -39,8 +39,8 @@ async def search_resolves(
         ORDER BY created_at DESC
         LIMIT $7 OFFSET $8
         """,
-        problem_id,
-        call_id,
+        problem_ids,
+        call_ids,
         resolved,
         date_from,
         date_to,

@@ -13,7 +13,7 @@ MV_NAME = "groups_mv"
 
 async def search_groups(
     conn: asyncpg.Connection,
-    session_id: UUID | None = None,
+    session_ids: list[UUID] | None = None,
     name: str | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
@@ -29,7 +29,7 @@ async def search_groups(
         f"""
         SELECT group_id, session_id, created_at, name, active, mcp, generated
         FROM {source}
-        WHERE ($1::uuid IS NULL OR session_id = $1)
+        WHERE ($1::uuid[] IS NULL OR session_id = ANY($1))
           AND ($2::text IS NULL OR name ILIKE '%' || $2 || '%')
           AND ($3::timestamptz IS NULL OR created_at >= $3)
           AND ($4::timestamptz IS NULL OR created_at <= $4)
@@ -37,7 +37,7 @@ async def search_groups(
         ORDER BY created_at DESC
         LIMIT $6 OFFSET $7
         """,
-        session_id,
+        session_ids,
         name,
         date_from,
         date_to,

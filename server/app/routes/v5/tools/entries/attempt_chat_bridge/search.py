@@ -14,8 +14,8 @@ MV_NAME = "attempt_chat_bridge_mv"
 
 async def search_attempt_chat_bridges(
     conn: asyncpg.Connection,
-    attempt_id: UUID | None = None,
-    attempt_chat_id: UUID | None = None,
+    attempt_ids: list[UUID] | None = None,
+    attempt_chat_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -27,13 +27,13 @@ async def search_attempt_chat_bridges(
         f"""
         SELECT attempt_id, attempt_chat_id, created_at, active, generated, mcp, session_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR attempt_id = $1)
-          AND ($2::uuid IS NULL OR attempt_chat_id = $2)
+        WHERE ($1::uuid[] IS NULL OR attempt_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR attempt_chat_id = ANY($2))
         ORDER BY created_at DESC
         LIMIT $3 OFFSET $4
         """,
-        attempt_id,
-        attempt_chat_id,
+        attempt_ids,
+        attempt_chat_ids,
         limit,
         offset,
     )

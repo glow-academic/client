@@ -14,7 +14,7 @@ MV_NAME = "attempt_message_tree_mv"
 
 async def search_attempt_message_trees(
     conn: asyncpg.Connection,
-    message_id: UUID | None = None,
+    message_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -26,11 +26,11 @@ async def search_attempt_message_trees(
         f"""
         SELECT message_id, branch_path, depth
         FROM {source}
-        WHERE ($1::uuid IS NULL OR message_id = $1)
+        WHERE ($1::uuid[] IS NULL OR message_id = ANY($1))
         ORDER BY depth DESC
         LIMIT $2 OFFSET $3
         """,
-        message_id,
+        message_ids,
         limit,
         offset,
     )

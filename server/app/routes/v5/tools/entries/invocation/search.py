@@ -10,8 +10,8 @@ from app.routes.v5.tools.entries.invocation.types import GetInvocationResponse
 
 async def search_invocations(
     conn: asyncpg.Connection,
-    benchmark_id: UUID | None = None,
-    session_id: UUID | None = None,
+    benchmark_ids: list[UUID] | None = None,
+    session_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     limit: int = 20,
@@ -53,8 +53,8 @@ async def search_invocations(
         LEFT JOIN invocation_temperature_levels_connection tl ON tl.invocation_id = e.id
         LEFT JOIN invocation_voices_connection vc ON vc.invocation_id = e.id
         WHERE e.active = true
-          AND ($1::uuid IS NULL OR e.benchmark_id = $1)
-          AND ($2::uuid IS NULL OR e.session_id = $2)
+          AND ($1::uuid[] IS NULL OR e.benchmark_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR e.session_id = ANY($2))
           AND ($3::timestamptz IS NULL OR e.created_at >= $3)
           AND ($4::timestamptz IS NULL OR e.created_at <= $4)
         GROUP BY e.id, e.benchmark_id, e.session_id, e.use_custom, e."position",
@@ -62,8 +62,8 @@ async def search_invocations(
         ORDER BY e.created_at DESC
         LIMIT $5 OFFSET $6
         """,
-        benchmark_id,
-        session_id,
+        benchmark_ids,
+        session_ids,
         date_from,
         date_to,
         limit,

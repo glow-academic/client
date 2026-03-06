@@ -12,7 +12,7 @@ MV_NAME = "texts_mv"
 
 async def search_texts(
     conn: asyncpg.Connection,
-    text_id: UUID | None = None,
+    text_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -24,11 +24,11 @@ async def search_texts(
         f"""
         SELECT texts_id, text_id, upload_id, file_path, mime_type, created_at
         FROM {source}
-        WHERE ($1::uuid IS NULL OR text_id = $1)
+        WHERE ($1::uuid[] IS NULL OR text_id = ANY($1))
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         """,
-        text_id,
+        text_ids,
         limit,
         offset,
     )

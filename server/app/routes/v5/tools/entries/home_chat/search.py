@@ -12,8 +12,8 @@ MV_NAME = "home_chat_mv"
 
 async def search_home_chats(
     conn: asyncpg.Connection,
-    home_id: UUID | None = None,
-    chat_id: UUID | None = None,
+    home_ids: list[UUID] | None = None,
+    chat_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -25,13 +25,13 @@ async def search_home_chats(
         f"""
         SELECT id, home_id, chat_id, created_at, active, generated, mcp, session_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR home_id = $1)
-          AND ($2::uuid IS NULL OR chat_id = $2)
+        WHERE ($1::uuid[] IS NULL OR home_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR chat_id = ANY($2))
         ORDER BY created_at DESC
         LIMIT $3 OFFSET $4
         """,
-        home_id,
-        chat_id,
+        home_ids,
+        chat_ids,
         limit,
         offset,
     )

@@ -13,8 +13,8 @@ MV_NAME = "debug_info_mv"
 
 async def search_debug_info(
     conn: asyncpg.Connection,
-    call_id: UUID | None = None,
-    run_id: UUID | None = None,
+    call_ids: list[UUID] | None = None,
+    run_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     mcp: bool | None = None,
@@ -29,16 +29,16 @@ async def search_debug_info(
         f"""
         SELECT id, created_at, content, active, generated, call_id, mcp, run_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR call_id = $1)
-          AND ($2::uuid IS NULL OR run_id = $2)
+        WHERE ($1::uuid[] IS NULL OR call_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR run_id = ANY($2))
           AND ($3::timestamptz IS NULL OR created_at >= $3)
           AND ($4::timestamptz IS NULL OR created_at <= $4)
           AND ($5::boolean IS NULL OR mcp = $5)
         ORDER BY created_at DESC
         LIMIT $6 OFFSET $7
         """,
-        call_id,
-        run_id,
+        call_ids,
+        run_ids,
         date_from,
         date_to,
         mcp,

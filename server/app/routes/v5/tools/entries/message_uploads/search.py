@@ -9,9 +9,9 @@ from app.routes.v5.tools.entries.message_uploads.types import GetMessageUploadRe
 
 async def search_message_uploads(
     conn: asyncpg.Connection,
-    message_id: UUID | None = None,
-    upload_id: UUID | None = None,
-    session_id: UUID | None = None,
+    message_ids: list[UUID] | None = None,
+    upload_ids: list[UUID] | None = None,
+    session_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> list[GetMessageUploadResponse]:
@@ -21,15 +21,15 @@ async def search_message_uploads(
         SELECT id, message_id, upload_id, session_id, created_at, active, mcp, generated
         FROM message_uploads_entry
         WHERE active = true
-          AND ($1::uuid IS NULL OR message_id = $1)
-          AND ($2::uuid IS NULL OR upload_id = $2)
-          AND ($3::uuid IS NULL OR session_id = $3)
+          AND ($1::uuid[] IS NULL OR message_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR upload_id = ANY($2))
+          AND ($3::uuid[] IS NULL OR session_id = ANY($3))
         ORDER BY created_at DESC
         LIMIT $4 OFFSET $5
         """,
-        message_id,
-        upload_id,
-        session_id,
+        message_ids,
+        upload_ids,
+        session_ids,
         limit,
         offset,
     )

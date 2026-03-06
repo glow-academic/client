@@ -14,7 +14,7 @@ MV_NAME = "uploads_completions_mv"
 
 async def search_uploads_completions(
     conn: asyncpg.Connection,
-    upload_id: UUID | None = None,
+    upload_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -26,11 +26,11 @@ async def search_uploads_completions(
         f"""
         SELECT id, created_at, generated, mcp, active, upload_id, session_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR upload_id = $1)
+        WHERE ($1::uuid[] IS NULL OR upload_id = ANY($1))
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         """,
-        upload_id,
+        upload_ids,
         limit,
         offset,
     )

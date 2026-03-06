@@ -12,8 +12,8 @@ MV_NAME = "practice_chat_mv"
 
 async def search_practice_chats(
     conn: asyncpg.Connection,
-    practice_id: UUID | None = None,
-    chat_id: UUID | None = None,
+    practice_ids: list[UUID] | None = None,
+    chat_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -25,13 +25,13 @@ async def search_practice_chats(
         f"""
         SELECT id, practice_id, chat_id, created_at, active, generated, mcp, session_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR practice_id = $1)
-          AND ($2::uuid IS NULL OR chat_id = $2)
+        WHERE ($1::uuid[] IS NULL OR practice_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR chat_id = ANY($2))
         ORDER BY created_at DESC
         LIMIT $3 OFFSET $4
         """,
-        practice_id,
-        chat_id,
+        practice_ids,
+        chat_ids,
         limit,
         offset,
     )

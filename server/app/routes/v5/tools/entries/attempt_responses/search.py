@@ -14,9 +14,9 @@ MV_NAME = "attempt_responses_mv"
 
 async def search_attempt_responses(
     conn: asyncpg.Connection,
-    chat_id: UUID | None = None,
-    question_id: UUID | None = None,
-    option_id: UUID | None = None,
+    chat_ids: list[UUID] | None = None,
+    question_ids: list[UUID] | None = None,
+    option_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -28,15 +28,15 @@ async def search_attempt_responses(
         f"""
         SELECT response_id, chat_id, question_id, option_id, created_at
         FROM {source}
-        WHERE ($1::uuid IS NULL OR chat_id = $1)
-          AND ($2::uuid IS NULL OR question_id = $2)
-          AND ($3::uuid IS NULL OR option_id = $3)
+        WHERE ($1::uuid[] IS NULL OR chat_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR question_id = ANY($2))
+          AND ($3::uuid[] IS NULL OR option_id = ANY($3))
         ORDER BY created_at DESC
         LIMIT $4 OFFSET $5
         """,
-        chat_id,
-        question_id,
-        option_id,
+        chat_ids,
+        question_ids,
+        option_ids,
         limit,
         offset,
     )

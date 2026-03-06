@@ -21,7 +21,7 @@ LIST_SQL_PATH = "app/sql/queries/views/message/list/get_message_list_view_comple
 
 async def search_messages(
     conn: asyncpg.Connection,
-    run_id: UUID | None = None,
+    run_ids: list[UUID] | None = None,
     role: str | None = None,
     limit: int = 20,
     offset: int = 0,
@@ -36,12 +36,12 @@ async def search_messages(
                text_upload_ids, audio_upload_ids, image_upload_ids,
                video_upload_ids, file_upload_ids, call_upload_ids
         FROM {source}
-        WHERE ($1::uuid IS NULL OR run_id = $1)
+        WHERE ($1::uuid[] IS NULL OR run_id = ANY($1))
           AND ($2::text IS NULL OR role = $2)
         ORDER BY message_created_at DESC
         LIMIT $3 OFFSET $4
         """,
-        run_id,
+        run_ids,
         role,
         limit,
         offset,

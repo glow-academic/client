@@ -10,8 +10,8 @@ from app.routes.v5.tools.entries.setting_drafts.types import GetSettingDraftResp
 
 async def search_setting_drafts(
     conn: asyncpg.Connection,
-    group_id: UUID | None = None,
-    session_id: UUID | None = None,
+    group_ids: list[UUID] | None = None,
+    session_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     mcp: bool | None = None,
@@ -50,8 +50,8 @@ async def search_setting_drafts(
         LEFT JOIN setting_drafts_provider_keys_connection pk ON pk.draft_id = d.id
         LEFT JOIN setting_drafts_thresholds_connection th ON th.draft_id = d.id
         WHERE d.active = true
-          AND ($1::uuid IS NULL OR d.group_id = $1)
-          AND ($2::uuid IS NULL OR d.session_id = $2)
+          AND ($1::uuid[] IS NULL OR d.group_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR d.session_id = ANY($2))
           AND ($3::timestamptz IS NULL OR d.created_at >= $3)
           AND ($4::timestamptz IS NULL OR d.created_at <= $4)
           AND ($5::boolean IS NULL OR d.mcp = $5)
@@ -60,8 +60,8 @@ async def search_setting_drafts(
         ORDER BY d.created_at DESC
         LIMIT $6 OFFSET $7
         """,
-        group_id,
-        session_id,
+        group_ids,
+        session_ids,
         date_from,
         date_to,
         mcp,

@@ -13,21 +13,97 @@ from pydantic import BaseModel, Field
 from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetNamesV4Item,
-    QGetRubricsV4Item,
-    QGetScenarioFlagsV4Item,
-    QGetScenarioPositionsV4Item,
-    QGetScenarioRubricsV4Item,
-    QGetScenarioTimeLimitsV4Item,
-    QGetSimulationDraftsEntriesV4Item,
-)
 
 # =============================================================================
-# Resource Types (imported from SQL types for reuse)
+# Resource Types (handcrafted — no dependency on app.sql.types)
 # =============================================================================
+
+
+class SimulationNameResource(BaseModel):
+    """Name resource for simulation."""
+
+    id: UUID | None = None
+    name: str | None = None
+    generated: bool | None = None
+
+
+class SimulationDescriptionResource(BaseModel):
+    """Description resource for simulation."""
+
+    id: UUID | None = None
+    description: str | None = None
+    generated: bool | None = None
+
+
+class SimulationScenarioFlag(BaseModel):
+    """Scenario flag (denormalized: includes flag name/description/icon)."""
+
+    id: UUID | None = None
+    scenario_id: UUID | None = None
+    flag_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    icon: str | None = None
+    generated: bool | None = None
+
+
+class SimulationScenarioPosition(BaseModel):
+    """Scenario position."""
+
+    id: UUID | None = None
+    scenario_id: UUID | None = None
+    value: int | None = None
+    generated: bool | None = None
+
+
+class SimulationScenarioRubric(BaseModel):
+    """Scenario rubric."""
+
+    id: UUID | None = None
+    scenario_id: UUID | None = None
+    rubric_id: UUID | None = None
+    generated: bool | None = None
+
+
+class SimulationScenarioTimeLimit(BaseModel):
+    """Scenario time limit."""
+
+    id: UUID | None = None
+    scenario_id: UUID | None = None
+    time_limit_seconds: int | None = None
+    generated: bool | None = None
+    negative: bool | None = None
+
+
+class SimulationRubric(BaseModel):
+    """Rubric catalog item."""
+
+    id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    standard_group_ids: list[UUID] | None = None
+
+
+class SimulationDraftEntry(BaseModel):
+    """Simulation draft entry for websocket."""
+
+    draft_id: UUID | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    version: int | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
+    active: bool | None = None
+    group_id: UUID | None = None
+    name_ids: list[UUID] | None = None
+    description_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
 
 
 class SimulationFlagConfig(BaseModel):
@@ -78,16 +154,16 @@ class SimulationScenario(BaseModel):
 class SimulationResourceBucket(BaseModel):
     """Generic resources bucket with full objects (always plural lists)."""
 
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
+    names: list[SimulationNameResource] | None = None
+    descriptions: list[SimulationDescriptionResource] | None = None
     flags: list[SimulationFlagConfig] | None = None
     departments: list[SimulationDepartment] | None = None
     scenarios: list[SimulationScenario] | None = None
-    scenario_flags: list[QGetScenarioFlagsV4Item] | None = None
-    scenario_positions: list[QGetScenarioPositionsV4Item] | None = None
-    scenario_rubrics: list[QGetScenarioRubricsV4Item] | None = None
-    scenario_time_limits: list[QGetScenarioTimeLimitsV4Item] | None = None
-    rubrics: list[QGetRubricsV4Item] | None = None
+    scenario_flags: list[SimulationScenarioFlag] | None = None
+    scenario_positions: list[SimulationScenarioPosition] | None = None
+    scenario_rubrics: list[SimulationScenarioRubric] | None = None
+    scenario_time_limits: list[SimulationScenarioTimeLimit] | None = None
+    rubrics: list[SimulationRubric] | None = None
 
 
 class SimulationResources(BaseModel):
@@ -302,13 +378,13 @@ class GetSimulationApiRequest(BaseModel):
 
 
 class SimulationNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: SimulationNameResource | None = None
+    resources: list[SimulationNameResource] | None = None
 
 
 class SimulationDescriptionSection(BaseResourceSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
+    resource: SimulationDescriptionResource | None = None
+    resources: list[SimulationDescriptionResource] | None = None
 
 
 class SimulationFlagSection(BaseResourceSection):
@@ -327,23 +403,23 @@ class SimulationScenarioSection(BaseResourceSection):
 
 
 class SimulationScenarioFlagSection(BaseResourceSection):
-    current: list[QGetScenarioFlagsV4Item] | None = None
-    resources: list[QGetScenarioFlagsV4Item] | None = None
+    current: list[SimulationScenarioFlag] | None = None
+    resources: list[SimulationScenarioFlag] | None = None
 
 
 class SimulationScenarioPositionSection(BaseResourceSection):
-    current: list[QGetScenarioPositionsV4Item] | None = None
-    resources: list[QGetScenarioPositionsV4Item] | None = None
+    current: list[SimulationScenarioPosition] | None = None
+    resources: list[SimulationScenarioPosition] | None = None
 
 
 class SimulationScenarioRubricSection(BaseResourceSection):
-    current: list[QGetScenarioRubricsV4Item] | None = None
-    resources: list[QGetScenarioRubricsV4Item] | None = None
+    current: list[SimulationScenarioRubric] | None = None
+    resources: list[SimulationScenarioRubric] | None = None
 
 
 class SimulationScenarioTimeLimitSection(BaseResourceSection):
-    current: list[QGetScenarioTimeLimitsV4Item] | None = None
-    resources: list[QGetScenarioTimeLimitsV4Item] | None = None
+    current: list[SimulationScenarioTimeLimit] | None = None
+    resources: list[SimulationScenarioTimeLimit] | None = None
 
 
 class GetSimulationApiResponse(BaseModel):
@@ -367,29 +443,29 @@ class GetSimulationApiResponse(BaseModel):
     scenario_positions: SimulationScenarioPositionSection | None = None
     scenario_rubrics: SimulationScenarioRubricSection | None = None
     scenario_time_limits: SimulationScenarioTimeLimitSection | None = None
-    rubrics: list[QGetRubricsV4Item] | None = None
+    rubrics: list[SimulationRubric] | None = None
 
 
 class SimulationWebsocketEntries(BaseModel):
     """Optional websocket entries payload."""
 
-    draft_simulation: QGetSimulationDraftsEntriesV4Item | None = None
+    draft_simulation: SimulationDraftEntry | None = None
     runs: GetRunListViewResponse | None = None
 
 
 class SimulationWebsocketResources(BaseModel):
     """Hydrated websocket resources: selected simulation + config resources."""
 
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
+    names: list[SimulationNameResource] | None = None
+    descriptions: list[SimulationDescriptionResource] | None = None
     flags: list[SimulationFlagConfig] | None = None
-    departments: list[SimulationDepartment | QGetDepartmentsV4Item] | None = None
+    departments: list[SimulationDepartment] | None = None
     scenarios: list[SimulationScenario] | None = None
-    scenario_flags: list[QGetScenarioFlagsV4Item] | None = None
-    scenario_positions: list[QGetScenarioPositionsV4Item] | None = None
-    scenario_rubrics: list[QGetScenarioRubricsV4Item] | None = None
-    scenario_time_limits: list[QGetScenarioTimeLimitsV4Item] | None = None
-    rubrics: list[QGetRubricsV4Item] | None = None
+    scenario_flags: list[SimulationScenarioFlag] | None = None
+    scenario_positions: list[SimulationScenarioPosition] | None = None
+    scenario_rubrics: list[SimulationScenarioRubric] | None = None
+    scenario_time_limits: list[SimulationScenarioTimeLimit] | None = None
+    rubrics: list[SimulationRubric] | None = None
 
 
 class GetSimulationWebsocketResponse(InternalResponseBase):

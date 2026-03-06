@@ -12,7 +12,7 @@ MV_NAME = "run_pricing_mv"
 
 async def search_run_pricing_entries_internal(
     conn: asyncpg.Connection,
-    run_id: UUID | None = None,
+    run_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -25,11 +25,11 @@ async def search_run_pricing_entries_internal(
         SELECT id, pricing_type, count, run_id, session_id,
                created_at, active, mcp, generated
         FROM {source}
-        WHERE ($1::uuid IS NULL OR run_id = $1)
+        WHERE ($1::uuid[] IS NULL OR run_id = ANY($1))
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         """,
-        run_id,
+        run_ids,
         limit,
         offset,
     )

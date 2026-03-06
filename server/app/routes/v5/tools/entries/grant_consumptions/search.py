@@ -12,7 +12,7 @@ from app.routes.v5.tools.entries.grant_consumptions.types import (
 
 async def search_grant_consumptions(
     conn: asyncpg.Connection,
-    grant_id: UUID | None = None,
+    grant_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     mcp: bool | None = None,
@@ -24,14 +24,14 @@ async def search_grant_consumptions(
         """
         SELECT id, grant_id, created_at, active, mcp, generated
         FROM grant_consumptions_entry
-        WHERE ($1::uuid IS NULL OR grant_id = $1)
+        WHERE ($1::uuid[] IS NULL OR grant_id = ANY($1))
           AND ($2::timestamptz IS NULL OR created_at >= $2)
           AND ($3::timestamptz IS NULL OR created_at <= $3)
           AND ($4::boolean IS NULL OR mcp = $4)
         ORDER BY created_at DESC
         LIMIT $5 OFFSET $6
         """,
-        grant_id,
+        grant_ids,
         date_from,
         date_to,
         mcp,

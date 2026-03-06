@@ -12,8 +12,8 @@ MV_NAME = "attempt_content_mv"
 
 async def search_attempt_contents(
     conn: asyncpg.Connection,
-    message_id: UUID | None = None,
-    persona_entry_id: UUID | None = None,
+    message_ids: list[UUID] | None = None,
+    persona_entry_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -25,13 +25,13 @@ async def search_attempt_contents(
         f"""
         SELECT content_id, message_id, content, persona_entry_id, idx, created_at
         FROM {source}
-        WHERE ($1::uuid IS NULL OR message_id = $1)
-          AND ($2::uuid IS NULL OR persona_entry_id = $2)
+        WHERE ($1::uuid[] IS NULL OR message_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR persona_entry_id = ANY($2))
         ORDER BY created_at DESC
         LIMIT $3 OFFSET $4
         """,
-        message_id,
-        persona_entry_id,
+        message_ids,
+        persona_entry_ids,
         limit,
         offset,
     )

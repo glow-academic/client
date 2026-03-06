@@ -14,7 +14,7 @@ MV_NAME = "attempt_completion_mv"
 
 async def search_attempt_completions(
     conn: asyncpg.Connection,
-    chat_id: UUID | None = None,
+    chat_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -26,11 +26,11 @@ async def search_attempt_completions(
         f"""
         SELECT id, chat_id, end_reason, created_at, active, generated, mcp, call_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR chat_id = $1)
+        WHERE ($1::uuid[] IS NULL OR chat_id = ANY($1))
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         """,
-        chat_id,
+        chat_ids,
         limit,
         offset,
     )

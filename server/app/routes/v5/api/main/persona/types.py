@@ -13,21 +13,161 @@ from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 from app.routes.v5.tools.resources.fields.types import GetFieldResponse
 from app.routes.v5.tools.resources.parameters.types import GetParameterResponse
-from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetColorsV4Item,
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetExamplesV4Item,
-    QGetIconsV4Item,
-    QGetInstructionsV4Item,
-    QGetModelsV4Item,
-    QGetNamesV4Item,
-    QGetParameterFieldsV4Item,
-    QGetPersonaDraftsEntriesV4Item,
-    QGetProvidersV4Item,
-    QGetVoicesV4Item,
-)
+
+
+# =============================================================================
+# Resource Types (handcrafted — no dependency on app.sql.types)
+# =============================================================================
+
+
+class PersonaNameResource(BaseModel):
+    """Name resource for persona."""
+
+    id: UUID | None = None
+    name: str | None = None
+    generated: bool | None = None
+
+
+class PersonaDescriptionResource(BaseModel):
+    """Description resource for persona."""
+
+    id: UUID | None = None
+    description: str | None = None
+    generated: bool | None = None
+
+
+class PersonaColorResource(BaseModel):
+    """Color resource for persona."""
+
+    id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    hex_code: str | None = None
+    generated: bool | None = None
+
+
+class PersonaIconResource(BaseModel):
+    """Icon resource for persona."""
+
+    id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    value: str | None = None
+    generated: bool | None = None
+
+
+class PersonaInstructionResource(BaseModel):
+    """Instruction resource for persona."""
+
+    id: UUID | None = None
+    template: str | None = None
+    generated: bool | None = None
+
+
+class PersonaDepartmentResource(BaseModel):
+    """Department resource for persona."""
+
+    department_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    generated: bool | None = None
+
+
+class PersonaParameterFieldResource(BaseModel):
+    """Parameter field resource for persona."""
+
+    id: UUID | None = None
+    field_id: UUID | None = None
+    parameter_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    generated: bool | None = None
+
+
+class PersonaExampleResource(BaseModel):
+    """Example resource for persona."""
+
+    id: UUID | None = None
+    example: str | None = None
+    generated: bool | None = None
+
+
+class PersonaVoiceResource(BaseModel):
+    """Voice resource for persona."""
+
+    id: UUID | None = None
+    voice: str | None = None
+    generated: bool | None = None
+
+
+class PersonaAgentResource(BaseModel):
+    """Agent resource for persona (config chain)."""
+
+    id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    model_id: UUID | None = None
+    temperature: float | None = None
+    reasoning: str | None = None
+    tool_ids: list[UUID] | None = None
+    quality: str | None = None
+    voices: list[str] | None = None
+    prompt_id: UUID | None = None
+    instruction_ids: list[UUID] | None = None
+    active: bool | None = None
+    generated: bool | None = None
+
+
+class PersonaModelResource(BaseModel):
+    """Model resource for persona (config chain)."""
+
+    id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    value: str | None = None
+    provider_id: UUID | None = None
+    modality_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+
+
+class PersonaProviderResource(BaseModel):
+    """Provider resource for persona (config chain)."""
+
+    id: UUID | None = None
+    value: str | None = None
+    name: str | None = None
+    description: str | None = None
+    endpoint: str | None = None
+    key: str | None = None
+    active: bool | None = None
+    generated: bool | None = None
+
+
+class PersonaDraftEntry(BaseModel):
+    """Persona draft entry for websocket."""
+
+    draft_id: UUID | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    version: int | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
+    active: bool | None = None
+    group_id: UUID | None = None
+    name_ids: list[UUID] | None = None
+    description_ids: list[UUID] | None = None
+    color_ids: list[UUID] | None = None
+    icon_ids: list[UUID] | None = None
+    instruction_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    example_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
 
 
 class PersonaFlagConfig(BaseModel):
@@ -48,28 +188,28 @@ class PersonaFlagConfig(BaseModel):
 
 # Single-select sections (resource = singular current, resources = all options)
 class PersonaNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: PersonaNameResource | None = None
+    resources: list[PersonaNameResource] | None = None
 
 
 class PersonaDescriptionSection(BaseResourceSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
+    resource: PersonaDescriptionResource | None = None
+    resources: list[PersonaDescriptionResource] | None = None
 
 
 class PersonaColorSection(BaseResourceSection):
-    resource: QGetColorsV4Item | None = None
-    resources: list[QGetColorsV4Item] | None = None
+    resource: PersonaColorResource | None = None
+    resources: list[PersonaColorResource] | None = None
 
 
 class PersonaIconSection(BaseResourceSection):
-    resource: QGetIconsV4Item | None = None
-    resources: list[QGetIconsV4Item] | None = None
+    resource: PersonaIconResource | None = None
+    resources: list[PersonaIconResource] | None = None
 
 
 class PersonaInstructionSection(BaseResourceSection):
-    resource: QGetInstructionsV4Item | None = None
-    resources: list[QGetInstructionsV4Item] | None = None
+    resource: PersonaInstructionResource | None = None
+    resources: list[PersonaInstructionResource] | None = None
 
 
 # Flag section (uses PersonaFlagConfig)
@@ -80,18 +220,18 @@ class PersonaFlagSection(BaseResourceSection):
 
 # Multi-select sections (current = list, resources = all options)
 class PersonaDepartmentSection(BaseResourceSection):
-    current: list[QGetDepartmentsV4Item] | None = None
-    resources: list[QGetDepartmentsV4Item] | None = None
+    current: list[PersonaDepartmentResource] | None = None
+    resources: list[PersonaDepartmentResource] | None = None
 
 
 class PersonaParameterFieldSection(BaseResourceSection):
-    current: list[QGetParameterFieldsV4Item] | None = None
-    resources: list[QGetParameterFieldsV4Item] | None = None
+    current: list[PersonaParameterFieldResource] | None = None
+    resources: list[PersonaParameterFieldResource] | None = None
 
 
 class PersonaExampleSection(BaseResourceSection):
-    current: list[QGetExamplesV4Item] | None = None
-    resources: list[QGetExamplesV4Item] | None = None
+    current: list[PersonaExampleResource] | None = None
+    resources: list[PersonaExampleResource] | None = None
 
 
 class PersonaParameterSection(BaseResourceSection):
@@ -100,8 +240,8 @@ class PersonaParameterSection(BaseResourceSection):
 
 
 class PersonaVoiceSection(BaseResourceSection):
-    current: list[QGetVoicesV4Item] | None = None
-    resources: list[QGetVoicesV4Item] | None = None
+    current: list[PersonaVoiceResource] | None = None
+    resources: list[PersonaVoiceResource] | None = None
 
 
 class GetPersonaApiRequest(BaseModel):
@@ -163,7 +303,7 @@ class GetPersonaApiResponse(BaseModel):
 class PersonaWebsocketEntries(BaseModel):
     """Entries data for websocket response."""
 
-    draft_persona: QGetPersonaDraftsEntriesV4Item | None = None
+    draft_persona: PersonaDraftEntry | None = None
     runs: GetRunListViewResponse | None = None
 
 
@@ -171,17 +311,17 @@ class PersonaWebsocketResources(BaseModel):
     """Hydrated resources for websocket — selected only, no suggestions."""
 
     # 11 persona resources
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    colors: list[QGetColorsV4Item] | None = None
-    icons: list[QGetIconsV4Item] | None = None
-    instructions: list[QGetInstructionsV4Item] | None = None
+    names: list[PersonaNameResource] | None = None
+    descriptions: list[PersonaDescriptionResource] | None = None
+    colors: list[PersonaColorResource] | None = None
+    icons: list[PersonaIconResource] | None = None
+    instructions: list[PersonaInstructionResource] | None = None
     flags: list[PersonaFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    parameter_fields: list[QGetParameterFieldsV4Item] | None = None
-    examples: list[QGetExamplesV4Item] | None = None
+    departments: list[PersonaDepartmentResource] | None = None
+    parameter_fields: list[PersonaParameterFieldResource] | None = None
+    examples: list[PersonaExampleResource] | None = None
     parameters: list[GetParameterResponse] | None = None
-    voices: list[QGetVoicesV4Item] | None = None
+    voices: list[PersonaVoiceResource] | None = None
     fields: list[GetFieldResponse] | None = None
 
 
@@ -200,17 +340,17 @@ class GetPersonaWebsocketResponse(InternalResponseBase):
 class PersonaResourceBucket(BaseModel):
     """Generic resources bucket with full objects (always plural lists)."""
 
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    colors: list[QGetColorsV4Item] | None = None
-    icons: list[QGetIconsV4Item] | None = None
-    instructions: list[QGetInstructionsV4Item] | None = None
+    names: list[PersonaNameResource] | None = None
+    descriptions: list[PersonaDescriptionResource] | None = None
+    colors: list[PersonaColorResource] | None = None
+    icons: list[PersonaIconResource] | None = None
+    instructions: list[PersonaInstructionResource] | None = None
     flags: list[PersonaFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    parameter_fields: list[QGetParameterFieldsV4Item] | None = None
-    examples: list[QGetExamplesV4Item] | None = None
+    departments: list[PersonaDepartmentResource] | None = None
+    parameter_fields: list[PersonaParameterFieldResource] | None = None
+    examples: list[PersonaExampleResource] | None = None
     parameters: list[GetParameterResponse] | None = None
-    voices: list[QGetVoicesV4Item] | None = None
+    voices: list[PersonaVoiceResource] | None = None
     fields: list[GetFieldResponse] | None = None
 
 

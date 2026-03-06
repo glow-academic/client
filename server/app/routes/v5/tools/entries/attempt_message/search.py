@@ -12,10 +12,10 @@ MV_NAME = "attempt_message_mv"
 
 async def search_attempt_messages(
     conn: asyncpg.Connection,
-    chat_id: UUID | None = None,
-    attempt_id: UUID | None = None,
-    text_id: UUID | None = None,
-    audio_id: UUID | None = None,
+    chat_ids: list[UUID] | None = None,
+    attempt_ids: list[UUID] | None = None,
+    text_ids: list[UUID] | None = None,
+    audio_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -29,17 +29,17 @@ async def search_attempt_messages(
                created_at, completed, text_id,
                history_file_path, audio_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR chat_id = $1)
-          AND ($2::uuid IS NULL OR attempt_id = $2)
-          AND ($3::uuid IS NULL OR text_id = $3)
-          AND ($4::uuid IS NULL OR audio_id = $4)
+        WHERE ($1::uuid[] IS NULL OR chat_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR attempt_id = ANY($2))
+          AND ($3::uuid[] IS NULL OR text_id = ANY($3))
+          AND ($4::uuid[] IS NULL OR audio_id = ANY($4))
         ORDER BY created_at DESC
         LIMIT $5 OFFSET $6
         """,
-        chat_id,
-        attempt_id,
-        text_id,
-        audio_id,
+        chat_ids,
+        attempt_ids,
+        text_ids,
+        audio_ids,
         limit,
         offset,
     )

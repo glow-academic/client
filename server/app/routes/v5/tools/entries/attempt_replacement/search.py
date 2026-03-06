@@ -14,7 +14,7 @@ MV_NAME = "attempt_replacement_mv"
 
 async def search_attempt_replacements(
     conn: asyncpg.Connection,
-    improvement_id: UUID | None = None,
+    improvement_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -26,11 +26,11 @@ async def search_attempt_replacements(
         f"""
         SELECT replacement_id, improvement_id, section, replace_text, idx, created_at
         FROM {source}
-        WHERE ($1::uuid IS NULL OR improvement_id = $1)
+        WHERE ($1::uuid[] IS NULL OR improvement_id = ANY($1))
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         """,
-        improvement_id,
+        improvement_ids,
         limit,
         offset,
     )

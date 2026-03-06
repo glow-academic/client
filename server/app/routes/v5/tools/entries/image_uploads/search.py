@@ -9,9 +9,9 @@ from app.routes.v5.tools.entries.image_uploads.types import GetImageUploadRespon
 
 async def search_image_uploads(
     conn: asyncpg.Connection,
-    image_id: UUID | None = None,
-    upload_id: UUID | None = None,
-    session_id: UUID | None = None,
+    image_ids: list[UUID] | None = None,
+    upload_ids: list[UUID] | None = None,
+    session_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> list[GetImageUploadResponse]:
@@ -21,15 +21,15 @@ async def search_image_uploads(
         SELECT id, image_id, upload_id, session_id, created_at, active, mcp, generated
         FROM image_uploads_entry
         WHERE active = true
-          AND ($1::uuid IS NULL OR image_id = $1)
-          AND ($2::uuid IS NULL OR upload_id = $2)
-          AND ($3::uuid IS NULL OR session_id = $3)
+          AND ($1::uuid[] IS NULL OR image_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR upload_id = ANY($2))
+          AND ($3::uuid[] IS NULL OR session_id = ANY($3))
         ORDER BY created_at DESC
         LIMIT $4 OFFSET $5
         """,
-        image_id,
-        upload_id,
-        session_id,
+        image_ids,
+        upload_ids,
+        session_ids,
         limit,
         offset,
     )

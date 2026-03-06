@@ -44,7 +44,7 @@ async def test_filters_by_profile_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt(conn)
 
-    items = await search_attempts(conn, profile_id=nonexistent_id())
+    items = await search_attempts(conn, profile_ids=[nonexistent_id()])
 
     assert items == []
 

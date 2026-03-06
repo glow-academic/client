@@ -14,7 +14,7 @@ MV_NAME = "attempt_conversations_mv"
 
 async def search_attempt_conversations(
     conn: asyncpg.Connection,
-    chat_id: UUID | None = None,
+    chat_ids: list[UUID] | None = None,
     mcp: bool | None = None,
     limit: int = 20,
     offset: int = 0,
@@ -27,12 +27,12 @@ async def search_attempt_conversations(
         f"""
         SELECT id, created_at, generated, mcp, active, chat_id, run_id, call_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR chat_id = $1)
+        WHERE ($1::uuid[] IS NULL OR chat_id = ANY($1))
           AND ($2::boolean IS NULL OR mcp = $2)
         ORDER BY created_at DESC
         LIMIT $3 OFFSET $4
         """,
-        chat_id,
+        chat_ids,
         mcp,
         limit,
         offset,

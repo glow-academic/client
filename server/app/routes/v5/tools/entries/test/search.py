@@ -24,8 +24,8 @@ LIST_SQL_PATH = "app/sql/queries/views/test/list/get_test_list_view_complete.sql
 
 async def search_tests(
     conn: asyncpg.Connection,
-    eval_id: UUID | None = None,
-    profile_id: UUID | None = None,
+    eval_ids: list[UUID] | None = None,
+    profile_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -39,13 +39,13 @@ async def search_tests(
                test_name, test_description,
                num_invocations, infinite_mode, archived, test_created_at
         FROM {source}
-        WHERE ($1::uuid IS NULL OR eval_id = $1)
-          AND ($2::uuid IS NULL OR profile_id = $2)
+        WHERE ($1::uuid[] IS NULL OR eval_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR profile_id = ANY($2))
         ORDER BY test_created_at DESC
         LIMIT $3 OFFSET $4
         """,
-        eval_id,
-        profile_id,
+        eval_ids,
+        profile_ids,
         limit,
         offset,
     )

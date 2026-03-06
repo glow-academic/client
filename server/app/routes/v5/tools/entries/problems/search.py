@@ -13,8 +13,8 @@ MV_NAME = "problems_mv"
 
 async def search_problems(
     conn: asyncpg.Connection,
-    profile_id: UUID | None = None,
-    session_id: UUID | None = None,
+    profile_ids: list[UUID] | None = None,
+    session_ids: list[UUID] | None = None,
     type: str | None = None,
     resolved: bool | None = None,
     date_from: datetime | None = None,
@@ -31,8 +31,8 @@ async def search_problems(
         f"""
         SELECT problem_id, profile_id, session_id, type, message, resolved, created_at, active, mcp, generated
         FROM {source}
-        WHERE ($1::uuid IS NULL OR profile_id = $1)
-          AND ($2::uuid IS NULL OR session_id = $2)
+        WHERE ($1::uuid[] IS NULL OR profile_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR session_id = ANY($2))
           AND ($3::text IS NULL OR type = $3)
           AND ($4::boolean IS NULL OR resolved = $4)
           AND ($5::timestamptz IS NULL OR created_at >= $5)
@@ -41,8 +41,8 @@ async def search_problems(
         ORDER BY created_at DESC
         LIMIT $8 OFFSET $9
         """,
-        profile_id,
-        session_id,
+        profile_ids,
+        session_ids,
         type,
         resolved,
         date_from,

@@ -35,7 +35,7 @@ async def test_search_finds_created(conn, profile_id):
         conn, call_id=call.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_call_uploads(conn, call_id=call.id)
+    results = await search_call_uploads(conn, call_ids=[call.id])
 
     assert len(results) == 1
     assert results[0].call_id == call.id
@@ -48,7 +48,7 @@ async def test_search_filters_by_call_id(conn, profile_id):
         conn, call_id=call.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_call_uploads(conn, call_id=nonexistent_id())
+    results = await search_call_uploads(conn, call_ids=[nonexistent_id()])
 
     assert len(results) == 0
 
@@ -59,7 +59,7 @@ async def test_search_filters_by_upload_id(conn, profile_id):
         conn, call_id=call.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_call_uploads(conn, upload_id=nonexistent_id())
+    results = await search_call_uploads(conn, upload_ids=[nonexistent_id()])
 
     assert len(results) == 0
 
@@ -80,6 +80,6 @@ async def test_search_pagination(conn, profile_id):
         conn, call_id=call.id, upload_id=upload2.id, session_id=session.id
     )
 
-    results = await search_call_uploads(conn, call_id=call.id, limit=1)
+    results = await search_call_uploads(conn, call_ids=[call.id], limit=1)
 
     assert len(results) == 1

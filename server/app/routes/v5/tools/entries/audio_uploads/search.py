@@ -9,9 +9,9 @@ from app.routes.v5.tools.entries.audio_uploads.types import GetAudioUploadRespon
 
 async def search_audio_uploads(
     conn: asyncpg.Connection,
-    audio_id: UUID | None = None,
-    upload_id: UUID | None = None,
-    session_id: UUID | None = None,
+    audio_ids: list[UUID] | None = None,
+    upload_ids: list[UUID] | None = None,
+    session_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> list[GetAudioUploadResponse]:
@@ -21,15 +21,15 @@ async def search_audio_uploads(
         SELECT id, audio_id, upload_id, session_id, created_at, active, mcp, generated
         FROM audio_uploads_entry
         WHERE active = true
-          AND ($1::uuid IS NULL OR audio_id = $1)
-          AND ($2::uuid IS NULL OR upload_id = $2)
-          AND ($3::uuid IS NULL OR session_id = $3)
+          AND ($1::uuid[] IS NULL OR audio_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR upload_id = ANY($2))
+          AND ($3::uuid[] IS NULL OR session_id = ANY($3))
         ORDER BY created_at DESC
         LIMIT $4 OFFSET $5
         """,
-        audio_id,
-        upload_id,
-        session_id,
+        audio_ids,
+        upload_ids,
+        session_ids,
         limit,
         offset,
     )

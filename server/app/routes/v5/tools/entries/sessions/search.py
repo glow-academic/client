@@ -13,7 +13,7 @@ MV_NAME = "sessions_mv"
 
 async def search_sessions(
     conn: asyncpg.Connection,
-    profile_id: UUID | None = None,
+    profile_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     active: bool | None = None,
@@ -29,7 +29,7 @@ async def search_sessions(
         f"""
         SELECT session_id, profile_id, session_created_at, active, mcp
         FROM {source}
-        WHERE ($1::uuid IS NULL OR profile_id = $1)
+        WHERE ($1::uuid[] IS NULL OR profile_id = ANY($1))
           AND ($2::timestamptz IS NULL OR session_created_at >= $2)
           AND ($3::timestamptz IS NULL OR session_created_at <= $3)
           AND ($4::boolean IS NULL OR active = $4)
@@ -37,7 +37,7 @@ async def search_sessions(
         ORDER BY session_created_at DESC
         LIMIT $6 OFFSET $7
         """,
-        profile_id,
+        profile_ids,
         date_from,
         date_to,
         active,

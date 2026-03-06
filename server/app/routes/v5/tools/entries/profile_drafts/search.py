@@ -10,8 +10,8 @@ from app.routes.v5.tools.entries.profile_drafts.types import GetProfileDraftResp
 
 async def search_profile_drafts(
     conn: asyncpg.Connection,
-    group_id: UUID | None = None,
-    session_id: UUID | None = None,
+    group_ids: list[UUID] | None = None,
+    session_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     mcp: bool | None = None,
@@ -38,8 +38,8 @@ async def search_profile_drafts(
         LEFT JOIN profile_drafts_request_limits_connection rl ON rl.draft_id = d.id
         LEFT JOIN profile_drafts_roles_connection ro ON ro.draft_id = d.id
         WHERE d.active = true
-          AND ($1::uuid IS NULL OR d.group_id = $1)
-          AND ($2::uuid IS NULL OR d.session_id = $2)
+          AND ($1::uuid[] IS NULL OR d.group_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR d.session_id = ANY($2))
           AND ($3::timestamptz IS NULL OR d.created_at >= $3)
           AND ($4::timestamptz IS NULL OR d.created_at <= $4)
           AND ($5::boolean IS NULL OR d.mcp = $5)
@@ -48,8 +48,8 @@ async def search_profile_drafts(
         ORDER BY d.created_at DESC
         LIMIT $6 OFFSET $7
         """,
-        group_id,
-        session_id,
+        group_ids,
+        session_ids,
         date_from,
         date_to,
         mcp,

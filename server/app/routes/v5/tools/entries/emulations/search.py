@@ -13,9 +13,9 @@ MV_NAME = "emulations_mv"
 
 async def search_emulations(
     conn: asyncpg.Connection,
-    profile_id: UUID | None = None,
-    grant_id: UUID | None = None,
-    session_id: UUID | None = None,
+    profile_ids: list[UUID] | None = None,
+    grant_ids: list[UUID] | None = None,
+    session_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     mcp: bool | None = None,
@@ -30,18 +30,18 @@ async def search_emulations(
         f"""
         SELECT emulation_id, profile_id, grant_id, session_id, created_at, active, mcp, generated
         FROM {source}
-        WHERE ($1::uuid IS NULL OR profile_id = $1)
-          AND ($2::uuid IS NULL OR grant_id = $2)
-          AND ($3::uuid IS NULL OR session_id = $3)
+        WHERE ($1::uuid[] IS NULL OR profile_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR grant_id = ANY($2))
+          AND ($3::uuid[] IS NULL OR session_id = ANY($3))
           AND ($4::timestamptz IS NULL OR created_at >= $4)
           AND ($5::timestamptz IS NULL OR created_at <= $5)
           AND ($6::boolean IS NULL OR mcp = $6)
         ORDER BY created_at DESC
         LIMIT $7 OFFSET $8
         """,
-        profile_id,
-        grant_id,
-        session_id,
+        profile_ids,
+        grant_ids,
+        session_ids,
         date_from,
         date_to,
         mcp,

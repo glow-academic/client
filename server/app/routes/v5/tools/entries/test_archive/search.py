@@ -12,7 +12,7 @@ MV_NAME = "test_archive_mv"
 
 async def search_test_archives(
     conn: asyncpg.Connection,
-    test_id: UUID | None = None,
+    test_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -24,11 +24,11 @@ async def search_test_archives(
         f"""
         SELECT id, created_at, generated, mcp, active, test_id, archived, call_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR test_id = $1)
+        WHERE ($1::uuid[] IS NULL OR test_id = ANY($1))
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         """,
-        test_id,
+        test_ids,
         limit,
         offset,
     )

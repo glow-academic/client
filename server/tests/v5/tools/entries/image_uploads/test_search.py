@@ -31,7 +31,7 @@ async def test_search_finds_created(conn, profile_id):
         conn, image_id=image.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_image_uploads(conn, image_id=image.id)
+    results = await search_image_uploads(conn, image_ids=[image.id])
 
     assert len(results) == 1
     assert results[0].image_id == image.id
@@ -44,7 +44,7 @@ async def test_search_filters_by_image_id(conn, profile_id):
         conn, image_id=image.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_image_uploads(conn, image_id=nonexistent_id())
+    results = await search_image_uploads(conn, image_ids=[nonexistent_id()])
 
     assert len(results) == 0
 
@@ -55,7 +55,7 @@ async def test_search_filters_by_upload_id(conn, profile_id):
         conn, image_id=image.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_image_uploads(conn, upload_id=nonexistent_id())
+    results = await search_image_uploads(conn, upload_ids=[nonexistent_id()])
 
     assert len(results) == 0
 
@@ -76,6 +76,6 @@ async def test_search_pagination(conn, profile_id):
         conn, image_id=image.id, upload_id=upload2.id, session_id=session.id
     )
 
-    results = await search_image_uploads(conn, image_id=image.id, limit=1)
+    results = await search_image_uploads(conn, image_ids=[image.id], limit=1)
 
     assert len(results) == 1

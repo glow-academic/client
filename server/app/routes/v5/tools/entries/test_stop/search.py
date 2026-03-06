@@ -12,7 +12,7 @@ MV_NAME = "test_stop_mv"
 
 async def search_test_stops(
     conn: asyncpg.Connection,
-    invocation_id: UUID | None = None,
+    invocation_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -24,11 +24,11 @@ async def search_test_stops(
         f"""
         SELECT id, created_at, generated, mcp, active, invocation_id, stopped, call_id
         FROM {source}
-        WHERE ($1::uuid IS NULL OR invocation_id = $1)
+        WHERE ($1::uuid[] IS NULL OR invocation_id = ANY($1))
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         """,
-        invocation_id,
+        invocation_ids,
         limit,
         offset,
     )

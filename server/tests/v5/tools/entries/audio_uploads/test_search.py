@@ -31,7 +31,7 @@ async def test_search_finds_created(conn, profile_id):
         conn, audio_id=audio.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_audio_uploads(conn, audio_id=audio.id)
+    results = await search_audio_uploads(conn, audio_ids=[audio.id])
 
     assert len(results) == 1
     assert results[0].audio_id == audio.id
@@ -44,7 +44,7 @@ async def test_search_filters_by_audio_id(conn, profile_id):
         conn, audio_id=audio.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_audio_uploads(conn, audio_id=nonexistent_id())
+    results = await search_audio_uploads(conn, audio_ids=[nonexistent_id()])
 
     assert len(results) == 0
 
@@ -55,7 +55,7 @@ async def test_search_filters_by_upload_id(conn, profile_id):
         conn, audio_id=audio.id, upload_id=upload.id, session_id=session.id
     )
 
-    results = await search_audio_uploads(conn, upload_id=nonexistent_id())
+    results = await search_audio_uploads(conn, upload_ids=[nonexistent_id()])
 
     assert len(results) == 0
 
@@ -76,6 +76,6 @@ async def test_search_pagination(conn, profile_id):
         conn, audio_id=audio.id, upload_id=upload2.id, session_id=session.id
     )
 
-    results = await search_audio_uploads(conn, audio_id=audio.id, limit=1)
+    results = await search_audio_uploads(conn, audio_ids=[audio.id], limit=1)
 
     assert len(results) == 1

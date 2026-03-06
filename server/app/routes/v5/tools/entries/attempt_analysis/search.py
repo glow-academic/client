@@ -14,7 +14,7 @@ MV_NAME = "attempt_analysis_mv"
 
 async def search_attempt_analyses(
     conn: asyncpg.Connection,
-    grade_id: UUID | None = None,
+    grade_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -26,11 +26,11 @@ async def search_attempt_analyses(
         f"""
         SELECT analysis_id, grade_id, content, created_at
         FROM {source}
-        WHERE ($1::uuid IS NULL OR grade_id = $1)
+        WHERE ($1::uuid[] IS NULL OR grade_id = ANY($1))
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         """,
-        grade_id,
+        grade_ids,
         limit,
         offset,
     )

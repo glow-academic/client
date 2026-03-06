@@ -19,9 +19,8 @@ TODOs (input modality & resolution):
             and pass to post_process_media_sentinels in generate_prepare.
     - TODO: Persist multipart messages (text + image blocks) instead of text-only
             in persist_run_message when input modality includes non-text media.
-    - TODO: Implement resolution phase — compare competing soft units for the same
-            (target_type, target_name) across agents, run test framework, promote winner.
-    - TODO: Wire promote_unit / fail_unit into generate_run_complete after resolution.
+    - Resolution phase implemented: find_contested_targets / find_uncontested_targets
+            + promote_unit / fail_unit wired in generate_run_complete_new + generation_ended.
     - TODO: Build entry_actions alongside resource_actions in generate_run_complete
             (currently only resource_type/resource_id are extracted from tool_results).
     - TODO: Emit per-unit modality metadata in generation_channel progress events
@@ -390,6 +389,87 @@ async def get_run_status(
             all_agents_done=True,
             tool_results=[],
         )
+
+
+async def get_all_units(
+    redis: Any,
+    *,
+    run_id: str,
+) -> dict[str, UnitState]:
+    """Return all units for a run: {field_key: UnitState}.
+
+    Field key format: ``{agent_id}:{target_type}:{target_name}``.
+    """
+    if not redis:
+        raw = _fallback.get(_units_key(run_id), {})
+        return {
+            k: UnitState(
+                state=v["state"],
+                result_id=v.get("result_id"),
+                modality=v.get("modality"),
+                metadata=v.get("metadata", {}),
+            )
+            for k, v in raw.items()
+        }
+
+    try:
+        raw_units: dict[bytes, bytes] = await redis.hgetall(_units_key(run_id))
+        result: dict[str, UnitState] = {}
+        for k, v in raw_units.items():
+            key = k.decode() if isinstance(k, bytes) else k
+            parsed = json.loads(v)
+            result[key] = UnitState(
+                state=parsed["state"],
+                result_id=parsed.get("result_id"),
+                modality=parsed.get("modality"),
+                metadata=parsed.get("metadata", {}),
+            )
+        return result
+    except Exception as e:
+        logger.error(f"Redis error in get_all_units for {run_id}: {e}")
+        return {}
+
+
+def find_contested_targets(
+    units: dict[str, UnitState],
+) -> dict[tuple[str, str], list[tuple[str, UnitState]]]:
+    """Group soft units by (target_type, target_name) → [(agent_id, UnitState)].
+
+    Returns only targets with >1 competing agent (contested).
+    """
+    by_target: dict[tuple[str, str], list[tuple[str, UnitState]]] = {}
+    for field_key, state in units.items():
+        if state.state != "soft":
+            continue
+        parts = field_key.split(":", 2)
+        if len(parts) != 3:
+            continue
+        agent_id, target_type, target_name = parts
+        key = (target_type, target_name)
+        by_target.setdefault(key, []).append((agent_id, state))
+
+    return {k: v for k, v in by_target.items() if len(v) > 1}
+
+
+def find_uncontested_targets(
+    units: dict[str, UnitState],
+) -> dict[tuple[str, str], tuple[str, UnitState]]:
+    """Return soft units with exactly 1 competing agent (uncontested).
+
+    Returns {(target_type, target_name): (agent_id, UnitState)}.
+    """
+    by_target: dict[tuple[str, str], list[tuple[str, UnitState]]] = {}
+    for field_key, state in units.items():
+        if state.state != "soft":
+            continue
+        parts = field_key.split(":", 2)
+        if len(parts) != 3:
+            continue
+        agent_id, target_type, target_name = parts
+        key = (target_type, target_name)
+        by_target.setdefault(key, []).append((agent_id, state))
+
+    return {k: v[0] for k, v in by_target.items() if len(v) == 1}
 
 
 async def cleanup_run(
