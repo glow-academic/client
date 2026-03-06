@@ -35,7 +35,7 @@ async def get_personas(
     rows = await conn.fetch(
         """
         SELECT id, name, description, icon, color, department_ids, instructions,
-               examples, parameter_ids, parameter_field_ids, created_at, active,
+               examples, parameter_field_ids, created_at, active,
                generated, mcp
         FROM personas_resource
         WHERE id = ANY($1)
@@ -54,7 +54,6 @@ async def get_personas(
             department_ids=r["department_ids"] or [],
             instructions=r["instructions"],
             examples=r["examples"] or [],
-            parameter_ids=r["parameter_ids"] or [],
             parameter_field_ids=r["parameter_field_ids"] or [],
             created_at=r["created_at"],
             active=r["active"],

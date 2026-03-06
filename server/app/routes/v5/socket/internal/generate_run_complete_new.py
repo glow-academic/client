@@ -64,6 +64,7 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
 
     # Identity context — propagated through the pipeline
     profile_id_str = data.get("profile_id")
+    profiles_id_str = data.get("profiles_id")
     session_id_str = data.get("session_id")
 
     logger.info(
@@ -80,6 +81,7 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
                 {
                     "sid": sid,
                     "profile_id": profile_id_str,
+                    "profiles_id": profiles_id_str,
                     "session_id": session_id_str,
                     "artifact_types": data.get("artifact_types")
                     or [{"name": artifact_type, "operation": "get"}],

@@ -18,14 +18,6 @@ CREATE INDEX idx_personas_resource_parameter_field_ids ON public.personas_resour
 
 --
 
--- Name: idx_personas_resource_parameter_ids; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_personas_resource_parameter_ids ON public.personas_resource USING gin (parameter_ids);
-
-
---
-
 -- Name: personas_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 

@@ -1,17 +1,16 @@
 """Rate limit gate for generation pipeline (new).
 
-Replaces internal/generate.py. Uses resolve_common_context for rate limiting
-instead of the broken fetcher path (which returns None for profile).
+Replaces internal/generate.py. Uses requests_per_day from profile context
+(resolved at client boundary) + runs count from resolve_runs_context.
 
 Differences from generate.py:
-  - Uses resolve_common_context (ProfileContext.requests_per_day) for rate limit
-  - No registry fetcher call (expensive, was only used for rate limit extraction)
-  - session_id, profile_id, group_id always in data (resolved by client handler)
+  - requests_per_day already in data (resolved at client boundary)
+  - Uses resolve_runs_context directly (not full resolve_common_context)
+  - No registry fetcher call
+  - Identity context (profile_id, profiles_id, session_id, group_id) always in data
   - Audio session continuation logic unchanged
 
 GAPs:
-  - TODO: resolve_common_context currently calls get_redis_client() internally.
-          For full testability, it should accept redis as a DI parameter.
   - TODO: Audio session continuation stays as-is (low priority refactor).
 """
 
@@ -20,7 +19,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio, get_redis_client
+from app.infra.globals import get_internal_sio
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.session_store import get_session_by_group_id, rotate_run_id
 from app.routes.v5.socket.types import GenerateErrorApiRequest
@@ -46,10 +45,10 @@ async def _emit_error(
 # NOTE: Not registered as @internal_sio.on("generate") yet.
 # To activate: import and swap registration.
 async def generate_handler_new(data: dict[str, Any]) -> None:
-    """Rate limit gate — uses resolve_common_context for daily limit check.
+    """Rate limit gate — uses requests_per_day from profile context.
 
-    Expects session_id, profile_id, group_id already in data
-    (resolved by client handler).
+    Expects identity context already in data (resolved by client handler):
+      profile_id, profiles_id, session_id, group_id, requests_per_day
     """
     sid = data.get("sid", "")
     if not sid:
@@ -62,7 +61,7 @@ async def generate_handler_new(data: dict[str, Any]) -> None:
         else "unknown"
     )
 
-    # These are always in data — resolved by client handler
+    # Identity context — resolved by client handler
     profile_id_str = data.get("profile_id")
     session_id_str = data.get("session_id")
     group_id = data.get("group_id")
@@ -81,25 +80,24 @@ async def generate_handler_new(data: dict[str, Any]) -> None:
         await _emit_error(sid, f"Invalid profile_id: {str(e)}", artifact_type)
         return
 
-    # --- Rate limit check via resolve_common_context ---
-    try:
-        from app.infra.common_context import resolve_common_context
+    # --- Rate limit check ---
+    requests_per_day = data.get("requests_per_day")
+    if requests_per_day is not None:
+        try:
+            from app.infra.runs_context import resolve_runs_context
 
-        async with get_db_connection() as conn:
-            common = await resolve_common_context(
-                conn, get_redis_client(), profile_id=profile_id
-            )
+            async with get_db_connection() as conn:
+                runs_ctx = await resolve_runs_context(conn, profile_id=profile_id)
 
-        if common and common.profile and common.profile.requests_per_day is not None:
             runs_today = (
-                common.runs.runs.total_count
-                if common.runs and common.runs.runs
+                runs_ctx.runs.total_count
+                if runs_ctx and runs_ctx.runs
                 else 0
             )
-            if runs_today >= common.profile.requests_per_day:
+            if runs_today >= requests_per_day:
                 error_msg = (
                     f"Rate limit exceeded ({runs_today}/"
-                    f"{common.profile.requests_per_day} requests today)"
+                    f"{requests_per_day} requests today)"
                 )
                 logger.error(
                     f"{artifact_type.capitalize()} generation rate limit exceeded - "
@@ -130,9 +128,9 @@ async def generate_handler_new(data: dict[str, Any]) -> None:
                 )
                 return
 
-    except Exception as e:
-        logger.exception(f"Rate limit check failed: {e}")
-        # On error, pass through — let generate_prepare handle it
+        except Exception as e:
+            logger.exception(f"Rate limit check failed: {e}")
+            # On error, pass through — let generate_prepare handle it
 
     # --- Rate limit passed ---
 
@@ -149,5 +147,5 @@ async def generate_handler_new(data: dict[str, Any]) -> None:
             return
 
     # Normal generation — forward to generate_prepare
-    # data already contains session_id, profile_id, group_id — they propagate through
+    # data already contains full identity context — propagates through
     await internal_sio.emit("generate_prepare", data)

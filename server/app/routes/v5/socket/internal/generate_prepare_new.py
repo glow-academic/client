@@ -33,7 +33,6 @@ from typing import Any
 from app.infra.generation import convert_tools_to_dict
 from app.infra.generation.media_context import wrap_media_entries
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
-from app.infra.websocket.db_helpers import link_profile_to_run, link_run_agents
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.init_run_trackers import init_run_trackers
 from app.infra.websocket.persist_run_message import persist_run_message
@@ -155,13 +154,18 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
         else "unknown"
     )
 
-    # These are always in data — resolved by client, propagated through internal/generate
+    # Identity context — resolved at client boundary, propagated through internal/generate
     profile_id_str = data.get("profile_id")
+    profiles_id_str = data.get("profiles_id")
     session_id_str = data.get("session_id")
     group_id_str = data.get("group_id")
 
     if not profile_id_str:
         await _emit_error(sid, "Profile not found. Please reconnect.", artifact_type)
+        return
+
+    if not profiles_id_str:
+        await _emit_error(sid, "Profiles resource not found. Please reconnect.", artifact_type)
         return
 
     if not session_id_str:
@@ -174,6 +178,7 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
 
     try:
         profile_id = uuid.UUID(profile_id_str)
+        profiles_id = uuid.UUID(profiles_id_str)
         session_id = uuid.UUID(session_id_str)
         group_id = uuid.UUID(group_id_str)
         payload = GeneratePayload(**data)
@@ -305,22 +310,19 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
         createable_resources = compute_createable_resources(config_tools)
         all_artifact_types = compute_all_artifact_types(all_tool_dicts)
 
-        # --- Step 8: Create run (session_id + group_id already resolved) ---
+        # --- Step 8: Create run (all identity context already resolved) ---
+        agent_ids_for_run = [aid for aid in agent_groups if aid]
         async with get_db_connection() as conn:
-            # Create run (moved from client handler)
             from app.routes.v5.tools.entries.runs.create import create_run
 
             run = await create_run(
-                conn, group_id=group_id, session_id=session_id, profile_id=profile_id,
+                conn,
+                group_id=group_id,
+                session_id=session_id,
+                profiles_id=profiles_id,
+                agent_ids=agent_ids_for_run,
             )
             run_id = run.id
-
-            # Link profile → run
-            await link_profile_to_run(conn, profile_id, run_id)
-
-            # Link run → agents
-            agent_ids_for_run = [aid for aid in agent_groups if aid]
-            await link_run_agents(conn, run_id, agent_ids_for_run)
 
         # --- Step 9: Init trackers ---
         units = [
@@ -447,6 +449,7 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                     save=payload.save,
                     metadata=dispatch.metadata or None,
                     profile_id=profile_id_str,
+                    profiles_id=profiles_id_str,
                     session_id=session_id_str,
                     artifact_id=str(artifact_id) if artifact_id else None,
                     draft_id=str(payload.draft_id) if payload.draft_id else None,

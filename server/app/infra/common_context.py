@@ -35,6 +35,7 @@ async def resolve_common_context(
     redis: Redis,
     *,
     profile_id: UUID,
+    profile: ProfileContext | None = None,
     group_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> CommonContext | None:
@@ -42,14 +43,16 @@ async def resolve_common_context(
 
     Steps:
       1. resolve_profile_context — sequential (need settings_id for step 2)
+         Skipped if ``profile`` is already provided (pre-resolved at boundary).
       2. In parallel:
          a. resolve_tool_graph(settings_id)
          b. resolve_runs_context(profile_id, group_id)
 
     Returns None if profile not found.
     """
-    # Step 1: profile (sequential — need settings_id)
-    profile = await resolve_profile_context(conn, profile_id, redis, bypass_cache)
+    # Step 1: profile (skip if pre-resolved)
+    if profile is None:
+        profile = await resolve_profile_context(conn, profile_id, redis, bypass_cache)
     if profile is None:
         return None
 

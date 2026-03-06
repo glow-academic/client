@@ -15,7 +15,6 @@ class GetPersonaResponse(BaseModel):
     department_ids: list[UUID]
     instructions: str
     examples: list[str]
-    parameter_ids: list[UUID]
     parameter_field_ids: list[UUID]
     created_at: datetime
     active: bool

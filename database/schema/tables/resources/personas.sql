@@ -18,7 +18,6 @@ CREATE TABLE public.personas_resource (
     department_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
     instructions text DEFAULT ''::text NOT NULL,
     examples text[] DEFAULT ARRAY[]::text[] NOT NULL,
-    parameter_ids uuid[] DEFAULT '{}'::uuid[] NOT NULL,
     parameter_field_ids uuid[] DEFAULT '{}'::uuid[] NOT NULL
 );
 
