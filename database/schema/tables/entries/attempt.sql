@@ -213,7 +213,6 @@ CREATE TABLE public.attempt_message_entry (
     chat_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    message_id uuid NOT NULL,
     call_id uuid NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
     generated boolean DEFAULT false NOT NULL,
