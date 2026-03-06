@@ -282,7 +282,7 @@ async def fetch_pricing_filters(
             ]
 
     if fields.date_range.visible:
-        from app.routes.v5.api.entries.runs.search import get_run_list_entries_internal
+        from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
 
         async with pool.acquire() as c_earliest, pool.acquire() as c_latest:
             earliest_result, latest_result = await asyncio.gather(

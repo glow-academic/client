@@ -21,10 +21,6 @@ from fastapi import APIRouter, Depends
 # ============================================================================
 from app.routes.v5.api.docs import router as docs_router
 
-# ============================================================================
-# Entries (CRUD layer on entry tables via MVs)
-# ============================================================================
-from app.routes.v5.api.entries import router as entries_router
 from app.routes.v5.api.main.activity import router as activity_artifact_router
 
 # ============================================================================
@@ -132,11 +128,6 @@ router.include_router(artifacts_router)
 # Resources
 # ============================================================================
 router.include_router(resources_router)
-
-# ============================================================================
-# Entries (CRUD layer on entry tables via MVs)
-# ============================================================================
-router.include_router(entries_router)
 
 # ============================================================================
 # Docs

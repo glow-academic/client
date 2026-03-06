@@ -5,7 +5,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.api.entries.run_pricing.types import (
+from app.routes.v5.tools.entries.run_pricing.types import (
     CreateRunPricingEntryResponse,
     CreateRunPricingEntrySqlParams,
     CreateRunPricingEntrySqlRow,

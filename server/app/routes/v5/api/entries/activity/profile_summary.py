@@ -1,1 +1,0 @@
-"""Profile summary view internal."""

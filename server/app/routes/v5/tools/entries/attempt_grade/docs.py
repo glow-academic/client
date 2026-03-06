@@ -9,7 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_grade.create import create_attempt_grade
 from app.routes.v5.tools.entries.attempt_grade.get import get_attempt_grades
 from app.routes.v5.tools.entries.attempt_grade.refresh import refresh_attempt_grade
-from app.routes.v5.tools.entries.attempt_grade.search import search_attempt_grade_entries_internal
+from app.routes.v5.tools.entries.attempt_grade.search import search_attempt_grades
 
 
 async def get_attempt_grade_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -47,7 +47,7 @@ async def get_attempt_grade_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves grades by IDs from attempt_grade_mv.",
             ),
             get_operation_info(
-                search_attempt_grade_entries_internal,
+                search_attempt_grades,
                 description="Filtered paginated search against attempt_grade_mv.",
             ),
         ],

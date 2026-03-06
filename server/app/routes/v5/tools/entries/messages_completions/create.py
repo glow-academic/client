@@ -5,7 +5,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.api.entries.messages_completions.types import (
+from app.routes.v5.tools.entries.messages_completions.types import (
     CreateMessagesCompletionsEntryResponse,
     CreateMessagesCompletionsEntrySqlParams,
     CreateMessagesCompletionsEntrySqlRow,

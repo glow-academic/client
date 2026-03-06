@@ -5,7 +5,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.api.entries.metrics.types import (
+from app.routes.v5.tools.entries.metrics.types import (
     CreateMetricsEntryResponse,
     CreateMetricsEntrySqlParams,
     CreateMetricsEntrySqlRow,
