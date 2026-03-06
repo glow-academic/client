@@ -1,25 +1,28 @@
-"""Scenario get endpoint - Three-layer architecture.
+"""Scenario GET endpoint — composable infra architecture.
 
-This implements the three-layer BFF pattern:
-1. get_scenario_internal() - Core data fetching (cacheable, returns dataclass)
-2. get_scenario_websocket() - Minimal data for WebSocket handlers
-3. get_scenario_client() - Full BFF response for HTTP endpoint/frontend
-
-The internal layer handles SQL queries and resource fetching.
-The presentation layers transform internal data into consumer-specific formats.
+Uses composable infra layers:
+  1. resolve_common_context — profile + tool graph + runs
+  2. resolve_scenario_permissions_context — access check (404, 403, fail fast)
+  3. resolve_scenario_context — artifact + draft → merged + hydrated resources
+  4. score_tools — tool graph + artifact resources → per-resource tool picks
+  5. Pure Python — permissions, show/required flags, response assembly
 """
 
-import asyncio
-from dataclasses import dataclass
-from typing import Annotated, Any, cast
+from __future__ import annotations
+
+from typing import Annotated
 from uuid import UUID
 
-import asyncpg  # type: ignore
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from redis.asyncio import Redis
 
-from app.infra.globals import get_db, get_pool, get_redis_client
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
+from app.infra.common_context import resolve_common_context
+from app.infra.globals import get_db, get_redis_client
+from app.infra.helpers import dedupe_by_id
+from app.infra.scenario_context import SCENARIO_FLAG_TYPES, resolve_scenario_context
+from app.infra.scenario_permissions_context import resolve_scenario_permissions_context
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.scenario.permissions import (
     SCENARIO_BASIC_RESOURCES,
     SCENARIO_CONTENT_RESOURCES,
@@ -57,174 +60,56 @@ from app.routes.v5.api.main.scenario.permissions import (
 from app.routes.v5.api.main.scenario.types import (
     GetScenarioApiRequest,
     GetScenarioApiResponse,
-    GetScenarioWebsocketResponse,
+    ScenarioDepartment,
     ScenarioDepartmentSection,
+    ScenarioDescriptionResource,
     ScenarioDescriptionSection,
+    ScenarioDocument,
     ScenarioDocumentSection,
+    ScenarioField,
     ScenarioFlagConfig,
     ScenarioFlagSection,
+    ScenarioImage,
     ScenarioImageSection,
+    ScenarioNameResource,
     ScenarioNameSection,
+    ScenarioObjective,
     ScenarioObjectiveSection,
+    ScenarioOption,
     ScenarioOptionSection,
+    ScenarioParameter,
     ScenarioParameterFieldSection,
     ScenarioParameterSection,
+    ScenarioPersona,
     ScenarioPersonaSection,
+    ScenarioProblemStatement,
     ScenarioProblemStatementSection,
+    ScenarioQuestion,
     ScenarioQuestionSection,
-    ScenarioResourceBucket,
-    ScenarioResources,
+    ScenarioVideo,
     ScenarioVideoSection,
-    ScenarioWebsocketEntries,
-    ScenarioWebsocketResources,
 )
-from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.entries.scenario_drafts.get import (
-    get_scenario_drafts_entries_internal,
-)
-from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.args.get import get_args
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.descriptions.search import (
-    search_descriptions,
-)
-from app.routes.v5.tools.resources.documents.get import get_documents
-from app.routes.v5.tools.resources.documents.search import search_documents
-from app.routes.v5.tools.resources.fields.search import search_fields
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.images.get import get_images
-from app.routes.v5.tools.resources.images.search import search_images
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.search import search_names
-from app.routes.v5.tools.resources.objectives.get import get_objectives
-from app.routes.v5.tools.resources.options.get import get_options
-from app.routes.v5.tools.resources.options.search import search_options
-from app.routes.v5.tools.resources.parameter_fields.get import (
-    get_parameter_fields,
-)
-from app.routes.v5.tools.resources.parameter_fields.search import (
-    search_parameter_fields,
-)
-from app.routes.v5.tools.resources.parameters.get import get_parameters
-from app.routes.v5.tools.resources.parameters.search import search_parameters
-from app.routes.v5.tools.resources.personas.get import get_personas
-from app.routes.v5.tools.resources.personas.search import search_personas
-from app.routes.v5.tools.resources.problem_statements.get import (
-    get_problem_statements,
-)
-from app.routes.v5.tools.resources.problem_statements.search import (
-    search_problem_statements,
-)
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.questions.get import get_questions
-from app.routes.v5.tools.resources.questions.search import search_questions
-from app.routes.v5.tools.resources.tools.get import get_tools
-from app.routes.v5.tools.resources.videos.get import get_videos
-from app.routes.v5.tools.resources.videos.search import search_videos
-from app.sql.types import (
-    GetScenarioAccessSqlParams,
-    GetScenarioAccessSqlRow,
-    GetScenarioIdsSqlParams,
-    GetScenarioIdsSqlRow,
-    load_sql_query,
-)
+from app.routes.v5.tools.entries.scenario_drafts.get import get_scenario_drafts
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
-
-# SQL paths
-QUERY1_SQL_PATH = "app/sql/queries/scenarios/get_scenario_access_complete.sql"
-QUERY2_SQL_PATH = "app/sql/queries/scenarios/get_scenario_ids_complete.sql"
 
 router = APIRouter()
 
 
-def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
-    """Preserve order while deduplicating by id attribute."""
-    seen: set[UUID] = set()
-    output: list[Any] = []
-    for item in items:
-        item_id = getattr(item, id_attr, None)
-        if item_id and item_id not in seen:
-            seen.add(item_id)
-            output.append(item)
-    return output
+# ---------------------------------------------------------------------------
+# get_scenario_client — composable infra architecture
+# ---------------------------------------------------------------------------
 
 
-# =============================================================================
-# Internal Data Layer
-# =============================================================================
-
-
-@dataclass
-class ScenarioInternalData:
-    """Internal data from core scenario fetching (cacheable layer).
-
-    This dataclass contains all computed data needed by both:
-    - get_scenario_websocket() - minimal data for WebSocket handlers
-    - get_scenario_client() - full BFF response for HTTP/frontend
-    """
-
-    # Access/context
-    actor_name: str | None
-    scenario_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
-
-    # Agent mappings
-    agent_ids: dict[str, UUID | None]
-
-    # Show/required flags
-    show_flags_map: dict[str, bool]
-    required_flags_map: dict[str, bool]
-
-    # Suggestions (resource -> list of suggestion IDs)
-    suggestions_map: dict[str, list[UUID]]
-
-    # Show AI generate flags (computed: agent exists for resource)
-    show_ai_generate_map: dict[str, bool]
-    basic_show_ai_generate: bool
-    content_show_ai_generate: bool
-
-    # Resources payload
-    resources_payload: ScenarioResources
-
-    # Per-resource group IDs (from draft MV)
-    resource_group_ids: dict[str, UUID | None]
-
-    # Per-resource tool IDs (from selected agents)
-    tool_ids_map: dict[str, UUID | None]
-
-    # Config resources (for websocket generation context)
-    config_agent_resources: list[Any] | None
-    config_model_resources: list[Any] | None
-    config_provider_resources: list[Any] | None
-
-    # IDs result (for backwards-compat fields in client response)
-    ids_result: GetScenarioIdsSqlRow
-
-    # Resolved parameter IDs (derived from saved parameter_fields)
-    resolved_parameter_ids: list[str] | None
-
-    # Scenario-specific: video parameter data
-    video_param_ids: set[UUID]
-    non_video_param_ids: set[UUID]
-    persona_to_params: dict[UUID, list[UUID]]
-    doc_to_params: dict[UUID, list[UUID]]
-
-
-async def get_scenario_internal(
+async def get_scenario_client(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
     profile_id: UUID,
     scenario_id: UUID | None,
     draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-    # Search terms per resource (only needed for client layer)
+    group_id: UUID,
+    parameter_ids: list[UUID] | None = None,
+    # Search filters (threaded from client)
     description_search: str | None = None,
     persona_search: str | None = None,
     document_search: str | None = None,
@@ -237,670 +122,170 @@ async def get_scenario_internal(
     persona_show_selected: bool | None = None,
     document_show_selected: bool | None = None,
     parameter_show_selected: bool | None = None,
-    parameter_ids: list[UUID] | None = None,
-    group_id: UUID | None = None,
-) -> ScenarioInternalData:
-    """Core data fetching layer (cacheable).
+    bypass_cache: bool = False,
+) -> GetScenarioApiResponse:
+    """Scenario GET using composable infra functions.
 
-    Fetches all scenario data using two-pass architecture and returns
-    a dataclass with all computed values. This is the shared layer used by:
-    - get_scenario_websocket() - minimal data for WebSocket handlers
-    - get_scenario_client() - full BFF response for HTTP/frontend
-
-    Args:
-        profile_id: The authenticated user's profile ID
-        scenario_id: The scenario ID to fetch (None for new scenario mode)
-        draft_id: Optional draft ID for draft mode
-        bypass_cache: Whether to bypass resource caching
-
-    Returns:
-        ScenarioInternalData with all computed values
-
-    Raises:
-        HTTPException: For validation errors (404, 403, 400)
+    Flow:
+      1. resolve_common_context(profile_id) → profile, tool_graph, runs
+      2. resolve_scenario_permissions_context → access check (404, 403, fail fast)
+      3. resolve_scenario_context(scenario_id, draft_id, ...) → hydrated resources
+      4. score_tools(tool_graph, SCENARIO_RESOURCES) → per-resource tool picks
+      5. Pure Python: permissions, show/required/AI flags, response assembly
     """
 
-    # === QUERY 1: Access Check (always fresh, no cache) ===
-    pool = get_pool()
-    if not pool:
-        raise RuntimeError("Database pool not initialized")
+    # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
-    # Fetch draft if provided
-    draft_item = None
-    if draft_id is not None:
-        async with pool.acquire() as draft_conn:
-            draft_items = await get_scenario_drafts_entries_internal(
-                conn=draft_conn,
-                ids=[draft_id],
-                bypass_cache=bypass_cache,
-            )
-            if draft_items:
-                draft_item = draft_items[0]
-
-    # Fetch user context for permissions
-    async with pool.acquire() as context_conn:
-        profile_ctx = await get_auth_profile_internal(
-            conn=context_conn,
-            profile_id=profile_id,
-            bypass_cache=bypass_cache,
-        )
-    user_role = profile_ctx.access.role
-    actor_name = profile_ctx.access.actor_name
-    user_department_ids = [
-        d.department_id for d in profile_ctx.departments if d.department_id
-    ]
-
-    # === GROUP ID: Create in Python (moved from SQL side-effect) ===
-    if group_id:
-        effective_group_id = group_id
-    elif draft_item and draft_item.group_id:
-        effective_group_id = draft_item.group_id
-    else:
-        async with pool.acquire() as c:
-            effective_group_id = await c.fetchval(
-                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
-            )
-
-    async with pool.acquire() as conn:
-        query1_params = GetScenarioAccessSqlParams(
-            profile_id=profile_id,
-            scenario_id=scenario_id,
-            draft_id=draft_id,
-        )
-
-        access_result = cast(
-            GetScenarioAccessSqlRow,
-            await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
-        )
-
-        # Extract user context from Query 1
-        scenario_department_ids = access_result.scenario_department_ids or []
-        active_simulation_count = access_result.active_simulation_count or 0
-
-        # Early validation: check scenario exists
-        if scenario_id is not None:
-            if access_result.scenario_exists is False:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Scenario {scenario_id} not found",
-                )
-
-            # Check access
-            if not has_access(user_role, user_department_ids, scenario_department_ids):
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have access to this scenario. It may be restricted to other departments.",
-                )
-
-        effective_draft_version = draft_item.version if draft_item is not None else None
-
-        # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
-        query2_params = GetScenarioIdsSqlParams(
-            profile_id=profile_id,
-            scenario_id=scenario_id,
-            draft_id=draft_id,
-            group_id=effective_group_id,
-            user_department_ids=user_department_ids,
-        )
-
-        ids_result = cast(
-            GetScenarioIdsSqlRow,
-            await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
-        )
-
-    # === RESOLVE AGENTS FROM SETTINGS (source of truth) ===
-    async with pool.acquire() as settings_conn:
-        settings_data = await get_auth_settings_internal(
-            settings_conn, profile_id, bypass_cache
-        )
-
-    agent_ids, tool_ids_map_create, _link_tool_ids_map = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, SCENARIO_RESOURCES
+    common = await resolve_common_context(
+        conn,
+        redis,
+        profile_id=profile_id,
+        group_id=group_id,
+        bypass_cache=bypass_cache,
     )
-    tool_ids_map = tool_ids_map_create
 
-    # === COMPUTE SHOW_AI_GENERATE FLAGS ===
-    show_ai_generate_map = {
-        resource: agent_ids.get(resource) is not None for resource in SCENARIO_RESOURCES
+    if common is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
+        )
+
+    profile = common.profile
+
+    # ── Step 2: Permissions check (fail fast before full hydration) ────────
+
+    perms = None
+    if scenario_id is not None:
+        perms = await resolve_scenario_permissions_context(conn, scenario_id)
+
+        if not perms.exists:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Scenario {scenario_id} not found",
+            )
+
+        if not has_access(profile.role, profile.department_ids, perms.department_ids):
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have access to this scenario. "
+                "It may be restricted to other departments.",
+            )
+
+    # ── Step 3: Scenario artifact context ─────────────────────────────────
+
+    scenario = await resolve_scenario_context(
+        conn,
+        redis,
+        scenario_id=scenario_id,
+        group_id=group_id,
+        draft_id=draft_id,
+        user_department_ids=profile.department_ids,
+        parameter_ids=parameter_ids,
+        description_search=description_search,
+        persona_search=persona_search,
+        document_search=document_search,
+        parameter_search=parameter_search,
+        problem_statement_search=problem_statement_search,
+        image_search=image_search,
+        video_search=video_search,
+        question_search=question_search,
+        option_search=option_search,
+        persona_show_selected=persona_show_selected,
+        document_show_selected=document_show_selected,
+        parameter_show_selected=parameter_show_selected,
+        bypass_cache=bypass_cache,
+    )
+
+    # ── Step 4: Tool scoring ──────────────────────────────────────────────
+
+    scores = score_tools(common.tool_graph, SCENARIO_RESOURCES)
+
+    agent_ids: dict[str, UUID | None] = {
+        r: (scores.best[r].agent_id if scores.best.get(r) else None)
+        for r in SCENARIO_RESOURCES
     }
 
-    basic_show_ai_generate = any(
-        show_ai_generate_map.get(r, False) for r in SCENARIO_BASIC_RESOURCES
-    )
-    content_show_ai_generate = any(
-        show_ai_generate_map.get(r, False) for r in SCENARIO_CONTENT_RESOURCES
-    )
+    tool_ids_map: dict[str, UUID | None] = {
+        r: (scores.best[r].tool_id if scores.best.get(r) else None)
+        for r in SCENARIO_RESOURCES
+    }
 
-    # === PYTHON BUSINESS LOGIC ===
+    # ── Step 5: Permissions ───────────────────────────────────────────────
 
-    # Compute permissions
+    scenario_department_ids = [
+        d.id for d in scenario.resources["departments"].selected
+    ]
+    active_simulation_count = perms.active_simulation_count if perms else 0
+
     can_edit = compute_can_edit(
-        user_role=user_role,
+        user_role=profile.role,
         scenario_department_ids=scenario_department_ids,
         active_simulation_count=active_simulation_count,
-        user_department_ids=user_department_ids,
+        user_department_ids=profile.department_ids,
     )
 
     disabled_reason = compute_disabled_reason(
-        user_role=user_role,
+        user_role=profile.role,
         scenario_department_ids=scenario_department_ids,
         active_simulation_count=active_simulation_count,
-        user_department_ids=user_department_ids,
+        user_department_ids=profile.department_ids,
     )
 
-    # === PASS 2: Parallel Resource Fetching ===
+    # ── Step 6: Show / Required / AI flags ────────────────────────────────
 
-    # Selected IDs for fetching (with draft override support)
-    selected_name_ids = [ids_result.name_id] if ids_result.name_id else []
-    selected_description_ids = (
-        [ids_result.description_id] if ids_result.description_id else []
+    all_departments = dedupe_by_id(
+        scenario.resources["departments"].selected
+        + scenario.resources["departments"].suggestions
     )
-    selected_problem_statement_ids = (
-        [ids_result.problem_statement_id] if ids_result.problem_statement_id else []
+    all_personas = dedupe_by_id(
+        scenario.resources["personas"].selected
+        + scenario.resources["personas"].suggestions
     )
-    selected_department_ids = ids_result.department_ids or []
-    selected_persona_ids = ids_result.persona_ids or []
-    selected_document_ids = ids_result.document_ids or []
-    selected_parameter_ids = ids_result.parameter_ids or []
-    selected_parameter_field_ids = ids_result.parameter_field_ids or []
-    selected_objective_ids = ids_result.objective_ids or []
-    selected_image_ids = ids_result.image_ids or []
-    selected_video_ids = ids_result.video_ids or []
-    selected_question_ids = ids_result.question_ids or []
-    selected_option_ids = ids_result.option_ids or []
-
-    # Draft values override canonical junction values
-    if draft_item is not None:
-        if draft_item.name_ids:
-            selected_name_ids = [draft_item.name_ids[0]]
-        if draft_item.description_ids:
-            selected_description_ids = [draft_item.description_ids[0]]
-        if draft_item.department_ids:
-            selected_department_ids = draft_item.department_ids
-        if draft_item.persona_ids:
-            selected_persona_ids = draft_item.persona_ids
-        if draft_item.document_ids:
-            selected_document_ids = draft_item.document_ids
-        if draft_item.parameter_ids:
-            selected_parameter_ids = draft_item.parameter_ids
-        if draft_item.parameter_field_ids:
-            selected_parameter_field_ids = draft_item.parameter_field_ids
-        if draft_item.question_ids:
-            selected_question_ids = draft_item.question_ids
-
-    # Build per-resource group_ids from draft_item
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": draft_item.group_id if draft_item else None,
-        "descriptions": draft_item.group_id if draft_item else None,
-        "problem_statements": draft_item.group_id if draft_item else None,
-        "flags": draft_item.group_id if draft_item else None,
-        "departments": draft_item.group_id if draft_item else None,
-        "personas": draft_item.group_id if draft_item else None,
-        "documents": draft_item.group_id if draft_item else None,
-        "parameters": draft_item.group_id if draft_item else None,
-        "fields": draft_item.group_id if draft_item else None,
-        "objectives": draft_item.group_id if draft_item else None,
-        "images": draft_item.group_id if draft_item else None,
-        "videos": draft_item.group_id if draft_item else None,
-        "questions": draft_item.group_id if draft_item else None,
-        "options": draft_item.group_id if draft_item else None,
-    }
-
-    # Parallel fetch all resources
-    # NOTE: Each query needs its own connection from the pool because
-    # asyncpg connections cannot handle concurrent operations.
-
-    async def fetch_names():
-        async with pool.acquire() as c:
-            selected = await get_names(
-                c, selected_name_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-            suggestions = await search_names(
-                c,
-                get_redis_client(),
-                draft_id=effective_group_id,
-                exclude_ids=selected_name_ids,
-                bypass_cache=bypass_cache,
-                scenario=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_descriptions():
-        async with pool.acquire() as c:
-            selected = await get_descriptions(
-                c, selected_description_ids, get_redis_client(), cache
-            )
-            suggestions = await search_descriptions(
-                c,
-                get_redis_client(),
-                search=description_search,
-                draft_id=effective_group_id,
-                exclude_ids=selected_description_ids,
-                bypass_cache=bypass_cache,
-                scenario=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_problem_statements():
-        async with pool.acquire() as c:
-            selected = await get_problem_statements(
-                c, selected_problem_statement_ids, get_redis_client(), bypass_cache
-            )
-            suggestions = await search_problem_statements(
-                c,
-                get_redis_client(),
-                search=problem_statement_search,
-                limit_count=20,
-                offset_count=0,
-                exclude_ids=selected_problem_statement_ids,
-                bypass_cache=bypass_cache,
-            )
-            return (selected, suggestions)
-
-    # Scenario-specific flag types (business logic)
-    SCENARIO_FLAG_TYPES = {
-        "scenario_active",
-        "video_enabled",
-        "problem_statement_enabled",
-        "objectives_enabled",
-        "images_enabled",
-        "questions_enabled",
-    }
-
-    async def fetch_all_scenario_flags():
-        """Fetch ALL available scenario flags, not just selected ones."""
-        async with pool.acquire() as c:
-            # Get all selected flag IDs to fetch their full data
-            all_selected_ids = [
-                fid
-                for fid in [
-                    ids_result.active_flag_id,
-                    ids_result.objectives_enabled_flag_id,
-                    ids_result.images_enabled_flag_id,
-                    ids_result.video_enabled_flag_id,
-                    ids_result.questions_enabled_flag_id,
-                    ids_result.problem_statement_enabled_flag_id,
-                ]
-                if fid
-            ]
-            selected = await get_flags(
-                c, all_selected_ids, get_redis_client(), bypass_cache
-            )
-            # Search for all available scenario flags (by type)
-            all_flags = await search_flags(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=50,
-                offset_count=0,
-                exclude_ids=all_selected_ids,
-                bypass_cache=bypass_cache,
-                scenario=True,
-            )
-            # Filter to only scenario-specific flags (business logic in Python)
-            suggestions = [f for f in all_flags if f.type in SCENARIO_FLAG_TYPES]
-            return (selected, suggestions)
-
-    async def fetch_departments():
-        async with pool.acquire() as c:
-            selected = await get_departments(
-                c,
-                selected_department_ids,
-                get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-            dept_source = "all" if scenario_id is None else "recent"
-            suggestions = await search_departments(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=20,
-                offset_count=0,
-                department_ids=user_department_ids,
-                suggest_source=dept_source,
-                exclude_ids=selected_department_ids,
-                bypass_cache=bypass_cache,
-            )
-            return (selected, suggestions)
-
-    async def fetch_personas():
-        async with pool.acquire() as c:
-            selected = await get_personas(
-                c, selected_persona_ids, get_redis_client(), bypass_cache
-            )
-            suggestions = await search_personas(
-                c,
-                get_redis_client(),
-                search=persona_search,
-                limit_count=20,
-                offset_count=0,
-                department_ids=user_department_ids,
-                draft_id=effective_group_id,
-                suggest_source="selected" if persona_show_selected else None,
-                exclude_ids=selected_persona_ids,
-                bypass_cache=bypass_cache,
-                scenario=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_documents():
-        async with pool.acquire() as c:
-            selected = await get_documents(
-                c, selected_document_ids, get_redis_client(), bypass_cache
-            )
-            suggestions = await search_documents(
-                c,
-                get_redis_client(),
-                search=document_search,
-                limit_count=20,
-                offset_count=0,
-                department_ids=user_department_ids,
-                draft_id=effective_group_id,
-                suggest_source="selected" if document_show_selected else None,
-                exclude_ids=selected_document_ids,
-                bypass_cache=bypass_cache,
-                scenario=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_parameters():
-        async with pool.acquire() as c:
-            selected = await get_parameters(
-                c,
-                selected_parameter_ids,
-                get_redis_client(),
-                bypass_cache,
-            )
-            suggestions = await search_parameters(
-                c,
-                get_redis_client(),
-                search=parameter_search,
-                limit_count=20,
-                offset_count=0,
-                persona_parameter=None,
-                document_parameter=None,
-                scenario_parameter=True,
-                video_parameter=None,
-                suggest_source="selected" if parameter_show_selected else "all",
-                exclude_ids=selected_parameter_ids,
-                bypass_cache=bypass_cache,
-            )
-            return (selected, suggestions)
-
-    async def fetch_parameter_fields():
-        async with pool.acquire() as c:
-            selected = await get_parameter_fields(
-                c, selected_parameter_field_ids, get_redis_client(), bypass_cache
-            )
-            available: list = []
-            conditional_param_ids: list[UUID] = []
-            if parameter_ids:
-                available = await search_parameter_fields(
-                    c,
-                    get_redis_client(),
-                    parameter_ids=parameter_ids,
-                    bypass_cache=bypass_cache,
-                )
-            return (selected, available, conditional_param_ids)
-
-    async def fetch_objectives():
-        async with pool.acquire() as c:
-            selected = await get_objectives(
-                c, selected_objective_ids, get_redis_client(), bypass_cache
-            )
-            return (selected, [])
-
-    async def fetch_images():
-        async with pool.acquire() as c:
-            selected = await get_images(
-                c, selected_image_ids, get_redis_client(), bypass_cache
-            )
-            suggestions = await search_images(
-                c,
-                get_redis_client(),
-                search=image_search,
-                limit_count=20,
-                offset_count=0,
-                exclude_ids=selected_image_ids,
-                bypass_cache=bypass_cache,
-                scenario=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_videos():
-        async with pool.acquire() as c:
-            selected = await get_videos(
-                c, selected_video_ids, get_redis_client(), bypass_cache
-            )
-            suggestions = await search_videos(
-                c,
-                get_redis_client(),
-                search=video_search,
-                limit_count=20,
-                offset_count=0,
-                exclude_ids=selected_video_ids,
-                bypass_cache=bypass_cache,
-                scenario=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_questions():
-        async with pool.acquire() as c:
-            selected = await get_questions(
-                c, selected_question_ids, get_redis_client(), bypass_cache
-            )
-            suggestions = await search_questions(
-                c,
-                get_redis_client(),
-                search=question_search,
-                limit_count=20,
-                offset_count=0,
-                exclude_ids=selected_question_ids,
-                bypass_cache=bypass_cache,
-                scenario=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_options():
-        async with pool.acquire() as c:
-            selected = await get_options(
-                c, selected_option_ids, get_redis_client(), bypass_cache
-            )
-            suggestions = await search_options(
-                c,
-                get_redis_client(),
-                search=option_search,
-                limit_count=20,
-                offset_count=0,
-                exclude_ids=selected_option_ids,
-                question_ids=selected_question_ids or None,
-                bypass_cache=bypass_cache,
-                scenario=True,
-            )
-            return (selected, suggestions)
-
-    # === PARALLEL FETCH ===
-    (
-        (names_selected, names_suggestions),
-        (descriptions_selected, descriptions_suggestions),
-        (problem_statements_selected, problem_statements_suggestions),
-        (flags_selected, flags_suggestions),
-        (departments_selected, departments_suggestions),
-        (personas_selected, personas_suggestions),
-        (documents_selected, documents_suggestions),
-        (parameters_selected, parameters_suggestions),
-        (
-            parameter_fields_selected,
-            parameter_fields_suggestions,
-            conditional_param_ids,
-        ),
-        (objectives_selected, _),
-        (images_selected, images_suggestions),
-        (videos_selected, videos_suggestions),
-        (questions_selected, questions_suggestions),
-        (options_selected, options_suggestions),
-    ) = await asyncio.gather(
-        fetch_names(),
-        fetch_descriptions(),
-        fetch_problem_statements(),
-        fetch_all_scenario_flags(),
-        fetch_departments(),
-        fetch_personas(),
-        fetch_documents(),
-        fetch_parameters(),
-        fetch_parameter_fields(),
-        fetch_objectives(),
-        fetch_images(),
-        fetch_videos(),
-        fetch_questions(),
-        fetch_options(),
+    all_documents = dedupe_by_id(
+        scenario.resources["documents"].selected
+        + scenario.resources["documents"].suggestions
     )
-
-    # === VIDEO PARAMETER COMPUTATION ===
-    async with pool.acquire() as filter_conn:
-        video_param_rows = await filter_conn.fetch(
-            "SELECT id, video_parameter FROM parameters_resource WHERE active = true"
-        )
-        video_param_ids = {
-            row["id"] for row in video_param_rows if row["video_parameter"]
-        }
-        non_video_param_ids = {
-            row["id"] for row in video_param_rows if not row["video_parameter"]
-        }
-
-        all_persona_ids_for_video = [
-            p.id for p in personas_selected + personas_suggestions if p.id
-        ]
-        if all_persona_ids_for_video:
-            persona_param_rows = await filter_conn.fetch(
-                """SELECT ppj.personas_id as persona_id, ARRAY_AGG(DISTINCT pfr.parameter_id) as param_ids
-                   FROM persona_personas_junction ppj
-                   JOIN persona_parameter_fields_junction ppfj ON ppfj.persona_id = ppj.persona_id
-                   JOIN parameter_fields_resource pfr ON pfr.id = ppfj.parameter_field_id
-                   WHERE ppj.personas_id = ANY($1)
-                     AND ppj.active = true
-                     AND ppfj.active = true
-                     AND pfr.active = true
-                     AND pfr.parameter_id IS NOT NULL
-                   GROUP BY ppj.personas_id""",
-                all_persona_ids_for_video,
-            )
-            persona_to_params = {
-                row["persona_id"]: row["param_ids"] or [] for row in persona_param_rows
-            }
-        else:
-            persona_to_params = {}
-
-        all_document_ids_for_video = [
-            d.id for d in documents_selected + documents_suggestions if d.id
-        ]
-        if all_document_ids_for_video:
-            doc_param_rows = await filter_conn.fetch(
-                """SELECT ddj.documents_id as document_id, ARRAY_AGG(dpj.parameter_id) as param_ids
-                   FROM document_documents_junction ddj
-                   JOIN document_parameters_junction dpj ON dpj.document_id = ddj.document_id
-                   WHERE ddj.documents_id = ANY($1)
-                     AND ddj.active = true
-                     AND dpj.active = true
-                   GROUP BY ddj.documents_id""",
-                all_document_ids_for_video,
-            )
-            doc_to_params = {
-                row["document_id"]: row["param_ids"] or [] for row in doc_param_rows
-            }
-        else:
-            doc_to_params = {}
-
-    # === RESOLVE UPLOAD IDs (uploads_resource -> uploads_entry) ===
-    all_upload_ids: list[UUID] = []
-    for img in images_selected + images_suggestions:
-        if img.upload_id:
-            all_upload_ids.append(img.upload_id)
-    for vid in videos_selected + videos_suggestions:
-        if vid.upload_id:
-            all_upload_ids.append(vid.upload_id)
-    for doc in documents_selected + documents_suggestions:
-        if doc.upload_id:
-            all_upload_ids.append(doc.upload_id)
-
-    upload_id_map: dict[UUID, UUID] = {}
-    if all_upload_ids:
-        async with pool.acquire() as c:
-            rows = await c.fetch(
-                "SELECT id, upload_id FROM uploads_resource WHERE id = ANY($1) AND upload_id IS NOT NULL",
-                list(set(all_upload_ids)),
-            )
-            for row in rows:
-                upload_id_map[row["id"]] = row["upload_id"]
-
-    # Combine selected and suggestions (dedupe)
-    names = _dedupe_by_id(names_selected + names_suggestions, "id")
-    descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
-    problem_statements = _dedupe_by_id(
-        problem_statements_selected + problem_statements_suggestions,
-        "id",
+    all_parameters = dedupe_by_id(
+        scenario.resources["parameters"].selected
+        + scenario.resources["parameters"].suggestions
     )
-    all_scenario_flags = _dedupe_by_id(flags_selected + flags_suggestions, "name")
-    departments = _dedupe_by_id(departments_selected + departments_suggestions, "id")
-    personas = _dedupe_by_id(personas_selected + personas_suggestions, "id")
-    documents = _dedupe_by_id(documents_selected + documents_suggestions, "id")
-    parameters = _dedupe_by_id(
-        parameters_selected + parameters_suggestions,
-        "parameter_id",
+    all_parameter_fields = dedupe_by_id(
+        scenario.resources["parameter_fields"].selected
+        + scenario.resources["parameter_fields"].suggestions
     )
-
-    # Fetch conditional parameter metadata for any referenced by available fields
-    # but not already in the parameter list
-    existing_param_ids = {p.id for p in parameters if p.id}
-    missing_conditional_ids = [
-        pid for pid in conditional_param_ids if pid not in existing_param_ids
-    ]
-    if missing_conditional_ids:
-        async with pool.acquire() as c:
-            conditional_params = await get_parameters(
-                c, missing_conditional_ids, get_redis_client(), bypass_cache
-            )
-            parameters = _dedupe_by_id(parameters + conditional_params, "id")
-    parameter_fields = _dedupe_by_id(
-        parameter_fields_selected + parameter_fields_suggestions, "field_id"
+    all_objectives = scenario.resources["objectives"].selected
+    all_images = dedupe_by_id(
+        scenario.resources["images"].selected
+        + scenario.resources["images"].suggestions
     )
-    objectives = objectives_selected
-    images = _dedupe_by_id(images_selected + images_suggestions, "id")
-    videos = _dedupe_by_id(videos_selected + videos_suggestions, "video_id")
-    questions = _dedupe_by_id(questions_selected + questions_suggestions, "question_id")
-    options = _dedupe_by_id(options_selected + options_suggestions, "id")
-
-    # Compute final show flags
-    show_name = compute_show_name()
-    show_description = compute_show_description()
-    show_problem_statement = compute_show_problem_statement()
-    show_flag = compute_show_flag()
-    show_departments = compute_show_departments(len(departments))
-    show_personas = compute_show_personas(len(personas))
-    show_documents = compute_show_documents(len(documents))
-    show_parameters = compute_show_parameters(len(parameters))
-    show_parameter_fields = compute_show_fields(len(parameter_fields))
-    show_objectives = compute_show_objectives(len(objectives))
-    show_images = compute_show_images(len(images))
-    show_videos = compute_show_videos(len(videos))
-    show_questions = compute_show_questions(len(questions))
-    show_options = len(options) > 0
+    all_videos = dedupe_by_id(
+        scenario.resources["videos"].selected
+        + scenario.resources["videos"].suggestions
+    )
+    all_questions = dedupe_by_id(
+        scenario.resources["questions"].selected
+        + scenario.resources["questions"].suggestions
+    )
+    all_options = dedupe_by_id(
+        scenario.resources["options"].selected
+        + scenario.resources["options"].suggestions
+    )
 
     show_flags_map = {
-        "names": show_name,
-        "descriptions": show_description,
-        "problem_statements": show_problem_statement,
-        "flags": show_flag,
-        "departments": show_departments,
-        "personas": show_personas,
-        "documents": show_documents,
-        "parameters": show_parameters,
-        "fields": show_parameter_fields,
-        "objectives": show_objectives,
-        "images": show_images,
-        "videos": show_videos,
-        "questions": show_questions,
-        "options": show_options,
+        "names": compute_show_name(),
+        "descriptions": compute_show_description(),
+        "problem_statements": compute_show_problem_statement(),
+        "flags": compute_show_flag(),
+        "departments": compute_show_departments(len(all_departments)),
+        "personas": compute_show_personas(len(all_personas)),
+        "documents": compute_show_documents(len(all_documents)),
+        "parameters": compute_show_parameters(len(all_parameters)),
+        "fields": compute_show_fields(len(all_parameter_fields)),
+        "objectives": compute_show_objectives(len(all_objectives)),
+        "images": compute_show_images(len(all_images)),
+        "videos": compute_show_videos(len(all_videos)),
+        "questions": compute_show_questions(len(all_questions)),
+        "options": len(all_options) > 0,
     }
 
     required_flags_map = {
@@ -920,676 +305,370 @@ async def get_scenario_internal(
         "options": False,
     }
 
-    # Build enriched flags list from ALL available scenario flags (canonical pattern)
-    scenario_flags: list[ScenarioFlagConfig] = [
-        ScenarioFlagConfig(
-            key=flag.type,
-            label=flag.name,
-            description=flag.description,
-            icon_id=flag.icon,
-            flag_option_id=flag.id,
-            generated=flag.generated,
-            video_flag=flag.type == "questions_enabled",
+    show_ai_generate_map = {
+        r: agent_ids.get(r) is not None for r in SCENARIO_RESOURCES
+    }
+
+    basic_show_ai_generate = any(
+        show_ai_generate_map.get(r, False) for r in SCENARIO_BASIC_RESOURCES
+    )
+    content_show_ai_generate = any(
+        show_ai_generate_map.get(r, False) for r in SCENARIO_CONTENT_RESOURCES
+    )
+
+    suggestions_map: dict[str, list[UUID]] = {
+        "names": [n.id for n in scenario.resources["names"].suggestions],
+        "descriptions": [d.id for d in scenario.resources["descriptions"].suggestions],
+        "problem_statements": [
+            ps.id for ps in scenario.resources["problem_statements"].suggestions
+        ],
+        "departments": [d.id for d in scenario.resources["departments"].suggestions],
+        "personas": [p.id for p in scenario.resources["personas"].suggestions],
+        "documents": [d.id for d in scenario.resources["documents"].suggestions],
+        "parameters": [p.id for p in scenario.resources["parameters"].suggestions],
+        "objectives": [],
+        "images": [i.id for i in scenario.resources["images"].suggestions],
+        "videos": [v.id for v in scenario.resources["videos"].suggestions],
+        "questions": [q.id for q in scenario.resources["questions"].suggestions],
+        "options": [o.id for o in scenario.resources["options"].suggestions],
+    }
+
+    def _section(resource_key: str) -> dict:
+        return {
+            "show": show_flags_map.get(resource_key, False),
+            "required": required_flags_map.get(resource_key, False),
+            "suggestions": suggestions_map.get(resource_key),
+            "show_ai_generate": show_ai_generate_map.get(resource_key, False),
+            "tool_id": tool_ids_map.get(resource_key),
+        }
+
+    # ── Step 7: Resource conversion + response assembly ───────────────────
+
+    # Video param computation (pure Python from hydrated resources)
+    # Chain: parameter_field_ids → field.parameter_id → parameter.video_parameter
+    video_param_ids = {p.id for p in all_parameters if p.video_parameter}
+    field_to_param = {
+        pf.id: pf.parameter_id
+        for pf in all_parameter_fields
+        if pf.parameter_id
+    }
+
+    def _video_flags_for_field_ids(
+        field_ids: list[UUID] | None,
+    ) -> tuple[bool, bool]:
+        param_ids = {
+            field_to_param[fid]
+            for fid in (field_ids or [])
+            if fid in field_to_param
+        }
+        has_video = bool(param_ids & video_param_ids)
+        has_non_video = bool(param_ids - video_param_ids) or not param_ids
+        return has_video, has_non_video
+
+    # Build lookup dicts from entry MV results (keyed by resource ID)
+    file_map = {f.files_id: f for f in scenario.entries["files"]}
+    image_entry_map = {i.images_id: i for i in scenario.entries["images"]}
+    video_entry_map = {v.videos_id: v for v in scenario.entries["videos"]}
+
+    # Converters: resource types → scenario-specific response types
+    def _to_name(n) -> ScenarioNameResource:
+        return ScenarioNameResource(id=n.id, name=n.name, generated=n.generated)
+
+    def _to_description(d) -> ScenarioDescriptionResource:
+        return ScenarioDescriptionResource(
+            id=d.id, description=d.description, generated=d.generated
         )
-        for flag in all_scenario_flags
-        if flag.id and flag.type and flag.type != "scenario_parameter"
+
+    def _to_problem_statement(ps) -> ScenarioProblemStatement:
+        return ScenarioProblemStatement(
+            problem_statement_id=ps.id,
+            name=ps.name,
+            problem_statement=ps.problem_statement,
+            generated=ps.generated,
+        )
+
+    def _to_department(d) -> ScenarioDepartment:
+        return ScenarioDepartment(
+            department_id=d.id,
+            name=d.name,
+            description=d.description,
+            generated=d.generated,
+        )
+
+    def _to_persona(p) -> ScenarioPersona:
+        video_persona, non_video_persona = _video_flags_for_field_ids(p.parameter_field_ids)
+        return ScenarioPersona(
+            persona_id=p.id,
+            name=p.name,
+            description=p.description,
+            color=p.color,
+            icon=p.icon,
+            parameter_ids=None,
+            field_ids=p.parameter_field_ids,
+            example=p.examples[0] if p.examples else None,
+            video_persona=video_persona,
+            non_video_persona=non_video_persona,
+        )
+
+    def _to_document(d) -> ScenarioDocument:
+        video_document, non_video_document = _video_flags_for_field_ids(d.parameter_field_ids)
+        file_entry = file_map.get(d.file_id) if d.file_id else None
+        return ScenarioDocument(
+            document_id=d.id,
+            name=d.name,
+            description=d.description,
+            upload_id=file_entry.upload_id if file_entry else None,
+            file_path=file_entry.file_path if file_entry else None,
+            mime_type=file_entry.mime_type if file_entry else None,
+            html=d.template,
+            parameter_ids=None,
+            field_ids=d.parameter_field_ids,
+            parent_document_id=None,
+            video_document=video_document,
+            non_video_document=non_video_document,
+        )
+
+    def _to_parameter(p) -> ScenarioParameter:
+        return ScenarioParameter(
+            parameter_id=p.id,
+            name=p.name,
+            description=p.description,
+            document_parameter=p.document_parameter,
+            persona_parameter=p.persona_parameter,
+            scenario_parameter=p.scenario_parameter,
+            video_parameter=p.video_parameter,
+            non_video_parameter=not p.video_parameter
+            if p.video_parameter is not None
+            else True,
+        )
+
+    def _to_field(f) -> ScenarioField:
+        return ScenarioField(
+            field_id=getattr(f, "field_id", None) or f.id,
+            parameter_id=f.parameter_id,
+            generated=f.generated,
+        )
+
+    def _to_objective(o) -> ScenarioObjective:
+        return ScenarioObjective(
+            id=o.id, objective=o.objective, generated=o.generated
+        )
+
+    def _to_image(i) -> ScenarioImage:
+        entry = image_entry_map.get(i.id)
+        return ScenarioImage(
+            image_id=i.id,
+            name=i.name,
+            file_path=entry.file_path if entry else None,
+            mime_type=entry.mime_type if entry else None,
+            upload_id=entry.upload_id if entry else None,
+            generated=i.generated,
+        )
+
+    def _to_video(v) -> ScenarioVideo:
+        entry = video_entry_map.get(v.id)
+        return ScenarioVideo(
+            video_id=v.id,
+            name=v.name,
+            file_path=entry.file_path if entry else None,
+            mime_type=entry.mime_type if entry else None,
+            upload_id=entry.upload_id if entry else None,
+            generated=v.generated,
+        )
+
+    def _to_question(q) -> ScenarioQuestion:
+        return ScenarioQuestion(
+            question_id=q.id,
+            question_text=q.question_text,
+            allow_multiple=q.allow_multiple,
+            generated=q.generated,
+        )
+
+    def _to_option(o) -> ScenarioOption:
+        return ScenarioOption(
+            option_id=o.id,
+            option_text=o.option_text,
+            is_correct=o.is_correct,
+            question_id=o.question_id,
+            generated=o.generated,
+        )
+
+    # Build flag configs
+    all_flags = dedupe_by_id(
+        scenario.resources["flags"].selected
+        + scenario.resources["flags"].suggestions
+    )
+    scenario_flags = [
+        ScenarioFlagConfig(
+            key=f.type,
+            label=f.name,
+            description=f.description,
+            icon_id=f.icon,
+            flag_option_id=f.id,
+            generated=f.generated,
+            video_flag=f.type == "questions_enabled",
+        )
+        for f in all_flags
+        if f.id and f.type and f.type != "scenario_parameter"
     ]
     scenario_flags.sort(key=lambda f: f.video_flag or False)
 
-    # Helper to compute video flags for personas/documents
-    def compute_persona_video_flags(persona_id: UUID | None) -> tuple[bool, bool]:
-        if persona_id is None:
-            return False, True
-        linked_params = persona_to_params.get(persona_id, [])
-        has_video_param = any(pid in video_param_ids for pid in linked_params)
-        has_non_video_param = (
-            any(pid in non_video_param_ids for pid in linked_params)
-            or not linked_params
-        )
-        return has_video_param, has_non_video_param
+    current_flag_ids = {f.id for f in scenario.resources["flags"].selected}
 
-    def compute_document_video_flags(document_id: UUID | None) -> tuple[bool, bool]:
-        if document_id is None:
-            return False, True
-        linked_params = doc_to_params.get(document_id, [])
-        has_video_param = any(pid in video_param_ids for pid in linked_params)
-        has_non_video_param = (
-            any(pid in non_video_param_ids for pid in linked_params)
-            or not linked_params
-        )
-        return has_video_param, has_non_video_param
+    # Convert all resources
+    all_names = [_to_name(n) for n in dedupe_by_id(
+        scenario.resources["names"].selected
+        + scenario.resources["names"].suggestions
+    )]
+    all_descriptions_conv = [_to_description(d) for d in dedupe_by_id(
+        scenario.resources["descriptions"].selected
+        + scenario.resources["descriptions"].suggestions
+    )]
+    all_problem_statements = [_to_problem_statement(ps) for ps in dedupe_by_id(
+        scenario.resources["problem_statements"].selected
+        + scenario.resources["problem_statements"].suggestions
+    )]
+    all_departments_conv = [_to_department(d) for d in all_departments]
+    all_personas_conv = [_to_persona(p) for p in all_personas]
+    all_documents_conv = [_to_document(d) for d in all_documents]
+    all_parameters_conv = [_to_parameter(p) for p in all_parameters]
+    all_fields_conv = [_to_field(f) for f in all_parameter_fields]
+    all_objectives_conv = [_to_objective(o) for o in all_objectives]
+    all_images_conv = [_to_image(i) for i in all_images]
+    all_videos_conv = [_to_video(v) for v in all_videos]
+    all_questions_conv = [_to_question(q) for q in all_questions]
+    all_options_conv = [_to_option(o) for o in all_options]
 
-    def compute_parameter_non_video_flag(video_parameter: bool | None) -> bool:
-        return not video_parameter if video_parameter is not None else True
+    # Current (selected) resources
+    current_departments = [_to_department(d) for d in scenario.resources["departments"].selected]
+    current_personas = [_to_persona(p) for p in scenario.resources["personas"].selected]
+    current_documents = [_to_document(d) for d in scenario.resources["documents"].selected]
+    current_parameters = [_to_parameter(p) for p in scenario.resources["parameters"].selected]
+    current_fields = [_to_field(f) for f in scenario.resources["parameter_fields"].selected]
+    current_objectives = [_to_objective(o) for o in scenario.resources["objectives"].selected]
+    current_images = [_to_image(i) for i in scenario.resources["images"].selected]
+    current_videos = [_to_video(v) for v in scenario.resources["videos"].selected]
+    current_questions = [_to_question(q) for q in scenario.resources["questions"].selected]
+    current_options = [_to_option(o) for o in scenario.resources["options"].selected]
 
-    # Build resources payload with video flag enrichment
-    def _to_dict(item: Any) -> dict[str, Any]:
-        if hasattr(item, "model_dump"):
-            return item.model_dump()
-        return dict(item)
-
-    def _persona_to_dict(persona: Any) -> dict[str, Any]:
-        d = _to_dict(persona)
-        pid = getattr(persona, "persona_id", None) or getattr(persona, "id", None)
-        if "id" in d and "persona_id" not in d:
-            d["persona_id"] = d.pop("id")
-        video_persona, non_video_persona = compute_persona_video_flags(pid)
-        d["video_persona"] = video_persona
-        d["non_video_persona"] = non_video_persona
-        return d
-
-    def _image_to_dict(image: Any) -> dict[str, Any]:
-        d = _to_dict(image)
-        img_id = getattr(image, "image_id", None) or getattr(image, "id", None)
-        if "id" in d and "image_id" not in d:
-            d["image_id"] = d.pop("id")
-        upload_id = getattr(image, "upload_id", None)
-        if upload_id and upload_id in upload_id_map:
-            d["upload_id"] = upload_id_map[upload_id]
-        return d
-
-    def _video_to_dict(video: Any) -> dict[str, Any]:
-        d = _to_dict(video)
-        if video.upload_id and video.upload_id in upload_id_map:
-            d["upload_id"] = upload_id_map[video.upload_id]
-        return d
-
-    def _document_to_dict(document: Any) -> dict[str, Any]:
-        d = _to_dict(document)
-        video_document, non_video_document = compute_document_video_flags(document.id)
-        d["video_document"] = video_document
-        d["non_video_document"] = non_video_document
-        if document.upload_id and document.upload_id in upload_id_map:
-            d["upload_id"] = upload_id_map[document.upload_id]
-        return d
-
-    def _parameter_to_dict(param: Any) -> dict[str, Any]:
-        d = _to_dict(param)
-        if "id" in d and "parameter_id" not in d:
-            d["parameter_id"] = d.pop("id")
-        d["non_video_parameter"] = compute_parameter_non_video_flag(
-            param.video_parameter
-        )
-        return d
-
-    # Find selected resources for current bucket
-    name_resource = next((n for n in names if n.id in set(selected_name_ids)), None)
-    description_resource = next(
-        (d for d in descriptions if d.id in set(selected_description_ids)), None
-    )
-    problem_statement_resource = next(
-        (
-            ps
-            for ps in problem_statements
-            if ps.id in set(selected_problem_statement_ids)
-        ),
-        None,
-    )
-    department_resources = [
-        d for d in departments if d.id in set(selected_department_ids)
-    ]
-    persona_resources = personas_selected
-    document_resources = documents_selected
-    parameter_resources = [p for p in parameters if p.id in set(selected_parameter_ids)]
-    parameter_field_resources = [
-        f for f in parameter_fields if f.id in set(selected_parameter_field_ids)
-    ]
-    objective_resources = objectives_selected
-    image_resources = images_selected
-    video_resources = videos_selected
-    question_resources = questions_selected
-    option_resources = options_selected
-
-    # Build resources payload
-    resources_payload = ScenarioResources(
-        resources=ScenarioResourceBucket(
-            names=[_to_dict(n) for n in names],
-            descriptions=[_to_dict(d) for d in descriptions],
-            problem_statements=[_to_dict(ps) for ps in problem_statements],
-            flags=scenario_flags,
-            departments=[_to_dict(d) for d in departments],
-            personas=[_persona_to_dict(p) for p in personas],
-            documents=[_document_to_dict(d) for d in documents],
-            parameters=[_parameter_to_dict(p) for p in parameters],
-            parameter_fields=[_to_dict(f) for f in parameter_fields],
-            objectives=[_to_dict(o) for o in objectives],
-            images=[_image_to_dict(i) for i in images],
-            videos=[_video_to_dict(v) for v in videos],
-            questions=[_to_dict(q) for q in questions],
-            options=[_to_dict(o) for o in options],
-        ),
-        current=ScenarioResourceBucket(
-            names=[_to_dict(name_resource)] if name_resource else [],
-            descriptions=[_to_dict(description_resource)]
-            if description_resource
-            else [],
-            problem_statements=[_to_dict(problem_statement_resource)]
-            if problem_statement_resource
-            else [],
-            flags=[
-                f
-                for f in scenario_flags
-                if f.flag_option_id
-                in {
-                    ids_result.active_flag_id,
-                    ids_result.objectives_enabled_flag_id,
-                    ids_result.images_enabled_flag_id,
-                    ids_result.video_enabled_flag_id,
-                    ids_result.questions_enabled_flag_id,
-                    ids_result.problem_statement_enabled_flag_id,
-                }
-                - {None}
-            ],
-            departments=[_to_dict(d) for d in department_resources],
-            personas=[_persona_to_dict(p) for p in persona_resources],
-            documents=[_document_to_dict(d) for d in document_resources],
-            parameters=[_parameter_to_dict(p) for p in parameter_resources],
-            parameter_fields=[_to_dict(f) for f in parameter_field_resources],
-            objectives=[_to_dict(o) for o in objective_resources],
-            images=[_image_to_dict(i) for i in image_resources],
-            videos=[_video_to_dict(v) for v in video_resources],
-            questions=[_to_dict(q) for q in question_resources],
-            options=[_to_dict(o) for o in option_resources],
-        ),
-    )
-
-    # Build suggestions map
-    suggestions_map: dict[str, list[UUID]] = {
-        "names": [n.id for n in names_suggestions],
-        "descriptions": [d.id for d in descriptions_suggestions],
-        "problem_statements": [ps.id for ps in problem_statements_suggestions],
-        "departments": [d.id for d in departments_suggestions],
-        "personas": [p.id for p in personas_suggestions],
-        "documents": [d.id for d in documents_suggestions],
-        "parameters": [p.id for p in parameters_suggestions],
-        "objectives": [],
-        "images": [i.id for i in images_suggestions],
-        "videos": [v.video_id for v in videos_suggestions],
-        "questions": [q.question_id for q in questions_suggestions],
-        "options": [o.id for o in options_suggestions],
-    }
-
-    # Validation for new mode
-    if scenario_id is None:
-        if not departments:
-            raise HTTPException(
-                status_code=400, detail="No accessible departments found for user"
-            )
-
-    selected_agent_ids = [aid for aid in agent_ids.values() if aid]
-    unique_agent_ids = list(dict.fromkeys(selected_agent_ids))
-    config_agents_result: list[Any] = []
-    config_models_result: list[Any] = []
-    config_providers_result: list[Any] = []
-    if unique_agent_ids:
-        async with pool.acquire() as c:
-            config_agents_result = await get_agents(
-                c, unique_agent_ids, get_redis_client(), bypass_cache
-            )
-        if config_agents_result:
-            model_ids = list(
-                {
-                    m
-                    for agent in config_agents_result
-                    for m in [getattr(agent, "model_id", None)]
-                    if m is not None
-                }
-            )
-            if model_ids:
-                async with pool.acquire() as c:
-                    config_models_result = await get_models(
-                        c, model_ids, get_redis_client(), bypass_cache
-                    )
-            provider_ids = list(
-                dict.fromkeys(
-                    m.provider_id
-                    for m in config_models_result
-                    if getattr(m, "provider_id", None) is not None
-                )
-            )
-            if provider_ids:
-                async with pool.acquire() as c:
-                    config_providers_result = await get_providers(
-                        c, provider_ids, get_redis_client(), bypass_cache=bypass_cache
-                    )
-
-    # Compute resolved_parameter_ids from saved parameter_fields
+    # Resolved parameter IDs from saved parameter_fields
     resolved_parameter_ids = list(
-        {str(pf.parameter_id) for pf in parameter_field_resources if pf.parameter_id}
-    )
-
-    return ScenarioInternalData(
-        # Access/context
-        actor_name=actor_name,
-        scenario_exists=access_result.scenario_exists,
-        can_edit=can_edit,
-        disabled_reason=disabled_reason,
-        draft_version=effective_draft_version,
-        group_id=effective_group_id,
-        # Agent mappings
-        agent_ids=agent_ids,
-        # Show/required flags
-        show_flags_map=show_flags_map,
-        required_flags_map=required_flags_map,
-        # Suggestions
-        suggestions_map=suggestions_map,
-        # Show AI generate
-        show_ai_generate_map=show_ai_generate_map,
-        basic_show_ai_generate=basic_show_ai_generate,
-        content_show_ai_generate=content_show_ai_generate,
-        # Resources
-        resources_payload=resources_payload,
-        # Per-resource group IDs
-        resource_group_ids=resource_group_ids,
-        # Per-resource tool IDs
-        tool_ids_map=tool_ids_map,
-        # Config resources
-        config_agent_resources=config_agents_result or None,
-        config_model_resources=config_models_result or None,
-        config_provider_resources=config_providers_result or None,
-        # IDs result for backwards-compat
-        ids_result=ids_result,
-        # Resolved parameter IDs
-        resolved_parameter_ids=resolved_parameter_ids or None,
-        # Video param data
-        video_param_ids=video_param_ids,
-        non_video_param_ids=non_video_param_ids,
-        persona_to_params=persona_to_params,
-        doc_to_params=doc_to_params,
-    )
-
-
-# =============================================================================
-# WebSocket Layer
-# =============================================================================
-
-
-async def get_scenario_websocket(
-    profile_id: UUID,
-    scenario_id: UUID | None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-    # Search/filter kwargs (from artifact tool calls)
-    description_search: str | None = None,
-    persona_search: str | None = None,
-    document_search: str | None = None,
-    parameter_search: str | None = None,
-    problem_statement_search: str | None = None,
-    image_search: str | None = None,
-    video_search: str | None = None,
-    question_search: str | None = None,
-    option_search: str | None = None,
-    persona_show_selected: bool | None = None,
-    document_show_selected: bool | None = None,
-    parameter_show_selected: bool | None = None,
-    parameter_ids: list[UUID] | None = None,
-) -> GetScenarioWebsocketResponse:
-    """Minimal response for WebSocket handlers.
-
-    Returns generation context for socket handlers:
-    - group_id
-    - resource_agent_ids mapping (resource_type -> agent_id)
-    - resources payload for Jinja context
-    """
-    data = await get_scenario_internal(
-        profile_id=profile_id,
-        scenario_id=scenario_id,
-        draft_id=draft_id,
-        bypass_cache=bypass_cache,
-        description_search=description_search,
-        persona_search=persona_search,
-        document_search=document_search,
-        parameter_search=parameter_search,
-        problem_statement_search=problem_statement_search,
-        image_search=image_search,
-        video_search=video_search,
-        question_search=question_search,
-        option_search=option_search,
-        persona_show_selected=persona_show_selected,
-        document_show_selected=document_show_selected,
-        parameter_show_selected=parameter_show_selected,
-        parameter_ids=parameter_ids,
-    )
-
-    pool = get_pool()
-    if not pool:
-        raise RuntimeError("Database pool not initialized")
-
-    async def fetch_draft():
-        if not draft_id:
-            return None
-        async with pool.acquire() as conn:
-            draft_items = await get_scenario_drafts_entries_internal(
-                conn=conn,
-                ids=[draft_id],
-                bypass_cache=bypass_cache,
-            )
-            return draft_items[0] if draft_items else None
-
-    async def fetch_config_profile():
-        async with pool.acquire() as conn:
-            return await get_profiles(
-                conn, [profile_id], get_redis_client(), bypass_cache
-            )
-
-    async def fetch_runs_today():
-        from datetime import UTC, datetime
-
-        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
-        async with pool.acquire() as conn:
-            return await get_run_list_entries_internal(
-                conn=conn,
-                profile_id_filter=profile_id,
-                date_from=today_utc,
-                date_to=tomorrow_utc,
-                page_limit=1,
-                bypass_cache=True,
-            )
-
-    async def fetch_tools():
-        if not data.config_agent_resources:
-            return []
-        tool_ids: list[UUID] = []
-        for agent in data.config_agent_resources:
-            ids = getattr(agent, "tool_ids", None) or []
-            tool_ids.extend(ids)
-        deduped_tool_ids = list(dict.fromkeys(tool_ids))
-        if not deduped_tool_ids:
-            return []
-        async with pool.acquire() as conn:
-            return await get_tools(
-                conn, deduped_tool_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-
-    async def fetch_fields():
-        async with pool.acquire() as c:
-            return await search_fields(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=200,
-                offset_count=0,
-                bypass_cache=bypass_cache,
-            )
-
-    (
-        draft_view,
-        config_profile_result,
-        runs_result,
-        tools_result,
-        fields_catalog,
-    ) = await asyncio.gather(
-        fetch_draft(),
-        fetch_config_profile(),
-        fetch_runs_today(),
-        fetch_tools(),
-        fetch_fields(),
-    )
-
-    all_resources = data.resources_payload.resources
-
-    # Enrich tools with args and args_outputs
-    config_tools = tools_result or []
-    config_args = None
-    config_args_outputs = None
-    if config_tools and pool:
-        all_args_ids: list[UUID] = []
-        all_args_output_ids: list[UUID] = []
-        for tool in config_tools:
-            if tool.args_ids:
-                all_args_ids.extend(tool.args_ids)
-            if tool.args_output_ids:
-                all_args_output_ids.extend(tool.args_output_ids)
-        if all_args_ids or all_args_output_ids:
-
-            async def fetch_args():
-                if not all_args_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args(
-                        c,
-                        list(set(all_args_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            async def fetch_args_outputs():
-                if not all_args_output_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args_outputs(
-                        c,
-                        list(set(all_args_output_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            config_args, config_args_outputs = await asyncio.gather(
-                fetch_args(),
-                fetch_args_outputs(),
-            )
-
-    # Build entries (always construct — both fields optional now)
-    entries = ScenarioWebsocketEntries(
-        draft_scenario=draft_view,
-        runs=runs_result,
-    )
-
-    return GetScenarioWebsocketResponse(
-        group_id=data.group_id,
-        entries=entries if draft_view or runs_result else None,
-        resource_agent_ids=data.agent_ids,
-        resources=ScenarioWebsocketResources(
-            names=all_resources.names if all_resources else None,
-            descriptions=all_resources.descriptions if all_resources else None,
-            problem_statements=all_resources.problem_statements
-            if all_resources
-            else None,
-            flags=all_resources.flags if all_resources else None,
-            departments=all_resources.departments if all_resources else None,
-            personas=all_resources.personas if all_resources else None,
-            documents=all_resources.documents if all_resources else None,
-            parameters=all_resources.parameters if all_resources else None,
-            parameter_fields=all_resources.parameter_fields if all_resources else None,
-            objectives=all_resources.objectives if all_resources else None,
-            images=all_resources.images if all_resources else None,
-            videos=all_resources.videos if all_resources else None,
-            questions=all_resources.questions if all_resources else None,
-            options=all_resources.options if all_resources else None,
-            fields=fields_catalog,
-        ),
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=tools_result or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetScenarioApiRequest(
-            scenario_id=scenario_id,
-            draft_id=draft_id,
-            description_search=description_search,
-            persona_search=persona_search,
-            document_search=document_search,
-            parameter_search=parameter_search,
-            problem_statement_search=problem_statement_search,
-            image_search=image_search,
-            video_search=video_search,
-            question_search=question_search,
-            option_search=option_search,
-            persona_show_selected=persona_show_selected,
-            document_show_selected=document_show_selected,
-            parameter_show_selected=parameter_show_selected,
-            parameter_ids=parameter_ids,
-        ),
-    )
-
-
-# =============================================================================
-# Client/BFF Layer
-# =============================================================================
-
-
-async def get_scenario_client(
-    profile_id: UUID,
-    scenario_id: UUID | None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-    # Search terms per resource
-    description_search: str | None = None,
-    persona_search: str | None = None,
-    document_search: str | None = None,
-    parameter_search: str | None = None,
-    problem_statement_search: str | None = None,
-    image_search: str | None = None,
-    video_search: str | None = None,
-    question_search: str | None = None,
-    option_search: str | None = None,
-    persona_show_selected: bool | None = None,
-    document_show_selected: bool | None = None,
-    parameter_show_selected: bool | None = None,
-    parameter_ids: list[UUID] | None = None,
-    group_id: UUID | None = None,
-) -> GetScenarioApiResponse:
-    """BFF response for HTTP endpoint/frontend.
-
-    Returns the full response with all UI fields, suggestions, and
-    computed *_show_ai_generate flags in section-based form.
-    """
-    data = await get_scenario_internal(
-        profile_id=profile_id,
-        scenario_id=scenario_id,
-        draft_id=draft_id,
-        bypass_cache=bypass_cache,
-        description_search=description_search,
-        persona_search=persona_search,
-        document_search=document_search,
-        parameter_search=parameter_search,
-        problem_statement_search=problem_statement_search,
-        image_search=image_search,
-        video_search=video_search,
-        question_search=question_search,
-        option_search=option_search,
-        persona_show_selected=persona_show_selected,
-        document_show_selected=document_show_selected,
-        parameter_show_selected=parameter_show_selected,
-        parameter_ids=parameter_ids,
-        group_id=group_id,
-    )
-
-    resources_bucket = data.resources_payload.resources
-    current_bucket = data.resources_payload.current
-
-    def section_common(resource_key: str) -> dict[str, Any]:
-        return {
-            "show": data.show_flags_map.get(resource_key, False),
-            "required": data.required_flags_map.get(resource_key, False),
-            "suggestions": data.suggestions_map.get(resource_key, []),
-            "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
-            "tool_id": data.tool_ids_map.get(resource_key),
+        {
+            str(pf.parameter_id)
+            for pf in scenario.resources["parameter_fields"].selected
+            if pf.parameter_id
         }
+    )
 
     return GetScenarioApiResponse(
-        actor_name=data.actor_name,
-        scenario_exists=data.scenario_exists,
-        can_edit=data.can_edit,
-        disabled_reason=data.disabled_reason,
-        draft_version=data.draft_version,
-        group_id=data.group_id,
-        basic_show_ai_generate=data.basic_show_ai_generate,
-        content_show_ai_generate=data.content_show_ai_generate,
-        resolved_parameter_ids=data.resolved_parameter_ids or None,
+        # Context
+        actor_name=profile.name,
+        scenario_exists=scenario.artifact_id is not None,
+        can_edit=can_edit,
+        disabled_reason=disabled_reason,
+        draft_version=scenario.draft_version,
+        group_id=group_id,
+        # Step-level AI generation flags
+        basic_show_ai_generate=basic_show_ai_generate,
+        content_show_ai_generate=content_show_ai_generate,
+        resolved_parameter_ids=resolved_parameter_ids or None,
+        # Per-resource sections
         names=ScenarioNameSection(
-            resource=(
-                current_bucket.names[0]
-                if current_bucket and current_bucket.names
-                else None
-            ),
-            resources=(resources_bucket.names if resources_bucket else None),
-            **section_common("names"),
+            **_section("names"),
+            resource=_to_name(scenario.resources["names"].selected[0])
+            if scenario.resources["names"].selected
+            else None,
+            resources=all_names,
         ),
         descriptions=ScenarioDescriptionSection(
-            resource=(
-                current_bucket.descriptions[0]
-                if current_bucket and current_bucket.descriptions
-                else None
-            ),
-            resources=(resources_bucket.descriptions if resources_bucket else None),
-            **section_common("descriptions"),
+            **_section("descriptions"),
+            resource=_to_description(scenario.resources["descriptions"].selected[0])
+            if scenario.resources["descriptions"].selected
+            else None,
+            resources=all_descriptions_conv,
         ),
         problem_statements=ScenarioProblemStatementSection(
-            resource=(
-                current_bucket.problem_statements[0]
-                if current_bucket and current_bucket.problem_statements
-                else None
-            ),
-            resources=(
-                resources_bucket.problem_statements if resources_bucket else None
-            ),
-            **section_common("problem_statements"),
+            **_section("problem_statements"),
+            resource=_to_problem_statement(
+                scenario.resources["problem_statements"].selected[0]
+            )
+            if scenario.resources["problem_statements"].selected
+            else None,
+            resources=all_problem_statements,
         ),
         flags=ScenarioFlagSection(
-            current=(current_bucket.flags if current_bucket else None),
-            resources=(resources_bucket.flags if resources_bucket else None),
-            **section_common("flags"),
+            **_section("flags"),
+            current=[f for f in scenario_flags if f.flag_option_id in current_flag_ids],
+            resources=scenario_flags,
         ),
         departments=ScenarioDepartmentSection(
-            current=(current_bucket.departments if current_bucket else None),
-            resources=(resources_bucket.departments if resources_bucket else None),
-            **section_common("departments"),
+            **_section("departments"),
+            current=current_departments,
+            resources=all_departments_conv,
         ),
         personas=ScenarioPersonaSection(
-            current=(current_bucket.personas if current_bucket else None),
-            resources=(resources_bucket.personas if resources_bucket else None),
-            **section_common("personas"),
+            **_section("personas"),
+            current=current_personas,
+            resources=all_personas_conv,
         ),
         documents=ScenarioDocumentSection(
-            current=(current_bucket.documents if current_bucket else None),
-            resources=(resources_bucket.documents if resources_bucket else None),
-            **section_common("documents"),
+            **_section("documents"),
+            current=current_documents,
+            resources=all_documents_conv,
         ),
         parameters=ScenarioParameterSection(
-            current=(current_bucket.parameters if current_bucket else None),
-            resources=(resources_bucket.parameters if resources_bucket else None),
-            **section_common("parameters"),
+            **_section("parameters"),
+            current=current_parameters,
+            resources=all_parameters_conv,
         ),
         parameter_fields=ScenarioParameterFieldSection(
-            current=(current_bucket.parameter_fields if current_bucket else None),
-            resources=(resources_bucket.parameter_fields if resources_bucket else None),
-            **section_common("fields"),
+            **_section("fields"),
+            current=current_fields,
+            resources=all_fields_conv,
         ),
         objectives=ScenarioObjectiveSection(
-            current=(current_bucket.objectives if current_bucket else None),
-            resources=(resources_bucket.objectives if resources_bucket else None),
-            **section_common("objectives"),
+            **_section("objectives"),
+            current=current_objectives,
+            resources=all_objectives_conv,
         ),
         images=ScenarioImageSection(
-            current=(current_bucket.images if current_bucket else None),
-            resources=(resources_bucket.images if resources_bucket else None),
-            **section_common("images"),
+            **_section("images"),
+            current=current_images,
+            resources=all_images_conv,
         ),
         videos=ScenarioVideoSection(
-            current=(current_bucket.videos if current_bucket else None),
-            resources=(resources_bucket.videos if resources_bucket else None),
-            **section_common("videos"),
+            **_section("videos"),
+            current=current_videos,
+            resources=all_videos_conv,
         ),
         questions=ScenarioQuestionSection(
-            current=(current_bucket.questions if current_bucket else None),
-            resources=(resources_bucket.questions if resources_bucket else None),
-            **section_common("questions"),
+            **_section("questions"),
+            current=current_questions,
+            resources=all_questions_conv,
         ),
         options=ScenarioOptionSection(
-            current=(current_bucket.options if current_bucket else None),
-            resources=(resources_bucket.options if resources_bucket else None),
-            **section_common("options"),
+            **_section("options"),
+            current=current_options,
+            resources=all_options_conv,
         ),
     )
 
 
-# =============================================================================
-# Route Handler
-# =============================================================================
+# ---------------------------------------------------------------------------
+# get_scenario_websocket — stub (to be rewritten with infra functions)
+# ---------------------------------------------------------------------------
+
+
+async def get_scenario_websocket(*args, **kwargs):
+    """Stub — will be rewritten to use composable infra functions."""
+    raise NotImplementedError(
+        "get_scenario_websocket needs to be rewritten with infra functions"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Route handler
+# ---------------------------------------------------------------------------
 
 
 @router.post("/get", response_model=GetScenarioApiResponse)
@@ -1599,20 +678,10 @@ async def get_scenario(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetScenarioApiResponse:
-    """Get scenario information using two-pass architecture.
-
-    This is a thin HTTP wrapper around get_scenario_client().
-
-    Query 1: Access check (user role, departments, scenario state)
-    Query 2: ID fetching (resource IDs, suggestions, agents)
-    Pass 2: Parallel resource fetching (each resource type has own cache)
-    """
-    # Check for cache bypass header
+    """Get scenario information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
-        # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -1620,12 +689,30 @@ async def get_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Call the client (BFF) function
+        # Resolve group_id: client provides it, or draft has it, or create new
+        group_id = request.group_id
+        if not group_id and request.draft_id:
+            drafts = await get_scenario_drafts(conn, [request.draft_id])
+            if drafts and drafts[0].group_id:
+                group_id = drafts[0].group_id
+        if not group_id:
+            group_id = await conn.fetchval(
+                "INSERT INTO groups_entry (created_at, updated_at) "
+                "VALUES (NOW(), NOW()) RETURNING id"
+            )
+
+        redis = get_redis_client()
+
         response_data = await get_scenario_client(
+            conn,
+            redis,
             profile_id=profile_id,
             scenario_id=request.scenario_id,
             draft_id=request.draft_id,
-            bypass_cache=bypass_cache,
+            group_id=group_id,
+            parameter_ids=[UUID(str(pid)) for pid in request.parameter_ids]
+            if request.parameter_ids
+            else None,
             description_search=request.description_search,
             persona_search=request.persona_search,
             document_search=request.document_search,
@@ -1638,16 +725,11 @@ async def get_scenario(
             persona_show_selected=request.persona_show_selected,
             document_show_selected=request.document_show_selected,
             parameter_show_selected=request.parameter_show_selected,
-            parameter_ids=[UUID(str(pid)) for pid in request.parameter_ids]
-            if request.parameter_ids
-            else None,
-            group_id=request.group_id,
+            bypass_cache=bypass_cache,
         )
 
-        # No global cache for this response - individual resources are cached
         response.headers["X-Cache-Tags"] = "scenarios"
         response.headers["X-Cache-Hit"] = "0"
-        response.headers["X-Two-Pass"] = "1"
 
         return response_data
     except HTTPException:
@@ -1659,13 +741,7 @@ async def get_scenario(
             error=e,
             route_path=http_request.url.path,
             operation="get_scenario",
-            sql_query=load_sql_query(QUERY1_SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )
-
-
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.providers.get import get_providers
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
