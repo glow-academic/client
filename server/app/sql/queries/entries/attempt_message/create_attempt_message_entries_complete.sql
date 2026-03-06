@@ -17,7 +17,6 @@ END $$;
 CREATE OR REPLACE FUNCTION public.api_create_attempt_message_entry_v4(
     run_id uuid,
     chat_id uuid,
-    message_id uuid DEFAULT NULL,
     tool_id uuid DEFAULT NULL,
     upload_id uuid DEFAULT NULL,
     session_id uuid DEFAULT NULL,
@@ -52,9 +51,9 @@ BEGIN
         VALUES (api_create_attempt_message_entry_v4.tool_id, v_call_id);
     END IF;
 
-    -- 4. Create entry (attempt_message_entry has no mcp column)
-    INSERT INTO attempt_message_entry (call_id, chat_id, message_id)
-    VALUES (v_call_id, api_create_attempt_message_entry_v4.chat_id, api_create_attempt_message_entry_v4.message_id)
+    -- 4. Create entry
+    INSERT INTO attempt_message_entry (call_id, chat_id)
+    VALUES (v_call_id, api_create_attempt_message_entry_v4.chat_id)
     RETURNING attempt_message_entry.id INTO v_entry_id;
 
     -- 5. Create message

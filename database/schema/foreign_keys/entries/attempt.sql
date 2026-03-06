@@ -344,15 +344,6 @@ ALTER TABLE ONLY public.attempt_message_entry
 
 --
 
--- Name: attempt_message_entry attempt_message_entry_message_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.attempt_message_entry
-    ADD CONSTRAINT attempt_message_entry_message_id_fkey FOREIGN KEY (message_id) REFERENCES public.messages_entry(id) ON DELETE CASCADE;
-
-
---
-
 -- Name: attempt_message_tree_entry attempt_message_tree_entry_child_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

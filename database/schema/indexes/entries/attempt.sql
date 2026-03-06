@@ -234,14 +234,6 @@ CREATE INDEX idx_attempt_message_entry_created_at ON public.attempt_message_entr
 
 --
 
--- Name: idx_attempt_message_entry_message_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_attempt_message_entry_message_id ON public.attempt_message_entry USING btree (message_id);
-
-
---
-
 -- Name: idx_attempt_message_tree_entry_session_id; Type: INDEX; Schema: public; Owner: -
 --
 
