@@ -1,24 +1,8 @@
-"""metrics/refresh internal — reusable data-access layer."""
+"""Metrics refresh — recompute the materialized view."""
 
-import time
-
-import asyncpg
-
-from app.utils.cache.invalidate_tags import invalidate_tags
-
-MV_NAME = "metrics_mv"
+import asyncpg  # type: ignore
 
 
-async def refresh_metrics_internal(
-    conn: asyncpg.Connection,
-) -> dict:
-    """Refresh metrics_mv concurrently."""
-    start_time = time.time()
-    await conn.execute(f"REFRESH MATERIALIZED VIEW CONCURRENTLY {MV_NAME}")
-    duration_ms = int((time.time() - start_time) * 1000)
-    await invalidate_tags(["entries", "metrics"], redis=get_redis_client())
-    return {
-        "success": True,
-        "duration_ms": duration_ms,
-        "message": f"Refreshed {MV_NAME} in {duration_ms}ms",
-    }
+async def refresh_metrics_internal(conn: asyncpg.Connection) -> None:
+    """Refresh metrics_mv."""
+    await conn.execute("REFRESH MATERIALIZED VIEW metrics_mv")

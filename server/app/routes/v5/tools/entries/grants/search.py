@@ -12,11 +12,7 @@ MV_NAME = "grants_mv"
 
 async def search_grants(
     conn: asyncpg.Connection,
-    grantor_id: UUID | None = None,
-    emulation_id: UUID | None = None,
-    emulated_id: UUID | None = None,
-    grant_session_id: UUID | None = None,
-    emulation_session_id: UUID | None = None,
+    session_id: UUID | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -26,23 +22,13 @@ async def search_grants(
 
     rows = await conn.fetch(
         f"""
-        SELECT grant_id, grantor_id, emulation_id, emulated_id,
-               grant_session_id, emulation_session_id,
-               expires_at, used_at, revoked_at, created_at
+        SELECT id, session_id, expires_at, created_at, active, generated, mcp
         FROM {source}
-        WHERE ($1::uuid IS NULL OR grantor_id = $1)
-          AND ($2::uuid IS NULL OR emulation_id = $2)
-          AND ($3::uuid IS NULL OR emulated_id = $3)
-          AND ($4::uuid IS NULL OR grant_session_id = $4)
-          AND ($5::uuid IS NULL OR emulation_session_id = $5)
+        WHERE ($1::uuid IS NULL OR session_id = $1)
         ORDER BY created_at DESC
-        LIMIT $6 OFFSET $7
+        LIMIT $2 OFFSET $3
         """,
-        grantor_id,
-        emulation_id,
-        emulated_id,
-        grant_session_id,
-        emulation_session_id,
+        session_id,
         limit,
         offset,
     )

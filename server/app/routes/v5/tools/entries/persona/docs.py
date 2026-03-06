@@ -13,7 +13,7 @@ from app.routes.v5.tools.entries.persona.search import search_personas
 
 async def get_persona_docs(conn: asyncpg.Connection) -> DocsResponse:
     """Get full documentation for the persona entry."""
-    mv_info = await get_mv_info(conn, "persona_mv")
+    mv_info = await get_mv_info(conn, "personas_mv")
     entry_table = await get_table_info(conn, "personas_entry")
     personas_connection = await get_table_info(conn, "personas_personas_connection")
 
