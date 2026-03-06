@@ -43,7 +43,7 @@ async def create_persona(
     parameter_field_ids: list[UUID] | None = None,
     persona_ids: list[UUID] | None = None,
     voice_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreatePersonaResponse:
@@ -54,7 +54,7 @@ async def create_persona(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

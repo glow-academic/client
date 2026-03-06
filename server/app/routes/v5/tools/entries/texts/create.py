@@ -11,15 +11,17 @@ async def create_text(
     conn: asyncpg.Connection,
     session_id: UUID,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateTextResponse:
     """Create a texts entry."""
     text_id = await conn.fetchval(
         """
-        INSERT INTO texts_entry (session_id, mcp, generated)
-        VALUES ($1, $2, true)
+        INSERT INTO texts_entry (session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, true)
         RETURNING id
     """,
         session_id,
+        not soft,
         mcp,
     )
 
