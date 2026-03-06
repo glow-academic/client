@@ -48,7 +48,7 @@ async def _setup(conn, profile_id):
         conn, chat_id=attempt_chat.id, call_id=call2.id, run_id=run.id
     )
     result = await create_attempt_conversation_completions(
-        conn, conversation_id=conversation.id, call_id=call2.id, end_reason="completed"
+        conn, conversation_ids=[conversation.id], call_id=call2.id, end_reason="completed"
     )
     return result, conversation
 
@@ -58,7 +58,7 @@ async def test_finds_created_entry(conn, profile_id):
     await refresh_attempt_conversation_completions(conn)
 
     items = await search_attempt_conversation_completions(
-        conn, conversation_id=conversation.id
+        conn, conversation_ids=[conversation.id]
     )
 
     ids = [item.id for item in items]
@@ -70,7 +70,7 @@ async def test_filters_by_conversation_id(conn, profile_id):
     await refresh_attempt_conversation_completions(conn)
 
     items = await search_attempt_conversation_completions(
-        conn, conversation_id=nonexistent_id()
+        conn, conversation_ids=[nonexistent_id()]
     )
 
     assert items == []
@@ -81,7 +81,7 @@ async def test_pagination_limit(conn, profile_id):
     await refresh_attempt_conversation_completions(conn)
 
     items = await search_attempt_conversation_completions(
-        conn, conversation_id=conversation.id, limit=1
+        conn, conversation_ids=[conversation.id], limit=1
     )
 
     assert len(items) <= 1
@@ -100,7 +100,7 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, conversation = await _setup(conn, profile_id)
 
     items = await search_attempt_conversation_completions(
-        conn, conversation_id=conversation.id, bypass_mv=True
+        conn, conversation_ids=[conversation.id], bypass_mv=True
     )
 
     ids = [item.id for item in items]

@@ -14,7 +14,7 @@ MV_NAME = "messages_completions_mv"
 
 async def search_messages_completions(
     conn: asyncpg.Connection,
-    message_id: UUID | None = None,
+    message_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -26,11 +26,11 @@ async def search_messages_completions(
         f"""
         SELECT id, message_id, session_id, created_at, active, mcp, generated
         FROM {source}
-        WHERE ($1::uuid IS NULL OR message_id = $1)
+        WHERE ($1::uuid[] IS NULL OR message_id = ANY($1))
         ORDER BY created_at DESC
         LIMIT $2 OFFSET $3
         """,
-        message_id,
+        message_ids,
         limit,
         offset,
     )

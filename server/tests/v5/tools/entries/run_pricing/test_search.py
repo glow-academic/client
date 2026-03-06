@@ -38,7 +38,7 @@ async def test_finds_created_entry(conn, profile_id):
     entry_id, run = await _setup(conn, profile_id)
 
     items = await search_run_pricing_entries_internal(
-        conn, run_id=run.id, bypass_mv=True
+        conn, run_ids=[run.id], bypass_mv=True
     )
 
     ids = [item.id for item in items]
@@ -49,7 +49,7 @@ async def test_filters_by_run_id(conn, profile_id):
     await _setup(conn, profile_id)
 
     items = await search_run_pricing_entries_internal(
-        conn, run_id=nonexistent_id(), bypass_mv=True
+        conn, run_ids=[nonexistent_id()], bypass_mv=True
     )
 
     assert items == []
@@ -59,7 +59,7 @@ async def test_pagination_limit(conn, profile_id):
     entry_id, run = await _setup(conn, profile_id)
 
     items = await search_run_pricing_entries_internal(
-        conn, run_id=run.id, limit=1, bypass_mv=True
+        conn, run_ids=[run.id], limit=1, bypass_mv=True
     )
 
     assert len(items) <= 1
@@ -77,7 +77,7 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     entry_id, run = await _setup(conn, profile_id)
 
     items = await search_run_pricing_entries_internal(
-        conn, run_id=run.id, bypass_mv=True
+        conn, run_ids=[run.id], bypass_mv=True
     )
 
     ids = [item.id for item in items]

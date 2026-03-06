@@ -188,7 +188,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
 
             # Step 5a: Insert tree edges for message branching
             # Look up the user message_id just created in this run
-            messages = await search_messages(conn, run_id=run_id, bypass_mv=True)
+            messages = await search_messages(conn, run_ids=[run_id], bypass_mv=True)
             user_message_id = None
             for msg in messages:
                 if msg.role == "user":

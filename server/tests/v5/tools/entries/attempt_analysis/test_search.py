@@ -45,7 +45,7 @@ async def _setup(conn, profile_id):
         score=85,
     )
     result = await create_attempt_analysis(
-        conn, grade_id=grade.id, call_id=call2.id, content="Test analysis"
+        conn, grade_ids=[grade.id], call_id=call2.id, content="Test analysis"
     )
     return result, grade
 
@@ -54,7 +54,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, grade = await _setup(conn, profile_id)
     await refresh_attempt_analysis(conn)
 
-    items = await search_attempt_analyses(conn, grade_id=grade.id)
+    items = await search_attempt_analyses(conn, grade_ids=[grade.id])
 
     ids = [item.analysis_id for item in items]
     assert result.id in ids
@@ -64,7 +64,7 @@ async def test_filters_by_grade_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_analysis(conn)
 
-    items = await search_attempt_analyses(conn, grade_id=nonexistent_id())
+    items = await search_attempt_analyses(conn, grade_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -73,7 +73,7 @@ async def test_pagination_limit(conn, profile_id):
     result, grade = await _setup(conn, profile_id)
     await refresh_attempt_analysis(conn)
 
-    items = await search_attempt_analyses(conn, grade_id=grade.id, limit=1)
+    items = await search_attempt_analyses(conn, grade_ids=[grade.id], limit=1)
 
     assert len(items) <= 1
 
@@ -90,7 +90,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, grade = await _setup(conn, profile_id)
 
-    items = await search_attempt_analyses(conn, grade_id=grade.id, bypass_mv=True)
+    items = await search_attempt_analyses(conn, grade_ids=[grade.id], bypass_mv=True)
 
     ids = [item.analysis_id for item in items]
     assert result.id in ids

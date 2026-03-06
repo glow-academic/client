@@ -16,7 +16,7 @@ async def _setup(conn, profile_id):
     session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
-    result = await create_message(conn, run_id=run.id, role="user")
+    result = await create_message(conn, run_ids=[run.id], role="user")
     return result, run
 
 
@@ -29,7 +29,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, run = await _setup(conn, profile_id)
     await _refresh_mv(conn)
 
-    items = await search_messages(conn, run_id=run.id)
+    items = await search_messages(conn, run_ids=[run.id])
 
     ids = [item.message_id for item in items]
     assert result.id in ids
@@ -39,7 +39,7 @@ async def test_filters_by_run_id(conn, profile_id):
     await _setup(conn, profile_id)
     await _refresh_mv(conn)
 
-    items = await search_messages(conn, run_id=nonexistent_id())
+    items = await search_messages(conn, run_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -48,7 +48,7 @@ async def test_filters_by_role(conn, profile_id):
     result, run = await _setup(conn, profile_id)
     await _refresh_mv(conn)
 
-    items = await search_messages(conn, run_id=run.id, role="assistant")
+    items = await search_messages(conn, run_ids=[run.id], role="assistant")
 
     assert items == []
 
@@ -57,7 +57,7 @@ async def test_pagination_limit(conn, profile_id):
     result, run = await _setup(conn, profile_id)
     await _refresh_mv(conn)
 
-    items = await search_messages(conn, run_id=run.id, limit=1)
+    items = await search_messages(conn, run_ids=[run.id], limit=1)
 
     assert len(items) <= 1
 
@@ -74,7 +74,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, run = await _setup(conn, profile_id)
 
-    items = await search_messages(conn, run_id=run.id, bypass_mv=True)
+    items = await search_messages(conn, run_ids=[run.id], bypass_mv=True)
 
     ids = [item.message_id for item in items]
     assert result.id in ids

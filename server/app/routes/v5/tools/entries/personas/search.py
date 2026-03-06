@@ -10,7 +10,7 @@ from app.routes.v5.tools.entries.personas.types import GetPersonasResponse
 
 async def search_personas(
     conn: asyncpg.Connection,
-    session_id: UUID | None = None,
+    session_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     limit: int = 20,
@@ -25,14 +25,14 @@ async def search_personas(
         FROM personas_entry e
         LEFT JOIN personas_personas_connection pc ON pc.personas_entry_id = e.id
         WHERE e.active = true
-          AND ($1::uuid IS NULL OR e.session_id = $1)
+          AND ($1::uuid[] IS NULL OR e.session_id = ANY($1))
           AND ($2::timestamptz IS NULL OR e.created_at >= $2)
           AND ($3::timestamptz IS NULL OR e.created_at <= $3)
         GROUP BY e.id, e.created_at, e.active, e.generated, e.mcp, e.session_id
         ORDER BY e.created_at DESC
         LIMIT $4 OFFSET $5
         """,
-        session_id,
+        session_ids,
         date_from,
         date_to,
         limit,

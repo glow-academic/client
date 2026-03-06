@@ -14,9 +14,6 @@ from app.routes.v5.api.main.persona.types import ImportField
 from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetScenarioDraftsEntriesV4Item,
-)
 
 # =============================================================================
 # Resource Types
@@ -392,10 +389,37 @@ class GetScenarioWebsocketResponse(InternalResponseBase):
     resources: "ScenarioWebsocketResources"
 
 
+class ScenarioDraftEntry(BaseModel):
+    """Scenario draft entry for websocket."""
+
+    draft_id: UUID | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    version: int | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
+    active: bool | None = None
+    group_id: UUID | None = None
+    name_ids: list[UUID] | None = None
+    description_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
+    problem_statement_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+
+
 class ScenarioWebsocketEntries(BaseModel):
     """Optional websocket entries payload."""
 
-    draft_scenario: QGetScenarioDraftsEntriesV4Item | None = None
+    draft_scenario: ScenarioDraftEntry | None = None
     runs: GetRunListViewResponse | None = None
 
 

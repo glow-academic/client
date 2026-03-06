@@ -407,9 +407,9 @@ class PersonaInternalData:
     resolved_parameter_ids: list[str]
 
     # Config resources (from denormalized chain, for generation)
-    config_agent_resources: list[QGetAgentsV4Item] | None
-    config_model_resources: list[QGetModelsV4Item] | None
-    config_provider_resources: list[QGetProvidersV4Item] | None
+    config_agent_resources: list[PersonaAgentResource] | None
+    config_model_resources: list[PersonaModelResource] | None
+    config_provider_resources: list[PersonaProviderResource] | None
 
 
 # ========== Import Field Types ==========

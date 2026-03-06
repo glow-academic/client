@@ -54,7 +54,7 @@ async def test_finds_created_entry(conn, profile_id):
     await refresh_attempt_chat(conn)
 
     items = await search_attempt_chat_entries_internal(
-        conn, attempt_id=attempt.id
+        conn, attempt_ids=[attempt.id]
     )
 
     ids = [item.chat_id for item in items]
@@ -66,7 +66,7 @@ async def test_filters_by_attempt_id(conn, profile_id):
     await refresh_attempt_chat(conn)
 
     items = await search_attempt_chat_entries_internal(
-        conn, attempt_id=nonexistent_id()
+        conn, attempt_ids=[nonexistent_id()]
     )
 
     assert items == []
@@ -76,7 +76,7 @@ async def test_filters_by_group_id(conn, profile_id):
     result, _, group = await _setup(conn, profile_id)
     await refresh_attempt_chat(conn)
 
-    items = await search_attempt_chat_entries_internal(conn, group_id=group.id)
+    items = await search_attempt_chat_entries_internal(conn, group_ids=[group.id])
 
     ids = [item.chat_id for item in items]
     assert result.id in ids
@@ -87,7 +87,7 @@ async def test_pagination_limit(conn, profile_id):
     await refresh_attempt_chat(conn)
 
     items = await search_attempt_chat_entries_internal(
-        conn, attempt_id=attempt.id, limit=1
+        conn, attempt_ids=[attempt.id], limit=1
     )
 
     assert len(items) <= 1
@@ -106,7 +106,7 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, attempt, _ = await _setup(conn, profile_id)
 
     items = await search_attempt_chat_entries_internal(
-        conn, attempt_id=attempt.id, bypass_mv=True
+        conn, attempt_ids=[attempt.id], bypass_mv=True
     )
 
     ids = [item.chat_id for item in items]

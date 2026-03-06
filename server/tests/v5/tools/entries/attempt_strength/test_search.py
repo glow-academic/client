@@ -48,7 +48,7 @@ async def _setup(conn, profile_id):
     )
     msg = await create_message(conn, run_id=run.id, role="user")
     await create_attempt_message(
-        conn, chat_id=attempt_chat.id, call_id=call2.id, message_id=msg.id
+        conn, chat_id=attempt_chat.id, call_id=call2.id, message_ids=[msg.id]
     )
     grade = await create_attempt_grade(
         conn,
@@ -61,8 +61,8 @@ async def _setup(conn, profile_id):
     )
     result = await create_attempt_strength(
         conn,
-        grade_id=grade.id,
-        message_id=msg.id,
+        grade_ids=[grade.id],
+        message_ids=[msg.id],
         call_id=call2.id,
         name="Good greeting",
         description="Student greeted well",
@@ -74,7 +74,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, msg, grade = await _setup(conn, profile_id)
     await refresh_attempt_strength(conn)
 
-    items = await search_attempt_strengths(conn, message_id=msg.id)
+    items = await search_attempt_strengths(conn, message_ids=[msg.id])
 
     ids = [item.strength_id for item in items]
     assert result.id in ids
@@ -84,7 +84,7 @@ async def test_filters_by_message_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_strength(conn)
 
-    items = await search_attempt_strengths(conn, message_id=nonexistent_id())
+    items = await search_attempt_strengths(conn, message_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -93,7 +93,7 @@ async def test_filters_by_grade_id(conn, profile_id):
     result, msg, grade = await _setup(conn, profile_id)
     await refresh_attempt_strength(conn)
 
-    items = await search_attempt_strengths(conn, grade_id=grade.id)
+    items = await search_attempt_strengths(conn, grade_ids=[grade.id])
 
     ids = [item.strength_id for item in items]
     assert result.id in ids
@@ -103,7 +103,7 @@ async def test_filters_by_grade_id_nonexistent(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_strength(conn)
 
-    items = await search_attempt_strengths(conn, grade_id=nonexistent_id())
+    items = await search_attempt_strengths(conn, grade_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -112,7 +112,7 @@ async def test_pagination_limit(conn, profile_id):
     result, msg, grade = await _setup(conn, profile_id)
     await refresh_attempt_strength(conn)
 
-    items = await search_attempt_strengths(conn, message_id=msg.id, limit=1)
+    items = await search_attempt_strengths(conn, message_ids=[msg.id], limit=1)
 
     assert len(items) <= 1
 
@@ -129,7 +129,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, msg, grade = await _setup(conn, profile_id)
 
-    items = await search_attempt_strengths(conn, message_id=msg.id, bypass_mv=True)
+    items = await search_attempt_strengths(conn, message_ids=[msg.id], bypass_mv=True)
 
     ids = [item.strength_id for item in items]
     assert result.id in ids

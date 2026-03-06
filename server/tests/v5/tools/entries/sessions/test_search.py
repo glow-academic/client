@@ -16,7 +16,7 @@ async def test_finds_created_session(conn, profile_id):
     result = await create_session(conn, profile_id=profile_id)
     await refresh_sessions(conn)
 
-    items = await search_sessions(conn, profile_id=profile_id)
+    items = await search_sessions(conn, profile_ids=[profile_id])
 
     ids = [item.id for item in items]
     assert result.id in ids
@@ -26,7 +26,7 @@ async def test_filters_by_profile(conn, profile_id):
     result = await create_session(conn, profile_id=profile_id)
     await refresh_sessions(conn)
 
-    items = await search_sessions(conn, profile_id=nonexistent_id())
+    items = await search_sessions(conn, profile_ids=[nonexistent_id()])
 
     ids = [item.id for item in items]
     assert result.id not in ids
@@ -75,7 +75,7 @@ async def test_pagination_limit(conn, profile_id):
 
     items = await search_sessions(
         conn,
-        profile_id=profile_id,
+        profile_ids=[profile_id],
         limit=1,
     )
 
@@ -96,7 +96,7 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
 
     items = await search_sessions(
         conn,
-        profile_id=profile_id,
+        profile_ids=[profile_id],
         bypass_mv=True,
     )
 

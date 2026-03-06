@@ -76,7 +76,7 @@ async def _setup(conn, profile_id):
     )
     result = await create_attempt_replacement(
         conn,
-        improvement_id=improvement.id,
+        improvement_ids=[improvement.id],
         call_id=call2.id,
         section="Old text",
         replace="New text",
@@ -88,7 +88,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, improvement = await _setup(conn, profile_id)
     await refresh_attempt_replacement(conn)
 
-    items = await search_attempt_replacements(conn, improvement_id=improvement.id)
+    items = await search_attempt_replacements(conn, improvement_ids=[improvement.id])
 
     ids = [item.replacement_id for item in items]
     assert result.id in ids
@@ -98,7 +98,7 @@ async def test_filters_by_improvement_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_replacement(conn)
 
-    items = await search_attempt_replacements(conn, improvement_id=nonexistent_id())
+    items = await search_attempt_replacements(conn, improvement_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -108,7 +108,7 @@ async def test_pagination_limit(conn, profile_id):
     await refresh_attempt_replacement(conn)
 
     items = await search_attempt_replacements(
-        conn, improvement_id=improvement.id, limit=1
+        conn, improvement_ids=[improvement.id], limit=1
     )
 
     assert len(items) <= 1
@@ -127,7 +127,7 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, improvement = await _setup(conn, profile_id)
 
     items = await search_attempt_replacements(
-        conn, improvement_id=improvement.id, bypass_mv=True
+        conn, improvement_ids=[improvement.id], bypass_mv=True
     )
 
     ids = [item.replacement_id for item in items]

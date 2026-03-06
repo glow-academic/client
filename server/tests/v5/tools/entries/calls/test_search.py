@@ -29,7 +29,7 @@ async def test_finds_created_entry(conn, profile_id):
     call, run = await _setup(conn, profile_id)
     await _refresh_mv(conn)
 
-    items = await search_calls(conn, run_id=run.id)
+    items = await search_calls(conn, run_ids=[run.id])
 
     ids = [item.call_id for item in items]
     assert call.id in ids
@@ -39,7 +39,7 @@ async def test_filters_by_run_id(conn, profile_id):
     await _setup(conn, profile_id)
     await _refresh_mv(conn)
 
-    items = await search_calls(conn, run_id=nonexistent_id())
+    items = await search_calls(conn, run_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -48,7 +48,7 @@ async def test_pagination_limit(conn, profile_id):
     call, run = await _setup(conn, profile_id)
     await _refresh_mv(conn)
 
-    items = await search_calls(conn, run_id=run.id, limit=1)
+    items = await search_calls(conn, run_ids=[run.id], limit=1)
 
     assert len(items) <= 1
 
@@ -65,7 +65,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     call, run = await _setup(conn, profile_id)
 
-    items = await search_calls(conn, run_id=run.id, bypass_mv=True)
+    items = await search_calls(conn, run_ids=[run.id], bypass_mv=True)
 
     ids = [item.call_id for item in items]
     assert call.id in ids

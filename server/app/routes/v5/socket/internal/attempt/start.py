@@ -140,7 +140,7 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 else:
                     chat_entries = await search_home_chats(
                         conn,
-                        home_id=payload.home_id,
+                        home_ids=[payload.home_id],
                         limit=1000,
                         bypass_mv=True,
                     )

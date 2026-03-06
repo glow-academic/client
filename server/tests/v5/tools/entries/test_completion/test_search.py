@@ -36,7 +36,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, test_invocation = await _setup(conn, profile_id)
     await refresh_test_completion(conn)
 
-    items = await search_test_completions(conn, invocation_id=test_invocation.id)
+    items = await search_test_completions(conn, invocation_ids=[test_invocation.id])
 
     ids = [item.id for item in items]
     assert result.id in ids
@@ -46,7 +46,7 @@ async def test_filters_by_invocation_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_test_completion(conn)
 
-    items = await search_test_completions(conn, invocation_id=nonexistent_id())
+    items = await search_test_completions(conn, invocation_ids=[nonexistent_id()])
 
     assert items == []
 

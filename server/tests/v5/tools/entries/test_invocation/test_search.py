@@ -24,7 +24,7 @@ async def _setup(conn, profile_id):
     call = await create_call(conn, run_id=run.id, session_id=session.id)
     test = await create_test(conn, call_id=call.id, profiles_id=profile_id)
     call2 = await create_call(conn, run_id=run.id, session_id=session.id)
-    result = await create_test_invocation(conn, test_id=test.id, call_id=call2.id)
+    result = await create_test_invocation(conn, test_ids=[test.id], call_id=call2.id)
     return result, test
 
 
@@ -32,7 +32,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, test = await _setup(conn, profile_id)
     await refresh_test_invocation(conn)
 
-    items = await search_test_invocation_entries_internal(conn, test_id=test.id)
+    items = await search_test_invocation_entries_internal(conn, test_ids=[test.id])
 
     ids = [item.invocation_id for item in items]
     assert result.id in ids
@@ -43,7 +43,7 @@ async def test_filters_by_test_id(conn, profile_id):
     await refresh_test_invocation(conn)
 
     items = await search_test_invocation_entries_internal(
-        conn, test_id=nonexistent_id()
+        conn, test_ids=[nonexistent_id()]
     )
 
     assert items == []
@@ -54,7 +54,7 @@ async def test_pagination_limit(conn, profile_id):
     await refresh_test_invocation(conn)
 
     items = await search_test_invocation_entries_internal(
-        conn, test_id=test.id, limit=1
+        conn, test_ids=[test.id], limit=1
     )
 
     assert len(items) <= 1
@@ -73,7 +73,7 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, test = await _setup(conn, profile_id)
 
     items = await search_test_invocation_entries_internal(
-        conn, test_id=test.id, bypass_mv=True
+        conn, test_ids=[test.id], bypass_mv=True
     )
 
     ids = [item.invocation_id for item in items]

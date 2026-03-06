@@ -27,7 +27,7 @@ async def test_finds_created(conn, profile_id):
     grant = await _grant(conn, profile_id)
     result = await create_grant_consumption(conn, grant_id=grant.id)
 
-    items = await search_grant_consumptions(conn, grant_id=grant.id)
+    items = await search_grant_consumptions(conn, grant_ids=[grant.id])
 
     ids = [item.id for item in items]
     assert result.id in ids
@@ -37,7 +37,7 @@ async def test_filters_by_grant_id(conn, profile_id):
     grant = await _grant(conn, profile_id)
     await create_grant_consumption(conn, grant_id=grant.id)
 
-    items = await search_grant_consumptions(conn, grant_id=nonexistent_id())
+    items = await search_grant_consumptions(conn, grant_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -69,7 +69,7 @@ async def test_pagination_limit(conn, profile_id):
     await create_grant_consumption(conn, grant_id=grant.id)
     await create_grant_consumption(conn, grant_id=grant.id)
 
-    items = await search_grant_consumptions(conn, grant_id=grant.id, limit=1)
+    items = await search_grant_consumptions(conn, grant_ids=[grant.id], limit=1)
 
     assert len(items) == 1
 

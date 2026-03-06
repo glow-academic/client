@@ -50,12 +50,12 @@ async def _setup(conn, profile_id):
     msg = await create_message(conn, run_id=run.id, role="user")
     call3 = await create_call(conn, run_id=run.id, session_id=session.id)
     await create_attempt_message(
-        conn, chat_id=attempt_chat.id, message_id=msg.id, call_id=call3.id
+        conn, chat_id=attempt_chat.id, message_ids=[msg.id], call_id=call3.id
     )
     content_persona = await create_persona(conn)
     result = await create_attempt_content(
         conn,
-        message_id=msg.id,
+        message_ids=[msg.id],
         call_id=call3.id,
         content="Test content",
         persona_id=content_persona.id,
@@ -67,7 +67,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, msg = await _setup(conn, profile_id)
     await refresh_attempt_content(conn)
 
-    items = await search_attempt_contents(conn, message_id=msg.id)
+    items = await search_attempt_contents(conn, message_ids=[msg.id])
 
     ids = [item.content_id for item in items]
     assert result.id in ids
@@ -77,7 +77,7 @@ async def test_filters_by_message_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_content(conn)
 
-    items = await search_attempt_contents(conn, message_id=nonexistent_id())
+    items = await search_attempt_contents(conn, message_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -86,7 +86,7 @@ async def test_pagination_limit(conn, profile_id):
     result, msg = await _setup(conn, profile_id)
     await refresh_attempt_content(conn)
 
-    items = await search_attempt_contents(conn, message_id=msg.id, limit=1)
+    items = await search_attempt_contents(conn, message_ids=[msg.id], limit=1)
 
     assert len(items) <= 1
 
@@ -103,7 +103,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, msg = await _setup(conn, profile_id)
 
-    items = await search_attempt_contents(conn, message_id=msg.id, bypass_mv=True)
+    items = await search_attempt_contents(conn, message_ids=[msg.id], bypass_mv=True)
 
     ids = [item.content_id for item in items]
     assert result.id in ids

@@ -48,11 +48,11 @@ async def _setup(conn, profile_id):
     await create_attempt_chat_bridge(
         conn,
         attempt_id=attempt.id,
-        attempt_chat_id=attempt_chat.id,
+        attempt_chat_ids=[attempt_chat.id],
         session_id=session.id,
     )
     result = await create_attempt_responses(
-        conn, chat_id=attempt_chat.id, call_id=call2.id
+        conn, chat_ids=[attempt_chat.id], call_id=call2.id
     )
     return result, attempt_chat
 
@@ -61,7 +61,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, attempt_chat = await _setup(conn, profile_id)
     await refresh_attempt_responses(conn)
 
-    items = await search_attempt_responses(conn, chat_id=attempt_chat.id)
+    items = await search_attempt_responses(conn, chat_ids=[attempt_chat.id])
 
     ids = [item.response_id for item in items]
     assert result.id in ids
@@ -71,7 +71,7 @@ async def test_filters_by_chat_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_responses(conn)
 
-    items = await search_attempt_responses(conn, chat_id=nonexistent_id())
+    items = await search_attempt_responses(conn, chat_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -80,7 +80,7 @@ async def test_pagination_limit(conn, profile_id):
     result, attempt_chat = await _setup(conn, profile_id)
     await refresh_attempt_responses(conn)
 
-    items = await search_attempt_responses(conn, chat_id=attempt_chat.id, limit=1)
+    items = await search_attempt_responses(conn, chat_ids=[attempt_chat.id], limit=1)
 
     assert len(items) <= 1
 
@@ -98,7 +98,7 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, attempt_chat = await _setup(conn, profile_id)
 
     items = await search_attempt_responses(
-        conn, chat_id=attempt_chat.id, bypass_mv=True
+        conn, chat_ids=[attempt_chat.id], bypass_mv=True
     )
 
     ids = [item.response_id for item in items]

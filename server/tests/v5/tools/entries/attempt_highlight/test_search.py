@@ -73,7 +73,7 @@ async def _setup(conn, profile_id):
         description="Student greeted well",
     )
     result = await create_attempt_highlight(
-        conn, strength_id=strength.id, call_id=call2.id, section="Good opening"
+        conn, strength_ids=[strength.id], call_id=call2.id, section="Good opening"
     )
     return result, strength
 
@@ -82,7 +82,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, strength = await _setup(conn, profile_id)
     await refresh_attempt_highlight(conn)
 
-    items = await search_attempt_highlights(conn, strength_id=strength.id)
+    items = await search_attempt_highlights(conn, strength_ids=[strength.id])
 
     ids = [item.highlight_id for item in items]
     assert result.id in ids
@@ -92,7 +92,7 @@ async def test_filters_by_strength_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_highlight(conn)
 
-    items = await search_attempt_highlights(conn, strength_id=nonexistent_id())
+    items = await search_attempt_highlights(conn, strength_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -101,7 +101,7 @@ async def test_pagination_limit(conn, profile_id):
     result, strength = await _setup(conn, profile_id)
     await refresh_attempt_highlight(conn)
 
-    items = await search_attempt_highlights(conn, strength_id=strength.id, limit=1)
+    items = await search_attempt_highlights(conn, strength_ids=[strength.id], limit=1)
 
     assert len(items) <= 1
 
@@ -119,7 +119,7 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, strength = await _setup(conn, profile_id)
 
     items = await search_attempt_highlights(
-        conn, strength_id=strength.id, bypass_mv=True
+        conn, strength_ids=[strength.id], bypass_mv=True
     )
 
     ids = [item.highlight_id for item in items]

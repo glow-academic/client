@@ -29,7 +29,7 @@ async def test_finds_created_entry(conn, profile_id):
     text, _ = await _setup(conn, profile_id)
     await conn.execute("REFRESH MATERIALIZED VIEW texts_mv")
 
-    items = await search_texts(conn, text_id=text.id)
+    items = await search_texts(conn, text_ids=[text.id])
 
     ids = [item.text_id for item in items]
     assert text.id in ids
@@ -39,7 +39,7 @@ async def test_filters_by_text_id(conn, profile_id):
     await _setup(conn, profile_id)
     await conn.execute("REFRESH MATERIALIZED VIEW texts_mv")
 
-    items = await search_texts(conn, text_id=nonexistent_id())
+    items = await search_texts(conn, text_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -48,7 +48,7 @@ async def test_pagination_limit(conn, profile_id):
     text, _ = await _setup(conn, profile_id)
     await conn.execute("REFRESH MATERIALIZED VIEW texts_mv")
 
-    items = await search_texts(conn, text_id=text.id, limit=1)
+    items = await search_texts(conn, text_ids=[text.id], limit=1)
 
     assert len(items) <= 1
 
@@ -65,7 +65,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     text, _ = await _setup(conn, profile_id)
 
-    items = await search_texts(conn, text_id=text.id, bypass_mv=True)
+    items = await search_texts(conn, text_ids=[text.id], bypass_mv=True)
 
     ids = [item.text_id for item in items]
     assert text.id in ids

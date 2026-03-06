@@ -50,7 +50,7 @@ async def test_finds_created_entry(conn, profile_id, simulation_bundle):
     result, attempt, _ = await _setup(conn, profile_id, simulation_bundle)
     await refresh_attempt_home(conn)
 
-    items = await search_attempt_homes(conn, attempt_id=attempt.id)
+    items = await search_attempt_homes(conn, attempt_ids=[attempt.id])
 
     attempt_ids = [item.attempt_id for item in items]
     assert result.attempt_id in attempt_ids
@@ -60,7 +60,7 @@ async def test_filters_by_attempt_id(conn, profile_id, simulation_bundle):
     await _setup(conn, profile_id, simulation_bundle)
     await refresh_attempt_home(conn)
 
-    items = await search_attempt_homes(conn, attempt_id=nonexistent_id())
+    items = await search_attempt_homes(conn, attempt_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -69,7 +69,7 @@ async def test_filters_by_home_id(conn, profile_id, simulation_bundle):
     result, _, home = await _setup(conn, profile_id, simulation_bundle)
     await refresh_attempt_home(conn)
 
-    items = await search_attempt_homes(conn, home_id=home.id)
+    items = await search_attempt_homes(conn, home_ids=[home.id])
 
     home_ids = [item.home_id for item in items]
     assert result.home_id in home_ids
@@ -96,7 +96,7 @@ async def test_returns_all_without_filter(conn, profile_id, simulation_bundle):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id, simulation_bundle):
     result, attempt, _ = await _setup(conn, profile_id, simulation_bundle)
 
-    items = await search_attempt_homes(conn, attempt_id=attempt.id, bypass_mv=True)
+    items = await search_attempt_homes(conn, attempt_ids=[attempt.id], bypass_mv=True)
 
     attempt_ids = [item.attempt_id for item in items]
     assert result.attempt_id in attempt_ids

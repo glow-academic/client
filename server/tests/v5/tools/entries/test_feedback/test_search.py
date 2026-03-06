@@ -40,7 +40,7 @@ async def _setup(conn, profile_id):
     )
     result = await create_test_feedback(
         conn,
-        grade_id=test_grade.id,
+        grade_ids=[test_grade.id],
         call_id=call2.id,
         total=10,
         feedback="Good job",
@@ -54,7 +54,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, test_grade = await _setup(conn, profile_id)
     await refresh_test_feedback(conn)
 
-    items = await search_test_feedback_entries(conn, grade_id=test_grade.id)
+    items = await search_test_feedback_entries(conn, grade_ids=[test_grade.id])
 
     ids = [item.feedback_id for item in items]
     assert result.id in ids
@@ -64,7 +64,7 @@ async def test_filters_by_grade_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_test_feedback(conn)
 
-    items = await search_test_feedback_entries(conn, grade_id=nonexistent_id())
+    items = await search_test_feedback_entries(conn, grade_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -73,7 +73,7 @@ async def test_pagination_limit(conn, profile_id):
     result, test_grade = await _setup(conn, profile_id)
     await refresh_test_feedback(conn)
 
-    items = await search_test_feedback_entries(conn, grade_id=test_grade.id, limit=1)
+    items = await search_test_feedback_entries(conn, grade_ids=[test_grade.id], limit=1)
 
     assert len(items) <= 1
 
@@ -91,7 +91,7 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, test_grade = await _setup(conn, profile_id)
 
     items = await search_test_feedback_entries(
-        conn, grade_id=test_grade.id, bypass_mv=True
+        conn, grade_ids=[test_grade.id], bypass_mv=True
     )
 
     ids = [item.feedback_id for item in items]

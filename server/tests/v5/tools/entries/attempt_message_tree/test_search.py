@@ -49,7 +49,7 @@ async def _setup(conn, profile_id):
         conn, chat_id=chat.id, call_id=call2.id, message_id=msg1.id
     )
     await create_attempt_message(
-        conn, chat_id=chat.id, call_id=call2.id, message_id=msg2.id
+        conn, chat_id=chat.id, call_id=call2.id, message_ids=[msg2.id]
     )
     result = await create_attempt_message_tree(
         conn, parent_id=msg1.id, child_id=msg2.id, session_id=session.id
@@ -61,7 +61,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, msg1, msg2 = await _setup(conn, profile_id)
     await refresh_attempt_message_tree(conn)
 
-    items = await search_attempt_message_trees(conn, message_id=msg2.id)
+    items = await search_attempt_message_trees(conn, message_ids=[msg2.id])
 
     message_ids = [item.message_id for item in items]
     assert msg2.id in message_ids
@@ -71,7 +71,7 @@ async def test_filters_by_message_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_message_tree(conn)
 
-    items = await search_attempt_message_trees(conn, message_id=nonexistent_id())
+    items = await search_attempt_message_trees(conn, message_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -97,7 +97,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, msg1, msg2 = await _setup(conn, profile_id)
 
-    items = await search_attempt_message_trees(conn, message_id=msg2.id, bypass_mv=True)
+    items = await search_attempt_message_trees(conn, message_ids=[msg2.id], bypass_mv=True)
 
     message_ids = [item.message_id for item in items]
     assert msg2.id in message_ids

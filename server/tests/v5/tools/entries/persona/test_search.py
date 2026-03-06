@@ -29,7 +29,7 @@ async def test_filters_by_session_id(conn, profile_id):
     )
     await refresh_persona_internal(conn)
 
-    items = await search_personas(conn, session_id=nonexistent_id())
+    items = await search_personas(conn, session_ids=[nonexistent_id()])
 
     assert items == []
 

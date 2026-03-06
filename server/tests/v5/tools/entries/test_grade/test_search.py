@@ -42,7 +42,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, test_invocation, run = await _setup(conn, profile_id)
     await refresh_test_grade(conn)
 
-    items = await search_test_grades(conn, invocation_id=test_invocation.id)
+    items = await search_test_grades(conn, invocation_ids=[test_invocation.id])
 
     ids = [item.id for item in items]
     assert result.id in ids
@@ -52,7 +52,7 @@ async def test_filters_by_invocation_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_test_grade(conn)
 
-    items = await search_test_grades(conn, invocation_id=nonexistent_id())
+    items = await search_test_grades(conn, invocation_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -61,7 +61,7 @@ async def test_filters_by_run_id(conn, profile_id):
     result, _, run = await _setup(conn, profile_id)
     await refresh_test_grade(conn)
 
-    items = await search_test_grades(conn, run_id=run.id)
+    items = await search_test_grades(conn, run_ids=[run.id])
 
     ids = [item.id for item in items]
     assert result.id in ids
@@ -71,7 +71,7 @@ async def test_pagination_limit(conn, profile_id):
     result, test_invocation, _ = await _setup(conn, profile_id)
     await refresh_test_grade(conn)
 
-    items = await search_test_grades(conn, invocation_id=test_invocation.id, limit=1)
+    items = await search_test_grades(conn, invocation_ids=[test_invocation.id], limit=1)
 
     assert len(items) <= 1
 

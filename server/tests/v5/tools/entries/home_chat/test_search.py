@@ -29,8 +29,8 @@ async def _setup(conn, profile_id, bundle):
     chat = await create_chat(conn, session_id=session.id)
     home_chat = await create_home_chat(
         conn,
-        home_id=home.id,
-        chat_id=chat.id,
+        home_ids=[home.id],
+        chat_ids=[chat.id],
         session_id=session.id,
     )
     return home, chat, home_chat
@@ -40,7 +40,7 @@ async def test_finds_created_entry(conn, profile_id, simulation_bundle):
     home, chat, result = await _setup(conn, profile_id, simulation_bundle)
     await refresh_home_chat(conn)
 
-    items = await search_home_chats(conn, home_id=home.id)
+    items = await search_home_chats(conn, home_ids=[home.id])
 
     ids = [item.id for item in items]
     assert result.id in ids
@@ -50,7 +50,7 @@ async def test_filters_by_home_id(conn, profile_id, simulation_bundle):
     await _setup(conn, profile_id, simulation_bundle)
     await refresh_home_chat(conn)
 
-    items = await search_home_chats(conn, home_id=nonexistent_id())
+    items = await search_home_chats(conn, home_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -59,7 +59,7 @@ async def test_filters_by_chat_id(conn, profile_id, simulation_bundle):
     home, chat, result = await _setup(conn, profile_id, simulation_bundle)
     await refresh_home_chat(conn)
 
-    items = await search_home_chats(conn, chat_id=chat.id)
+    items = await search_home_chats(conn, chat_ids=[chat.id])
 
     ids = [item.id for item in items]
     assert result.id in ids
@@ -69,7 +69,7 @@ async def test_pagination_limit(conn, profile_id, simulation_bundle):
     home, _, _ = await _setup(conn, profile_id, simulation_bundle)
     await refresh_home_chat(conn)
 
-    items = await search_home_chats(conn, home_id=home.id, limit=1)
+    items = await search_home_chats(conn, home_ids=[home.id], limit=1)
 
     assert len(items) <= 1
 
@@ -86,7 +86,7 @@ async def test_returns_all_without_filter(conn, profile_id, simulation_bundle):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id, simulation_bundle):
     home, _, result = await _setup(conn, profile_id, simulation_bundle)
 
-    items = await search_home_chats(conn, home_id=home.id, bypass_mv=True)
+    items = await search_home_chats(conn, home_ids=[home.id], bypass_mv=True)
 
     ids = [item.id for item in items]
     assert result.id in ids

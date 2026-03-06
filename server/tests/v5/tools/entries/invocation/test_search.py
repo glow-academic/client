@@ -18,7 +18,7 @@ async def test_search_finds_created(conn):
     benchmark = await _setup(conn)
     created = await create_invocation(conn, benchmark_id=benchmark.id)
 
-    results = await search_invocations(conn, benchmark_id=benchmark.id)
+    results = await search_invocations(conn, benchmark_ids=[benchmark.id])
 
     result_ids = {r.id for r in results}
     assert created.id in result_ids
@@ -30,7 +30,7 @@ async def test_search_filters_by_benchmark(conn):
     c1 = await create_invocation(conn, benchmark_id=b1.id)
     await create_invocation(conn, benchmark_id=b2.id)
 
-    results = await search_invocations(conn, benchmark_id=b1.id)
+    results = await search_invocations(conn, benchmark_ids=[b1.id])
 
     result_ids = {r.id for r in results}
     assert c1.id in result_ids
@@ -51,7 +51,7 @@ async def test_search_returns_connections(conn):
         name_ids=[name_id],
     )
 
-    results = await search_invocations(conn, benchmark_id=benchmark.id)
+    results = await search_invocations(conn, benchmark_ids=[benchmark.id])
 
     matched = [r for r in results if r.id == created.id]
     assert len(matched) == 1
@@ -63,8 +63,8 @@ async def test_search_pagination(conn):
     for _ in range(3):
         await create_invocation(conn, benchmark_id=benchmark.id)
 
-    page1 = await search_invocations(conn, benchmark_id=benchmark.id, limit=2, offset=0)
-    page2 = await search_invocations(conn, benchmark_id=benchmark.id, limit=2, offset=2)
+    page1 = await search_invocations(conn, benchmark_ids=[benchmark.id], limit=2, offset=0)
+    page2 = await search_invocations(conn, benchmark_ids=[benchmark.id], limit=2, offset=2)
 
     assert len(page1) == 2
     assert len(page2) == 1

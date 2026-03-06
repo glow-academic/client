@@ -172,7 +172,7 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
                 # Find all bridges for this attempt
                 bridges = await search_attempt_chat_bridges(
                     conn,
-                    attempt_id=attempt_id,
+                    attempt_ids=[attempt_id],
                     limit=1000,
                     bypass_mv=True,
                 )
@@ -223,7 +223,7 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
             # 3b. Get already-resolved bridges (completed_count + resolved chat_ids)
             bridges = await search_attempt_chat_bridges(
                 conn,
-                attempt_id=attempt_id,
+                attempt_ids=[attempt_id],
                 limit=1000,
                 bypass_mv=True,
             )
@@ -243,7 +243,7 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
             # 3c. Get parent chat_ids from practice/home
             if is_practice:
                 practice_entries = await search_attempt_practice_entries(
-                    conn, attempt_id=attempt_id, bypass_mv=True
+                    conn, attempt_ids=[attempt_id], bypass_mv=True
                 )
                 if not practice_entries:
                     raise ValueError("No practice link for this attempt")
@@ -253,13 +253,13 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
                 )
             else:
                 home_entries = await search_attempt_homes(
-                    conn, attempt_id=attempt_id, bypass_mv=True
+                    conn, attempt_ids=[attempt_id], bypass_mv=True
                 )
                 if not home_entries:
                     raise ValueError("No home link for this attempt")
                 home_id = home_entries[0].home_id
                 parent_chat_links = await search_home_chats(
-                    conn, home_id=home_id, limit=1000, bypass_mv=True
+                    conn, home_ids=[home_id], limit=1000, bypass_mv=True
                 )
 
             # Extract all parent chat_ids
