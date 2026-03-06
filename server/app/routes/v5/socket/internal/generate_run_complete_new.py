@@ -3,7 +3,8 @@
 Replaces generate_run_complete.py.
 
 Differences from generate_run_complete.py:
-  - Uses persist_run_message for assistant message persistence
+  - session_id, profile_id, group_id always in data (propagated from prepare → artifact)
+  - Uses persist_run_message for assistant message persistence (with session_id)
   - Uses new run_tracker (record_agent_done, cleanup_run) with DI redis
   - Uses aggregate_tool_results which extracts both resource AND entry actions
   - Uses db_helpers for extracted SQL
@@ -11,13 +12,8 @@ Differences from generate_run_complete.py:
 
 GAPs / TODOs:
   - TODO: Pass entry_actions to save_artifact (currently only resource_actions used).
-  - TODO: session_id is not in the data payload — need to resolve or pass through
-          from generate_prepare_new. For now, assistant message persistence uses
-          persist_run_message which needs session_id.
   - TODO: Chat special case (MV refresh + invalidate + attempt_chat_started) stays
           as-is. Should be extracted to a post-save hook.
-  - TODO: Missing import bug for get_redis_client at line 205 of old file — fixed
-          here by using DI redis param.
 """
 
 from __future__ import annotations
@@ -53,7 +49,11 @@ internal_sio = get_internal_sio()
 # NOTE: Not registered as @internal_sio.on("generate_run_complete") yet.
 # To activate: import and swap registration.
 async def handle_run_complete_new(data: dict[str, Any]) -> None:
-    """Handle run_complete — new version with tracker + entry aggregation."""
+    """Handle run_complete — new version with tracker + entry aggregation.
+
+    Expects session_id, profile_id, group_id in data
+    (propagated from prepare → generate_artifact → here).
+    """
     sid = data.get("sid", "")
     if not sid:
         return
@@ -62,6 +62,10 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
     group_id_str = data.get("group_id", "")
     modality = data.get("modality", "text")
     artifact_type = data.get("artifact_type", "unknown")
+
+    # Identity context — propagated through the pipeline
+    profile_id_str = data.get("profile_id")
+    session_id_str = data.get("session_id")
 
     logger.info(
         f"generate_run_complete - modality={modality}, group_id={group_id_str}, "
@@ -76,6 +80,8 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
                 "generate",
                 {
                     "sid": sid,
+                    "profile_id": profile_id_str,
+                    "session_id": session_id_str,
                     "artifact_types": data.get("artifact_types")
                     or [{"name": artifact_type, "operation": "get"}],
                     "group_id": group_id_str,
@@ -98,14 +104,22 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
             if assistant_output:
                 exists = await check_assistant_message_exists(conn, run_uuid)
                 if not exists:
-                    # TODO: session_id is not in data — need to pass through from prepare.
-                    # For now, we use the old write_text_file approach as fallback.
-                    from app.utils.sql_helper import load_sql
-                    from app.utils.storage.file_writer import write_text_file
+                    if session_id_str:
+                        # New path: use persist_run_message with session_id
+                        await persist_run_message(
+                            conn, run_id=run_uuid,
+                            session_id=uuid.UUID(session_id_str),
+                            role="assistant", content=assistant_output,
+                        )
+                    else:
+                        # Fallback: old approach (no session_id available)
+                        # TODO: Remove once session_id always propagates
+                        from app.utils.sql_helper import load_sql
+                        from app.utils.storage.file_writer import write_text_file
 
-                    upload_id = await write_text_file(conn, None, assistant_output)
-                    sql = load_sql("app/sql/queries/messages/create_message_with_text_complete.sql")
-                    await conn.fetchval(sql, run_uuid, "assistant", upload_id, True)
+                        upload_id = await write_text_file(conn, None, assistant_output)
+                        sql = load_sql("app/sql/queries/messages/create_message_with_text_complete.sql")
+                        await conn.fetchval(sql, run_uuid, "assistant", upload_id, True)
 
             if input_tokens or output_tokens:
                 await record_tokens(conn, run_uuid, input_tokens, output_tokens)
@@ -135,7 +149,10 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
     # Step 4: Auto-save
     artifact_id: str | None = None
     should_save = data.get("save", True)
-    profile_id_str = await find_profile_by_socket(sid)
+
+    # Use profile_id from data if available, fall back to socket lookup
+    if not profile_id_str:
+        profile_id_str = await find_profile_by_socket(sid)
 
     if should_save and profile_id_str and group_id_str:
         try:

@@ -6,6 +6,7 @@ instead of the broken fetcher path (which returns None for profile).
 Differences from generate.py:
   - Uses resolve_common_context (ProfileContext.requests_per_day) for rate limit
   - No registry fetcher call (expensive, was only used for rate limit extraction)
+  - session_id, profile_id, group_id always in data (resolved by client handler)
   - Audio session continuation logic unchanged
 
 GAPs:
@@ -20,10 +21,8 @@ import uuid
 from typing import Any
 
 from app.infra.globals import get_internal_sio, get_redis_client
-from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.session_store import get_session_by_group_id, rotate_run_id
-from app.routes.v5.socket.client.types import GeneratePayload
 from app.routes.v5.socket.types import GenerateErrorApiRequest
 from app.utils.logging.db_logger import get_logger
 
@@ -47,8 +46,15 @@ async def _emit_error(
 # NOTE: Not registered as @internal_sio.on("generate") yet.
 # To activate: import and swap registration.
 async def generate_handler_new(data: dict[str, Any]) -> None:
-    """Rate limit gate — uses resolve_common_context for daily limit check."""
+    """Rate limit gate — uses resolve_common_context for daily limit check.
+
+    Expects session_id, profile_id, group_id already in data
+    (resolved by client handler).
+    """
     sid = data.get("sid", "")
+    if not sid:
+        return
+
     artifact_types_raw = data.get("artifact_types") or []
     artifact_type = (
         artifact_types_raw[0]["name"]
@@ -56,22 +62,24 @@ async def generate_handler_new(data: dict[str, Any]) -> None:
         else "unknown"
     )
 
-    if not sid:
-        return
+    # These are always in data — resolved by client handler
+    profile_id_str = data.get("profile_id")
+    session_id_str = data.get("session_id")
+    group_id = data.get("group_id")
 
-    profile_id_str = data.get("profile_id") or await find_profile_by_socket(sid)
     if not profile_id_str:
         await _emit_error(sid, "Profile not found. Please reconnect.", artifact_type)
         return
 
-    try:
-        profile_id = uuid.UUID(profile_id_str)
-        GeneratePayload(**data)  # validate
-    except Exception as e:
-        await _emit_error(sid, f"Invalid request: {str(e)}", artifact_type)
+    if not session_id_str:
+        await _emit_error(sid, "Session not found. Please reconnect.", artifact_type)
         return
 
-    group_id = data.get("group_id")
+    try:
+        profile_id = uuid.UUID(profile_id_str)
+    except Exception as e:
+        await _emit_error(sid, f"Invalid profile_id: {str(e)}", artifact_type)
+        return
 
     # --- Rate limit check via resolve_common_context ---
     try:
@@ -141,4 +149,5 @@ async def generate_handler_new(data: dict[str, Any]) -> None:
             return
 
     # Normal generation — forward to generate_prepare
+    # data already contains session_id, profile_id, group_id — they propagate through
     await internal_sio.emit("generate_prepare", data)

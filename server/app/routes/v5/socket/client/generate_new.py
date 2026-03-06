@@ -1,23 +1,23 @@
 """Client-facing generate handler (new).
 
-Validates payload, resolves group (no run creation — moved internal),
+Validates payload, resolves profile_id + session_id from sid,
 and emits to internal "generate" event.
 
 Differences from generate.py:
   - No run creation (moved to generate_prepare_new.py)
   - No profiles_runs_connection (moved to generate_prepare_new.py)
-  - Uses db_helpers for group resolution
+  - Resolves both profile_id AND session_id from sid (not from payload)
+  - group_id always assumed present in payload (no resolution needed)
+  - session_id, profile_id, group_id propagate through all internal events
 """
 
 from __future__ import annotations
 
-import uuid
 from typing import Any
 
 from app.infra.globals import get_internal_sio, sio
-from app.infra.websocket.db_helpers import create_group_for_profile, get_group_from_draft
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.typed_emit import emit_to_internal
 from app.routes.v5.socket.client.types import GeneratePayload
 from app.routes.v5.socket.types import GenerateErrorApiRequest
@@ -42,7 +42,12 @@ async def _emit_error(sid: str, message: str, artifact_type: str) -> None:
 # NOTE: Not registered as @sio.event yet — use side-by-side with generate.py
 # To activate: import this module in __init__.py and swap the registration.
 async def generate_new(sid: str, data: dict[str, Any]) -> None:
-    """Handle unified ``generate`` event — new version without run creation."""
+    """Handle unified ``generate`` event — new version.
+
+    Resolves profile_id and session_id from sid (client boundary),
+    then forwards everything to the internal "generate" event.
+    group_id is always expected in the payload.
+    """
     artifact_types_raw = data.get("artifact_types") or []
     artifact_type = (
         artifact_types_raw[0]["name"]
@@ -51,31 +56,34 @@ async def generate_new(sid: str, data: dict[str, Any]) -> None:
     )
     try:
         payload = GeneratePayload(**data)
+
+        # Resolve profile_id from sid (never trust payload)
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
             await _emit_error(sid, "Profile not found. Please reconnect.", artifact_type)
             return
 
-        profile_id = uuid.UUID(profile_id_str)
+        # Resolve session_id from sid (stored at connect time)
+        session_id_str = await find_session_by_socket(sid)
+        if not session_id_str:
+            await _emit_error(sid, "Session not found. Please reconnect.", artifact_type)
+            return
 
-        # Resolve group_id (from draft or create new) — no run creation
-        group_id: uuid.UUID | None = None
-        async with get_db_connection() as conn:
-            if payload.draft_id:
-                draft_table = f"{artifact_type}_drafts_entry"
-                group_id = await get_group_from_draft(conn, draft_table, payload.draft_id)
+        # group_id must be in payload — no resolution needed
+        group_id = data.get("group_id")
+        if not group_id:
+            await _emit_error(sid, "group_id is required.", artifact_type)
+            return
 
-            if not group_id:
-                group_id = await create_group_for_profile(conn, profile_id)
-
-        # Emit to internal bus — run_id will be created in generate_prepare_new
+        # Emit to internal bus with resolved identity context
+        # run_id will be created in generate_prepare_new
         await internal_sio.emit(
             "generate",
             {
                 "sid": sid,
                 "profile_id": profile_id_str,
-                "group_id": str(group_id),
-                # No run_id — created internally now
+                "session_id": session_id_str,
+                "group_id": group_id,
                 **payload.model_dump(mode="json"),
             },
         )

@@ -5,6 +5,8 @@ prepare_pipeline.py + thin I/O.
 
 Differences from generate_prepare.py:
   - Run creation happens here (moved from client handler)
+  - session_id, profile_id, group_id always in data (resolved by client handler)
+  - No create_session call — session_id propagated from client
   - Uses prepare_pipeline pure functions for all logic
   - Uses persist_run_message for message persistence
   - Uses init_run_trackers with WorkUnit state machine
@@ -32,7 +34,6 @@ from app.infra.generation import convert_tools_to_dict
 from app.infra.generation.media_context import wrap_media_entries
 from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.websocket.db_helpers import link_profile_to_run, link_run_agents
-from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.init_run_trackers import init_run_trackers
 from app.infra.websocket.persist_run_message import persist_run_message
@@ -57,7 +58,6 @@ from app.routes.v5.socket.internal.prepare_pipeline import (
     validate_payload,
 )
 from app.routes.v5.socket.types import GenerateErrorApiRequest
-from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.models.get import get_models
@@ -139,7 +139,11 @@ async def _fetch_entry_types(
 # NOTE: Not registered as @internal_sio.on("generate_prepare") yet.
 # To activate: import and swap registration.
 async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
-    """Handle generate_prepare — thin orchestrator over pure functions."""
+    """Handle generate_prepare — thin orchestrator over pure functions.
+
+    Expects session_id, profile_id, group_id already in data
+    (resolved by client handler, propagated through internal/generate).
+    """
     sid = data.get("sid", "")
     if not sid:
         return
@@ -151,13 +155,27 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
         else "unknown"
     )
 
-    profile_id_str = data.get("profile_id") or await find_profile_by_socket(sid)
+    # These are always in data — resolved by client, propagated through internal/generate
+    profile_id_str = data.get("profile_id")
+    session_id_str = data.get("session_id")
+    group_id_str = data.get("group_id")
+
     if not profile_id_str:
         await _emit_error(sid, "Profile not found. Please reconnect.", artifact_type)
         return
 
+    if not session_id_str:
+        await _emit_error(sid, "Session not found. Please reconnect.", artifact_type)
+        return
+
+    if not group_id_str:
+        await _emit_error(sid, "group_id is required.", artifact_type)
+        return
+
     try:
         profile_id = uuid.UUID(profile_id_str)
+        session_id = uuid.UUID(session_id_str)
+        group_id = uuid.UUID(group_id_str)
         payload = GeneratePayload(**data)
     except Exception as e:
         await _emit_error(sid, f"Invalid request: {str(e)}", artifact_type)
@@ -287,21 +305,13 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
         createable_resources = compute_createable_resources(config_tools)
         all_artifact_types = compute_all_artifact_types(all_tool_dicts)
 
-        # --- Step 8: Resolve group_id, create run + session ---
-        group_id = uuid.UUID(data["group_id"]) if data.get("group_id") else None
-        if not group_id:
-            await _emit_error(sid, "group_id is required", artifact_type)
-            return
-
+        # --- Step 8: Create run (session_id + group_id already resolved) ---
         async with get_db_connection() as conn:
-            # Create session for this profile
-            session = await create_session(conn, profile_id=profile_id)
-
             # Create run (moved from client handler)
             from app.routes.v5.tools.entries.runs.create import create_run
 
             run = await create_run(
-                conn, group_id=group_id, session_id=session.id, profile_id=profile_id,
+                conn, group_id=group_id, session_id=session_id, profile_id=profile_id,
             )
             run_id = run.id
 
@@ -335,7 +345,7 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
             "generation_started",
             GenerationStartedData(
                 sid=sid, artifact_type=artifact_type,
-                group_id=str(group_id), run_id=str(run_id),
+                group_id=group_id_str, run_id=str(run_id),
                 resource_types=resource_types,
             ).model_dump(mode="json"),
         ))
@@ -390,7 +400,7 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                 for msg in dispatch.messages:
                     if msg.persist:
                         await persist_run_message(
-                            conn, run_id=run_id, session_id=session.id,
+                            conn, run_id=run_id, session_id=session_id,
                             role=msg.role, content=msg.raw_text,
                         )
 
@@ -405,7 +415,7 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                     for instruction in payload.user_instructions:
                         all_messages.append({"role": "user", "content": instruction})
                         await persist_run_message(
-                            conn, run_id=run_id, session_id=session.id,
+                            conn, run_id=run_id, session_id=session_id,
                             role="user", content=instruction,
                         )
 
@@ -417,7 +427,7 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                     artifact_type=artifact_type,
                     resource_type=agent_resource_types[0] if agent_resource_types else artifact_type,
                     run_id=str(run_id),
-                    group_id=str(group_id),
+                    group_id=group_id_str,
                     modality=payload.modality,
                     message_id=None,
                     messages=all_messages,
@@ -436,7 +446,8 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                     tools=dispatch.scoped_tools,
                     save=payload.save,
                     metadata=dispatch.metadata or None,
-                    profile_id=str(profile_id),
+                    profile_id=profile_id_str,
+                    session_id=session_id_str,
                     artifact_id=str(artifact_id) if artifact_id else None,
                     draft_id=str(payload.draft_id) if payload.draft_id else None,
                     developer_instruction_templates=dispatch.developer_instruction_templates,

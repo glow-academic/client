@@ -95,6 +95,7 @@ class GenerateArtifactPayload(BaseModel):
     )
     # Artifact tool support: needed to re-fetch context and re-render developer messages
     profile_id: str | None = None
+    session_id: str | None = None
     artifact_id: str | None = None
     draft_id: str | None = None
     developer_instruction_templates: list[str] | None = None
@@ -1135,6 +1136,8 @@ async def _generate_artifact_impl(
                             "entry_id": result_entry_id,
                             "run_id": data.run_id,
                             "group_id": data.group_id,
+                            "profile_id": data.profile_id,
+                            "session_id": data.session_id,
                             "type": "complete",
                             "event_type": "tool_result",
                             "tool_call_id": tool_call_id,
@@ -1263,6 +1266,8 @@ async def _generate_artifact_impl(
                 "resource_type": resource_type,
                 "run_id": data.run_id,
                 "group_id": data.group_id,
+                "profile_id": data.profile_id,
+                "session_id": data.session_id,
                 "input_text_tokens": total_input_tokens,
                 "output_text_tokens": total_output_tokens,
                 "assistant_output": final_assistant_output,
