@@ -1,4 +1,4 @@
-"""Tests for infra.activate.activate_artifact — shared activate helper.
+"""Tests for infra.activate.activate — shared activate helper.
 
 Uses persona_artifact as a concrete test bed, but the helper
 itself is table-agnostic.
@@ -6,7 +6,7 @@ itself is table-agnostic.
 
 import pytest
 
-from app.infra.activate.activate_artifact import activate_artifacts
+from app.infra.activate.activate import activate_rows
 
 pytestmark = pytest.mark.asyncio
 
@@ -25,13 +25,13 @@ async def _make_persona(conn, *, active=True):
 
 
 # ---------------------------------------------------------------------------
-# activate_artifacts
+# activate_rows
 # ---------------------------------------------------------------------------
 
 
 async def test_activate_empty_list(conn):
     """Empty list returns empty list without touching DB."""
-    result = await activate_artifacts(conn, table="persona_artifact", ids=[])
+    result = await activate_rows(conn, table="persona_artifact", ids=[])
     assert result == []
 
 
@@ -43,7 +43,7 @@ async def test_activate_inactive_artifact(conn):
     row = await conn.fetchrow("SELECT active FROM persona_artifact WHERE id = $1", pid)
     assert row["active"] is False
 
-    result = await activate_artifacts(conn, table="persona_artifact", ids=[pid])
+    result = await activate_rows(conn, table="persona_artifact", ids=[pid])
     assert pid in result
 
     # Verify it's now active
@@ -55,7 +55,7 @@ async def test_activate_already_active_artifact(conn):
     """Activating an already-active artifact is a no-op (still returns the ID)."""
     pid = await _make_persona(conn, active=True)
 
-    result = await activate_artifacts(conn, table="persona_artifact", ids=[pid])
+    result = await activate_rows(conn, table="persona_artifact", ids=[pid])
     assert pid in result
 
     row = await conn.fetchrow("SELECT active FROM persona_artifact WHERE id = $1", pid)
@@ -68,7 +68,7 @@ async def test_activate_multiple(conn):
     p2 = await _make_persona(conn, active=False)
     p3 = await _make_persona(conn, active=True)
 
-    result = await activate_artifacts(
+    result = await activate_rows(
         conn, table="persona_artifact", ids=[p1, p2, p3]
     )
     assert set(result) == {p1, p2, p3}
@@ -85,7 +85,7 @@ async def test_activate_nonexistent_id(conn):
     import uuid
 
     fake_id = uuid.uuid4()
-    result = await activate_artifacts(
+    result = await activate_rows(
         conn, table="persona_artifact", ids=[fake_id]
     )
     assert result == []
@@ -106,7 +106,7 @@ async def test_activate_preserves_junctions(conn):
     )
 
     # Activate
-    await activate_artifacts(conn, table="persona_artifact", ids=[pid])
+    await activate_rows(conn, table="persona_artifact", ids=[pid])
 
     # Junction still exists
     junction = await conn.fetchrow(

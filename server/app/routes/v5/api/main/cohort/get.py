@@ -1,27 +1,28 @@
-"""Cohort get endpoint - Two-pass architecture with three-layer BFF.
+"""Cohort GET endpoint — composable infra architecture.
 
-This implements the refactored approach matching the persona gold standard:
-1. Query 1: Access check (user context, cohort state)
-2. Query 2: ID fetching (resource IDs, suggestions, agents, tool IDs)
-3. Pass 2: Parallel resource fetching (per-resource caching)
-
-Three output layers:
-- get_cohort_internal() -> CohortInternalData (shared dataclass)
-- get_cohort_websocket() -> GetCohortWebsocketResponse (minimal, for AI generation)
-- get_cohort_client() -> GetCohortApiResponse (full BFF response for HTTP/frontend)
+Uses composable infra layers:
+  1. resolve_common_context — profile + tool graph + runs
+  2. resolve_cohort_permissions_context — access check (404, 403, fail fast)
+  3. resolve_cohort_context — artifact + draft → merged + hydrated resources
+  4. score_tools — tool graph + artifact resources → per-resource tool picks
+  5. Pure Python — permissions, show/required flags, response assembly
 """
 
-import asyncio
-from dataclasses import dataclass
-from typing import Annotated, Any, cast
+from __future__ import annotations
+
+from typing import Annotated
 from uuid import UUID
 
-import asyncpg  # type: ignore
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from redis.asyncio import Redis
 
-from app.infra.globals import get_db, get_pool, get_redis_client
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
+from app.infra.cohort_context import resolve_cohort_context
+from app.infra.cohort_permissions_context import resolve_cohort_permissions_context
+from app.infra.common_context import resolve_common_context
+from app.infra.globals import get_db, get_redis_client
+from app.infra.helpers import dedupe_by_id
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.cohort.permissions import (
     COHORT_RESOURCES,
     compute_can_edit,
@@ -49,298 +50,196 @@ from app.routes.v5.api.main.cohort.permissions import (
 from app.routes.v5.api.main.cohort.types import (
     CohortDepartment,
     CohortDepartmentSection,
-    CohortDescriptionResource,
     CohortDescriptionSection,
     CohortFlagConfig,
     CohortFlagSection,
-    CohortNameResource,
     CohortNameSection,
     CohortProfile,
     CohortProfilePersona,
     CohortProfilePersonaSection,
     CohortProfileSection,
-    CohortResourceBucket,
-    CohortResources,
     CohortSimulation,
     CohortSimulationAvailability,
     CohortSimulationAvailabilitySection,
     CohortSimulationPosition,
     CohortSimulationPositionSection,
     CohortSimulationSection,
-    CohortWebsocketEntries,
-    CohortWebsocketResources,
     GetCohortApiRequest,
     GetCohortApiResponse,
-    GetCohortWebsocketResponse,
 )
-from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.tools.entries.cohort_drafts.get import (
-    get_cohort_drafts_entries_internal,
-)
-from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.args.get import get_args
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.descriptions.search import (
-    search_descriptions,
-)
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.search import search_names
-from app.routes.v5.tools.resources.personas.search import search_personas
-from app.routes.v5.tools.resources.profile_personas.get import (
-    get_profile_personas,
-)
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.profiles.search import search_profiles
-from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.simulation_availability.get import (
-    get_simulation_availability,
-)
-from app.routes.v5.tools.resources.simulation_positions.get import (
-    get_simulation_positions,
-)
-from app.routes.v5.tools.resources.simulations.get import get_simulations
-from app.routes.v5.tools.resources.simulations.search import search_simulations
-from app.routes.v5.tools.resources.tools.get import get_tools
-from app.sql.types import (
-    GetCohortAccessSqlParams,
-    GetCohortAccessSqlRow,
-    GetCohortIdsSqlParams,
-    GetCohortIdsSqlRow,
-    load_sql_query,
-)
+from app.routes.v5.tools.entries.cohort_drafts.get import get_cohort_drafts
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
-
-# SQL paths
-QUERY1_SQL_PATH = "app/sql/queries/cohorts/get_cohort_access_complete.sql"
-QUERY2_SQL_PATH = "app/sql/queries/cohorts/get_cohort_ids_complete.sql"
 
 router = APIRouter()
 
 
-def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
-    """Preserve order while deduplicating by id attribute."""
-    seen: set[UUID] = set()
-    output: list[Any] = []
-    for item in items:
-        item_id = getattr(item, id_attr, None)
-        if item_id and item_id not in seen:
-            seen.add(item_id)
-            output.append(item)
-    return output
+# ---------------------------------------------------------------------------
+# get_cohort_client — composable infra architecture
+# ---------------------------------------------------------------------------
 
 
-@dataclass
-class CohortInternalData:
-    """Internal data from core cohort fetching (cacheable layer).
-
-    This dataclass contains all computed data needed by both:
-    - get_cohort_websocket() - minimal data for WebSocket handlers
-    - get_cohort_client() - full BFF response for HTTP/frontend
-    """
-
-    # Access/context
-    actor_name: str | None
-    cohort_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
-
-    # Generation mappings
-    agent_ids: dict[str, UUID | None]
-
-    # Show/required flags
-    show_flags_map: dict[str, bool]
-    required_flags_map: dict[str, bool]
-
-    # Suggestions (resource -> list of suggestion IDs)
-    suggestions_map: dict[str, list[UUID]]
-
-    # Show AI generate flags (computed: agent exists)
-    show_ai_generate_map: dict[str, bool]
-    basic_show_ai_generate: bool
-    simulations_step_show_ai_generate: bool
-
-    # Resources payload
-    resources_payload: CohortResources
-
-    # Per-resource group IDs
-    resource_group_ids: dict[str, UUID | None]
-
-    # Per-resource tool IDs (from selected agents)
-    tool_ids_map: dict[str, UUID | None]
-
-    # Raw data for backward-compat fields in API response
-    name_id: UUID | None
-    description_id: UUID | None
-    active_flag_id: UUID | None
-    department_ids: list[UUID]
-    simulation_ids: list[UUID]
-
-    # Profiles step
-    profiles_step_show_ai_generate: bool
-
-    # Selected resources for API response
-    name_resource: CohortNameResource | None
-    description_resource: CohortDescriptionResource | None
-    flag_resource: CohortFlagConfig | None
-    department_resources: list[CohortDepartment]
-    simulation_resources: list[CohortSimulation]
-    simulation_positions: list[CohortSimulationPosition]
-    simulation_availability: list[CohortSimulationAvailability]
-    profile_resources: list[CohortProfile]
-    profile_persona_resources: list[CohortProfilePersona]
-
-    # Config resources (for websocket generation context)
-    config_agent_resources: list[Any] | None
-    config_model_resources: list[Any] | None
-    config_provider_resources: list[Any] | None
-
-
-async def get_cohort_internal(
+async def get_cohort_client(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
     profile_id: UUID,
     cohort_id: UUID | None,
     draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-    # Search/filter kwargs (threaded from websocket artifact tool)
+    group_id: UUID,
     descriptions_search: str | None = None,
     simulation_search: str | None = None,
     simulation_show_selected: bool | None = None,
     profile_search: str | None = None,
     profile_show_selected: bool | None = None,
-    group_id: UUID | None = None,
-) -> CohortInternalData:
-    """Core data fetching layer (cacheable).
+    bypass_cache: bool = False,
+) -> GetCohortApiResponse:
+    """Cohort GET using composable infra functions.
 
-    Fetches all cohort data using two-pass architecture and returns
-    a dataclass with all computed values. This is the shared layer used by:
-    - get_cohort_websocket() - minimal data for WebSocket handlers
-    - get_cohort_client() - full BFF response for HTTP/frontend
-
-    Args:
-        profile_id: The authenticated user's profile ID
-        cohort_id: The cohort ID to fetch (None for new cohort mode)
-        draft_id: Optional draft ID for draft mode
-        bypass_cache: Whether to bypass resource caching
-
-    Returns:
-        CohortInternalData with all computed values
-
-    Raises:
-        HTTPException: For validation errors (404, 403, 400)
+    Flow:
+      1. resolve_common_context(profile_id) → profile, tool_graph, runs
+      2. resolve_cohort_permissions_context → access check (404, 403, fail fast)
+      3. resolve_cohort_context(cohort_id, draft_id, ...) → hydrated resources
+      4. score_tools(tool_graph, COHORT_RESOURCES) → per-resource tool picks
+      5. Pure Python: permissions, show/required/AI flags, response assembly
     """
 
-    # === QUERY 1: Access Check (always fresh, no cache) ===
-    pool = get_pool()
-    if not pool:
-        raise RuntimeError("Database pool not initialized")
+    # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
-    # Resolve shared profile context first (default path)
-    async with pool.acquire() as context_conn:
-        profile_ctx = await get_auth_profile_internal(
-            conn=context_conn,
-            profile_id=profile_id,
-            bypass_cache=bypass_cache,
-        )
-
-    # Extract user context from internal fetch (single source of truth)
-    user_role = profile_ctx.access.role
-    actor_name = profile_ctx.access.actor_name
-    user_department_ids = [
-        d.department_id for d in profile_ctx.departments if d.department_id
-    ]
-
-    draft_item = None
-    if draft_id is not None:
-        async with pool.acquire() as draft_conn:
-            draft_items = await get_cohort_drafts_entries_internal(
-                conn=draft_conn,
-                ids=[draft_id],
-                bypass_cache=bypass_cache,
-            )
-            if draft_items:
-                draft_item = draft_items[0]
-
-    # === GROUP ID: Create in Python (moved from SQL side-effect) ===
-    if group_id:
-        effective_group_id = group_id
-    elif draft_item and draft_item.group_id:
-        effective_group_id = draft_item.group_id
-    else:
-        async with pool.acquire() as c:
-            effective_group_id = await c.fetchval(
-                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
-            )
-
-    async with pool.acquire() as conn:
-        query1_params = GetCohortAccessSqlParams(
-            profile_id=profile_id,
-            cohort_id=cohort_id,
-            draft_id=draft_id,
-            draft_group_id=effective_group_id,
-            draft_version=draft_item.version if draft_item is not None else None,
-        )
-
-        access_result = cast(
-            GetCohortAccessSqlRow,
-            await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
-        )
-        cohort_department_ids = access_result.cohort_department_ids or []
-
-        # Early validation: check cohort exists
-        if cohort_id is not None:
-            if access_result.cohort_exists is False:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Cohort {cohort_id} not found",
-                )
-
-            # Check access
-            if not has_access(user_role, user_department_ids, cohort_department_ids):
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have access to this cohort. It may be restricted to other departments.",
-                )
-
-        # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
-        query2_params = GetCohortIdsSqlParams(
-            profile_id=profile_id,
-            cohort_id=cohort_id,
-            draft_id=draft_id,
-            group_id=effective_group_id,
-            user_department_ids=user_department_ids,
-        )
-
-        ids_result = cast(
-            GetCohortIdsSqlRow,
-            await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
-        )
-
-    # === RESOLVE AGENTS FROM SETTINGS (source of truth) ===
-    async with pool.acquire() as settings_conn:
-        settings_data = await get_auth_settings_internal(
-            settings_conn, profile_id, bypass_cache
-        )
-
-    agent_ids, create_tool_ids, link_tool_ids_map = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, COHORT_RESOURCES
+    common = await resolve_common_context(
+        conn,
+        redis,
+        profile_id=profile_id,
+        group_id=group_id,
+        bypass_cache=bypass_cache,
     )
-    # Merge create/link tool IDs into single tool_ids_map (for backward compat tool_id field)
+
+    if common is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
+        )
+
+    profile = common.profile
+
+    # ── Step 2: Permissions check (fail fast before full hydration) ────────
+
+    perms = None
+    if cohort_id is not None:
+        perms = await resolve_cohort_permissions_context(conn, cohort_id)
+
+        if not perms.exists:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Cohort {cohort_id} not found",
+            )
+
+        if not has_access(profile.role, profile.department_ids, perms.department_ids):
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have access to this cohort. "
+                "It may be restricted to other departments.",
+            )
+
+    # ── Step 3: Cohort artifact context ─────────────────────────────────
+
+    cohort = await resolve_cohort_context(
+        conn,
+        redis,
+        cohort_id=cohort_id,
+        group_id=group_id,
+        draft_id=draft_id,
+        user_department_ids=profile.department_ids,
+        descriptions_search=descriptions_search,
+        simulation_search=simulation_search,
+        simulation_show_selected=simulation_show_selected,
+        profile_search=profile_search,
+        profile_show_selected=profile_show_selected,
+        bypass_cache=bypass_cache,
+    )
+
+    # ── Step 4: Tool scoring ──────────────────────────────────────────────
+
+    scores = score_tools(common.tool_graph, COHORT_RESOURCES)
+
     tool_ids_map: dict[str, UUID | None] = {
-        r: create_tool_ids.get(r) or link_tool_ids_map.get(r) for r in COHORT_RESOURCES
+        r: (scores.best[r].tool_id if scores.best.get(r) else None)
+        for r in COHORT_RESOURCES
     }
 
-    # === COMPUTE SHOW_AI_GENERATE FLAGS ===
+    # ── Step 5: Permissions ───────────────────────────────────────────────
+
+    cohort_department_ids = [
+        d.id for d in cohort.resources["departments"].selected if d.id
+    ]
+
+    can_edit = compute_can_edit(
+        user_role=profile.role,
+        cohort_department_ids=cohort_department_ids,
+        user_department_ids=profile.department_ids,
+    )
+
+    disabled_reason = compute_disabled_reason(
+        user_role=profile.role,
+        cohort_department_ids=cohort_department_ids,
+        user_department_ids=profile.department_ids,
+    )
+
+    # ── Step 6: Show / Required / AI flags ────────────────────────────────
+
+    all_departments = dedupe_by_id(
+        cohort.resources["departments"].selected
+        + cohort.resources["departments"].suggestions
+    )
+    all_simulations = dedupe_by_id(
+        cohort.resources["simulations"].selected
+        + cohort.resources["simulations"].suggestions
+    )
+    all_profiles = dedupe_by_id(
+        cohort.resources["profiles"].selected
+        + cohort.resources["profiles"].suggestions
+    )
+    all_simulation_positions = cohort.resources["simulation_positions"].selected
+    all_simulation_availability = cohort.resources["simulation_availability"].selected
+    all_profile_personas = cohort.resources["profile_personas"].selected
+
+    # Validate new mode
+    if cohort_id is None and not all_departments:
+        raise HTTPException(
+            status_code=400, detail="No accessible departments found for user"
+        )
+
+    show_departments_flag = compute_show_departments(len(all_departments))
+
+    show_flags_map = {
+        "names": compute_show_name(),
+        "descriptions": compute_show_description(),
+        "flags": compute_show_flag(),
+        "departments": show_departments_flag,
+        "simulations": compute_show_simulations(len(all_simulations)),
+        "simulation_positions": compute_show_simulation_positions(
+            len(all_simulation_positions)
+        ),
+        "simulation_availability": compute_show_simulation_availability(
+            len(all_simulation_availability)
+        ),
+        "profiles": compute_show_profiles(len(all_profiles)),
+        "profile_personas": compute_show_profile_personas(len(all_profile_personas)),
+    }
+
+    required_flags_map = {
+        "names": compute_name_required(),
+        "descriptions": compute_description_required(),
+        "flags": compute_flag_required(),
+        "departments": compute_departments_required(show_departments_flag),
+        "simulations": compute_simulations_required(),
+        "simulation_positions": compute_simulation_positions_required(),
+        "simulation_availability": compute_simulation_availability_required(),
+        "profiles": compute_profiles_required(),
+        "profile_personas": compute_profile_personas_required(),
+    }
+
     show_ai_generate_map = {
-        resource: agent_ids.get(resource) is not None for resource in COHORT_RESOURCES
+        r: scores.best.get(r) is not None for r in COHORT_RESOURCES
     }
 
     basic_show_ai_generate = any(
@@ -355,290 +254,91 @@ async def get_cohort_internal(
         show_ai_generate_map.get(r, False) for r in ("profiles", "profile_personas")
     )
 
-    # === PYTHON BUSINESS LOGIC ===
+    suggestions_map: dict[str, list[UUID]] = {
+        "names": [n.id for n in cohort.resources["names"].suggestions],
+        "descriptions": [
+            d.id for d in cohort.resources["descriptions"].suggestions
+        ],
+        "departments": [
+            d.id for d in cohort.resources["departments"].suggestions
+        ],
+        "simulations": [
+            s.id
+            for s in cohort.resources["simulations"].suggestions
+            if s.id
+        ],
+        "profiles": [
+            p.id for p in cohort.resources["profiles"].suggestions if p.id
+        ],
+    }
 
-    # Compute permissions
-    can_edit = compute_can_edit(
-        user_role, cohort_department_ids, user_department_ids=user_department_ids
-    )
-    disabled_reason = compute_disabled_reason(
-        user_role, cohort_department_ids, user_department_ids=user_department_ids
-    )
+    def _section(resource_key: str) -> dict:
+        return {
+            "show": show_flags_map.get(resource_key, False),
+            "required": required_flags_map.get(resource_key, False),
+            "suggestions": suggestions_map.get(resource_key),
+            "show_ai_generate": show_ai_generate_map.get(resource_key, False),
+            "tool_id": tool_ids_map.get(resource_key),
+        }
 
-    # === PASS 2: Parallel Resource Fetching (each endpoint handles own cache) ===
+    # ── Step 7: Resource conversion + response assembly ───────────────────
 
-    # Selected IDs for fetching
-    name_ids = [ids_result.name_id] if ids_result.name_id else []
-    description_ids = [ids_result.description_id] if ids_result.description_id else []
-    flag_ids = [ids_result.active_flag_id] if ids_result.active_flag_id else []
-    department_ids = ids_result.department_ids or []
-    simulation_ids = ids_result.simulation_ids or []
-    profile_ids = ids_result.profile_ids or []
-    profile_persona_ids = ids_result.profile_persona_ids or []
-
-    # Parallel fetch all resources
-    # NOTE: Each query needs its own connection from the pool because
-    # asyncpg connections cannot handle concurrent operations.
-
-    async def fetch_names() -> tuple[list[Any], list[Any]]:
-        async with pool.acquire() as c:
-            selected = await get_names(
-                c, name_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-            suggestions = await search_names(
-                c,
-                get_redis_client(),
-                draft_id=effective_group_id,
-                exclude_ids=name_ids,
-                bypass_cache=bypass_cache,
-                cohort=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
-        async with pool.acquire() as c:
-            selected = await get_descriptions(
-                c, description_ids, get_redis_client(), cache
-            )
-            suggestions = await search_descriptions(
-                c,
-                get_redis_client(),
-                search=descriptions_search,
-                draft_id=effective_group_id,
-                suggest_source="all",
-                exclude_ids=description_ids,
-                bypass_cache=bypass_cache,
-                cohort=True,
-            )
-            return (selected, suggestions)
-
-    # Cohort-specific flag types (business logic)
-    COHORT_FLAG_TYPES = {"cohort_active"}
-
-    async def fetch_flags() -> tuple[list[Any], list[Any]]:
-        async with pool.acquire() as c:
-            selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
-            all_flags = await search_flags(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=50,
-                offset_count=0,
-                exclude_ids=flag_ids,
-                bypass_cache=bypass_cache,
-                cohort=True,
-            )
-            # Filter to only cohort-specific flags (business logic in Python)
-            suggestions = [f for f in all_flags if f.type in COHORT_FLAG_TYPES]
-            return (selected, suggestions)
-
-    async def fetch_departments() -> tuple[list[Any], list[Any]]:
-        async with pool.acquire() as c:
-            selected = await get_departments(
-                c, department_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-            # Use "all" to show all available departments the user has access to
-            suggestions = await search_departments(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=20,
-                offset_count=0,
-                department_ids=user_department_ids,
-                suggest_source="all",
-                exclude_ids=department_ids,
-                bypass_cache=bypass_cache,
-            )
-            return (selected, suggestions)
-
-    async def fetch_simulations() -> tuple[list[Any], list[Any]]:
-        async with pool.acquire() as c:
-            selected = await get_simulations(
-                c, simulation_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-            # Search for suggestions
-            suggestions = await search_simulations(
-                c,
-                get_redis_client(),
-                search=simulation_search,
-                limit_count=20,
-                offset_count=0,
-                draft_id=effective_group_id,
-                suggest_source="selected" if simulation_show_selected else "all",
-                exclude_ids=simulation_ids,
-                bypass_cache=bypass_cache,
-                cohort=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_simulation_positions() -> list[CohortSimulationPosition]:
-        async with pool.acquire() as c:
-            items = await get_simulation_positions(
-                c, simulation_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-            return [
-                CohortSimulationPosition(
-                    simulation_id=item.simulation_id,
-                    value=item.value,
-                    generated=item.generated,
-                    mcp=item.mcp,
-                )
-                for item in items
-            ]
-
-    simulation_availability_ids = ids_result.simulation_availability_ids or []
-
-    async def fetch_simulation_availability() -> list[CohortSimulationAvailability]:
-        if not simulation_availability_ids:
-            return []
-        async with pool.acquire() as c:
-            items = await get_simulation_availability(
-                c,
-                simulation_availability_ids,
-                get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-            return [
-                CohortSimulationAvailability(
-                    id=item.id,
-                    simulation_id=item.simulation_id,
-                    time=item.time,
-                    type=item.type,
-                    generated=item.generated,
-                    mcp=item.mcp,
-                )
-                for item in items
-            ]
-
-    async def fetch_profiles() -> tuple[list[Any], list[Any]]:
-        async with pool.acquire() as c:
-            selected = (
-                await get_profiles(
-                    c, profile_ids, get_redis_client(), bypass_cache=bypass_cache
-                )
-                if profile_ids
-                else []
-            )
-            suggestions = await search_profiles(
-                c,
-                get_redis_client(),
-                search=profile_search,
-                limit_count=20,
-                offset_count=0,
-                exclude_ids=profile_ids or [],
-                department_ids=user_department_ids,
-                bypass_cache=bypass_cache,
-            )
-            return (selected, suggestions)
-
-    async def fetch_profile_personas() -> list[CohortProfilePersona]:
-        if not profile_persona_ids:
-            return []
-        async with pool.acquire() as c:
-            items = await get_profile_personas(
-                c, profile_persona_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-            return [
-                CohortProfilePersona(
-                    id=item.id,
-                    profile_id=item.profile_id,
-                    persona_id=item.persona_id,
-                    generated=item.generated,
-                )
-                for item in items
-            ]
-
-    async def fetch_personas() -> list[Any]:
-        async with pool.acquire() as c:
-            return await search_personas(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=100,
-                offset_count=0,
-                bypass_cache=bypass_cache,
-            )
-
-    # Parallel fetch all resources
-    (
-        (names_selected, names_suggestions),
-        (descriptions_selected, descriptions_suggestions),
-        (flags_selected, flags_suggestions),
-        (departments_selected, departments_suggestions),
-        (simulations_selected, simulations_suggestions),
-        simulation_positions,
-        simulation_availability,
-        (profiles_selected, profiles_suggestions),
-        profile_personas_fetched,
-        personas_fetched,
-    ) = await asyncio.gather(
-        fetch_names(),
-        fetch_descriptions(),
-        fetch_flags(),
-        fetch_departments(),
-        fetch_simulations(),
-        fetch_simulation_positions(),
-        fetch_simulation_availability(),
-        fetch_profiles(),
-        fetch_profile_personas(),
-        fetch_personas(),
-    )
-
-    # Dedupe and combine selected + suggestions
-    names_raw = _dedupe_by_id(names_selected + names_suggestions, "id")
-    descriptions_raw = _dedupe_by_id(
-        descriptions_selected + descriptions_suggestions, "id"
-    )
-    flags_raw = _dedupe_by_id(flags_selected + flags_suggestions, "id")
-    departments_raw = _dedupe_by_id(
-        departments_selected + departments_suggestions, "id"
-    )
-    simulations_raw = _dedupe_by_id(
-        simulations_selected + simulations_suggestions, "simulation_id"
-    )
-    profiles_raw = _dedupe_by_id(profiles_selected + profiles_suggestions, "id")
-
-    # Convert to response types
-    names = [
-        CohortNameResource(id=n.id, name=n.name, generated=n.generated)
-        for n in names_raw
-    ]
-    descriptions = [
-        CohortDescriptionResource(
-            id=d.id, description=d.description, generated=d.generated
-        )
-        for d in descriptions_raw
-    ]
-    departments = [
-        CohortDepartment(
+    # Converters
+    def _to_department(d) -> CohortDepartment:
+        return CohortDepartment(
             department_id=d.id,
             name=d.name,
             description=d.description,
             generated=d.generated,
         )
-        for d in departments_raw
-    ]
-    simulations = [
-        CohortSimulation(
-            simulation_id=s.simulation_id,
+
+    def _to_simulation(s) -> CohortSimulation:
+        return CohortSimulation(
+            simulation_id=s.id,
             name=s.name,
             description=s.description,
             generated=s.generated,
         )
-        for s in simulations_raw
-    ]
-    profiles = [
-        CohortProfile(
+
+    def _to_profile(p) -> CohortProfile:
+        return CohortProfile(
             profile_id=p.id,
             name=p.name,
             description=p.description,
         )
-        for p in profiles_raw
-    ]
 
-    # Convert flags to CohortFlagConfig format (matches client FlagConfig)
-    # show/required are set at the section level via section_common(), not per-flag
-    flags = [
+    def _to_simulation_position(sp) -> CohortSimulationPosition:
+        return CohortSimulationPosition(
+            simulation_id=sp.simulation_id,
+            value=sp.value,
+            generated=sp.generated,
+            mcp=sp.mcp,
+        )
+
+    def _to_simulation_availability(sa) -> CohortSimulationAvailability:
+        return CohortSimulationAvailability(
+            id=sa.id,
+            simulation_id=sa.simulation_id,
+            time=sa.time,
+            type=sa.type,
+            generated=sa.generated,
+            mcp=sa.mcp,
+        )
+
+    def _to_profile_persona(pp) -> CohortProfilePersona:
+        return CohortProfilePersona(
+            id=pp.id,
+            profile_id=pp.profile_id,
+            persona_id=pp.persona_id,
+            generated=pp.generated,
+        )
+
+    # Build flag configs
+    all_flags = (
+        cohort.resources["flags"].selected
+        + cohort.resources["flags"].suggestions
+    )
+    flag_configs = [
         CohortFlagConfig(
             key=f.name,
             label=f.name,
@@ -647,510 +347,123 @@ async def get_cohort_internal(
             flag_option_id=f.id,
             generated=f.generated,
         )
-        for f in flags_raw
+        for f in all_flags
         if f.id
     ]
 
-    # Find selected resources
-    name_resource = next((n for n in names if n.id == ids_result.name_id), None)
-    description_resource = next(
-        (d for d in descriptions if d.id == ids_result.description_id),
-        None,
-    )
-    flag_resource = next(
-        (f for f in flags if f.flag_option_id == ids_result.active_flag_id), None
-    )
+    flag_ids_set = {f.id for f in cohort.resources["flags"].selected}
 
-    # Selected multi-select resources
-    department_resources = [d for d in departments if d.department_id in department_ids]
-    simulation_resources = [s for s in simulations if s.simulation_id in simulation_ids]
-    profile_resources = [
-        p for p in profiles if p.profile_id and p.profile_id in profile_ids
+    # Convert resources
+    all_names = dedupe_by_id(
+        cohort.resources["names"].selected
+        + cohort.resources["names"].suggestions
+    )
+    all_descriptions = dedupe_by_id(
+        cohort.resources["descriptions"].selected
+        + cohort.resources["descriptions"].suggestions
+    )
+    all_departments_conv = [_to_department(d) for d in all_departments]
+    all_simulations_conv = [_to_simulation(s) for s in all_simulations]
+    all_profiles_conv = [_to_profile(p) for p in all_profiles]
+    all_sim_positions_conv = [_to_simulation_position(sp) for sp in all_simulation_positions]
+    all_sim_availability_conv = [
+        _to_simulation_availability(sa) for sa in all_simulation_availability
     ]
+    all_profile_personas_conv = [_to_profile_persona(pp) for pp in all_profile_personas]
 
-    # Suggestion IDs
-    name_suggestions_ids = [n.id for n in names_suggestions]
-    description_suggestions_ids = [d.id for d in descriptions_suggestions]
-    department_suggestions_ids = [d.id for d in departments_suggestions]
-    simulation_suggestions_ids = [s.simulation_id for s in simulations_suggestions]
-    profile_suggestions_ids = [p.id for p in profiles_suggestions if p.id]
-
-    # Compute final show flags based on actual data
-    show_name = compute_show_name()
-    show_description_flag = compute_show_description()
-    show_flag = compute_show_flag()
-    show_departments_flag = compute_show_departments(len(departments))
-    show_simulations_flag = compute_show_simulations(len(simulations))
-    show_simulation_positions_flag = compute_show_simulation_positions(
-        len(simulation_positions or [])
-    )
-    show_simulation_availability_flag = compute_show_simulation_availability(
-        len(simulation_availability or [])
-    )
-    show_profiles_flag = compute_show_profiles(len(profiles))
-    show_profile_personas_flag = compute_show_profile_personas(
-        len(profile_personas_fetched or [])
-    )
-
-    # Validation for new mode
-    if cohort_id is None:
-        if not departments:
-            raise HTTPException(
-                status_code=400, detail="No accessible departments found for user"
-            )
-
-    # Build show/required flags maps
-    show_flags_map = {
-        "names": show_name,
-        "descriptions": show_description_flag,
-        "flags": show_flag,
-        "departments": show_departments_flag,
-        "simulations": show_simulations_flag,
-        "simulation_positions": show_simulation_positions_flag,
-        "simulation_availability": show_simulation_availability_flag,
-        "profiles": show_profiles_flag,
-        "profile_personas": show_profile_personas_flag,
-    }
-    required_flags_map = {
-        "names": compute_name_required(),
-        "descriptions": compute_description_required(),
-        "flags": compute_flag_required(),
-        "departments": compute_departments_required(show_departments_flag),
-        "simulations": compute_simulations_required(),
-        "simulation_positions": compute_simulation_positions_required(),
-        "simulation_availability": compute_simulation_availability_required(),
-        "profiles": compute_profiles_required(),
-        "profile_personas": compute_profile_personas_required(),
-    }
-
-    # Build suggestions map
-    suggestions_map: dict[str, list[UUID]] = {
-        "names": name_suggestions_ids,
-        "descriptions": description_suggestions_ids,
-        "departments": department_suggestions_ids,
-        "simulations": simulation_suggestions_ids,
-        "profiles": profile_suggestions_ids,
-    }
-
-    # Build resources payload
-    resources_payload = CohortResources(
-        resources=CohortResourceBucket(
-            names=names,
-            descriptions=descriptions,
-            flags=flags,
-            departments=departments,
-            simulations=simulations,
-            simulation_positions=simulation_positions or [],
-            simulation_availability=simulation_availability or [],
-            profiles=profiles,
-            profile_personas=profile_personas_fetched or [],
-            personas=personas_fetched or [],
-        ),
-        current=CohortResourceBucket(
-            names=[name_resource] if name_resource else [],
-            descriptions=[description_resource] if description_resource else [],
-            flags=[flag_resource] if flag_resource else [],
-            departments=department_resources or [],
-            simulations=simulation_resources or [],
-            simulation_positions=simulation_positions or [],
-            simulation_availability=simulation_availability or [],
-            profiles=profile_resources,
-            profile_personas=profile_personas_fetched or [],
-            personas=personas_fetched or [],
-        ),
-    )
-
-    # Per-resource group IDs (cohort uses single group_id for all resources)
-    resource_group_ids: dict[str, UUID | None] = {
-        "names": effective_group_id,
-        "descriptions": effective_group_id,
-        "flags": effective_group_id,
-        "departments": effective_group_id,
-        "simulations": effective_group_id,
-        "simulation_positions": effective_group_id,
-        "simulation_availability": effective_group_id,
-        "profiles": effective_group_id,
-        "profile_personas": effective_group_id,
-    }
-
-    selected_agent_ids = [aid for aid in agent_ids.values() if aid]
-    unique_agent_ids = list(dict.fromkeys(selected_agent_ids))
-    config_agents_result: list[Any] = []
-    config_models_result: list[Any] = []
-    config_providers_result: list[Any] = []
-    if unique_agent_ids:
-        async with pool.acquire() as c:
-            config_agents_result = await get_agents(
-                c, unique_agent_ids, get_redis_client(), bypass_cache
-            )
-        if config_agents_result:
-            model_ids = list(
-                {
-                    m
-                    for agent in config_agents_result
-                    for m in [getattr(agent, "model_id", None)]
-                    if m is not None
-                }
-            )
-            if model_ids:
-                async with pool.acquire() as c:
-                    config_models_result = await get_models(
-                        c, model_ids, get_redis_client(), bypass_cache
-                    )
-            provider_ids = list(
-                dict.fromkeys(
-                    m.provider_id
-                    for m in config_models_result
-                    if getattr(m, "provider_id", None) is not None
-                )
-            )
-            if provider_ids:
-                async with pool.acquire() as c:
-                    config_providers_result = await get_providers(
-                        c, provider_ids, get_redis_client(), bypass_cache=bypass_cache
-                    )
-
-    return CohortInternalData(
-        # Access/context
-        actor_name=actor_name,
-        cohort_exists=access_result.cohort_exists,
-        can_edit=can_edit,
-        disabled_reason=disabled_reason,
-        draft_version=access_result.effective_draft_version,
-        group_id=effective_group_id,
-        # Generation mapping
-        agent_ids=agent_ids,
-        # Show/required flags
-        show_flags_map=show_flags_map,
-        required_flags_map=required_flags_map,
-        # Suggestions
-        suggestions_map=suggestions_map,
-        # Show AI generate
-        show_ai_generate_map=show_ai_generate_map,
-        basic_show_ai_generate=basic_show_ai_generate,
-        simulations_step_show_ai_generate=simulations_step_show_ai_generate,
-        profiles_step_show_ai_generate=profiles_step_show_ai_generate,
-        # Resources
-        resources_payload=resources_payload,
-        # Per-resource group IDs
-        resource_group_ids=resource_group_ids,
-        # Per-resource tool IDs
-        tool_ids_map=tool_ids_map,
-        # Raw IDs
-        name_id=ids_result.name_id,
-        description_id=ids_result.description_id,
-        active_flag_id=ids_result.active_flag_id,
-        department_ids=department_ids,
-        simulation_ids=simulation_ids,
-        # Selected resources
-        name_resource=name_resource,
-        description_resource=description_resource,
-        flag_resource=flag_resource,
-        department_resources=department_resources,
-        simulation_resources=simulation_resources,
-        simulation_positions=simulation_positions or [],
-        simulation_availability=simulation_availability or [],
-        profile_resources=profile_resources,
-        profile_persona_resources=profile_personas_fetched or [],
-        config_agent_resources=config_agents_result or None,
-        config_model_resources=config_models_result or None,
-        config_provider_resources=config_providers_result or None,
-    )
-
-
-async def get_cohort_websocket(
-    profile_id: UUID,
-    cohort_id: UUID | None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-    # Search/filter kwargs (from artifact tool calls)
-    descriptions_search: str | None = None,
-    simulation_search: str | None = None,
-    simulation_show_selected: bool | None = None,
-    profile_search: str | None = None,
-    profile_show_selected: bool | None = None,
-) -> GetCohortWebsocketResponse:
-    """Minimal response for WebSocket handlers.
-
-    Returns generation context for socket handlers:
-    - group_id
-    - resource_agent_ids mapping (resource_type -> agent_id)
-    - selected resources + config resources for Jinja context
-    """
-    data = await get_cohort_internal(
-        profile_id=profile_id,
-        cohort_id=cohort_id,
-        draft_id=draft_id,
-        bypass_cache=bypass_cache,
-        descriptions_search=descriptions_search,
-        simulation_search=simulation_search,
-        simulation_show_selected=simulation_show_selected,
-        profile_search=profile_search,
-        profile_show_selected=profile_show_selected,
-    )
-
-    # Fetch draft, config_profile, runs_today, and tools in parallel
-    pool = get_pool()
-
-    async def fetch_draft():
-        if not draft_id or not pool:
-            return None
-        async with pool.acquire() as conn:
-            draft_items = await get_cohort_drafts_entries_internal(
-                conn=conn,
-                ids=[draft_id],
-                bypass_cache=bypass_cache,
-            )
-            return draft_items[0] if draft_items else None
-
-    async def fetch_config_profile():
-        if not pool:
-            return None
-        async with pool.acquire() as conn:
-            return await get_profiles(
-                conn, [profile_id], get_redis_client(), bypass_cache
-            )
-
-    async def fetch_runs_today():
-        if not pool:
-            return None
-        from datetime import UTC, datetime
-
-        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
-        async with pool.acquire() as conn:
-            return await get_run_list_entries_internal(
-                conn=conn,
-                profile_id_filter=profile_id,
-                date_from=today_utc,
-                date_to=tomorrow_utc,
-                page_limit=1,
-                bypass_cache=True,
-            )
-
-    async def fetch_tools():
-        if not data.config_agent_resources or not pool:
-            return []
-        tool_ids: list[UUID] = []
-        for agent in data.config_agent_resources:
-            ids = getattr(agent, "tool_ids", None) or []
-            tool_ids.extend(ids)
-        deduped_tool_ids = list(dict.fromkeys(tool_ids))
-        if not deduped_tool_ids:
-            return []
-        async with pool.acquire() as conn:
-            return await get_tools(
-                conn, deduped_tool_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-
-    (
-        draft_view,
-        config_profile_result,
-        runs_result,
-        tools_result,
-    ) = await asyncio.gather(
-        fetch_draft(),
-        fetch_config_profile(),
-        fetch_runs_today(),
-        fetch_tools(),
-    )
-
-    all_resources = data.resources_payload.resources
-
-    # Enrich tools with args and args_outputs
-    config_tools = tools_result or []
-    config_args = None
-    config_args_outputs = None
-    if config_tools and pool:
-        all_args_ids: list[UUID] = []
-        all_args_output_ids: list[UUID] = []
-        for tool in config_tools:
-            if tool.args_ids:
-                all_args_ids.extend(tool.args_ids)
-            if tool.args_output_ids:
-                all_args_output_ids.extend(tool.args_output_ids)
-        if all_args_ids or all_args_output_ids:
-
-            async def fetch_args():
-                if not all_args_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args(
-                        c,
-                        list(set(all_args_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            async def fetch_args_outputs():
-                if not all_args_output_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args_outputs(
-                        c,
-                        list(set(all_args_output_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            config_args, config_args_outputs = await asyncio.gather(
-                fetch_args(),
-                fetch_args_outputs(),
-            )
-
-    # Build entries (always construct — both fields optional now)
-    entries = CohortWebsocketEntries(
-        draft_cohort=draft_view,
-        runs=runs_result,
-    )
-
-    return GetCohortWebsocketResponse(
-        group_id=data.group_id,
-        entries=entries if draft_view or runs_result else None,
-        resource_agent_ids=data.agent_ids,
-        resources=CohortWebsocketResources(
-            names=all_resources.names if all_resources else None,
-            descriptions=all_resources.descriptions if all_resources else None,
-            flags=all_resources.flags if all_resources else None,
-            departments=all_resources.departments if all_resources else None,
-            simulations=all_resources.simulations if all_resources else None,
-            simulation_positions=all_resources.simulation_positions
-            if all_resources
-            else None,
-            simulation_availability=all_resources.simulation_availability
-            if all_resources
-            else None,
-            profiles=all_resources.profiles if all_resources else None,
-            profile_personas=all_resources.profile_personas if all_resources else None,
-            personas=all_resources.personas if all_resources else None,
-        ),
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=tools_result or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetCohortApiRequest(
-            cohort_id=cohort_id,
-            draft_id=draft_id,
-            descriptions_search=descriptions_search,
-            simulation_search=simulation_search,
-            simulation_show_selected=simulation_show_selected,
-            profile_search=profile_search,
-            profile_show_selected=profile_show_selected,
-        ),
-    )
-
-
-async def get_cohort_client(
-    profile_id: UUID,
-    cohort_id: UUID | None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-    group_id: UUID | None = None,
-) -> GetCohortApiResponse:
-    """BFF response for HTTP endpoint/frontend.
-
-    Returns the full response with all UI sections and
-    computed *_show_ai_generate flags.
-    """
-    data = await get_cohort_internal(
-        profile_id=profile_id,
-        cohort_id=cohort_id,
-        draft_id=draft_id,
-        cache=cache,
-        group_id=group_id,
-    )
-
-    resources_bucket = data.resources_payload.resources
-    current_bucket = data.resources_payload.current
-
-    def section_common(resource_key: str) -> dict[str, Any]:
-        return {
-            "show": data.show_flags_map.get(resource_key, False),
-            "required": data.required_flags_map.get(resource_key, False),
-            "suggestions": data.suggestions_map.get(resource_key, []),
-            "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
-            "tool_id": data.tool_ids_map.get(resource_key),
-        }
+    current_departments = [
+        _to_department(d) for d in cohort.resources["departments"].selected
+    ]
+    current_simulations = [
+        _to_simulation(s) for s in cohort.resources["simulations"].selected
+    ]
+    current_profiles = [
+        _to_profile(p) for p in cohort.resources["profiles"].selected
+    ]
 
     return GetCohortApiResponse(
         # Context
-        actor_name=data.actor_name,
-        cohort_exists=data.cohort_exists,
-        can_edit=data.can_edit,
-        disabled_reason=data.disabled_reason,
-        draft_version=data.draft_version,
-        group_id=data.group_id,
-        basic_show_ai_generate=data.basic_show_ai_generate,
-        simulations_step_show_ai_generate=data.simulations_step_show_ai_generate,
-        profiles_step_show_ai_generate=data.profiles_step_show_ai_generate,
+        actor_name=profile.name,
+        cohort_exists=cohort.artifact_id is not None,
+        can_edit=can_edit,
+        disabled_reason=disabled_reason,
+        draft_version=cohort.draft_version,
+        group_id=group_id,
+        # Step-level AI generation flags
+        basic_show_ai_generate=basic_show_ai_generate,
+        simulations_step_show_ai_generate=simulations_step_show_ai_generate,
+        profiles_step_show_ai_generate=profiles_step_show_ai_generate,
+        # Per-resource sections
         names=CohortNameSection(
-            resource=(
-                current_bucket.names[0]
-                if current_bucket and current_bucket.names
-                else None
-            ),
-            resources=(resources_bucket.names if resources_bucket else None),
-            **section_common("names"),
+            **_section("names"),
+            resource=cohort.resources["names"].selected[0]
+            if cohort.resources["names"].selected
+            else None,
+            resources=all_names,
         ),
         descriptions=CohortDescriptionSection(
-            resource=(
-                current_bucket.descriptions[0]
-                if current_bucket and current_bucket.descriptions
-                else None
-            ),
-            resources=(resources_bucket.descriptions if resources_bucket else None),
-            **section_common("descriptions"),
+            **_section("descriptions"),
+            resource=cohort.resources["descriptions"].selected[0]
+            if cohort.resources["descriptions"].selected
+            else None,
+            resources=all_descriptions,
         ),
         flags=CohortFlagSection(
-            resource=(
-                current_bucket.flags[0]
-                if current_bucket and current_bucket.flags
-                else None
+            **_section("flags"),
+            resource=next(
+                (f for f in flag_configs if f.flag_option_id in flag_ids_set), None
             ),
-            resources=(resources_bucket.flags if resources_bucket else None),
-            **section_common("flags"),
+            resources=flag_configs,
         ),
         departments=CohortDepartmentSection(
-            current=(current_bucket.departments if current_bucket else None),
-            resources=(resources_bucket.departments if resources_bucket else None),
-            **section_common("departments"),
+            **_section("departments"),
+            current=current_departments,
+            resources=all_departments_conv,
         ),
         simulations=CohortSimulationSection(
-            current=(current_bucket.simulations if current_bucket else None),
-            resources=(resources_bucket.simulations if resources_bucket else None),
-            **section_common("simulations"),
+            **_section("simulations"),
+            current=current_simulations,
+            resources=all_simulations_conv,
         ),
         simulation_positions=CohortSimulationPositionSection(
-            current=(current_bucket.simulation_positions if current_bucket else None),
-            resources=(
-                resources_bucket.simulation_positions if resources_bucket else None
-            ),
-            **section_common("simulation_positions"),
+            **_section("simulation_positions"),
+            current=all_sim_positions_conv,
+            resources=all_sim_positions_conv,
         ),
         simulation_availability=CohortSimulationAvailabilitySection(
-            current=(
-                current_bucket.simulation_availability if current_bucket else None
-            ),
-            resources=(
-                resources_bucket.simulation_availability if resources_bucket else None
-            ),
-            **section_common("simulation_availability"),
+            **_section("simulation_availability"),
+            current=all_sim_availability_conv,
+            resources=all_sim_availability_conv,
         ),
         profiles=CohortProfileSection(
-            current=(current_bucket.profiles if current_bucket else None),
-            resources=(resources_bucket.profiles if resources_bucket else None),
-            **section_common("profiles"),
+            **_section("profiles"),
+            current=current_profiles,
+            resources=all_profiles_conv,
         ),
         profile_personas=CohortProfilePersonaSection(
-            current=(current_bucket.profile_personas if current_bucket else None),
-            resources=(resources_bucket.profile_personas if resources_bucket else None),
-            **section_common("profile_personas"),
+            **_section("profile_personas"),
+            current=all_profile_personas_conv,
+            resources=all_profile_personas_conv,
         ),
-        personas=(resources_bucket.personas if resources_bucket else None),
+        personas=cohort.resources["personas"].suggestions,
     )
+
+
+# ---------------------------------------------------------------------------
+# get_cohort_websocket — stub (to be rewritten with infra functions)
+# ---------------------------------------------------------------------------
+
+
+async def get_cohort_websocket(*args, **kwargs):
+    """Stub — will be rewritten to use composable infra functions."""
+    raise NotImplementedError(
+        "get_cohort_websocket needs to be rewritten with infra functions"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Route handler
+# ---------------------------------------------------------------------------
 
 
 @router.post("/get", response_model=GetCohortApiResponse)
@@ -1160,20 +473,10 @@ async def get_cohort(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetCohortApiResponse:
-    """Get cohort information using two-pass architecture.
-
-    This is a thin HTTP wrapper around get_cohort_client().
-
-    Query 1: Access check (user role, departments, cohort state)
-    Query 2: ID fetching (resource IDs, suggestions, agents)
-    Pass 2: Parallel resource fetching (each resource type has own cache)
-    """
-    # Check for cache bypass header
+    """Get cohort information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
-        # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -1181,19 +484,37 @@ async def get_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Call the client function (calls internal itself)
+        # Resolve group_id: client provides it, or draft has it, or create new
+        group_id = request.group_id
+        if not group_id and request.draft_id:
+            drafts = await get_cohort_drafts(conn, [request.draft_id])
+            if drafts and drafts[0].group_id:
+                group_id = drafts[0].group_id
+        if not group_id:
+            group_id = await conn.fetchval(
+                "INSERT INTO groups_entry (created_at, updated_at) "
+                "VALUES (NOW(), NOW()) RETURNING id"
+            )
+
+        redis = get_redis_client()
+
         response_data = await get_cohort_client(
+            conn,
+            redis,
             profile_id=profile_id,
             cohort_id=request.cohort_id,
             draft_id=request.draft_id,
+            group_id=group_id,
+            descriptions_search=request.descriptions_search,
+            simulation_search=request.simulation_search,
+            simulation_show_selected=request.simulation_show_selected,
+            profile_search=request.profile_search,
+            profile_show_selected=request.profile_show_selected,
             bypass_cache=bypass_cache,
-            group_id=request.group_id,
         )
 
-        # No global cache for this response - individual resources are cached
         response.headers["X-Cache-Tags"] = "cohorts"
         response.headers["X-Cache-Hit"] = "0"
-        response.headers["X-Two-Pass"] = "1"
 
         return response_data
     except HTTPException:
@@ -1205,11 +526,7 @@ async def get_cohort(
             error=e,
             route_path=http_request.url.path,
             operation="get_cohort",
-            sql_query=load_sql_query(QUERY1_SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )
-
-
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
