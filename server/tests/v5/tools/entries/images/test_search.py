@@ -26,7 +26,7 @@ async def _setup(conn, profile_id):
         "INSERT INTO files_resource (active, mcp, generated) VALUES (true, false, true) RETURNING id"
     )
     await conn.execute(
-        "INSERT INTO files_uploads_connection (upload_id, files_id, active, mcp, generated) VALUES ($1, $2, true, false, true)",
+        "INSERT INTO files_uploads_connection (upload_id, files_id, active) VALUES ($1, $2, true)",
         upload.id,
         files_id,
     )

@@ -33,7 +33,7 @@ async def _setup(conn, profile_id):
 
 async def test_finds_created_entry(conn, profile_id):
     upload, _ = await _setup(conn, profile_id)
-    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY uploads_mv")
+    await conn.execute("REFRESH MATERIALIZED VIEW uploads_mv")
 
     items = await search_uploads(conn, upload_id=upload.id)
 
@@ -43,7 +43,7 @@ async def test_finds_created_entry(conn, profile_id):
 
 async def test_filters_by_upload_id(conn, profile_id):
     await _setup(conn, profile_id)
-    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY uploads_mv")
+    await conn.execute("REFRESH MATERIALIZED VIEW uploads_mv")
 
     items = await search_uploads(conn, upload_id=nonexistent_id())
 
@@ -52,7 +52,7 @@ async def test_filters_by_upload_id(conn, profile_id):
 
 async def test_pagination_limit(conn, profile_id):
     upload, _ = await _setup(conn, profile_id)
-    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY uploads_mv")
+    await conn.execute("REFRESH MATERIALIZED VIEW uploads_mv")
 
     items = await search_uploads(conn, upload_id=upload.id, limit=1)
 
@@ -61,7 +61,7 @@ async def test_pagination_limit(conn, profile_id):
 
 async def test_returns_all_without_filter(conn, profile_id):
     await _setup(conn, profile_id)
-    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY uploads_mv")
+    await conn.execute("REFRESH MATERIALIZED VIEW uploads_mv")
 
     items = await search_uploads(conn)
 

@@ -14,7 +14,6 @@ async def search_attempt_messages(
     conn: asyncpg.Connection,
     chat_id: UUID | None = None,
     attempt_id: UUID | None = None,
-    runs_id: UUID | None = None,
     text_id: UUID | None = None,
     audio_id: UUID | None = None,
     limit: int = 20,
@@ -27,20 +26,18 @@ async def search_attempt_messages(
     rows = await conn.fetch(
         f"""
         SELECT message_id, chat_id, attempt_id, type,
-               created_at, completed, runs_id, text_id,
+               created_at, completed, text_id,
                history_file_path, audio_id
         FROM {source}
         WHERE ($1::uuid IS NULL OR chat_id = $1)
           AND ($2::uuid IS NULL OR attempt_id = $2)
-          AND ($3::uuid IS NULL OR runs_id = $3)
-          AND ($4::uuid IS NULL OR text_id = $4)
-          AND ($5::uuid IS NULL OR audio_id = $5)
+          AND ($3::uuid IS NULL OR text_id = $3)
+          AND ($4::uuid IS NULL OR audio_id = $4)
         ORDER BY created_at DESC
-        LIMIT $6 OFFSET $7
+        LIMIT $5 OFFSET $6
         """,
         chat_id,
         attempt_id,
-        runs_id,
         text_id,
         audio_id,
         limit,

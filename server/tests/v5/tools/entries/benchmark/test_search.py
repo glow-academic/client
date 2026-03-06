@@ -9,17 +9,13 @@ from app.routes.v5.tools.entries.benchmark.search import search_benchmarks
 pytestmark = pytest.mark.asyncio
 
 
-async def _setup(conn, profile_id, department_id):
-    result = await create_benchmark(
-        conn,
-        profiles_ids=[profile_id],
-        departments_ids=[department_id],
-    )
+async def _setup(conn):
+    result = await create_benchmark(conn)
     return result
 
 
-async def test_returns_all_without_filter(conn, profile_id, department_id):
-    await _setup(conn, profile_id, department_id)
+async def test_returns_all_without_filter(conn):
+    await _setup(conn)
     await refresh_benchmark(conn)
 
     items = await search_benchmarks(conn)
@@ -27,8 +23,8 @@ async def test_returns_all_without_filter(conn, profile_id, department_id):
     assert len(items) >= 1
 
 
-async def test_pagination_limit(conn, profile_id, department_id):
-    await _setup(conn, profile_id, department_id)
+async def test_pagination_limit(conn):
+    await _setup(conn)
     await refresh_benchmark(conn)
 
     items = await search_benchmarks(conn, limit=1)
@@ -36,8 +32,8 @@ async def test_pagination_limit(conn, profile_id, department_id):
     assert len(items) <= 1
 
 
-async def test_finds_created_entry(conn, profile_id, department_id):
-    result = await _setup(conn, profile_id, department_id)
+async def test_finds_created_entry(conn):
+    result = await _setup(conn)
     await refresh_benchmark(conn)
 
     items = await search_benchmarks(conn)
@@ -46,8 +42,8 @@ async def test_finds_created_entry(conn, profile_id, department_id):
     assert result.id in benchmark_ids
 
 
-async def test_bypass_mv_finds_without_refresh(conn, profile_id, department_id):
-    result = await _setup(conn, profile_id, department_id)
+async def test_bypass_mv_finds_without_refresh(conn):
+    result = await _setup(conn)
 
     items = await search_benchmarks(conn, bypass_mv=True)
 

@@ -27,7 +27,7 @@ async def _setup(conn, profile_id):
 
 async def test_finds_created_entry(conn, profile_id):
     text, _ = await _setup(conn, profile_id)
-    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY texts_mv")
+    await conn.execute("REFRESH MATERIALIZED VIEW texts_mv")
 
     items = await search_texts(conn, text_id=text.id)
 
@@ -37,7 +37,7 @@ async def test_finds_created_entry(conn, profile_id):
 
 async def test_filters_by_text_id(conn, profile_id):
     await _setup(conn, profile_id)
-    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY texts_mv")
+    await conn.execute("REFRESH MATERIALIZED VIEW texts_mv")
 
     items = await search_texts(conn, text_id=nonexistent_id())
 
@@ -46,7 +46,7 @@ async def test_filters_by_text_id(conn, profile_id):
 
 async def test_pagination_limit(conn, profile_id):
     text, _ = await _setup(conn, profile_id)
-    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY texts_mv")
+    await conn.execute("REFRESH MATERIALIZED VIEW texts_mv")
 
     items = await search_texts(conn, text_id=text.id, limit=1)
 
@@ -55,7 +55,7 @@ async def test_pagination_limit(conn, profile_id):
 
 async def test_returns_all_without_filter(conn, profile_id):
     await _setup(conn, profile_id)
-    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY texts_mv")
+    await conn.execute("REFRESH MATERIALIZED VIEW texts_mv")
 
     items = await search_texts(conn)
 
