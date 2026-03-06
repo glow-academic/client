@@ -51,6 +51,9 @@ from app.routes.v5.tools.resources.parameter_fields.search import (
 from app.routes.v5.tools.resources.parameters.search import search_parameters
 from app.routes.v5.tools.resources.voices.search import search_voices
 
+# Artifact search (for scenario count)
+from app.routes.v5.tools.artifacts.scenario.search import search_scenarios
+
 
 # ---------------------------------------------------------------------------
 # Types
@@ -75,6 +78,8 @@ class PersonaArtifactContext:
     active: bool
     group_id: UUID
     draft_version: int | None
+    personas_resource_ids: list[UUID]  # personas_resource IDs (for scenario lookups)
+    has_active_scenarios: bool  # True if any active scenarios use this persona
 
     # Resource pairs — selected + suggestions per type
     names: ResourcePair
@@ -139,6 +144,7 @@ async def resolve_persona_context(
             icons=True,
             instructions=True,
             parameter_fields=True,
+            personas=True,
             voices=True,
         )
         if persona_id
@@ -157,8 +163,10 @@ async def resolve_persona_context(
     merged = _merge_junction_ids(artifact, draft)
     draft_version = draft.version if draft else None
     active = artifact.active if artifact else True
+    personas_resource_ids = list(artifact.persona_ids or []) if artifact else []
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
+    # Also check if any active scenarios use this persona (via personas_resource IDs)
     (
         names_selected,
         names_suggestions,
@@ -183,6 +191,7 @@ async def resolve_persona_context(
         parameters_selected,
         parameters_suggestions,
         fields_catalog,
+        active_scenario_ids,
     ) = await asyncio.gather(
         # Names
         get_names(conn, merged.name_ids, redis, bypass_cache),
@@ -270,6 +279,17 @@ async def resolve_persona_context(
             conn, redis, search=None, limit_count=200, offset_count=0,
             department_ids=user_dept_ids, bypass_cache=bypass_cache,
         ),
+        # Scenario count: any active scenarios using this persona?
+        (
+            search_scenarios(
+                conn,
+                persona_ids=personas_resource_ids,
+                active_only=True,
+                limit_count=1,
+            )
+            if personas_resource_ids
+            else _empty()
+        ),
     )
 
     # Filter flags to persona-specific types
@@ -282,6 +302,8 @@ async def resolve_persona_context(
         active=active,
         group_id=group_id,
         draft_version=draft_version,
+        personas_resource_ids=personas_resource_ids,
+        has_active_scenarios=len(active_scenario_ids) > 0,
         names=ResourcePair(selected=names_selected, suggestions=names_suggestions),
         descriptions=ResourcePair(selected=descriptions_selected, suggestions=descriptions_suggestions),
         colors=ResourcePair(selected=colors_selected, suggestions=colors_suggestions),
