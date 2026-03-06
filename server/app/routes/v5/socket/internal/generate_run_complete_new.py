@@ -26,7 +26,6 @@ from app.infra.websocket.db_helpers import (
     check_assistant_message_exists,
     record_tokens,
 )
-from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.persist_run_message import persist_run_message
 from app.infra.websocket.run_tracker import cleanup_run, record_agent_done
@@ -90,10 +89,11 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
             )
         return
 
-    if not run_id:
+    if not run_id or not session_id_str:
         return
 
     run_uuid = uuid.UUID(run_id)
+    session_id = uuid.UUID(session_id_str)
     assistant_output = data.get("assistant_output") or ""
     input_tokens = data.get("input_text_tokens", 0)
     output_tokens = data.get("output_text_tokens", 0)
@@ -104,22 +104,11 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
             if assistant_output:
                 exists = await check_assistant_message_exists(conn, run_uuid)
                 if not exists:
-                    if session_id_str:
-                        # New path: use persist_run_message with session_id
-                        await persist_run_message(
-                            conn, run_id=run_uuid,
-                            session_id=uuid.UUID(session_id_str),
-                            role="assistant", content=assistant_output,
-                        )
-                    else:
-                        # Fallback: old approach (no session_id available)
-                        # TODO: Remove once session_id always propagates
-                        from app.utils.sql_helper import load_sql
-                        from app.utils.storage.file_writer import write_text_file
-
-                        upload_id = await write_text_file(conn, None, assistant_output)
-                        sql = load_sql("app/sql/queries/messages/create_message_with_text_complete.sql")
-                        await conn.fetchval(sql, run_uuid, "assistant", upload_id, True)
+                    await persist_run_message(
+                        conn, run_id=run_uuid,
+                        session_id=session_id,
+                        role="assistant", content=assistant_output,
+                    )
 
             if input_tokens or output_tokens:
                 await record_tokens(conn, run_uuid, input_tokens, output_tokens)
@@ -149,10 +138,6 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
     # Step 4: Auto-save
     artifact_id: str | None = None
     should_save = data.get("save", True)
-
-    # Use profile_id from data if available, fall back to socket lookup
-    if not profile_id_str:
-        profile_id_str = await find_profile_by_socket(sid)
 
     if should_save and profile_id_str and group_id_str:
         try:
