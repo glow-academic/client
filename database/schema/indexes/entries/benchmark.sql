@@ -9,3 +9,11 @@ CREATE INDEX idx_benchmark_entry_session_id ON public.benchmark_entry USING btre
 
 
 --
+
+-- Name: idx_benchmark_test_entry_session_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_benchmark_test_entry_session_id ON public.benchmark_test_entry USING btree (session_id);
+
+
+--

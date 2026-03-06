@@ -20,11 +20,36 @@ CREATE TABLE public.benchmark_entry (
 
 --
 
+-- Name: benchmark_test_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.benchmark_test_entry (
+    benchmark_id uuid NOT NULL,
+    test_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    session_id uuid NOT NULL
+);
+
+
+--
+
 -- Name: benchmark_entry benchmark_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.benchmark_entry
     ADD CONSTRAINT benchmark_entry_pkey PRIMARY KEY (id);
+
+
+--
+
+-- Name: benchmark_test_entry benchmark_test_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.benchmark_test_entry
+    ADD CONSTRAINT benchmark_test_entry_pkey PRIMARY KEY (benchmark_id, test_id);
 
 
 --

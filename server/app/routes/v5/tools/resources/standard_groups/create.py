@@ -19,6 +19,7 @@ async def create_standard_group(
     pass_points: int,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetStandardGroupResponse:
@@ -27,7 +28,7 @@ async def create_standard_group(
         """
         INSERT INTO standard_groups_resource
             (name, short_name, description, points, pass_points, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true, $6, $6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
         RETURNING id
         """,
         name,
@@ -35,6 +36,7 @@ async def create_standard_group(
         description,
         points,
         pass_points,
+        not soft,
         mcp,
     )
     await invalidate_tags(["resources", "standard_groups"], redis=redis)

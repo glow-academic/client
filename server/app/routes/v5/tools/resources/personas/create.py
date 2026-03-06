@@ -23,6 +23,7 @@ async def create_persona(
     examples: list[str] | None = None,
     parameter_field_ids: list[UUID] | None = None,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetPersonaResponse:
@@ -34,7 +35,7 @@ async def create_persona(
             instructions, examples, parameter_field_ids,
             active, mcp, generated
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true, $9, $9)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
         RETURNING id
     """,
         name,
@@ -45,6 +46,7 @@ async def create_persona(
         instructions,
         examples or [],
         parameter_field_ids or [],
+        not soft,
         mcp,
     )
 

@@ -22,6 +22,7 @@ async def create_simulation_availability(
     availability_type: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetSimulationAvailabilityResponse:
@@ -30,13 +31,14 @@ async def create_simulation_availability(
         """
         INSERT INTO simulation_availability_resource
             (simulation_id, time, type, active, mcp, generated)
-        VALUES ($1, $2, $3::availability_type, true, $4, $4)
+        VALUES ($1, $2, $3::availability_type, $4, $5, $5)
         ON CONFLICT (simulation_id, type) DO UPDATE SET time = EXCLUDED.time
         RETURNING id
         """,
         simulation_id,
         time,
         availability_type,
+        not soft,
         mcp,
     )
 
