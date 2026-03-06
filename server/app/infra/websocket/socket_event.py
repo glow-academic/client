@@ -10,6 +10,7 @@ Two buses:
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any, Protocol
 
@@ -18,6 +19,11 @@ class AsyncEmitter(Protocol):
     """Minimal interface for a socket emitter (sio or internal_sio)."""
 
     async def emit(self, event: str, data: Any, **kwargs: Any) -> None: ...
+
+
+# Type alias for emit callback — handlers accept this as a parameter.
+# Production default: flush_events. Tests: pass a spy/recorder.
+EmitFn = Callable[[list["SocketEvent"]], Awaitable[None]]
 
 
 @dataclass(frozen=True)
