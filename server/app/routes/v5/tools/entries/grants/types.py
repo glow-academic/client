@@ -1,5 +1,6 @@
 """Grants canonical types."""
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -10,10 +11,13 @@ class CreateGrantResponse(BaseModel):
 
 
 class GetGrantResponse(BaseModel):
-    id: UUID
-    session_id: UUID
-    expires_at: object
-    created_at: object
-    active: bool
-    mcp: bool
-    generated: bool
+    grant_id: UUID
+    grantor_id: UUID | None
+    emulation_id: UUID | None
+    emulated_id: UUID | None
+    grant_session_id: UUID
+    emulation_session_id: UUID | None
+    expires_at: datetime | None
+    used_at: datetime | None
+    revoked_at: datetime | None
+    created_at: datetime

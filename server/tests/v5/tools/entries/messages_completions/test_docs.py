@@ -17,10 +17,10 @@ async def test_returns_docs_response(conn):
     assert len(result.description) > 0
 
 
-async def test_no_materialized_view(conn):
+async def test_has_materialized_view(conn):
     result = await get_messages_completions_docs(conn)
 
-    assert result.materialized_view is None
+    assert result.materialized_view is not None
 
 
 async def test_includes_source_tables(conn):
@@ -36,6 +36,7 @@ async def test_includes_all_operations(conn):
     op_names = [op.name for op in result.operations]
     assert "create_messages_completions_entry_internal" in op_names
     assert "get_messages_completions_entries_internal" in op_names
+    assert "search_messages_completions" in op_names
 
 
 async def test_create_operation_has_params(conn):

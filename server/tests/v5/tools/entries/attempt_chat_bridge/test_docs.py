@@ -39,7 +39,7 @@ async def test_includes_all_operations(conn):
     op_names = [op.name for op in result.operations]
     assert "create_attempt_chat_bridge" in op_names
     assert "refresh_attempt_chat_bridge" in op_names
-    assert "search_attempt_chat_bridge_entries_internal" in op_names
+    assert "search_attempt_chat_bridges" in op_names
 
 
 async def test_create_operation_has_params(conn):

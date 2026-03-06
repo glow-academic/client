@@ -1,83 +1,50 @@
-"""grants/search internal — reusable data-access layer."""
+"""Grants search — filtered/paginated query against grants_mv."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchGrantsEntriesSqlParams,
-    SearchGrantsEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.grants.types import GetGrantResponse
 
-SQL_PATH = "app/sql/queries/entries/grants/search_grants_entries_complete.sql"
+MV_NAME = "grants_mv"
 
 
-async def search_grants_entries_internal(
+async def search_grants(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     grantor_id: UUID | None = None,
     emulation_id: UUID | None = None,
     emulated_id: UUID | None = None,
     grant_session_id: UUID | None = None,
     emulation_session_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search grants entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetGrantResponse]:
+    """Search grants from grants_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "grants"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/grants/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "grantor_id": str(grantor_id) if grantor_id else None,
-            "emulation_id": str(emulation_id) if emulation_id else None,
-            "emulated_id": str(emulated_id) if emulated_id else None,
-            "grant_session_id": str(grant_session_id) if grant_session_id else None,
-            "emulation_session_id": str(emulation_session_id)
-            if emulation_session_id
-            else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT grant_id, grantor_id, emulation_id, emulated_id,
+               grant_session_id, emulation_session_id,
+               expires_at, used_at, revoked_at, created_at
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR grantor_id = $1)
+          AND ($2::uuid IS NULL OR emulation_id = $2)
+          AND ($3::uuid IS NULL OR emulated_id = $3)
+          AND ($4::uuid IS NULL OR grant_session_id = $4)
+          AND ($5::uuid IS NULL OR emulation_session_id = $5)
+        ORDER BY created_at DESC
+        LIMIT $6 OFFSET $7
+        """,
+        grantor_id,
+        emulation_id,
+        emulated_id,
+        grant_session_id,
+        emulation_session_id,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchGrantsEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        grantor_id=grantor_id,
-        emulation_id=emulation_id,
-        emulated_id=emulated_id,
-        grant_session_id=grant_session_id,
-        emulation_session_id=emulation_session_id,
-    )
-    result = cast(
-        SearchGrantsEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [GetGrantResponse(**dict(r)) for r in rows]

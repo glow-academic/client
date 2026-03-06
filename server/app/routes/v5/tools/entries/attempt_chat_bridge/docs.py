@@ -16,7 +16,7 @@ from app.routes.v5.tools.entries.attempt_chat_bridge.refresh import (
     refresh_attempt_chat_bridge,
 )
 from app.routes.v5.tools.entries.attempt_chat_bridge.search import (
-    search_attempt_chat_bridge_entries_internal,
+    search_attempt_chat_bridges,
 )
 
 
@@ -54,7 +54,7 @@ async def get_attempt_chat_bridge_docs(conn: asyncpg.Connection) -> DocsResponse
                 description="Refreshes attempt_chat_bridge_mv concurrently to reflect latest writes.",
             ),
             get_operation_info(
-                search_attempt_chat_bridge_entries_internal,
+                search_attempt_chat_bridges,
                 description="Filtered paginated search against attempt_chat_bridge_mv.",
             ),
         ],

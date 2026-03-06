@@ -1,72 +1,41 @@
-"""attempt_chat_bridge/search internal — reusable data-access layer."""
+"""Attempt chat bridge search — filtered/paginated query against attempt_chat_bridge_mv."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchAttemptChatBridgeEntriesSqlParams,
-    SearchAttemptChatBridgeEntriesSqlRow,
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.attempt_chat_bridge.types import (
+    GetAttemptChatBridgeResponse,
 )
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/entries/attempt_chat_bridge/search_attempt_chat_bridge_entries_complete.sql"
+MV_NAME = "attempt_chat_bridge_mv"
 
 
-async def search_attempt_chat_bridge_entries_internal(
+async def search_attempt_chat_bridges(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 1000,
-    offset_count: int | None = 0,
     attempt_id: UUID | None = None,
     attempt_chat_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search attempt_chat_bridge entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetAttemptChatBridgeResponse]:
+    """Search attempt_chat_bridge entries from attempt_chat_bridge_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "attempt_chat_bridge"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/attempt_chat_bridge/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "attempt_id": str(attempt_id) if attempt_id else None,
-            "attempt_chat_id": str(attempt_chat_id) if attempt_chat_id else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT attempt_id, attempt_chat_id, created_at, active, generated, mcp, session_id
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR attempt_id = $1)
+          AND ($2::uuid IS NULL OR attempt_chat_id = $2)
+        ORDER BY created_at DESC
+        LIMIT $3 OFFSET $4
+        """,
+        attempt_id,
+        attempt_chat_id,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchAttemptChatBridgeEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        attempt_id=attempt_id,
-        attempt_chat_id=attempt_chat_id,
-    )
-    result = cast(
-        SearchAttemptChatBridgeEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [GetAttemptChatBridgeResponse(**dict(r)) for r in rows]

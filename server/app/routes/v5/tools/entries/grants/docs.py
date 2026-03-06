@@ -7,7 +7,7 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.grants.create import create_grant
 from app.routes.v5.tools.entries.grants.get import get_grants_entries_internal
-from app.routes.v5.tools.entries.grants.search import search_grants_entries_internal
+from app.routes.v5.tools.entries.grants.search import search_grants
 
 
 async def get_grants_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -36,8 +36,8 @@ async def get_grants_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves grant entries by IDs from grants_entry.",
             ),
             get_operation_info(
-                search_grants_entries_internal,
-                description="Filtered paginated search against grants_entry.",
+                search_grants,
+                description="Filtered paginated search against grants_mv.",
             ),
         ],
     )

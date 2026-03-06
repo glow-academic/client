@@ -44,7 +44,7 @@ from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
     create_attempt_chat_bridge,
 )
 from app.routes.v5.tools.entries.attempt_chat_bridge.search import (
-    search_attempt_chat_bridge_entries_internal,
+    search_attempt_chat_bridges,
 )
 from app.routes.v5.tools.entries.attempt_completion.create import (
     create_attempt_completion_entry_internal,
@@ -170,16 +170,16 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
         if complete_all:
             async with get_db_connection() as conn:
                 # Find all bridges for this attempt
-                bridges = await search_attempt_chat_bridge_entries_internal(
+                bridges = await search_attempt_chat_bridges(
                     conn,
                     attempt_id=attempt_id,
-                    limit_count=1000,
-                    bypass_cache=True,
+                    limit=1000,
+                    bypass_mv=True,
                 )
 
                 # Create completion for each bridge (skip already-completed)
                 for bridge in bridges:
-                    bridge_chat_id = bridge.get("attempt_chat_id")
+                    bridge_chat_id = bridge.attempt_chat_id
                     if bridge_chat_id:
                         try:
                             await create_attempt_completion_entry_internal(
@@ -221,16 +221,24 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
             attempt_department_id = attempt_data.department_id
 
             # 3b. Get already-resolved bridges (completed_count + resolved chat_ids)
-            bridges = await search_attempt_chat_bridge_entries_internal(
+            bridges = await search_attempt_chat_bridges(
                 conn,
                 attempt_id=attempt_id,
-                limit_count=1000,
-                bypass_cache=True,
+                limit=1000,
+                bypass_mv=True,
             )
-            resolved_chat_ids = {
-                bridge.get("chat_id") for bridge in bridges if bridge.get("chat_id")
-            }
             completed_count = len(bridges)
+
+            # Look up chat_ids from attempt_chat_entry for resolved bridges
+            bridge_attempt_chat_ids = [b.attempt_chat_id for b in bridges]
+            if bridge_attempt_chat_ids:
+                chat_rows = await conn.fetch(
+                    "SELECT chat_id FROM attempt_chat_entry WHERE id = ANY($1) AND active = true",
+                    bridge_attempt_chat_ids,
+                )
+                resolved_chat_ids = {r["chat_id"] for r in chat_rows}
+            else:
+                resolved_chat_ids = set()
 
             # 3c. Get parent chat_ids from practice/home
             if is_practice:

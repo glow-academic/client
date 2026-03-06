@@ -1,65 +1,35 @@
-"""metrics/search internal — reusable data-access layer."""
-
-from typing import cast
+"""Metrics search — filtered/paginated query against metrics_mv."""
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchMetricsEntriesSqlParams,
-    SearchMetricsEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.metrics.types import GetMetricsSearchResponse
 
-SQL_PATH = "app/sql/queries/entries/metrics/search_metrics_entries_complete.sql"
+MV_NAME = "metrics_mv"
 
 
-async def search_metrics_entries_internal(
+async def search_metrics(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search metrics entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetMetricsSearchResponse]:
+    """Search metrics from metrics_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "metrics"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/metrics/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT date_hour, sample_count,
+               avg_cpu_percent, min_cpu_percent, max_cpu_percent,
+               avg_latency_ms, min_latency_ms, max_latency_ms,
+               avg_memory_bytes, min_memory_bytes, max_memory_bytes,
+               max_requests_total, max_errors_total
+        FROM {source}
+        ORDER BY date_hour DESC
+        LIMIT $1 OFFSET $2
+        """,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchMetricsEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-    )
-    result = cast(
-        SearchMetricsEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [GetMetricsSearchResponse(**dict(r)) for r in rows]

@@ -1,84 +1,61 @@
-"""attempt/search internal — reusable data-access layer."""
+"""attempt/search — filtered/paginated query against attempt_mv."""
 
 from datetime import datetime
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.infra.globals import get_redis_client
+from app.routes.v5.tools.entries.attempt.types import GetAttemptResponse
 from app.sql.types import (
     GetAttemptListViewSqlRow,
     QGetAttemptListViewV4Option,
-    SearchAttemptEntriesSqlParams,
-    SearchAttemptEntriesSqlRow,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/entries/attempt/search_attempt_entries_complete.sql"
+MV_NAME = "attempt_mv"
 
 
-async def search_attempt_entries_internal(
+async def search_attempts(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     simulation_id: UUID | None = None,
     profile_id: UUID | None = None,
     cohort_id: UUID | None = None,
     department_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search attempt entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetAttemptResponse]:
+    """Search attempt entries from attempt_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "attempt"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/attempt/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "simulation_id": str(simulation_id) if simulation_id else None,
-            "profile_id": str(profile_id) if profile_id else None,
-            "cohort_id": str(cohort_id) if cohort_id else None,
-            "department_id": str(department_id) if department_id else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT attempt_id, simulation_id, profile_id, user_persona_id,
+               personas_id, cohort_id, department_id, practice,
+               attempt_created_at, infinite_mode, num_chats, is_archived,
+               scenario_ids, chat_entry_id, attempt_chat_id
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR simulation_id = $1)
+          AND ($2::uuid IS NULL OR profile_id = $2)
+          AND ($3::uuid IS NULL OR cohort_id = $3)
+          AND ($4::uuid IS NULL OR department_id = $4)
+        ORDER BY attempt_created_at DESC
+        LIMIT $5 OFFSET $6
+        """,
+        simulation_id,
+        profile_id,
+        cohort_id,
+        department_id,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchAttemptEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        simulation_id=simulation_id,
-        profile_id=profile_id,
-        cohort_id=cohort_id,
-        department_id=department_id,
-    )
-    result = cast(
-        SearchAttemptEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [GetAttemptResponse(**dict(r)) for r in rows]
 
 
 LIST_SQL_PATH = "app/sql/queries/views/attempt/list/get_attempt_list_view_complete.sql"

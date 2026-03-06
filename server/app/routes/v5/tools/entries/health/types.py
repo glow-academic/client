@@ -11,14 +11,14 @@ class CreateHealthResponse(BaseModel):
 
 
 class GetHealthResponse(BaseModel):
-    id: UUID
-    ts: datetime
+    date_hour: datetime
     service: str
-    ok: bool
-    latency_ms: float
-    error: str
-    session_id: UUID | None
-    created_at: datetime
-    active: bool
-    mcp: bool
-    generated: bool
+    check_count: int
+    ok_count: int
+    fail_count: int
+    uptime_percent: float
+    avg_latency_ms: float
+    min_latency_ms: float
+    max_latency_ms: float
+    latest_ok: bool
+    latest_error: str

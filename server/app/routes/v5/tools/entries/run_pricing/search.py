@@ -1,69 +1,37 @@
-"""run_pricing/search internal — reusable data-access layer."""
+"""Run pricing search — filtered/paginated query against run_pricing_mv."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchRunPricingEntriesSqlParams,
-    SearchRunPricingEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.run_pricing.types import GetRunPricingResponse
 
-SQL_PATH = "app/sql/queries/entries/run_pricing/search_run_pricing_entries_complete.sql"
+MV_NAME = "run_pricing_mv"
 
 
 async def search_run_pricing_entries_internal(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     run_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search run_pricing entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetRunPricingResponse]:
+    """Search run_pricing entries from run_pricing_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "run_pricing"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/run_pricing/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "run_id": str(run_id) if run_id else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT id, pricing_type, count, run_id, session_id,
+               created_at, active, mcp, generated
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR run_id = $1)
+        ORDER BY created_at DESC
+        LIMIT $2 OFFSET $3
+        """,
+        run_id,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchRunPricingEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        run_id=run_id,
-    )
-    result = cast(
-        SearchRunPricingEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [GetRunPricingResponse(**dict(r)) for r in rows]

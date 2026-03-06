@@ -9,7 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.practice.create import create_practice
 from app.routes.v5.tools.entries.practice.get import get_practices
 from app.routes.v5.tools.entries.practice.refresh import refresh_practice
-from app.routes.v5.tools.entries.practice.search import search_practice_entries_internal
+from app.routes.v5.tools.entries.practice.search import search_practices
 
 
 async def get_practice_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -56,7 +56,7 @@ async def get_practice_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves practice entries by IDs from practice_mv.",
             ),
             get_operation_info(
-                search_practice_entries_internal,
+                search_practices,
                 description="Filtered paginated search against practice_mv.",
             ),
         ],

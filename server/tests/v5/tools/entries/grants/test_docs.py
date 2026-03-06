@@ -34,7 +34,7 @@ async def test_includes_all_operations(conn):
     op_names = [op.name for op in result.operations]
     assert "create_grant" in op_names
     assert "get_grants_entries_internal" in op_names
-    assert "search_grants_entries_internal" in op_names
+    assert "search_grants" in op_names
 
 
 async def test_create_operation_has_params(conn):

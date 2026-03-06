@@ -64,8 +64,7 @@ async def get_test_invocation_docs(conn: asyncpg.Connection) -> DocsResponse:
             get_operation_info(
                 search_test_invocation_entries_internal,
                 description=(
-                    "Filtered paginated search against test_invocation entries by search text "
-                    "and profile_id. Results cached for 60 seconds."
+                    "Filtered paginated search against test_invocation_mv with declarative filters."
                 ),
             ),
         ],

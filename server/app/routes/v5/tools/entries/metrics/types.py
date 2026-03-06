@@ -54,3 +54,19 @@ class GetMetricsResponse(BaseModel):
     active: bool
     mcp: bool
     generated: bool
+
+
+class GetMetricsSearchResponse(BaseModel):
+    date_hour: datetime
+    sample_count: int
+    avg_cpu_percent: float
+    min_cpu_percent: float
+    max_cpu_percent: float
+    avg_latency_ms: float
+    min_latency_ms: float
+    max_latency_ms: float
+    avg_memory_bytes: int
+    min_memory_bytes: int
+    max_memory_bytes: int
+    max_requests_total: int
+    max_errors_total: int
