@@ -40,19 +40,19 @@ async def test_returns_all_without_filter(conn, profile_id, redis_client):
     assert len(items) >= 1
 
 
-async def test_filters_by_images_id(conn, profile_id, redis_client):
+async def test_filters_by_images_ids(conn, profile_id, redis_client):
     _, images_id = await _setup(conn, profile_id, redis_client)
 
-    items = await search_images(conn, images_id=images_id, bypass_mv=True)
+    items = await search_images(conn, images_ids=[images_id], bypass_mv=True)
 
     assert len(items) >= 1
     assert all(item.images_id == images_id for item in items)
 
 
-async def test_filters_by_nonexistent_images_id(conn, profile_id, redis_client):
+async def test_filters_by_nonexistent_images_ids(conn, profile_id, redis_client):
     await _setup(conn, profile_id, redis_client)
 
-    items = await search_images(conn, images_id=nonexistent_id(), bypass_mv=True)
+    items = await search_images(conn, images_ids=[nonexistent_id()], bypass_mv=True)
 
     assert items == []
 
@@ -68,7 +68,7 @@ async def test_pagination_limit(conn, profile_id, redis_client):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id, redis_client):
     image, images_id = await _setup(conn, profile_id, redis_client)
 
-    items = await search_images(conn, images_id=images_id, bypass_mv=True)
+    items = await search_images(conn, images_ids=[images_id], bypass_mv=True)
 
     image_ids = [item.image_id for item in items]
     assert image.id in image_ids

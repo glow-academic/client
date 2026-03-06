@@ -60,10 +60,10 @@ from app.routes.v5.tools.resources.problem_statements.search import (
 from app.routes.v5.tools.resources.questions.search import search_questions
 from app.routes.v5.tools.resources.videos.search import search_videos
 
-# Upload entry fetchers
-from app.routes.v5.tools.entries.image_uploads.search import search_image_uploads
-from app.routes.v5.tools.entries.uploads.search import search_uploads
-from app.routes.v5.tools.entries.video_uploads.search import search_video_uploads
+# Entry MV fetchers (aliased to avoid collision with resource search functions)
+from app.routes.v5.tools.entries.files.search import search_files as search_file_entries
+from app.routes.v5.tools.entries.images.search import search_images as search_image_entries
+from app.routes.v5.tools.entries.videos.search import search_videos as search_video_entries
 
 
 # ---------------------------------------------------------------------------
@@ -375,26 +375,16 @@ async def resolve_scenario_context(
         if getattr(f, "type", None) in SCENARIO_FLAG_TYPES
     ]
 
-    # Step 3: Upload enrichment
-    # Resolve document upload_id (uploads_resource.id → uploads_entry.id)
-    all_docs = documents_selected + documents_suggestions
-    doc_upload_resource_ids = [d.upload_id for d in all_docs if d.upload_id]
+    # Step 3: Entry MV fetches (files, images, videos — for file_path/mime_type)
+    all_doc_file_ids = [d.file_id for d in documents_selected + documents_suggestions if d.file_id]
+    all_image_ids = [i.id for i in images_selected + images_suggestions if i.id]
+    all_video_ids = [v.id for v in videos_selected + videos_suggestions if v.id]
 
-    document_upload_map: dict[UUID, UUID] = {}
-    if doc_upload_resource_ids:
-        rows = await conn.fetch(
-            "SELECT id, upload_id FROM uploads_resource WHERE id = ANY($1) AND upload_id IS NOT NULL",
-            list(set(doc_upload_resource_ids)),
-        )
-        document_upload_map = {row["id"]: row["upload_id"] for row in rows}
-
-    # Resolve image uploads: image_resource → image_uploads_entry → uploads_entry
-    all_images = images_selected + images_suggestions
-    image_upload_map = await _resolve_image_uploads(conn, all_images)
-
-    # Resolve video uploads: video_resource → video_uploads_entry → uploads_entry
-    all_videos = videos_selected + videos_suggestions
-    video_upload_map = await _resolve_video_uploads(conn, all_videos)
+    file_entries, image_entries, video_entries = await asyncio.gather(
+        search_file_entries(conn, files_ids=all_doc_file_ids, limit=200) if all_doc_file_ids else _empty(),
+        search_image_entries(conn, images_ids=all_image_ids, limit=200) if all_image_ids else _empty(),
+        search_video_entries(conn, videos_ids=all_video_ids, limit=200) if all_video_ids else _empty(),
+    )
 
     return ArtifactContext(
         artifact_id=artifact.id if artifact else None,
@@ -447,9 +437,9 @@ async def resolve_scenario_context(
             "fields": ResourcePair(selected=[], suggestions=fields_catalog),
         },
         entries={
-            "document_upload_map": document_upload_map,
-            "image_upload_map": image_upload_map,
-            "video_upload_map": video_upload_map,
+            "files": file_entries,
+            "images": image_entries,
+            "videos": video_entries,
         },
     )
 
