@@ -152,7 +152,8 @@ class TestResolveProfileContextEmpty:
 
 @pytest.mark.asyncio
 class TestResolveProfileContextFull:
-    async def test_full_hydration(self):
+    async def test_full_hydration_and_call_args(self):
+        """Verify IDs flow correctly: artifact → parallel fetchers → assembly."""
         profiles_id = uuid4()
         name_id = uuid4()
         role_id = uuid4()
@@ -189,14 +190,22 @@ class TestResolveProfileContextFull:
         )
 
         with (
-            patch(f"{MODULE}.get_profile_artifacts", new_callable=AsyncMock, return_value=[artifact]),
-            patch(f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[name]),
-            patch(f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[role]),
-            patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[dept]),
-            patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[email]),
+            patch(f"{MODULE}.get_profile_artifacts", new_callable=AsyncMock, return_value=[artifact]) as mock_artifacts,
+            patch(f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[name]) as mock_names,
+            patch(f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[role]) as mock_roles,
+            patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[dept]) as mock_depts,
+            patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[email]) as mock_emails,
         ):
             result = await resolve_profile_context(None, artifact.id, None)
 
+        # Verify correct IDs flowed to each fetcher
+        assert mock_artifacts.call_args[0][1] == [artifact.id]
+        assert mock_names.call_args[0][1] == [name_id]
+        assert mock_roles.call_args[0][1] == [role_id]
+        assert mock_depts.call_args[0][1] == [dept_id]
+        assert mock_emails.call_args[0][1] == [email_id]
+
+        # Verify assembly
         assert result is not None
         assert result.profiles_id == profiles_id
         assert result.name == "Jane Doe"

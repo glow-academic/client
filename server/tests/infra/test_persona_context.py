@@ -269,7 +269,7 @@ class TestResolvePersonaContextEmpty:
         assert result.draft_version is None
 
     async def test_existing_persona_no_draft(self):
-        """Fetch published artifact, no draft overlay."""
+        """Fetch published artifact, no draft overlay — verify IDs flow to fetchers."""
         persona_id = uuid4()
         group_id = uuid4()
         name_id = uuid4()
@@ -285,6 +285,18 @@ class TestResolvePersonaContextEmpty:
                 None, None, persona_id=persona_id, group_id=group_id,
             )
 
+        # Verify artifact fetcher called with correct persona_id
+        mock_artifacts = m._mocks[f"{MODULE}.get_persona_artifacts"]
+        assert mock_artifacts.call_args[0][1] == [persona_id]
+
+        # Verify get_names called with merged name_ids from artifact
+        mock_names = m._mocks[f"{MODULE}.get_names"]
+        assert mock_names.call_args[0][1] == [name_id]
+
+        # Verify search_names called with exclude_ids matching selected
+        mock_search_names = m._mocks[f"{MODULE}.search_names"]
+        assert mock_search_names.call_args.kwargs["exclude_ids"] == [name_id]
+
         assert result.persona_id == persona_id
         assert result.names.selected == [selected_name]
         assert result.draft_version is None
@@ -294,7 +306,7 @@ class TestResolvePersonaContextEmpty:
 @pytest.mark.asyncio
 class TestResolvePersonaContextDraft:
     async def test_draft_overrides_published(self):
-        """Draft name_ids override published name_ids."""
+        """Draft name_ids override published — get_names called with draft ID, not published."""
         persona_id = uuid4()
         group_id = uuid4()
         published_name_id = uuid4()
@@ -318,6 +330,14 @@ class TestResolvePersonaContextDraft:
                 group_id=group_id,
                 draft_id=draft_id,
             )
+
+        # Key assertion: get_names received draft_name_id, NOT published_name_id
+        mock_names = m._mocks[f"{MODULE}.get_names"]
+        assert mock_names.call_args[0][1] == [draft_name_id]
+
+        # Draft fetcher called with correct draft_id
+        mock_drafts = m._mocks[f"{MODULE}.get_persona_drafts"]
+        assert mock_drafts.call_args[0][1] == [draft_id]
 
         assert result.draft_version == 3
         assert result.names.selected == [draft_name_obj]
