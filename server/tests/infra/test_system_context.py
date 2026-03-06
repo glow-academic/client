@@ -25,10 +25,12 @@ class FakeSystem:
 
 
 class FakeAgent:
-    def __init__(self, *, agent_id=None, model_id=None, tool_ids=None):
+    def __init__(self, *, agent_id=None, model_id=None, tool_ids=None, prompt_id=None, instruction_ids=None):
         self.id = agent_id or uuid4()
         self.model_id = model_id
         self.tool_ids = tool_ids or []
+        self.prompt_id = prompt_id
+        self.instruction_ids = instruction_ids or []
 
 
 class FakeModel:
@@ -79,6 +81,8 @@ class TestResolveSystemContextEmpty:
         assert result.tools == []
         assert result.args == []
         assert result.args_outputs == []
+        assert result.prompts == []
+        assert result.instructions == []
 
 
 @pytest.mark.asyncio
@@ -86,28 +90,37 @@ class TestResolveSystemContextCallArgs:
     """Verify each fetcher receives the correct IDs from the previous level."""
 
     async def test_full_chain_ids_flow(self):
-        """system → agent_ids → model_id/tool_ids → provider_id/args_ids/args_output_ids."""
+        """system → agent_ids → model_id/tool_ids/prompt_id/instruction_ids → provider_id/args_ids/args_output_ids."""
         system_id = uuid4()
         agent_id = uuid4()
         model_id = uuid4()
         tool_id = uuid4()
+        prompt_id = uuid4()
+        instruction_id = uuid4()
         provider_id = uuid4()
         arg_id = uuid4()
         arg_output_id = uuid4()
 
         system = FakeSystem(system_id=system_id, agent_ids=[agent_id])
-        agent = FakeAgent(agent_id=agent_id, model_id=model_id, tool_ids=[tool_id])
+        agent = FakeAgent(
+            agent_id=agent_id, model_id=model_id, tool_ids=[tool_id],
+            prompt_id=prompt_id, instruction_ids=[instruction_id],
+        )
         model = FakeModel(model_id=model_id, provider_id=provider_id)
         tool = FakeTool(tool_id=tool_id, args_ids=[arg_id], args_output_ids=[arg_output_id])
         provider = object()
         arg = object()
         arg_output = object()
+        prompt = object()
+        instruction = object()
 
         with (
             _patch("get_systems", [system]) as mock_sys,
             _patch("get_agents", [agent]) as mock_agents,
             _patch("get_models", [model]) as mock_models,
             _patch("get_tools", [tool]) as mock_tools,
+            _patch("get_prompts", [prompt]) as mock_prompts,
+            _patch("get_instructions", [instruction]) as mock_instructions,
             _patch("get_providers", [provider]) as mock_providers,
             _patch("get_args", [arg]) as mock_args,
             _patch("get_args_outputs", [arg_output]) as mock_args_out,
@@ -120,19 +133,15 @@ class TestResolveSystemContextCallArgs:
         # Step 2: get_agents called with agent_ids from system
         assert mock_agents.call_args[0][1] == [agent_id]
 
-        # Step 3a: get_models called with model_ids from agents
+        # Step 3: get_models/tools/prompts/instructions called with IDs from agents
         assert set(mock_models.call_args[0][1]) == {model_id}
-
-        # Step 3b: get_tools called with tool_ids from agents
         assert set(mock_tools.call_args[0][1]) == {tool_id}
+        assert set(mock_prompts.call_args[0][1]) == {prompt_id}
+        assert set(mock_instructions.call_args[0][1]) == {instruction_id}
 
-        # Step 4a: get_providers called with provider_ids from models
+        # Step 4: get_providers/args/args_outputs called with IDs from models/tools
         assert set(mock_providers.call_args[0][1]) == {provider_id}
-
-        # Step 4b: get_args called with args_ids from tools
         assert set(mock_args.call_args[0][1]) == {arg_id}
-
-        # Step 4c: get_args_outputs called with args_output_ids from tools
         assert set(mock_args_out.call_args[0][1]) == {arg_output_id}
 
         # Return values assembled correctly
@@ -142,6 +151,8 @@ class TestResolveSystemContextCallArgs:
         assert result.tools == [tool]
         assert result.args == [arg]
         assert result.args_outputs == [arg_output]
+        assert result.prompts == [prompt]
+        assert result.instructions == [instruction]
 
     async def test_multiple_agents_dedup_model_ids(self):
         """Two agents sharing the same model — get_models called with 1 ID, not 2."""
@@ -157,6 +168,8 @@ class TestResolveSystemContextCallArgs:
             _patch("get_agents", [agent1, agent2]) as mock_agents,
             _patch("get_models", [model]) as mock_models,
             _patch("get_tools", []),
+            _patch("get_prompts", []),
+            _patch("get_instructions", []),
             _patch("get_providers", []),
             _patch("get_args", []),
             _patch("get_args_outputs", []),
@@ -168,6 +181,33 @@ class TestResolveSystemContextCallArgs:
         # get_models called with deduplicated model_id (1, not 2)
         assert mock_models.call_args[0][1] == [model_id]
         assert result.models == [model]
+
+    async def test_multiple_agents_dedup_prompt_and_instruction_ids(self):
+        """Two agents sharing a prompt — get_prompts called with 1 ID, not 2."""
+        system_id = uuid4()
+        shared_prompt_id = uuid4()
+        shared_instruction_id = uuid4()
+        unique_instruction_id = uuid4()
+        agent1 = FakeAgent(prompt_id=shared_prompt_id, instruction_ids=[shared_instruction_id])
+        agent2 = FakeAgent(prompt_id=shared_prompt_id, instruction_ids=[shared_instruction_id, unique_instruction_id])
+        system = FakeSystem(system_id=system_id, agent_ids=[agent1.id, agent2.id])
+
+        with (
+            _patch("get_systems", [system]),
+            _patch("get_agents", [agent1, agent2]),
+            _patch("get_models", []),
+            _patch("get_tools", []),
+            _patch("get_prompts", []) as mock_prompts,
+            _patch("get_instructions", []) as mock_instructions,
+            _patch("get_providers", []),
+            _patch("get_args", []),
+            _patch("get_args_outputs", []),
+        ):
+            await resolve_system_context(None, None, system_id=system_id)
+
+        # Deduped: 1 unique prompt ID, 2 unique instruction IDs
+        assert mock_prompts.call_args[0][1] == [shared_prompt_id]
+        assert set(mock_instructions.call_args[0][1]) == {shared_instruction_id, unique_instruction_id}
 
     async def test_multiple_tools_dedup_args_and_outputs(self):
         """Two tools sharing args — get_args/get_args_outputs called with deduped IDs."""
@@ -185,6 +225,8 @@ class TestResolveSystemContextCallArgs:
             _patch("get_agents", [agent]),
             _patch("get_models", []),
             _patch("get_tools", [tool1, tool2]),
+            _patch("get_prompts", []),
+            _patch("get_instructions", []),
             _patch("get_providers", []),
             _patch("get_args", []) as mock_args,
             _patch("get_args_outputs", []) as mock_args_out,
@@ -206,6 +248,8 @@ class TestResolveSystemContextCallArgs:
             _patch("get_agents", [agent]),
             _patch("get_models", []) as mock_models,
             _patch("get_tools", []) as mock_tools,
+            _patch("get_prompts", []),
+            _patch("get_instructions", []),
             _patch("get_providers", []),
             _patch("get_args", []),
             _patch("get_args_outputs", []),
@@ -219,6 +263,30 @@ class TestResolveSystemContextCallArgs:
         assert result.models == []
         assert result.tools == []
 
+    async def test_agent_no_prompt_skips_prompt_fetch(self):
+        """Agent with prompt_id=None — get_prompts not called."""
+        system_id = uuid4()
+        agent = FakeAgent(model_id=None, tool_ids=[], prompt_id=None, instruction_ids=[])
+        system = FakeSystem(system_id=system_id, agent_ids=[agent.id])
+
+        with (
+            _patch("get_systems", [system]),
+            _patch("get_agents", [agent]),
+            _patch("get_models", []),
+            _patch("get_tools", []),
+            _patch("get_prompts", []) as mock_prompts,
+            _patch("get_instructions", []) as mock_instructions,
+            _patch("get_providers", []),
+            _patch("get_args", []),
+            _patch("get_args_outputs", []),
+        ):
+            result = await resolve_system_context(None, None, system_id=system_id)
+
+        assert mock_prompts.call_count == 0
+        assert mock_instructions.call_count == 0
+        assert result.prompts == []
+        assert result.instructions == []
+
     async def test_tool_no_args_skips_args_fetch(self):
         """Tool with empty args_ids — get_args not called."""
         system_id = uuid4()
@@ -231,6 +299,8 @@ class TestResolveSystemContextCallArgs:
             _patch("get_agents", [agent]),
             _patch("get_models", []),
             _patch("get_tools", [tool]),
+            _patch("get_prompts", []),
+            _patch("get_instructions", []),
             _patch("get_providers", []),
             _patch("get_args", []) as mock_args,
             _patch("get_args_outputs", []) as mock_args_out,
@@ -255,6 +325,8 @@ class TestResolveSystemContextCallArgs:
             _patch("get_agents", [agent]),
             _patch("get_models", [model]),
             _patch("get_tools", []),
+            _patch("get_prompts", []),
+            _patch("get_instructions", []),
             _patch("get_providers", []) as mock_providers,
             _patch("get_args", []),
             _patch("get_args_outputs", []),

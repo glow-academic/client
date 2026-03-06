@@ -176,6 +176,12 @@ async def resolve_websocket_context(
     all_args_outputs = dedupe_by_id(
         [ao for sc in system_contexts for ao in sc.args_outputs]
     )
+    all_prompts = dedupe_by_id(
+        [p for sc in system_contexts for p in sc.prompts]
+    )
+    all_instructions = dedupe_by_id(
+        [i for sc in system_contexts for i in sc.instructions]
+    )
 
     # Dedupe systems by system_id
     seen_system_ids: set[UUID] = set()
@@ -212,10 +218,14 @@ async def resolve_websocket_context(
 
     return WebsocketContext(
         artifacts=artifacts_dict,
+        scores=scores,
         systems=all_systems,
         agents=all_agents,
         models=all_models,
+        providers=all_providers,
         tools=all_tools,
         args=all_args,
         args_outputs=all_args_outputs,
+        prompts=all_prompts,
+        instructions=all_instructions,
     )

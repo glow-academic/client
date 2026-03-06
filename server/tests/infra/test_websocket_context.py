@@ -56,6 +56,8 @@ class FakeSystemContext:
         self.tools = [type("T", (), {"id": uuid4()})()]
         self.args = [type("Arg", (), {"id": uuid4()})()]
         self.args_outputs = [type("AO", (), {"id": uuid4()})()]
+        self.prompts = [type("Pr", (), {"id": uuid4()})()]
+        self.instructions = [type("I", (), {"id": uuid4()})()]
 
 
 def _persona_artifact_context(*, artifact_id=None, group_id=None):
@@ -77,11 +79,11 @@ def _persona_artifact_context(*, artifact_id=None, group_id=None):
             "examples": ResourcePair(selected=[], suggestions=[]),
             "voices": ResourcePair(selected=[], suggestions=[]),
             "parameters": ResourcePair(selected=[], suggestions=[]),
+            "fields": ResourcePair(selected=[], suggestions=[]),
         },
         entries={
             "personas_resource_ids": [],
             "has_active_scenarios": False,
-            "fields": [],
         },
     )
 
@@ -215,9 +217,12 @@ class TestResolveWebsocketContextSingleArtifact:
         assert "get.colors" in art.resources
         assert "search.colors" in art.resources
 
+        # Fields in resources (not entries)
+        assert "get.fields" in art.resources
+        assert "search.fields" in art.resources
+
         # Entries namespaced with get.
         assert "get.has_active_scenarios" in art.entries
-        assert "get.fields" in art.entries
 
     async def test_params_flow_to_resolver(self):
         """Params from ArtifactRequest are passed to resolver."""
@@ -414,6 +419,8 @@ class TestResolveWebsocketContextScoring:
         sc1.tools = []
         sc1.args = []
         sc1.args_outputs = []
+        sc1.prompts = []
+        sc1.instructions = []
 
         sc2 = FakeSystemContext(system_id=system_id_2)
         sc2.agents = [shared_agent]
@@ -422,6 +429,8 @@ class TestResolveWebsocketContextScoring:
         sc2.tools = []
         sc2.args = []
         sc2.args_outputs = []
+        sc2.prompts = []
+        sc2.instructions = []
 
         best = {
             "names": ResolvedTool(

@@ -381,15 +381,13 @@ class TestResolvePersonaContextResources:
         resource_names = [
             "names", "descriptions", "colors", "icons", "instructions",
             "flags", "departments", "parameter_fields", "examples",
-            "voices", "parameters",
+            "voices", "parameters", "fields",
         ]
         for rname in resource_names:
             pair = result.resources[rname]
             assert isinstance(pair, ResourcePair), f"{rname} should be a ResourcePair"
             assert isinstance(pair.selected, list), f"{rname}.selected should be list"
             assert isinstance(pair.suggestions, list), f"{rname}.suggestions should be list"
-
-        assert isinstance(result.entries["fields"], list)
 
     async def test_inactive_artifact(self):
         persona_id = uuid4()

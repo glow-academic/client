@@ -210,7 +210,7 @@ async def get_persona_client(
         "instructions": compute_show_instructions(instructions_has_tools),
         "flags": compute_show_flag(),
         "departments": compute_show_departments(len(all_departments)),
-        "parameter_fields": compute_show_parameter_fields(len(persona.entries["fields"])),
+        "parameter_fields": compute_show_parameter_fields(len(persona.resources["fields"].suggestions)),
         "examples": compute_show_examples(len(all_examples)),
         "parameters": compute_show_parameters(len(all_parameters)),
         "voices": compute_show_voices(len(all_voices)),
@@ -378,7 +378,7 @@ async def get_persona_client(
             resources=all_voices,
         ),
         # Fields catalog
-        fields=persona.entries["fields"],
+        fields=persona.resources["fields"].suggestions,
         # Resolved parameter IDs
         resolved_parameter_ids=resolved_parameter_ids or None,
     )

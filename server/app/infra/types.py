@@ -61,9 +61,13 @@ class WebsocketContext:
     """Full resolved websocket context across all artifacts."""
 
     artifacts: dict[str, ArtifactWebsocketContext]
+    scores: Any  # ArtifactToolScores — resource → best tool picks
     systems: list
     agents: list
     models: list
+    providers: list
     tools: list
     args: list
     args_outputs: list
+    prompts: list
+    instructions: list

@@ -282,11 +282,11 @@ async def resolve_persona_context(
             "examples": ResourcePair(selected=examples_selected, suggestions=examples_suggestions),
             "voices": ResourcePair(selected=voices_selected, suggestions=voices_suggestions),
             "parameters": ResourcePair(selected=parameters_selected, suggestions=parameters_suggestions),
+            "fields": ResourcePair(selected=[], suggestions=fields_catalog),
         },
         entries={
             "personas_resource_ids": personas_resource_ids,
             "has_active_scenarios": len(active_scenario_ids) > 0,
-            "fields": fields_catalog,
         },
     )
 
