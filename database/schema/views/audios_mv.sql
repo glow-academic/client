@@ -7,18 +7,15 @@
 
 CREATE MATERIALIZED VIEW public.audios_mv AS
  SELECT ae.id AS audio_id,
-    ur.id AS files_id,
     ue.file_path,
     ue.mime_type,
     ue.size,
     ae.length_seconds,
     avc.voice_id,
     ae.created_at
-   FROM (((((public.audios_entry ae
+   FROM (((public.audios_entry ae
      JOIN public.audio_uploads_entry aue ON (((aue.audio_id = ae.id) AND (aue.active = true))))
      JOIN public.uploads_entry ue ON (((ue.id = aue.upload_id) AND (ue.active = true))))
-     JOIN public.files_uploads_connection uuc ON (((uuc.upload_id = ue.id) AND (uuc.active = true))))
-     JOIN public.files_resource ur ON (((ur.id = uuc.files_id) AND (ur.active = true))))
      LEFT JOIN public.audios_voices_connection avc ON (((avc.audio_id = ae.id) AND (avc.active = true))))
   WHERE (ae.active = true)
   WITH NO DATA;

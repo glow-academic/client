@@ -12,7 +12,8 @@ MV_NAME = "videos_mv"
 
 async def search_videos(
     conn: asyncpg.Connection,
-    files_id: UUID | None = None,
+    video_id: UUID | None = None,
+    videos_id: UUID | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -22,13 +23,15 @@ async def search_videos(
 
     rows = await conn.fetch(
         f"""
-        SELECT video_id, files_id, file_path, mime_type, size, length_seconds, created_at
+        SELECT video_id, videos_id, file_path, mime_type, size, length_seconds, created_at
         FROM {source}
-        WHERE ($1::uuid IS NULL OR files_id = $1)
+        WHERE ($1::uuid IS NULL OR video_id = $1)
+          AND ($2::uuid IS NULL OR videos_id = $2)
         ORDER BY created_at DESC
-        LIMIT $2 OFFSET $3
+        LIMIT $3 OFFSET $4
         """,
-        files_id,
+        video_id,
+        videos_id,
         limit,
         offset,
     )

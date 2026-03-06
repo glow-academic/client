@@ -21,7 +21,6 @@ class GetAudioResponse(BaseModel):
 
 class SearchAudioResponse(BaseModel):
     audio_id: UUID
-    files_id: UUID
     file_path: str
     mime_type: str
     size: int

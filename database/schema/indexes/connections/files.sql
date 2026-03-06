@@ -17,19 +17,3 @@ CREATE INDEX uploads_calls_connection_id_idx ON public.files_calls_connection US
 
 
 --
-
--- Name: uploads_uploads_connection_upload_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX uploads_uploads_connection_upload_id_idx ON public.files_uploads_connection USING btree (upload_id);
-
-
---
-
--- Name: uploads_uploads_connection_uploads_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX uploads_uploads_connection_uploads_id_idx ON public.files_uploads_connection USING btree (files_id);
-
-
---

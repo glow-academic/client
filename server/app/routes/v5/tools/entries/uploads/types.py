@@ -23,7 +23,6 @@ class GetUploadResponse(BaseModel):
 
 
 class SearchUploadResponse(BaseModel):
-    files_id: UUID
     upload_id: UUID
     file_path: str
     mime_type: str

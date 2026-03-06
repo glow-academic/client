@@ -7,17 +7,17 @@
 
 CREATE MATERIALIZED VIEW public.images_mv AS
  SELECT ie.id AS image_id,
-    ur.id AS files_id,
+    iic.images_id,
     ue.file_path,
     ue.mime_type,
     ue.size,
     iqc.quality_id,
     ie.created_at
    FROM (((((public.images_entry ie
+     JOIN public.images_images_connection iic ON (((iic.image_id = ie.id) AND (iic.active = true))))
+     JOIN public.images_resource ir ON (((ir.id = iic.images_id) AND (ir.active = true))))
      JOIN public.image_uploads_entry iue ON (((iue.image_id = ie.id) AND (iue.active = true))))
      JOIN public.uploads_entry ue ON (((ue.id = iue.upload_id) AND (ue.active = true))))
-     JOIN public.files_uploads_connection uuc ON (((uuc.upload_id = ue.id) AND (uuc.active = true))))
-     JOIN public.files_resource ur ON (((ur.id = uuc.files_id) AND (ur.active = true))))
      LEFT JOIN public.images_qualities_connection iqc ON (((iqc.image_id = ie.id) AND (iqc.active = true))))
   WHERE (ie.active = true)
   WITH NO DATA;

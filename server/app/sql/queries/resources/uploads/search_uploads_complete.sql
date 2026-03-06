@@ -1,7 +1,7 @@
 -- Search files resources with optional context
--- Query files_resource + files_uploads_connection only (no view_uploads_entry)
+-- Query files_resource directly
 -- Parameters: search (text), limit_count (int), offset_count (int), exclude_ids (uuid[])
--- Returns: items (array of file resources with upload_id from connection)
+-- Returns: items (array of file resources)
 
 -- Drop function if exists (handles signature variations)
 DO $$
@@ -18,7 +18,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- Create function - query files_resource + connection only
+-- Create function - query files_resource only
 CREATE OR REPLACE FUNCTION api_search_uploads_v4(
     search text DEFAULT NULL,
     limit_count int DEFAULT 20,
@@ -43,11 +43,9 @@ SELECT COALESCE(
 FROM (
     SELECT
         ur.id AS files_id,
-        uuc.upload_id,
         COALESCE(ur.generated, false) AS generated,
         ur.created_at
     FROM files_resource ur
-    LEFT JOIN files_uploads_connection uuc ON uuc.files_id = ur.id AND uuc.active = true
     WHERE ur.active = true
       AND (exclude_ids IS NULL OR NOT (ur.id = ANY(exclude_ids)))
       -- Artifact boolean filters (each filters to resources linked to at least one of that artifact type)

@@ -22,19 +22,10 @@ async def _setup(conn, profile_id):
         mime_type="audio/mpeg",
         size=1024,
     )
-    # Create files_resource and files_uploads_connection directly
-    files_id = await conn.fetchval(
-        "INSERT INTO files_resource (active, mcp, generated) VALUES (true, false, true) RETURNING id"
-    )
-    await conn.execute(
-        "INSERT INTO files_uploads_connection (upload_id, files_id, active) VALUES ($1, $2, true)",
-        upload.id,
-        files_id,
-    )
     await create_audio_upload(
         conn, audio_id=audio.id, upload_id=upload.id, session_id=session.id
     )
-    return audio, files_id
+    return audio
 
 
 async def test_returns_all_without_filter(conn, profile_id):
@@ -43,23 +34,6 @@ async def test_returns_all_without_filter(conn, profile_id):
     items = await search_audios(conn, bypass_mv=True)
 
     assert len(items) >= 1
-
-
-async def test_filters_by_files_id(conn, profile_id):
-    _, files_id = await _setup(conn, profile_id)
-
-    items = await search_audios(conn, files_id=files_id, bypass_mv=True)
-
-    assert len(items) >= 1
-    assert all(item.files_id == files_id for item in items)
-
-
-async def test_filters_by_nonexistent_files_id(conn, profile_id):
-    await _setup(conn, profile_id)
-
-    items = await search_audios(conn, files_id=nonexistent_id(), bypass_mv=True)
-
-    assert items == []
 
 
 async def test_pagination_limit(conn, profile_id):
@@ -71,9 +45,9 @@ async def test_pagination_limit(conn, profile_id):
 
 
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
-    audio, files_id = await _setup(conn, profile_id)
+    audio = await _setup(conn, profile_id)
 
-    items = await search_audios(conn, files_id=files_id, bypass_mv=True)
+    items = await search_audios(conn, bypass_mv=True)
 
     audio_ids = [item.audio_id for item in items]
     assert audio.id in audio_ids

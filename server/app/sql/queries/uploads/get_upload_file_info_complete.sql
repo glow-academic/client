@@ -53,18 +53,6 @@ actor_profile AS (
     SELECT COALESCE((SELECT n.name FROM profile_names_junction pn JOIN names_resource n ON pn.names_id = n.id WHERE pn.profile_id = profile_artifact.id LIMIT 1), 'System') as actor_name
     FROM profile_artifact
     WHERE id = (SELECT profile_id FROM params)
-),
-regular_document_upload AS (
-    -- Case 1: Upload is linked to a document via document_files_junction
-    SELECT
-        dur.document_id
-    FROM document_files_junction dur
-    JOIN files_resource ur ON ur.id = dur.files_id
-    JOIN files_uploads_connection uuc ON uuc.files_id = ur.id
-    JOIN documents_resource d ON d.id = dur.document_id
-    WHERE uuc.upload_id = (SELECT upload_id FROM params)
-      AND dur.active = true
-    LIMIT 1
 )
 SELECT 
     COALESCE((SELECT upload_exists FROM upload_exists_check), false)::boolean as upload_exists,

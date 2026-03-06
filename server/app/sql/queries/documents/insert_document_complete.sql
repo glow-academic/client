@@ -102,11 +102,12 @@ link_document_template_flag AS (
     ON CONFLICT (document_id, flags_id) DO NOTHING
 ),
 get_files_resource_id AS (
-    -- Look up files_resource.id from upload_id via connection table
-    SELECT ur.id as files_id
-    FROM files_resource ur
-    JOIN files_uploads_connection uuc ON uuc.files_id = ur.id
-    WHERE uuc.upload_id = api_insert_document_v4.upload_id
+    -- Look up files_resource.id from upload_id via file_uploads_entry → file_files_connection
+    SELECT ffc.files_id
+    FROM file_uploads_entry fue
+    JOIN file_files_connection ffc ON ffc.file_id = fue.file_id AND ffc.active = true
+    WHERE fue.upload_id = api_insert_document_v4.upload_id
+    AND fue.active = true
     AND api_insert_document_v4.upload_id IS NOT NULL
     LIMIT 1
 ),

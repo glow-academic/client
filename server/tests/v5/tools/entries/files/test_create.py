@@ -5,6 +5,7 @@ import pytest
 from app.routes.v5.tools.entries.files.create import create_file
 from app.routes.v5.tools.entries.files.get import get_file
 from app.routes.v5.tools.entries.sessions.create import create_session
+from app.routes.v5.tools.resources.files.create import create_file as create_file_resource
 
 pytestmark = pytest.mark.asyncio
 
@@ -39,3 +40,11 @@ async def test_passes_mcp_flag(conn, profile_id):
 
     assert file is not None
     assert file.mcp is True
+
+
+async def test_links_files_resource(conn, profile_id, redis_client):
+    session = await _session(conn, profile_id)
+    resource = await create_file_resource(conn, redis=redis_client)
+    result = await create_file(conn, session_id=session.id, files_id=resource.id)
+
+    assert result.id is not None

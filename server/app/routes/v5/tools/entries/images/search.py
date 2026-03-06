@@ -12,7 +12,8 @@ MV_NAME = "images_mv"
 
 async def search_images(
     conn: asyncpg.Connection,
-    files_id: UUID | None = None,
+    image_id: UUID | None = None,
+    images_id: UUID | None = None,
     quality_id: UUID | None = None,
     limit: int = 20,
     offset: int = 0,
@@ -23,15 +24,17 @@ async def search_images(
 
     rows = await conn.fetch(
         f"""
-        SELECT image_id, files_id, file_path, mime_type, size,
+        SELECT image_id, images_id, file_path, mime_type, size,
                quality_id, created_at
         FROM {source}
-        WHERE ($1::uuid IS NULL OR files_id = $1)
-          AND ($2::uuid IS NULL OR quality_id = $2)
+        WHERE ($1::uuid IS NULL OR image_id = $1)
+          AND ($2::uuid IS NULL OR images_id = $2)
+          AND ($3::uuid IS NULL OR quality_id = $3)
         ORDER BY created_at DESC
-        LIMIT $3 OFFSET $4
+        LIMIT $4 OFFSET $5
         """,
-        files_id,
+        image_id,
+        images_id,
         quality_id,
         limit,
         offset,

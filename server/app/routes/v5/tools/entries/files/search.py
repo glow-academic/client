@@ -12,6 +12,7 @@ MV_NAME = "files_mv"
 
 async def search_files(
     conn: asyncpg.Connection,
+    file_id: UUID | None = None,
     files_id: UUID | None = None,
     mime_type: str | None = None,
     limit: int = 20,
@@ -25,11 +26,13 @@ async def search_files(
         f"""
         SELECT file_id, files_id, file_path, mime_type, size, created_at
         FROM {source}
-        WHERE ($1::uuid IS NULL OR files_id = $1)
-          AND ($2::text IS NULL OR mime_type = $2)
+        WHERE ($1::uuid IS NULL OR file_id = $1)
+          AND ($2::uuid IS NULL OR files_id = $2)
+          AND ($3::text IS NULL OR mime_type = $3)
         ORDER BY created_at DESC
-        LIMIT $3 OFFSET $4
+        LIMIT $4 OFFSET $5
         """,
+        file_id,
         files_id,
         mime_type,
         limit,

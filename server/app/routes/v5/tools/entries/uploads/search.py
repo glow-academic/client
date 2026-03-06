@@ -22,7 +22,7 @@ async def search_uploads(
 
     rows = await conn.fetch(
         f"""
-        SELECT files_id, upload_id, file_path, mime_type, size, created_at
+        SELECT upload_id, file_path, mime_type, size, created_at
         FROM {source}
         WHERE ($1::uuid IS NULL OR upload_id = $1)
         ORDER BY created_at DESC

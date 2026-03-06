@@ -19,20 +19,11 @@ async def _setup(conn, profile_id):
         mime_type="text/plain",
         size=1024,
     )
-    # uploads_mv requires: files_resource + files_uploads_connection + uploads_entry
-    files_id = await conn.fetchval(
-        "INSERT INTO files_resource DEFAULT VALUES RETURNING id"
-    )
-    await conn.execute(
-        "INSERT INTO files_uploads_connection (files_id, upload_id) VALUES ($1, $2)",
-        files_id,
-        upload.id,
-    )
-    return upload, files_id
+    return upload
 
 
 async def test_finds_created_entry(conn, profile_id):
-    upload, _ = await _setup(conn, profile_id)
+    upload = await _setup(conn, profile_id)
     await conn.execute("REFRESH MATERIALIZED VIEW uploads_mv")
 
     items = await search_uploads(conn, upload_id=upload.id)
@@ -51,7 +42,7 @@ async def test_filters_by_upload_id(conn, profile_id):
 
 
 async def test_pagination_limit(conn, profile_id):
-    upload, _ = await _setup(conn, profile_id)
+    upload = await _setup(conn, profile_id)
     await conn.execute("REFRESH MATERIALIZED VIEW uploads_mv")
 
     items = await search_uploads(conn, upload_id=upload.id, limit=1)
@@ -69,7 +60,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 
 
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
-    upload, _ = await _setup(conn, profile_id)
+    upload = await _setup(conn, profile_id)
 
     items = await search_uploads(conn, upload_id=upload.id, bypass_mv=True)
 

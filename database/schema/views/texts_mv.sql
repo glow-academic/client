@@ -8,17 +8,14 @@
 CREATE MATERIALIZED VIEW public.texts_mv AS
  SELECT tr.id AS texts_id,
     te.id AS text_id,
-    ur.id AS files_id,
     ue.file_path,
     ue.mime_type,
     te.created_at
-   FROM ((((((public.texts_resource tr
+   FROM ((((public.texts_resource tr
      JOIN public.texts_texts_connection ttc ON (((ttc.texts_id = tr.id) AND (ttc.active = true))))
      JOIN public.texts_entry te ON (((te.id = ttc.text_id) AND (te.active = true))))
      LEFT JOIN public.text_uploads_entry tue ON (((tue.text_id = te.id) AND (tue.active = true))))
      LEFT JOIN public.uploads_entry ue ON (((ue.id = tue.upload_id) AND (ue.active = true))))
-     LEFT JOIN public.files_uploads_connection uuc ON (((uuc.upload_id = ue.id) AND (uuc.active = true))))
-     LEFT JOIN public.files_resource ur ON (((ur.id = uuc.files_id) AND (ur.active = true))))
   WHERE (tr.active = true)
   WITH NO DATA;
 

@@ -19,21 +19,3 @@ ALTER TABLE ONLY public.files_calls_connection
 
 
 --
-
--- Name: files_uploads_connection files_uploads_connection_files_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.files_uploads_connection
-    ADD CONSTRAINT files_uploads_connection_files_id_fkey FOREIGN KEY (files_id) REFERENCES public.files_resource(id) ON DELETE CASCADE;
-
-
---
-
--- Name: files_uploads_connection files_uploads_connection_upload_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.files_uploads_connection
-    ADD CONSTRAINT files_uploads_connection_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES public.uploads_entry(id) ON DELETE CASCADE;
-
-
---

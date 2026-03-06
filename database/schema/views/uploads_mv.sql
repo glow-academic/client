@@ -6,16 +6,13 @@
 --
 
 CREATE MATERIALIZED VIEW public.uploads_mv AS
- SELECT ur.id AS files_id,
-    ue.id AS upload_id,
-    ue.file_path,
-    ue.mime_type,
-    ue.size,
-    ue.created_at
-   FROM ((public.files_resource ur
-     JOIN public.files_uploads_connection uuc ON (((uuc.files_id = ur.id) AND (uuc.active = true))))
-     JOIN public.uploads_entry ue ON (((ue.id = uuc.upload_id) AND (ue.active = true))))
-  WHERE (ur.active = true)
+ SELECT id AS upload_id,
+    file_path,
+    mime_type,
+    size,
+    created_at
+   FROM public.uploads_entry ue
+  WHERE (active = true)
   WITH NO DATA;
 
 

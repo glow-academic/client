@@ -12,7 +12,6 @@ MV_NAME = "audios_mv"
 
 async def search_audios(
     conn: asyncpg.Connection,
-    files_id: UUID | None = None,
     voice_id: UUID | None = None,
     limit: int = 20,
     offset: int = 0,
@@ -23,15 +22,13 @@ async def search_audios(
 
     rows = await conn.fetch(
         f"""
-        SELECT audio_id, files_id, file_path, mime_type, size,
+        SELECT audio_id, file_path, mime_type, size,
                length_seconds, voice_id, created_at
         FROM {source}
-        WHERE ($1::uuid IS NULL OR files_id = $1)
-          AND ($2::uuid IS NULL OR voice_id = $2)
+        WHERE ($1::uuid IS NULL OR voice_id = $1)
         ORDER BY created_at DESC
-        LIMIT $3 OFFSET $4
+        LIMIT $2 OFFSET $3
         """,
-        files_id,
         voice_id,
         limit,
         offset,
