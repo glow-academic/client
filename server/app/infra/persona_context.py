@@ -10,11 +10,13 @@ Composes existing black-box fetchers — no raw SQL.
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from uuid import UUID
 
 import asyncpg
 from redis.asyncio import Redis
+
+from app.infra.types import ArtifactContext, ResourcePair
 
 # Artifact + draft fetchers
 from app.routes.v5.tools.artifacts.persona.get import (
@@ -62,40 +64,6 @@ from app.routes.v5.tools.artifacts.scenario.search import search_scenarios
 PERSONA_FLAG_TYPES = {"persona_active"}
 
 
-@dataclass(frozen=True)
-class ResourcePair:
-    """Selected (current) + suggestions (available options) for one resource."""
-
-    selected: list
-    suggestions: list
-
-
-@dataclass
-class PersonaArtifactContext:
-    """Fully hydrated persona artifact with merged draft overrides."""
-
-    persona_id: UUID | None
-    active: bool
-    group_id: UUID
-    draft_version: int | None
-    personas_resource_ids: list[UUID]  # personas_resource IDs (for scenario lookups)
-    has_active_scenarios: bool  # True if any active scenarios use this persona
-
-    # Resource pairs — selected + suggestions per type
-    names: ResourcePair
-    descriptions: ResourcePair
-    colors: ResourcePair
-    icons: ResourcePair
-    instructions: ResourcePair
-    flags: ResourcePair
-    departments: ResourcePair
-    parameter_fields: ResourcePair
-    examples: ResourcePair
-    voices: ResourcePair
-    parameters: ResourcePair
-    fields: list  # catalog — no selected/suggestions split
-
-
 # ---------------------------------------------------------------------------
 # resolve_persona_context
 # ---------------------------------------------------------------------------
@@ -119,13 +87,13 @@ async def resolve_persona_context(
     color_show_selected: bool | None = None,
     icon_show_selected: bool | None = None,
     bypass_cache: bool = False,
-) -> PersonaArtifactContext:
+) -> ArtifactContext:
     """Resolve a persona artifact into fully hydrated resources.
 
     Steps:
       1. Fetch artifact + draft in parallel → merge IDs
       2. Parallel hydrate: get (selected) + search (suggestions) per resource
-      3. Assemble PersonaArtifactContext with ResourcePairs
+      3. Assemble ArtifactContext with ResourcePairs
     """
     user_dept_ids = user_department_ids or []
     param_ids = parameter_ids or []
@@ -297,25 +265,29 @@ async def resolve_persona_context(
         f for f in flags_suggestions if getattr(f, "type", None) in PERSONA_FLAG_TYPES
     ]
 
-    return PersonaArtifactContext(
-        persona_id=persona_id,
+    return ArtifactContext(
+        artifact_id=persona_id,
         active=active,
         group_id=group_id,
         draft_version=draft_version,
-        personas_resource_ids=personas_resource_ids,
-        has_active_scenarios=len(active_scenario_ids) > 0,
-        names=ResourcePair(selected=names_selected, suggestions=names_suggestions),
-        descriptions=ResourcePair(selected=descriptions_selected, suggestions=descriptions_suggestions),
-        colors=ResourcePair(selected=colors_selected, suggestions=colors_suggestions),
-        icons=ResourcePair(selected=icons_selected, suggestions=icons_suggestions),
-        instructions=ResourcePair(selected=instructions_selected, suggestions=instructions_suggestions),
-        flags=ResourcePair(selected=flags_selected, suggestions=flags_suggestions_filtered),
-        departments=ResourcePair(selected=departments_selected, suggestions=departments_suggestions),
-        parameter_fields=ResourcePair(selected=parameter_fields_selected, suggestions=parameter_fields_suggestions),
-        examples=ResourcePair(selected=examples_selected, suggestions=examples_suggestions),
-        voices=ResourcePair(selected=voices_selected, suggestions=voices_suggestions),
-        parameters=ResourcePair(selected=parameters_selected, suggestions=parameters_suggestions),
-        fields=fields_catalog,
+        resources={
+            "names": ResourcePair(selected=names_selected, suggestions=names_suggestions),
+            "descriptions": ResourcePair(selected=descriptions_selected, suggestions=descriptions_suggestions),
+            "colors": ResourcePair(selected=colors_selected, suggestions=colors_suggestions),
+            "icons": ResourcePair(selected=icons_selected, suggestions=icons_suggestions),
+            "instructions": ResourcePair(selected=instructions_selected, suggestions=instructions_suggestions),
+            "flags": ResourcePair(selected=flags_selected, suggestions=flags_suggestions_filtered),
+            "departments": ResourcePair(selected=departments_selected, suggestions=departments_suggestions),
+            "parameter_fields": ResourcePair(selected=parameter_fields_selected, suggestions=parameter_fields_suggestions),
+            "examples": ResourcePair(selected=examples_selected, suggestions=examples_suggestions),
+            "voices": ResourcePair(selected=voices_selected, suggestions=voices_suggestions),
+            "parameters": ResourcePair(selected=parameters_selected, suggestions=parameters_suggestions),
+        },
+        entries={
+            "personas_resource_ids": personas_resource_ids,
+            "has_active_scenarios": len(active_scenario_ids) > 0,
+            "fields": fields_catalog,
+        },
     )
 
 

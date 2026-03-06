@@ -11,12 +11,11 @@ from uuid import uuid4
 import pytest
 
 from app.infra.persona_context import (
-    PersonaArtifactContext,
-    ResourcePair,
     resolve_persona_context,
     _merge_junction_ids,
     _MergedIds,
 )
+from app.infra.types import ArtifactContext, ResourcePair
 from app.routes.v5.tools.artifacts.persona.types import GetPersonasResponse
 from app.routes.v5.tools.entries.persona_drafts.types import GetPersonaDraftResponse
 
@@ -263,13 +262,13 @@ class TestResolvePersonaContextEmpty:
                 None, None, persona_id=None, group_id=group_id,
             )
 
-        assert result.persona_id is None
+        assert result.artifact_id is None
         assert result.group_id == group_id
-        assert result.names.selected == []
-        assert result.names.suggestions == []
+        assert result.resources["names"].selected == []
+        assert result.resources["names"].suggestions == []
         assert result.draft_version is None
-        assert result.personas_resource_ids == []
-        assert result.has_active_scenarios is False
+        assert result.entries["personas_resource_ids"] == []
+        assert result.entries["has_active_scenarios"] is False
 
     async def test_existing_persona_no_draft(self):
         """Fetch published artifact, no draft overlay — verify IDs flow to fetchers."""
@@ -300,8 +299,8 @@ class TestResolvePersonaContextEmpty:
         mock_search_names = m._mocks[f"{MODULE}.search_names"]
         assert mock_search_names.call_args.kwargs["exclude_ids"] == [name_id]
 
-        assert result.persona_id == persona_id
-        assert result.names.selected == [selected_name]
+        assert result.artifact_id == persona_id
+        assert result.resources["names"].selected == [selected_name]
         assert result.draft_version is None
         assert result.active is True
 
@@ -343,7 +342,7 @@ class TestResolvePersonaContextDraft:
         assert mock_drafts.call_args[0][1] == [draft_id]
 
         assert result.draft_version == 3
-        assert result.names.selected == [draft_name_obj]
+        assert result.resources["names"].selected == [draft_name_obj]
 
 
 @pytest.mark.asyncio
@@ -367,8 +366,8 @@ class TestResolvePersonaContextResources:
                 None, None, persona_id=persona_id, group_id=group_id,
             )
 
-        assert result.names.selected == [selected_obj]
-        assert result.names.suggestions == [suggestion_obj]
+        assert result.resources["names"].selected == [selected_obj]
+        assert result.resources["names"].suggestions == [suggestion_obj]
 
     async def test_all_resource_pairs_populated(self):
         """Every resource type returns a ResourcePair."""
@@ -385,12 +384,12 @@ class TestResolvePersonaContextResources:
             "voices", "parameters",
         ]
         for rname in resource_names:
-            pair = getattr(result, rname)
+            pair = result.resources[rname]
             assert isinstance(pair, ResourcePair), f"{rname} should be a ResourcePair"
             assert isinstance(pair.selected, list), f"{rname}.selected should be list"
             assert isinstance(pair.suggestions, list), f"{rname}.suggestions should be list"
 
-        assert isinstance(result.fields, list)
+        assert isinstance(result.entries["fields"], list)
 
     async def test_inactive_artifact(self):
         persona_id = uuid4()
@@ -425,8 +424,8 @@ class TestResolvePersonaContextResources:
                 None, None, persona_id=persona_id, group_id=group_id,
             )
 
-        assert len(result.flags.suggestions) == 1
-        assert result.flags.suggestions[0].type == "persona_active"
+        assert len(result.resources["flags"].suggestions) == 1
+        assert result.resources["flags"].suggestions[0].type == "persona_active"
 
     async def test_has_active_scenarios_true(self):
         """Persona with active scenarios sets has_active_scenarios=True."""
@@ -447,8 +446,8 @@ class TestResolvePersonaContextResources:
                 None, None, persona_id=persona_id, group_id=group_id,
             )
 
-        assert result.has_active_scenarios is True
-        assert result.personas_resource_ids == [personas_resource_id]
+        assert result.entries["has_active_scenarios"] is True
+        assert result.entries["personas_resource_ids"] == [personas_resource_id]
 
         # Verify search_scenarios called with the personas_resource_ids
         mock_scenarios = m._mocks[f"{MODULE}.search_scenarios"]
@@ -472,4 +471,4 @@ class TestResolvePersonaContextResources:
                 None, None, persona_id=persona_id, group_id=group_id,
             )
 
-        assert result.has_active_scenarios is False
+        assert result.entries["has_active_scenarios"] is False
