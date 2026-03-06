@@ -36,7 +36,7 @@ async def test_finds_created_entry(conn, profile_id):
     entry_id, message_id = await _setup(conn, profile_id)
     await refresh_messages_completions_internal(conn)
 
-    items = await search_messages_completions(conn, message_id=message_id)
+    items = await search_messages_completions(conn, message_ids=[message_id])
 
     ids = [item.id for item in items]
     assert entry_id in ids
@@ -46,7 +46,7 @@ async def test_filters_by_message_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_messages_completions_internal(conn)
 
-    items = await search_messages_completions(conn, message_id=nonexistent_id())
+    items = await search_messages_completions(conn, message_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -55,7 +55,7 @@ async def test_pagination_limit(conn, profile_id):
     entry_id, message_id = await _setup(conn, profile_id)
     await refresh_messages_completions_internal(conn)
 
-    items = await search_messages_completions(conn, message_id=message_id, limit=1)
+    items = await search_messages_completions(conn, message_ids=[message_id], limit=1)
 
     assert len(items) <= 1
 
@@ -73,7 +73,7 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     entry_id, message_id = await _setup(conn, profile_id)
 
     items = await search_messages_completions(
-        conn, message_id=message_id, bypass_mv=True
+        conn, message_ids=[message_id], bypass_mv=True
     )
 
     ids = [item.id for item in items]

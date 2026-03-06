@@ -18,7 +18,7 @@ async def test_search_finds_created(conn, profile_id):
     session = await _session(conn, profile_id)
     result = await create_personas(conn, session_id=session.id)
 
-    items = await search_personas(conn, session_id=session.id)
+    items = await search_personas(conn, session_ids=[session.id])
 
     ids = [item.id for item in items]
     assert result.id in ids
@@ -28,7 +28,7 @@ async def test_search_filters_by_session(conn, profile_id):
     session = await _session(conn, profile_id)
     await create_personas(conn, session_id=session.id)
 
-    items = await search_personas(conn, session_id=nonexistent_id())
+    items = await search_personas(conn, session_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -44,7 +44,7 @@ async def test_search_returns_connections(conn, profile_id):
         conn, session_id=session.id, persona_ids=[persona_id]
     )
 
-    items = await search_personas(conn, session_id=session.id)
+    items = await search_personas(conn, session_ids=[session.id])
 
     matched = [item for item in items if item.id == result.id]
     assert len(matched) == 1
@@ -56,6 +56,6 @@ async def test_search_pagination(conn, profile_id):
     await create_personas(conn, session_id=session.id)
     await create_personas(conn, session_id=session.id)
 
-    items = await search_personas(conn, session_id=session.id, limit=1)
+    items = await search_personas(conn, session_ids=[session.id], limit=1)
 
     assert len(items) == 1

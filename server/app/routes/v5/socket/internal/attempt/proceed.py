@@ -249,7 +249,7 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
                     raise ValueError("No practice link for this attempt")
                 practice_id = practice_entries[0].practice_id
                 parent_chat_links = await search_practice_chats(
-                    conn, practice_id=practice_id, limit=1000, bypass_mv=True
+                    conn, practice_ids=[practice_id], limit=1000, bypass_mv=True
                 )
             else:
                 home_entries = await search_attempt_homes(

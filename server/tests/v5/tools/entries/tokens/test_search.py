@@ -27,7 +27,7 @@ async def test_finds_created_token(conn, profile_id):
     result = await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
-    items = await search_tokens(conn, run_id=run.id)
+    items = await search_tokens(conn, run_ids=[run.id])
 
     ids = [item.id for item in items]
     assert result.id in ids
@@ -38,7 +38,7 @@ async def test_filters_by_run_id(conn, profile_id):
     await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
-    items = await search_tokens(conn, run_id=nonexistent_id())
+    items = await search_tokens(conn, run_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -48,7 +48,7 @@ async def test_filters_by_session_id(conn, profile_id):
     result = await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
-    items = await search_tokens(conn, session_id=session.id)
+    items = await search_tokens(conn, session_ids=[session.id])
 
     ids = [item.id for item in items]
     assert result.id in ids
@@ -59,7 +59,7 @@ async def test_filters_by_session_id_no_match(conn, profile_id):
     await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
-    items = await search_tokens(conn, session_id=nonexistent_id())
+    items = await search_tokens(conn, session_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -107,7 +107,7 @@ async def test_pagination_limit(conn, profile_id):
     await create_token(conn, run_id=run.id, session_id=session.id)
     await refresh_tokens(conn)
 
-    items = await search_tokens(conn, run_id=run.id, limit=1)
+    items = await search_tokens(conn, run_ids=[run.id], limit=1)
 
     assert len(items) == 1
 
@@ -126,7 +126,7 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     session, run = await _run(conn, profile_id)
     result = await create_token(conn, run_id=run.id, session_id=session.id)
 
-    items = await search_tokens(conn, run_id=run.id, bypass_mv=True)
+    items = await search_tokens(conn, run_ids=[run.id], bypass_mv=True)
 
     ids = [item.id for item in items]
     assert result.id in ids

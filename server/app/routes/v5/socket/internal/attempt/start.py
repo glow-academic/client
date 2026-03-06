@@ -133,7 +133,7 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 if is_practice:
                     chat_entries = await search_practice_chats(
                         conn,
-                        practice_id=payload.practice_id,
+                        practice_ids=[payload.practice_id],
                         limit=1000,
                         bypass_mv=True,
                     )
