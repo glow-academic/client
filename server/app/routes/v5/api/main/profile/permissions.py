@@ -194,6 +194,28 @@ def compute_departments_required() -> bool:
     return False
 
 
+def compute_show_roles() -> bool:
+    """Determine if roles picker should be shown."""
+    return True
+
+
+def compute_roles_required() -> bool:
+    """Determine if roles is required."""
+    return False
+
+
+def compute_role_options(user_role: str | None) -> list[str]:
+    """Compute which roles the user can assign, based on role hierarchy.
+
+    Superadmin can assign all roles, admin can assign admin and below,
+    others can assign instructional and below.
+    """
+    all_roles = ["superadmin", "admin", "instructional", "member", "guest", "custom"]
+    user_rank = ROLE_HIERARCHY.get(user_role or "", 0)
+
+    return [r for r in all_roles if ROLE_HIERARCHY.get(r, 0) <= user_rank]
+
+
 # ========== List Endpoint Permission Functions ==========
 
 
@@ -298,6 +320,7 @@ PROFILE_RESOURCES: set[str] = {
     "request_limits",
     "flags",
     "departments",
+    "roles",
 }
 
 # Multi-resource agent definitions for profile

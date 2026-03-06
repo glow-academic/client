@@ -213,7 +213,7 @@ class TestSavePersonaClientCreate:
         redis = AsyncMock()
 
         with (
-            patch(f"{MODULE}.resolve_profile_context", new_callable=AsyncMock, return_value=_profile()),
+            patch(f"{MODULE}.resolve_profile_identity_context", new_callable=AsyncMock, return_value=_profile()),
             patch(f"{MODULE}.create_persona_artifact", new_callable=AsyncMock, return_value=_create_result(persona_id)),
             patch(f"{MODULE}._create_denormalized_snapshot", new_callable=AsyncMock, return_value=snapshot_id),
             patch(f"{MODULE}.invalidate_tags", new_callable=AsyncMock),
@@ -233,7 +233,7 @@ class TestSavePersonaClientCreate:
         redis = AsyncMock()
 
         with (
-            patch(f"{MODULE}.resolve_profile_context", new_callable=AsyncMock, return_value=_profile(role="student")),
+            patch(f"{MODULE}.resolve_profile_identity_context", new_callable=AsyncMock, return_value=_profile(role="student")),
             pytest.raises(HTTPException) as exc_info,
         ):
             await save_persona_client(conn, redis, profile_id=uuid4(), items=[item])
@@ -261,7 +261,7 @@ class TestSavePersonaClientUpdate:
         redis = AsyncMock()
 
         with (
-            patch(f"{MODULE}.resolve_profile_context", new_callable=AsyncMock, return_value=_profile()),
+            patch(f"{MODULE}.resolve_profile_identity_context", new_callable=AsyncMock, return_value=_profile()),
             patch(f"{MODULE}.resolve_persona_permissions_context", new_callable=AsyncMock, return_value=_perms()),
             patch(f"{MODULE}.update_persona_artifact", new_callable=AsyncMock, return_value=_create_result(persona_id)),
             patch(f"{MODULE}._create_denormalized_snapshot", new_callable=AsyncMock, return_value=snapshot_id),
@@ -283,7 +283,7 @@ class TestSavePersonaClientUpdate:
         redis = AsyncMock()
 
         with (
-            patch(f"{MODULE}.resolve_profile_context", new_callable=AsyncMock, return_value=_profile()),
+            patch(f"{MODULE}.resolve_profile_identity_context", new_callable=AsyncMock, return_value=_profile()),
             patch(f"{MODULE}.resolve_persona_permissions_context", new_callable=AsyncMock, return_value=_perms(exists=False)),
             pytest.raises(HTTPException) as exc_info,
         ):
@@ -298,7 +298,7 @@ class TestSavePersonaClientUpdate:
         redis = AsyncMock()
 
         with (
-            patch(f"{MODULE}.resolve_profile_context", new_callable=AsyncMock, return_value=_profile(role="admin")),
+            patch(f"{MODULE}.resolve_profile_identity_context", new_callable=AsyncMock, return_value=_profile(role="admin")),
             patch(f"{MODULE}.resolve_persona_permissions_context", new_callable=AsyncMock, return_value=_perms(active_scenario_count=1)),
             pytest.raises(HTTPException) as exc_info,
         ):
@@ -316,7 +316,7 @@ class TestSavePersonaClientValidation:
         redis = AsyncMock()
 
         with (
-            patch(f"{MODULE}.resolve_profile_context", new_callable=AsyncMock, return_value=_profile()),
+            patch(f"{MODULE}.resolve_profile_identity_context", new_callable=AsyncMock, return_value=_profile()),
         ):
             result = await save_persona_client(
                 conn, redis, profile_id=uuid4(), items=[item],
@@ -334,7 +334,7 @@ class TestSavePersonaClientValidation:
         redis = AsyncMock()
 
         with (
-            patch(f"{MODULE}.resolve_profile_context", new_callable=AsyncMock, return_value=None),
+            patch(f"{MODULE}.resolve_profile_identity_context", new_callable=AsyncMock, return_value=None),
             pytest.raises(HTTPException) as exc_info,
         ):
             await save_persona_client(conn, redis, profile_id=uuid4(), items=[])

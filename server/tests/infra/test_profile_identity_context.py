@@ -1,6 +1,6 @@
-"""Tests for infra.profile_context — profile context resolution.
+"""Tests for infra.profile_identity_context — profile identity context resolution.
 
-resolve_profile_context is tested with mocked black-box resource fetchers.
+resolve_profile_identity_context is tested with mocked black-box resource fetchers.
 """
 
 from datetime import datetime, UTC
@@ -9,7 +9,7 @@ from uuid import uuid4
 
 import pytest
 
-from app.infra.profile_context import ProfileContext, resolve_profile_context
+from app.infra.profile_identity_context import ProfileIdentityContext, resolve_profile_identity_context
 from app.routes.v5.tools.artifacts.profile.types import GetProfilesResponse
 from app.routes.v5.tools.resources.departments.types import GetDepartmentResponse
 from app.routes.v5.tools.resources.emails.types import GetEmailResponse
@@ -19,7 +19,7 @@ from app.routes.v5.tools.resources.roles.types import GetRoleResponse
 
 
 NOW = datetime.now(UTC)
-MODULE = "app.infra.profile_context"
+MODULE = "app.infra.profile_identity_context"
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -148,19 +148,19 @@ def _profile(
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# resolve_profile_context
+# resolve_profile_identity_context
 # ═══════════════════════════════════════════════════════════════════════════
 
 
 @pytest.mark.asyncio
-class TestResolveProfileContextEmpty:
+class TestResolveProfileIdentityContextEmpty:
     async def test_no_profile_returns_none(self):
         with patch(
             f"{MODULE}.get_profile_artifacts",
             new_callable=AsyncMock,
             return_value=[],
         ):
-            result = await resolve_profile_context(None, uuid4(), None)
+            result = await resolve_profile_identity_context(None, uuid4(), None)
         assert result is None
 
     async def test_no_profiles_junction_returns_none(self):
@@ -170,12 +170,12 @@ class TestResolveProfileContextEmpty:
             new_callable=AsyncMock,
             return_value=[artifact],
         ):
-            result = await resolve_profile_context(None, artifact.id, None)
+            result = await resolve_profile_identity_context(None, artifact.id, None)
         assert result is None
 
 
 @pytest.mark.asyncio
-class TestResolveProfileContextFull:
+class TestResolveProfileIdentityContextFull:
     async def test_full_hydration_and_call_args(self):
         """Verify IDs flow correctly: artifact → parallel fetchers → assembly."""
         profiles_id = uuid4()
@@ -236,7 +236,7 @@ class TestResolveProfileContextFull:
                 f"{MODULE}.get_profiles", new_callable=AsyncMock, return_value=[profile]
             ) as mock_profiles,
         ):
-            result = await resolve_profile_context(None, artifact.id, None)
+            result = await resolve_profile_identity_context(None, artifact.id, None)
 
         # Verify correct IDs flowed to each fetcher
         assert mock_artifacts.call_args[0][1] == [artifact.id]
@@ -312,7 +312,7 @@ class TestResolveProfileContextFull:
                 return_value=[_profile(profile_id=profiles_id)],
             ),
         ):
-            result = await resolve_profile_context(None, artifact.id, None)
+            result = await resolve_profile_identity_context(None, artifact.id, None)
 
         assert result is not None
         assert result.primary_department_id == dept_primary_id
@@ -367,7 +367,7 @@ class TestResolveProfileContextFull:
                 return_value=[_profile(profile_id=profiles_id)],
             ),
         ):
-            result = await resolve_profile_context(None, artifact.id, None)
+            result = await resolve_profile_identity_context(None, artifact.id, None)
 
         assert result is not None
         assert result.primary_email == "primary@org.com"
@@ -409,7 +409,7 @@ class TestResolveProfileContextFull:
                 return_value=[_profile(profile_id=profiles_id)],
             ),
         ):
-            result = await resolve_profile_context(None, artifact.id, None)
+            result = await resolve_profile_identity_context(None, artifact.id, None)
 
         assert result is not None
         assert result.primary_department_id is None
@@ -447,7 +447,7 @@ class TestResolveProfileContextFull:
                 return_value=[_profile(profile_id=profiles_id)],
             ),
         ):
-            result = await resolve_profile_context(None, artifact.id, None)
+            result = await resolve_profile_identity_context(None, artifact.id, None)
 
         assert result is not None
         assert result.is_active is False
@@ -479,7 +479,7 @@ class TestResolveProfileContextFull:
                 return_value=[_profile(profile_id=profiles_id)],
             ),
         ):
-            result = await resolve_profile_context(None, artifact.id, None)
+            result = await resolve_profile_identity_context(None, artifact.id, None)
 
         assert result is not None
         assert result.role == ""
@@ -524,7 +524,7 @@ class TestResolveProfileContextFull:
                 return_value=[_profile(profile_id=profiles_id)],
             ),
         ):
-            result = await resolve_profile_context(None, artifact.id, None)
+            result = await resolve_profile_identity_context(None, artifact.id, None)
 
         assert result is not None
         assert result.primary_department_id == dept_id
@@ -562,7 +562,7 @@ class TestResolveProfileContextFull:
                 return_value=[_profile(profile_id=profiles_id, requests_per_day=50)],
             ),
         ):
-            result = await resolve_profile_context(None, artifact.id, None)
+            result = await resolve_profile_identity_context(None, artifact.id, None)
 
         assert result is not None
         assert result.requests_per_day == 50
@@ -599,7 +599,7 @@ class TestResolveProfileContextFull:
                 return_value=[_profile(profile_id=profiles_id, requests_per_day=None)],
             ),
         ):
-            result = await resolve_profile_context(None, artifact.id, None)
+            result = await resolve_profile_identity_context(None, artifact.id, None)
 
         assert result is not None
         assert result.requests_per_day is None

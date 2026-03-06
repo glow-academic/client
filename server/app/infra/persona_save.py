@@ -1,7 +1,7 @@
 """Persona save logic — composable infra architecture.
 
 Core save function that composes existing black-box tools:
-  1. resolve_profile_context — profile (role, departments)
+  1. resolve_profile_identity_context — profile (role, departments)
   2. resolve_persona_permissions_context — access check
   3. Resource create/search tools — raw value → ID resolution
   4. Artifact create/update tools — junction writes
@@ -19,7 +19,7 @@ from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.persona_permissions_context import resolve_persona_permissions_context
-from app.infra.profile_context import resolve_profile_context
+from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tools
 from app.routes.v5.tools.artifacts.persona.create import (
@@ -325,7 +325,7 @@ async def save_persona_client(
     """Persona save using composable infra functions.
 
     Flow:
-      1. resolve_profile_context → role, department_ids
+      1. resolve_profile_identity_context → role, department_ids
       2. Per-item permission check (fail fast)
       3. Per-item value resolution (raw → ID)
       4. Single transaction: artifact create/update + denormalized snapshot
@@ -342,7 +342,7 @@ async def save_persona_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(conn, profile_id, redis)
 
     if profile is None:
         raise HTTPException(

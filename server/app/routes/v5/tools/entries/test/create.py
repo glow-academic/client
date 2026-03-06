@@ -9,7 +9,7 @@ from app.routes.v5.tools.entries.test.types import CreateTestResponse
 
 async def create_test(
     conn: asyncpg.Connection,
-    call_id: UUID,
+    call_id: UUID | None = None,
     profiles_id: UUID | None = None,
     name: str = "",
     description: str = "",

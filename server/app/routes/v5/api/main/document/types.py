@@ -14,16 +14,91 @@ from pydantic import BaseModel
 from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.routes.v5.tools.resources.images.types import GetImageResponse
-from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetDocumentDraftsEntriesV4Item,
-    QGetNamesV4Item,
-    QGetParameterFieldsV4Item,
-    QGetTextsV4Item,
-    QGetUploadsV4Item,
-)
+
+
+# ---------------------------------------------------------------------------
+# Handcrafted resource types (replaces Q types from app.sql.types)
+# ---------------------------------------------------------------------------
+
+
+class DocumentNameResource(BaseModel):
+    """Name resource for document."""
+
+    id: UUID | None = None
+    name: str | None = None
+    generated: bool | None = None
+
+
+class DocumentDescriptionResource(BaseModel):
+    """Description resource for document."""
+
+    id: UUID | None = None
+    description: str | None = None
+    generated: bool | None = None
+
+
+class DocumentDepartmentResource(BaseModel):
+    """Department resource for document."""
+
+    id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    generated: bool | None = None
+
+
+class DocumentParameterFieldResource(BaseModel):
+    """Parameter field resource for document."""
+
+    id: UUID | None = None
+    field_id: UUID | None = None
+    parameter_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    generated: bool | None = None
+
+
+class DocumentFileResource(BaseModel):
+    """File (upload) resource for document."""
+
+    id: UUID | None = None
+    generated: bool | None = None
+
+
+class DocumentImageResource(BaseModel):
+    """Image resource for document."""
+
+    id: UUID | None = None
+    generated: bool | None = None
+
+
+class DocumentTextResource(BaseModel):
+    """Text resource for document."""
+
+    id: UUID | None = None
+    generated: bool | None = None
+
+
+class DocumentDraftEntry(BaseModel):
+    """Draft entry for document."""
+
+    id: UUID | None = None
+    version: int | None = None
+    created_at: datetime | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
+    active: bool | None = None
+    group_id: UUID | None = None
+    session_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    description_ids: list[UUID] | None = None
+    file_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    name_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
+    text_ids: list[UUID] | None = None
 
 # ========== GET Endpoint Types ==========
 
@@ -49,13 +124,13 @@ class GetDocumentApiRequest(BaseModel):
 
 
 class DocumentNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: DocumentNameResource | None = None
+    resources: list[DocumentNameResource] | None = None
 
 
 class DocumentDescriptionSection(BaseResourceSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
+    resource: DocumentDescriptionResource | None = None
+    resources: list[DocumentDescriptionResource] | None = None
 
 
 class DocumentFlagSection(BaseResourceSection):
@@ -64,28 +139,28 @@ class DocumentFlagSection(BaseResourceSection):
 
 
 class DocumentDepartmentSection(BaseResourceSection):
-    current: list[QGetDepartmentsV4Item] | None = None
-    resources: list[QGetDepartmentsV4Item] | None = None
+    current: list[DocumentDepartmentResource] | None = None
+    resources: list[DocumentDepartmentResource] | None = None
 
 
 class DocumentFieldSection(BaseResourceSection):
-    current: list[QGetParameterFieldsV4Item] | None = None
-    resources: list[QGetParameterFieldsV4Item] | None = None
+    current: list[DocumentParameterFieldResource] | None = None
+    resources: list[DocumentParameterFieldResource] | None = None
 
 
 class DocumentUploadSection(BaseResourceSection):
-    current: list[QGetUploadsV4Item] | None = None
-    resources: list[QGetUploadsV4Item] | None = None
+    current: list[DocumentFileResource] | None = None
+    resources: list[DocumentFileResource] | None = None
 
 
 class DocumentImageSection(BaseResourceSection):
-    current: list[GetImageResponse] | None = None
-    resources: list[GetImageResponse] | None = None
+    current: list[DocumentImageResource] | None = None
+    resources: list[DocumentImageResource] | None = None
 
 
 class DocumentTextSection(BaseResourceSection):
-    current: list[QGetTextsV4Item] | None = None
-    resources: list[QGetTextsV4Item] | None = None
+    current: list[DocumentTextResource] | None = None
+    resources: list[DocumentTextResource] | None = None
 
 
 class GetDocumentApiResponse(BaseModel):
@@ -140,21 +215,21 @@ class DocumentResources(BaseModel):
 class DocumentWebsocketEntries(BaseModel):
     """Optional websocket entries payload."""
 
-    draft_document: QGetDocumentDraftsEntriesV4Item | None = None
+    draft_document: DocumentDraftEntry | None = None
     runs: GetRunListViewResponse | None = None
 
 
 class DocumentWebsocketResources(BaseModel):
     """Hydrated websocket resources: selected document + config resources."""
 
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
+    names: list[DocumentNameResource] | None = None
+    descriptions: list[DocumentDescriptionResource] | None = None
     flags: list[DocumentFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    fields: list[QGetParameterFieldsV4Item] | None = None
-    uploads: list[QGetUploadsV4Item] | None = None
-    images: list[GetImageResponse] | None = None
-    texts: list[QGetTextsV4Item] | None = None
+    departments: list[DocumentDepartmentResource] | None = None
+    fields: list[DocumentParameterFieldResource] | None = None
+    uploads: list[DocumentFileResource] | None = None
+    images: list[DocumentImageResource] | None = None
+    texts: list[DocumentTextResource] | None = None
 
 
 class GetDocumentWebsocketResponse(InternalResponseBase):

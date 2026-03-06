@@ -60,7 +60,7 @@ def _patch(target, return_value):
 @pytest.mark.asyncio
 class TestResolveCommonContextEmpty:
     async def test_profile_not_found_returns_none(self):
-        with _patch("resolve_profile_context", None) as mock_profile:
+        with _patch("resolve_profile_identity_context", None) as mock_profile:
             result = await resolve_common_context(
                 None,
                 None,
@@ -77,7 +77,7 @@ class TestResolveCommonContextEmpty:
         runs = FakeRunsContext()
 
         with (
-            _patch("resolve_profile_context", profile),
+            _patch("resolve_profile_identity_context", profile),
             _patch("resolve_tool_graph", FakeToolGraph()) as mock_tg,
             _patch("resolve_runs_context", runs),
         ):
@@ -100,7 +100,7 @@ class TestResolveCommonContextCallArgs:
         profile = FakeProfileContext(settings_id=uuid4())
 
         with (
-            _patch("resolve_profile_context", profile) as mock_profile,
+            _patch("resolve_profile_identity_context", profile) as mock_profile,
             _patch("resolve_tool_graph", FakeToolGraph()),
             _patch("resolve_runs_context", FakeRunsContext()),
         ):
@@ -119,7 +119,7 @@ class TestResolveCommonContextCallArgs:
         profile = FakeProfileContext(settings_id=settings_id)
 
         with (
-            _patch("resolve_profile_context", profile),
+            _patch("resolve_profile_identity_context", profile),
             _patch("resolve_tool_graph", FakeToolGraph()) as mock_tg,
             _patch("resolve_runs_context", FakeRunsContext()),
         ):
@@ -137,7 +137,7 @@ class TestResolveCommonContextCallArgs:
         profile = FakeProfileContext(settings_id=uuid4())
 
         with (
-            _patch("resolve_profile_context", profile),
+            _patch("resolve_profile_identity_context", profile),
             _patch("resolve_tool_graph", FakeToolGraph()),
             _patch("resolve_runs_context", FakeRunsContext()) as mock_runs,
         ):
@@ -155,7 +155,7 @@ class TestResolveCommonContextCallArgs:
         profile = FakeProfileContext(settings_id=uuid4())
 
         with (
-            _patch("resolve_profile_context", profile),
+            _patch("resolve_profile_identity_context", profile),
             _patch("resolve_tool_graph", FakeToolGraph()),
             _patch("resolve_runs_context", FakeRunsContext()) as mock_runs,
         ):
@@ -175,7 +175,7 @@ class TestResolveCommonContextCallArgs:
         runs = FakeRunsContext()
 
         with (
-            _patch("resolve_profile_context", profile),
+            _patch("resolve_profile_identity_context", profile),
             _patch("resolve_tool_graph", tool_graph),
             _patch("resolve_runs_context", runs),
         ):
@@ -195,7 +195,7 @@ class TestResolveCommonContextCallArgs:
         profile = FakeProfileContext(settings_id=uuid4())
 
         with (
-            _patch("resolve_profile_context", profile) as mock_profile,
+            _patch("resolve_profile_identity_context", profile) as mock_profile,
             _patch("resolve_tool_graph", FakeToolGraph()) as mock_tg,
             _patch("resolve_runs_context", FakeRunsContext()),
         ):

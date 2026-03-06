@@ -18,7 +18,7 @@ import uuid
 from typing import Any
 
 from app.infra.globals import get_internal_sio, get_redis_client, sio
-from app.infra.profile_context import resolve_profile_context
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
@@ -80,7 +80,7 @@ async def generate_new(sid: str, data: dict[str, Any]) -> None:
         profile_id = uuid.UUID(profile_id_str)
         redis = get_redis_client()
         async with get_db_connection() as conn:
-            profile_ctx = await resolve_profile_context(conn, profile_id, redis)
+            profile_ctx = await resolve_profile_identity_context(conn, profile_id, redis)
 
         if not profile_ctx:
             await _emit_error(sid, "Profile context not found. Please reconnect.", artifact_type)

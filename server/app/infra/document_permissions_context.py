@@ -1,10 +1,10 @@
 """Resolve document permissions context — lightweight access + edit check.
 
 Given a document_id, fetches just the data needed for permission checks:
-  1. get_documents → department_ids
-  2. scenario_documents_junction count → active_scenario_count
+  1. get_documents → department_ids + document_ids (resource IDs)
+  2. search_scenarios → any active scenarios using this document?
 
-Composes existing black-box fetchers — no raw SQL (except junction count).
+Composes existing black-box fetchers — no raw SQL.
 """
 
 from __future__ import annotations
@@ -17,6 +17,7 @@ import asyncpg
 from app.routes.v5.tools.artifacts.document.get import (
     get_documents as get_document_artifacts,
 )
+from app.routes.v5.tools.artifacts.scenario.search import search_scenarios
 
 
 @dataclass(frozen=True)
@@ -34,14 +35,15 @@ async def resolve_document_permissions_context(
 ) -> DocumentPermissionsContext:
     """Fetch just what's needed for document permission checks.
 
-    Two queries:
-      1. get_document_artifacts → department_ids
-      2. scenario_documents_junction → active_scenario_count
+    Two black-box tool calls:
+      1. get_document_artifacts → department_ids + document_ids (resource IDs)
+      2. search_scenarios → any active scenarios using this document?
     """
     artifacts = await get_document_artifacts(
         conn,
         [document_id],
         departments=True,
+        documents=True,
     )
 
     if not artifacts:
@@ -53,19 +55,21 @@ async def resolve_document_permissions_context(
 
     artifact = artifacts[0]
     department_ids = list(artifact.department_ids or [])
+    document_resource_ids = list(artifact.document_ids or [])
 
-    # Count active scenarios referencing this document
-    active_scenario_count = await conn.fetchval(
-        """
-        SELECT COUNT(*)::int
-        FROM scenario_documents_junction
-        WHERE documents_id = $1 AND active = true
-        """,
-        document_id,
+    active_scenario_ids = (
+        await search_scenarios(
+            conn,
+            document_ids=document_resource_ids,
+            active_only=True,
+            limit_count=1,
+        )
+        if document_resource_ids
+        else []
     )
 
     return DocumentPermissionsContext(
         exists=True,
         department_ids=department_ids,
-        active_scenario_count=active_scenario_count or 0,
+        active_scenario_count=len(active_scenario_ids),
     )

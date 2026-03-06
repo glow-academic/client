@@ -18,6 +18,7 @@ async def search_scenarios(
     *,
     search: str | None = None,
     department_ids: list[UUID] | None = None,
+    document_ids: list[UUID] | None = None,
     persona_ids: list[UUID] | None = None,
     simulation_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
@@ -64,6 +65,18 @@ async def search_scenarios(
             owner_col=OWNER_COL,
             resource_col="departments_id",
             ids=department_ids,
+        )
+
+    # document_ids are documents_resource IDs — direct junction lookup
+    if document_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="scenario_documents_junction",
+            owner_col=OWNER_COL,
+            resource_col="documents_id",
+            ids=document_ids,
         )
 
     # persona_ids are personas_resource IDs — direct junction lookup

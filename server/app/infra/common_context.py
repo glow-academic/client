@@ -1,7 +1,7 @@
 """Resolve common context — profile + tool graph + runs.
 
 Central entry point for any artifact GET. Given a profile_id, resolves:
-  1. ProfileContext (sequential — needed for settings_id + department_ids)
+  1. ProfileIdentityContext (sequential — needed for settings_id + department_ids)
   2. In parallel: SettingsToolGraph + RunsContext
 
 Composes existing infra functions — no raw SQL.
@@ -16,7 +16,7 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.profile_context import ProfileContext, resolve_profile_context
+from app.infra.profile_identity_context import ProfileIdentityContext, resolve_profile_identity_context
 from app.infra.runs_context import RunsContext, resolve_runs_context
 from app.infra.tool_graph import SettingsToolGraph, resolve_tool_graph
 
@@ -25,7 +25,7 @@ from app.infra.tool_graph import SettingsToolGraph, resolve_tool_graph
 class CommonContext:
     """Shared context for any artifact GET — profile, tools, and runs."""
 
-    profile: ProfileContext
+    profile: ProfileIdentityContext
     tool_graph: SettingsToolGraph
     runs: RunsContext
 
@@ -35,14 +35,14 @@ async def resolve_common_context(
     redis: Redis,
     *,
     profile_id: UUID,
-    profile: ProfileContext | None = None,
+    profile: ProfileIdentityContext | None = None,
     group_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> CommonContext | None:
     """Resolve common context for any artifact GET.
 
     Steps:
-      1. resolve_profile_context — sequential (need settings_id for step 2)
+      1. resolve_profile_identity_context — sequential (need settings_id for step 2)
          Skipped if ``profile`` is already provided (pre-resolved at boundary).
       2. In parallel:
          a. resolve_tool_graph(settings_id)
@@ -52,7 +52,7 @@ async def resolve_common_context(
     """
     # Step 1: profile (skip if pre-resolved)
     if profile is None:
-        profile = await resolve_profile_context(conn, profile_id, redis, bypass_cache)
+        profile = await resolve_profile_identity_context(conn, profile_id, redis, bypass_cache)
     if profile is None:
         return None
 

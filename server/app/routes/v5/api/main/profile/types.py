@@ -6,16 +6,60 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from datetime import datetime
+
 from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetEmailsV4Item,
-    QGetNamesV4Item,
-    QGetProfileDraftsEntriesV4Item,
-    QGetRequestLimitsV4Item,
-)
+
+
+# ---------------------------------------------------------------------------
+# Handcrafted resource types (replaces Q types from app.sql.types)
+# ---------------------------------------------------------------------------
+
+
+class ProfileNameResource(BaseModel):
+    """Name resource for profile."""
+
+    id: UUID | None = None
+    name: str | None = None
+    generated: bool | None = None
+
+
+class ProfileEmailResource(BaseModel):
+    """Email resource for profile."""
+
+    id: UUID | None = None
+    email: str | None = None
+    generated: bool | None = None
+
+
+class ProfileRequestLimitResource(BaseModel):
+    """Request limit resource for profile."""
+
+    id: UUID | None = None
+    requests_per_day: int | None = None
+    generated: bool | None = None
+
+
+class ProfileDepartmentResource(BaseModel):
+    """Department resource for profile."""
+
+    id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    generated: bool | None = None
+
+
+class ProfileRoleResource(BaseModel):
+    """Role resource for profile."""
+
+    id: UUID | None = None
+    role: str | None = None
+    name: str | None = None
+    description: str | None = None
+    icon_value: str | None = None
+    color_hex: str | None = None
 
 
 class ProfileFlagConfig(BaseModel):
@@ -31,14 +75,38 @@ class ProfileFlagConfig(BaseModel):
     generated: bool | None = None
 
 
+class ProfileDraftEntry(BaseModel):
+    """Draft entry for profile."""
+
+    id: UUID | None = None
+    version: int | None = None
+    created_at: datetime | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
+    active: bool | None = None
+    group_id: UUID | None = None
+    session_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    email_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = None
+    name_ids: list[UUID] | None = None
+    request_limit_ids: list[UUID] | None = None
+    role_ids: list[UUID] | None = None
+
+
+# ---------------------------------------------------------------------------
+# Section types
+# ---------------------------------------------------------------------------
+
+
 class ProfileNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: ProfileNameResource | None = None
+    resources: list[ProfileNameResource] | None = None
 
 
 class ProfileRequestLimitSection(BaseResourceSection):
-    resource: QGetRequestLimitsV4Item | None = None
-    resources: list[QGetRequestLimitsV4Item] | None = None
+    resource: ProfileRequestLimitResource | None = None
+    resources: list[ProfileRequestLimitResource] | None = None
 
 
 class ProfileFlagSection(BaseResourceSection):
@@ -47,23 +115,23 @@ class ProfileFlagSection(BaseResourceSection):
 
 
 class ProfileEmailSection(BaseResourceSection):
-    current: list[QGetEmailsV4Item] | None = None
-    resources: list[QGetEmailsV4Item] | None = None
+    current: list[ProfileEmailResource] | None = None
+    resources: list[ProfileEmailResource] | None = None
 
 
 class ProfileDepartmentSection(BaseResourceSection):
-    current: list[QGetDepartmentsV4Item] | None = None
-    resources: list[QGetDepartmentsV4Item] | None = None
+    current: list[ProfileDepartmentResource] | None = None
+    resources: list[ProfileDepartmentResource] | None = None
 
 
-class ProfileRoleResource(BaseModel):
-    """Role resource for profile."""
+class ProfileRoleSection(BaseResourceSection):
+    current: list[ProfileRoleResource] | None = None
+    resources: list[ProfileRoleResource] | None = None
 
-    role: str | None = None
-    name: str | None = None
-    description: str | None = None
-    icon_value: str | None = None
-    color_hex: str | None = None
+
+# ---------------------------------------------------------------------------
+# GET endpoint types
+# ---------------------------------------------------------------------------
 
 
 class GetProfileApiRequest(BaseModel):
@@ -83,7 +151,6 @@ class GetProfileApiResponse(BaseModel):
 
     role: str | None = None
     role_options: list[str] | None = None
-    roles: list[ProfileRoleResource] | None = None
 
     basic_show_ai_generate: bool | None = None
     general_show_ai_generate: bool | None = None
@@ -93,19 +160,25 @@ class GetProfileApiResponse(BaseModel):
     request_limits: ProfileRequestLimitSection | None = None
     flags: ProfileFlagSection | None = None
     departments: ProfileDepartmentSection | None = None
+    roles: ProfileRoleSection | None = None
+
+
+# ---------------------------------------------------------------------------
+# Websocket types
+# ---------------------------------------------------------------------------
 
 
 class ProfileWebsocketEntries(BaseModel):
-    draft_profile: QGetProfileDraftsEntriesV4Item | None = None
+    draft_profile: ProfileDraftEntry | None = None
     runs: GetRunListViewResponse | None = None
 
 
 class ProfileWebsocketResources(BaseModel):
-    names: list[QGetNamesV4Item] | None = None
-    emails: list[QGetEmailsV4Item] | None = None
-    request_limits: list[QGetRequestLimitsV4Item] | None = None
+    names: list[ProfileNameResource] | None = None
+    emails: list[ProfileEmailResource] | None = None
+    request_limits: list[ProfileRequestLimitResource] | None = None
     flags: list[ProfileFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
+    departments: list[ProfileDepartmentResource] | None = None
 
 
 class GetProfileWebsocketResponse(InternalResponseBase):
