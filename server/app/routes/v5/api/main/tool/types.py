@@ -2,26 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetArgPositionsV4Item,
-    QGetArgsOutputsV4Item,
-    QGetArgsV4Item,
-    QGetDescriptionsV4Item,
-    QGetModelsV4Item,
-    QGetNamesV4Item,
-    QGetProvidersV4Item,
-    QGetToolDraftsEntriesV4Item,
-)
 
 
 class ToolFlagConfig(BaseModel):
@@ -38,13 +24,13 @@ class ToolFlagConfig(BaseModel):
 
 
 class ToolNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: object | None = None
+    resources: list | None = None
 
 
 class ToolDescriptionSection(BaseResourceSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
+    resource: object | None = None
+    resources: list | None = None
 
 
 class ToolFlagSection(BaseResourceSection):
@@ -53,25 +39,24 @@ class ToolFlagSection(BaseResourceSection):
 
 
 class ToolArgSection(BaseResourceSection):
-    current: list[QGetArgsV4Item] | None = None
-    resources: list[QGetArgsV4Item] | None = None
+    current: list | None = None
+    resources: list | None = None
 
 
 class ToolArgOutputSection(BaseResourceSection):
-    current: list[QGetArgsOutputsV4Item] | None = None
-    resources: list[QGetArgsOutputsV4Item] | None = None
+    current: list | None = None
+    resources: list | None = None
 
 
 class ToolArgPositionSection(BaseResourceSection):
-    current: list[QGetArgPositionsV4Item] | None = None
-    resources: list[QGetArgPositionsV4Item] | None = None
+    current: list | None = None
+    resources: list | None = None
 
 
 class GetToolApiRequest(BaseModel):
     tool_id: UUID | None = None
     draft_id: UUID | None = None
-    # Optional group_id from layout context (avoids server-side creation)
-    group_id: UUID | None = None
+    group_id: UUID
 
 
 class GetToolApiResponse(BaseModel):
@@ -93,63 +78,6 @@ class GetToolApiResponse(BaseModel):
     args: ToolArgSection | None = None
     arg_positions: ToolArgPositionSection | None = None
     args_outputs: ToolArgOutputSection | None = None
-
-
-class ToolWebsocketEntries(BaseModel):
-    draft_tool: QGetToolDraftsEntriesV4Item | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class ToolWebsocketResources(BaseModel):
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    flags: list[ToolFlagConfig] | None = None
-    args: list[QGetArgsV4Item] | None = None
-    arg_positions: list[QGetArgPositionsV4Item] | None = None
-    args_outputs: list[QGetArgsOutputsV4Item] | None = None
-
-
-class GetToolWebsocketResponse(InternalResponseBase):
-    entries: ToolWebsocketEntries | None = None
-    resources: ToolWebsocketResources
-
-
-class ToolResourceBucket(BaseModel):
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    args: list[QGetArgsV4Item] | None = None
-    arg_positions: list[QGetArgPositionsV4Item] | None = None
-    args_outputs: list[QGetArgsOutputsV4Item] | None = None
-    flags: list[ToolFlagConfig] | None = None
-
-
-class ToolResources(BaseModel):
-    resources: ToolResourceBucket | None = None
-    current: ToolResourceBucket | None = None
-
-
-@dataclass
-class ToolInternalData:
-    actor_name: str | None
-    tool_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
-
-    agent_ids: dict[str, UUID | None]
-    show_flags_map: dict[str, bool]
-    required_flags_map: dict[str, bool]
-    suggestions_map: dict[str, list[UUID]]
-    show_ai_generate_map: dict[str, bool]
-
-    resources_payload: ToolResources
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
-
-    config_agent_resources: list[QGetAgentsV4Item] | None
-    config_model_resources: list[QGetModelsV4Item] | None
-    config_provider_resources: list[QGetProvidersV4Item] | None
 
 
 class ListToolApiTool(BaseModel):

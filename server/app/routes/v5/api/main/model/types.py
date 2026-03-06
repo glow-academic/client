@@ -2,7 +2,7 @@
 
 Section-first API following the gold-standard pattern (REFERENCE.md).
 Resources: names, descriptions, values, providers, flags, departments,
-modalities, temperature_levels, reasoning_levels, qualities, voices.
+modalities, temperature_levels, pricing, reasoning_levels, qualities, voices.
 """
 
 from __future__ import annotations
@@ -11,25 +11,9 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetModalitiesV4Item,
-    QGetModelDraftsEntriesV4Item,
-    QGetNamesV4Item,
-    QGetPricingV4Item,
-    QGetProvidersV4Item,
-    QGetQualitiesV4Item,
-    QGetReasoningLevelsV4Item,
-    QGetTemperatureLevelsV4Item,
-    QGetValuesV4Item,
-    QGetVoicesV4Item,
-)
 
 # =============================================================================
 # Flag Config
@@ -50,115 +34,6 @@ class ModelFlagConfig(BaseModel):
 
 
 # =============================================================================
-# Access Check Types (Query 1) - handcrafted
-# =============================================================================
-
-
-class GetModelAccessSqlParams(BaseModel):
-    """Parameters for model access check query."""
-
-    profile_id: UUID
-    model_id: UUID | None = None
-    draft_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.profile_id, self.model_id, self.draft_id)
-
-
-class GetModelAccessSqlRow(BaseModel):
-    """Row returned from model access check query."""
-
-    actor_name: str | None = None
-    model_exists: bool | None = None
-    draft_version: int | None = None
-    group_id: UUID | None = None
-    user_role: str | None = None
-    user_department_ids: list[UUID] | None = None
-    model_department_ids: list[UUID] | None = None
-    active_persona_count: int | None = None
-
-
-# =============================================================================
-# ID Fetching Types (Query 2) - handcrafted
-# =============================================================================
-
-
-class GetModelIdsSqlParams(BaseModel):
-    """Parameters for model ID fetching query."""
-
-    profile_id: UUID
-    model_id: UUID | None = None
-    draft_id: UUID | None = None
-    group_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.model_id,
-            self.draft_id,
-            self.group_id,
-            self.user_department_ids,
-        )
-
-
-class GetModelIdsSqlRow(BaseModel):
-    """Row returned from model ID fetching query."""
-
-    # Single-select IDs
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    value_id: UUID | None = None
-    provider_id: UUID | None = None
-
-    # Flag IDs
-    active_flag_id: UUID | None = None
-    modalities_enabled_flag_id: UUID | None = None
-    temperature_enabled_flag_id: UUID | None = None
-    pricing_enabled_flag_id: UUID | None = None
-    voices_enabled_flag_id: UUID | None = None
-    reasoning_levels_enabled_flag_id: UUID | None = None
-    qualities_enabled_flag_id: UUID | None = None
-
-    # Multi-select IDs
-    department_ids: list[UUID] | None = None
-    modality_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    pricing_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    quality_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-
-    # Candidate agents (for Python-side agent scoring)
-    candidate_agents: list[dict] | None = None
-
-    # Tools existence flags
-    names_has_tools: bool | None = None
-    values_has_tools: bool | None = None
-    departments_has_tools: bool | None = None
-    modalities_has_tools: bool | None = None
-    temperature_levels_has_tools: bool | None = None
-    pricing_has_tools: bool | None = None
-    reasoning_levels_has_tools: bool | None = None
-    qualities_has_tools: bool | None = None
-    voices_has_tools: bool | None = None
-
-    # Domain IDs
-    name_domain_id: UUID | None = None
-    description_domain_id: UUID | None = None
-    value_domain_id: UUID | None = None
-    provider_domain_id: UUID | None = None
-    flag_domain_id: UUID | None = None
-    departments_domain_id: UUID | None = None
-    modalities_domain_id: UUID | None = None
-    temperature_levels_domain_id: UUID | None = None
-    pricing_domain_id: UUID | None = None
-    reasoning_levels_domain_id: UUID | None = None
-    qualities_domain_id: UUID | None = None
-    voices_domain_id: UUID | None = None
-
-
-# =============================================================================
 # GET Endpoint Types — Section-first API
 # =============================================================================
 
@@ -168,27 +43,27 @@ class GetModelApiRequest(BaseModel):
 
     model_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID | None = None
+    group_id: UUID
 
 
 class ModelNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class ModelDescriptionSection(BaseResourceSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class ModelValueSection(BaseResourceSection):
-    resource: QGetValuesV4Item | None = None
-    resources: list[QGetValuesV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class ModelProviderSection(BaseResourceSection):
-    resource: QGetProvidersV4Item | None = None
-    resources: list[QGetProvidersV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class ModelFlagSection(BaseResourceSection):
@@ -197,38 +72,38 @@ class ModelFlagSection(BaseResourceSection):
 
 
 class ModelDepartmentSection(BaseResourceSection):
-    current: list[QGetDepartmentsV4Item] | None = None
-    resources: list[QGetDepartmentsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ModelModalitySection(BaseResourceSection):
-    current: list[QGetModalitiesV4Item] | None = None
-    resources: list[QGetModalitiesV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ModelTemperatureLevelSection(BaseResourceSection):
-    current: list[QGetTemperatureLevelsV4Item] | None = None
-    resources: list[QGetTemperatureLevelsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ModelReasoningLevelSection(BaseResourceSection):
-    current: list[QGetReasoningLevelsV4Item] | None = None
-    resources: list[QGetReasoningLevelsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ModelPricingSection(BaseResourceSection):
-    current: list[QGetPricingV4Item] | None = None
-    resources: list[QGetPricingV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ModelQualitySection(BaseResourceSection):
-    current: list[QGetQualitiesV4Item] | None = None
-    resources: list[QGetQualitiesV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ModelVoiceSection(BaseResourceSection):
-    current: list[QGetVoicesV4Item] | None = None
-    resources: list[QGetVoicesV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class GetModelApiResponse(BaseModel):
@@ -259,42 +134,6 @@ class GetModelApiResponse(BaseModel):
     reasoning_levels: ModelReasoningLevelSection | None = None
     qualities: ModelQualitySection | None = None
     voices: ModelVoiceSection | None = None
-
-
-# =============================================================================
-# Websocket Types
-# =============================================================================
-
-
-class ModelWebsocketEntries(BaseModel):
-    """Optional websocket entries payload."""
-
-    draft_model: QGetModelDraftsEntriesV4Item | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class ModelWebsocketResources(BaseModel):
-    """Hydrated websocket resources: selected model + config resources."""
-
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    values: list[QGetValuesV4Item] | None = None
-    providers: list[QGetProvidersV4Item] | None = None
-    flags: list[ModelFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    modalities: list[QGetModalitiesV4Item] | None = None
-    temperature_levels: list[QGetTemperatureLevelsV4Item] | None = None
-    pricing: list[QGetPricingV4Item] | None = None
-    reasoning_levels: list[QGetReasoningLevelsV4Item] | None = None
-    qualities: list[QGetQualitiesV4Item] | None = None
-    voices: list[QGetVoicesV4Item] | None = None
-
-
-class GetModelWebsocketResponse(InternalResponseBase):
-    """Minimal response for model websocket generation handlers."""
-
-    entries: ModelWebsocketEntries | None = None
-    resources: ModelWebsocketResources
 
 
 # =============================================================================

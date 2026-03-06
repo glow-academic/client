@@ -1,24 +1,32 @@
-"""Model get endpoint - Three-layer architecture.
+"""Model GET endpoint — composable infra architecture.
 
-This implements the three-layer BFF pattern:
-1. get_model_internal() - Core data fetching (cacheable, returns dataclass)
-2. get_model_websocket() - Minimal data for WebSocket handlers
-3. get_model_client() - Full BFF response for HTTP endpoint/frontend
+Uses composable infra layers:
+  1. resolve_common_context — profile + tool graph + runs
+  2. resolve_model_permissions_context — fail-fast 404/403
+  3. resolve_model_context — artifact + draft → merged + hydrated resources
+  4. score_tools — tool graph + artifact resources → per-resource tool picks
+  5. Pure Python — permissions, show/required flags, response assembly
 """
 
-import asyncio
-from dataclasses import dataclass
-from datetime import UTC
-from typing import Annotated, Any, cast
+from __future__ import annotations
+
+from typing import Annotated
 from uuid import UUID
 
-import asyncpg  # type: ignore
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from redis.asyncio import Redis
 
-from app.infra.globals import get_db, get_pool, get_redis_client
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
+from app.infra.common_context import resolve_common_context
+from app.infra.globals import get_db, get_redis_client
+from app.infra.helpers import dedupe_by_id
+from app.infra.model_context import resolve_model_context
+from app.infra.model_permissions_context import resolve_model_permissions_context
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.model.permissions import (
+    MODEL_BASIC_RESOURCES,
+    MODEL_FEATURES_RESOURCES,
+    MODEL_PROVIDER_RESOURCES,
     MODEL_RESOURCES,
     compute_can_edit,
     compute_departments_required,
@@ -50,13 +58,8 @@ from app.routes.v5.api.main.model.permissions import (
     has_access,
 )
 from app.routes.v5.api.main.model.types import (
-    GetModelAccessSqlParams,
-    GetModelAccessSqlRow,
     GetModelApiRequest,
     GetModelApiResponse,
-    GetModelIdsSqlParams,
-    GetModelIdsSqlRow,
-    GetModelWebsocketResponse,
     ModelDepartmentSection,
     ModelDescriptionSection,
     ModelFlagConfig,
@@ -70,579 +73,125 @@ from app.routes.v5.api.main.model.types import (
     ModelTemperatureLevelSection,
     ModelValueSection,
     ModelVoiceSection,
-    ModelWebsocketEntries,
-    ModelWebsocketResources,
 )
-from app.routes.v5.api.permissions import (
-    has_tools_for_resource,
-    resolve_agents_for_artifact,
-)
-from app.routes.v5.tools.entries.model_drafts.get import (
-    get_model_drafts_entries_internal,
-)
-from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.args.get import get_args
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.descriptions.search import (
-    search_descriptions,
-)
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.modalities.get import get_modalities
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.search import search_names
-from app.routes.v5.tools.resources.pricing.get import get_pricing
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.qualities.get import get_qualities
-from app.routes.v5.tools.resources.reasoning_levels.get import (
-    get_reasoning_levels,
-)
-from app.routes.v5.tools.resources.temperature_levels.get import (
-    get_temperature_levels,
-)
-from app.routes.v5.tools.resources.tools.get import get_tools
-from app.routes.v5.tools.resources.values.get import get_values
-from app.routes.v5.tools.resources.voices.get import get_voices
-from app.sql.types import load_sql_query
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
-
-# SQL paths
-QUERY1_SQL_PATH = "app/sql/queries/models/get_model_access_complete.sql"
-QUERY2_SQL_PATH = "app/sql/queries/models/get_model_ids_complete.sql"
 
 router = APIRouter()
 
 
-def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
-    """Preserve order while deduplicating by id attribute."""
-    seen: set[UUID] = set()
-    output: list[Any] = []
-    for item in items:
-        item_id = getattr(item, id_attr, None)
-        if item_id and item_id not in seen:
-            seen.add(item_id)
-            output.append(item)
-    return output
+# ---------------------------------------------------------------------------
+# get_model_client — composable infra architecture
+# ---------------------------------------------------------------------------
 
 
-# Model-specific flag names (business logic)
-MODEL_FLAG_NAMES = {
-    "model_active",
-    "model_modalities_enabled",
-    "model_temperature_enabled",
-    "model_pricing_enabled",
-    "model_voices_enabled",
-    "model_reasoning_levels_enabled",
-    "model_qualities_enabled",
-}
-
-
-@dataclass
-class ModelInternalData:
-    """Internal data from core model fetching (cacheable layer)."""
-
-    # Access/context
-    actor_name: str | None
-    model_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
-
-    agent_ids: dict[str, UUID | None]
-
-    # Show/required flags
-    show_flags_map: dict[str, bool]
-    required_flags_map: dict[str, bool]
-
-    # Suggestions (resource -> list of suggestion IDs)
-    suggestions_map: dict[str, list[UUID]]
-
-    # Show AI generate flags
-    show_ai_generate_map: dict[str, bool]
-    basic_show_ai_generate: bool
-    provider_show_ai_generate: bool
-    features_show_ai_generate: bool
-
-    # Selected resources (current selections)
-    name_resource: Any | None
-    description_resource: Any | None
-    value_resource: Any | None
-    provider_resource: Any | None
-    model_flags: list[ModelFlagConfig]
-    department_resources: list[Any]
-    modality_resources: list[Any]
-    temperature_level_resources: list[Any]
-    pricing_resources: list[Any]
-    reasoning_level_resources: list[Any]
-    quality_resources: list[Any]
-    voice_resources: list[Any]
-
-    # All resources (for suggestions/picker)
-    names: list[Any]
-    descriptions: list[Any]
-    values: list[Any]
-    providers: list[Any]
-    flags: list[ModelFlagConfig]
-    departments: list[Any]
-    modalities: list[Any]
-    temperature_levels: list[Any]
-    pricing: list[Any]
-    reasoning_levels: list[Any]
-    qualities: list[Any]
-    voices: list[Any]
-
-    # Per-resource tool IDs (from selected agents)
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
-
-    # Config resources for websocket generation
-    config_agent_resources: list[Any] | None
-    config_model_resources: list[Any] | None
-    config_provider_resources: list[Any] | None
-
-
-async def get_model_internal(
+async def get_model_client(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
     profile_id: UUID,
     model_id: UUID | None,
     draft_id: UUID | None = None,
+    group_id: UUID,
     bypass_cache: bool = False,
-    group_id: UUID | None = None,
-) -> ModelInternalData:
-    """Core data fetching layer (cacheable)."""
-    pool = get_pool()
-    if not pool:
-        raise RuntimeError("Database pool not initialized")
+) -> GetModelApiResponse:
+    """Model GET using composable infra functions.
 
-    # Resolve shared profile context first (default path).
-    async with pool.acquire() as context_conn:
-        profile_ctx = await get_auth_profile_internal(
-            conn=context_conn,
-            profile_id=profile_id,
-            bypass_cache=bypass_cache,
+    Flow:
+      1. resolve_common_context(profile_id) → profile, tool_graph, runs
+      2. resolve_model_permissions_context → access check (404, 403, fail fast)
+      3. resolve_model_context(model_id, draft_id, ...) → hydrated resources
+      4. score_tools(tool_graph, MODEL_RESOURCES) → per-resource tool picks
+      5. Pure Python: permissions, show/required/AI flags, response assembly
+    """
+
+    # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
+
+    common = await resolve_common_context(
+        conn,
+        redis,
+        profile_id=profile_id,
+        group_id=group_id,
+        bypass_cache=bypass_cache,
+    )
+
+    if common is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
         )
 
-    # Extract user context from internal fetch (single source of truth)
-    user_role = profile_ctx.access.role
-    actor_name = profile_ctx.access.actor_name
-    user_department_ids = [
-        d.department_id for d in profile_ctx.departments if d.department_id
-    ]
+    profile = common.profile
 
-    # Fetch draft if draft_id provided
-    draft_item = None
-    if draft_id is not None:
-        async with pool.acquire() as draft_conn:
-            draft_items = await get_model_drafts_entries_internal(
-                conn=draft_conn,
-                ids=[draft_id],
-                bypass_cache=bypass_cache,
+    # ── Step 2: Permissions check (fail fast before full hydration) ──────
+
+    perms = None
+    if model_id is not None:
+        perms = await resolve_model_permissions_context(conn, model_id)
+
+        if not perms.exists:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Model {model_id} not found",
             )
-            if draft_items:
-                draft_item = draft_items[0]
 
-    async with pool.acquire() as conn:
-        # === QUERY 1: Access Check ===
-        query1_params = GetModelAccessSqlParams(
-            profile_id=profile_id,
-            model_id=model_id,
-            draft_id=draft_id,
-            draft_group_id=draft_item.group_id if draft_item is not None else None,
-            draft_version=draft_item.version if draft_item is not None else None,
-        )
+        if not has_access(profile.role, profile.department_ids, perms.department_ids):
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have access to this model. It may be restricted to other departments.",
+            )
 
-        access_result = cast(
-            GetModelAccessSqlRow,
-            await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
-        )
+    # ── Step 3: Model artifact context ────────────────────────────────────
 
-        # Extract artifact-specific state from Query 1 (no user context)
-        model_department_ids = access_result.model_department_ids or []
-        active_persona_count = access_result.active_persona_count or 0
-
-        if model_id is not None:
-            if access_result.model_exists is False:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Model {model_id} not found",
-                )
-            if not has_access(user_role, user_department_ids, model_department_ids):
-                raise HTTPException(
-                    status_code=403,
-                    detail=(
-                        "You don't have access to this model."
-                        " It may be restricted to other departments."
-                    ),
-                )
-
-        # group_id is guaranteed by SQL (created inline if no draft)
-        if group_id:
-            effective_group_id = group_id
-        else:
-            effective_group_id = access_result.group_id
-        effective_draft_version = access_result.effective_draft_version
-
-        # === QUERY 2: ID Fetching ===
-        query2_params = GetModelIdsSqlParams(
-            profile_id=profile_id,
-            model_id=model_id,
-            draft_id=draft_id,
-            group_id=effective_group_id,
-            user_department_ids=user_department_ids,
-        )
-
-        ids_result = cast(
-            GetModelIdsSqlRow,
-            await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
-        )
-
-    # === RESOLVE AGENTS FROM SETTINGS ===
-    async with pool.acquire() as settings_conn:
-        settings_data = await get_auth_settings_internal(
-            settings_conn, profile_id, bypass_cache
-        )
-    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, MODEL_RESOURCES
+    model_ctx = await resolve_model_context(
+        conn,
+        redis,
+        model_id=model_id,
+        group_id=group_id,
+        draft_id=draft_id,
+        user_department_ids=profile.department_ids,
+        bypass_cache=bypass_cache,
     )
 
-    # === COMPUTE SHOW_AI_GENERATE FLAGS ===
-    def _compute_show_ai_generate(resource: str) -> bool:
-        return agent_ids.get(resource) is not None
+    # ── Step 4: Tool scoring ──────────────────────────────────────────────
 
-    show_ai_generate_map = {r: _compute_show_ai_generate(r) for r in MODEL_RESOURCES}
+    scores = score_tools(common.tool_graph, MODEL_RESOURCES)
 
-    basic_show_ai_generate = any(
-        show_ai_generate_map.get(r, False)
-        for r in ["names", "descriptions", "flags", "departments"]
-    )
-    provider_show_ai_generate = any(
-        show_ai_generate_map.get(r, False) for r in ["values", "providers"]
-    )
-    features_show_ai_generate = any(
-        show_ai_generate_map.get(r, False)
-        for r in [
-            "modalities",
-            "temperature_levels",
-            "pricing",
-            "reasoning_levels",
-            "qualities",
-            "voices",
-        ]
-    )
+    agent_ids: dict[str, UUID | None] = {
+        r: (scores.best[r].agent_id if scores.best.get(r) else None)
+        for r in MODEL_RESOURCES
+    }
 
-    # === PYTHON BUSINESS LOGIC ===
+    tool_ids_map: dict[str, UUID | None] = {
+        r: (scores.best[r].tool_id if scores.best.get(r) else None)
+        for r in MODEL_RESOURCES
+    }
+
+    # ── Step 5: Permissions ───────────────────────────────────────────────
+
+    perms_department_ids = perms.department_ids if perms else []
+    active_agent_count = perms.active_agent_count if perms else 0
+
     can_edit = compute_can_edit(
-        user_role=user_role,
-        model_department_ids=model_department_ids,
-        active_persona_count=active_persona_count,
-        user_department_ids=user_department_ids,
+        user_role=profile.role,
+        model_department_ids=perms_department_ids,
+        active_agent_count=active_agent_count,
+        user_department_ids=profile.department_ids,
     )
+
     disabled_reason = compute_disabled_reason(
-        user_role=user_role,
-        model_department_ids=model_department_ids,
-        active_persona_count=active_persona_count,
+        user_role=profile.role,
+        model_department_ids=perms_department_ids,
+        active_agent_count=active_agent_count,
     )
 
-    # === EXTRACT SELECTED IDS ===
-    selected_name_id = ids_result.name_id
-    selected_description_id = ids_result.description_id
-    selected_value_id = ids_result.value_id
-    selected_provider_id = ids_result.provider_id
+    # ── Step 6: Show / Required / AI flags ────────────────────────────────
 
-    selected_active_flag_id = ids_result.active_flag_id
-    selected_modalities_enabled_flag_id = ids_result.modalities_enabled_flag_id
-    selected_temperature_enabled_flag_id = ids_result.temperature_enabled_flag_id
-    selected_pricing_enabled_flag_id = ids_result.pricing_enabled_flag_id
-    selected_voices_enabled_flag_id = ids_result.voices_enabled_flag_id
-    selected_reasoning_levels_enabled_flag_id = (
-        ids_result.reasoning_levels_enabled_flag_id
-    )
-    selected_qualities_enabled_flag_id = ids_result.qualities_enabled_flag_id
+    names_has_tools = scores.has_any.get("names", False)
+    values_has_tools = scores.has_any.get("values", False)
 
-    selected_department_ids = ids_result.department_ids or []
-    selected_modality_ids = ids_result.modality_ids or []
-    selected_temperature_level_ids = ids_result.temperature_level_ids or []
-    selected_pricing_ids = ids_result.pricing_ids or []
-    selected_reasoning_level_ids = ids_result.reasoning_level_ids or []
-    selected_quality_ids = ids_result.quality_ids or []
-    selected_voice_ids = ids_result.voice_ids or []
-
-    # Draft values override canonical model-junction values.
-    if draft_item is not None:
-        if draft_item.name_ids:
-            selected_name_id = draft_item.name_ids[0]
-        if draft_item.description_ids:
-            selected_description_id = draft_item.description_ids[0]
-        if draft_item.value_ids:
-            selected_value_id = draft_item.value_ids[0]
-        if draft_item.provider_ids:
-            selected_provider_id = draft_item.provider_ids[0]
-        if draft_item.flag_ids:
-            selected_active_flag_id = draft_item.flag_ids[0]
-        if draft_item.department_ids:
-            selected_department_ids = draft_item.department_ids
-        if draft_item.modality_ids:
-            selected_modality_ids = draft_item.modality_ids
-        if draft_item.temperature_level_ids:
-            selected_temperature_level_ids = draft_item.temperature_level_ids
-        if draft_item.pricing_ids:
-            selected_pricing_ids = draft_item.pricing_ids
-        if draft_item.reasoning_level_ids:
-            selected_reasoning_level_ids = draft_item.reasoning_level_ids
-        if draft_item.quality_ids:
-            selected_quality_ids = draft_item.quality_ids
-        if draft_item.voice_ids:
-            selected_voice_ids = draft_item.voice_ids
-
-    # === PASS 2: Parallel Resource Fetching ===
-    name_ids = [selected_name_id] if selected_name_id else []
-    description_ids = [selected_description_id] if selected_description_id else []
-    value_ids_list = [selected_value_id] if selected_value_id else []
-    provider_ids_list = [selected_provider_id] if selected_provider_id else []
-    flag_ids = [
-        fid
-        for fid in [
-            selected_active_flag_id,
-            selected_modalities_enabled_flag_id,
-            selected_temperature_enabled_flag_id,
-            selected_pricing_enabled_flag_id,
-            selected_voices_enabled_flag_id,
-            selected_reasoning_levels_enabled_flag_id,
-            selected_qualities_enabled_flag_id,
-        ]
-        if fid is not None
-    ]
-
-    async def fetch_names():
-        async with pool.acquire() as c:
-            selected = await get_names(
-                c, name_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-            suggestions = await search_names(
-                c,
-                get_redis_client(),
-                draft_id=effective_group_id,
-                exclude_ids=name_ids,
-                bypass_cache=bypass_cache,
-                model=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_descriptions():
-        async with pool.acquire() as c:
-            selected = await get_descriptions(
-                c, description_ids, get_redis_client(), cache
-            )
-            suggestions = await search_descriptions(
-                c,
-                get_redis_client(),
-                draft_id=effective_group_id,
-                exclude_ids=description_ids,
-                bypass_cache=bypass_cache,
-                model=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_values():
-        async with pool.acquire() as c:
-            selected = await get_values(
-                c, value_ids_list, get_redis_client(), bypass_cache
-            )
-            return (selected, [])
-
-    async def fetch_providers():
-        async with pool.acquire() as c:
-            selected = await get_providers(
-                c, provider_ids_list, get_redis_client(), bypass_cache=bypass_cache
-            )
-            return (selected, [])
-
-    async def fetch_flags():
-        async with pool.acquire() as c:
-            selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
-            all_flags = await search_flags(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=50,
-                offset_count=0,
-                exclude_ids=flag_ids,
-                bypass_cache=bypass_cache,
-                model=True,
-            )
-            suggestions = [f for f in all_flags if f.name in MODEL_FLAG_NAMES]
-            return (selected, suggestions)
-
-    async def fetch_departments():
-        async with pool.acquire() as c:
-            selected = await get_departments(
-                c,
-                selected_department_ids,
-                get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-            suggestions = await search_departments(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=20,
-                offset_count=0,
-                department_ids=user_department_ids,
-                suggest_source="all",
-                exclude_ids=selected_department_ids,
-                bypass_cache=bypass_cache,
-                model=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_modalities():
-        async with pool.acquire() as c:
-            selected = await get_modalities(
-                c, selected_modality_ids, get_redis_client(), bypass_cache
-            )
-            return (selected, [])
-
-    async def fetch_temperature_levels():
-        async with pool.acquire() as c:
-            selected = await get_temperature_levels(
-                c, selected_temperature_level_ids, get_redis_client(), bypass_cache
-            )
-            return (selected, [])
-
-    async def fetch_pricing():
-        async with pool.acquire() as c:
-            selected = await get_pricing(
-                c, selected_pricing_ids, get_redis_client(), bypass_cache
-            )
-            return (selected, [])
-
-    async def fetch_reasoning_levels():
-        async with pool.acquire() as c:
-            selected = await get_reasoning_levels(
-                c, selected_reasoning_level_ids, get_redis_client(), bypass_cache
-            )
-            return (selected, [])
-
-    async def fetch_qualities():
-        async with pool.acquire() as c:
-            selected = await get_qualities(
-                c, selected_quality_ids, get_redis_client(), bypass_cache
-            )
-            return (selected, [])
-
-    async def fetch_voices():
-        async with pool.acquire() as c:
-            selected = await get_voices(
-                c, selected_voice_ids, get_redis_client(), bypass_cache
-            )
-            return (selected, [])
-
-    # Parallel fetch
-    (
-        (names_selected, names_suggestions),
-        (descriptions_selected, descriptions_suggestions),
-        (values_selected, values_suggestions),
-        (providers_selected, providers_suggestions),
-        (flags_selected, flags_suggestions),
-        (departments_selected, departments_suggestions),
-        (modalities_selected, modalities_suggestions),
-        (temperature_levels_selected, temperature_levels_suggestions),
-        (pricing_selected, pricing_suggestions),
-        (reasoning_levels_selected, reasoning_levels_suggestions),
-        (qualities_selected, qualities_suggestions),
-        (voices_selected, voices_suggestions),
-    ) = await asyncio.gather(
-        fetch_names(),
-        fetch_descriptions(),
-        fetch_values(),
-        fetch_providers(),
-        fetch_flags(),
-        fetch_departments(),
-        fetch_modalities(),
-        fetch_temperature_levels(),
-        fetch_pricing(),
-        fetch_reasoning_levels(),
-        fetch_qualities(),
-        fetch_voices(),
-    )
-
-    # Dedupe resources
-    names = _dedupe_by_id(names_selected + names_suggestions, "id")
-    descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
-    values = _dedupe_by_id(values_selected + values_suggestions, "id")
-    providers = _dedupe_by_id(providers_selected + providers_suggestions, "id")
-    flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
-    departments = _dedupe_by_id(departments_selected + departments_suggestions, "id")
-    modalities = _dedupe_by_id(modalities_selected + modalities_suggestions, "id")
-    temperature_levels = _dedupe_by_id(
-        temperature_levels_selected + temperature_levels_suggestions,
-        "temperature_level_id",
-    )
-    pricing = _dedupe_by_id(pricing_selected + pricing_suggestions, "pricing_id")
-    reasoning_levels = _dedupe_by_id(
-        reasoning_levels_selected + reasoning_levels_suggestions,
-        "reasoning_level_id",
-    )
-    qualities = _dedupe_by_id(qualities_selected + qualities_suggestions, "id")
-    voices = _dedupe_by_id(voices_selected + voices_suggestions, "id")
-
-    # Find selected resources
-    name_resource = next((n for n in names if n.id == selected_name_id), None)
-    description_resource = next(
-        (d for d in descriptions if d.id == selected_description_id), None
-    )
-    value_resource = next((v for v in values if v.id == selected_value_id), None)
-    provider_resource = next(
-        (p for p in providers if p.id == selected_provider_id), None
-    )
-
-    department_resources = [d for d in departments if d.id in selected_department_ids]
-    modality_resources = [m for m in modalities if m.id in selected_modality_ids]
-    temperature_level_resources = [
-        t
-        for t in temperature_levels
-        if t.temperature_level_id in selected_temperature_level_ids
-    ]
-    pricing_resources_list = [
-        p for p in pricing if p.pricing_id in selected_pricing_ids
-    ]
-    pricing_resources_list.sort(key=lambda p: (p.pricing_type or "", p.unit_name or ""))
-    reasoning_level_resources = [
-        r
-        for r in reasoning_levels
-        if r.reasoning_level_id in selected_reasoning_level_ids
-    ]
-    quality_resources = [q for q in qualities if q.id in selected_quality_ids]
-    voice_resources = [v for v in voices if v.id in selected_voice_ids]
-
-    # Build flag configs
-    show_flag = compute_show_flag()
-    model_flags = [
-        ModelFlagConfig(
-            key=derive_flag_key_and_label(flag.name)[0],
-            label=derive_flag_key_and_label(flag.name)[1],
-            description=flag.description,
-            icon_id=flag.icon,
-            flag_option_id=flag.id,
-            show=show_flag,
-            required=compute_flag_required(),
-            generated=flag.generated,
-        )
-        for flag in flags
-        if flag.id
-    ]
-
-    # Compute show/required flags
-    names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
-    values_has_tools = has_tools_for_resource(
-        settings_data.agent_tool_entries, "values"
+    all_departments = dedupe_by_id(
+        model_ctx.resources["departments"].selected
+        + model_ctx.resources["departments"].suggestions
     )
 
     show_flags_map = {
@@ -650,8 +199,8 @@ async def get_model_internal(
         "descriptions": compute_show_description(),
         "values": compute_show_value(values_has_tools),
         "providers": compute_show_provider(),
-        "flags": show_flag,
-        "departments": compute_show_departments(len(departments)),
+        "flags": compute_show_flag(),
+        "departments": compute_show_departments(len(all_departments)),
         "modalities": compute_show_modalities(),
         "temperature_levels": compute_show_temperature_levels(),
         "pricing": compute_show_pricing(),
@@ -675,390 +224,248 @@ async def get_model_internal(
         "voices": compute_voices_required(),
     }
 
-    # Suggestion IDs
-    suggestions_map: dict[str, list[UUID]] = {
-        "names": [n.id for n in names_suggestions],
-        "descriptions": [d.id for d in descriptions_suggestions],
-        "values": [v.id for v in values_suggestions],
-        "departments": [d.id for d in departments_suggestions],
-        "modalities": [m.id for m in modalities_suggestions],
-        "temperature_levels": [
-            t.temperature_level_id for t in temperature_levels_suggestions
-        ],
-        "pricing": [p.pricing_id for p in pricing_suggestions],
-        "reasoning_levels": [
-            r.reasoning_level_id for r in reasoning_levels_suggestions
-        ],
-        "qualities": [q.id for q in qualities_suggestions],
-        "voices": [v.id for v in voices_suggestions],
+    def compute_show_ai_generate(resource: str) -> bool:
+        return agent_ids.get(resource) is not None
+
+    show_ai_generate_map = {
+        r: compute_show_ai_generate(r) for r in MODEL_RESOURCES
     }
 
-    # Validation for new mode
+    basic_show_ai_generate = any(
+        show_ai_generate_map.get(r, False) for r in MODEL_BASIC_RESOURCES
+    )
+    provider_show_ai_generate = any(
+        show_ai_generate_map.get(r, False) for r in MODEL_PROVIDER_RESOURCES
+    )
+    features_show_ai_generate = any(
+        show_ai_generate_map.get(r, False) for r in MODEL_FEATURES_RESOURCES
+    )
+
+    # ── Step 7: Validation ────────────────────────────────────────────────
+
     if model_id is None:
-        if not departments:
+        if not all_departments:
             raise HTTPException(
                 status_code=400, detail="No accessible departments found for user"
             )
 
-    # Detail mode: check access via name_resource
-    if model_id is not None and not name_resource:
-        raise HTTPException(
-            status_code=403,
-            detail=(
-                "You don't have access to this model."
-                " It may be restricted to other departments."
-            ),
-        )
+    # ── Step 8: Response assembly ─────────────────────────────────────────
 
-    # Fetch config resources from settings agents
-    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
-    config_model_resource_ids = [
-        a.model_id for a in settings_data.settings_agents if a.model_id
+    # Flags — enriched format
+    all_flags = dedupe_by_id(
+        model_ctx.resources["flags"].selected
+        + model_ctx.resources["flags"].suggestions
+    )
+    model_flags = [
+        ModelFlagConfig(
+            key=derive_flag_key_and_label(flag.name)[0],
+            label=derive_flag_key_and_label(flag.name)[1],
+            description=flag.description,
+            icon_id=flag.icon,
+            flag_option_id=flag.id,
+            show=show_flags_map.get("flags", True),
+            required=required_flags_map.get("flags", False),
+            generated=flag.generated,
+        )
+        for flag in all_flags
+        if flag.id
     ]
 
-    config_agents_result: list[Any] = []
-    config_models_result: list[Any] = []
-    config_providers_result: list[Any] = []
-    if config_agent_resource_ids:
-        async with pool.acquire() as c:
-            config_agents_result = await get_agents(
-                c, config_agent_resource_ids, get_redis_client(), bypass_cache
-            )
-    if config_model_resource_ids:
-        async with pool.acquire() as c:
-            config_models_result = await get_models(
-                c, config_model_resource_ids, get_redis_client(), bypass_cache
-            )
-    provider_ids_for_config = list(
-        dict.fromkeys(
-            [
-                getattr(model, "provider_id", None)
-                for model in config_models_result
-                if getattr(model, "provider_id", None) is not None
-            ]
+    current_flags = [
+        ModelFlagConfig(
+            key=derive_flag_key_and_label(f.name)[0],
+            label=derive_flag_key_and_label(f.name)[1],
+            description=f.description,
+            icon_id=f.icon,
+            flag_option_id=f.id,
+            show=show_flags_map.get("flags", True),
+            required=required_flags_map.get("flags", False),
+            generated=f.generated,
         )
-    )
-    if provider_ids_for_config:
-        async with pool.acquire() as c:
-            config_providers_result = await get_providers(
-                c,
-                provider_ids_for_config,
-                get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-
-    return ModelInternalData(
-        actor_name=actor_name,
-        model_exists=access_result.model_exists,
-        can_edit=can_edit,
-        disabled_reason=disabled_reason,
-        draft_version=effective_draft_version,
-        group_id=effective_group_id,
-        agent_ids=agent_ids,
-        show_flags_map=show_flags_map,
-        required_flags_map=required_flags_map,
-        suggestions_map=suggestions_map,
-        show_ai_generate_map=show_ai_generate_map,
-        basic_show_ai_generate=basic_show_ai_generate,
-        provider_show_ai_generate=provider_show_ai_generate,
-        features_show_ai_generate=features_show_ai_generate,
-        name_resource=name_resource,
-        description_resource=description_resource,
-        value_resource=value_resource,
-        provider_resource=provider_resource,
-        model_flags=model_flags,
-        department_resources=department_resources,
-        modality_resources=modality_resources,
-        temperature_level_resources=temperature_level_resources,
-        pricing_resources=pricing_resources_list,
-        reasoning_level_resources=reasoning_level_resources,
-        quality_resources=quality_resources,
-        voice_resources=voice_resources,
-        names=names,
-        descriptions=descriptions,
-        values=values,
-        providers=providers,
-        flags=model_flags,
-        departments=departments,
-        modalities=modalities,
-        temperature_levels=temperature_levels,
-        pricing=pricing,
-        reasoning_levels=reasoning_levels,
-        qualities=qualities,
-        voices=voices,
-        create_tool_ids_map=create_tool_ids_map,
-        link_tool_ids_map=link_tool_ids_map,
-        config_agent_resources=config_agents_result or None,
-        config_model_resources=config_models_result or None,
-        config_provider_resources=config_providers_result or None,
-    )
-
-
-async def get_model_websocket(
-    profile_id: UUID,
-    model_id: UUID | None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> GetModelWebsocketResponse:
-    """Minimal response for WebSocket handlers."""
-    data = await get_model_internal(
-        profile_id=profile_id,
-        model_id=model_id,
-        draft_id=draft_id,
-        bypass_cache=bypass_cache,
-    )
-
-    # Fetch draft model view, config_profile, runs_today, and tools in parallel
-    pool = get_pool()
-
-    async def fetch_draft():
-        if not draft_id or not pool:
-            return None
-        async with pool.acquire() as conn:
-            draft_items = await get_model_drafts_entries_internal(
-                conn=conn,
-                ids=[draft_id],
-                bypass_cache=bypass_cache,
-            )
-            return draft_items[0] if draft_items else None
-
-    async def fetch_config_profile():
-        if not pool:
-            return None
-        async with pool.acquire() as conn:
-            return await get_profiles(
-                conn, [profile_id], get_redis_client(), bypass_cache
-            )
-
-    async def fetch_runs_today():
-        if not pool:
-            return None
-        from datetime import datetime
-
-        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
-        async with pool.acquire() as conn:
-            return await get_run_list_entries_internal(
-                conn=conn,
-                profile_id_filter=profile_id,
-                date_from=today_utc,
-                date_to=tomorrow_utc,
-                page_limit=1,
-                bypass_cache=True,
-            )
-
-    async def fetch_tools():
-        if not data.config_agent_resources or not pool:
-            return []
-        agent_resource = data.config_agent_resources[0]
-        if not agent_resource or not getattr(agent_resource, "tool_ids", None):
-            return []
-        async with pool.acquire() as c:
-            return await get_tools(
-                c,
-                list(agent_resource.tool_ids),
-                get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-
-    (
-        draft_model,
-        config_profile_result,
-        runs_result,
-        tools_result,
-    ) = await asyncio.gather(
-        fetch_draft(),
-        fetch_config_profile(),
-        fetch_runs_today(),
-        fetch_tools(),
-    )
-
-    # Get selected flag configs
-    selected_flag_ids = {f.flag_option_id for f in data.model_flags if f.flag_option_id}
-    selected_enriched_flags = [
-        f for f in data.flags if f.flag_option_id in selected_flag_ids
+        for f in model_ctx.resources["flags"].selected
+        if f.id
     ]
 
-    # Enrich tools with args and args_outputs
-    config_tools = tools_result or []
-    config_args = None
-    config_args_outputs = None
-    if config_tools and pool:
-        all_args_ids: list[UUID] = []
-        all_args_output_ids: list[UUID] = []
-        for tool in config_tools:
-            if tool.args_ids:
-                all_args_ids.extend(tool.args_ids)
-            if tool.args_output_ids:
-                all_args_output_ids.extend(tool.args_output_ids)
-        if all_args_ids or all_args_output_ids:
-
-            async def fetch_args():
-                if not all_args_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args(
-                        c,
-                        list(set(all_args_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            async def fetch_args_outputs():
-                if not all_args_output_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args_outputs(
-                        c,
-                        list(set(all_args_output_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            config_args, config_args_outputs = await asyncio.gather(
-                fetch_args(),
-                fetch_args_outputs(),
-            )
-
-    # Build entries (always construct — both fields optional now)
-    entries = ModelWebsocketEntries(
-        draft_model=draft_model,
-        runs=runs_result,
+    # Dedupe all resources
+    all_names = dedupe_by_id(
+        model_ctx.resources["names"].selected
+        + model_ctx.resources["names"].suggestions
+    )
+    all_descriptions = dedupe_by_id(
+        model_ctx.resources["descriptions"].selected
+        + model_ctx.resources["descriptions"].suggestions
+    )
+    all_values = dedupe_by_id(
+        model_ctx.resources["values"].selected
+        + model_ctx.resources["values"].suggestions
+    )
+    all_providers = dedupe_by_id(
+        model_ctx.resources["providers"].selected
+        + model_ctx.resources["providers"].suggestions
+    )
+    all_modalities = dedupe_by_id(
+        model_ctx.resources["modalities"].selected
+        + model_ctx.resources["modalities"].suggestions
+    )
+    all_temperature_levels = dedupe_by_id(
+        model_ctx.resources["temperature_levels"].selected
+        + model_ctx.resources["temperature_levels"].suggestions,
+        id_attr="temperature_level_id",
+    )
+    all_pricing = dedupe_by_id(
+        model_ctx.resources["pricing"].selected
+        + model_ctx.resources["pricing"].suggestions,
+        id_attr="pricing_id",
+    )
+    all_reasoning_levels = dedupe_by_id(
+        model_ctx.resources["reasoning_levels"].selected
+        + model_ctx.resources["reasoning_levels"].suggestions,
+        id_attr="reasoning_level_id",
+    )
+    all_qualities = dedupe_by_id(
+        model_ctx.resources["qualities"].selected
+        + model_ctx.resources["qualities"].suggestions
+    )
+    all_voices = dedupe_by_id(
+        model_ctx.resources["voices"].selected
+        + model_ctx.resources["voices"].suggestions
     )
 
-    return GetModelWebsocketResponse(
-        group_id=data.group_id,
-        entries=entries if draft_model or runs_result else None,
-        resource_agent_ids=data.agent_ids,
-        resources=ModelWebsocketResources(
-            names=[data.name_resource] if data.name_resource else None,
-            descriptions=(
-                [data.description_resource] if data.description_resource else None
-            ),
-            values=[data.value_resource] if data.value_resource else None,
-            providers=[data.provider_resource] if data.provider_resource else None,
-            flags=selected_enriched_flags or None,
-            departments=data.department_resources or None,
-            modalities=data.modality_resources or None,
-            temperature_levels=data.temperature_level_resources or None,
-            pricing=data.pricing_resources or None,
-            reasoning_levels=data.reasoning_level_resources or None,
-            qualities=data.quality_resources or None,
-            voices=data.voice_resources or None,
-        ),
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=tools_result or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetModelApiRequest(model_id=model_id, draft_id=draft_id),
-    )
+    # Suggestions maps (IDs only)
+    suggestions_map = {
+        "names": [n.id for n in model_ctx.resources["names"].suggestions],
+        "descriptions": [
+            d.id for d in model_ctx.resources["descriptions"].suggestions
+        ],
+        "values": [v.id for v in model_ctx.resources["values"].suggestions],
+        "departments": [
+            d.id for d in model_ctx.resources["departments"].suggestions
+        ],
+        "modalities": [
+            m.id for m in model_ctx.resources["modalities"].suggestions
+        ],
+        "temperature_levels": [
+            t.temperature_level_id
+            for t in model_ctx.resources["temperature_levels"].suggestions
+        ],
+        "pricing": [
+            p.pricing_id for p in model_ctx.resources["pricing"].suggestions
+        ],
+        "reasoning_levels": [
+            r.reasoning_level_id
+            for r in model_ctx.resources["reasoning_levels"].suggestions
+        ],
+        "qualities": [
+            q.id for q in model_ctx.resources["qualities"].suggestions
+        ],
+        "voices": [v.id for v in model_ctx.resources["voices"].suggestions],
+    }
 
-
-async def get_model_client(
-    profile_id: UUID,
-    model_id: UUID | None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-    group_id: UUID | None = None,
-) -> GetModelApiResponse:
-    """BFF response for HTTP endpoint/frontend."""
-    data = await get_model_internal(
-        profile_id=profile_id,
-        model_id=model_id,
-        draft_id=draft_id,
-        cache=cache,
-        group_id=group_id,
-    )
-
-    def section_common(resource_key: str) -> dict[str, Any]:
+    def _section(resource_key: str) -> dict:
         return {
-            "show": data.show_flags_map.get(resource_key, False),
-            "required": data.required_flags_map.get(resource_key, False),
-            "suggestions": data.suggestions_map.get(resource_key, []),
-            "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
-            "create_tool_id": data.create_tool_ids_map.get(resource_key),
-            "link_tool_id": data.link_tool_ids_map.get(resource_key),
+            "show": show_flags_map.get(resource_key, False),
+            "required": required_flags_map.get(resource_key, False),
+            "suggestions": suggestions_map.get(resource_key, []),
+            "show_ai_generate": show_ai_generate_map.get(resource_key, False),
+            "tool_id": tool_ids_map.get(resource_key),
         }
 
     return GetModelApiResponse(
-        actor_name=data.actor_name,
-        model_exists=data.model_exists,
-        can_edit=data.can_edit,
-        disabled_reason=data.disabled_reason,
-        draft_version=data.draft_version,
-        group_id=data.group_id,
-        basic_show_ai_generate=data.basic_show_ai_generate,
-        provider_show_ai_generate=data.provider_show_ai_generate,
-        features_show_ai_generate=data.features_show_ai_generate,
+        actor_name=profile.name,
+        model_exists=model_ctx.artifact_id is not None,
+        can_edit=can_edit,
+        disabled_reason=disabled_reason,
+        draft_version=model_ctx.draft_version,
+        group_id=group_id,
+        basic_show_ai_generate=basic_show_ai_generate,
+        provider_show_ai_generate=provider_show_ai_generate,
+        features_show_ai_generate=features_show_ai_generate,
         names=ModelNameSection(
-            resource=data.name_resource,
-            resources=data.names,
-            **section_common("names"),
+            **_section("names"),
+            resource=model_ctx.resources["names"].selected[0]
+            if model_ctx.resources["names"].selected
+            else None,
+            resources=all_names,
         ),
         descriptions=ModelDescriptionSection(
-            resource=data.description_resource,
-            resources=data.descriptions,
-            **section_common("descriptions"),
+            **_section("descriptions"),
+            resource=model_ctx.resources["descriptions"].selected[0]
+            if model_ctx.resources["descriptions"].selected
+            else None,
+            resources=all_descriptions,
         ),
         values=ModelValueSection(
-            resource=data.value_resource,
-            resources=data.values,
-            **section_common("values"),
+            **_section("values"),
+            resource=model_ctx.resources["values"].selected[0]
+            if model_ctx.resources["values"].selected
+            else None,
+            resources=all_values,
         ),
         providers=ModelProviderSection(
-            resource=data.provider_resource,
-            resources=data.providers,
-            **section_common("providers"),
+            **_section("providers"),
+            resource=model_ctx.resources["providers"].selected[0]
+            if model_ctx.resources["providers"].selected
+            else None,
+            resources=all_providers,
         ),
         flags=ModelFlagSection(
-            current=[
-                f
-                for f in data.model_flags
-                if f.flag_option_id
-                and f.flag_option_id in {ff.flag_option_id for ff in data.model_flags}
-            ],
-            resources=data.flags,
-            **section_common("flags"),
+            **_section("flags"),
+            current=current_flags or None,
+            resources=model_flags,
         ),
         departments=ModelDepartmentSection(
-            current=data.department_resources or None,
-            resources=data.departments,
-            **section_common("departments"),
+            **_section("departments"),
+            current=model_ctx.resources["departments"].selected or None,
+            resources=all_departments,
         ),
         modalities=ModelModalitySection(
-            current=data.modality_resources or None,
-            resources=data.modalities,
-            **section_common("modalities"),
+            **_section("modalities"),
+            current=model_ctx.resources["modalities"].selected or None,
+            resources=all_modalities,
         ),
         temperature_levels=ModelTemperatureLevelSection(
-            current=data.temperature_level_resources or None,
-            resources=data.temperature_levels,
-            **section_common("temperature_levels"),
+            **_section("temperature_levels"),
+            current=model_ctx.resources["temperature_levels"].selected or None,
+            resources=all_temperature_levels,
         ),
         pricing=ModelPricingSection(
-            current=data.pricing_resources or None,
-            resources=data.pricing,
-            **section_common("pricing"),
+            **_section("pricing"),
+            current=model_ctx.resources["pricing"].selected or None,
+            resources=all_pricing,
         ),
         reasoning_levels=ModelReasoningLevelSection(
-            current=data.reasoning_level_resources or None,
-            resources=data.reasoning_levels,
-            **section_common("reasoning_levels"),
+            **_section("reasoning_levels"),
+            current=model_ctx.resources["reasoning_levels"].selected or None,
+            resources=all_reasoning_levels,
         ),
         qualities=ModelQualitySection(
-            current=data.quality_resources or None,
-            resources=data.qualities,
-            **section_common("qualities"),
+            **_section("qualities"),
+            current=model_ctx.resources["qualities"].selected or None,
+            resources=all_qualities,
         ),
         voices=ModelVoiceSection(
-            current=data.voice_resources or None,
-            resources=data.voices,
-            **section_common("voices"),
+            **_section("voices"),
+            current=model_ctx.resources["voices"].selected or None,
+            resources=all_voices,
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# get_model_websocket — stub (to be rewritten with infra functions)
+# ---------------------------------------------------------------------------
+
+
+async def get_model_websocket(*args, **kwargs):
+    """Stub — will be rewritten to use composable infra functions."""
+    raise NotImplementedError(
+        "get_model_websocket needs to be rewritten with infra functions"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Route handler
+# ---------------------------------------------------------------------------
 
 
 @router.post("/get", response_model=GetModelApiResponse)
@@ -1068,9 +475,8 @@ async def get_model(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetModelApiResponse:
-    """Get model information using two-pass architecture."""
+    """Get model information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         profile_id = http_request.state.profile_id
@@ -1080,17 +486,20 @@ async def get_model(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        redis = get_redis_client()
+
         response_data = await get_model_client(
+            conn,
+            redis,
             profile_id=profile_id,
             model_id=request.model_id,
             draft_id=request.draft_id,
-            bypass_cache=bypass_cache,
             group_id=request.group_id,
+            bypass_cache=bypass_cache,
         )
 
         response.headers["X-Cache-Tags"] = "models"
         response.headers["X-Cache-Hit"] = "0"
-        response.headers["X-Two-Pass"] = "1"
 
         return response_data
     except HTTPException:
@@ -1102,11 +511,7 @@ async def get_model(
             error=e,
             route_path=http_request.url.path,
             operation="get_model",
-            sql_query=load_sql_query(QUERY1_SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )
-
-
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached

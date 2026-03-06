@@ -2,22 +2,12 @@
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetNamesV4Item,
-    QGetPointsV4Item,
-    QGetRubricDraftsEntriesV4Item,
-    QGetStandardGroupsV4Item,
-    QGetStandardsV4Item,
-)
 
 
 class RubricFlagConfig(BaseModel):
@@ -34,13 +24,13 @@ class RubricFlagConfig(BaseModel):
 
 
 class RubricNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class RubricDescriptionSection(BaseResourceSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class RubricFlagSection(BaseResourceSection):
@@ -49,36 +39,29 @@ class RubricFlagSection(BaseResourceSection):
 
 
 class RubricDepartmentSection(BaseResourceSection):
-    current: list[QGetDepartmentsV4Item] | None = None
-    resources: list[QGetDepartmentsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class RubricPointsSection(BaseResourceSection):
-    resource: QGetPointsV4Item | None = None
-    resources: list[QGetPointsV4Item] | None = None
-
-
-class RubricPassPointsSection(BaseResourceSection):
-    resource: QGetPointsV4Item | None = None
-    resources: list[QGetPointsV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class RubricStandardGroupsSection(BaseResourceSection):
-    current: list[QGetStandardGroupsV4Item] | None = None
-    resources: list[QGetStandardGroupsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class RubricStandardsSection(BaseResourceSection):
-    current: list[QGetStandardsV4Item] | None = None
-    resources: list[QGetStandardsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class GetRubricApiRequest(BaseModel):
     rubric_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID | None = None
-    description_search: str | None = None
-    standard_group_search: str | None = None
+    group_id: UUID
 
 
 class GetRubricApiResponse(BaseModel):
@@ -97,30 +80,8 @@ class GetRubricApiResponse(BaseModel):
     flags: RubricFlagSection | None = None
     departments: RubricDepartmentSection | None = None
     points: RubricPointsSection | None = None
-    pass_points: RubricPassPointsSection | None = None
     standard_groups: RubricStandardGroupsSection | None = None
     standards: RubricStandardsSection | None = None
-
-
-class RubricWebsocketEntries(BaseModel):
-    draft_rubric: QGetRubricDraftsEntriesV4Item | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class RubricWebsocketResources(BaseModel):
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    flags: list[RubricFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    points: list[QGetPointsV4Item] | None = None
-    pass_points: list[QGetPointsV4Item] | None = None
-    standard_groups: list[QGetStandardGroupsV4Item] | None = None
-    standards: list[QGetStandardsV4Item] | None = None
-
-
-class GetRubricWebsocketResponse(InternalResponseBase):
-    entries: RubricWebsocketEntries | None = None
-    resources: RubricWebsocketResources
 
 
 class RubricResourceAction(BaseModel):

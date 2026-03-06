@@ -8,7 +8,7 @@
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8ea4-72c7-8d80-8bae3d99f783', 'Imagen 4 Ultra - Highest quality variant of Imagen 4 image generation model', '2025-12-02T18:34:42.754909+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.models_resource (created_at, value, active, generated, mcp, id, name, description, department_ids, provider_id, temperature_level_ids, reasoning_level_ids, quality_ids, voice_ids, modality_ids) VALUES ('2025-12-02T18:34:42.754909+00:00', 'imagen-4.0-ultra-generate-001', true, false, false, '019bb25e-e5ff-77d0-a1f1-5add7db366d4', 'imagen-4.0-ultra-generate-001', 'Imagen 4 Ultra - Highest quality variant of Imagen 4 image generation model', '{}', '019bb2af-b2a8-7035-bbfd-664ba627bd44', '{}', '{}', '{019bbce5-e5ff-7197-bd68-b0ff7b7508af}', '{}', '{019bbce5-e606-77f1-abf8-78df7462af03,019bbce5-e609-750d-90c6-cb39f1266e18}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea2-7cbf-b07e-eced50ebf906', 'imagen-4.0-ultra-generate-001', '2025-12-02T18:34:42.754909+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.values_resource (id, value, created_at, active, generated, mcp) VALUES ('019bbabc-5a34-7a24-9b06-52c4d3ed167c', 'imagen-4.0-ultra-generate-001', '2025-12-02T18:34:42.754909+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.values_resource (id, value, type, created_at, active, generated, mcp) VALUES ('019bbabc-5a34-7a24-9b06-52c4d3ed167c', 'imagen-4.0-ultra-generate-001', 'model', '2025-12-02T18:34:42.754909+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- model_artifact

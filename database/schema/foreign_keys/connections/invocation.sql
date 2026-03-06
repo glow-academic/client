@@ -155,6 +155,42 @@ ALTER TABLE ONLY public.invocation_voices_connection
 
 --
 
+-- Name: invocation_drafts_endpoints_connection invocation_drafts_endpoints_connection_endpoints_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invocation_drafts_endpoints_connection
+    ADD CONSTRAINT invocation_drafts_endpoints_connection_endpoints_id_fkey FOREIGN KEY (endpoints_id) REFERENCES public.endpoints_resource(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: invocation_drafts_endpoints_connection invocation_drafts_endpoints_connection_invocation_drafts_id_fke; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invocation_drafts_endpoints_connection
+    ADD CONSTRAINT invocation_drafts_endpoints_connection_invocation_drafts_id_fke FOREIGN KEY (invocation_drafts_id) REFERENCES public.invocation_drafts_entry(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: invocation_drafts_pricing_connection invocation_drafts_pricing_connection_invocation_drafts_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invocation_drafts_pricing_connection
+    ADD CONSTRAINT invocation_drafts_pricing_connection_invocation_drafts_id_fkey FOREIGN KEY (invocation_drafts_id) REFERENCES public.invocation_drafts_entry(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: invocation_drafts_pricing_connection invocation_drafts_pricing_connection_pricing_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invocation_drafts_pricing_connection
+    ADD CONSTRAINT invocation_drafts_pricing_connection_pricing_id_fkey FOREIGN KEY (pricing_id) REFERENCES public.pricing_resource(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: invocation_drafts_profiles_connection invocation_drafts_profiles_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -169,6 +205,24 @@ ALTER TABLE ONLY public.invocation_drafts_profiles_connection
 
 ALTER TABLE ONLY public.invocation_drafts_profiles_connection
     ADD CONSTRAINT invocation_drafts_profiles_connection_profiles_id_fkey FOREIGN KEY (profiles_id) REFERENCES public.profiles_resource(id);
+
+
+--
+
+-- Name: invocation_drafts_values_connection invocation_drafts_values_connection_invocation_drafts_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invocation_drafts_values_connection
+    ADD CONSTRAINT invocation_drafts_values_connection_invocation_drafts_id_fkey FOREIGN KEY (invocation_drafts_id) REFERENCES public.invocation_drafts_entry(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: invocation_drafts_values_connection invocation_drafts_values_connection_values_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invocation_drafts_values_connection
+    ADD CONSTRAINT invocation_drafts_values_connection_values_id_fkey FOREIGN KEY (values_id) REFERENCES public.values_resource(id) ON DELETE CASCADE;
 
 
 --

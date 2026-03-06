@@ -2,27 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetEndpointsV4Item,
-    QGetKeysV4Item,
-    QGetModelsV4Item,
-    QGetNamesV4Item,
-    QGetProviderDraftsEntriesV4Item,
-    QGetProvidersV4Item,
-    QGetValuesV4Item,
-)
 
 
 class ProviderFlagConfig(BaseModel):
@@ -39,13 +25,13 @@ class ProviderFlagConfig(BaseModel):
 
 
 class ProviderNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class ProviderDescriptionSection(BaseResourceSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class ProviderFlagSection(BaseResourceSection):
@@ -54,23 +40,23 @@ class ProviderFlagSection(BaseResourceSection):
 
 
 class ProviderDepartmentSection(BaseResourceSection):
-    current: list[QGetDepartmentsV4Item] | None = None
-    resources: list[QGetDepartmentsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ProviderValueSection(BaseResourceSection):
-    resource: QGetValuesV4Item | None = None
-    resources: list[QGetValuesV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class ProviderEndpointSection(BaseResourceSection):
-    resource: QGetEndpointsV4Item | None = None
-    resources: list[QGetEndpointsV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class ProviderKeySection(BaseResourceSection):
-    resource: QGetKeysV4Item | None = None
-    resources: list[QGetKeysV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class GetProviderApiRequest(BaseModel):
@@ -78,7 +64,7 @@ class GetProviderApiRequest(BaseModel):
 
     provider_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID | None = None
+    group_id: UUID
 
 
 class GetProviderApiResponse(BaseModel):
@@ -101,70 +87,6 @@ class GetProviderApiResponse(BaseModel):
     values: ProviderValueSection | None = None
     endpoints: ProviderEndpointSection | None = None
     keys: ProviderKeySection | None = None
-
-
-class ProviderWebsocketEntries(BaseModel):
-    """Entries data for websocket response."""
-
-    draft_provider: QGetProviderDraftsEntriesV4Item | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class ProviderWebsocketResources(BaseModel):
-    """Hydrated resources for websocket — selected only."""
-
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    flags: list[ProviderFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    values: list[QGetValuesV4Item] | None = None
-    endpoints: list[QGetEndpointsV4Item] | None = None
-    keys: list[QGetKeysV4Item] | None = None
-
-
-class GetProviderWebsocketResponse(InternalResponseBase):
-    """Minimal response for WebSocket handlers."""
-
-    entries: ProviderWebsocketEntries | None = None
-    resources: ProviderWebsocketResources
-
-
-@dataclass
-class ProviderInternalData:
-    """Internal data from core provider fetching (cacheable layer)."""
-
-    actor_name: str | None
-    provider_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
-    agent_ids: dict[str, UUID | None]
-    show_flags_map: dict[str, bool]
-    required_flags_map: dict[str, bool]
-    suggestions_map: dict[str, list[UUID]]
-    show_ai_generate_map: dict[str, bool]
-    basic_show_ai_generate: bool
-    integrations_show_ai_generate: bool
-    name_resource: QGetNamesV4Item | None
-    description_resource: QGetDescriptionsV4Item | None
-    value_resource: QGetValuesV4Item | None
-    endpoint_resource: QGetEndpointsV4Item | None
-    key_resource: QGetKeysV4Item | None
-    provider_flags: list[ProviderFlagConfig]
-    department_resources: list[QGetDepartmentsV4Item]
-    names: list[QGetNamesV4Item]
-    descriptions: list[QGetDescriptionsV4Item]
-    flags: list[ProviderFlagConfig]
-    departments: list[QGetDepartmentsV4Item]
-    values: list[QGetValuesV4Item]
-    endpoints: list[QGetEndpointsV4Item]
-    keys: list[QGetKeysV4Item]
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
-    config_agent_resources: list[QGetAgentsV4Item] | None
-    config_model_resources: list[QGetModelsV4Item] | None
-    config_provider_resources: list[QGetProvidersV4Item] | None
 
 
 class ListProviderApiProvider(BaseModel):

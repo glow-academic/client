@@ -1,26 +1,31 @@
-"""Rubric get endpoint - Three-layer architecture.
+"""Rubric GET endpoint — composable infra architecture.
 
-This implements the three-layer BFF pattern:
-1. get_rubric_internal() - Core data fetching (cacheable, returns dataclass)
-2. get_rubric_websocket() - Minimal data for WebSocket handlers
-3. get_rubric_client() - Full BFF response for HTTP endpoint/frontend
-
-The internal layer handles SQL queries and resource fetching.
-The presentation layers transform internal data into consumer-specific formats.
+Uses composable infra layers:
+  1. resolve_common_context — profile + tool graph + runs
+  2. resolve_rubric_permissions_context — fail-fast 404/403
+  3. resolve_rubric_context — artifact + draft -> merged + hydrated resources
+  4. score_tools — tool graph + artifact resources -> per-resource tool picks
+  5. Pure Python — permissions, show/required flags, response assembly
 """
 
-import asyncio
-from dataclasses import dataclass
-from typing import Annotated, Any, cast
+from __future__ import annotations
+
+from typing import Annotated
 from uuid import UUID
 
-import asyncpg  # type: ignore
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from redis.asyncio import Redis
 
-from app.infra.globals import get_db, get_pool, get_redis_client
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
+from app.infra.common_context import resolve_common_context
+from app.infra.globals import get_db, get_redis_client
+from app.infra.helpers import dedupe_by_id
+from app.infra.rubric_context import resolve_rubric_context
+from app.infra.rubric_permissions_context import resolve_rubric_permissions_context
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.rubric.permissions import (
+    RUBRIC_BASIC_RESOURCES,
+    RUBRIC_CONTENT_RESOURCES,
     RUBRIC_RESOURCES,
     compute_can_edit,
     compute_departments_required,
@@ -28,13 +33,11 @@ from app.routes.v5.api.main.rubric.permissions import (
     compute_disabled_reason,
     compute_flag_required,
     compute_name_required,
-    compute_pass_points_required,
     compute_points_required,
     compute_show_departments,
     compute_show_description,
     compute_show_flag,
     compute_show_name,
-    compute_show_pass_points,
     compute_show_points,
     compute_show_standard_groups,
     compute_show_standards,
@@ -45,910 +48,23 @@ from app.routes.v5.api.main.rubric.permissions import (
 from app.routes.v5.api.main.rubric.types import (
     GetRubricApiRequest,
     GetRubricApiResponse,
-    GetRubricWebsocketResponse,
     RubricDepartmentSection,
     RubricDescriptionSection,
     RubricFlagConfig,
     RubricFlagSection,
     RubricNameSection,
-    RubricPassPointsSection,
     RubricPointsSection,
     RubricStandardGroupsSection,
     RubricStandardsSection,
-    RubricWebsocketEntries,
-    RubricWebsocketResources,
-)
-from app.routes.v5.api.permissions import (
-    has_tools_for_resource,
-    resolve_agents_for_artifact,
-)
-from app.routes.v5.tools.entries.rubric_drafts.get import (
-    get_rubric_drafts_entries_internal,
-)
-from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.args.get import get_args
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.descriptions.search import (
-    search_descriptions,
-)
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.search import search_names
-from app.routes.v5.tools.resources.points.get import get_points
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.standard_groups.get import (
-    get_standard_groups,
-)
-from app.routes.v5.tools.resources.standards.get import get_standards
-from app.routes.v5.tools.resources.tools.get import get_tools
-from app.sql.types import (
-    GetRubricAccessSqlParams,
-    GetRubricAccessSqlRow,
-    GetRubricIdsSqlParams,
-    GetRubricIdsSqlRow,
-    load_sql_query,
 )
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
-
-# SQL paths
-QUERY1_SQL_PATH = "app/sql/queries/rubrics/get_rubric_access_complete.sql"
-QUERY2_SQL_PATH = "app/sql/queries/rubrics/get_rubric_ids_complete.sql"
 
 router = APIRouter()
 
 
-@dataclass
-class RubricInternalData:
-    """Internal data from core rubric fetching (cacheable layer).
-
-    This dataclass contains all computed data needed by both:
-    - get_rubric_websocket() - minimal data for WebSocket handlers
-    - get_rubric_client() - full BFF response for HTTP/frontend
-    """
-
-    # Access/context
-    actor_name: str | None
-    rubric_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
-
-    # Agent mappings (resource_type -> agent_id)
-    resource_agent_ids: dict[str, UUID | None]
-
-    # Show/required flags
-    show_flags_map: dict[str, bool]
-    required_flags_map: dict[str, bool]
-
-    # Suggestions (resource -> list of suggestion IDs)
-    suggestions_map: dict[str, list[UUID]]
-
-    # Show AI generate flags (computed: agent exists)
-    show_ai_generate_map: dict[str, bool]
-    basic_show_ai_generate: bool
-    content_show_ai_generate: bool
-
-    # Resources
-    names: list[Any]
-    descriptions: list[Any]
-    flags: list[RubricFlagConfig]
-    departments: list[Any]
-    points: list[Any]
-    pass_points: list[Any]
-    standard_groups: list[Any]
-    standards: list[Any]
-    names_current: list[Any]
-    descriptions_current: list[Any]
-    flags_current: list[RubricFlagConfig]
-    departments_current: list[Any]
-    points_current: list[Any]
-    pass_points_current: list[Any]
-    standard_groups_current: list[Any]
-    standards_current: list[Any]
-
-    # Config resources for websocket generation context
-    config_agents: list[Any]
-    config_models: list[Any]
-    config_providers: list[Any]
-    config_tools: list[Any]
-
-    # Per-resource tool IDs (from selected agents)
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
-
-
-async def get_rubric_internal(
-    profile_id: UUID,
-    rubric_id: UUID | None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-    # Search/filter kwargs (threaded from websocket artifact tool)
-    description_search: str | None = None,
-    standard_group_search: str | None = None,
-    group_id: UUID | None = None,
-) -> RubricInternalData:
-    """Core data fetching layer (cacheable).
-
-    Fetches all rubric data using two-pass architecture and returns
-    a dataclass with all computed values. This is the shared layer used by:
-    - get_rubric_websocket() - minimal data for WebSocket handlers
-    - get_rubric_client() - full BFF response for HTTP/frontend
-    """
-
-    # === QUERY 1: Access Check (always fresh, no cache) ===
-    pool = get_pool()
-    if not pool:
-        raise RuntimeError("Database pool not initialized")
-
-    # Resolve shared profile context first (default path).
-    async with pool.acquire() as context_conn:
-        profile_ctx = await get_auth_profile_internal(
-            conn=context_conn,
-            profile_id=profile_id,
-            bypass_cache=bypass_cache,
-        )
-
-    # Extract user context from internal fetch (single source of truth)
-    user_role = profile_ctx.access.role
-    actor_name = profile_ctx.access.actor_name
-    user_department_ids = [
-        d.department_id for d in profile_ctx.departments if d.department_id
-    ]
-
-    draft_item = None
-    if draft_id is not None:
-        async with pool.acquire() as draft_conn:
-            draft_items = await get_rubric_drafts_entries_internal(
-                conn=draft_conn,
-                ids=[draft_id],
-                bypass_cache=bypass_cache,
-            )
-            if draft_items:
-                draft_item = draft_items[0]
-
-    async with pool.acquire() as conn:
-        query1_params = GetRubricAccessSqlParams(
-            profile_id=profile_id,
-            rubric_id=rubric_id,
-            draft_id=draft_id,
-            draft_group_id=draft_item.group_id if draft_item is not None else None,
-            draft_version=draft_item.version if draft_item is not None else None,
-        )
-
-        access_result = cast(
-            GetRubricAccessSqlRow,
-            await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
-        )
-
-        # Extract artifact-specific state from Query 1 (no user context)
-        rubric_department_ids = access_result.rubric_department_ids or []
-        active_simulation_count = access_result.active_simulation_count or 0
-
-        # Early validation: check rubric exists
-        if rubric_id is not None:
-            if access_result.rubric_exists is False:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Rubric {rubric_id} not found",
-                )
-
-            # Check access
-            if not has_access(user_role, user_department_ids, rubric_department_ids):
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have access to this rubric. It may be restricted to other departments.",
-                )
-
-        # group_id is guaranteed by SQL (created inline if no draft)
-        if group_id:
-            effective_group_id = group_id
-        else:
-            effective_group_id = access_result.group_id
-        effective_draft_version = access_result.effective_draft_version
-
-        # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
-        query2_params = GetRubricIdsSqlParams(
-            profile_id=profile_id,
-            rubric_id=rubric_id,
-            draft_id=draft_id,
-            group_id=effective_group_id,
-            user_department_ids=user_department_ids,
-        )
-
-        ids_result = cast(
-            GetRubricIdsSqlRow,
-            await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
-        )
-
-    selected_name_id = ids_result.name_id
-    selected_description_id = ids_result.description_id
-    selected_active_flag_id = ids_result.active_flag_id
-    selected_total_points_id = ids_result.total_points_id
-    selected_pass_points_id = ids_result.pass_points_id
-
-    selected_department_ids = ids_result.department_ids or []
-    selected_standard_group_ids = ids_result.standard_group_ids or []
-    selected_standard_ids = ids_result.standard_ids or []
-
-    # Draft values override canonical rubric-junction values.
-    if draft_item is not None:
-        if draft_item.name_ids:
-            selected_name_id = draft_item.name_ids[0]
-        if draft_item.description_ids:
-            selected_description_id = draft_item.description_ids[0]
-        if draft_item.flag_ids:
-            selected_active_flag_id = draft_item.flag_ids[0]
-        if draft_item.department_ids:
-            selected_department_ids = draft_item.department_ids
-        if draft_item.point_ids:
-            selected_total_points_id = draft_item.point_ids[0]
-            selected_pass_points_id = (
-                draft_item.point_ids[1]
-                if len(draft_item.point_ids) > 1
-                else draft_item.point_ids[0]
-            )
-        if draft_item.standard_group_ids:
-            selected_standard_group_ids = draft_item.standard_group_ids
-        if draft_item.standard_ids:
-            selected_standard_ids = draft_item.standard_ids
-
-    # === RESOLVE AGENTS FROM SETTINGS ===
-    async with pool.acquire() as settings_conn:
-        settings_data = await get_auth_settings_internal(
-            settings_conn, profile_id, bypass_cache
-        )
-    resource_agent_ids, create_tool_ids_map, link_tool_ids_map = (
-        resolve_agents_for_artifact(settings_data.agent_tool_entries, RUBRIC_RESOURCES)
-    )
-    names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
-
-    # === COMPUTE SHOW_AI_GENERATE FLAGS ===
-    def compute_show_ai_generate(resource: str) -> bool:
-        """Returns True if an agent exists for that resource."""
-        return resource_agent_ids.get(resource) is not None
-
-    name_show_ai_generate = compute_show_ai_generate("names")
-    description_show_ai_generate = compute_show_ai_generate("descriptions")
-    flag_show_ai_generate = compute_show_ai_generate("flags")
-    departments_show_ai_generate = compute_show_ai_generate("departments")
-    points_show_ai_generate = compute_show_ai_generate("points")
-    pass_points_show_ai_generate = compute_show_ai_generate("pass_points")
-    standard_groups_show_ai_generate = compute_show_ai_generate("standard_groups")
-    standards_show_ai_generate = compute_show_ai_generate("standards")
-
-    # Step-level show_ai_generate flags
-    basic_show_ai_generate = any(
-        [
-            name_show_ai_generate,
-            description_show_ai_generate,
-            flag_show_ai_generate,
-            departments_show_ai_generate,
-        ]
-    )
-    content_show_ai_generate = any(
-        [
-            points_show_ai_generate,
-            pass_points_show_ai_generate,
-            standard_groups_show_ai_generate,
-            standards_show_ai_generate,
-        ]
-    )
-
-    # === PYTHON BUSINESS LOGIC ===
-    can_edit = compute_can_edit(
-        user_role=user_role,
-        rubric_department_ids=rubric_department_ids,
-        active_simulation_count=active_simulation_count,
-    )
-
-    disabled_reason = compute_disabled_reason(
-        user_role=user_role,
-        rubric_department_ids=rubric_department_ids,
-        active_simulation_count=active_simulation_count,
-    )
-
-    # === PASS 2: Parallel Resource Fetching ===
-
-    # Selected IDs for fetching
-    name_ids = [selected_name_id] if selected_name_id else []
-    description_ids = [selected_description_id] if selected_description_id else []
-    flag_ids = [selected_active_flag_id] if selected_active_flag_id else []
-    department_ids = selected_department_ids
-    total_points_ids = [selected_total_points_id] if selected_total_points_id else []
-    pass_points_ids = [selected_pass_points_id] if selected_pass_points_id else []
-    standard_group_ids = selected_standard_group_ids
-    standard_ids = selected_standard_ids
-
-    async def fetch_names() -> tuple[list[Any], list[Any]]:
-        async with pool.acquire() as c:
-            selected = await get_names(
-                c, name_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-            suggestions = await search_names(
-                c,
-                get_redis_client(),
-                draft_id=effective_group_id,
-                exclude_ids=name_ids,
-                bypass_cache=bypass_cache,
-                rubric=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_descriptions() -> tuple[list[Any], list[Any]]:
-        async with pool.acquire() as c:
-            selected = await get_descriptions(
-                c, description_ids, get_redis_client(), cache
-            )
-            suggestions = await search_descriptions(
-                c,
-                get_redis_client(),
-                search=description_search,
-                draft_id=effective_group_id,
-                exclude_ids=description_ids,
-                bypass_cache=bypass_cache,
-                rubric=True,
-            )
-            return (selected, suggestions)
-
-    RUBRIC_FLAG_NAMES = {"rubric_active"}
-
-    async def fetch_flags() -> tuple[list[Any], list[Any]]:
-        async with pool.acquire() as c:
-            selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
-            all_flags = await search_flags(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=50,
-                offset_count=0,
-                exclude_ids=flag_ids,
-                bypass_cache=bypass_cache,
-                rubric=True,
-            )
-            suggestions = [f for f in all_flags if f.name in RUBRIC_FLAG_NAMES]
-            return (selected, suggestions)
-
-    async def fetch_departments() -> tuple[list[Any], list[Any]]:
-        async with pool.acquire() as c:
-            selected = await get_departments(
-                c, department_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-            suggestions = await search_departments(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=20,
-                offset_count=0,
-                department_ids=user_department_ids,
-                suggest_source="all",
-                exclude_ids=department_ids,
-                bypass_cache=bypass_cache,
-                rubric=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_points() -> list[Any]:
-        async with pool.acquire() as c:
-            return await get_points(
-                c, total_points_ids, get_redis_client(), bypass_cache
-            )
-
-    async def fetch_pass_points() -> list[Any]:
-        async with pool.acquire() as c:
-            return await get_points(
-                c, pass_points_ids, get_redis_client(), bypass_cache
-            )
-
-    async def fetch_standard_groups() -> list[Any]:
-        async with pool.acquire() as c:
-            return await get_standard_groups(
-                c, standard_group_ids, get_redis_client(), bypass_cache
-            )
-
-    async def fetch_standards() -> list[Any]:
-        async with pool.acquire() as c:
-            return await get_standards(
-                c, standard_ids, get_redis_client(), bypass_cache
-            )
-
-    # Parallel fetch all resources
-    (
-        (names_selected, names_suggestions),
-        (descriptions_selected, descriptions_suggestions),
-        (flags_selected, flags_suggestions),
-        (departments_selected, departments_suggestions),
-        points_selected,
-        pass_points_selected,
-        standard_groups_selected,
-        standards_selected,
-    ) = await asyncio.gather(
-        fetch_names(),
-        fetch_descriptions(),
-        fetch_flags(),
-        fetch_departments(),
-        fetch_points(),
-        fetch_pass_points(),
-        fetch_standard_groups(),
-        fetch_standards(),
-    )
-
-    names = _dedupe_by_id(names_selected + names_suggestions, "id")
-    descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
-    flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
-    departments = _dedupe_by_id(departments_selected + departments_suggestions, "id")
-
-    # Find selected resources
-    name_resource = next((n for n in names if n.id == selected_name_id), None)
-    description_resource = next(
-        (d for d in descriptions if d.id == selected_description_id),
-        None,
-    )
-    department_resources = [d for d in departments if d.id in selected_department_ids]
-
-    # Points resources - selected are the current
-    total_points_resource = points_selected[0] if points_selected else None
-    pass_points_resource = pass_points_selected[0] if pass_points_selected else None
-
-    name_suggestion_ids = [n.id for n in names_suggestions]
-    description_suggestion_ids = [d.id for d in descriptions_suggestions]
-    department_suggestion_ids = [d.id for d in departments_suggestions]
-    points_suggestion_ids: list[UUID] = []
-    pass_points_suggestion_ids: list[UUID] = []
-    standard_group_suggestion_ids: list[UUID] = []
-    standard_suggestion_ids: list[UUID] = []
-
-    # Compute final show flags based on actual data
-    show_name = compute_show_name(names_has_tools)
-    show_description_flag = compute_show_description()
-    show_flag = compute_show_flag()
-    show_departments_flag = compute_show_departments(len(departments))
-    show_points_flag = compute_show_points()
-    show_pass_points_flag = compute_show_pass_points()
-    show_standard_groups_flag = compute_show_standard_groups()
-    show_standards_flag = compute_show_standards(len(standard_groups_selected))
-
-    # Build show and required flags maps for section metadata.
-    show_flags_map = {
-        "names": show_name,
-        "descriptions": show_description_flag,
-        "flags": show_flag,
-        "departments": show_departments_flag,
-        "points": show_points_flag,
-        "pass_points": show_pass_points_flag,
-        "standard_groups": show_standard_groups_flag,
-        "standards": show_standards_flag,
-    }
-
-    required_flags_map = {
-        "names": compute_name_required(),
-        "descriptions": compute_description_required(),
-        "flags": compute_flag_required(),
-        "departments": compute_departments_required(),
-        "points": compute_points_required(),
-        "pass_points": compute_pass_points_required(),
-        "standard_groups": compute_standard_groups_required(),
-        "standards": compute_standards_required(),
-    }
-
-    # Transform flags to enriched format for client
-    rubric_flags = [
-        RubricFlagConfig(
-            key=derive_flag_key_and_label(flag.name)[0],
-            label=derive_flag_key_and_label(flag.name)[1],
-            description=flag.description,
-            icon_id=flag.icon,
-            flag_option_id=flag.id,
-            show=show_flag,
-            required=compute_flag_required(),
-            generated=flag.generated,
-        )
-        for flag in flags
-        if flag.id
-    ]
-
-    # Validation for new mode
-    if rubric_id is None:
-        if not departments:
-            raise HTTPException(
-                status_code=400, detail="No accessible departments found for user"
-            )
-
-    # Detail mode: check access via name_resource
-    if rubric_id is not None and not name_resource:
-        raise HTTPException(
-            status_code=403,
-            detail="You don't have access to this rubric. It may be restricted to other departments.",
-        )
-
-    # Fetch config resources for websocket generation context.
-    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
-    config_model_resource_ids = [
-        a.model_id for a in settings_data.settings_agents if a.model_id
-    ]
-
-    config_agents: list[Any] = []
-    config_models: list[Any] = []
-    config_providers: list[Any] = []
-    config_tools: list[Any] = []
-    if config_agent_resource_ids:
-        async with pool.acquire() as c:
-            config_agents = await get_agents(
-                c,
-                config_agent_resource_ids,
-                get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-    if config_model_resource_ids:
-        async with pool.acquire() as c:
-            config_models = await get_models(
-                c,
-                config_model_resource_ids,
-                get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-    provider_ids = list(
-        dict.fromkeys(
-            [m.provider_id for m in config_models if m.provider_id is not None]
-        )
-    )
-    if provider_ids:
-        async with pool.acquire() as c:
-            config_providers = await get_providers(
-                c, provider_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-    tool_ids: list[UUID] = []
-    for agent in config_agents:
-        raw = getattr(agent, "tool_ids", None) or []
-        tool_ids.extend([tid for tid in raw if tid is not None])
-    tool_ids = list(dict.fromkeys(tool_ids))
-    if tool_ids:
-        async with pool.acquire() as c:
-            config_tools = await get_tools(
-                c,
-                tool_ids,
-                get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-
-    # Build show_ai_generate map
-    show_ai_generate_map = {
-        "names": name_show_ai_generate,
-        "descriptions": description_show_ai_generate,
-        "flags": flag_show_ai_generate,
-        "departments": departments_show_ai_generate,
-        "points": points_show_ai_generate,
-        "pass_points": pass_points_show_ai_generate,
-        "standard_groups": standard_groups_show_ai_generate,
-        "standards": standards_show_ai_generate,
-    }
-
-    # Build suggestions map
-    suggestions_map: dict[str, list[UUID]] = {
-        "names": name_suggestion_ids,
-        "descriptions": description_suggestion_ids,
-        "departments": department_suggestion_ids,
-        "points": points_suggestion_ids,
-        "pass_points": pass_points_suggestion_ids,
-        "standard_groups": standard_group_suggestion_ids,
-        "standards": standard_suggestion_ids,
-    }
-
-    return RubricInternalData(
-        # Access/context
-        actor_name=actor_name,
-        rubric_exists=access_result.rubric_exists,
-        can_edit=can_edit,
-        disabled_reason=disabled_reason,
-        draft_version=effective_draft_version,
-        group_id=effective_group_id,
-        # Agent mappings
-        resource_agent_ids=resource_agent_ids,
-        # Show/required flags
-        show_flags_map=show_flags_map,
-        required_flags_map=required_flags_map,
-        # Suggestions
-        suggestions_map=suggestions_map,
-        # Show AI generate
-        show_ai_generate_map=show_ai_generate_map,
-        basic_show_ai_generate=basic_show_ai_generate,
-        content_show_ai_generate=content_show_ai_generate,
-        # Resources
-        names=names,
-        descriptions=descriptions,
-        flags=rubric_flags,
-        departments=departments,
-        points=points_selected,
-        pass_points=pass_points_selected,
-        standard_groups=standard_groups_selected,
-        standards=standards_selected,
-        names_current=[name_resource] if name_resource else [],
-        descriptions_current=[description_resource] if description_resource else [],
-        flags_current=[
-            f for f in rubric_flags if f.flag_option_id == selected_active_flag_id
-        ],
-        departments_current=department_resources or [],
-        points_current=[total_points_resource] if total_points_resource else [],
-        pass_points_current=[pass_points_resource] if pass_points_resource else [],
-        standard_groups_current=standard_groups_selected,
-        standards_current=standards_selected,
-        config_agents=config_agents,
-        config_models=config_models,
-        config_providers=config_providers,
-        config_tools=config_tools,
-        # Per-resource tool IDs
-        create_tool_ids_map=create_tool_ids_map,
-        link_tool_ids_map=link_tool_ids_map,
-    )
-
-
-async def get_rubric_websocket(
-    profile_id: UUID,
-    rubric_id: UUID | None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-    # Search/filter kwargs (from artifact tool calls)
-    description_search: str | None = None,
-    standard_group_search: str | None = None,
-) -> GetRubricWebsocketResponse:
-    """Websocket response using views/resources pattern."""
-    from datetime import UTC, datetime
-
-    data = await get_rubric_internal(
-        profile_id=profile_id,
-        rubric_id=rubric_id,
-        draft_id=draft_id,
-        cache=cache,
-        description_search=description_search,
-        standard_group_search=standard_group_search,
-    )
-
-    # Fetch draft rubric view, config_profile, runs_today, and tools in parallel
-    pool = get_pool()
-
-    async def fetch_draft():
-        if not draft_id or not pool:
-            return None
-        async with pool.acquire() as conn:
-            draft_items = await get_rubric_drafts_entries_internal(
-                conn=conn,
-                ids=[draft_id],
-                bypass_cache=bypass_cache,
-            )
-            return draft_items[0] if draft_items else None
-
-    async def fetch_config_profile():
-        if not pool:
-            return None
-        async with pool.acquire() as conn:
-            return await get_profiles(conn, [profile_id], get_redis_client(), cache)
-
-    async def fetch_runs_today():
-        if not pool:
-            return None
-        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
-        async with pool.acquire() as conn:
-            return await get_run_list_entries_internal(
-                conn=conn,
-                profile_id_filter=profile_id,
-                date_from=today_utc,
-                date_to=tomorrow_utc,
-                page_limit=1,
-                bypass_cache=True,
-            )
-
-    async def fetch_tools():
-        if not data.config_agents or not pool:
-            return []
-        agent_resource = data.config_agents[0]
-        if not agent_resource or not agent_resource.tool_ids:
-            return []
-        async with pool.acquire() as c:
-            return await get_tools(c, list(agent_resource.tool_ids), cache)
-
-    (
-        draft_rubric,
-        config_profile_result,
-        runs_result,
-        tools_result,
-    ) = await asyncio.gather(
-        fetch_draft(),
-        fetch_config_profile(),
-        fetch_runs_today(),
-        fetch_tools(),
-    )
-
-    # Pre-fetch args and args_outputs from tool IDs (both cached via *_internal)
-    config_args = None
-    config_args_outputs = None
-    if tools_result and pool:
-        all_args_ids: list[UUID] = []
-        all_args_output_ids: list[UUID] = []
-        for tool in tools_result:
-            if tool.args_ids:
-                all_args_ids.extend(tool.args_ids)
-            if tool.args_output_ids:
-                all_args_output_ids.extend(tool.args_output_ids)
-
-        if all_args_ids or all_args_output_ids:
-
-            async def fetch_args():
-                if not all_args_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args(
-                        c,
-                        list(set(all_args_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            async def fetch_args_outputs():
-                if not all_args_output_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args_outputs(
-                        c,
-                        list(set(all_args_output_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            config_args, config_args_outputs = await asyncio.gather(
-                fetch_args(),
-                fetch_args_outputs(),
-            )
-
-    return GetRubricWebsocketResponse(
-        entries=RubricWebsocketEntries(
-            draft_rubric=draft_rubric,
-            runs=runs_result or None,
-        ),
-        resources=RubricWebsocketResources(
-            names=data.names_current,
-            descriptions=data.descriptions_current,
-            flags=data.flags_current,
-            departments=data.departments_current,
-            points=data.points_current,
-            pass_points=data.pass_points_current,
-            standard_groups=data.standard_groups_current,
-            standards=data.standards_current,
-        ),
-        agents=data.config_agents,
-        models=data.config_models,
-        providers=data.config_providers,
-        tools=tools_result or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetRubricApiRequest(
-            rubric_id=rubric_id,
-            draft_id=draft_id,
-            description_search=description_search,
-            standard_group_search=standard_group_search,
-        ),
-        resource_agent_ids=data.resource_agent_ids,
-        group_id=data.group_id,
-    )
-
-
-async def get_rubric_client(
-    profile_id: UUID,
-    rubric_id: UUID | None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-    group_id: UUID | None = None,
-) -> GetRubricApiResponse:
-    """BFF response for HTTP endpoint/frontend.
-
-    Returns the full response with all UI fields, suggestions, and
-    computed *_show_ai_generate flags.
-    """
-    data = await get_rubric_internal(
-        profile_id=profile_id,
-        rubric_id=rubric_id,
-        draft_id=draft_id,
-        cache=cache,
-        group_id=group_id,
-    )
-
-    return GetRubricApiResponse(
-        actor_name=data.actor_name,
-        rubric_exists=data.rubric_exists,
-        can_edit=data.can_edit,
-        disabled_reason=data.disabled_reason,
-        draft_version=data.draft_version,
-        group_id=data.group_id,
-        basic_show_ai_generate=data.basic_show_ai_generate,
-        content_show_ai_generate=data.content_show_ai_generate,
-        names=RubricNameSection(
-            show=data.show_flags_map.get("names", False),
-            required=data.required_flags_map.get("names", False),
-            suggestions=data.suggestions_map.get("names"),
-            show_ai_generate=data.show_ai_generate_map.get("names", False),
-            create_tool_id=data.create_tool_ids_map.get("names"),
-            link_tool_id=data.link_tool_ids_map.get("names"),
-            resource=data.names_current[0] if data.names_current else None,
-            resources=data.names,
-        ),
-        descriptions=RubricDescriptionSection(
-            show=data.show_flags_map.get("descriptions", False),
-            required=data.required_flags_map.get("descriptions", False),
-            suggestions=data.suggestions_map.get("descriptions"),
-            show_ai_generate=data.show_ai_generate_map.get("descriptions", False),
-            create_tool_id=data.create_tool_ids_map.get("descriptions"),
-            link_tool_id=data.link_tool_ids_map.get("descriptions"),
-            resource=data.descriptions_current[0]
-            if data.descriptions_current
-            else None,
-            resources=data.descriptions,
-        ),
-        flags=RubricFlagSection(
-            show=data.show_flags_map.get("flags", False),
-            required=data.required_flags_map.get("flags", False),
-            show_ai_generate=data.show_ai_generate_map.get("flags", False),
-            link_tool_id=data.link_tool_ids_map.get("flags"),
-            current=data.flags_current,
-            resources=data.flags,
-        ),
-        departments=RubricDepartmentSection(
-            show=data.show_flags_map.get("departments", False),
-            required=data.required_flags_map.get("departments", False),
-            suggestions=data.suggestions_map.get("departments"),
-            show_ai_generate=data.show_ai_generate_map.get("departments", False),
-            link_tool_id=data.link_tool_ids_map.get("departments"),
-            current=data.departments_current,
-            resources=data.departments,
-        ),
-        points=RubricPointsSection(
-            show=data.show_flags_map.get("points", False),
-            required=data.required_flags_map.get("points", False),
-            suggestions=data.suggestions_map.get("points"),
-            show_ai_generate=data.show_ai_generate_map.get("points", False),
-            create_tool_id=data.create_tool_ids_map.get("points"),
-            link_tool_id=data.link_tool_ids_map.get("points"),
-            resource=data.points_current[0] if data.points_current else None,
-            resources=data.points,
-        ),
-        pass_points=RubricPassPointsSection(
-            show=data.show_flags_map.get("pass_points", False),
-            required=data.required_flags_map.get("pass_points", False),
-            suggestions=data.suggestions_map.get("pass_points"),
-            show_ai_generate=data.show_ai_generate_map.get("pass_points", False),
-            create_tool_id=data.create_tool_ids_map.get("pass_points"),
-            link_tool_id=data.link_tool_ids_map.get("pass_points"),
-            resource=data.pass_points_current[0] if data.pass_points_current else None,
-            resources=data.pass_points,
-        ),
-        standard_groups=RubricStandardGroupsSection(
-            show=data.show_flags_map.get("standard_groups", False),
-            required=data.required_flags_map.get("standard_groups", False),
-            suggestions=data.suggestions_map.get("standard_groups"),
-            show_ai_generate=data.show_ai_generate_map.get("standard_groups", False),
-            create_tool_id=data.create_tool_ids_map.get("standard_groups"),
-            link_tool_id=data.link_tool_ids_map.get("standard_groups"),
-            current=data.standard_groups_current,
-            resources=data.standard_groups,
-        ),
-        standards=RubricStandardsSection(
-            show=data.show_flags_map.get("standards", False),
-            required=data.required_flags_map.get("standards", False),
-            suggestions=data.suggestions_map.get("standards"),
-            show_ai_generate=data.show_ai_generate_map.get("standards", False),
-            link_tool_id=data.link_tool_ids_map.get("standards"),
-            current=data.standards_current,
-            resources=data.standards,
-        ),
-    )
+# ---------------------------------------------------------------------------
+# get_rubric_client — composable infra architecture
+# ---------------------------------------------------------------------------
 
 
 def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
@@ -960,16 +76,309 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
     return (key, label)
 
 
-def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
-    """Preserve order while deduplicating by id attribute."""
-    seen: set[UUID] = set()
-    output: list[Any] = []
-    for item in items:
-        item_id = getattr(item, id_attr, None)
-        if item_id and item_id not in seen:
-            seen.add(item_id)
-            output.append(item)
-    return output
+async def get_rubric_client(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
+    profile_id: UUID,
+    rubric_id: UUID | None,
+    draft_id: UUID | None = None,
+    group_id: UUID,
+    bypass_cache: bool = False,
+) -> GetRubricApiResponse:
+    """Rubric GET using composable infra functions.
+
+    Flow:
+      1. resolve_common_context(profile_id) -> profile, tool_graph, runs
+      2. resolve_rubric_permissions_context -> access check (404, 403, fail fast)
+      3. resolve_rubric_context(rubric_id, draft_id, ...) -> hydrated resources
+      4. score_tools(tool_graph, RUBRIC_RESOURCES) -> per-resource tool picks
+      5. Pure Python: permissions, show/required/AI flags, response assembly
+    """
+
+    # -- Step 1: Common context (profile -> tool_graph + runs) ----------------
+
+    common = await resolve_common_context(
+        conn,
+        redis,
+        profile_id=profile_id,
+        group_id=group_id,
+        bypass_cache=bypass_cache,
+    )
+
+    if common is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
+        )
+
+    profile = common.profile
+
+    # -- Step 2: Permissions check (fail fast before full hydration) -----------
+
+    perms = None
+    if rubric_id is not None:
+        perms = await resolve_rubric_permissions_context(conn, rubric_id)
+
+        if not perms.exists:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Rubric {rubric_id} not found",
+            )
+
+        if not has_access(profile.role, profile.department_ids, perms.department_ids):
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have access to this rubric. It may be restricted to other departments.",
+            )
+
+    # -- Step 3: Rubric artifact context --------------------------------------
+
+    rubric_ctx = await resolve_rubric_context(
+        conn,
+        redis,
+        rubric_id=rubric_id,
+        group_id=group_id,
+        draft_id=draft_id,
+        user_department_ids=profile.department_ids,
+        bypass_cache=bypass_cache,
+    )
+
+    # -- Step 4: Tool scoring -------------------------------------------------
+
+    scores = score_tools(common.tool_graph, RUBRIC_RESOURCES)
+
+    agent_ids: dict[str, UUID | None] = {
+        r: (scores.best[r].agent_id if scores.best.get(r) else None)
+        for r in RUBRIC_RESOURCES
+    }
+
+    tool_ids_map: dict[str, UUID | None] = {
+        r: (scores.best[r].tool_id if scores.best.get(r) else None)
+        for r in RUBRIC_RESOURCES
+    }
+
+    # -- Step 5: Permissions --------------------------------------------------
+
+    perms_department_ids = perms.department_ids if perms else []
+    active_simulation_count = perms.active_simulation_count if perms else 0
+
+    can_edit = compute_can_edit(
+        user_role=profile.role,
+        rubric_department_ids=perms_department_ids,
+        active_simulation_count=active_simulation_count,
+    )
+
+    disabled_reason = compute_disabled_reason(
+        user_role=profile.role,
+        rubric_department_ids=perms_department_ids,
+        active_simulation_count=active_simulation_count,
+    )
+
+    # -- Step 6: Show / Required / AI flags -----------------------------------
+
+    names_has_tools = scores.has_any.get("names", False)
+
+    all_departments = dedupe_by_id(
+        rubric_ctx.resources["departments"].selected
+        + rubric_ctx.resources["departments"].suggestions
+    )
+    all_standard_groups = dedupe_by_id(
+        rubric_ctx.resources["standard_groups"].selected
+        + rubric_ctx.resources["standard_groups"].suggestions
+    )
+
+    show_flags_map = {
+        "names": compute_show_name(names_has_tools),
+        "descriptions": compute_show_description(),
+        "flags": compute_show_flag(),
+        "departments": compute_show_departments(len(all_departments)),
+        "points": compute_show_points(),
+        "standard_groups": compute_show_standard_groups(),
+        "standards": compute_show_standards(len(all_standard_groups)),
+    }
+
+    required_flags_map = {
+        "names": compute_name_required(),
+        "descriptions": compute_description_required(),
+        "flags": compute_flag_required(),
+        "departments": compute_departments_required(),
+        "points": compute_points_required(),
+        "standard_groups": compute_standard_groups_required(),
+        "standards": compute_standards_required(),
+    }
+
+    def compute_show_ai_generate(resource: str) -> bool:
+        return agent_ids.get(resource) is not None
+
+    show_ai_generate_map = {
+        r: compute_show_ai_generate(r) for r in RUBRIC_RESOURCES
+    }
+
+    basic_show_ai_generate = any(
+        show_ai_generate_map.get(r, False) for r in RUBRIC_BASIC_RESOURCES
+    )
+    content_show_ai_generate = any(
+        show_ai_generate_map.get(r, False) for r in RUBRIC_CONTENT_RESOURCES
+    )
+
+    # -- Step 7: Validation ---------------------------------------------------
+
+    if rubric_id is None:
+        if not all_departments:
+            raise HTTPException(
+                status_code=400, detail="No accessible departments found for user"
+            )
+
+    # -- Step 8: Response assembly --------------------------------------------
+
+    # Flags — enriched format
+    all_flags = dedupe_by_id(
+        rubric_ctx.resources["flags"].selected
+        + rubric_ctx.resources["flags"].suggestions
+    )
+    rubric_flags = [
+        RubricFlagConfig(
+            key=derive_flag_key_and_label(flag.name)[0],
+            label=derive_flag_key_and_label(flag.name)[1],
+            description=flag.description,
+            icon_id=flag.icon,
+            flag_option_id=flag.id,
+            show=show_flags_map.get("flags", True),
+            required=required_flags_map.get("flags", False),
+            generated=flag.generated,
+        )
+        for flag in all_flags
+        if flag.id
+    ]
+
+    current_flags = [
+        RubricFlagConfig(
+            key=derive_flag_key_and_label(f.name)[0],
+            label=derive_flag_key_and_label(f.name)[1],
+            description=f.description,
+            icon_id=f.icon,
+            flag_option_id=f.id,
+            show=show_flags_map.get("flags", True),
+            required=required_flags_map.get("flags", False),
+            generated=f.generated,
+        )
+        for f in rubric_ctx.resources["flags"].selected
+        if f.id
+    ]
+
+    # Names, Descriptions — all = selected + suggestions deduped
+    all_names = dedupe_by_id(
+        rubric_ctx.resources["names"].selected
+        + rubric_ctx.resources["names"].suggestions
+    )
+    all_descriptions = dedupe_by_id(
+        rubric_ctx.resources["descriptions"].selected
+        + rubric_ctx.resources["descriptions"].suggestions
+    )
+    all_points = dedupe_by_id(
+        rubric_ctx.resources["points"].selected
+        + rubric_ctx.resources["points"].suggestions
+    )
+
+    # Suggestions maps (IDs only)
+    suggestions_map = {
+        "names": [n.id for n in rubric_ctx.resources["names"].suggestions],
+        "descriptions": [
+            d.id for d in rubric_ctx.resources["descriptions"].suggestions
+        ],
+        "departments": [
+            d.id for d in rubric_ctx.resources["departments"].suggestions
+        ],
+        "points": [p.id for p in rubric_ctx.resources["points"].suggestions],
+        "standard_groups": [
+            sg.id for sg in rubric_ctx.resources["standard_groups"].suggestions
+        ],
+        "standards": [
+            s.id for s in rubric_ctx.resources["standards"].suggestions
+        ],
+    }
+
+    def _section(resource_key: str) -> dict:
+        return {
+            "show": show_flags_map.get(resource_key, False),
+            "required": required_flags_map.get(resource_key, False),
+            "suggestions": suggestions_map.get(resource_key, []),
+            "show_ai_generate": show_ai_generate_map.get(resource_key, False),
+            "tool_id": tool_ids_map.get(resource_key),
+        }
+
+    return GetRubricApiResponse(
+        actor_name=profile.name,
+        rubric_exists=rubric_ctx.artifact_id is not None,
+        can_edit=can_edit,
+        disabled_reason=disabled_reason,
+        draft_version=rubric_ctx.draft_version,
+        group_id=group_id,
+        basic_show_ai_generate=basic_show_ai_generate,
+        content_show_ai_generate=content_show_ai_generate,
+        names=RubricNameSection(
+            **_section("names"),
+            resource=rubric_ctx.resources["names"].selected[0]
+            if rubric_ctx.resources["names"].selected
+            else None,
+            resources=all_names,
+        ),
+        descriptions=RubricDescriptionSection(
+            **_section("descriptions"),
+            resource=rubric_ctx.resources["descriptions"].selected[0]
+            if rubric_ctx.resources["descriptions"].selected
+            else None,
+            resources=all_descriptions,
+        ),
+        flags=RubricFlagSection(
+            **_section("flags"),
+            current=current_flags or None,
+            resources=rubric_flags,
+        ),
+        departments=RubricDepartmentSection(
+            **_section("departments"),
+            current=rubric_ctx.resources["departments"].selected or None,
+            resources=all_departments,
+        ),
+        points=RubricPointsSection(
+            **_section("points"),
+            resource=rubric_ctx.resources["points"].selected[0]
+            if rubric_ctx.resources["points"].selected
+            else None,
+            resources=all_points,
+        ),
+        standard_groups=RubricStandardGroupsSection(
+            **_section("standard_groups"),
+            current=rubric_ctx.resources["standard_groups"].selected or None,
+            resources=all_standard_groups,
+        ),
+        standards=RubricStandardsSection(
+            **_section("standards"),
+            current=rubric_ctx.resources["standards"].selected or None,
+            resources=dedupe_by_id(
+                rubric_ctx.resources["standards"].selected
+                + rubric_ctx.resources["standards"].suggestions
+            ),
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
+# get_rubric_websocket — stub (to be rewritten with infra functions)
+# ---------------------------------------------------------------------------
+
+
+async def get_rubric_websocket(*args, **kwargs):
+    """Stub — will be rewritten to use composable infra functions."""
+    raise NotImplementedError(
+        "get_rubric_websocket needs to be rewritten with infra functions"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Route handler
+# ---------------------------------------------------------------------------
 
 
 @router.post("/get", response_model=GetRubricApiResponse)
@@ -979,14 +388,8 @@ async def get_rubric(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetRubricApiResponse:
-    """Get rubric information using two-pass architecture.
-
-    Query 1: Access check (user role, departments, rubric state)
-    Query 2: ID fetching (resource IDs, suggestions, agents)
-    Pass 2: Parallel resource fetching (each resource type has own cache)
-    """
+    """Get rubric information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         profile_id = http_request.state.profile_id
@@ -996,17 +399,20 @@ async def get_rubric(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        redis = get_redis_client()
+
         response_data = await get_rubric_client(
+            conn,
+            redis,
             profile_id=profile_id,
             rubric_id=request.rubric_id,
             draft_id=request.draft_id,
-            bypass_cache=bypass_cache,
             group_id=request.group_id,
+            bypass_cache=bypass_cache,
         )
 
         response.headers["X-Cache-Tags"] = "rubrics"
         response.headers["X-Cache-Hit"] = "0"
-        response.headers["X-Two-Pass"] = "1"
 
         return response_data
     except HTTPException:
@@ -1018,11 +424,7 @@ async def get_rubric(
             error=e,
             route_path=http_request.url.path,
             operation="get_rubric",
-            sql_query=load_sql_query(QUERY1_SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )
-
-
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached

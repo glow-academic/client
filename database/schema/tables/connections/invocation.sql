@@ -64,6 +64,21 @@ CREATE TABLE public.invocation_drafts_descriptions_connection (
 
 --
 
+-- Name: invocation_drafts_endpoints_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.invocation_drafts_endpoints_connection (
+    invocation_drafts_id uuid CONSTRAINT invocation_drafts_endpoints_conne_invocation_drafts_id_not_null NOT NULL,
+    endpoints_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+
 -- Name: invocation_drafts_flags_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -160,6 +175,21 @@ CREATE TABLE public.invocation_drafts_names_connection (
 
 --
 
+-- Name: invocation_drafts_pricing_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.invocation_drafts_pricing_connection (
+    invocation_drafts_id uuid CONSTRAINT invocation_drafts_pricing_connect_invocation_drafts_id_not_null NOT NULL,
+    pricing_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+
 -- Name: invocation_drafts_profiles_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -203,6 +233,21 @@ CREATE TABLE public.invocation_drafts_temperature_levels_connection (
     generated boolean DEFAULT false CONSTRAINT suite_drafts_temperature_levels_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT suite_drafts_temperature_levels_connection_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT suite_drafts_temperature_levels_connection_active_not_null NOT NULL
+);
+
+
+--
+
+-- Name: invocation_drafts_values_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.invocation_drafts_values_connection (
+    invocation_drafts_id uuid CONSTRAINT invocation_drafts_values_connecti_invocation_drafts_id_not_null NOT NULL,
+    values_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 
@@ -485,6 +530,15 @@ ALTER TABLE ONLY public.invocation_voices_connection
 
 --
 
+-- Name: invocation_drafts_endpoints_connection invocation_drafts_endpoints_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invocation_drafts_endpoints_connection
+    ADD CONSTRAINT invocation_drafts_endpoints_connection_pkey PRIMARY KEY (invocation_drafts_id, endpoints_id);
+
+
+--
+
 -- Name: invocation_drafts_model_flags_connection invocation_drafts_model_flags_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -512,11 +566,29 @@ ALTER TABLE ONLY public.invocation_drafts_model_rubrics_connection
 
 --
 
+-- Name: invocation_drafts_pricing_connection invocation_drafts_pricing_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invocation_drafts_pricing_connection
+    ADD CONSTRAINT invocation_drafts_pricing_connection_pkey PRIMARY KEY (invocation_drafts_id, pricing_id);
+
+
+--
+
 -- Name: invocation_drafts_profiles_connection invocation_drafts_profiles_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.invocation_drafts_profiles_connection
     ADD CONSTRAINT invocation_drafts_profiles_connection_pkey PRIMARY KEY (draft_id, profiles_id);
+
+
+--
+
+-- Name: invocation_drafts_values_connection invocation_drafts_values_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.invocation_drafts_values_connection
+    ADD CONSTRAINT invocation_drafts_values_connection_pkey PRIMARY KEY (invocation_drafts_id, values_id);
 
 
 --

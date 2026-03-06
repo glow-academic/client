@@ -6,16 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetAuthDraftsEntriesV4Item,
-    QGetDescriptionsV4Item,
-    QGetNamesV4Item,
-    QGetProtocolsV4Item,
-    QGetSlugsV4Item,
-)
 
 
 class AuthFlagConfig(BaseModel):
@@ -46,13 +37,13 @@ class AuthItemResource(BaseModel):
 
 
 class AuthNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: object | None = None
+    resources: list | None = None
 
 
 class AuthDescriptionSection(BaseResourceSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
+    resource: object | None = None
+    resources: list | None = None
 
 
 class AuthFlagSection(BaseResourceSection):
@@ -61,13 +52,13 @@ class AuthFlagSection(BaseResourceSection):
 
 
 class AuthProtocolSection(BaseResourceSection):
-    current: list[QGetProtocolsV4Item] | None = None
-    resources: list[QGetProtocolsV4Item] | None = None
+    current: list | None = None
+    resources: list | None = None
 
 
 class AuthSlugSection(BaseResourceSection):
-    current: list[QGetSlugsV4Item] | None = None
-    resources: list[QGetSlugsV4Item] | None = None
+    current: list | None = None
+    resources: list | None = None
 
 
 class AuthItemSection(BaseResourceSection):
@@ -80,7 +71,7 @@ class GetAuthApiRequest(BaseModel):
 
     auth_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID | None = None
+    group_id: UUID
 
 
 class GetAuthApiResponse(BaseModel):
@@ -101,27 +92,6 @@ class GetAuthApiResponse(BaseModel):
     protocols: AuthProtocolSection | None = None
     slugs: AuthSlugSection | None = None
     items: AuthItemSection | None = None
-
-
-class AuthWebsocketEntries(BaseModel):
-    draft_auth: QGetAuthDraftsEntriesV4Item | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class AuthWebsocketResources(BaseModel):
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    flags: list[AuthFlagConfig] | None = None
-    protocols: list[QGetProtocolsV4Item] | None = None
-    slugs: list[QGetSlugsV4Item] | None = None
-    items: list[AuthItemResource] | None = None
-
-
-class GetAuthWebsocketResponse(InternalResponseBase):
-    """Minimal response for WebSocket handlers."""
-
-    entries: AuthWebsocketEntries | None = None
-    resources: AuthWebsocketResources
 
 
 class AuthResourceAction(BaseModel):

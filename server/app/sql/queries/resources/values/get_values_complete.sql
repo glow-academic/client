@@ -37,6 +37,7 @@ END $$;
 CREATE TYPE types.q_get_values_v4_item AS (
     id uuid,
     value text,
+    type value_type,
     generated boolean
 );
 
@@ -52,7 +53,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (v.id, v.value, COALESCE(v.generated, false))::types.q_get_values_v4_item
+        (v.id, v.value, v.type, COALESCE(v.generated, false))::types.q_get_values_v4_item
         ORDER BY array_position(ids, v.id)
     ),
     ARRAY[]::types.q_get_values_v4_item[]

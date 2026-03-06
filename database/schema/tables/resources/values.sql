@@ -11,7 +11,8 @@ CREATE TABLE public.values_resource (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
+    mcp boolean DEFAULT false NOT NULL,
+    type public.value_type NOT NULL
 );
 
 

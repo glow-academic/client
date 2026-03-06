@@ -16,17 +16,19 @@ async def create_value(
     redis: Redis,
     mcp: bool = False,
     soft: bool = False,
+    value_type: str = "model",
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetValueResponse:
     """Create a value resource."""
     value_id = await conn.fetchval(
         """
-        INSERT INTO values_resource (value, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO values_resource (value, type, active, mcp, generated)
+        VALUES ($1, $2::value_type, $3, $4, $4)
         RETURNING id
     """,
         value,
+        value_type,
         not soft,
         mcp,
     )

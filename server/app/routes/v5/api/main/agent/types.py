@@ -3,26 +3,12 @@
 from __future__ import annotations
 
 import datetime as dt
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetAgentDraftsEntriesV4Item,
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetInstructionsV4Item,
-    QGetModelsV4Item,
-    QGetNamesV4Item,
-    QGetPromptsV4Item,
-    QGetReasoningLevelsV4Item,
-    QGetTemperatureLevelsV4Item,
-    QGetToolsV4Item,
-    QGetVoicesV4Item,
-)
 
 
 class AgentFlagConfig(BaseModel):
@@ -39,28 +25,28 @@ class AgentFlagConfig(BaseModel):
 
 
 class AgentNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class AgentDescriptionSection(BaseResourceSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class AgentModelSection(BaseResourceSection):
-    resource: QGetModelsV4Item | None = None
-    resources: list[QGetModelsV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class AgentPromptSection(BaseResourceSection):
-    resource: QGetPromptsV4Item | None = None
-    resources: list[QGetPromptsV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class AgentInstructionSection(BaseResourceSection):
-    resource: QGetInstructionsV4Item | None = None
-    resources: list[QGetInstructionsV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class AgentFlagSection(BaseResourceSection):
@@ -69,28 +55,33 @@ class AgentFlagSection(BaseResourceSection):
 
 
 class AgentDepartmentSection(BaseResourceSection):
-    current: list[QGetDepartmentsV4Item] | None = None
-    resources: list[QGetDepartmentsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class AgentToolSection(BaseResourceSection):
-    current: list[QGetToolsV4Item] | None = None
-    resources: list[QGetToolsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class AgentTemperatureLevelSection(BaseResourceSection):
-    resource: QGetTemperatureLevelsV4Item | None = None
-    resources: list[QGetTemperatureLevelsV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class AgentReasoningLevelSection(BaseResourceSection):
-    resource: QGetReasoningLevelsV4Item | None = None
-    resources: list[QGetReasoningLevelsV4Item] | None = None
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
 class AgentVoiceSection(BaseResourceSection):
-    current: list[QGetVoicesV4Item] | None = None
-    resources: list[QGetVoicesV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
+class AgentQualitySection(BaseResourceSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class GetAgentApiRequest(BaseModel):
@@ -98,8 +89,7 @@ class GetAgentApiRequest(BaseModel):
 
     agent_id: UUID | None = None
     draft_id: UUID | None = None
-    # Optional group_id from layout context (avoids server-side creation)
-    group_id: UUID | None = None
+    group_id: UUID
 
 
 class GetAgentApiResponse(BaseModel):
@@ -126,57 +116,7 @@ class GetAgentApiResponse(BaseModel):
     temperature_levels: AgentTemperatureLevelSection | None = None
     reasoning_levels: AgentReasoningLevelSection | None = None
     voices: AgentVoiceSection | None = None
-
-
-class AgentWebsocketEntries(BaseModel):
-    """Entries data for websocket response."""
-
-    draft_agent: QGetAgentDraftsEntriesV4Item | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class AgentWebsocketResources(BaseModel):
-    """Hydrated selected resources for websocket generation."""
-
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    prompts: list[QGetPromptsV4Item] | None = None
-    instructions: list[QGetInstructionsV4Item] | None = None
-    flags: list[AgentFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    temperature_levels: list[QGetTemperatureLevelsV4Item] | None = None
-    reasoning_levels: list[QGetReasoningLevelsV4Item] | None = None
-    voices: list[QGetVoicesV4Item] | None = None
-
-
-class GetAgentWebsocketResponse(InternalResponseBase):
-    """WebSocket response shape for agent generation."""
-
-    entries: AgentWebsocketEntries | None = None
-    resources: AgentWebsocketResources
-
-
-class AgentResourceBucket(BaseModel):
-    """Internal resources bucket with full and current objects."""
-
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    models: list[QGetModelsV4Item] | None = None
-    prompts: list[QGetPromptsV4Item] | None = None
-    instructions: list[QGetInstructionsV4Item] | None = None
-    flags: list[AgentFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    tools: list[QGetToolsV4Item] | None = None
-    temperature_levels: list[QGetTemperatureLevelsV4Item] | None = None
-    reasoning_levels: list[QGetReasoningLevelsV4Item] | None = None
-    voices: list[QGetVoicesV4Item] | None = None
-
-
-class AgentResources(BaseModel):
-    """Internal resources payload with full + selected buckets."""
-
-    resources: AgentResourceBucket | None = None
-    current: AgentResourceBucket | None = None
+    qualities: AgentQualitySection | None = None
 
 
 class AgentResourceAction(BaseModel):

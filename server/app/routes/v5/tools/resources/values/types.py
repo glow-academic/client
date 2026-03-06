@@ -9,6 +9,7 @@ from pydantic import BaseModel
 class GetValueResponse(BaseModel):
     id: UUID
     value: str
+    type: str
     created_at: datetime
     active: bool
     mcp: bool

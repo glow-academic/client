@@ -36,7 +36,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.id, q.value, q.generated)::types.q_get_values_v4_item
+        (q.id, q.value, q.type, q.generated)::types.q_get_values_v4_item
         ORDER BY q.value
     ),
     ARRAY[]::types.q_get_values_v4_item[]
@@ -45,6 +45,7 @@ FROM (
     SELECT
         v.id,
         v.value,
+        v.type,
         COALESCE(v.generated, false) AS generated
     FROM values_resource v
     WHERE v.active = true

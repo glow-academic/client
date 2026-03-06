@@ -8,7 +8,7 @@
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8ea4-72aa-a4df-e3241a60229a', 'Sora 2 is OpenAI''s advanced video generation model.', '2025-11-24T19:50:32.230847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.models_resource (created_at, value, active, generated, mcp, id, name, description, department_ids, provider_id, temperature_level_ids, reasoning_level_ids, quality_ids, voice_ids, modality_ids) VALUES ('2025-11-24T19:50:32.230847+00:00', 'sora-2', true, false, false, '019bb25e-e5ff-7786-906a-923b3bf6d8d7', 'sora-2', 'Sora 2 is OpenAI''s advanced video generation model.', '{}', '019bb2af-b2a7-7d85-a61a-0dc4fd93b3c6', '{}', '{}', '{}', '{}', '{019bbce5-e609-750d-90c6-cb39f1266e18,019bbce5-e606-77f1-abf8-78df7462af03,019bbce5-e607-7bc4-a6b0-a4218bc8e5f8,019bbce5-e608-7d5a-b937-0a22697e3f8b}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea2-7cb7-b80a-adcaefc1dbac', 'sora-2', '2025-11-24T19:50:32.230847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.values_resource (id, value, created_at, active, generated, mcp) VALUES ('019bbabc-5a34-7653-8352-2665159608b1', 'sora-2', '2025-11-24T19:50:32.230847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.values_resource (id, value, type, created_at, active, generated, mcp) VALUES ('019bbabc-5a34-7653-8352-2665159608b1', 'sora-2', 'model', '2025-11-24T19:50:32.230847+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- model_artifact

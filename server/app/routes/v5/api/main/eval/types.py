@@ -3,84 +3,15 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
-from app.routes.v5.api.types import ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetEvalDraftsEntriesV4Item,
-    QGetModelFlagsV4Item,
-    QGetModelPositionsV4Item,
-    QGetModelRubricsV4Item,
-    QGetNamesV4Item,
-)
+from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+
 
 # ========== Eval-specific resource types ==========
-
-
-class EvalAgentItem(BaseModel):
-    """Eval agent item (from eval_agents resource endpoint)."""
-
-    id: UUID
-    name: str | None = None
-    description: str | None = None
-    roles: list[str] | None = None
-    generated: bool = False
-
-
-class EvalRubricItem(BaseModel):
-    """Eval rubric item (from rubrics resource endpoint)."""
-
-    id: UUID
-    name: str | None = None
-    description: str | None = None
-    agent_role: str | None = None
-    generated: bool = False
-
-
-class EvalRunRubricMapping(BaseModel):
-    """Maps a model run to its assigned rubric IDs."""
-
-    run_id: UUID
-    rubric_ids: list[UUID] | None = None
-
-
-class EvalGroupRubricMapping(BaseModel):
-    """Maps a group to its assigned rubric IDs."""
-
-    group_id: UUID
-    rubric_ids: list[UUID] | None = None
-
-
-class EvalAvailableModelRun(BaseModel):
-    """Available model run for eval selection."""
-
-    model_run_id: UUID
-    created_at: datetime | None = None
-    model_id: UUID | None = None
-    model_name: str | None = None
-    profile_id: UUID | None = None
-    profile_name: str | None = None
-    agent_id: UUID | None = None
-    agent_name: str | None = None
-    persona_id: UUID | None = None
-    persona_name: str | None = None
-    actor_type: str | None = None
-
-
-class EvalAvailableGroup(BaseModel):
-    """Available group for eval selection."""
-
-    group_id: UUID
-    name: str | None = None
-    description: str | None = None
-    created_at: datetime | None = None
-    member_count: int | None = None
 
 
 class EvalFlagConfig(BaseModel):
@@ -96,56 +27,47 @@ class EvalFlagConfig(BaseModel):
     generated: bool | None = None
 
 
-# ========== GET Endpoint Types ==========
+# ========== GET Endpoint Types - Section Types ==========
 
 
-class BaseEvalSection(BaseModel):
-    show: bool = False
-    required: bool = False
-    suggestions: list[UUID] | None = None
-    show_ai_generate: bool = False
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
+class EvalNameSection(BaseResourceSection):
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
-class EvalNameSection(BaseEvalSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+class EvalDescriptionSection(BaseResourceSection):
+    resource: Any | None = None
+    resources: list[Any] | None = None
 
 
-class EvalDescriptionSection(BaseEvalSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
-
-
-class EvalFlagSection(BaseEvalSection):
+class EvalFlagSection(BaseResourceSection):
     resource: EvalFlagConfig | None = None
     resources: list[EvalFlagConfig] | None = None
 
 
-class EvalDepartmentSection(BaseEvalSection):
-    current: list[QGetDepartmentsV4Item] | None = None
-    resources: list[QGetDepartmentsV4Item] | None = None
+class EvalDepartmentSection(BaseResourceSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
-class EvalAgentSection(BaseEvalSection):
-    current: list[EvalAgentItem] | None = None
-    resources: list[EvalAgentItem] | None = None
+class EvalModelSection(BaseResourceSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
-class EvalRubricSection(BaseEvalSection):
-    current: list[EvalRubricItem] | None = None
-    resources: list[EvalRubricItem] | None = None
+class EvalModelFlagSection(BaseResourceSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
-class EvalRunSection(BaseEvalSection):
-    current: list[EvalAvailableModelRun] | None = None
-    resources: list[EvalAvailableModelRun] | None = None
+class EvalModelRubricSection(BaseResourceSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
-class EvalGroupSection(BaseEvalSection):
-    current: list[EvalAvailableGroup] | None = None
-    resources: list[EvalAvailableGroup] | None = None
+class EvalModelPositionSection(BaseResourceSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class GetEvalApiRequest(BaseModel):
@@ -153,14 +75,7 @@ class GetEvalApiRequest(BaseModel):
 
     eval_id: UUID | None = None
     draft_id: UUID | None = None
-    # Optional group_id from layout context (avoids server-side creation)
-    group_id: UUID | None = None
-    agent_search: str | None = None
-    group_search: str | None = None
-    available_model_runs_search: str | None = None
-    available_model_runs_agent_ids: list[UUID] | None = None
-    available_model_runs_page: int | None = 1
-    available_model_runs_page_size: int | None = 50
+    group_id: UUID
 
 
 class GetEvalApiResponse(BaseModel):
@@ -174,6 +89,7 @@ class GetEvalApiResponse(BaseModel):
     group_id: UUID | None = None
 
     basic_show_ai_generate: bool | None = None
+    model_show_ai_generate: bool | None = None
 
     names: EvalNameSection | None = None
     descriptions: EvalDescriptionSection | None = None
@@ -181,43 +97,10 @@ class GetEvalApiResponse(BaseModel):
     dynamic_flags: EvalFlagSection | None = None
     groups_flags: EvalFlagSection | None = None
     departments: EvalDepartmentSection | None = None
-    agents: EvalAgentSection | None = None
-    rubrics: EvalRubricSection | None = None
-    runs: EvalRunSection | None = None
-    groups: EvalGroupSection | None = None
-
-    run_rubrics: list[EvalRunRubricMapping] | None = None
-    group_rubrics: list[EvalGroupRubricMapping] | None = None
-
-    available_model_runs: list[EvalAvailableModelRun] | None = None
-    available_model_runs_total_count: int | None = None
-    available_model_runs_page: int | None = None
-    available_model_runs_page_size: int | None = None
-    available_model_runs_total_pages: int | None = None
-
-    available_groups: list[EvalAvailableGroup] | None = None
-
-
-class EvalWebsocketEntries(BaseModel):
-    draft_eval: QGetEvalDraftsEntriesV4Item | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class EvalWebsocketResources(BaseModel):
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    flags: list[EvalFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    eval_agents: list[EvalAgentItem] | None = None
-    rubrics: list[EvalRubricItem] | None = None
-    model_flags: list[QGetModelFlagsV4Item] | None = None
-    model_rubrics: list[QGetModelRubricsV4Item] | None = None
-    model_positions: list[QGetModelPositionsV4Item] | None = None
-
-
-class GetEvalWebsocketResponse(InternalResponseBase):
-    entries: EvalWebsocketEntries | None = None
-    resources: EvalWebsocketResources
+    models: EvalModelSection | None = None
+    model_flags: EvalModelFlagSection | None = None
+    model_rubrics: EvalModelRubricSection | None = None
+    model_positions: EvalModelPositionSection | None = None
 
 
 # ========== List Endpoint Types ==========

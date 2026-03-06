@@ -222,6 +222,16 @@ def compute_voices_required() -> bool:
     return False
 
 
+def compute_show_qualities(qualities_has_tools: bool) -> bool:
+    """Determine if quality picker should be shown."""
+    return qualities_has_tools
+
+
+def compute_qualities_required() -> bool:
+    """Determine if quality is required."""
+    return False
+
+
 # ========== List Endpoint Permission Functions ==========
 
 
@@ -338,6 +348,7 @@ AGENT_RESOURCES: set[str] = {
     "temperature_levels",
     "reasoning_levels",
     "voices",
+    "qualities",
 }
 
 # Resources that require an active tool to show AI generate button
@@ -406,6 +417,11 @@ AGENT_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
         "name": "Voice",
         "description": "Voice selection",
         "icon": "mic",
+    },
+    "qualities": {
+        "name": "Quality",
+        "description": "Quality settings",
+        "icon": "sparkles",
     },
 }
 

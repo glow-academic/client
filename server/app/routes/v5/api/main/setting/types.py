@@ -2,30 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.routes.v5.tools.resources.profiles.types import GetProfileResponse
-from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetAuthItemKeysV4Item,
-    QGetAuthsV4Item,
-    QGetColorsV4Item,
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetModelsV4Item,
-    QGetNamesV4Item,
-    QGetProviderKeysV4Item,
-    QGetProvidersV4Item,
-    QGetRolesV4Item,
-    QGetSettingDraftsEntriesV4Item,
-)
 
 # ========== Flag Enrichment ==========
 
@@ -48,13 +30,13 @@ class SettingFlagConfig(BaseModel):
 
 # Single-select sections
 class SettingNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: dict | None = None
+    resources: list | None = None
 
 
 class SettingDescriptionSection(BaseResourceSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
+    resource: dict | None = None
+    resources: list | None = None
 
 
 # Flag section (uses SettingFlagConfig)
@@ -65,38 +47,38 @@ class SettingFlagSection(BaseResourceSection):
 
 # Multi-select sections
 class SettingColorSection(BaseResourceSection):
-    current: list[QGetColorsV4Item] | None = None
-    resources: list[QGetColorsV4Item] | None = None
+    current: list | None = None
+    resources: list | None = None
 
 
 class SettingDepartmentSection(BaseResourceSection):
-    current: list[QGetDepartmentsV4Item] | None = None
-    resources: list[QGetDepartmentsV4Item] | None = None
+    current: list | None = None
+    resources: list | None = None
 
 
 class SettingProfileSection(BaseResourceSection):
-    current: list[GetProfileResponse] | None = None
-    resources: list[GetProfileResponse] | None = None
+    current: list | None = None
+    resources: list | None = None
 
 
 class SettingAuthSection(BaseResourceSection):
-    current: list[QGetAuthsV4Item] | None = None
-    resources: list[QGetAuthsV4Item] | None = None
+    current: list | None = None
+    resources: list | None = None
 
 
 class SettingProviderKeySection(BaseResourceSection):
-    current: list[QGetProviderKeysV4Item] | None = None
-    resources: list[QGetProviderKeysV4Item] | None = None
+    current: list | None = None
+    resources: list | None = None
 
 
 class SettingAuthItemKeySection(BaseResourceSection):
-    current: list[QGetAuthItemKeysV4Item] | None = None
-    resources: list[QGetAuthItemKeysV4Item] | None = None
+    current: list | None = None
+    resources: list | None = None
 
 
-class SettingRoleSection(BaseResourceSection):
-    current: list[QGetRolesV4Item] | None = None
-    resources: list[QGetRolesV4Item] | None = None
+class SettingSystemSection(BaseResourceSection):
+    current: list | None = None
+    resources: list | None = None
 
 
 # ========== GET Endpoint Types ==========
@@ -110,8 +92,7 @@ class GetSettingApiRequest(BaseModel):
     setting_id: UUID | None = Field(default=None, alias="settings_id")
     color_search: str | None = None
     draft_id: UUID | None = None
-    # Optional group_id from layout context (avoids server-side creation)
-    group_id: UUID | None = None
+    group_id: UUID
     mcp: bool | None = False
 
 
@@ -136,45 +117,8 @@ class GetSettingApiResponse(BaseModel):
     auths: SettingAuthSection | None = None
     provider_keys: SettingProviderKeySection | None = None
     auth_item_keys: SettingAuthItemKeySection | None = None
-    roles: SettingRoleSection | None = None
+    systems: SettingSystemSection | None = None
 
-
-# ========== Websocket Types ==========
-
-
-class SettingWebsocketEntries(BaseModel):
-    """Entries data for websocket response."""
-
-    draft_setting: QGetSettingDraftsEntriesV4Item | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class SettingWebsocketResources(BaseModel):
-    """Hydrated resources for websocket — selected only, no suggestions."""
-
-    # 10 setting resources
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    colors: list[QGetColorsV4Item] | None = None
-    flags: list[SettingFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    profiles: list[GetProfileResponse] | None = None
-    auths: list[QGetAuthsV4Item] | None = None
-    provider_keys: list[QGetProviderKeysV4Item] | None = None
-    auth_item_keys: list[QGetAuthItemKeysV4Item] | None = None
-    roles: list[QGetRolesV4Item] | None = None
-
-
-class GetSettingWebsocketResponse(InternalResponseBase):
-    """Minimal response for WebSocket handlers (get_setting_websocket).
-
-    Uses views + resources pattern:
-    - Views: draft setting view (convenience for Jinja templates)
-    - Resources: hydrated selected objects + config for generation
-    """
-
-    entries: SettingWebsocketEntries | None = None
-    resources: SettingWebsocketResources
 
 
 # ========== Generation Completion Event ==========
@@ -188,85 +132,6 @@ class SettingGenerationCompleteEvent(BaseModel):
     run_id: str | None = None
     group_id: str | None = None
     success: bool = False
-    # Hydrated resources (only one populated per event)
-    name_resource: QGetNamesV4Item | None = None
-    description_resource: QGetDescriptionsV4Item | None = None
-    color_resources: list[QGetColorsV4Item] | None = None
-    flag_resource: SettingFlagConfig | None = None
-    department_resources: list[QGetDepartmentsV4Item] | None = None
-    profile_resources: list[GetProfileResponse] | None = None
-    auth_resources: list[QGetAuthsV4Item] | None = None
-    provider_key_resources: list[QGetProviderKeysV4Item] | None = None
-    auth_item_key_resources: list[QGetAuthItemKeysV4Item] | None = None
-    role_resources: list[QGetRolesV4Item] | None = None
-
-
-# ========== Internal Data Types ==========
-
-
-class SettingResourceBucket(BaseModel):
-    """Generic resources bucket with full objects (always plural lists)."""
-
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    colors: list[QGetColorsV4Item] | None = None
-    flags: list[SettingFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    profiles: list[GetProfileResponse] | None = None
-    auths: list[QGetAuthsV4Item] | None = None
-    provider_keys: list[QGetProviderKeysV4Item] | None = None
-    auth_item_keys: list[QGetAuthItemKeysV4Item] | None = None
-    roles: list[QGetRolesV4Item] | None = None
-
-
-class SettingResources(BaseModel):
-    """Full resources + current selections."""
-
-    resources: SettingResourceBucket | None = None
-    current: SettingResourceBucket | None = None
-
-
-@dataclass
-class SettingInternalData:
-    """Internal data from core setting fetching (cacheable layer).
-
-    This dataclass contains all computed data needed by both:
-    - get_setting_websocket() - minimal data for WebSocket handlers
-    - get_setting_client() - full BFF response for HTTP/frontend
-    """
-
-    # Access/context
-    actor_name: str | None
-    setting_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
-
-    # Agent mappings (resource_type -> agent_id)
-    resource_agent_ids: dict[str, UUID | None]
-
-    # Show/required flags
-    show_map: dict[str, bool]
-    required_map: dict[str, bool]
-
-    # Suggestions (resource -> list of suggestion IDs)
-    suggestions_map: dict[str, list[UUID]]
-
-    # Show AI generate flags (computed: agent exists for resource)
-    show_ai_generate_map: dict[str, bool]
-
-    # Resources payload
-    resources_payload: SettingResources
-
-    # Per-resource tool IDs (from selected agents)
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
-
-    # Config resources (from denormalized chain, for generation)
-    config_agent_resources: list[QGetAgentsV4Item] | None
-    config_model_resources: list[QGetModelsV4Item] | None
-    config_provider_resources: list[QGetProvidersV4Item] | None
 
 
 # ========== Resource Action Types (for tool call tracking) ==========

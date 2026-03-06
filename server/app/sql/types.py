@@ -10685,67 +10685,6 @@ class GetEvalDocsApiResponse(BaseModel):
 
 
 
-# Generated from: get_eval_ids
-
-class GetEvalIdsSqlParams(BaseModel):
-
-    profile_id: UUID
-    eval_id: UUID | None = None
-    draft_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.eval_id,
-            self.draft_id,
-            self.user_department_ids,
-        )
-
-class GetEvalIdsSqlRow(BaseModel):
-
-    names_id: UUID | None = None
-    descriptions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    dynamic_flag_id: UUID | None = None
-    groups_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
-    model_flag_ids: list[UUID] | None = None
-    model_rubric_ids: list[UUID] | None = None
-    model_position_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    rubric_suggestions: list[UUID] | None = None
-
-class GetEvalIdsApiRequest(BaseModel):
-
-    eval_id: UUID | None = None
-    draft_id: UUID | None = None
-    user_department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-
-class GetEvalIdsApiResponse(BaseModel):
-
-    names_id: UUID | None = None
-    descriptions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    dynamic_flag_id: UUID | None = None
-    groups_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
-    model_flag_ids: list[UUID] | None = None
-    model_rubric_ids: list[UUID] | None = None
-    model_position_ids: list[UUID] | None = None
-    name_suggestions: list[UUID] | None = None
-    description_suggestions: list[UUID] | None = None
-    department_suggestions: list[UUID] | None = None
-    rubric_suggestions: list[UUID] | None = None
-
-
-
 # Generated from: get_evals_list
 
 class GetEvalsListSqlParams(BaseModel):
@@ -27924,6 +27863,7 @@ class QGetValuesV4Item(BaseModel):
 
     id: UUID | None
     value: str | None
+    type: Any | None
     generated: bool | None
 
 class GetValuesSqlRow(BaseModel):
@@ -27988,6 +27928,7 @@ class SearchValuesApiResponse(BaseModel):
 class ValuesSqlParams(BaseModel):
 
     value: str | None = None
+    type: str | None = None
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None
@@ -27995,6 +27936,7 @@ class ValuesSqlParams(BaseModel):
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.value,
+            self.type,
             self.mcp,
             self.group_id,
             self.tool_id,
@@ -28008,6 +27950,7 @@ class ValuesSqlRow(BaseModel):
 class ValuesApiRequest(BaseModel):
 
     value: str | None = None
+    type: str | None = None
     mcp: bool | None = False
     group_id: UUID | None = None
     tool_id: UUID | None = None
@@ -34122,12 +34065,6 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "GetEvalDocsApiRequest",
         "GetEvalDocsApiResponse",
     ),
-    "app/sql/queries/evals/get_eval_ids_complete.sql": (
-        "GetEvalIdsSqlParams",
-        "GetEvalIdsSqlRow",
-        "GetEvalIdsApiRequest",
-        "GetEvalIdsApiResponse",
-    ),
     "app/sql/queries/evals/get_evals_list_complete.sql": (
         "GetEvalsListSqlParams",
         "GetEvalsListSqlRow",
@@ -38708,11 +38645,6 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/evals/get_eval_docs_complete.sql"]
-    ) -> SqlString: ...
-
-    @overload
-    def load_sql_query(
-        file_path: Literal["app/sql/queries/evals/get_eval_ids_complete.sql"]
     ) -> SqlString: ...
 
     @overload

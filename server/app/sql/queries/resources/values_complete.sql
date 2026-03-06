@@ -21,6 +21,7 @@ END $$;
 
 CREATE OR REPLACE FUNCTION api_create_values_v4(
     value text DEFAULT NULL,
+    type value_type DEFAULT 'model',
     mcp boolean DEFAULT false,
     group_id uuid DEFAULT NULL,
     tool_id uuid DEFAULT NULL
@@ -39,9 +40,10 @@ DECLARE
     v_call_id uuid;
 BEGIN
     -- INSERT INTO values_resource table
-    INSERT INTO values_resource(value, active, mcp, generated)
+    INSERT INTO values_resource(value, type, active, mcp, generated)
     VALUES (
         api_create_values_v4.value,
+        api_create_values_v4.type,
         true,
         api_create_values_v4.mcp,
         api_create_values_v4.mcp

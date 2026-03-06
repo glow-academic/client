@@ -7,15 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetDepartmentDraftsEntriesV4Item,
-    QGetDescriptionsV4Item,
-    QGetNamesV4Item,
-    QGetSettingsV4Item,
-)
 
 
 class DepartmentFlagConfig(BaseModel):
@@ -32,13 +24,13 @@ class DepartmentFlagConfig(BaseModel):
 
 
 class DepartmentNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: object | None = None
+    resources: list | None = None
 
 
 class DepartmentDescriptionSection(BaseResourceSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
+    resource: object | None = None
+    resources: list | None = None
 
 
 class DepartmentFlagSection(BaseResourceSection):
@@ -47,14 +39,14 @@ class DepartmentFlagSection(BaseResourceSection):
 
 
 class DepartmentSettingSection(BaseResourceSection):
-    current: list[QGetSettingsV4Item] | None = None
-    resources: list[QGetSettingsV4Item] | None = None
+    current: list | None = None
+    resources: list | None = None
 
 
 class GetDepartmentApiRequest(BaseModel):
     department_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID | None = None
+    group_id: UUID
 
 
 class GetDepartmentApiResponse(BaseModel):
@@ -71,23 +63,6 @@ class GetDepartmentApiResponse(BaseModel):
     descriptions: DepartmentDescriptionSection | None = None
     flags: DepartmentFlagSection | None = None
     settings: DepartmentSettingSection | None = None
-
-
-class DepartmentWebsocketEntries(BaseModel):
-    draft_department: QGetDepartmentDraftsEntriesV4Item | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class DepartmentWebsocketResources(BaseModel):
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    flags: list[DepartmentFlagConfig] | None = None
-    settings: list[QGetSettingsV4Item] | None = None
-
-
-class GetDepartmentWebsocketResponse(InternalResponseBase):
-    entries: DepartmentWebsocketEntries | None = None
-    resources: DepartmentWebsocketResources
 
 
 class DepartmentResourceAction(BaseModel):

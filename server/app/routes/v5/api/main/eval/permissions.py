@@ -1,26 +1,10 @@
 """Eval permission helpers.
 
-Extracts business logic from SQL into Python for the two-pass architecture.
-These functions compute permissions, UI flags, and access control based on
-data fetched from the Pass 1 SQL query.
+Pure Python business logic for eval permissions, UI flags, and access control.
+Used by the composable infra architecture GET endpoint.
 """
 
 from uuid import UUID
-
-from app.routes.v5.api.permissions import (
-    select_agents_for_artifact,
-    select_multi_resource_agent,
-)
-from app.routes.v5.api.types import CandidateAgent
-
-# Re-export for backwards compatibility
-__all__ = [
-    "CandidateAgent",
-    "select_agents_for_artifact",
-    "select_multi_resource_agent",
-    "EVAL_RESOURCES",
-    "EVAL_BASIC_RESOURCES",
-]
 
 
 def compute_can_edit(
@@ -45,36 +29,6 @@ def compute_disabled_reason(
         )
 
     return None
-
-
-def get_missing_tools(
-    names_has_tools: bool,
-    descriptions_has_tools: bool,
-    flags_has_tools: bool,
-    show_departments: bool,
-    departments_has_tools: bool,
-    show_agents: bool,
-    agents_has_tools: bool,
-    show_rubrics: bool,
-    rubrics_has_tools: bool,
-) -> list[str]:
-    """Get list of missing required tools."""
-    missing = []
-
-    if not names_has_tools:
-        missing.append("name")
-    if not descriptions_has_tools:
-        missing.append("description")
-    if not flags_has_tools:
-        missing.append("flags")
-    if show_departments and not departments_has_tools:
-        missing.append("departments")
-    if show_agents and not agents_has_tools:
-        missing.append("agents")
-    if show_rubrics and not rubrics_has_tools:
-        missing.append("rubrics")
-
-    return missing
 
 
 def has_access(
@@ -103,6 +57,9 @@ def has_access(
     user_dept_set = set(user_department_ids)
     eval_dept_set = set(eval_department_ids)
     return bool(user_dept_set & eval_dept_set)
+
+
+# ========== Show Functions ==========
 
 
 def compute_show_name(names_has_tools: bool) -> bool:
@@ -135,14 +92,27 @@ def compute_show_departments(departments_count: int) -> bool:
     return departments_count > 0
 
 
-def compute_show_agents(agents_count: int) -> bool:
-    """Determine if agents picker should be shown."""
-    return agents_count > 0
+def compute_show_models(models_count: int) -> bool:
+    """Determine if models picker should be shown."""
+    return models_count > 0
 
 
-def compute_show_rubrics(rubrics_count: int) -> bool:
-    """Determine if rubrics picker should be shown."""
-    return rubrics_count > 0
+def compute_show_model_flags(model_flags_count: int) -> bool:
+    """Determine if model flags picker should be shown."""
+    return model_flags_count > 0
+
+
+def compute_show_model_rubrics(model_rubrics_count: int) -> bool:
+    """Determine if model rubrics picker should be shown."""
+    return model_rubrics_count > 0
+
+
+def compute_show_model_positions(model_positions_count: int) -> bool:
+    """Determine if model positions picker should be shown."""
+    return model_positions_count > 0
+
+
+# ========== Required Functions ==========
 
 
 def compute_name_required() -> bool:
@@ -175,14 +145,24 @@ def compute_departments_required(show_departments: bool) -> bool:
     return show_departments
 
 
-def compute_agents_required(show_agents: bool) -> bool:
-    """Determine if agents is required."""
-    return show_agents
+def compute_models_required() -> bool:
+    """Determine if models is required."""
+    return False
 
 
-def compute_rubrics_required(show_rubrics: bool) -> bool:
-    """Determine if rubrics is required."""
-    return show_rubrics
+def compute_model_flags_required() -> bool:
+    """Determine if model flags is required."""
+    return False
+
+
+def compute_model_rubrics_required() -> bool:
+    """Determine if model rubrics is required."""
+    return False
+
+
+def compute_model_positions_required() -> bool:
+    """Determine if model positions is required."""
+    return False
 
 
 # ========== List Endpoint Permission Functions ==========
@@ -229,7 +209,10 @@ EVAL_RESOURCES: set[str] = {
     "descriptions",
     "flags",
     "departments",
-    "rubrics",
+    "models",
+    "model_flags",
+    "model_rubrics",
+    "model_positions",
 }
 
 EVAL_BASIC_RESOURCES: set[str] = {
@@ -237,6 +220,13 @@ EVAL_BASIC_RESOURCES: set[str] = {
     "descriptions",
     "flags",
     "departments",
+}
+
+EVAL_MODEL_RESOURCES: set[str] = {
+    "models",
+    "model_flags",
+    "model_rubrics",
+    "model_positions",
 }
 
 # ========== Domain Metadata - for client-side display in modals ==========
@@ -262,10 +252,25 @@ EVAL_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
         "description": "Which departments can access this eval",
         "icon": "building",
     },
-    "rubrics": {
-        "name": "Rubrics",
-        "description": "Rubrics for scoring evaluations",
+    "models": {
+        "name": "Models",
+        "description": "Models used in this eval",
+        "icon": "cpu",
+    },
+    "model_flags": {
+        "name": "Model Flags",
+        "description": "Flag configurations per model",
+        "icon": "flag",
+    },
+    "model_rubrics": {
+        "name": "Model Rubrics",
+        "description": "Rubric assignments per model",
         "icon": "list-checks",
+    },
+    "model_positions": {
+        "name": "Model Positions",
+        "description": "Position assignments per model",
+        "icon": "move",
     },
 }
 

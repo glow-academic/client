@@ -8,7 +8,7 @@
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8ea4-729c-9be4-d64362c52b0e', 'GPT-5 Mini is a faster, more efficient version of GPT-5 optimized for speed and cost.', '2025-08-12T12:52:09.591583+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.models_resource (created_at, value, active, generated, mcp, id, name, description, department_ids, provider_id, temperature_level_ids, reasoning_level_ids, quality_ids, voice_ids, modality_ids) VALUES ('2025-08-12T12:52:09.591583+00:00', 'gpt-5-mini', true, false, false, '019bb25e-e5ff-77a3-aa13-5b6303c29e2d', 'gpt-5-mini', 'GPT-5 Mini is a faster, more efficient version of GPT-5 optimized for speed and cost.', '{}', '019bb2af-b2a7-7d85-a61a-0dc4fd93b3c6', '{}', '{}', '{}', '{}', '{019bbce5-e606-77f1-abf8-78df7462af03,019bbce5-e609-750d-90c6-cb39f1266e18,019bbce5-e609-7efe-8549-87dd267f086a,019bbce5-e606-77f1-abf8-78df7462af03,019bbce5-e609-7efe-8549-87dd267f086a}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea2-7c81-a652-95207daadd7a', 'gpt-5-mini', '2025-08-12T12:52:09.591583+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.values_resource (id, value, created_at, active, generated, mcp) VALUES ('019bbabc-5a34-755e-a42c-b3cf4a9a3049', 'gpt-5-mini', '2025-08-12T12:52:09.591583+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.values_resource (id, value, type, created_at, active, generated, mcp) VALUES ('019bbabc-5a34-755e-a42c-b3cf4a9a3049', 'gpt-5-mini', 'model', '2025-08-12T12:52:09.591583+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- model_artifact

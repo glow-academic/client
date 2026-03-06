@@ -7,17 +7,7 @@ data fetched from the Pass 1 SQL query.
 
 from uuid import UUID
 
-from app.routes.v5.api.permissions import (
-    select_agents_for_artifact,
-    select_multi_resource_agent,
-)
-from app.routes.v5.api.types import CandidateAgent
-
-# Re-export for backwards compatibility
 __all__ = [
-    "CandidateAgent",
-    "select_agents_for_artifact",
-    "select_multi_resource_agent",
     "RUBRIC_RESOURCES",
     "RUBRIC_BASIC_RESOURCES",
     "RUBRIC_CONTENT_RESOURCES",
@@ -126,11 +116,6 @@ def compute_show_points() -> bool:
     return True
 
 
-def compute_show_pass_points() -> bool:
-    """Determine if pass points picker should be shown."""
-    return True
-
-
 def compute_show_standard_groups() -> bool:
     """Determine if standard groups picker should be shown."""
     return True
@@ -163,11 +148,6 @@ def compute_departments_required() -> bool:
 
 def compute_points_required() -> bool:
     """Determine if total points is required."""
-    return True
-
-
-def compute_pass_points_required() -> bool:
-    """Determine if pass points is required."""
     return True
 
 
@@ -240,7 +220,6 @@ RUBRIC_RESOURCES: set[str] = {
     "departments",
     "flags",
     "points",
-    "pass_points",
     "standard_groups",
     "standards",
 }
@@ -248,7 +227,6 @@ RUBRIC_RESOURCES: set[str] = {
 RUBRIC_BASIC_RESOURCES: set[str] = {"names", "descriptions", "flags", "departments"}
 RUBRIC_CONTENT_RESOURCES: set[str] = {
     "points",
-    "pass_points",
     "standard_groups",
     "standards",
 }
@@ -280,11 +258,6 @@ RUBRIC_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
         "name": "Total Points",
         "description": "The total points available in this rubric",
         "icon": "hash",
-    },
-    "pass_points": {
-        "name": "Pass Points",
-        "description": "The minimum points required to pass",
-        "icon": "check-circle",
     },
     "standard_groups": {
         "name": "Standard Groups",

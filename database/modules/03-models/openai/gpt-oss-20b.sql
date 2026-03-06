@@ -8,7 +8,7 @@
 INSERT INTO public.descriptions_resource (id, description, created_at, active, generated, mcp) VALUES ('019b995c-8ea4-72e3-a859-4e21f060ebbd', 'Open Source Running Locally', '2025-08-16T04:14:45.309000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.models_resource (created_at, value, active, generated, mcp, id, name, description, department_ids, provider_id, temperature_level_ids, reasoning_level_ids, quality_ids, voice_ids, modality_ids) VALUES ('2025-08-16T04:14:45.309000+00:00', 'gpt-oss-20b', true, false, false, '019bb25e-e5ff-779e-a760-e603914cff51', 'gpt-oss-20b', 'Open Source Running Locally', '{}', '019bb2af-b2a7-7d85-a61a-0dc4fd93b3c6', '{}', '{}', '{}', '{}', '{019bbce5-e606-77f1-abf8-78df7462af03,019bbce5-e609-7efe-8549-87dd267f086a,019bbce5-e606-77f1-abf8-78df7462af03,019bbce5-e609-7efe-8549-87dd267f086a}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('019b995c-8ea2-7cc7-b3bb-7af58b357159', 'gpt-oss-20b', '2025-08-16T04:14:45.309000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
-INSERT INTO public.values_resource (id, value, created_at, active, generated, mcp) VALUES ('019bbabc-5a34-73ed-8ac6-6d5307da5a3e', 'gpt-oss-20b', '2025-08-16T04:14:45.309000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.values_resource (id, value, type, created_at, active, generated, mcp) VALUES ('019bbabc-5a34-73ed-8ac6-6d5307da5a3e', 'gpt-oss-20b', 'model', '2025-08-16T04:14:45.309000+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
 -- model_artifact
