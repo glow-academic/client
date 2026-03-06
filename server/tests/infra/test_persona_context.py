@@ -134,7 +134,6 @@ def _mock_all_fetchers():
             f"{MODULE}.get_parameters": [],
             f"{MODULE}.search_parameters": [],
             f"{MODULE}.search_fields": [],
-            f"{MODULE}.search_scenarios": [],
         }
     )
 
@@ -282,8 +281,7 @@ class TestResolvePersonaContextEmpty:
         assert result.resources["names"].selected == []
         assert result.resources["names"].suggestions == []
         assert result.draft_version is None
-        assert result.entries["personas_resource_ids"] == []
-        assert result.entries["has_active_scenarios"] is False
+        assert result.entries == {}
 
     async def test_existing_persona_no_draft(self):
         """Fetch published artifact, no draft overlay — verify IDs flow to fetchers."""
@@ -468,56 +466,3 @@ class TestResolvePersonaContextResources:
         assert len(result.resources["flags"].suggestions) == 1
         assert result.resources["flags"].suggestions[0].type == "persona_active"
 
-    async def test_has_active_scenarios_true(self):
-        """Persona with active scenarios sets has_active_scenarios=True."""
-        persona_id = uuid4()
-        group_id = uuid4()
-        personas_resource_id = uuid4()
-        scenario_id = uuid4()
-
-        artifact = _persona_artifact(
-            persona_id=persona_id,
-            persona_ids=[personas_resource_id],
-        )
-
-        with _mock_all_fetchers() as m:
-            m.override(f"{MODULE}.get_persona_artifacts", [artifact])
-            m.override(f"{MODULE}.search_scenarios", [scenario_id])
-
-            result = await resolve_persona_context(
-                None,
-                None,
-                persona_id=persona_id,
-                group_id=group_id,
-            )
-
-        assert result.entries["has_active_scenarios"] is True
-        assert result.entries["personas_resource_ids"] == [personas_resource_id]
-
-        # Verify search_scenarios called with the personas_resource_ids
-        mock_scenarios = m._mocks[f"{MODULE}.search_scenarios"]
-        assert mock_scenarios.call_args.kwargs["persona_ids"] == [personas_resource_id]
-
-    async def test_has_active_scenarios_false_when_none(self):
-        """Persona with no active scenarios sets has_active_scenarios=False."""
-        persona_id = uuid4()
-        group_id = uuid4()
-        personas_resource_id = uuid4()
-
-        artifact = _persona_artifact(
-            persona_id=persona_id,
-            persona_ids=[personas_resource_id],
-        )
-
-        with _mock_all_fetchers() as m:
-            m.override(f"{MODULE}.get_persona_artifacts", [artifact])
-            # search_scenarios returns empty — no active scenarios
-
-            result = await resolve_persona_context(
-                None,
-                None,
-                persona_id=persona_id,
-                group_id=group_id,
-            )
-
-        assert result.entries["has_active_scenarios"] is False

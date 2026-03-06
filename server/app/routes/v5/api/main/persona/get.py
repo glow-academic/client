@@ -20,6 +20,7 @@ from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.persona_context import resolve_persona_context
+from app.infra.persona_permissions_context import resolve_persona_permissions_context
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.persona.permissions import (
     PERSONA_RESOURCES,
@@ -98,8 +99,8 @@ async def get_persona_client(
 
     Flow:
       1. resolve_common_context(profile_id) → profile, tool_graph, runs
-      2. resolve_persona_context(persona_id, draft_id, ...) → hydrated resources
-      3. Access check (404, 403)
+      2. resolve_persona_permissions_context → access check (404, 403, fail fast)
+      3. resolve_persona_context(persona_id, draft_id, ...) → hydrated resources
       4. score_tools(tool_graph, PERSONA_RESOURCES) → per-resource tool picks
       5. Pure Python: permissions, show/required/AI flags, response assembly
     """
@@ -122,7 +123,25 @@ async def get_persona_client(
 
     profile = common.profile
 
-    # ── Step 2: Persona artifact context ──────────────────────────────────
+    # ── Step 2: Permissions check (fail fast before full hydration) ──────
+
+    perms = None
+    if persona_id is not None:
+        perms = await resolve_persona_permissions_context(conn, persona_id)
+
+        if not perms.exists:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Persona {persona_id} not found",
+            )
+
+        if not has_access(profile.role, profile.department_ids, perms.department_ids):
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have access to this persona.",
+            )
+
+    # ── Step 3: Persona artifact context ──────────────────────────────────
 
     persona = await resolve_persona_context(
         conn,
@@ -141,24 +160,6 @@ async def get_persona_client(
         bypass_cache=bypass_cache,
     )
 
-    # ── Step 3: Access check ──────────────────────────────────────────────
-
-    if persona_id is not None:
-        if persona.artifact_id is None:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Persona {persona_id} not found",
-            )
-
-        persona_department_ids = [
-            d.id for d in persona.resources["departments"].selected
-        ]
-        if not has_access(profile.role, profile.department_ids, persona_department_ids):
-            raise HTTPException(
-                status_code=403,
-                detail="You don't have access to this persona.",
-            )
-
     # ── Step 4: Tool scoring ──────────────────────────────────────────────
 
     scores = score_tools(common.tool_graph, PERSONA_RESOURCES)
@@ -175,20 +176,20 @@ async def get_persona_client(
 
     # ── Step 5: Permissions ───────────────────────────────────────────────
 
-    persona_department_ids = [d.id for d in persona.resources["departments"].selected]
-    active_scenario_count = 1 if persona.entries["has_active_scenarios"] else 0
+    perms_department_ids = perms.department_ids if perms else []
+    perms_scenario_count = perms.active_scenario_count if perms else 0
 
     can_edit = compute_can_edit(
         user_role=profile.role,
-        persona_department_ids=persona_department_ids,
-        active_scenario_count=active_scenario_count,
+        persona_department_ids=perms_department_ids,
+        active_scenario_count=perms_scenario_count,
         user_department_ids=profile.department_ids,
     )
 
     disabled_reason = compute_disabled_reason(
         user_role=profile.role,
-        persona_department_ids=persona_department_ids,
-        active_scenario_count=active_scenario_count,
+        persona_department_ids=perms_department_ids,
+        active_scenario_count=perms_scenario_count,
         user_department_ids=profile.department_ids,
     )
 

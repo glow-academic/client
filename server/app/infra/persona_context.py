@@ -53,8 +53,6 @@ from app.routes.v5.tools.resources.parameter_fields.search import (
 from app.routes.v5.tools.resources.parameters.search import search_parameters
 from app.routes.v5.tools.resources.voices.search import search_voices
 
-# Artifact search (for scenario count)
-from app.routes.v5.tools.artifacts.scenario.search import search_scenarios
 
 
 # ---------------------------------------------------------------------------
@@ -112,7 +110,6 @@ async def resolve_persona_context(
             icons=True,
             instructions=True,
             parameter_fields=True,
-            personas=True,
             voices=True,
         )
         if persona_id
@@ -129,10 +126,8 @@ async def resolve_persona_context(
     merged = _merge_junction_ids(artifact, draft)
     draft_version = draft.version if draft else None
     active = artifact.active if artifact else True
-    personas_resource_ids = list(artifact.persona_ids or []) if artifact else []
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
-    # Also check if any active scenarios use this persona (via personas_resource IDs)
     (
         names_selected,
         names_suggestions,
@@ -157,7 +152,6 @@ async def resolve_persona_context(
         parameters_selected,
         parameters_suggestions,
         fields_catalog,
-        active_scenario_ids,
     ) = await asyncio.gather(
         # Names
         get_names(conn, merged.name_ids, redis, bypass_cache),
@@ -314,17 +308,6 @@ async def resolve_persona_context(
             department_ids=user_dept_ids,
             bypass_cache=bypass_cache,
         ),
-        # Scenario count: any active scenarios using this persona?
-        (
-            search_scenarios(
-                conn,
-                persona_ids=personas_resource_ids,
-                active_only=True,
-                limit_count=1,
-            )
-            if personas_resource_ids
-            else _empty()
-        ),
     )
 
     # Filter flags to persona-specific types
@@ -374,10 +357,7 @@ async def resolve_persona_context(
             ),
             "fields": ResourcePair(selected=[], suggestions=fields_catalog),
         },
-        entries={
-            "personas_resource_ids": personas_resource_ids,
-            "has_active_scenarios": len(active_scenario_ids) > 0,
-        },
+        entries={},
     )
 
 
