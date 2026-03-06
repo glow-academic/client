@@ -18,6 +18,7 @@ from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.common_context import CommonContext, resolve_common_context
+from app.infra.helpers import dedupe_by_id
 from app.infra.persona_context import (
     PersonaArtifactContext,
     ResourcePair,
@@ -203,12 +204,12 @@ async def get_persona_client_new(
     instructions_has_tools = scores.has_any.get("instructions", False)
 
     # Dedupe selected + suggestions for show counts
-    all_colors = _dedupe_by_id(persona.colors.selected + persona.colors.suggestions)
-    all_icons = _dedupe_by_id(persona.icons.selected + persona.icons.suggestions)
-    all_departments = _dedupe_by_id(persona.departments.selected + persona.departments.suggestions)
-    all_examples = _dedupe_by_id(persona.examples.selected + persona.examples.suggestions)
-    all_parameters = _dedupe_by_id(persona.parameters.selected + persona.parameters.suggestions)
-    all_voices = _dedupe_by_id(persona.voices.selected + persona.voices.suggestions)
+    all_colors = dedupe_by_id(persona.colors.selected + persona.colors.suggestions)
+    all_icons = dedupe_by_id(persona.icons.selected + persona.icons.suggestions)
+    all_departments = dedupe_by_id(persona.departments.selected + persona.departments.suggestions)
+    all_examples = dedupe_by_id(persona.examples.selected + persona.examples.suggestions)
+    all_parameters = dedupe_by_id(persona.parameters.selected + persona.parameters.suggestions)
+    all_voices = dedupe_by_id(persona.voices.selected + persona.voices.suggestions)
 
     show_flags_map = {
         "names": compute_show_name(names_has_tools),
@@ -264,7 +265,7 @@ async def get_persona_client_new(
     # ── Step 7: Response assembly ─────────────────────────────────────────
 
     # Transform flags to enriched PersonaFlagConfig
-    all_flags = _dedupe_by_id(persona.flags.selected + persona.flags.suggestions)
+    all_flags = dedupe_by_id(persona.flags.selected + persona.flags.suggestions)
     persona_flags = [
         PersonaFlagConfig(
             key=f.name,
@@ -319,9 +320,9 @@ async def get_persona_client_new(
         }
 
     # Dedupe merged lists (selected + suggestions) for the `resources` field
-    all_names = _dedupe_by_id(persona.names.selected + persona.names.suggestions)
-    all_descriptions = _dedupe_by_id(persona.descriptions.selected + persona.descriptions.suggestions)
-    all_instructions = _dedupe_by_id(persona.instructions.selected + persona.instructions.suggestions)
+    all_names = dedupe_by_id(persona.names.selected + persona.names.suggestions)
+    all_descriptions = dedupe_by_id(persona.descriptions.selected + persona.descriptions.suggestions)
+    all_instructions = dedupe_by_id(persona.instructions.selected + persona.instructions.suggestions)
 
     return GetPersonaApiResponse(
         # Context
@@ -398,18 +399,3 @@ async def get_persona_client_new(
     )
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-
-
-def _dedupe_by_id(items: list) -> list:
-    """Preserve order while deduplicating by .id attribute."""
-    seen: set = set()
-    output: list = []
-    for item in items:
-        item_id = getattr(item, "id", None)
-        if item_id and item_id not in seen:
-            seen.add(item_id)
-            output.append(item)
-    return output
