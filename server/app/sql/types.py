@@ -3911,7 +3911,7 @@ class QGetDocumentResourceV4Item(BaseModel):
     name: str | None
     description: str | None
     generated: bool | None
-    upload_id: UUID | None
+    file_id: UUID | None
     text_id: UUID | None
     image_ids: list[UUID] | None
     template: bool | None
@@ -20891,12 +20891,11 @@ class QGetDocumentsV4Item(BaseModel):
     name: str | None
     description: str | None
     generated: bool | None
-    upload_id: UUID | None
+    file_id: UUID | None
     text_id: UUID | None
     image_ids: list[UUID] | None
     template: bool | None
     parameter_field_ids: list[UUID] | None
-    parameter_ids: list[UUID] | None
 
 class GetDocumentsSqlRow(BaseModel):
 
@@ -20923,7 +20922,7 @@ class SearchDocumentsSqlParams(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    file_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     text_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     image_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     template: bool | None = None
@@ -20939,7 +20938,7 @@ class SearchDocumentsSqlParams(BaseModel):
             self.draft_id,
             self.suggest_source,
             self.exclude_ids,
-            self.upload_ids,
+            self.file_ids,
             self.text_ids,
             self.image_ids,
             self.template,
@@ -20960,7 +20959,7 @@ class SearchDocumentsApiRequest(BaseModel):
     draft_id: UUID | None = None
     suggest_source: str | None = None
     exclude_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
-    upload_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    file_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     text_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     image_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
     template: bool | None = None
@@ -24265,7 +24264,6 @@ class QGetPersonasV4Item(BaseModel):
     examples: list[str] | None
     generated: bool | None
     parameter_field_ids: list[UUID] | None
-    parameter_ids: list[UUID] | None
 
 class GetPersonasSqlRow(BaseModel):
 

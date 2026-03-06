@@ -6,7 +6,7 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db
-from app.routes.v5.tools.resources.descriptions.create import SQL_PATH
+SQL_PATH = "app/sql/queries/resources/descriptions_complete.sql"
 from app.sql.types import (
     DescriptionsApiRequest,
     DescriptionsApiResponse,

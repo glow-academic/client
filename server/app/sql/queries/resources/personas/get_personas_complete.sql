@@ -59,8 +59,7 @@ CREATE TYPE types.q_get_personas_v4_item AS (
     instructions text,
     examples text[],
     generated boolean,
-    parameter_field_ids uuid[],
-    parameter_ids uuid[]
+    parameter_field_ids uuid[]
 );
 
 -- Create function
@@ -85,8 +84,7 @@ SELECT COALESCE(
             COALESCE(p.instructions, ''),
             COALESCE(p.examples, ARRAY[]::text[]),
             COALESCE(p.generated, false),
-            COALESCE(p.parameter_field_ids, ARRAY[]::uuid[]),
-            COALESCE(p.parameter_ids, ARRAY[]::uuid[])
+            COALESCE(p.parameter_field_ids, ARRAY[]::uuid[])
         )::types.q_get_personas_v4_item
         ORDER BY array_position(p_ids, p.id)
     ),

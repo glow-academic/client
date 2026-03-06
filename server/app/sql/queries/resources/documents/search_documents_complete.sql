@@ -1,7 +1,7 @@
 -- Search documents resources with optional context
 -- CLEAN PATTERN: Query documents_resource only + allowed junction/drafts tables
 -- Parameters: search (text), limit_count (int), offset_count (int), department_ids (uuid[]),
---   draft_id (uuid), suggest_source (text), exclude_ids (uuid[]), upload_ids (uuid[]),
+--   draft_id (uuid), suggest_source (text), exclude_ids (uuid[]), file_ids (uuid[]),
 --   text_ids (uuid[]), image_ids (uuid[]), document (boolean), scenario (boolean)
 -- Returns: items (array of document resources)
 
@@ -29,7 +29,7 @@ CREATE OR REPLACE FUNCTION api_search_documents_v4(
     draft_id uuid DEFAULT NULL,
     suggest_source text DEFAULT 'all',
     exclude_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    upload_ids uuid[] DEFAULT ARRAY[]::uuid[],
+    file_ids uuid[] DEFAULT ARRAY[]::uuid[],
     text_ids uuid[] DEFAULT ARRAY[]::uuid[],
     image_ids uuid[] DEFAULT ARRAY[]::uuid[],
     template boolean DEFAULT NULL,
@@ -45,7 +45,7 @@ STABLE
 AS $$
 SELECT COALESCE(
     ARRAY_AGG(
-        (q.document_id, q.name, q.description, q.generated, q.upload_id, q.text_id, q.image_ids, q.template, q.parameter_field_ids, q.parameter_ids)::types.q_get_documents_v4_item
+        (q.document_id, q.name, q.description, q.generated, q.file_id, q.text_id, q.image_ids, q.template, q.parameter_field_ids)::types.q_get_documents_v4_item
         ORDER BY q.name
     ),
     ARRAY[]::types.q_get_documents_v4_item[]
@@ -56,12 +56,11 @@ FROM (
         d.name,
         COALESCE(d.description, '') AS description,
         COALESCE(d.generated, false) AS generated,
-        d.upload_id,
+        d.file_id,
         d.text_id,
         d.image_ids,
         d.template,
-        COALESCE(d.parameter_field_ids, ARRAY[]::uuid[]) AS parameter_field_ids,
-        COALESCE(d.parameter_ids, ARRAY[]::uuid[]) AS parameter_ids
+        COALESCE(d.parameter_field_ids, ARRAY[]::uuid[]) AS parameter_field_ids
     FROM documents_resource d
     WHERE d.active = true
       AND d.name IS NOT NULL
@@ -91,7 +90,7 @@ FROM (
       )
       -- Exclude already selected
       AND (exclude_ids IS NULL OR NOT (d.id = ANY(exclude_ids)))
-      AND (COALESCE(array_length(upload_ids, 1), 0) = 0 OR d.upload_id = ANY(upload_ids))
+      AND (COALESCE(array_length(file_ids, 1), 0) = 0 OR d.file_id = ANY(file_ids))
       AND (COALESCE(array_length(text_ids, 1), 0) = 0 OR d.text_id = ANY(text_ids))
       AND (COALESCE(array_length(image_ids, 1), 0) = 0 OR d.image_ids && image_ids)
       AND (template IS NULL OR d.template = template)

@@ -20,7 +20,7 @@ async def test_gets_created_document(conn, redis_client):
     assert items[0].id == created.id
     assert items[0].name == "test-doc"
     assert items[0].description == "desc"
-    assert items[0].upload_id is None
+    assert items[0].file_id is None
     assert items[0].text_id is None
     assert items[0].template is False
     assert items[0].active is True

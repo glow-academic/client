@@ -10,9 +10,8 @@ class DocumentsResourceData(BaseModel):
     name: str | None = None
     description: str | None = None
     generated: bool | None = None
-    upload_id: str | None = None
+    file_id: str | None = None
     text_id: str | None = None
     image_ids: list[str] | None = None
     template: bool | None = None
     parameter_field_ids: list[str] | None = None
-    parameter_ids: list[str] | None = None

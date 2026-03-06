@@ -5,6 +5,7 @@ import pytest
 from app.routes.v5.tools.entries.images.create import create_image
 from app.routes.v5.tools.entries.images.get import get_image
 from app.routes.v5.tools.entries.sessions.create import create_session
+from app.routes.v5.tools.resources.images.create import create_image as create_image_resource
 
 pytestmark = pytest.mark.asyncio
 
@@ -39,3 +40,13 @@ async def test_passes_mcp_flag(conn, profile_id):
 
     assert image is not None
     assert image.mcp is True
+
+
+async def test_links_images_resource(conn, profile_id, redis_client):
+    session = await _session(conn, profile_id)
+    resource = await create_image_resource(
+        conn, name="test", description="test", redis=redis_client
+    )
+    result = await create_image(conn, session_id=session.id, images_id=resource.id)
+
+    assert result.id is not None

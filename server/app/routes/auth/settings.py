@@ -206,7 +206,7 @@ async def get_auth_settings(
             profile_id = None
 
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
+        cache = None if bypass_cache else (get_cached, set_cached)
 
         pass1_start = time.time()
         data = await get_auth_settings_internal(conn, profile_id, bypass_cache)

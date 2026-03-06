@@ -27,7 +27,7 @@ async def search_documents(
     draft_id: UUID | None = None,
     suggest_source: str | None = None,
     exclude_ids: list[UUID] | None = None,
-    upload_ids: list[UUID] | None = None,
+    file_ids: list[UUID] | None = None,
     text_ids: list[UUID] | None = None,
     image_ids: list[UUID] | None = None,
     template: bool | None = None,
@@ -56,7 +56,7 @@ async def search_documents(
             "draft_id": str(draft_id) if draft_id else None,
             "suggest_source": suggest_source,
             "exclude_ids": [str(i) for i in (exclude_ids or [])],
-            "upload_ids": sorted(str(i) for i in (upload_ids or [])),
+            "file_ids": sorted(str(i) for i in (file_ids or [])),
             "text_ids": sorted(str(i) for i in (text_ids or [])),
             "image_ids": sorted(str(i) for i in (image_ids or [])),
             "template": template,
@@ -84,9 +84,9 @@ async def search_documents(
                 department_ids,
             ),
         )
-    if upload_ids:
+    if file_ids:
         extra_conditions.append(
-            ("{alias}.upload_id = ANY(${idx})", upload_ids),
+            ("{alias}.file_id = ANY(${idx})", file_ids),
         )
     if text_ids:
         extra_conditions.append(

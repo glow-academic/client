@@ -14,11 +14,10 @@ CREATE TABLE public.documents_resource (
     name text DEFAULT ''::text NOT NULL,
     description text DEFAULT ''::text NOT NULL,
     department_ids uuid[] DEFAULT ARRAY[]::uuid[] NOT NULL,
-    upload_id uuid,
+    file_id uuid,
     text_id uuid,
     image_ids uuid[] DEFAULT '{}'::uuid[] NOT NULL,
     template boolean DEFAULT false NOT NULL,
-    parameter_ids uuid[] DEFAULT '{}'::uuid[] NOT NULL,
     parameter_field_ids uuid[] DEFAULT '{}'::uuid[] NOT NULL
 );
 

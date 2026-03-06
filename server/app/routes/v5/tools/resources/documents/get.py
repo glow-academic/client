@@ -34,8 +34,8 @@ async def get_documents(
 
     rows = await conn.fetch(
         """
-        SELECT id, name, description, department_ids, upload_id, text_id, image_ids,
-               template, parameter_ids, parameter_field_ids, created_at, active,
+        SELECT id, name, description, department_ids, file_id, text_id, image_ids,
+               template, parameter_field_ids, created_at, active,
                generated, mcp
         FROM documents_resource
         WHERE id = ANY($1)
@@ -50,11 +50,10 @@ async def get_documents(
             name=r["name"],
             description=r["description"],
             department_ids=r["department_ids"] or [],
-            upload_id=r["upload_id"],
+            file_id=r["file_id"],
             text_id=r["text_id"],
             image_ids=r["image_ids"] or [],
             template=r["template"],
-            parameter_ids=r["parameter_ids"] or [],
             parameter_field_ids=r["parameter_field_ids"] or [],
             created_at=r["created_at"],
             active=r["active"],

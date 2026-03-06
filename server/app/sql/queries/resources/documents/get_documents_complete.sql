@@ -54,12 +54,11 @@ CREATE TYPE types.q_get_documents_v4_item AS (
     name text,
     description text,
     generated boolean,
-    upload_id uuid,
+    file_id uuid,
     text_id uuid,
     image_ids uuid[],
     template boolean,
-    parameter_field_ids uuid[],
-    parameter_ids uuid[]
+    parameter_field_ids uuid[]
 );
 
 -- Create function - query documents_resource only
@@ -79,12 +78,11 @@ SELECT COALESCE(
             d.name,
             COALESCE(d.description, ''),
             COALESCE(d.generated, false),
-            d.upload_id,
+            d.file_id,
             d.text_id,
             d.image_ids,
             d.template,
-            COALESCE(d.parameter_field_ids, ARRAY[]::uuid[]),
-            COALESCE(d.parameter_ids, ARRAY[]::uuid[])
+            COALESCE(d.parameter_field_ids, ARRAY[]::uuid[])
         )::types.q_get_documents_v4_item
         ORDER BY array_position(p_ids, d.id)
     ),

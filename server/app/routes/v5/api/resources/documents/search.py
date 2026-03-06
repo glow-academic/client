@@ -43,7 +43,7 @@ async def search_documents(
             draft_id=request.draft_id,
             suggest_source=request.suggest_source,
             exclude_ids=request.exclude_ids,
-            upload_ids=request.upload_ids,
+            file_ids=request.file_ids,
             text_ids=request.text_ids,
             image_ids=request.image_ids,
             template=request.template,
@@ -58,12 +58,11 @@ async def search_documents(
                 name=i.name,
                 description=i.description,
                 generated=i.generated,
-                upload_id=i.upload_id,
+                file_id=i.file_id,
                 text_id=i.text_id,
                 image_ids=i.image_ids,
                 template=i.template,
                 parameter_field_ids=i.parameter_field_ids,
-                parameter_ids=i.parameter_ids,
             )
             for i in items
         ]

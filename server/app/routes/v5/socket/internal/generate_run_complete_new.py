@@ -22,12 +22,9 @@ import uuid
 from typing import Any
 
 from app.infra.globals import get_internal_sio, get_redis_client
-from app.infra.websocket.db_helpers import (
-    check_assistant_message_exists,
-    record_tokens,
-)
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.persist_run_message import persist_run_message
+from app.routes.v5.tools.entries.tokens.create import create_token
 from app.infra.websocket.run_tracker import cleanup_run, record_agent_done
 from app.infra.websocket.socket_event import SocketEvent, flush_events, internal_event
 from app.routes.v5.socket.internal.attempt.types import AttemptChatStartedData
@@ -100,20 +97,21 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
     input_tokens = data.get("input_text_tokens", 0)
     output_tokens = data.get("output_text_tokens", 0)
 
-    # Step 1: Save assistant message (deduplicated) + token counts
+    # Step 1: Save assistant message + token counts
     try:
         async with get_db_connection() as conn:
             if assistant_output:
-                exists = await check_assistant_message_exists(conn, run_uuid)
-                if not exists:
-                    await persist_run_message(
-                        conn, run_id=run_uuid,
-                        session_id=session_id,
-                        role="assistant", content=assistant_output,
-                    )
+                await persist_run_message(
+                    conn, run_id=run_uuid,
+                    session_id=session_id,
+                    role="assistant", content=assistant_output,
+                )
 
             if input_tokens or output_tokens:
-                await record_tokens(conn, run_uuid, input_tokens, output_tokens)
+                await create_token(
+                    conn, run_id=run_uuid, session_id=session_id,
+                    input_tokens=input_tokens, output_tokens=output_tokens,
+                )
     except Exception as e:
         logger.exception(f"Failed to save run_complete for {artifact_type}: {e}")
 

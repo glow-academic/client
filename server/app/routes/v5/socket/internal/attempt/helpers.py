@@ -57,7 +57,7 @@ async def emit_chat_generate(
             conn,
             session_id=session_id,
             group_id=group_id,
-            profile_id=profiles_id,
+            profiles_id=profiles_id,
         )
         run_id = run_result.id
 

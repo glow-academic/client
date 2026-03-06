@@ -39,7 +39,7 @@ CREATE TYPE types.q_get_document_resource_v4_item AS (
     name text,
     description text,
     generated boolean,
-    upload_id uuid,
+    file_id uuid,
     text_id uuid,
     image_ids uuid[],
     template boolean
@@ -62,7 +62,7 @@ SELECT COALESCE(
             COALESCE(d.name, ''),
             COALESCE(d.description, ''),
             COALESCE(d.generated, false),
-            d.upload_id,
+            d.file_id,
             d.text_id,
             d.image_ids,
             d.template

@@ -11,11 +11,10 @@ class GetDocumentResponse(BaseModel):
     name: str
     description: str
     department_ids: list[UUID]
-    upload_id: UUID | None
+    file_id: UUID | None
     text_id: UUID | None
     image_ids: list[UUID]
     template: bool
-    parameter_ids: list[UUID]
     parameter_field_ids: list[UUID]
     created_at: datetime
     active: bool
