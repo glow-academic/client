@@ -59,8 +59,7 @@ def _table_name(target_type: str, target_name: str) -> str:
     return f"{target_name}_{suffix}"
 
 
-# NOTE: Not registered as @internal_sio.on("generate_run_complete") yet.
-# To activate: import and swap registration.
+@internal_sio.on("generate_run_complete")  # type: ignore
 async def handle_run_complete_new(data: dict[str, Any]) -> None:
     """Handle run_complete — triage contested vs uncontested, promote or grade.
 

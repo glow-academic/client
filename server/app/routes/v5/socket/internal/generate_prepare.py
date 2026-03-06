@@ -416,7 +416,7 @@ def _enrich_tools_with_args_outputs(
 # ---------------------------------------------------------------------------
 
 
-@internal_sio.on("generate_prepare")  # type: ignore
+# @internal_sio.on("generate_prepare")  # Swapped to generate_prepare_new.py
 async def generate_prepare_handler(data: dict[str, Any]) -> None:
     """Handle ``generate_prepare`` — runs after rate limit gate passes."""
     sid = data.get("sid", "")

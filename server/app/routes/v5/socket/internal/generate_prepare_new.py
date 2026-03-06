@@ -141,8 +141,7 @@ async def _fetch_entry_types(
     return results
 
 
-# NOTE: Not registered as @internal_sio.on("generate_prepare") yet.
-# To activate: import and swap registration.
+@internal_sio.on("generate_prepare")  # type: ignore
 async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
     """Handle generate_prepare — thin orchestrator over pure functions.
 
@@ -488,7 +487,7 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                 developer_instruction_templates=dev_templates,
                 payload_metadata=payload_metadata,
                 resource_agent_ids=resource_agent_ids,
-                save=payload.save,
+                save=None,  # save:bool removed — all results are soft-created, promoted later
             )
 
             # Persist messages (I/O)
@@ -540,7 +539,6 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                         "tool_choice": "required",
                     },
                     tools=dispatch.scoped_tools,
-                    save=payload.save,
                     metadata=dispatch.metadata or None,
                     profile_id=profile_id_str,
                     profiles_id=profiles_id_str,

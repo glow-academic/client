@@ -470,14 +470,6 @@ async def get_persona(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Resolve group_id: client provides it, or create a new one
-        group_id = request.group_id
-        if not group_id:
-            group_id = await conn.fetchval(
-                "INSERT INTO groups_entry (created_at, updated_at) "
-                "VALUES (NOW(), NOW()) RETURNING id"
-            )
-
         redis = get_redis_client()
 
         response_data = await get_persona_client(
@@ -486,7 +478,7 @@ async def get_persona(
             profile_id=profile_id,
             persona_id=request.persona_id,
             draft_id=request.draft_id,
-            group_id=group_id,
+            group_id=request.group_id,
             parameter_ids=[UUID(pid) for pid in request.parameter_ids]
             if request.parameter_ids
             else None,

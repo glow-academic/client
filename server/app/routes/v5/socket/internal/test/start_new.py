@@ -34,8 +34,7 @@ logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 
-# NOTE: Not registered as @internal_sio.on("test_start") yet.
-# To activate: import and swap registration with test/start.py.
+@internal_sio.on("test_start")  # type: ignore
 async def test_start_handler_new(data: dict[str, Any]) -> None:
     """Handle test_start — create test via black boxes, optional benchmark bridge."""
     sid = data.get("sid", "")

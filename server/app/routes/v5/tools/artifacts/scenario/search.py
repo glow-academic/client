@@ -20,6 +20,7 @@ async def search_scenarios(
     department_ids: list[UUID] | None = None,
     document_ids: list[UUID] | None = None,
     persona_ids: list[UUID] | None = None,
+    parameter_ids: list[UUID] | None = None,
     simulation_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
@@ -78,6 +79,19 @@ async def search_scenarios(
             resource_col="documents_id",
             ids=document_ids,
         )
+
+    # parameter_ids are parameter_artifact IDs — two-hop through parameter_fields_resource
+    if parameter_ids:
+        conditions.append(
+            f"EXISTS ("
+            f"SELECT 1 FROM scenario_parameter_fields_junction spfj "
+            f"JOIN parameter_fields_resource pfr ON pfr.id = spfj.parameter_fields_id "
+            f"WHERE spfj.{OWNER_COL} = a.id AND spfj.active = true "
+            f"AND pfr.parameter_id = ANY(${idx})"
+            f")"
+        )
+        params.append(parameter_ids)
+        idx += 1
 
     # persona_ids are personas_resource IDs — direct junction lookup
     if persona_ids:

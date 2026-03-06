@@ -45,7 +45,7 @@ def _table_name(target_type: str, target_name: str) -> str:
     return f"{target_name}_{suffix}"
 
 
-# NOTE: Not registered yet. To activate: import and register.
+@internal_sio.on("test_ended")  # type: ignore
 async def handle_generation_ended(data: dict[str, Any]) -> None:
     """Resolve contested targets after test grading completes.
 

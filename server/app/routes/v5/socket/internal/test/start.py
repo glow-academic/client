@@ -31,7 +31,7 @@ internal_sio = get_internal_sio()
 SQL_PATH_START_TEST = "app/sql/queries/generate/test/start_test_complete.sql"
 
 
-@internal_sio.on("test_start")  # type: ignore
+# @internal_sio.on("test_start")  # Swapped to test/start_new.py
 async def test_start_handler(data: dict[str, Any]) -> None:
     """Handle test_start — create a new test, then emit test_proceed."""
     sid = data.get("sid", "")

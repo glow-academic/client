@@ -89,7 +89,6 @@ from app.routes.v5.api.main.scenario.types import (
     ScenarioVideo,
     ScenarioVideoSection,
 )
-from app.routes.v5.tools.entries.scenario_drafts.get import get_scenario_drafts
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -689,18 +688,6 @@ async def get_scenario(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Resolve group_id: client provides it, or draft has it, or create new
-        group_id = request.group_id
-        if not group_id and request.draft_id:
-            drafts = await get_scenario_drafts(conn, [request.draft_id])
-            if drafts and drafts[0].group_id:
-                group_id = drafts[0].group_id
-        if not group_id:
-            group_id = await conn.fetchval(
-                "INSERT INTO groups_entry (created_at, updated_at) "
-                "VALUES (NOW(), NOW()) RETURNING id"
-            )
-
         redis = get_redis_client()
 
         response_data = await get_scenario_client(
@@ -709,7 +696,7 @@ async def get_scenario(
             profile_id=profile_id,
             scenario_id=request.scenario_id,
             draft_id=request.draft_id,
-            group_id=group_id,
+            group_id=request.group_id,
             parameter_ids=[UUID(str(pid)) for pid in request.parameter_ids]
             if request.parameter_ids
             else None,

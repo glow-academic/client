@@ -121,16 +121,24 @@ async def execute_tool_call(
             mcp=mcp,
         )
 
-        return json.dumps({
+        result_id_str = str(result.result_id) if result.result_id else None
+        response: dict[str, Any] = {
             "success": True,
             "message": f"Successfully created {name} {layer}",
-            "result_id": str(result.result_id) if result.result_id else None,
+            "result_id": result_id_str,
             "run_id": str(result.run_id),
             "call_id": str(result.call_id) if result.call_id else None,
             "message_id": str(result.message_id),
             f"{layer}_type": name,
             "soft": soft,
-        })
+        }
+        # Emit layer-specific ID key for downstream consumers
+        # (generation_progress_new reads resource_id / entry_id)
+        if layer == "resource":
+            response["resource_id"] = result_id_str
+        elif layer == "entry":
+            response["entry_id"] = result_id_str
+        return json.dumps(response)
 
     except Exception as e:
         logger.exception(f"Error executing tool {tool_name}: {e}")

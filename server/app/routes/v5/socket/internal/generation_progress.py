@@ -17,7 +17,7 @@ logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 
-@internal_sio.on("generate_call_complete")  # type: ignore
+# @internal_sio.on("generate_call_complete")  # Swapped to generation_progress_new.py
 async def handle_resource_progress(data: dict[str, Any]) -> None:
     """Track resource completions and emit progress percentage."""
     event_type = data.get("event_type")

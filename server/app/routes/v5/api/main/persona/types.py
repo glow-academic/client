@@ -262,8 +262,7 @@ class GetPersonaApiRequest(BaseModel):
     color_show_selected: bool | None = None
     icon_show_selected: bool | None = None
     parameter_field_show_selected: bool | None = None
-    # Optional group_id from layout context (avoids server-side creation)
-    group_id: UUID | None = None
+    group_id: UUID
 
 
 class GetPersonaApiResponse(BaseModel):

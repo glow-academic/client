@@ -32,7 +32,7 @@ internal_sio = get_internal_sio()
 SCORE_TTL = 3600
 
 
-# NOTE: Not registered yet. To activate: import and register.
+@internal_sio.on("test_grade_progress")  # type: ignore
 async def handle_generation_resolve(data: dict[str, Any]) -> None:
     """Store invocation grade scores for later resolution by generation_ended.
 

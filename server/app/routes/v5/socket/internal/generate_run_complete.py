@@ -41,7 +41,7 @@ SQL_PATH_CREATE_MESSAGE_WITH_TEXT = (
 )
 
 
-@internal_sio.on("generate_run_complete")  # type: ignore
+# @internal_sio.on("generate_run_complete")  # Swapped to generate_run_complete_new.py
 async def handle_run_complete(data: dict[str, Any]) -> None:
     """Handle run_complete for all artifact types and modalities."""
     sid = data.get("sid", "")

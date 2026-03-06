@@ -398,14 +398,6 @@ async def get_profile(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Resolve group_id: client provides it, or create a new one
-        group_id = request.group_id
-        if not group_id:
-            group_id = await conn.fetchval(
-                "INSERT INTO groups_entry (created_at, updated_at) "
-                "VALUES (NOW(), NOW()) RETURNING id"
-            )
-
         redis = get_redis_client()
 
         response_data = await get_profile_client(
@@ -414,7 +406,7 @@ async def get_profile(
             profile_id=profile_id,
             target_profile_id=request.target_profile_id,
             draft_id=request.draft_id,
-            group_id=group_id,
+            group_id=request.group_id,
             bypass_cache=bypass_cache,
         )
 

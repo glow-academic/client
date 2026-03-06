@@ -1,8 +1,7 @@
-"""Handcrafted types for parameter artifact endpoints (section-first parity)."""
+"""Handcrafted types for parameter artifact endpoints."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
@@ -11,16 +10,65 @@ from pydantic import BaseModel
 from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetModelsV4Item,
-    QGetNamesV4Item,
-    QGetParameterDraftsEntriesV4Item,
-    QGetParameterFieldsV4Item,
-    QGetProvidersV4Item,
-)
+
+
+# ---------------------------------------------------------------------------
+# Handcrafted resource types (replaces Q types from app.sql.types)
+# ---------------------------------------------------------------------------
+
+
+class ParameterNameResource(BaseModel):
+    """Name resource for parameter."""
+
+    id: UUID | None = None
+    name: str | None = None
+    generated: bool | None = None
+
+
+class ParameterDescriptionResource(BaseModel):
+    """Description resource for parameter."""
+
+    id: UUID | None = None
+    description: str | None = None
+    generated: bool | None = None
+
+
+class ParameterDepartmentResource(BaseModel):
+    """Department resource for parameter."""
+
+    id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    generated: bool | None = None
+
+
+class ParameterFieldResource(BaseModel):
+    """Parameter field resource for parameter."""
+
+    id: UUID | None = None
+    field_id: UUID | None = None
+    parameter_id: UUID | None = None
+    name: str | None = None
+    generated: bool | None = None
+
+
+class ParameterDraftEntry(BaseModel):
+    """Draft entry for parameter."""
+
+    id: UUID | None = None
+    version: int | None = None
+    created_at: datetime | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
+    active: bool | None = None
+    group_id: UUID | None = None
+    session_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    description_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = None
+    name_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
 
 
 class ParameterFlagConfig(BaseModel):
@@ -36,14 +84,19 @@ class ParameterFlagConfig(BaseModel):
     generated: bool | None = None
 
 
+# ---------------------------------------------------------------------------
+# Section types
+# ---------------------------------------------------------------------------
+
+
 class ParameterNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: ParameterNameResource | None = None
+    resources: list[ParameterNameResource] | None = None
 
 
 class ParameterDescriptionSection(BaseResourceSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
+    resource: ParameterDescriptionResource | None = None
+    resources: list[ParameterDescriptionResource] | None = None
 
 
 class ParameterFlagSection(BaseResourceSection):
@@ -52,13 +105,18 @@ class ParameterFlagSection(BaseResourceSection):
 
 
 class ParameterDepartmentSection(BaseResourceSection):
-    current: list[QGetDepartmentsV4Item] | None = None
-    resources: list[QGetDepartmentsV4Item] | None = None
+    current: list[ParameterDepartmentResource] | None = None
+    resources: list[ParameterDepartmentResource] | None = None
 
 
 class ParameterFieldSection(BaseResourceSection):
-    current: list[QGetParameterFieldsV4Item] | None = None
-    resources: list[QGetParameterFieldsV4Item] | None = None
+    current: list[ParameterFieldResource] | None = None
+    resources: list[ParameterFieldResource] | None = None
+
+
+# ---------------------------------------------------------------------------
+# GET endpoint types
+# ---------------------------------------------------------------------------
 
 
 class GetParameterApiRequest(BaseModel):
@@ -66,9 +124,7 @@ class GetParameterApiRequest(BaseModel):
 
     parameter_id: UUID | None = None
     draft_id: UUID | None = None
-    field_search: str | None = None
-    field_show_selected: bool | None = None
-    group_id: UUID | None = None
+    group_id: UUID
 
 
 class GetParameterApiResponse(BaseModel):
@@ -91,63 +147,29 @@ class GetParameterApiResponse(BaseModel):
     fields: ParameterFieldSection | None = None
 
 
+# ---------------------------------------------------------------------------
+# Websocket types
+# ---------------------------------------------------------------------------
+
+
 class ParameterWebsocketEntries(BaseModel):
-    draft_parameter: QGetParameterDraftsEntriesV4Item | None = None
+    draft_parameter: ParameterDraftEntry | None = None
     runs: GetRunListViewResponse | None = None
 
 
 class ParameterWebsocketResources(BaseModel):
     """Hydrated selected resources for websocket generation context."""
 
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
+    names: list[ParameterNameResource] | None = None
+    descriptions: list[ParameterDescriptionResource] | None = None
     flags: list[ParameterFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    fields: list[QGetParameterFieldsV4Item] | None = None
+    departments: list[ParameterDepartmentResource] | None = None
+    fields: list[ParameterFieldResource] | None = None
 
 
 class GetParameterWebsocketResponse(InternalResponseBase):
     entries: ParameterWebsocketEntries | None = None
     resources: ParameterWebsocketResources
-
-
-class ParameterResourceBucket(BaseModel):
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    flags: list[ParameterFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    fields: list[QGetParameterFieldsV4Item] | None = None
-
-
-class ParameterResources(BaseModel):
-    resources: ParameterResourceBucket | None = None
-    current: ParameterResourceBucket | None = None
-
-
-@dataclass
-class ParameterInternalData:
-    actor_name: str | None
-    parameter_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
-
-    agent_ids: dict[str, UUID | None]
-    show_flags_map: dict[str, bool]
-    required_flags_map: dict[str, bool]
-    suggestions_map: dict[str, list[UUID]]
-    show_ai_generate_map: dict[str, bool]
-    basic_show_ai_generate: bool
-    fields_step_show_ai_generate: bool
-
-    resources_payload: ParameterResources
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
-
-    config_agent_resources: list[QGetAgentsV4Item] | None
-    config_model_resources: list[QGetModelsV4Item] | None
-    config_provider_resources: list[QGetProvidersV4Item] | None
 
 
 # ========== List Endpoint Types ==========

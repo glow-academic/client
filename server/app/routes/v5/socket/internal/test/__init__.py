@@ -14,5 +14,6 @@ from . import (
     proceed,  # noqa: F401 — registers test_proceed handler
     progress,  # noqa: F401 — registers test_progress_update handler
     run,  # noqa: F401 — registers test_run handler
-    start,  # noqa: F401 — registers test_start handler
+    start,  # noqa: F401 — kept for reference (handler deactivated)
+    start_new,  # noqa: F401 — registers test_start handler
 )
