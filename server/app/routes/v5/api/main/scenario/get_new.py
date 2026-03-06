@@ -345,20 +345,30 @@ async def get_scenario_client(
     # ── Step 7: Resource conversion + response assembly ───────────────────
 
     # Video param computation (pure Python from hydrated resources)
+    # Chain: parameter_field_ids → field.parameter_id → parameter.video_parameter
     video_param_ids = {p.id for p in all_parameters if p.video_parameter}
+    field_to_param = {
+        pf.id: pf.parameter_id
+        for pf in all_parameter_fields
+        if pf.parameter_id
+    }
 
-    def _video_flags_for_param_ids(
-        linked_param_ids: list[UUID] | None,
+    def _video_flags_for_field_ids(
+        field_ids: list[UUID] | None,
     ) -> tuple[bool, bool]:
-        linked = set(linked_param_ids or [])
-        has_video = bool(linked & video_param_ids)
-        has_non_video = bool(linked - video_param_ids) or not linked
+        param_ids = {
+            field_to_param[fid]
+            for fid in (field_ids or [])
+            if fid in field_to_param
+        }
+        has_video = bool(param_ids & video_param_ids)
+        has_non_video = bool(param_ids - video_param_ids) or not param_ids
         return has_video, has_non_video
 
-    # Upload maps from context entries
-    doc_upload_map: dict[UUID, UUID] = scenario.entries["document_upload_map"]
-    image_upload_map: dict[UUID, dict] = scenario.entries["image_upload_map"]
-    video_upload_map: dict[UUID, dict] = scenario.entries["video_upload_map"]
+    # Build lookup dicts from entry MV results (keyed by resource ID)
+    file_map = {f.files_id: f for f in scenario.entries["files"]}
+    image_entry_map = {i.images_id: i for i in scenario.entries["images"]}
+    video_entry_map = {v.videos_id: v for v in scenario.entries["videos"]}
 
     # Converters: resource types → scenario-specific response types
     def _to_name(n) -> ScenarioNameResource:
@@ -386,14 +396,14 @@ async def get_scenario_client(
         )
 
     def _to_persona(p) -> ScenarioPersona:
-        video_persona, non_video_persona = _video_flags_for_param_ids(p.parameter_ids)
+        video_persona, non_video_persona = _video_flags_for_field_ids(p.parameter_field_ids)
         return ScenarioPersona(
             persona_id=p.id,
             name=p.name,
             description=p.description,
             color=p.color,
             icon=p.icon,
-            parameter_ids=p.parameter_ids,
+            parameter_ids=None,
             field_ids=p.parameter_field_ids,
             example=p.examples[0] if p.examples else None,
             video_persona=video_persona,
@@ -401,17 +411,17 @@ async def get_scenario_client(
         )
 
     def _to_document(d) -> ScenarioDocument:
-        video_document, non_video_document = _video_flags_for_param_ids(d.parameter_ids)
-        upload_id = doc_upload_map.get(d.upload_id) if d.upload_id else None
+        video_document, non_video_document = _video_flags_for_field_ids(d.parameter_field_ids)
+        file_entry = file_map.get(d.file_id) if d.file_id else None
         return ScenarioDocument(
             document_id=d.id,
             name=d.name,
             description=d.description,
-            upload_id=upload_id,
-            file_path=None,
-            mime_type=None,
-            html=getattr(d, "template", None),
-            parameter_ids=d.parameter_ids,
+            upload_id=file_entry.upload_id if file_entry else None,
+            file_path=file_entry.file_path if file_entry else None,
+            mime_type=file_entry.mime_type if file_entry else None,
+            html=d.template,
+            parameter_ids=None,
             field_ids=d.parameter_field_ids,
             parent_document_id=None,
             video_document=video_document,
@@ -445,24 +455,24 @@ async def get_scenario_client(
         )
 
     def _to_image(i) -> ScenarioImage:
-        upload = image_upload_map.get(i.id)
+        entry = image_entry_map.get(i.id)
         return ScenarioImage(
             image_id=i.id,
             name=i.name,
-            file_path=upload["file_path"] if upload else None,
-            mime_type=upload["mime_type"] if upload else None,
-            upload_id=upload["upload_id"] if upload else None,
+            file_path=entry.file_path if entry else None,
+            mime_type=entry.mime_type if entry else None,
+            upload_id=entry.upload_id if entry else None,
             generated=i.generated,
         )
 
     def _to_video(v) -> ScenarioVideo:
-        upload = video_upload_map.get(v.id)
+        entry = video_entry_map.get(v.id)
         return ScenarioVideo(
             video_id=v.id,
             name=v.name,
-            file_path=upload["file_path"] if upload else None,
-            mime_type=upload["mime_type"] if upload else None,
-            upload_id=upload["upload_id"] if upload else None,
+            file_path=entry.file_path if entry else None,
+            mime_type=entry.mime_type if entry else None,
+            upload_id=entry.upload_id if entry else None,
             generated=v.generated,
         )
 
