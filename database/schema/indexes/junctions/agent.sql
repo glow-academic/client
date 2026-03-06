@@ -114,6 +114,30 @@ CREATE INDEX agent_names_name_id_idx ON public.agent_names_junction USING btree 
 
 --
 
+-- Name: agent_qualities_active_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_qualities_active_idx ON public.agent_qualities_junction USING btree (active);
+
+
+--
+
+-- Name: agent_qualities_agent_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_qualities_agent_id_idx ON public.agent_qualities_junction USING btree (agent_id);
+
+
+--
+
+-- Name: agent_qualities_resource_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX agent_qualities_resource_id_idx ON public.agent_qualities_junction USING btree (qualities_id);
+
+
+--
+
 -- Name: agent_reasoning_levels_active_idx; Type: INDEX; Schema: public; Owner: -
 --
 

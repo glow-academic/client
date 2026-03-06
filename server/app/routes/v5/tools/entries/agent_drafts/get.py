@@ -29,7 +29,8 @@ async def get_agent_drafts(
             COALESCE(ARRAY_AGG(DISTINCT p.profiles_id) FILTER (WHERE p.profiles_id IS NOT NULL), '{}') AS profile_ids,
             COALESCE(ARRAY_AGG(DISTINCT rl.reasoning_levels_id) FILTER (WHERE rl.reasoning_levels_id IS NOT NULL), '{}') AS reasoning_level_ids,
             COALESCE(ARRAY_AGG(DISTINCT tl.temperature_levels_id) FILTER (WHERE tl.temperature_levels_id IS NOT NULL), '{}') AS temperature_level_ids,
-            COALESCE(ARRAY_AGG(DISTINCT v.voices_id) FILTER (WHERE v.voices_id IS NOT NULL), '{}') AS voice_ids
+            COALESCE(ARRAY_AGG(DISTINCT v.voices_id) FILTER (WHERE v.voices_id IS NOT NULL), '{}') AS voice_ids,
+            COALESCE(ARRAY_AGG(DISTINCT q.qualities_id) FILTER (WHERE q.qualities_id IS NOT NULL), '{}') AS quality_ids
         FROM agent_drafts_entry d
         LEFT JOIN agent_drafts_names_connection n ON n.draft_id = d.id
         LEFT JOIN agent_drafts_descriptions_connection desc_c ON desc_c.draft_id = d.id
@@ -41,6 +42,7 @@ async def get_agent_drafts(
         LEFT JOIN agent_drafts_reasoning_levels_connection rl ON rl.draft_id = d.id
         LEFT JOIN agent_drafts_temperature_levels_connection tl ON tl.draft_id = d.id
         LEFT JOIN agent_drafts_voices_connection v ON v.draft_id = d.id
+        LEFT JOIN agent_drafts_qualities_connection q ON q.draft_id = d.id
         WHERE d.id = ANY($1)
           AND d.active = true
         GROUP BY d.id, d.version, d.created_at, d.generated, d.mcp, d.active,
@@ -70,6 +72,7 @@ async def get_agent_drafts(
             reasoning_level_ids=r["reasoning_level_ids"],
             temperature_level_ids=r["temperature_level_ids"],
             voice_ids=r["voice_ids"],
+            quality_ids=r["quality_ids"],
         )
         for r in rows
     ]

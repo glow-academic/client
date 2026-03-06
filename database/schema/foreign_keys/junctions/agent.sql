@@ -110,6 +110,24 @@ ALTER TABLE ONLY public.agent_names_junction
 
 --
 
+-- Name: agent_qualities_junction agent_qualities_junction_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_qualities_junction
+    ADD CONSTRAINT agent_qualities_junction_agent_id_fkey FOREIGN KEY (agent_id) REFERENCES public.agent_artifact(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: agent_qualities_junction agent_qualities_junction_qualities_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_qualities_junction
+    ADD CONSTRAINT agent_qualities_junction_qualities_id_fkey FOREIGN KEY (qualities_id) REFERENCES public.qualities_resource(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: agent_reasoning_levels_junction agent_reasoning_levels_junction_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

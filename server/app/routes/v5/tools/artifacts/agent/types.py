@@ -23,6 +23,7 @@ class GetAgentsResponse(BaseModel):
     temperature_level_ids: list[UUID] | None = None
     tool_ids: list[UUID] | None = None
     voice_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = None
     agent_ids: list[UUID] | None = None
 
 

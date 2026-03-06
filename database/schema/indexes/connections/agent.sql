@@ -50,6 +50,14 @@ CREATE INDEX idx_agent_drafts_profiles_resource_id ON public.agent_drafts_profil
 
 --
 
+-- Name: idx_agent_drafts_qualities_resource_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_agent_drafts_qualities_resource_id ON public.agent_drafts_qualities_connection USING btree (qualities_id);
+
+
+--
+
 -- Name: idx_agent_drafts_reasoning_levels_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 

@@ -33,7 +33,6 @@ JUNCTIONS: list[tuple[str, str, str, str]] = [
         "model_rubrics_id",
         "model_rubric_ids",
     ),
-    ("rubrics", "eval_rubrics_junction", "rubrics_id", "rubric_ids"),
     ("evals", "eval_evals_junction", "evals_id", "eval_ids"),
 ]
 
@@ -50,7 +49,6 @@ async def get_evals(
     model_flags: bool = False,
     model_positions: bool = False,
     model_rubrics: bool = False,
-    rubrics: bool = False,
     evals: bool = False,
 ) -> list[GetEvalsResponse]:
     """Get eval artifacts by IDs with optional junction ID fetching."""
@@ -66,7 +64,6 @@ async def get_evals(
         "model_flags": model_flags,
         "model_positions": model_positions,
         "model_rubrics": model_rubrics,
-        "rubrics": rubrics,
         "evals": evals,
     }
 

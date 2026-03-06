@@ -29,3 +29,4 @@ class GetAgentDraftResponse(BaseModel):
     reasoning_level_ids: list[UUID]
     temperature_level_ids: list[UUID]
     voice_ids: list[UUID]
+    quality_ids: list[UUID]

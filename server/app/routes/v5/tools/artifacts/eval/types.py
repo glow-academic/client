@@ -22,7 +22,6 @@ class GetEvalsResponse(BaseModel):
     model_flag_ids: list[UUID] | None = None
     model_position_ids: list[UUID] | None = None
     model_rubric_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
     eval_ids: list[UUID] | None = None
 
 

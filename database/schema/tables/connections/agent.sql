@@ -98,6 +98,22 @@ CREATE TABLE public.agent_drafts_profiles_connection (
 
 --
 
+-- Name: agent_drafts_qualities_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.agent_drafts_qualities_connection (
+    draft_id uuid NOT NULL,
+    qualities_id uuid NOT NULL,
+    version integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL
+);
+
+
+--
+
 -- Name: agent_drafts_reasoning_levels_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -212,6 +228,15 @@ ALTER TABLE ONLY public.agent_drafts_names_connection
 
 ALTER TABLE ONLY public.agent_drafts_profiles_connection
     ADD CONSTRAINT agent_drafts_profiles_connection_pkey PRIMARY KEY (draft_id, profiles_id);
+
+
+--
+
+-- Name: agent_drafts_qualities_connection agent_drafts_qualities_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_drafts_qualities_connection
+    ADD CONSTRAINT agent_drafts_qualities_connection_pkey PRIMARY KEY (draft_id, qualities_id);
 
 
 --

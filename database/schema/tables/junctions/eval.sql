@@ -137,21 +137,6 @@ CREATE TABLE public.eval_names_junction (
 
 --
 
--- Name: eval_rubrics_junction; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.eval_rubrics_junction (
-    eval_id uuid NOT NULL,
-    rubrics_id uuid CONSTRAINT eval_rubrics_junction_rubric_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
-);
-
-
---
-
 -- Name: eval_departments_junction eval_departments_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -229,15 +214,6 @@ ALTER TABLE ONLY public.eval_models_junction
 
 ALTER TABLE ONLY public.eval_names_junction
     ADD CONSTRAINT eval_names_pkey PRIMARY KEY (eval_id, names_id);
-
-
---
-
--- Name: eval_rubrics_junction eval_rubrics_junction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eval_rubrics_junction
-    ADD CONSTRAINT eval_rubrics_junction_pkey PRIMARY KEY (eval_id, rubrics_id);
 
 
 --

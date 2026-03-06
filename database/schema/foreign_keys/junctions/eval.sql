@@ -163,21 +163,3 @@ ALTER TABLE ONLY public.eval_names_junction
 
 
 --
-
--- Name: eval_rubrics_junction eval_rubrics_junction_eval_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eval_rubrics_junction
-    ADD CONSTRAINT eval_rubrics_junction_eval_id_fkey FOREIGN KEY (eval_id) REFERENCES public.eval_artifact(id) ON DELETE CASCADE;
-
-
---
-
--- Name: eval_rubrics_junction eval_rubrics_junction_rubric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.eval_rubrics_junction
-    ADD CONSTRAINT eval_rubrics_junction_rubric_id_fkey FOREIGN KEY (rubrics_id) REFERENCES public.rubrics_resource(id) ON DELETE CASCADE;
-
-
---

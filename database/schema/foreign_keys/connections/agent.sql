@@ -110,6 +110,24 @@ ALTER TABLE ONLY public.agent_drafts_profiles_connection
 
 --
 
+-- Name: agent_drafts_qualities_connection agent_drafts_qualities_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_drafts_qualities_connection
+    ADD CONSTRAINT agent_drafts_qualities_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.agent_drafts_entry(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: agent_drafts_qualities_connection agent_drafts_qualities_connection_qualities_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_drafts_qualities_connection
+    ADD CONSTRAINT agent_drafts_qualities_connection_qualities_id_fkey FOREIGN KEY (qualities_id) REFERENCES public.qualities_resource(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: agent_drafts_reasoning_levels_connection agent_drafts_reasoning_levels_connecti_reasoning_levels_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

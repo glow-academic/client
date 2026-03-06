@@ -161,19 +161,3 @@ CREATE INDEX idx_eval_names_mcp ON public.eval_names_junction USING btree (mcp);
 
 
 --
-
--- Name: idx_eval_rubrics_eval_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_eval_rubrics_eval_id ON public.eval_rubrics_junction USING btree (eval_id);
-
-
---
-
--- Name: idx_eval_rubrics_rubric_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_eval_rubrics_rubric_id ON public.eval_rubrics_junction USING btree (rubrics_id);
-
-
---
