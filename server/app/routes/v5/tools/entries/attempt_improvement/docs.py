@@ -14,7 +14,7 @@ from app.routes.v5.tools.entries.attempt_improvement.refresh import (
     refresh_attempt_improvement,
 )
 from app.routes.v5.tools.entries.attempt_improvement.search import (
-    search_attempt_improvement_entries_internal,
+    search_attempt_improvements,
 )
 
 
@@ -50,7 +50,7 @@ async def get_attempt_improvement_docs(conn: asyncpg.Connection) -> DocsResponse
                 description="Batch retrieves improvements by IDs from attempt_improvement_mv.",
             ),
             get_operation_info(
-                search_attempt_improvement_entries_internal,
+                search_attempt_improvements,
                 description="Filtered paginated search against attempt_improvement_mv.",
             ),
         ],

@@ -39,7 +39,7 @@ async def test_includes_all_operations(conn):
     assert "create_attempt_feedback" in op_names
     assert "refresh_attempt_feedback" in op_names
     assert "get_attempt_feedbacks" in op_names
-    assert "search_attempt_feedback_entries_internal" in op_names
+    assert "search_attempt_feedback_entries" in op_names
 
 
 async def test_create_operation_has_params(conn):

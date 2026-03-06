@@ -14,7 +14,7 @@ from app.routes.v5.tools.entries.attempt_replacement.refresh import (
     refresh_attempt_replacement,
 )
 from app.routes.v5.tools.entries.attempt_replacement.search import (
-    search_attempt_replacement_entries_internal,
+    search_attempt_replacements,
 )
 
 
@@ -50,7 +50,7 @@ async def get_attempt_replacement_docs(conn: asyncpg.Connection) -> DocsResponse
                 description="Batch retrieves replacements by IDs from attempt_replacement_mv.",
             ),
             get_operation_info(
-                search_attempt_replacement_entries_internal,
+                search_attempt_replacements,
                 description="Filtered paginated search against attempt_replacement_mv.",
             ),
         ],

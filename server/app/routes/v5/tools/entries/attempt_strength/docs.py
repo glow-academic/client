@@ -9,7 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_strength.create import create_attempt_strength
 from app.routes.v5.tools.entries.attempt_strength.get import get_attempt_strengths
 from app.routes.v5.tools.entries.attempt_strength.refresh import refresh_attempt_strength
-from app.routes.v5.tools.entries.attempt_strength.search import search_attempt_strength_entries_internal
+from app.routes.v5.tools.entries.attempt_strength.search import search_attempt_strengths
 
 
 async def get_attempt_strength_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -44,7 +44,7 @@ async def get_attempt_strength_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves strengths by IDs from attempt_strength_mv.",
             ),
             get_operation_info(
-                search_attempt_strength_entries_internal,
+                search_attempt_strengths,
                 description="Filtered paginated search against attempt_strength_mv.",
             ),
         ],

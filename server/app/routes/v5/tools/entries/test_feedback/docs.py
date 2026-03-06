@@ -10,7 +10,7 @@ from app.routes.v5.tools.entries.test_feedback.create import create_test_feedbac
 from app.routes.v5.tools.entries.test_feedback.get import get_test_feedbacks
 from app.routes.v5.tools.entries.test_feedback.refresh import refresh_test_feedback
 from app.routes.v5.tools.entries.test_feedback.search import (
-    search_test_feedback_entries_internal,
+    search_test_feedback_entries,
 )
 
 
@@ -49,10 +49,10 @@ async def get_test_feedback_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves test_feedback entries by IDs from test_feedback_mv.",
             ),
             get_operation_info(
-                search_test_feedback_entries_internal,
+                search_test_feedback_entries,
                 description=(
-                    "Filtered paginated search against test_feedback entries by search text "
-                    "and profile_id. Results cached for 60 seconds."
+                    "Filtered paginated search against test_feedback entries "
+                    "from test_feedback_mv with declarative filters."
                 ),
             ),
         ],

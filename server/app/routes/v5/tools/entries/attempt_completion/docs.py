@@ -9,7 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_completion.create import create_attempt_completion
 from app.routes.v5.tools.entries.attempt_completion.get import get_attempt_completions
 from app.routes.v5.tools.entries.attempt_completion.refresh import refresh_attempt_completion
-from app.routes.v5.tools.entries.attempt_completion.search import search_attempt_completion_entries_internal
+from app.routes.v5.tools.entries.attempt_completion.search import search_attempt_completions
 
 
 async def get_attempt_completion_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -43,7 +43,7 @@ async def get_attempt_completion_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves completions by IDs from attempt_completion_mv.",
             ),
             get_operation_info(
-                search_attempt_completion_entries_internal,
+                search_attempt_completions,
                 description="Filtered paginated search against attempt_completion_mv.",
             ),
         ],

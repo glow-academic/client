@@ -9,7 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_hint.create import create_attempt_hint
 from app.routes.v5.tools.entries.attempt_hint.get import get_attempt_hints
 from app.routes.v5.tools.entries.attempt_hint.refresh import refresh_attempt_hint
-from app.routes.v5.tools.entries.attempt_hint.search import search_attempt_hint_entries_internal
+from app.routes.v5.tools.entries.attempt_hint.search import search_attempt_hints
 
 
 async def get_attempt_hint_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -43,7 +43,7 @@ async def get_attempt_hint_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves hints by IDs from attempt_hint_mv.",
             ),
             get_operation_info(
-                search_attempt_hint_entries_internal,
+                search_attempt_hints,
                 description="Filtered paginated search against attempt_hint_mv.",
             ),
         ],
