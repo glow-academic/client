@@ -504,6 +504,91 @@ def build_agent_dispatch(
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# WebsocketContext → agent groups (replaces build_agent_groups for ws_ctx path)
+# ---------------------------------------------------------------------------
+
+
+def build_agent_groups_from_scores(
+    *,
+    resource_types: list[str],
+    scores: Any,
+) -> dict[UUID, list[str]]:
+    """Map resource_types → agent_id groups using ArtifactToolScores.best.
+
+    Each resource_type maps to the best ResolvedTool's agent_id via score_tools.
+    Groups by agent_id → [resource_types...].
+    """
+    agent_groups: dict[UUID, list[str]] = {}
+
+    for rt in resource_types:
+        best = scores.best.get(rt)
+        if best is not None:
+            agent_groups.setdefault(best.agent_id, []).append(rt)
+
+    return agent_groups
+
+
+def build_resource_agent_ids_from_scores(
+    scores: Any,
+) -> dict[str, UUID]:
+    """Derive resource_agent_ids mapping from ArtifactToolScores.best.
+
+    Used for metadata injection (image_agent_id, video_agent_id).
+    """
+    return {
+        target: tool.agent_id
+        for target, tool in scores.best.items()
+        if tool is not None
+    }
+
+
+def build_jinja_from_ws_ctx(
+    ws_ctx: Any,
+    entry_results: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Build namespaced Jinja context from WebsocketContext.artifacts.
+
+    Maps ws_ctx.artifacts (keyed "get.persona" etc) into the shape
+    build_namespaced_context produces: {artifacts: {name: {operation: {resources: ..., entries: ...}}}}.
+    """
+    context: dict[str, Any] = {"artifacts": {}}
+
+    for key, art_ctx in ws_ctx.artifacts.items():
+        # key is "get.persona" → split into operation="get", name="persona"
+        parts = key.split(".", 1)
+        if len(parts) != 2:
+            continue
+        operation, name = parts
+
+        # Flatten resources: "get.names" → just the list under "names"
+        resources_flat: dict[str, Any] = {}
+        for rkey, rval in art_ctx.resources.items():
+            # rkey is "get.names" or "search.names"
+            rparts = rkey.split(".", 1)
+            if len(rparts) == 2:
+                resources_flat[rkey] = rval
+
+        # Flatten entries similarly
+        entries_flat: dict[str, Any] = {}
+        for ekey, eval_ in art_ctx.entries.items():
+            entries_flat[ekey] = eval_
+
+        artifact_data: dict[str, Any] = {
+            "resources": resources_flat,
+            "entries": entries_flat,
+        }
+
+        context["artifacts"].setdefault(name, {})[operation] = artifact_data
+
+    # Merge entry_results (debug_info, messages) same as build_namespaced_context
+    if entry_results:
+        for name, ops in entry_results.items():
+            context["artifacts"].setdefault(name, {}).update(ops)
+
+    return context
+
+
 def aggregate_tool_results(
     all_tool_results: list[dict[str, Any]],
 ) -> tuple[dict[str, Any], dict[str, Any]]:

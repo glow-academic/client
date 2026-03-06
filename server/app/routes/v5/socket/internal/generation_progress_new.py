@@ -8,10 +8,9 @@ Differences from generation_progress.py:
   - Calls legacy record_resource_complete in parallel during migration
 
 GAPs / TODOs:
-  - TODO: agent_id is not in the current generate_call_complete event payload.
-          generate_artifact.py needs to include it in modality event emission.
-          For now, falls back to "unknown" which means the work unit won't match
-          an existing key. This is a known gap during migration.
+  - agent_id is now propagated: GenerateArtifactPayload.agent_id → tool_result
+          → generate_call_complete → this handler. Falls back to "unknown" only
+          for old callers that don't set agent_id.
   - TODO: Entry progress events (entry_type/entry_id in tool_result) are not
           currently emitted by generate_artifact. Once they are, this handler
           will automatically track them.
@@ -64,8 +63,7 @@ async def handle_resource_progress_new(data: dict[str, Any]) -> None:
     redis = get_redis_client()
 
     # New tracker: record_unit_soft
-    # TODO: agent_id is not in event payload yet — use "unknown" as placeholder
-    agent_id = data.get("agent_id", "unknown")
+    agent_id = data.get("agent_id") or "unknown"
 
     try:
         completed, total = await record_unit_soft(

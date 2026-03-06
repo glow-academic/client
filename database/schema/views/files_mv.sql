@@ -8,6 +8,7 @@
 CREATE MATERIALIZED VIEW public.files_mv AS
  SELECT fe.id AS file_id,
     ffc.files_id,
+    ue.id AS upload_id,
     ue.file_path,
     ue.mime_type,
     ue.size,

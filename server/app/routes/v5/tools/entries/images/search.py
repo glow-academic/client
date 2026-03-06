@@ -24,7 +24,7 @@ async def search_images(
 
     rows = await conn.fetch(
         f"""
-        SELECT image_id, images_id, file_path, mime_type, size,
+        SELECT image_id, images_id, upload_id, file_path, mime_type, size,
                quality_id, created_at
         FROM {source}
         WHERE ($1::uuid IS NULL OR image_id = $1)

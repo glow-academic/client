@@ -21,7 +21,7 @@ class GetTextResponse(BaseModel):
 class SearchTextResponse(BaseModel):
     texts_id: UUID
     text_id: UUID
-    files_id: UUID | None
+    upload_id: UUID | None
     file_path: str | None
     mime_type: str | None
     created_at: datetime

@@ -22,7 +22,7 @@ async def search_audios(
 
     rows = await conn.fetch(
         f"""
-        SELECT audio_id, file_path, mime_type, size,
+        SELECT audio_id, upload_id, file_path, mime_type, size,
                length_seconds, voice_id, created_at
         FROM {source}
         WHERE ($1::uuid IS NULL OR voice_id = $1)

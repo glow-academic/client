@@ -7,6 +7,7 @@
 
 CREATE MATERIALIZED VIEW public.audios_mv AS
  SELECT ae.id AS audio_id,
+    ue.id AS upload_id,
     ue.file_path,
     ue.mime_type,
     ue.size,

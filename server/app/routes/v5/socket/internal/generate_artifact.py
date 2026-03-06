@@ -100,6 +100,7 @@ class GenerateArtifactPayload(BaseModel):
     artifact_id: str | None = None
     draft_id: str | None = None
     developer_instruction_templates: list[str] | None = None
+    agent_id: str | None = None
 
 
 _extract_template_var = extract_template_var
@@ -1137,6 +1138,7 @@ async def _generate_artifact_impl(
                             "entry_id": result_entry_id,
                             "run_id": data.run_id,
                             "group_id": data.group_id,
+                            "agent_id": data.agent_id,
                             "profile_id": data.profile_id,
                             "profiles_id": data.profiles_id,
                             "session_id": data.session_id,
@@ -1268,6 +1270,7 @@ async def _generate_artifact_impl(
                 "resource_type": resource_type,
                 "run_id": data.run_id,
                 "group_id": data.group_id,
+                "agent_id": data.agent_id,
                 "profile_id": data.profile_id,
                 "profiles_id": data.profiles_id,
                 "session_id": data.session_id,

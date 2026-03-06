@@ -23,7 +23,7 @@ async def search_videos(
 
     rows = await conn.fetch(
         f"""
-        SELECT video_id, videos_id, file_path, mime_type, size, length_seconds, created_at
+        SELECT video_id, videos_id, upload_id, file_path, mime_type, size, length_seconds, created_at
         FROM {source}
         WHERE ($1::uuid IS NULL OR video_id = $1)
           AND ($2::uuid IS NULL OR videos_id = $2)

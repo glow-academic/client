@@ -21,6 +21,7 @@ class GetFileResponse(BaseModel):
 class SearchFileResponse(BaseModel):
     file_id: UUID
     files_id: UUID
+    upload_id: UUID
     file_path: str
     mime_type: str
     size: int

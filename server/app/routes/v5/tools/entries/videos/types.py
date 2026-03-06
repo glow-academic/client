@@ -22,6 +22,7 @@ class GetVideoResponse(BaseModel):
 class SearchVideoResponse(BaseModel):
     video_id: UUID
     videos_id: UUID
+    upload_id: UUID
     file_path: str
     mime_type: str
     size: int

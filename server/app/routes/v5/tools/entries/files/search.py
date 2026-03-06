@@ -24,7 +24,7 @@ async def search_files(
 
     rows = await conn.fetch(
         f"""
-        SELECT file_id, files_id, file_path, mime_type, size, created_at
+        SELECT file_id, files_id, upload_id, file_path, mime_type, size, created_at
         FROM {source}
         WHERE ($1::uuid IS NULL OR file_id = $1)
           AND ($2::uuid IS NULL OR files_id = $2)

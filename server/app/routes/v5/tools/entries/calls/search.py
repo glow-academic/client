@@ -24,7 +24,7 @@ async def search_calls(
     rows = await conn.fetch(
         f"""
         SELECT call_id, run_id, call_created_at,
-               files_id, file_path, mime_type, tool_id
+               upload_id, file_path, mime_type, tool_id
         FROM {source}
         WHERE ($1::uuid IS NULL OR run_id = $1)
           AND ($2::uuid IS NULL OR tool_id = $2)

@@ -22,7 +22,7 @@ async def search_texts(
 
     rows = await conn.fetch(
         f"""
-        SELECT texts_id, text_id, files_id, file_path, mime_type, created_at
+        SELECT texts_id, text_id, upload_id, file_path, mime_type, created_at
         FROM {source}
         WHERE ($1::uuid IS NULL OR text_id = $1)
         ORDER BY created_at DESC
