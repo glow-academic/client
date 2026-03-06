@@ -42,7 +42,7 @@ async def create_eval(
     model_rubric_ids: list[UUID] | None = None,
     rubric_ids: list[UUID] | None = None,
     eval_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateEvalResponse:
@@ -53,7 +53,7 @@ async def create_eval(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

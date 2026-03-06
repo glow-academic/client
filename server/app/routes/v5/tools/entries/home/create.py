@@ -19,16 +19,18 @@ async def create_home(
     simulation_positions_ids: list[UUID],
     position: int = 0,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateHomeResponse:
     """Create a home entry with all connection tables."""
     home_id = await conn.fetchval(
         """
-        INSERT INTO home_entry (session_id, "position", mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO home_entry (session_id, "position", active, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
         RETURNING id
         """,
         session_id,
         position,
+        not soft,
         mcp,
     )
 

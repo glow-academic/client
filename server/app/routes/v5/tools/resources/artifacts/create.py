@@ -15,6 +15,7 @@ async def create_artifact(
     artifact: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetArtifactResponse:
@@ -22,11 +23,12 @@ async def create_artifact(
     artifact_id = await conn.fetchval(
         """
         INSERT INTO artifacts_resource (artifact, active, mcp, generated)
-        VALUES ($1, true, $2, $2)
+        VALUES ($1, $2, $3, $3)
         ON CONFLICT (artifact) DO UPDATE SET artifact = EXCLUDED.artifact
         RETURNING id
     """,
         artifact,
+        not soft,
         mcp,
     )
 

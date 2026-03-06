@@ -12,15 +12,17 @@ async def create_image(
     session_id: UUID,
     images_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateImageResponse:
     """Create an images entry with optional link to images resource."""
     image_id = await conn.fetchval(
         """
-        INSERT INTO images_entry (session_id, mcp, generated)
-        VALUES ($1, $2, true)
+        INSERT INTO images_entry (session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, true)
         RETURNING id
     """,
         session_id,
+        not soft,
         mcp,
     )
 

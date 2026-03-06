@@ -17,6 +17,7 @@ async def create_icon(
     value: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetIconResponse:
@@ -24,12 +25,13 @@ async def create_icon(
     icon_id = await conn.fetchval(
         """
         INSERT INTO icons_resource (name, description, value, active, mcp, generated)
-        VALUES ($1, $2, $3, true, $4, $4)
+        VALUES ($1, $2, $3, $4, $5, $5)
         RETURNING id
     """,
         name,
         description,
         value,
+        not soft,
         mcp,
     )
 

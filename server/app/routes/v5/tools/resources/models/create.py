@@ -17,6 +17,7 @@ async def create_model(
     description: str = "",
     redis: Redis = None,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetModelResponse:
@@ -24,12 +25,13 @@ async def create_model(
     model_id = await conn.fetchval(
         """
         INSERT INTO models_resource (value, name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, true, $4, $4)
+        VALUES ($1, $2, $3, $4, $5, $5)
         RETURNING id
         """,
         value,
         name,
         description,
+        not soft,
         mcp,
     )
     await invalidate_tags(["resources", "models"], redis=redis)

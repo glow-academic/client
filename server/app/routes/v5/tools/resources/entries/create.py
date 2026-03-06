@@ -15,6 +15,7 @@ async def create_entry(
     entry: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetEntryResponse:
@@ -22,11 +23,12 @@ async def create_entry(
     entry_id = await conn.fetchval(
         """
         INSERT INTO entries_resource (entry, active, mcp, generated)
-        VALUES ($1::entry_type, true, $2, $2)
+        VALUES ($1::entry_type, $2, $3, $3)
         ON CONFLICT (entry) DO UPDATE SET entry = EXCLUDED.entry
         RETURNING id
     """,
         entry,
+        not soft,
         mcp,
     )
 

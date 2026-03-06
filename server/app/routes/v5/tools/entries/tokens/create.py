@@ -15,12 +15,13 @@ async def create_token(
     output_tokens: int = 0,
     cached_input_tokens: int = 0,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateTokenResponse:
     """Create a tokens entry."""
     token_id = await conn.fetchval(
         """
-        INSERT INTO tokens_entry (run_id, input_tokens, output_tokens, cached_input_tokens, session_id, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, true)
+        INSERT INTO tokens_entry (run_id, input_tokens, output_tokens, cached_input_tokens, session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, true)
         RETURNING id
         """,
         run_id,
@@ -28,6 +29,7 @@ async def create_token(
         output_tokens,
         cached_input_tokens,
         session_id,
+        not soft,
         mcp,
     )
 

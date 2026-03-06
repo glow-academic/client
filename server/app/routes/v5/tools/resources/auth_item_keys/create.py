@@ -19,6 +19,7 @@ async def create_auth_item_key(
     redis: Redis,
     updated_at: datetime | None = None,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetAuthItemKeyResponse:
@@ -26,13 +27,14 @@ async def create_auth_item_key(
     row_id = await conn.fetchval(
         """
         INSERT INTO auth_item_keys_resource (auth_id, item_id, key_id, active, mcp, generated)
-        VALUES ($1, $2, $3, true, $4, $4)
+        VALUES ($1, $2, $3, $4, $5, $5)
         ON CONFLICT (auth_id, item_id, key_id) DO UPDATE SET auth_id = EXCLUDED.auth_id
         RETURNING id
         """,
         auth_id,
         item_id,
         key_id,
+        not soft,
         mcp,
     )
 

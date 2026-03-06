@@ -16,6 +16,7 @@ async def create_model_position(
     value: int,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetModelPositionResponse:
@@ -23,11 +24,12 @@ async def create_model_position(
     model_position_id = await conn.fetchval(
         """
         INSERT INTO model_positions_resource (model_id, value, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         RETURNING id
         """,
         model_id,
         value,
+        not soft,
         mcp,
     )
 

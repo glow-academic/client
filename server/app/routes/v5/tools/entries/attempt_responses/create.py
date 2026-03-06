@@ -16,17 +16,19 @@ async def create_attempt_responses(
     question_ids: list[UUID] | None = None,
     option_ids: list[UUID] | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptResponsesResponse:
     """Create an attempt_responses entry."""
     entry_id = await conn.fetchval(
         """
         INSERT INTO attempt_responses_entry
-            (chat_id, call_id, mcp, generated)
-        VALUES ($1, $2, $3, true)
+            (chat_id, call_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
         RETURNING id
         """,
         chat_id,
         call_id,
+        not soft,
         mcp,
     )
 

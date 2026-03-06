@@ -17,6 +17,7 @@ async def create_prompt(
     description: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetPromptResponse:
@@ -24,12 +25,13 @@ async def create_prompt(
     prompt_id = await conn.fetchval(
         """
         INSERT INTO prompts_resource (system_prompt, name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, true, $4, $4)
+        VALUES ($1, $2, $3, $4, $5, $5)
         RETURNING id
     """,
         system_prompt,
         name,
         description,
+        not soft,
         mcp,
     )
 

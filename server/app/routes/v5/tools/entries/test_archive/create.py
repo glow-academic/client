@@ -15,17 +15,19 @@ async def create_test_archive(
     call_id: UUID,
     archived: bool,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateTestArchiveResponse:
     """Create a test_archive entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO test_archive_entry (test_id, call_id, archived, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO test_archive_entry (test_id, call_id, archived, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         test_id,
         call_id,
         archived,
+        not soft,
         mcp,
     )
     return CreateTestArchiveResponse(id=entry_id)

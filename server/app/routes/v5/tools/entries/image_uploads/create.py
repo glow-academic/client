@@ -13,17 +13,19 @@ async def create_image_upload(
     upload_id: UUID,
     session_id: UUID,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateImageUploadResponse:
     """Create an image_uploads entry."""
     row_id = await conn.fetchval(
         """
-        INSERT INTO image_uploads_entry (image_id, upload_id, session_id, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO image_uploads_entry (image_id, upload_id, session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
     """,
         image_id,
         upload_id,
         session_id,
+        not soft,
         mcp,
     )
 

@@ -34,7 +34,7 @@ async def create_parameter(
     flag_ids: list[UUID] | None = None,
     field_ids: list[UUID] | None = None,
     parameter_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateParameterResponse:
@@ -45,7 +45,7 @@ async def create_parameter(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

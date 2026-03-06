@@ -17,12 +17,13 @@ async def create_attempt_replacement(
     replace: str,
     idx: int = 0,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptReplacementResponse:
     """Create an attempt_replacement entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO attempt_replacement_entry (improvement_id, call_id, section, "replace", idx, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, true)
+        INSERT INTO attempt_replacement_entry (improvement_id, call_id, section, "replace", idx, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, true)
         RETURNING id
         """,
         improvement_id,
@@ -30,6 +31,7 @@ async def create_attempt_replacement(
         section,
         replace,
         idx,
+        not soft,
         mcp,
     )
     return CreateAttemptReplacementResponse(id=entry_id)

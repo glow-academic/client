@@ -12,14 +12,16 @@ async def create_file(
     conn: asyncpg.Connection,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
 ) -> GetFileResponse:
     """Create a file resource (plain insert, no unique constraint)."""
     file_id = await conn.fetchval(
         """
         INSERT INTO files_resource (active, mcp, generated)
-        VALUES (true, $1, $1)
+        VALUES ($1, $2, $2)
         RETURNING id
     """,
+        not soft,
         mcp,
     )
 

@@ -19,6 +19,7 @@ async def create_pricing(
     unit_value: int,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetPricingResponse:
@@ -27,7 +28,7 @@ async def create_pricing(
         """
         INSERT INTO pricing_resource
             (pricing_type, price, unit_name, unit_category, unit_value, active, mcp, generated)
-        VALUES ($1::pricing_type, $2, $3, $4::unit_type, $5, true, $6, $6)
+        VALUES ($1::pricing_type, $2, $3, $4::unit_type, $5, $6, $7, $7)
         RETURNING id
         """,
         pricing_type,
@@ -35,6 +36,7 @@ async def create_pricing(
         unit_name,
         unit_category,
         unit_value,
+        not soft,
         mcp,
     )
     await invalidate_tags(["resources", "pricing"], redis=redis)

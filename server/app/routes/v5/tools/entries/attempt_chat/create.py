@@ -52,6 +52,7 @@ async def create_attempt_chat(
     descriptions_ids: list[UUID] | None = None,
     parameters_ids: list[UUID] | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptChatResponse:
     """Create an attempt_chat entry with optional connection tables."""
     attempt_chat_id = await conn.fetchval(
@@ -64,7 +65,7 @@ async def create_attempt_chat(
             replacements_enabled, strengths_enabled, use_custom, use_previous,
             problem_statement_enabled, objectives_enabled, video_enabled,
             images_enabled, questions_enabled,
-            assistant_persona_ids, mcp, generated
+            assistant_persona_ids, active, mcp, generated
         )
         VALUES (
             $1, $2, $3, $4, $5, $6,
@@ -74,7 +75,7 @@ async def create_attempt_chat(
             $17, $18, $19, $20,
             $21, $22, $23,
             $24, $25,
-            $26, $27, true
+            $26, $27, $28, true
         )
         RETURNING id
         """,
@@ -104,6 +105,7 @@ async def create_attempt_chat(
         images_enabled,
         questions_enabled,
         assistant_persona_ids or [],
+        not soft,
         mcp,
     )
 

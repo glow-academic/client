@@ -19,6 +19,7 @@ async def create_provider_key(
     name: str = "",
     description: str = "",
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetProviderKeyResponse:
@@ -26,7 +27,7 @@ async def create_provider_key(
     provider_key_id = await conn.fetchval(
         """
         INSERT INTO provider_keys_resource (provider_id, key_id, key, name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true, $6, $6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
         RETURNING id
         """,
         provider_id,
@@ -34,6 +35,7 @@ async def create_provider_key(
         key,
         name,
         description,
+        not soft,
         mcp,
     )
 

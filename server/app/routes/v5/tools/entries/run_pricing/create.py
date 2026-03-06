@@ -22,6 +22,7 @@ async def create_run_pricing_entry_internal(
     run_id: UUID,
     count: int = 0,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateRunPricingEntryResponse:
     """Create a run_pricing entry. Internal only — no HTTP route."""
     params = CreateRunPricingEntrySqlParams(
@@ -29,6 +30,7 @@ async def create_run_pricing_entry_internal(
         pricing_type=pricing_type,
         count=count,
         run_id=run_id,
+        active=not soft,
         mcp=mcp,
     )
 

@@ -18,6 +18,7 @@ async def create_scenario_position(
     value: int,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetScenarioPositionResponse:
@@ -25,11 +26,12 @@ async def create_scenario_position(
     row_id = await conn.fetchval(
         """
         INSERT INTO scenario_positions_resource (scenario_id, value, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         RETURNING id
         """,
         scenario_id,
         value,
+        not soft,
         mcp,
     )
 

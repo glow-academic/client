@@ -16,17 +16,19 @@ async def create_benchmark(
     use_groups: bool = False,
     dynamic: bool = False,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateBenchmarkResponse:
     """Create a benchmark entry with optional connection tables."""
     benchmark_id = await conn.fetchval(
         """
-        INSERT INTO benchmark_entry (session_id, use_groups, dynamic, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO benchmark_entry (session_id, use_groups, dynamic, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         session_id,
         use_groups,
         dynamic,
+        not soft,
         mcp,
     )
 

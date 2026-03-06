@@ -12,15 +12,17 @@ async def create_login(
     session_id: UUID,
     profile_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateLoginResponse:
     """Create a login entry and optionally link to a profile."""
     login_id = await conn.fetchval(
         """
-        INSERT INTO logins_entry (session_id, mcp, generated)
-        VALUES ($1, $2, true)
+        INSERT INTO logins_entry (session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, true)
         RETURNING id
         """,
         session_id,
+        not soft,
         mcp,
     )
 

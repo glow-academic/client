@@ -15,6 +15,7 @@ async def create_request_limit(
     requests_per_day: int,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetRequestLimitResponse:
@@ -22,10 +23,11 @@ async def create_request_limit(
     request_limit_id = await conn.fetchval(
         """
         INSERT INTO request_limits_resource (requests_per_day, active, mcp, generated)
-        VALUES ($1, true, $2, $2)
+        VALUES ($1, $2, $3, $3)
         RETURNING id
         """,
         requests_per_day,
+        not soft,
         mcp,
     )
 

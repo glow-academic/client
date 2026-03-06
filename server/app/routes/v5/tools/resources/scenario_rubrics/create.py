@@ -18,6 +18,7 @@ async def create_scenario_rubric(
     rubric_id: UUID,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetScenarioRubricResponse:
@@ -25,11 +26,12 @@ async def create_scenario_rubric(
     row_id = await conn.fetchval(
         """
         INSERT INTO scenario_rubrics_resource (scenario_id, rubric_id, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         RETURNING id
         """,
         scenario_id,
         rubric_id,
+        not soft,
         mcp,
     )
 

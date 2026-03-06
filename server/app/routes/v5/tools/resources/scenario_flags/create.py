@@ -16,6 +16,7 @@ async def create_scenario_flag(
     flag_id: UUID,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetScenarioFlagResponse:
@@ -23,11 +24,12 @@ async def create_scenario_flag(
     row_id = await conn.fetchval(
         """
         INSERT INTO scenario_flags_resource (scenario_id, flag_id, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         RETURNING id
         """,
         scenario_id,
         flag_id,
+        not soft,
         mcp,
     )
 

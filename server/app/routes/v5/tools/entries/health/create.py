@@ -17,20 +17,22 @@ async def create_health(
     error: str = "",
     session_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateHealthResponse:
     """Create a health entry."""
     if ts is None:
         ts = datetime.now(UTC)
 
     health_id = await conn.fetchval(
-        """INSERT INTO health_entry (ts, service, ok, latency_ms, error, session_id, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, true) RETURNING id""",
+        """INSERT INTO health_entry (ts, service, ok, latency_ms, error, session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true) RETURNING id""",
         ts,
         service,
         ok,
         latency_ms,
         error,
         session_id,
+        not soft,
         mcp,
     )
 

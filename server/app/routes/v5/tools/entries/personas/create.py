@@ -11,16 +11,18 @@ async def create_personas(
     conn: asyncpg.Connection,
     session_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
     persona_ids: list[UUID] | None = None,
 ) -> CreatePersonasResponse:
     """Create a personas entry with optional persona connections."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO personas_entry (session_id, mcp, generated)
-        VALUES ($1, $2, true)
+        INSERT INTO personas_entry (session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, true)
         RETURNING id
     """,
         session_id,
+        not soft,
         mcp,
     )
 

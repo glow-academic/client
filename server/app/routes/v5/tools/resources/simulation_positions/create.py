@@ -20,6 +20,7 @@ async def create_simulation_position(
     value: int,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetSimulationPositionResponse:
@@ -27,11 +28,12 @@ async def create_simulation_position(
     row_id = await conn.fetchval(
         """
         INSERT INTO simulation_positions_resource (simulation_id, value, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         RETURNING id
         """,
         simulation_id,
         value,
+        not soft,
         mcp,
     )
 

@@ -50,7 +50,7 @@ async def create_scenario(
     question_ids: list[UUID] | None = None,
     video_ids: list[UUID] | None = None,
     scenario_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateScenarioResponse:
@@ -61,7 +61,7 @@ async def create_scenario(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

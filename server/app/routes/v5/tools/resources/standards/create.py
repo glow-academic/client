@@ -18,6 +18,7 @@ async def create_standard(
     standard_group_id: UUID,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetStandardResponse:
@@ -26,13 +27,14 @@ async def create_standard(
         """
         INSERT INTO standards_resource
             (name, description, points, standard_group_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, true, $5, $5)
+        VALUES ($1, $2, $3, $4, $5, $6, $6)
         RETURNING id
         """,
         name,
         description,
         points,
         standard_group_id,
+        not soft,
         mcp,
     )
 

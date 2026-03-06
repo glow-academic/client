@@ -17,6 +17,7 @@ async def create_reasoning_level(
     reasoning_level: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetReasoningLevelResponse:
@@ -24,10 +25,11 @@ async def create_reasoning_level(
     level_id = await conn.fetchval(
         """
         INSERT INTO reasoning_levels_resource (reasoning_level, active, mcp, generated)
-        VALUES ($1, true, $2, $2)
+        VALUES ($1, $2, $3, $3)
         RETURNING id
         """,
         reasoning_level,
+        not soft,
         mcp,
     )
     await invalidate_tags(["resources", "reasoning_levels"], redis=redis)

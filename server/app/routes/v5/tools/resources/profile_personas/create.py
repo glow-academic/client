@@ -18,6 +18,7 @@ async def create_profile_persona(
     persona_id: UUID,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetProfilePersonaResponse:
@@ -25,12 +26,13 @@ async def create_profile_persona(
     row_id = await conn.fetchval(
         """
         INSERT INTO profile_personas_resource (profile_id, persona_id, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         ON CONFLICT (persona_id, profile_id) DO UPDATE SET persona_id = EXCLUDED.persona_id
         RETURNING id
         """,
         profile_id,
         persona_id,
+        not soft,
         mcp,
     )
 

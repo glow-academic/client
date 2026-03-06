@@ -13,16 +13,18 @@ async def create_emulation(
     session_id: UUID,
     profile_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateEmulationResponse:
     """Create an emulation entry and optionally link to a profile."""
     emulation_id = await conn.fetchval(
         """
-        INSERT INTO emulations_entry (grant_id, session_id, mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO emulations_entry (grant_id, session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
         RETURNING id
         """,
         grant_id,
         session_id,
+        not soft,
         mcp,
     )
 

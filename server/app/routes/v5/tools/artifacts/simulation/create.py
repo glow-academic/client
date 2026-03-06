@@ -42,7 +42,7 @@ async def create_simulation(
     scenario_rubric_ids: list[UUID] | None = None,
     scenario_time_limit_ids: list[UUID] | None = None,
     simulation_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateSimulationResponse:
@@ -53,7 +53,7 @@ async def create_simulation(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

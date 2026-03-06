@@ -14,6 +14,7 @@ async def create_run(
     profiles_id: UUID | None = None,
     agent_ids: list[UUID] | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateRunResponse:
     """Create a runs entry with optional profile and agent links.
 
@@ -22,12 +23,13 @@ async def create_run(
     """
     run_id = await conn.fetchval(
         """
-        INSERT INTO runs_entry (session_id, group_id, mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO runs_entry (session_id, group_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
         RETURNING id
     """,
         session_id,
         group_id,
+        not soft,
         mcp,
     )
 

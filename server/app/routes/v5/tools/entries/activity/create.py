@@ -12,15 +12,17 @@ async def create_activity(
     session_id: UUID,
     profile_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateActivityResponse:
     """Create an activity entry and optionally link to a profile."""
     activity_id = await conn.fetchval(
         """
-        INSERT INTO activity_entry (session_id, mcp, generated)
-        VALUES ($1, $2, true)
+        INSERT INTO activity_entry (session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, true)
         RETURNING id
         """,
         session_id,
+        not soft,
         mcp,
     )
 

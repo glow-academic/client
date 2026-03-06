@@ -16,18 +16,20 @@ async def create_attempt_highlight(
     section: str,
     idx: int = 0,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptHighlightResponse:
     """Create an attempt_highlight entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO attempt_highlight_entry (strength_id, call_id, section, idx, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO attempt_highlight_entry (strength_id, call_id, section, idx, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, $6, true)
         RETURNING id
         """,
         strength_id,
         call_id,
         section,
         idx,
+        not soft,
         mcp,
     )
     return CreateAttemptHighlightResponse(id=entry_id)

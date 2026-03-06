@@ -18,15 +18,16 @@ async def create_attempt(
     num_chats: int = 1,
     practice: bool = False,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptResponse:
     """Create an attempt entry with profiles connection."""
     attempt_id = await conn.fetchval(
         """
         INSERT INTO attempt_entry (
             call_id, user_persona_id, name, description,
-            infinite_mode, num_chats, practice, mcp, generated
+            infinite_mode, num_chats, practice, active, mcp, generated
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)
         RETURNING id
         """,
         call_id,
@@ -36,6 +37,7 @@ async def create_attempt(
         infinite_mode,
         num_chats,
         practice,
+        not soft,
         mcp,
     )
 

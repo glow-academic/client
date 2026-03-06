@@ -17,6 +17,7 @@ async def create_args_output(
     redis: Redis,
     template: str = "",
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetArgOutputResponse:
@@ -24,13 +25,14 @@ async def create_args_output(
     args_output_id = await conn.fetchval(
         """
         INSERT INTO args_outputs_resource (args_id, name, template, active, mcp, generated)
-        VALUES ($1, $2, $3, true, $4, $4)
+        VALUES ($1, $2, $3, $4, $5, $5)
         ON CONFLICT (args_id, name) DO UPDATE SET name = EXCLUDED.name
         RETURNING id
         """,
         args_id,
         name,
         template,
+        not soft,
         mcp,
     )
 

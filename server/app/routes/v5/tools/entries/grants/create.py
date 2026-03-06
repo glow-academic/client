@@ -13,6 +13,7 @@ async def create_grant(
     session_id: UUID,
     expires_at: datetime | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateGrantResponse:
     """Create a grants entry. Defaults to 1 hour expiry if not specified."""
     if expires_at is None:
@@ -20,12 +21,13 @@ async def create_grant(
 
     grant_id = await conn.fetchval(
         """
-        INSERT INTO grants_entry (session_id, expires_at, mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO grants_entry (session_id, expires_at, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
         RETURNING id
         """,
         session_id,
         expires_at,
+        not soft,
         mcp,
     )
 

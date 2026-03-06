@@ -17,6 +17,7 @@ async def create_role(
     name: str = "",
     description: str = "",
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetRoleResponse:
@@ -24,13 +25,14 @@ async def create_role(
     role_id = await conn.fetchval(
         """
         INSERT INTO roles_resource (role, name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, true, $4, $4)
+        VALUES ($1, $2, $3, $4, $5, $5)
         ON CONFLICT (role, name) DO UPDATE SET role = EXCLUDED.role
         RETURNING id
         """,
         role,
         name,
         description,
+        not soft,
         mcp,
     )
     await invalidate_tags(["resources", "roles"], redis=redis)

@@ -13,18 +13,20 @@ async def create_attempt_hint(
     call_id: UUID,
     hint: str,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptHintResponse:
     """Create an attempt_hint entry."""
     entry_id = await conn.fetchval(
         """
         INSERT INTO attempt_hint_entry
-            (message_id, call_id, hint, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+            (message_id, call_id, hint, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         message_id,
         call_id,
         hint,
+        not soft,
         mcp,
     )
 

@@ -42,7 +42,7 @@ async def create_cohort(
     simulation_availability_ids: list[UUID] | None = None,
     simulation_position_ids: list[UUID] | None = None,
     cohort_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateCohortResponse:
@@ -53,7 +53,7 @@ async def create_cohort(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

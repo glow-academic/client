@@ -50,9 +50,14 @@ async def update_auth(
     auth_ids: list[UUID] | None = None,
     # Base columns
     active: bool | Any = _UNSET,
+    soft: bool = False,
     mcp: bool = False,
 ) -> UpdateAuthResponse:
     """Update an auth artifact with efficient junction diffs."""
+    # soft=True forces active=false regardless of the active parameter
+    if soft:
+        active = False
+
     # 1. Update artifact row
     if active is not _UNSET:
         await conn.execute(

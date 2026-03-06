@@ -38,7 +38,7 @@ async def create_rubric(
     standard_group_ids: list[UUID] | None = None,
     standard_ids: list[UUID] | None = None,
     rubric_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateRubricResponse:
@@ -49,7 +49,7 @@ async def create_rubric(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

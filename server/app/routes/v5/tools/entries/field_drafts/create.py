@@ -13,6 +13,7 @@ async def create_field_draft(
     session_id: UUID,
     version: int = 0,
     mcp: bool = False,
+    soft: bool = False,
     conditional_parameter_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
     description_ids: list[UUID] | None = None,
@@ -23,13 +24,14 @@ async def create_field_draft(
     """Create a field_drafts entry with optional connection table links."""
     draft_id = await conn.fetchval(
         """
-        INSERT INTO field_drafts_entry (group_id, session_id, version, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO field_drafts_entry (group_id, session_id, version, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         group_id,
         session_id,
         version,
+        not soft,
         mcp,
     )
 

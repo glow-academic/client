@@ -11,14 +11,16 @@ async def create_session(
     conn: asyncpg.Connection,
     profile_id: UUID,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateSessionResponse:
     """Create a sessions entry with profile link via connection table."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO sessions_entry (mcp, generated)
-        VALUES ($1, true)
+        INSERT INTO sessions_entry (active, mcp, generated)
+        VALUES ($1, $2, true)
         RETURNING id
     """,
+        not soft,
         mcp,
     )
 

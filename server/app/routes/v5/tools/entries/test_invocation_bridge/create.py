@@ -15,16 +15,18 @@ async def create_test_invocation_bridge(
     invocation_id: UUID,
     session_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateTestInvocationBridgeResponse:
     """Create a test_invocation_bridge_entry bridge row."""
     await conn.execute(
         """
-        INSERT INTO test_invocation_bridge_entry (test_invocation_id, invocation_id, session_id, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO test_invocation_bridge_entry (test_invocation_id, invocation_id, session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         """,
         test_invocation_id,
         invocation_id,
         session_id,
+        not soft,
         mcp,
     )
 

@@ -19,16 +19,18 @@ async def create_practice(
     simulation_positions_ids: list[UUID],
     position: int = 0,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreatePracticeResponse:
     """Create a practice entry with all connection tables."""
     practice_id = await conn.fetchval(
         """
-        INSERT INTO practice_entry (session_id, "position", mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO practice_entry (session_id, "position", active, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
         RETURNING id
         """,
         session_id,
         position,
+        not soft,
         mcp,
     )
 

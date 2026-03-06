@@ -32,7 +32,7 @@ async def create_department(
     department_ids: list[UUID] | None = None,
     flag_ids: list[UUID] | None = None,
     settings_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateDepartmentResponse:
@@ -43,7 +43,7 @@ async def create_department(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

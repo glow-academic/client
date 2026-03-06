@@ -16,6 +16,7 @@ async def create_field(
     description: str = "",
     redis: Redis = None,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetFieldResponse:
@@ -23,11 +24,12 @@ async def create_field(
     field_id = await conn.fetchval(
         """
         INSERT INTO fields_resource (name, description, value, active, mcp, generated)
-        VALUES ($1, $2, '', true, $3, $3)
+        VALUES ($1, $2, '', $3, $4, $4)
         RETURNING id
         """,
         name,
         description,
+        not soft,
         mcp,
     )
     await invalidate_tags(["resources", "fields"], redis=redis)

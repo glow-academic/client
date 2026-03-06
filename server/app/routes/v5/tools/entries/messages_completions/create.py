@@ -20,10 +20,11 @@ async def create_messages_completions_entry_internal(
     message_id: UUID,
     session_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateMessagesCompletionsEntryResponse:
     """Create a messages_completions entry. Internal only — no HTTP route."""
     params = CreateMessagesCompletionsEntrySqlParams(
-        session_id=session_id, message_id=message_id, mcp=mcp
+        session_id=session_id, message_id=message_id, active=not soft, mcp=mcp
     )
 
     result = cast(

@@ -15,6 +15,7 @@ async def create_key(
     redis: Redis,
     name: str = "",
     mcp: bool = False,
+    soft: bool = False,
     key: str = "",
     description: str = "",
     group_id: UUID | None = None,
@@ -24,12 +25,13 @@ async def create_key(
     key_id = await conn.fetchval(
         """
         INSERT INTO keys_resource (key, name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, true, $4, $4)
+        VALUES ($1, $2, $3, $4, $5, $5)
         RETURNING id
         """,
         key,
         name,
         description,
+        not soft,
         mcp,
     )
 

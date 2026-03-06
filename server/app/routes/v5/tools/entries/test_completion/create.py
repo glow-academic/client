@@ -15,17 +15,19 @@ async def create_test_completion(
     call_id: UUID,
     end_reason: str = "",
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateTestCompletionResponse:
     """Create a test_completion entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO test_completion_entry (invocation_id, call_id, end_reason, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO test_completion_entry (invocation_id, call_id, end_reason, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         invocation_id,
         call_id,
         end_reason,
+        not soft,
         mcp,
     )
     return CreateTestCompletionResponse(id=entry_id)

@@ -15,6 +15,7 @@ async def create_instruction(
     template: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetInstructionResponse:
@@ -22,10 +23,11 @@ async def create_instruction(
     instruction_id = await conn.fetchval(
         """
         INSERT INTO instructions_resource (template, active, mcp, generated)
-        VALUES ($1, true, $2, $2)
+        VALUES ($1, $2, $3, $3)
         RETURNING id
     """,
         template,
+        not soft,
         mcp,
     )
 

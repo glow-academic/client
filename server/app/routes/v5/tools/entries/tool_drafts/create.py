@@ -13,6 +13,7 @@ async def create_tool_draft(
     session_id: UUID,
     version: int = 0,
     mcp: bool = False,
+    soft: bool = False,
     arg_position_ids: list[UUID] | None = None,
     arg_ids: list[UUID] | None = None,
     args_output_ids: list[UUID] | None = None,
@@ -27,13 +28,14 @@ async def create_tool_draft(
     """Create a tool_drafts entry with optional connection table links."""
     draft_id = await conn.fetchval(
         """
-        INSERT INTO tool_drafts_entry (group_id, session_id, version, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO tool_drafts_entry (group_id, session_id, version, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         group_id,
         session_id,
         version,
+        not soft,
         mcp,
     )
 

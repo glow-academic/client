@@ -25,6 +25,7 @@ async def create_metrics_entry_internal(
     cpu_percent: float,
     memory_bytes: int,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateMetricsEntryResponse:
     """Create a metrics entry. Internal only — no HTTP route."""
     params = CreateMetricsEntrySqlParams(
@@ -35,6 +36,7 @@ async def create_metrics_entry_internal(
         avg_latency_ms=avg_latency_ms,
         cpu_percent=cpu_percent,
         memory_bytes=memory_bytes,
+        active=not soft,
         mcp=mcp,
     )
 

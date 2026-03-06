@@ -17,6 +17,7 @@ async def create_color(
     hex_code: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetColorResponse:
@@ -24,12 +25,13 @@ async def create_color(
     color_id = await conn.fetchval(
         """
         INSERT INTO colors_resource (name, description, hex_code, active, mcp, generated)
-        VALUES ($1, $2, $3, true, $4, $4)
+        VALUES ($1, $2, $3, $4, $5, $5)
         RETURNING id
     """,
         name,
         description,
         hex_code,
+        not soft,
         mcp,
     )
 

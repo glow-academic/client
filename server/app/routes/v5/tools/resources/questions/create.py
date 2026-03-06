@@ -17,6 +17,7 @@ async def create_question(
     redis: Redis,
     allow_multiple: bool = False,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetQuestionResponse:
@@ -24,12 +25,13 @@ async def create_question(
     question_id = await conn.fetchval(
         """
         INSERT INTO questions_resource (question_text, time, allow_multiple, active, mcp, generated)
-        VALUES ($1, $2, $3, true, $4, $4)
+        VALUES ($1, $2, $3, $4, $5, $5)
         RETURNING id
     """,
         question_text,
         time,
         allow_multiple,
+        not soft,
         mcp,
     )
 

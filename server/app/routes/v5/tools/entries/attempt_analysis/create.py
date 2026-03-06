@@ -15,17 +15,19 @@ async def create_attempt_analysis(
     call_id: UUID,
     content: str,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptAnalysisResponse:
     """Create an attempt_analysis entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO attempt_analysis_entry (grade_id, call_id, content, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO attempt_analysis_entry (grade_id, call_id, content, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         grade_id,
         call_id,
         content,
+        not soft,
         mcp,
     )
     return CreateAttemptAnalysisResponse(id=entry_id)

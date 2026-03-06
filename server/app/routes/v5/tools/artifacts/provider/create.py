@@ -38,7 +38,7 @@ async def create_provider(
     key_ids: list[UUID] | None = None,
     provider_ids: list[UUID] | None = None,
     value_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateProviderResponse:
@@ -49,7 +49,7 @@ async def create_provider(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

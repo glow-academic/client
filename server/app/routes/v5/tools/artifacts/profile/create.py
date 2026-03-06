@@ -36,7 +36,7 @@ async def create_profile(
     email_ids: list[UUID] | None = None,
     role_ids: list[UUID] | None = None,
     profile_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateProfileResponse:
@@ -47,7 +47,7 @@ async def create_profile(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

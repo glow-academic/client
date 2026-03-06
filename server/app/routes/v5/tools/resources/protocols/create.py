@@ -15,6 +15,7 @@ async def create_protocol(
     value: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetProtocolResponse:
@@ -22,11 +23,12 @@ async def create_protocol(
     protocol_id = await conn.fetchval(
         """
         INSERT INTO protocols_resource (value, active, mcp, generated)
-        VALUES ($1, true, $2, $2)
+        VALUES ($1, $2, $3, $3)
         ON CONFLICT (value) DO UPDATE SET value = EXCLUDED.value
         RETURNING id
     """,
         value,
+        not soft,
         mcp,
     )
 

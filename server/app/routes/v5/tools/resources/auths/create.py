@@ -16,6 +16,7 @@ async def create_auth(
     name: str = "",
     description: str = "",
     mcp: bool = False,
+    soft: bool = False,
     department_ids: list[UUID] | None = None,
     slug: str | None = None,
     protocol: str | None = None,
@@ -26,7 +27,7 @@ async def create_auth(
     auth_id = await conn.fetchval(
         """
         INSERT INTO auths_resource (name, description, department_ids, slug, protocol, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true, $6, $6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
         RETURNING id
         """,
         name,
@@ -34,6 +35,7 @@ async def create_auth(
         department_ids or [],
         slug,
         protocol,
+        not soft,
         mcp,
     )
 

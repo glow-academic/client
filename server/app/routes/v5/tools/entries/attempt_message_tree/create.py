@@ -15,6 +15,7 @@ async def create_attempt_message_tree(
     child_id: UUID,
     session_id: UUID,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptMessageTreeResponse | None:
     """Create an attempt_message_tree entry.
 
@@ -23,14 +24,15 @@ async def create_attempt_message_tree(
     """
     row = await conn.fetchrow(
         """
-        INSERT INTO attempt_message_tree_entry (parent_id, child_id, session_id, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO attempt_message_tree_entry (parent_id, child_id, session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         ON CONFLICT (parent_id, child_id) DO NOTHING
         RETURNING parent_id, child_id
         """,
         parent_id,
         child_id,
         session_id,
+        not soft,
         mcp,
     )
     if row is None:

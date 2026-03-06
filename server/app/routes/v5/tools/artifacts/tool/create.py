@@ -46,7 +46,7 @@ async def create_tool(
     operation_ids: list[UUID] | None = None,
     resource_ids: list[UUID] | None = None,
     tool_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateToolResponse:
@@ -57,7 +57,7 @@ async def create_tool(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

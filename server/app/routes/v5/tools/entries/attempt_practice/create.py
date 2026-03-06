@@ -15,16 +15,18 @@ async def create_attempt_practice(
     practice_id: UUID,
     session_id: UUID,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptPracticeResponse:
     """Create an attempt_practice_entry bridge row."""
     await conn.execute(
         """
-        INSERT INTO attempt_practice_entry (attempt_id, practice_id, session_id, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO attempt_practice_entry (attempt_id, practice_id, session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         """,
         attempt_id,
         practice_id,
         session_id,
+        not soft,
         mcp,
     )
 

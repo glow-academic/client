@@ -15,6 +15,7 @@ async def create_email(
     email: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetEmailResponse:
@@ -22,11 +23,12 @@ async def create_email(
     email_id = await conn.fetchval(
         """
         INSERT INTO emails_resource (email, active, mcp, generated)
-        VALUES ($1, true, $2, $2)
+        VALUES ($1, $2, $3, $3)
         ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
         RETURNING id
     """,
         email,
+        not soft,
         mcp,
     )
 

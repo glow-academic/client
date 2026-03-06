@@ -15,17 +15,19 @@ async def create_attempt_message(
     message_id: UUID,
     call_id: UUID,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptMessageResponse:
     """Create an attempt_message_entry row."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO attempt_message_entry (id, chat_id, call_id, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO attempt_message_entry (id, chat_id, call_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         message_id,
         chat_id,
         call_id,
+        not soft,
         mcp,
     )
 

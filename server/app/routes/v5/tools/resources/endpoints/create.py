@@ -15,6 +15,7 @@ async def create_endpoint(
     base_url: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetEndpointResponse:
@@ -22,11 +23,12 @@ async def create_endpoint(
     endpoint_id = await conn.fetchval(
         """
         INSERT INTO endpoints_resource (base_url, active, mcp, generated)
-        VALUES ($1, true, $2, $2)
+        VALUES ($1, $2, $3, $3)
         ON CONFLICT (base_url) WHERE active = true DO UPDATE SET base_url = EXCLUDED.base_url
         RETURNING id
     """,
         base_url,
+        not soft,
         mcp,
     )
 

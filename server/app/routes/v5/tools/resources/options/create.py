@@ -15,6 +15,7 @@ async def create_option(
     option_text: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
     question_id: UUID | None = None,
@@ -23,11 +24,12 @@ async def create_option(
     option_id = await conn.fetchval(
         """
         INSERT INTO options_resource (option_text, question_id, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         RETURNING id
         """,
         option_text,
         question_id,
+        not soft,
         mcp,
     )
     await invalidate_tags(["resources", "options"], redis=redis)

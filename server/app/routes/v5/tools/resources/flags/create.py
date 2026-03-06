@@ -18,6 +18,7 @@ async def create_flag(
     redis: Redis,
     flag_type: str = "active",
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetFlagResponse:
@@ -25,13 +26,14 @@ async def create_flag(
     flag_id = await conn.fetchval(
         """
         INSERT INTO flags_resource (name, description, icon, type, active, mcp, generated)
-        VALUES ($1, $2, $3, $4::flag_type, true, $5, $5)
+        VALUES ($1, $2, $3, $4::flag_type, $5, $6, $6)
         RETURNING id
     """,
         name,
         description,
         icon,
         flag_type,
+        not soft,
         mcp,
     )
 

@@ -18,6 +18,7 @@ async def create_parameter_field(
     redis: Redis,
     parameter_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetParameterFieldResponse:
@@ -25,11 +26,12 @@ async def create_parameter_field(
     parameter_field_id = await conn.fetchval(
         """
         INSERT INTO parameter_fields_resource (field_id, parameter_id, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         RETURNING id
         """,
         field_id,
         parameter_id,
+        not soft,
         mcp,
     )
 

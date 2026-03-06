@@ -14,18 +14,20 @@ async def create_upload(
     mime_type: str,
     size: int,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateUploadResponse:
     """Create an uploads entry."""
     upload_id = await conn.fetchval(
         """
-        INSERT INTO uploads_entry (session_id, file_path, mime_type, size, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO uploads_entry (session_id, file_path, mime_type, size, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, $6, true)
         RETURNING id
     """,
         session_id,
         file_path,
         mime_type,
         size,
+        not soft,
         mcp,
     )
 

@@ -54,9 +54,14 @@ async def update_rubric(
     rubric_ids: list[UUID] | None = None,
     # Base columns
     active: bool | Any = _UNSET,
+    soft: bool = False,
     mcp: bool = False,
 ) -> UpdateRubricResponse:
     """Update a rubric artifact with efficient junction diffs."""
+    # soft=True forces active=false regardless of the active parameter
+    if soft:
+        active = False
+
     # 1. Update artifact row
     if active is not _UNSET:
         await conn.execute(

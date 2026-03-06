@@ -15,6 +15,7 @@ async def create_resource(
     resource: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetResourceResponse:
@@ -22,11 +23,12 @@ async def create_resource(
     resource_id = await conn.fetchval(
         """
         INSERT INTO resources_resource (resource, active, mcp, generated)
-        VALUES ($1::resource_type, true, $2, $2)
+        VALUES ($1::resource_type, $2, $3, $3)
         ON CONFLICT (resource) DO UPDATE SET resource = EXCLUDED.resource
         RETURNING id
     """,
         resource,
+        not soft,
         mcp,
     )
 

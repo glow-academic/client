@@ -21,6 +21,7 @@ async def create_scenario_time_limit(
     redis: Redis,
     negative: bool = False,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetScenarioTimeLimitResponse:
@@ -29,12 +30,13 @@ async def create_scenario_time_limit(
         """
         INSERT INTO scenario_time_limits_resource
             (scenario_id, time_limit_seconds, negative, active, mcp, generated)
-        VALUES ($1, $2, $3, true, $4, $4)
+        VALUES ($1, $2, $3, $4, $5, $5)
         RETURNING id
         """,
         scenario_id,
         time_limit_seconds,
         negative,
+        not soft,
         mcp,
     )
 

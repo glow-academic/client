@@ -18,6 +18,7 @@ async def create_problem_statement(
     problem_statement: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetProblemStatementResponse:
@@ -25,11 +26,12 @@ async def create_problem_statement(
     problem_statement_id = await conn.fetchval(
         """
         INSERT INTO problem_statements_resource (name, problem_statement, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         RETURNING id
     """,
         name,
         problem_statement,
+        not soft,
         mcp,
     )
 

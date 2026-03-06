@@ -15,18 +15,20 @@ async def create_problem(
     message: str = "No message provided",
     profile_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateProblemResponse:
     """Create a problem entry and optionally link to a profile."""
     problem_id = await conn.fetchval(
         """
-        INSERT INTO problems_entry (session_id, call_id, type, message, mcp, generated)
-        VALUES ($1, $2, $3::public.feedback_type, $4, $5, true)
+        INSERT INTO problems_entry (session_id, call_id, type, message, active, mcp, generated)
+        VALUES ($1, $2, $3::public.feedback_type, $4, $5, $6, true)
         RETURNING id
         """,
         session_id,
         call_id,
         type,
         message,
+        not soft,
         mcp,
     )
 

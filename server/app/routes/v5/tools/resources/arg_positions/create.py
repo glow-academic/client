@@ -16,6 +16,7 @@ async def create_arg_position(
     value: int,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetArgPositionResponse:
@@ -23,11 +24,12 @@ async def create_arg_position(
     arg_position_id = await conn.fetchval(
         """
         INSERT INTO arg_positions_resource (args_id, value, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         RETURNING id
         """,
         args_id,
         value,
+        not soft,
         mcp,
     )
 

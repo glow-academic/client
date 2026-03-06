@@ -15,17 +15,19 @@ async def create_attempt_completion(
     call_id: UUID,
     end_reason: str = "",
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptCompletionResponse:
     """Create an attempt_completion entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO attempt_completion_entry (chat_id, call_id, end_reason, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO attempt_completion_entry (chat_id, call_id, end_reason, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         chat_id,
         call_id,
         end_reason,
+        not soft,
         mcp,
     )
     return CreateAttemptCompletionResponse(id=entry_id)

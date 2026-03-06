@@ -13,16 +13,18 @@ async def create_video(
     length_seconds: int = 0,
     videos_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateVideoResponse:
     """Create a videos entry with optional link to videos resource."""
     video_id = await conn.fetchval(
         """
-        INSERT INTO videos_entry (session_id, length_seconds, mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO videos_entry (session_id, length_seconds, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
         RETURNING id
     """,
         session_id,
         length_seconds,
+        not soft,
         mcp,
     )
 

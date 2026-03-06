@@ -14,17 +14,19 @@ async def create_call(
     external_call_id: str = "",
     tool_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateCallResponse:
     """Create a calls entry with optional tool link."""
     call_id = await conn.fetchval(
         """
-        INSERT INTO calls_entry (run_id, session_id, external_call_id, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO calls_entry (run_id, session_id, external_call_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
     """,
         run_id,
         session_id,
         external_call_id,
+        not soft,
         mcp,
     )
 

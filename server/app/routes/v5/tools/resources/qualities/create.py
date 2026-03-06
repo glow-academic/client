@@ -15,6 +15,7 @@ async def create_quality(
     quality: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetQualityResponse:
@@ -22,10 +23,11 @@ async def create_quality(
     quality_id = await conn.fetchval(
         """
         INSERT INTO qualities_resource (quality, active, mcp, generated)
-        VALUES ($1::quality_type, true, $2, $2)
+        VALUES ($1::quality_type, $2, $3, $3)
         RETURNING id
         """,
         quality,
+        not soft,
         mcp,
     )
 

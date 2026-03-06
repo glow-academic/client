@@ -15,6 +15,7 @@ async def create_operation(
     operation: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetOperationResponse:
@@ -22,11 +23,12 @@ async def create_operation(
     operation_id = await conn.fetchval(
         """
         INSERT INTO operations_resource (operation, active, mcp, generated)
-        VALUES ($1, true, $2, $2)
+        VALUES ($1, $2, $3, $3)
         ON CONFLICT (operation) DO UPDATE SET operation = EXCLUDED.operation
         RETURNING id
     """,
         operation,
+        not soft,
         mcp,
     )
 

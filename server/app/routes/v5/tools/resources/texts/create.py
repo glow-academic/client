@@ -14,6 +14,7 @@ async def create_text(
     conn: asyncpg.Connection,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetTextResponse:
@@ -21,9 +22,10 @@ async def create_text(
     text_id = await conn.fetchval(
         """
         INSERT INTO texts_resource (active, mcp, generated)
-        VALUES (true, $1, $1)
+        VALUES ($1, $2, $2)
         RETURNING id
     """,
+        not soft,
         mcp,
     )
 

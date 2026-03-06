@@ -12,16 +12,18 @@ async def create_audio(
     session_id: UUID,
     length_seconds: int = 0,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAudioResponse:
     """Create an audios entry."""
     audio_id = await conn.fetchval(
         """
-        INSERT INTO audios_entry (session_id, length_seconds, mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO audios_entry (session_id, length_seconds, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
         RETURNING id
     """,
         session_id,
         length_seconds,
+        not soft,
         mcp,
     )
 

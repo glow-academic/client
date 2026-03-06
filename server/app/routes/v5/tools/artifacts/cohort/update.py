@@ -66,9 +66,14 @@ async def update_cohort(
     cohort_ids: list[UUID] | None = None,
     # Base columns
     active: bool | Any = _UNSET,
+    soft: bool = False,
     mcp: bool = False,
 ) -> UpdateCohortResponse:
     """Update a cohort artifact with efficient junction diffs."""
+    # soft=True forces active=false regardless of the active parameter
+    if soft:
+        active = False
+
     # 1. Update artifact row
     if active is not _UNSET:
         await conn.execute(

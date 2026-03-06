@@ -18,12 +18,13 @@ async def create_test_feedback(
     total_points: int = 0,
     pass_points: int = 0,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateTestFeedbackResponse:
     """Create a test_feedback entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO test_feedback_entry (grade_id, call_id, total, feedback, total_points, pass_points, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+        INSERT INTO test_feedback_entry (grade_id, call_id, total, feedback, total_points, pass_points, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
         RETURNING id
         """,
         grade_id,
@@ -32,6 +33,7 @@ async def create_test_feedback(
         feedback,
         total_points,
         pass_points,
+        not soft,
         mcp,
     )
     return CreateTestFeedbackResponse(id=entry_id)

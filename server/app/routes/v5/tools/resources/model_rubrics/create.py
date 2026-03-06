@@ -16,6 +16,7 @@ async def create_model_rubric(
     rubric_id: UUID,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetModelRubricResponse:
@@ -23,11 +24,12 @@ async def create_model_rubric(
     model_rubric_id = await conn.fetchval(
         """
         INSERT INTO model_rubrics_resource (model_id, rubric_id, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         RETURNING id
         """,
         model_id,
         rubric_id,
+        not soft,
         mcp,
     )
 

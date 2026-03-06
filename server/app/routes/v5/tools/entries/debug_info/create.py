@@ -13,17 +13,19 @@ async def create_debug_info(
     content: str,
     run_id: UUID,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateDebugInfoResponse:
     """Create a debug_info entry."""
     debug_info_id = await conn.fetchval(
         """
-        INSERT INTO debug_info_entry (call_id, content, run_id, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO debug_info_entry (call_id, content, run_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         call_id,
         content,
         run_id,
+        not soft,
         mcp,
     )
 

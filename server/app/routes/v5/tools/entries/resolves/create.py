@@ -13,17 +13,19 @@ async def create_resolve(
     resolved: bool,
     call_id: UUID,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateResolveResponse:
     """Create a resolves entry."""
     resolve_id = await conn.fetchval(
         """
-        INSERT INTO resolves_entry (problem_id, resolved, call_id, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO resolves_entry (problem_id, resolved, call_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         problem_id,
         resolved,
         call_id,
+        not soft,
         mcp,
     )
 

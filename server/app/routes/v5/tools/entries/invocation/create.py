@@ -14,6 +14,7 @@ async def create_invocation(
     use_custom: bool = False,
     position: int = 0,
     mcp: bool = False,
+    soft: bool = False,
     department_ids: list[UUID] | None = None,
     description_ids: list[UUID] | None = None,
     flag_ids: list[UUID] | None = None,
@@ -32,14 +33,15 @@ async def create_invocation(
     """Create an invocation entry with optional connection table links."""
     invocation_id = await conn.fetchval(
         """
-        INSERT INTO invocation_entry (benchmark_id, session_id, use_custom, "position", mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO invocation_entry (benchmark_id, session_id, use_custom, "position", active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, $6, true)
         RETURNING id
         """,
         benchmark_id,
         session_id,
         use_custom,
         position,
+        not soft,
         mcp,
     )
 

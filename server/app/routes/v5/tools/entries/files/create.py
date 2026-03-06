@@ -12,15 +12,17 @@ async def create_file(
     session_id: UUID,
     files_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateFileResponse:
     """Create a files entry with optional link to files resource."""
     file_id = await conn.fetchval(
         """
-        INSERT INTO files_entry (session_id, mcp, generated)
-        VALUES ($1, $2, true)
+        INSERT INTO files_entry (session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, true)
         RETURNING id
     """,
         session_id,
+        not soft,
         mcp,
     )
 

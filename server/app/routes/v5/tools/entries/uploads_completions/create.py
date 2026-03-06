@@ -14,16 +14,18 @@ async def create_upload_completion(
     upload_id: UUID,
     session_id: UUID,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateUploadCompletionResponse:
     """Create an uploads_completions entry."""
     completion_id = await conn.fetchval(
         """
-        INSERT INTO uploads_completions_entry (upload_id, session_id, mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO uploads_completions_entry (upload_id, session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
         RETURNING id
     """,
         upload_id,
         session_id,
+        not soft,
         mcp,
     )
 

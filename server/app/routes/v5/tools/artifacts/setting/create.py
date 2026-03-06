@@ -48,7 +48,7 @@ async def create_setting(
     system_ids: list[UUID] | None = None,
     threshold_ids: list[UUID] | None = None,
     setting_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateSettingResponse:
@@ -59,7 +59,7 @@ async def create_setting(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

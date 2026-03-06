@@ -14,16 +14,18 @@ async def create_chat(
     department_ids: list[UUID] | None = None,
     position: int = 0,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateChatResponse:
     """Create a chat entry with optional connection tables."""
     chat_id = await conn.fetchval(
         """
-        INSERT INTO chat_entry (session_id, "position", mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO chat_entry (session_id, "position", active, mcp, generated)
+        VALUES ($1, $2, $3, $4, true)
         RETURNING id
         """,
         session_id,
         position,
+        not soft,
         mcp,
     )
 

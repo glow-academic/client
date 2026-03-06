@@ -40,7 +40,7 @@ async def create_document(
     parameter_field_ids: list[UUID] | None = None,
     text_ids: list[UUID] | None = None,
     document_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateDocumentResponse:
@@ -51,7 +51,7 @@ async def create_document(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

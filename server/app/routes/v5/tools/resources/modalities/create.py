@@ -16,6 +16,7 @@ async def create_modality(
     redis: Redis,
     is_input: bool = False,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetModalityResponse:
@@ -23,11 +24,12 @@ async def create_modality(
     modality_id = await conn.fetchval(
         """
         INSERT INTO modalities_resource (modality, is_input, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         RETURNING id
         """,
         modality,
         is_input,
+        not soft,
         mcp,
     )
     await invalidate_tags(["resources", "modalities"], redis=redis)

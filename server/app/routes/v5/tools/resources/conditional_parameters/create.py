@@ -19,6 +19,7 @@ async def create_conditional_parameter(
     parameter_id: UUID,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetConditionalParameterResponse:
@@ -26,11 +27,12 @@ async def create_conditional_parameter(
     conditional_parameter_id = await conn.fetchval(
         """
         INSERT INTO conditional_parameters_resource (parameter_id, active, mcp, generated)
-        VALUES ($1, true, $2, $2)
+        VALUES ($1, $2, $3, $3)
         ON CONFLICT (parameter_id) DO UPDATE SET parameter_id = EXCLUDED.parameter_id
         RETURNING id
         """,
         parameter_id,
+        not soft,
         mcp,
     )
 

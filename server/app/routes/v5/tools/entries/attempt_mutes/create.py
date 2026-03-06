@@ -15,17 +15,19 @@ async def create_attempt_mutes(
     call_id: UUID,
     muted: bool,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptMutesResponse:
     """Create an attempt_mutes entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO attempt_mutes_entry (conversation_id, call_id, muted, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO attempt_mutes_entry (conversation_id, call_id, muted, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         conversation_id,
         call_id,
         muted,
+        not soft,
         mcp,
     )
     return CreateAttemptMutesResponse(id=entry_id)

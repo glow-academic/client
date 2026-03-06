@@ -16,6 +16,7 @@ async def create_rubric(
     name: str = "",
     description: str = "",
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetRubricResponse:
@@ -23,11 +24,12 @@ async def create_rubric(
     rubric_id = await conn.fetchval(
         """
         INSERT INTO rubrics_resource (name, description, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         RETURNING id
     """,
         name,
         description,
+        not soft,
         mcp,
     )
 

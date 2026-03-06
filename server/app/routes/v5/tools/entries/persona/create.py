@@ -11,14 +11,16 @@ async def create_persona(
     conn: asyncpg.Connection,
     personas_id: UUID | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreatePersonaResponse:
     """Create a personas entry with optional resource link."""
     persona_id = await conn.fetchval(
         """
-        INSERT INTO personas_entry (mcp, generated)
-        VALUES ($1, true)
+        INSERT INTO personas_entry (active, mcp, generated)
+        VALUES ($1, $2, true)
         RETURNING id
         """,
+        not soft,
         mcp,
     )
 

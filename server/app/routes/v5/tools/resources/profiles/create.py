@@ -16,6 +16,7 @@ async def create_profile(
     name: str = "",
     description: str = "",
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetProfileResponse:
@@ -23,11 +24,12 @@ async def create_profile(
     profile_id = await conn.fetchval(
         """
         INSERT INTO profiles_resource (name, description, active, mcp, generated)
-        VALUES ($1, $2, true, $3, $3)
+        VALUES ($1, $2, $3, $4, $4)
         RETURNING id
         """,
         name,
         description,
+        not soft,
         mcp,
     )
     await invalidate_tags(["resources", "profiles"], redis=redis)

@@ -19,15 +19,16 @@ async def create_test_invocation(
     position: int = 0,
     config_signature: str | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateTestInvocationResponse:
     """Create a test_invocation_entry row."""
     entry_id = await conn.fetchval(
         """
         INSERT INTO test_invocation_entry (
             test_id, call_id, title, group_id,
-            use_custom, "position", config_signature, mcp, generated
+            use_custom, "position", config_signature, active, mcp, generated
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)
         RETURNING id
         """,
         test_id,
@@ -37,6 +38,7 @@ async def create_test_invocation(
         use_custom,
         position,
         config_signature,
+        not soft,
         mcp,
     )
 

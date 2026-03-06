@@ -16,19 +16,21 @@ async def create_attempt_content(
     content: str,
     persona_id: UUID,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptContentResponse:
     """Create an attempt_content entry."""
     entry_id = await conn.fetchval(
         """
         INSERT INTO attempt_content_entry
-            (message_id, call_id, content, persona_id, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+            (message_id, call_id, content, persona_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, $6, true)
         RETURNING id
         """,
         message_id,
         call_id,
         content,
         persona_id,
+        not soft,
         mcp,
     )
 

@@ -16,15 +16,16 @@ async def create_test(
     num_invocations: int = 0,
     infinite_mode: bool = False,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateTestResponse:
     """Create a test entry with profiles connection."""
     test_id = await conn.fetchval(
         """
         INSERT INTO test_entry (
             call_id, name, description, num_invocations,
-            infinite_mode, mcp, generated
+            infinite_mode, active, mcp, generated
         )
-        VALUES ($1, $2, $3, $4, $5, $6, true)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, true)
         RETURNING id
         """,
         call_id,
@@ -32,6 +33,7 @@ async def create_test(
         description,
         num_invocations,
         infinite_mode,
+        not soft,
         mcp,
     )
 

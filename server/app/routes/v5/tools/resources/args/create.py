@@ -16,6 +16,7 @@ async def create_arg(
     field_type: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     description: str = "",
     required: bool = False,
     default_value: str = "",
@@ -26,7 +27,7 @@ async def create_arg(
     arg_id = await conn.fetchval(
         """
         INSERT INTO args_resource (name, description, field_type, required, default_value, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true, $6, $6)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
         RETURNING id
         """,
         name,
@@ -34,6 +35,7 @@ async def create_arg(
         field_type,
         required,
         default_value,
+        not soft,
         mcp,
     )
 

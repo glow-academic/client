@@ -15,17 +15,19 @@ async def create_test_stop(
     call_id: UUID,
     stopped: bool,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateTestStopResponse:
     """Create a test_stop entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO test_stop_entry (invocation_id, call_id, stopped, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO test_stop_entry (invocation_id, call_id, stopped, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         invocation_id,
         call_id,
         stopped,
+        not soft,
         mcp,
     )
     return CreateTestStopResponse(id=entry_id)

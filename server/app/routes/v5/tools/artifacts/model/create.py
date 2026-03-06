@@ -48,7 +48,7 @@ async def create_model(
     temperature_level_ids: list[UUID] | None = None,
     value_ids: list[UUID] | None = None,
     voice_ids: list[UUID] | None = None,
-    active: bool = True,
+    soft: bool = False,
     generated: bool = False,
     mcp: bool = False,
 ) -> CreateModelResponse:
@@ -59,7 +59,7 @@ async def create_model(
         VALUES ($1, $2, $3)
         RETURNING id
         """,
-        active,
+        not soft,
         generated,
         mcp,
     )

@@ -15,17 +15,19 @@ async def create_attempt_archive(
     call_id: UUID,
     archived: bool,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateAttemptArchiveResponse:
     """Create an attempt_archive entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO attempt_archive_entry (attempt_id, call_id, archived, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO attempt_archive_entry (attempt_id, call_id, archived, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         attempt_id,
         call_id,
         archived,
+        not soft,
         mcp,
     )
     return CreateAttemptArchiveResponse(id=entry_id)

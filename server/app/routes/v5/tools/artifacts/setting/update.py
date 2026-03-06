@@ -72,9 +72,14 @@ async def update_setting(
     setting_ids: list[UUID] | None = None,
     # Base columns
     active: bool | Any = _UNSET,
+    soft: bool = False,
     mcp: bool = False,
 ) -> UpdateSettingResponse:
     """Update a setting artifact with efficient junction diffs."""
+    # soft=True forces active=false regardless of the active parameter
+    if soft:
+        active = False
+
     # 1. Update artifact row
     if active is not _UNSET:
         await conn.execute(

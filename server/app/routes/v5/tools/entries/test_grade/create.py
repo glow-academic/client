@@ -16,13 +16,14 @@ async def create_test_grade(
     passed: bool,
     score: int,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateTestGradeResponse:
     """Create a test_grade entry."""
     entry_id = await conn.fetchval(
         """
         INSERT INTO test_grade_entry
-            (invocation_id, call_id, run_id, time_taken, passed, score, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+            (invocation_id, call_id, run_id, time_taken, passed, score, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
         RETURNING id
         """,
         invocation_id,
@@ -31,6 +32,7 @@ async def create_test_grade(
         time_taken,
         passed,
         score,
+        not soft,
         mcp,
     )
 

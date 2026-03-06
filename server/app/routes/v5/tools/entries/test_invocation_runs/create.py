@@ -15,15 +15,17 @@ async def create_test_invocation_runs(
     agent_ids: list[UUID] | None = None,
     run_ids: list[UUID] | None = None,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateTestInvocationRunsResponse:
     """Create a test_invocation_runs entry with optional connections."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO test_invocation_runs_entry (test_invocation_id, mcp, generated)
-        VALUES ($1, $2, true)
+        INSERT INTO test_invocation_runs_entry (test_invocation_id, active, mcp, generated)
+        VALUES ($1, $2, $3, true)
         RETURNING id
         """,
         test_invocation_id,
+        not soft,
         mcp,
     )
 

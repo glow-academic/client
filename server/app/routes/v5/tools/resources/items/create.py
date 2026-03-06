@@ -16,6 +16,7 @@ async def create_item(
     description: str,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     encrypted: bool = False,
     position: int = 0,
     group_id: UUID | None = None,
@@ -25,13 +26,14 @@ async def create_item(
     item_id = await conn.fetchval(
         """
         INSERT INTO items_resource (name, description, encrypted, position, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, true, $5, $5)
+        VALUES ($1, $2, $3, $4, $5, $6, $6)
         RETURNING id
         """,
         name,
         description,
         encrypted,
         position,
+        not soft,
         mcp,
     )
 

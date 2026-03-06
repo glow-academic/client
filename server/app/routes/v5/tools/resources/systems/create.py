@@ -16,6 +16,7 @@ async def create_system(
     description: str = "",
     redis: Redis = None,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetSystemResponse:
@@ -23,11 +24,12 @@ async def create_system(
     system_id = await conn.fetchval(
         """
         INSERT INTO systems_resource (id, name, description, active, mcp, generated)
-        VALUES (uuidv7(), $1, $2, true, $3, $3)
+        VALUES (uuidv7(), $1, $2, $3, $4, $4)
         RETURNING id
         """,
         name,
         description,
+        not soft,
         mcp,
     )
     await invalidate_tags(["resources", "systems"], redis=redis)

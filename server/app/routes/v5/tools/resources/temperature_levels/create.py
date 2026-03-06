@@ -17,6 +17,7 @@ async def create_temperature_level(
     temperature: float,
     redis: Redis,
     mcp: bool = False,
+    soft: bool = False,
     group_id: UUID | None = None,
     tool_id: UUID | None = None,
 ) -> GetTemperatureLevelResponse:
@@ -24,10 +25,11 @@ async def create_temperature_level(
     level_id = await conn.fetchval(
         """
         INSERT INTO temperature_levels_resource (temperature, active, mcp, generated)
-        VALUES ($1, true, $2, $2)
+        VALUES ($1, $2, $3, $3)
         RETURNING id
         """,
         temperature,
+        not soft,
         mcp,
     )
     await invalidate_tags(["resources", "temperature_levels"], redis=redis)

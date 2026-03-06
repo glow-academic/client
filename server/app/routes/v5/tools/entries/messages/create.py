@@ -12,16 +12,18 @@ async def create_message(
     run_id: UUID,
     role: str,
     mcp: bool = False,
+    soft: bool = False,
 ) -> CreateMessageResponse:
     """Create a messages entry."""
     row = await conn.fetchrow(
         """
-        INSERT INTO messages_entry (run_id, role, mcp, generated)
-        VALUES ($1, $2::message_type, $3, true)
+        INSERT INTO messages_entry (run_id, role, active, mcp, generated)
+        VALUES ($1, $2::message_type, $3, $4, true)
         RETURNING id, created_at
     """,
         run_id,
         role,
+        not soft,
         mcp,
     )
 
