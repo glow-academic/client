@@ -110,7 +110,9 @@ async def get_invocation_entries_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
-            return [GetInvocationResponse.model_validate(i) for i in cached.get("items", [])]
+            return [
+                GetInvocationResponse.model_validate(i) for i in cached.get("items", [])
+            ]
 
     items = await get_invocations(conn, ids)
 

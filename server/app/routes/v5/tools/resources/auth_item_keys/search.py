@@ -63,7 +63,8 @@ async def search_auth_item_keys(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetAuthItemKeyResponse.model_validate(item) for item in cached.get("items", [])
+                GetAuthItemKeyResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     # Build dynamic WHERE for ID search

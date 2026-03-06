@@ -105,9 +105,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, attempt_chat = await _setup(conn, profile_id)
 
-    items = await search_attempt_grades(
-        conn, chat_id=attempt_chat.id, bypass_mv=True
-    )
+    items = await search_attempt_grades(conn, chat_id=attempt_chat.id, bypass_mv=True)
 
     ids = [item.grade_id for item in items]
     assert result.id in ids

@@ -7,7 +7,7 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.files.create import create_file
 from app.routes.v5.tools.entries.files.get import get_file
-from app.routes.v5.tools.entries.files.search import search_files_entries_internal
+from app.routes.v5.tools.entries.files.search import search_files
 
 
 async def get_files_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -36,8 +36,8 @@ async def get_files_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Retrieves a single file entry by ID from files_entry.",
             ),
             get_operation_info(
-                search_files_entries_internal,
-                description="Filtered paginated search against files_entry.",
+                search_files,
+                description="Filtered paginated search against files_mv with optional file and mime_type filters.",
             ),
         ],
     )

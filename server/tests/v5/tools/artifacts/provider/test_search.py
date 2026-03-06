@@ -1,6 +1,5 @@
 """Tests for search_providers — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.provider.create import create_provider
@@ -71,9 +70,15 @@ async def test_pagination(conn, redis_client):
         name = await create_name(conn, f"page-{tag}-{i:02d}", redis_client)
         p = await create_provider(conn, name_id=name.id)
         created.append(p.id)
-    page1 = await search_providers(conn, search=f"page-{tag}", limit_count=2, offset_count=0)
-    page2 = await search_providers(conn, search=f"page-{tag}", limit_count=2, offset_count=2)
-    page3 = await search_providers(conn, search=f"page-{tag}", limit_count=2, offset_count=4)
+    page1 = await search_providers(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=0
+    )
+    page2 = await search_providers(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=2
+    )
+    page3 = await search_providers(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=4
+    )
     assert len(page1) == 2
     assert len(page2) == 2
     assert len(page3) == 1

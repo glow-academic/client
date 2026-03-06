@@ -21,9 +21,7 @@ async def _test_grade(conn, profile_id, **overrides):
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     call = await create_call(conn, run_id=run.id, session_id=session.id)
-    test = await create_test(
-        conn, call_id=call.id, profiles_id=profile_id
-    )
+    test = await create_test(conn, call_id=call.id, profiles_id=profile_id)
     call2 = await create_call(conn, run_id=run.id, session_id=session.id)
     test_invocation = await create_test_invocation(
         conn, test_id=test.id, call_id=call2.id

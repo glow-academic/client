@@ -9,7 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.test_grade.create import create_test_grade
 from app.routes.v5.tools.entries.test_grade.get import get_test_grades
 from app.routes.v5.tools.entries.test_grade.refresh import refresh_test_grade
-from app.routes.v5.tools.entries.test_grade.search import search_test_grade_entries_internal
+from app.routes.v5.tools.entries.test_grade.search import search_test_grades
 
 
 async def get_test_grade_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -47,10 +47,10 @@ async def get_test_grade_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves test_grade entries by IDs from test_grade_mv.",
             ),
             get_operation_info(
-                search_test_grade_entries_internal,
+                search_test_grades,
                 description=(
-                    "Filtered paginated search against test_grade entries by search text "
-                    "and profile_id. Results cached for 60 seconds."
+                    "Filtered paginated search against test_grade entries "
+                    "by invocation_id and run_id from test_grade_mv."
                 ),
             ),
         ],

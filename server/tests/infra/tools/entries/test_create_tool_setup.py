@@ -13,7 +13,9 @@ from app.routes.v5.tools.entries.texts.get import get_text
 from app.routes.v5.tools.entries.text_uploads.get import get_text_upload
 from app.routes.v5.tools.entries.call_uploads.get import get_call_upload
 from app.routes.v5.tools.entries.message_uploads.get import get_message_upload
-from app.routes.v5.tools.resources.tools.create import create_tool as create_tool_resource
+from app.routes.v5.tools.resources.tools.create import (
+    create_tool as create_tool_resource,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -59,7 +61,9 @@ async def _setup_with_tool(conn, profile_id):
 
 
 async def _setup_without_tool(conn, profile_id):
-    session, group, text_upload, _ = await _deps(conn, profile_id, with_call_upload=False)
+    session, group, text_upload, _ = await _deps(
+        conn, profile_id, with_call_upload=False
+    )
     result = await create_tool_setup(
         conn,
         group_id=group.id,

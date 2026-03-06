@@ -57,12 +57,8 @@ async def test_filters_by_date_to(conn, profile_id):
 
 
 async def test_filters_by_mcp(conn, profile_id):
-    r_mcp = await create_session(
-        conn, profile_id=profile_id, mcp=True
-    )
-    r_normal = await create_session(
-        conn, profile_id=profile_id, mcp=False
-    )
+    r_mcp = await create_session(conn, profile_id=profile_id, mcp=True)
+    r_normal = await create_session(conn, profile_id=profile_id, mcp=False)
     await refresh_sessions(conn)
 
     items = await search_sessions(conn, mcp=True)

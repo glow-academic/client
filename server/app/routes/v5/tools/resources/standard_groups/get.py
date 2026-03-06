@@ -22,13 +22,16 @@ async def get_standard_groups(
         return []
 
     tags = ["resources", "standard_groups"]
-    key = cache_key("/api/v5/resources/standard_groups/get", {"ids": [str(id) for id in ids]})
+    key = cache_key(
+        "/api/v5/resources/standard_groups/get", {"ids": [str(id) for id in ids]}
+    )
 
     if not bypass_cache:
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetStandardGroupResponse.model_validate(item) for item in cached.get("items", [])
+                GetStandardGroupResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

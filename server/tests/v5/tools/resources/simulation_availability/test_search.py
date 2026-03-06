@@ -18,7 +18,9 @@ pytestmark = pytest.mark.asyncio
 async def test_finds_created_simulation_availability(conn, redis_client):
     simulation = await create_simulation(conn, redis_client)
     now = datetime.now(timezone.utc)
-    item = await create_simulation_availability(conn, simulation.id, now, "start", redis_client)
+    item = await create_simulation_availability(
+        conn, simulation.id, now, "start", redis_client
+    )
 
     items = await search_simulation_availability(conn, redis_client)
 
@@ -47,7 +49,9 @@ async def test_respects_offset(conn, redis_client):
             conn, simulation.id, now, "start", redis_client
         )
 
-    all_items = await search_simulation_availability(conn, redis_client, limit_count=100)
+    all_items = await search_simulation_availability(
+        conn, redis_client, limit_count=100
+    )
     offset_items = await search_simulation_availability(
         conn, redis_client, limit_count=100, offset_count=1
     )
@@ -62,9 +66,7 @@ async def test_excludes_ids(conn, redis_client):
     a = await create_simulation_availability(conn, sim_a.id, now, "start", redis_client)
     b = await create_simulation_availability(conn, sim_b.id, now, "start", redis_client)
 
-    items = await search_simulation_availability(
-        conn, redis_client, exclude_ids=[a.id]
-    )
+    items = await search_simulation_availability(conn, redis_client, exclude_ids=[a.id])
 
     ids = [i.id for i in items]
     assert a.id not in ids
@@ -80,7 +82,9 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 async def test_cache_hit(conn, redis_client):
     simulation = await create_simulation(conn, redis_client)
     now = datetime.now(timezone.utc)
-    await create_simulation_availability(conn, simulation.id, now, "start", redis_client)
+    await create_simulation_availability(
+        conn, simulation.id, now, "start", redis_client
+    )
 
     items1 = await search_simulation_availability(conn, redis_client)
     items2 = await search_simulation_availability(conn, redis_client)
@@ -92,7 +96,9 @@ async def test_cache_hit(conn, redis_client):
 async def test_bypass_cache(conn, redis_client):
     simulation = await create_simulation(conn, redis_client)
     now = datetime.now(timezone.utc)
-    await create_simulation_availability(conn, simulation.id, now, "start", redis_client)
+    await create_simulation_availability(
+        conn, simulation.id, now, "start", redis_client
+    )
 
     items = await search_simulation_availability(conn, redis_client, bypass_cache=True)
 

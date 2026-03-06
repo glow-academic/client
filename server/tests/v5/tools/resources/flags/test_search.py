@@ -1,6 +1,5 @@
 """Tests for search_flags."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.flags.create import create_flag
@@ -73,7 +72,10 @@ async def test_excludes_ids(conn, redis_client):
     )
 
     items = await search_flags(
-        conn, redis_client, search="exclude-", exclude_ids=[a.id],
+        conn,
+        redis_client,
+        search="exclude-",
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]
@@ -100,9 +102,7 @@ async def test_cache_hit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    await create_flag(
-        conn, f"bypass-flag-{unique_tag()}", "desc", "home", redis_client
-    )
+    await create_flag(conn, f"bypass-flag-{unique_tag()}", "desc", "home", redis_client)
 
     items = await search_flags(
         conn, redis_client, search="bypass-flag-", bypass_cache=True

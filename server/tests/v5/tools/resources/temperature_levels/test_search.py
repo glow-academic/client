@@ -2,8 +2,12 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.temperature_levels.create import create_temperature_level
-from app.routes.v5.tools.resources.temperature_levels.search import search_temperature_levels
+from app.routes.v5.tools.resources.temperature_levels.create import (
+    create_temperature_level,
+)
+from app.routes.v5.tools.resources.temperature_levels.search import (
+    search_temperature_levels,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -34,7 +38,9 @@ async def test_respects_limit(conn, redis_client):
     for i in range(5):
         await create_temperature_level(conn, 0.4410 + i * 0.0001, redis_client)
 
-    items = await search_temperature_levels(conn, redis_client, search="0.441", limit_count=2)
+    items = await search_temperature_levels(
+        conn, redis_client, search="0.441", limit_count=2
+    )
 
     assert len(items) <= 2
 
@@ -43,8 +49,12 @@ async def test_respects_offset(conn, redis_client):
     for i in range(3):
         await create_temperature_level(conn, 0.3310 + i * 0.0001, redis_client)
 
-    all_items = await search_temperature_levels(conn, redis_client, search="0.331", limit_count=10)
-    offset_items = await search_temperature_levels(conn, redis_client, search="0.331", limit_count=10, offset_count=1)
+    all_items = await search_temperature_levels(
+        conn, redis_client, search="0.331", limit_count=10
+    )
+    offset_items = await search_temperature_levels(
+        conn, redis_client, search="0.331", limit_count=10, offset_count=1
+    )
 
     assert len(all_items) >= 3
     assert len(offset_items) == len(all_items) - 1
@@ -55,7 +65,10 @@ async def test_excludes_ids(conn, redis_client):
     b = await create_temperature_level(conn, 0.112, redis_client)
 
     items = await search_temperature_levels(
-        conn, redis_client, search="0.11", exclude_ids=[a.id],
+        conn,
+        redis_client,
+        search="0.11",
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]
@@ -82,6 +95,8 @@ async def test_cache_hit(conn, redis_client):
 async def test_bypass_cache(conn, redis_client):
     await create_temperature_level(conn, 0.999, redis_client)
 
-    items = await search_temperature_levels(conn, redis_client, search="0.999", bypass_cache=True)
+    items = await search_temperature_levels(
+        conn, redis_client, search="0.999", bypass_cache=True
+    )
 
     assert len(items) >= 1

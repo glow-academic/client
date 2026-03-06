@@ -2,7 +2,9 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.uploads_completions.docs import get_uploads_completions_docs
+from app.routes.v5.tools.entries.uploads_completions.docs import (
+    get_uploads_completions_docs,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -38,13 +40,15 @@ async def test_includes_all_operations(conn):
     assert "create_upload_completion" in op_names
     assert "refresh_uploads_completions_internal" in op_names
     assert "get_upload_completion" in op_names
-    assert "search_uploads_completions_entries_internal" in op_names
+    assert "search_uploads_completions" in op_names
 
 
 async def test_create_operation_has_params(conn):
     result = await get_uploads_completions_docs(conn)
 
-    create_op = next(op for op in result.operations if op.name == "create_upload_completion")
+    create_op = next(
+        op for op in result.operations if op.name == "create_upload_completion"
+    )
     param_names = [p.name for p in create_op.params]
     assert "upload_id" in param_names
     assert "session_id" in param_names

@@ -57,7 +57,8 @@ async def search_thresholds(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetThresholdResponse.model_validate(item) for item in cached.get("items", [])
+                GetThresholdResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     # Build dynamic WHERE for ID search

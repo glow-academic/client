@@ -1,6 +1,5 @@
 """Tests for create_simulation — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.simulation.create import create_simulation
@@ -62,11 +61,18 @@ async def test_links_flags_with_value(conn, redis_client):
 async def test_no_junctions_when_none_provided(conn, redis_client):
     result = await create_simulation(conn)
     items = await get_simulations(
-        conn, [result.id],
-        names=True, descriptions=True, departments=True,
-        flags=True, scenarios=True, scenario_flags=True,
-        scenario_positions=True, scenario_rubrics=True,
-        scenario_time_limits=True, simulations=True,
+        conn,
+        [result.id],
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+        scenarios=True,
+        scenario_flags=True,
+        scenario_positions=True,
+        scenario_rubrics=True,
+        scenario_time_limits=True,
+        simulations=True,
     )
     p = items[0]
     assert p.name_ids == []

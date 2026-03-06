@@ -19,3 +19,13 @@ class GetCallResponse(BaseModel):
     active: bool
     mcp: bool
     generated: bool
+
+
+class SearchCallResponse(BaseModel):
+    call_id: UUID
+    run_id: UUID
+    call_created_at: datetime
+    files_id: UUID | None
+    file_path: str | None
+    mime_type: str | None
+    tool_id: UUID | None

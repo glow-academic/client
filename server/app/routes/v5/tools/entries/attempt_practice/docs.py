@@ -16,7 +16,7 @@ from app.routes.v5.tools.entries.attempt_practice.refresh import (
     refresh_attempt_practice,
 )
 from app.routes.v5.tools.entries.attempt_practice.search import (
-    search_attempt_practice_entries_internal,
+    search_attempt_practice_entries,
 )
 
 
@@ -54,7 +54,7 @@ async def get_attempt_practice_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Refreshes attempt_practice_mv concurrently to reflect latest writes.",
             ),
             get_operation_info(
-                search_attempt_practice_entries_internal,
+                search_attempt_practice_entries,
                 description="Filtered paginated search against attempt_practice_mv.",
             ),
         ],

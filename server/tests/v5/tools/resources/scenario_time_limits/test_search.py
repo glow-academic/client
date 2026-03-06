@@ -2,8 +2,12 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.scenario_time_limits.create import create_scenario_time_limit
-from app.routes.v5.tools.resources.scenario_time_limits.search import search_scenario_time_limits
+from app.routes.v5.tools.resources.scenario_time_limits.create import (
+    create_scenario_time_limit,
+)
+from app.routes.v5.tools.resources.scenario_time_limits.search import (
+    search_scenario_time_limits,
+)
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
 
 pytestmark = pytest.mark.asyncio
@@ -47,9 +51,7 @@ async def test_excludes_ids(conn, redis_client):
     a = await create_scenario_time_limit(conn, scenario.id, 301, redis_client)
     b = await create_scenario_time_limit(conn, scenario.id, 302, redis_client)
 
-    items = await search_scenario_time_limits(
-        conn, redis_client, exclude_ids=[a.id]
-    )
+    items = await search_scenario_time_limits(conn, redis_client, exclude_ids=[a.id])
 
     ids = [i.id for i in items]
     assert a.id not in ids

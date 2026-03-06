@@ -9,7 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.texts.create import create_text
 from app.routes.v5.tools.entries.texts.get import get_text
 from app.routes.v5.tools.entries.texts.refresh import refresh_texts_internal
-from app.routes.v5.tools.entries.texts.search import search_texts_entries_internal
+from app.routes.v5.tools.entries.texts.search import search_texts
 
 
 async def get_texts_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -43,7 +43,7 @@ async def get_texts_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves texts entries by IDs from texts_mv.",
             ),
             get_operation_info(
-                search_texts_entries_internal,
+                search_texts,
                 description="Filtered paginated search against texts_mv.",
             ),
         ],

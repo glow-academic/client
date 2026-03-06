@@ -1,0 +1,77 @@
+"""Tests for search_uploads."""
+
+import pytest
+
+from app.routes.v5.tools.entries.sessions.create import create_session
+from app.routes.v5.tools.entries.uploads.create import create_upload
+from app.routes.v5.tools.entries.uploads.search import search_uploads
+from tests.helpers import nonexistent_id
+
+pytestmark = pytest.mark.asyncio
+
+
+async def _setup(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
+    upload = await create_upload(
+        conn,
+        session_id=session.id,
+        file_path="test/file.txt",
+        mime_type="text/plain",
+        size=1024,
+    )
+    # uploads_mv requires: files_resource + files_uploads_connection + uploads_entry
+    files_id = await conn.fetchval(
+        "INSERT INTO files_resource DEFAULT VALUES RETURNING id"
+    )
+    await conn.execute(
+        "INSERT INTO files_uploads_connection (files_id, upload_id) VALUES ($1, $2)",
+        files_id,
+        upload.id,
+    )
+    return upload, files_id
+
+
+async def test_finds_created_entry(conn, profile_id):
+    upload, _ = await _setup(conn, profile_id)
+    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY uploads_mv")
+
+    items = await search_uploads(conn, upload_id=upload.id)
+
+    ids = [item.upload_id for item in items]
+    assert upload.id in ids
+
+
+async def test_filters_by_upload_id(conn, profile_id):
+    await _setup(conn, profile_id)
+    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY uploads_mv")
+
+    items = await search_uploads(conn, upload_id=nonexistent_id())
+
+    assert items == []
+
+
+async def test_pagination_limit(conn, profile_id):
+    upload, _ = await _setup(conn, profile_id)
+    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY uploads_mv")
+
+    items = await search_uploads(conn, upload_id=upload.id, limit=1)
+
+    assert len(items) <= 1
+
+
+async def test_returns_all_without_filter(conn, profile_id):
+    await _setup(conn, profile_id)
+    await conn.execute("REFRESH MATERIALIZED VIEW CONCURRENTLY uploads_mv")
+
+    items = await search_uploads(conn)
+
+    assert len(items) >= 1
+
+
+async def test_bypass_mv_finds_without_refresh(conn, profile_id):
+    upload, _ = await _setup(conn, profile_id)
+
+    items = await search_uploads(conn, upload_id=upload.id, bypass_mv=True)
+
+    ids = [item.upload_id for item in items]
+    assert upload.id in ids

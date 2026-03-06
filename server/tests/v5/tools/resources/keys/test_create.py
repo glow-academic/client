@@ -17,7 +17,9 @@ async def test_creates_new_key(conn, redis_client):
 
 
 async def test_visible_via_get(conn, redis_client):
-    result = await create_key(conn, redis_client, name="test-key-visible", key="sk-visible")
+    result = await create_key(
+        conn, redis_client, name="test-key-visible", key="sk-visible"
+    )
 
     items = await get_keys(conn, [result.id], redis_client, bypass_cache=True)
 

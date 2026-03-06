@@ -9,7 +9,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_creates_new_parameter(conn, redis_client):
-    result = await create_parameter(conn, redis_client, name="test-param", description="desc")
+    result = await create_parameter(
+        conn, redis_client, name="test-param", description="desc"
+    )
 
     assert result.name == "test-param"
     assert result.description == "desc"

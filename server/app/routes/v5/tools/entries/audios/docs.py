@@ -8,7 +8,7 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.audios.create import create_audio
 from app.routes.v5.tools.entries.audios.refresh import refresh_audios_internal
-from app.routes.v5.tools.entries.audios.search import search_audios_entries_internal
+from app.routes.v5.tools.entries.audios.search import search_audios
 
 
 async def get_audios_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -38,7 +38,7 @@ async def get_audios_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Refreshes audios_mv concurrently to reflect latest writes.",
             ),
             get_operation_info(
-                search_audios_entries_internal,
+                search_audios,
                 description="Filtered paginated search against audios_mv with optional file and voice filters.",
             ),
         ],

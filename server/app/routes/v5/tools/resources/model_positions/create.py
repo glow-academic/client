@@ -32,5 +32,7 @@ async def create_model_position(
     )
 
     await invalidate_tags(["resources", "model_positions"], redis=redis)
-    items = await get_model_positions(conn, [model_position_id], redis, bypass_cache=True)
+    items = await get_model_positions(
+        conn, [model_position_id], redis, bypass_cache=True
+    )
     return items[0]

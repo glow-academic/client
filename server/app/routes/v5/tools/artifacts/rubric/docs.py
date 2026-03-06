@@ -27,10 +27,25 @@ async def get_rubric_docs(conn: asyncpg.Connection) -> DocsResponse:
         ),
         tables=tables,
         operations=[
-            get_operation_info(create_rubric, description="Creates a new rubric artifact with optional resource links."),
-            get_operation_info(update_rubric, description="Updates an existing rubric's resource links."),
-            get_operation_info(get_rubrics, description="Batch retrieves rubrics by IDs with optional junction data."),
-            get_operation_info(search_rubrics, description="Filtered paginated search returning matching rubric IDs."),
-            get_operation_info(delete_rubrics, description="Deletes rubrics by IDs. Supports soft delete (active=false) or hard delete (cascade)."),
+            get_operation_info(
+                create_rubric,
+                description="Creates a new rubric artifact with optional resource links.",
+            ),
+            get_operation_info(
+                update_rubric,
+                description="Updates an existing rubric's resource links.",
+            ),
+            get_operation_info(
+                get_rubrics,
+                description="Batch retrieves rubrics by IDs with optional junction data.",
+            ),
+            get_operation_info(
+                search_rubrics,
+                description="Filtered paginated search returning matching rubric IDs.",
+            ),
+            get_operation_info(
+                delete_rubrics,
+                description="Deletes rubrics by IDs. Supports soft delete (active=false) or hard delete (cascade).",
+            ),
         ],
     )

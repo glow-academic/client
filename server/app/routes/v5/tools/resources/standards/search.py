@@ -64,7 +64,8 @@ async def search_standards(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetStandardResponse.model_validate(item) for item in cached.get("items", [])
+                GetStandardResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     ids = await search_resource_ids(

@@ -1,9 +1,10 @@
 """Tests for get_scenario_positions."""
 
-
 import pytest
 
-from app.routes.v5.tools.resources.scenario_positions.create import create_scenario_position
+from app.routes.v5.tools.resources.scenario_positions.create import (
+    create_scenario_position,
+)
 from app.routes.v5.tools.resources.scenario_positions.get import get_scenario_positions
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
 from tests.helpers import nonexistent_id
@@ -54,7 +55,9 @@ async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     scenario = await create_scenario(conn, redis_client)
     item = await create_scenario_position(conn, scenario.id, 3, redis_client)
 
-    items = await get_scenario_positions(conn, [item.id], redis_client, bypass_cache=True)
+    items = await get_scenario_positions(
+        conn, [item.id], redis_client, bypass_cache=True
+    )
     assert len(items) == 1
 
     from app.utils.cache.cache_key import cache_key

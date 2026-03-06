@@ -28,8 +28,16 @@ SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
     ("agent_departments_junction", "departments_id", "agent_departments_pkey"),
     ("agent_models_junction", "models_id", "agent_models_junction_pkey"),
-    ("agent_reasoning_levels_junction", "reasoning_levels_id", "agent_reasoning_levels_junction_pkey"),
-    ("agent_temperature_levels_junction", "temperature_levels_id", "agent_temperature_levels_junction_pkey"),
+    (
+        "agent_reasoning_levels_junction",
+        "reasoning_levels_id",
+        "agent_reasoning_levels_junction_pkey",
+    ),
+    (
+        "agent_temperature_levels_junction",
+        "temperature_levels_id",
+        "agent_temperature_levels_junction_pkey",
+    ),
     ("agent_tools_junction", "tools_id", "agent_tools_pkey"),
     ("agent_voices_junction", "voices_id", "agent_voices_junction_pkey"),
     ("agent_agents_junction", "agents_id", "agent_agents_junction_pkey"),

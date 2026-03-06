@@ -352,7 +352,12 @@ async def get_simulation_internal(
                 c, description_ids, get_redis_client(), cache
             )
             suggestions = await search_descriptions(
-                c, get_redis_client(), draft_id=effective_group_id, exclude_ids=description_ids, bypass_cache=bypass_cache, simulation=True,
+                c,
+                get_redis_client(),
+                draft_id=effective_group_id,
+                exclude_ids=description_ids,
+                bypass_cache=bypass_cache,
+                simulation=True,
             )
             return (selected, suggestions)
 
@@ -362,9 +367,14 @@ async def get_simulation_internal(
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags(
-                c, get_redis_client(), search=None, limit_count=50,
-                offset_count=0, exclude_ids=None,
-                bypass_cache=bypass_cache, simulation=True,
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=None,
+                bypass_cache=bypass_cache,
+                simulation=True,
             )
             flags_by_type = {f.type: f for f in all_flags}
             available = [
@@ -397,7 +407,9 @@ async def get_simulation_internal(
         from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 
         async with pool.acquire() as c:
-            selected = await get_scenarios(c, scenario_ids, get_redis_client(), bypass_cache)
+            selected = await get_scenarios(
+                c, scenario_ids, get_redis_client(), bypass_cache
+            )
             suggestions = await search_scenarios(
                 c,
                 get_redis_client(),
@@ -435,8 +447,12 @@ async def get_simulation_internal(
             )
             # Also fetch all flag types for cross-product (built after scenarios are known)
             all_flags = await search_flags(
-                c, get_redis_client(), search=None, limit_count=50,
-                offset_count=0, exclude_ids=None,
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=None,
                 bypass_cache=bypass_cache,
             )
             flags_by_type = {f.type: f for f in all_flags}
@@ -466,7 +482,10 @@ async def get_simulation_internal(
                 c, scenario_rubric_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_scenario_rubrics(
-                c, get_redis_client(), scenario_ids=effective_scenario_ids, bypass_cache=bypass_cache
+                c,
+                get_redis_client(),
+                scenario_ids=effective_scenario_ids,
+                bypass_cache=bypass_cache,
             )
             return (selected, suggestions)
 
@@ -476,7 +495,10 @@ async def get_simulation_internal(
                 c, scenario_time_limit_ids, get_redis_client(), bypass_cache
             )
             suggestions = await search_scenario_time_limits(
-                c, get_redis_client(), scenario_ids=effective_scenario_ids, bypass_cache=bypass_cache
+                c,
+                get_redis_client(),
+                scenario_ids=effective_scenario_ids,
+                bypass_cache=bypass_cache,
             )
             return (selected, suggestions)
 
@@ -512,12 +534,8 @@ async def get_simulation_internal(
     # Combine and dedupe
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
-    departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "id"
-    )
-    scenarios_combined = _dedupe_by_id(
-        scenarios_selected + scenarios_suggestions, "id"
-    )
+    departments = _dedupe_by_id(departments_selected + departments_suggestions, "id")
+    scenarios_combined = _dedupe_by_id(scenarios_selected + scenarios_suggestions, "id")
     # Build scenario flags: cross-product of all scenario IDs × flag types
     # (canonical pattern: explicit flag type list, same as SIMULATION_FLAG_TYPES_ORDERED)
     all_scenario_ids = [s.id for s in scenarios_combined if s.id]

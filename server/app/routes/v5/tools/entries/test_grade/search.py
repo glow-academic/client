@@ -1,77 +1,40 @@
-"""test_grade/search internal — reusable data-access layer."""
+"""Test grade search — filtered/paginated query against test_grade_mv."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchTestGradeEntriesSqlParams,
-    SearchTestGradeEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.test_grade.types import GetTestGradeResponse
 
-SQL_PATH = "app/sql/queries/entries/test_grade/search_test_grade_entries_complete.sql"
+MV_NAME = "test_grade_mv"
 
 
-async def search_test_grade_entries_internal(
+async def search_test_grades(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     invocation_id: UUID | None = None,
     run_id: UUID | None = None,
-    rubric_grade_agent_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search test_grade entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetTestGradeResponse]:
+    """Search test_grade entries from test_grade_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "test_grade"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/test_grade/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "invocation_id": str(invocation_id) if invocation_id else None,
-            "run_id": str(run_id) if run_id else None,
-            "rubric_grade_agent_id": str(rubric_grade_agent_id)
-            if rubric_grade_agent_id
-            else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT id, invocation_id, run_id, created_at, updated_at,
+               passed, score, time_taken, generated, mcp, active, call_id
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR invocation_id = $1)
+          AND ($2::uuid IS NULL OR run_id = $2)
+        ORDER BY created_at DESC
+        LIMIT $3 OFFSET $4
+        """,
+        invocation_id,
+        run_id,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchTestGradeEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        invocation_id=invocation_id,
-        run_id=run_id,
-        rubric_grade_agent_id=rubric_grade_agent_id,
-    )
-    result = cast(
-        SearchTestGradeEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [GetTestGradeResponse(**dict(r)) for r in rows]

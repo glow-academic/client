@@ -1,5 +1,6 @@
 """Audios entry types — handcrafted, co-located with handler."""
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -16,3 +17,14 @@ class GetAudioResponse(BaseModel):
     active: bool
     mcp: bool
     generated: bool
+
+
+class SearchAudioResponse(BaseModel):
+    audio_id: UUID
+    files_id: UUID
+    file_path: str
+    mime_type: str
+    size: int
+    length_seconds: int
+    voice_id: UUID | None
+    created_at: datetime

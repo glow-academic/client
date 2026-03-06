@@ -15,7 +15,11 @@ async def _setup(conn, profile_id):
     session = await create_session(conn, profile_id=profile_id)
     parent = await create_file(conn, session_id=session.id)
     upload = await create_upload(
-        conn, session_id=session.id, file_path="test/file.bin", mime_type="application/octet-stream", size=1024
+        conn,
+        session_id=session.id,
+        file_path="test/file.bin",
+        mime_type="application/octet-stream",
+        size=1024,
     )
     return session, parent, upload
 

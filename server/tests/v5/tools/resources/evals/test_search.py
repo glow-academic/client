@@ -1,6 +1,5 @@
 """Tests for search_evals."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.evals.create import create_eval
@@ -28,7 +27,9 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_evals(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
+    items = await search_evals(
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
+    )
 
     assert items == []
 
@@ -47,7 +48,10 @@ async def test_excludes_ids(conn, redis_client):
     b = await create_eval(conn, redis_client, name=f"exclude-b-{unique_tag()}")
 
     items = await search_evals(
-        conn, redis_client, search="exclude-", exclude_ids=[a.id],
+        conn,
+        redis_client,
+        search="exclude-",
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]

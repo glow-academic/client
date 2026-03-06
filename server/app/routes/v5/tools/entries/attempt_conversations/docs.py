@@ -9,12 +9,14 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_conversations.create import (
     create_attempt_conversations,
 )
-from app.routes.v5.tools.entries.attempt_conversations.get import get_attempt_conversations
+from app.routes.v5.tools.entries.attempt_conversations.get import (
+    get_attempt_conversations,
+)
 from app.routes.v5.tools.entries.attempt_conversations.refresh import (
     refresh_attempt_conversations,
 )
 from app.routes.v5.tools.entries.attempt_conversations.search import (
-    search_conversations_entries_internal,
+    search_attempt_conversations,
 )
 
 
@@ -49,7 +51,7 @@ async def get_attempt_conversations_docs(conn: asyncpg.Connection) -> DocsRespon
                 description="Batch retrieves conversations by IDs from attempt_conversations_mv.",
             ),
             get_operation_info(
-                search_conversations_entries_internal,
+                search_attempt_conversations,
                 description="Filtered paginated search against attempt_conversations_mv.",
             ),
         ],

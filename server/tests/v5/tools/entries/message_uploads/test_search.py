@@ -1,6 +1,5 @@
 """Tests for message_uploads search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.message_uploads.create import create_message_upload

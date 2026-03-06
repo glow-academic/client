@@ -172,19 +172,28 @@ async def export_dashboard(
         async def _get_simulations() -> list[Any]:
             async with pool.acquire() as c:
                 return await get_simulations(
-                    conn=c, ids=list(simulation_ids_set), redis=get_redis_client(), bypass_cache=True
+                    conn=c,
+                    ids=list(simulation_ids_set),
+                    redis=get_redis_client(),
+                    bypass_cache=True,
                 )
 
         async def _get_personas() -> list[Any]:
             async with pool.acquire() as c:
                 return await get_personas(
-                    conn=c, ids=list(persona_ids_set), redis=get_redis_client(), bypass_cache=True
+                    conn=c,
+                    ids=list(persona_ids_set),
+                    redis=get_redis_client(),
+                    bypass_cache=True,
                 )
 
         async def _get_scenarios() -> list[Any]:
             async with pool.acquire() as c:
                 return await get_scenarios(
-                    conn=c, ids=list(scenario_ids_set), redis=get_redis_client(), bypass_cache=True
+                    conn=c,
+                    ids=list(scenario_ids_set),
+                    redis=get_redis_client(),
+                    bypass_cache=True,
                 )
 
         async def _get_cohort_names() -> list[Any]:

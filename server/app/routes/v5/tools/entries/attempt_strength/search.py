@@ -5,7 +5,9 @@ from uuid import UUID
 import asyncpg  # type: ignore
 
 from app.infra.docs.resolve_mv_source import resolve_mv_source
-from app.routes.v5.tools.entries.attempt_strength.types import GetAttemptStrengthResponse
+from app.routes.v5.tools.entries.attempt_strength.types import (
+    GetAttemptStrengthResponse,
+)
 
 MV_NAME = "attempt_strength_mv"
 

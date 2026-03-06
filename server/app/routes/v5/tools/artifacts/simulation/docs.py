@@ -28,10 +28,25 @@ async def get_simulation_docs(conn: asyncpg.Connection) -> DocsResponse:
         ),
         tables=tables,
         operations=[
-            get_operation_info(create_simulation, description="Creates a new simulation artifact with optional resource links."),
-            get_operation_info(update_simulation, description="Updates an existing simulation's resource links."),
-            get_operation_info(get_simulations, description="Batch retrieves simulations by IDs with optional junction data."),
-            get_operation_info(search_simulations, description="Filtered paginated search returning matching simulation IDs."),
-            get_operation_info(delete_simulations, description="Deletes simulations by IDs. Supports soft delete (active=false) or hard delete (cascade)."),
+            get_operation_info(
+                create_simulation,
+                description="Creates a new simulation artifact with optional resource links.",
+            ),
+            get_operation_info(
+                update_simulation,
+                description="Updates an existing simulation's resource links.",
+            ),
+            get_operation_info(
+                get_simulations,
+                description="Batch retrieves simulations by IDs with optional junction data.",
+            ),
+            get_operation_info(
+                search_simulations,
+                description="Filtered paginated search returning matching simulation IDs.",
+            ),
+            get_operation_info(
+                delete_simulations,
+                description="Deletes simulations by IDs. Supports soft delete (active=false) or hard delete (cascade).",
+            ),
         ],
     )

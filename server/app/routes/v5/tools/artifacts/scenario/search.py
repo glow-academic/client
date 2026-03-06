@@ -57,18 +57,24 @@ async def search_scenarios(
     # Junction filters
     if department_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="scenario_departments_junction",
-            owner_col=OWNER_COL, resource_col="departments_id",
+            owner_col=OWNER_COL,
+            resource_col="departments_id",
             ids=department_ids,
         )
 
     # persona_ids are personas_resource IDs — direct junction lookup
     if persona_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="scenario_personas_junction",
-            owner_col=OWNER_COL, resource_col="personas_id",
+            owner_col=OWNER_COL,
+            resource_col="personas_id",
             ids=persona_ids,
         )
 

@@ -101,7 +101,9 @@ from app.routes.v5.tools.entries.attempt_replacement.get import (
 from app.routes.v5.tools.entries.attempt_strength.get import (
     get_attempt_strength_internal,
 )
-from app.routes.v5.tools.entries.attempt_responses.get import get_simulation_responses_internal
+from app.routes.v5.tools.entries.attempt_responses.get import (
+    get_simulation_responses_internal,
+)
 from app.routes.v5.tools.entries.uploads.get import get_upload_list_view_internal
 from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
@@ -405,7 +407,10 @@ async def get_attempt_internal(
                 # Fetch problem statements
                 if problem_statement_ids:
                     items = await get_problem_statements(
-                        c, problem_statement_ids, get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        problem_statement_ids,
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
                     for item in items:
                         if item.problem_statement_id:
@@ -442,7 +447,10 @@ async def get_attempt_internal(
                 # Fetch standard groups
                 if standard_group_ids:
                     items = await get_standard_groups(
-                        c, standard_group_ids, get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        standard_group_ids,
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
                     for item in items:
                         if item.standard_group_id:

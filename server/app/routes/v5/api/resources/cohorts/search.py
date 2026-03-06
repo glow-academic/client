@@ -10,7 +10,9 @@ from app.routes.v5.api.resources.cohorts.types import (
     SearchCohortsApiRequest,
     SearchCohortsApiResponse,
 )
-from app.routes.v5.tools.resources.cohorts.search import search_cohorts as search_cohorts_fn
+from app.routes.v5.tools.resources.cohorts.search import (
+    search_cohorts as search_cohorts_fn,
+)
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

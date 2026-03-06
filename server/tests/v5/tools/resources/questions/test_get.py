@@ -1,6 +1,5 @@
 """Tests for get_questions."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.questions.create import create_question

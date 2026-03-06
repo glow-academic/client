@@ -1,6 +1,5 @@
 """Tests for search_items."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.items.create import create_item
@@ -37,9 +36,7 @@ async def test_returns_empty_for_no_match(conn, redis_client):
 
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
-        await create_item(
-            conn, f"limit-test-item-{unique_tag()}", "desc", redis_client
-        )
+        await create_item(conn, f"limit-test-item-{unique_tag()}", "desc", redis_client)
 
     items = await search_items(
         conn, redis_client, search="limit-test-item-", limit_count=2
@@ -65,15 +62,14 @@ async def test_respects_offset(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    a = await create_item(
-        conn, f"exclude-a-item-{unique_tag()}", "desc", redis_client
-    )
-    b = await create_item(
-        conn, f"exclude-b-item-{unique_tag()}", "desc", redis_client
-    )
+    a = await create_item(conn, f"exclude-a-item-{unique_tag()}", "desc", redis_client)
+    b = await create_item(conn, f"exclude-b-item-{unique_tag()}", "desc", redis_client)
 
     items = await search_items(
-        conn, redis_client, search="exclude-", exclude_ids=[a.id],
+        conn,
+        redis_client,
+        search="exclude-",
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]
@@ -88,9 +84,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_cache_hit(conn, redis_client):
-    await create_item(
-        conn, f"cache-hit-item-{unique_tag()}", "desc", redis_client
-    )
+    await create_item(conn, f"cache-hit-item-{unique_tag()}", "desc", redis_client)
 
     items1 = await search_items(conn, redis_client, search="cache-hit-item-")
     items2 = await search_items(conn, redis_client, search="cache-hit-item-")
@@ -100,9 +94,7 @@ async def test_cache_hit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    await create_item(
-        conn, f"bypass-item-{unique_tag()}", "desc", redis_client
-    )
+    await create_item(conn, f"bypass-item-{unique_tag()}", "desc", redis_client)
 
     items = await search_items(
         conn, redis_client, search="bypass-item-", bypass_cache=True

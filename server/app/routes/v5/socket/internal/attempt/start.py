@@ -34,14 +34,10 @@ from app.routes.v5.tools.entries.attempt_home.create import create_attempt_home
 from app.routes.v5.tools.entries.attempt_practice.create import create_attempt_practice
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.home.get import get_home_entries_internal
-from app.routes.v5.tools.entries.home_chat.search import (
-    search_home_chat_entries_internal,
-)
+from app.routes.v5.tools.entries.home_chat.search import search_home_chats
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.practice.get import get_practice_entries_internal
-from app.routes.v5.tools.entries.practice_chat.search import (
-    search_practice_chat_entries_internal,
-)
+from app.routes.v5.tools.entries.practice_chat.search import search_practice_chats
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.resources.profile_personas.get import (
     get_profile_personas,
@@ -135,18 +131,18 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
 
                 # 4. Count chats from parent via search internal
                 if is_practice:
-                    chat_entries = await search_practice_chat_entries_internal(
+                    chat_entries = await search_practice_chats(
                         conn,
                         practice_id=payload.practice_id,
-                        limit_count=1000,
-                        bypass_cache=True,
+                        limit=1000,
+                        bypass_mv=True,
                     )
                 else:
-                    chat_entries = await search_home_chat_entries_internal(
+                    chat_entries = await search_home_chats(
                         conn,
                         home_id=payload.home_id,
-                        limit_count=1000,
-                        bypass_cache=True,
+                        limit=1000,
+                        bypass_mv=True,
                     )
                 num_chats = max(len(chat_entries), 1)
 

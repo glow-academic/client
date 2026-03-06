@@ -27,10 +27,25 @@ async def get_parameter_docs(conn: asyncpg.Connection) -> DocsResponse:
         ),
         tables=tables,
         operations=[
-            get_operation_info(create_parameter, description="Creates a new parameter artifact with optional resource links."),
-            get_operation_info(update_parameter, description="Updates an existing parameter's resource links."),
-            get_operation_info(get_parameters, description="Batch retrieves parameters by IDs with optional junction data."),
-            get_operation_info(search_parameters, description="Filtered paginated search returning matching parameter IDs."),
-            get_operation_info(delete_parameters, description="Deletes parameters by IDs. Supports soft delete (active=false) or hard delete (cascade)."),
+            get_operation_info(
+                create_parameter,
+                description="Creates a new parameter artifact with optional resource links.",
+            ),
+            get_operation_info(
+                update_parameter,
+                description="Updates an existing parameter's resource links.",
+            ),
+            get_operation_info(
+                get_parameters,
+                description="Batch retrieves parameters by IDs with optional junction data.",
+            ),
+            get_operation_info(
+                search_parameters,
+                description="Filtered paginated search returning matching parameter IDs.",
+            ),
+            get_operation_info(
+                delete_parameters,
+                description="Deletes parameters by IDs. Supports soft delete (active=false) or hard delete (cascade).",
+            ),
         ],
     )

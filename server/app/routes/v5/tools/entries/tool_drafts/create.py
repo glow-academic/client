@@ -41,11 +41,23 @@ async def create_tool_draft(
         raise ValueError("Failed to create tool_drafts entry")
 
     connections: list[tuple[str, str, list[UUID]]] = [
-        ("tool_drafts_arg_positions_connection", "arg_positions_id", arg_position_ids or []),
+        (
+            "tool_drafts_arg_positions_connection",
+            "arg_positions_id",
+            arg_position_ids or [],
+        ),
         ("tool_drafts_args_connection", "args_id", arg_ids or []),
-        ("tool_drafts_args_outputs_connection", "args_outputs_id", args_output_ids or []),
+        (
+            "tool_drafts_args_outputs_connection",
+            "args_outputs_id",
+            args_output_ids or [],
+        ),
         ("tool_drafts_departments_connection", "departments_id", department_ids or []),
-        ("tool_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "tool_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("tool_drafts_entries_connection", "entries_id", entry_ids or []),
         ("tool_drafts_flags_connection", "flags_id", flag_ids or []),
         ("tool_drafts_names_connection", "names_id", name_ids or []),

@@ -38,21 +38,29 @@ async def search_scenario_flags(
 
     # Search by name/description via joined flags_resource
     if search:
-        extra_conditions.append((
-            "EXISTS (SELECT 1 FROM flags_resource f "
-            "WHERE f.id = {alias}.flag_id AND f.active = true "
-            "AND (LOWER(f.name) LIKE '%' || LOWER(${idx}) || '%' "
-            "OR LOWER(COALESCE(f.description, '')) LIKE '%' || LOWER(${idx}) || '%'))",
-            search,
-        ))
+        extra_conditions.append(
+            (
+                "EXISTS (SELECT 1 FROM flags_resource f "
+                "WHERE f.id = {alias}.flag_id AND f.active = true "
+                "AND (LOWER(f.name) LIKE '%' || LOWER(${idx}) || '%' "
+                "OR LOWER(COALESCE(f.description, '')) LIKE '%' || LOWER(${idx}) || '%'))",
+                search,
+            )
+        )
 
     if scenario_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.scenario_id = ANY(${idx}::uuid[]))", scenario_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.scenario_id = ANY(${idx}::uuid[]))",
+                scenario_ids,
+            )
         )
     if flag_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.flag_id = ANY(${idx}::uuid[]))", flag_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.flag_id = ANY(${idx}::uuid[]))",
+                flag_ids,
+            )
         )
 
     tags = ["resources", "scenario_flags"]

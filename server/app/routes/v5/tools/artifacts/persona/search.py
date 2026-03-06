@@ -59,41 +59,56 @@ async def search_personas(
     # Junction filters
     if department_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="persona_departments_junction",
-            owner_col=OWNER_COL, resource_col="departments_id",
+            owner_col=OWNER_COL,
+            resource_col="departments_id",
             ids=department_ids,
         )
 
     if flag_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="persona_flags_junction",
-            owner_col=OWNER_COL, resource_col="flags_id",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
             ids=flag_ids,
         )
 
     if voice_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="persona_voices_junction",
-            owner_col=OWNER_COL, resource_col="voices_id",
+            owner_col=OWNER_COL,
+            resource_col="voices_id",
             ids=voice_ids,
         )
 
     if color_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="persona_colors_junction",
-            owner_col=OWNER_COL, resource_col="colors_id",
+            owner_col=OWNER_COL,
+            resource_col="colors_id",
             ids=color_ids,
         )
 
     if icon_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="persona_icons_junction",
-            owner_col=OWNER_COL, resource_col="icons_id",
+            owner_col=OWNER_COL,
+            resource_col="icons_id",
             ids=icon_ids,
         )
 

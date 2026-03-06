@@ -1,6 +1,5 @@
 """Tests for create_parameter — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.parameter.create import create_parameter
@@ -73,8 +72,12 @@ async def test_no_junctions_when_none_provided(conn, redis_client):
     items = await get_parameters(
         conn,
         [result.id],
-        names=True, descriptions=True, departments=True,
-        flags=True, fields=True, parameters=True,
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+        fields=True,
+        parameters=True,
     )
     p = items[0]
     assert p.name_ids == []

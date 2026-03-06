@@ -28,7 +28,11 @@ SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
     ("rubric_departments_junction", "departments_id", "rubric_departments_pkey"),
     ("rubric_points_junction", "points_id", "rubric_points_pkey"),
-    ("rubric_standard_groups_junction", "standard_groups_id", "rubric_standard_groups_pkey"),
+    (
+        "rubric_standard_groups_junction",
+        "standard_groups_id",
+        "rubric_standard_groups_pkey",
+    ),
     ("rubric_standards_junction", "standards_id", "rubric_standards_pkey"),
     ("rubric_rubrics_junction", "rubrics_id", "rubric_rubrics_junction_pkey"),
 ]

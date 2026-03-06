@@ -41,7 +41,9 @@ async def test_creates_second_row(conn, redis_client):
 
 async def test_sets_mcp_flag(conn, redis_client):
     arg = await create_arg(conn, "test-arg-mcp", "text", redis_client)
-    result = await create_args_output(conn, arg.id, "mcp-output", redis_client, mcp=True)
+    result = await create_args_output(
+        conn, arg.id, "mcp-output", redis_client, mcp=True
+    )
 
     assert result.mcp is True
     assert result.generated is True

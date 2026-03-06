@@ -1,6 +1,5 @@
 """Tests for delete_personas — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.persona.create import create_persona

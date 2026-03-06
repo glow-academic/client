@@ -39,9 +39,7 @@ async def search_simulation_positions(
 
     extra_conditions: list[tuple[str, object]] = []
     if simulation_ids:
-        extra_conditions.append(
-            ("{alias}.simulation_id = ANY(${idx})", simulation_ids)
-        )
+        extra_conditions.append(("{alias}.simulation_id = ANY(${idx})", simulation_ids))
 
     tags = ["resources", "simulation_positions"]
     key = cache_key(

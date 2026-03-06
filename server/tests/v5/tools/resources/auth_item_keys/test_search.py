@@ -1,6 +1,5 @@
 """Tests for search_auth_item_keys."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.auth_item_keys.create import create_auth_item_key
@@ -44,7 +43,9 @@ async def test_excludes_ids(conn, redis_client):
     b = await _create_auth_item_key(conn, redis_client)
 
     items = await search_auth_item_keys(
-        conn, redis_client, exclude_ids=[a.id],
+        conn,
+        redis_client,
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]

@@ -27,10 +27,24 @@ async def get_field_docs(conn: asyncpg.Connection) -> DocsResponse:
         ),
         tables=tables,
         operations=[
-            get_operation_info(create_field, description="Creates a new field artifact with optional resource links."),
-            get_operation_info(update_field, description="Updates an existing field's resource links."),
-            get_operation_info(get_fields, description="Batch retrieves fields by IDs with optional junction data."),
-            get_operation_info(search_fields, description="Filtered paginated search returning matching field IDs."),
-            get_operation_info(delete_fields, description="Deletes fields by IDs. Supports soft delete (active=false) or hard delete (cascade)."),
+            get_operation_info(
+                create_field,
+                description="Creates a new field artifact with optional resource links.",
+            ),
+            get_operation_info(
+                update_field, description="Updates an existing field's resource links."
+            ),
+            get_operation_info(
+                get_fields,
+                description="Batch retrieves fields by IDs with optional junction data.",
+            ),
+            get_operation_info(
+                search_fields,
+                description="Filtered paginated search returning matching field IDs.",
+            ),
+            get_operation_info(
+                delete_fields,
+                description="Deletes fields by IDs. Supports soft delete (active=false) or hard delete (cascade).",
+            ),
         ],
     )

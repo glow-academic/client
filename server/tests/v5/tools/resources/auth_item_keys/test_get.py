@@ -1,6 +1,5 @@
 """Tests for get_auth_item_keys."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.auth_item_keys.create import create_auth_item_key

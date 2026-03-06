@@ -45,7 +45,9 @@ async def get_options(
 
     try:
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-        items = await get_options_resource(conn, request.ids, get_redis_client(), bypass_cache)
+        items = await get_options_resource(
+            conn, request.ids, get_redis_client(), bypass_cache
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetOptionsApiResponse(
             items=[

@@ -1,6 +1,5 @@
 """Tests for auth_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.auth_drafts.create import create_auth_draft

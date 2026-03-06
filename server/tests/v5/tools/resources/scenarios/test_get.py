@@ -1,6 +1,5 @@
 """Tests for get_scenarios."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_scenario(conn, redis_client):
-    created = await create_scenario(conn, redis_client, name="test-scenario", description="desc")
+    created = await create_scenario(
+        conn, redis_client, name="test-scenario", description="desc"
+    )
 
     items = await get_scenarios(conn, [created.id], redis_client)
 

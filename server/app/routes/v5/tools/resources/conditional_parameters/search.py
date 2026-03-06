@@ -6,8 +6,12 @@ import asyncpg  # type: ignore
 from redis.asyncio import Redis
 
 from app.infra.search.search_resource import search_resource_ids
-from app.routes.v5.tools.resources.conditional_parameters.get import get_conditional_parameters
-from app.routes.v5.tools.resources.conditional_parameters.types import GetConditionalParameterResponse
+from app.routes.v5.tools.resources.conditional_parameters.get import (
+    get_conditional_parameters,
+)
+from app.routes.v5.tools.resources.conditional_parameters.types import (
+    GetConditionalParameterResponse,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached

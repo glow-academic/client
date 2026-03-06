@@ -1,6 +1,5 @@
 """Tests for search_qualities."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.qualities.create import create_quality
@@ -63,7 +62,9 @@ async def test_excludes_ids(conn, redis_client):
     b = await create_quality(conn, "high", redis_client)
 
     items = await search_qualities(
-        conn, redis_client, exclude_ids=[a.id],
+        conn,
+        redis_client,
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]
@@ -90,8 +91,6 @@ async def test_cache_hit(conn, redis_client):
 async def test_bypass_cache(conn, redis_client):
     await create_quality(conn, "low", redis_client)
 
-    items = await search_qualities(
-        conn, redis_client, search="low", bypass_cache=True
-    )
+    items = await search_qualities(conn, redis_client, search="low", bypass_cache=True)
 
     assert len(items) >= 1

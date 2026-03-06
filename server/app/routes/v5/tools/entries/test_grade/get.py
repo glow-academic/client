@@ -15,7 +15,5 @@ async def get_test_grades(
     """Fetch test grades by IDs."""
     if not ids:
         return []
-    rows = await conn.fetch(
-        f"SELECT * FROM {MV_NAME} WHERE id = ANY($1)", ids
-    )
+    rows = await conn.fetch(f"SELECT * FROM {MV_NAME} WHERE id = ANY($1)", ids)
     return [GetTestGradeResponse(**dict(r)) for r in rows]

@@ -91,7 +91,9 @@ async def resolve_system_context(
         get_models(conn, model_ids, redis, bypass_cache) if model_ids else _empty(),
         get_tools(conn, tool_ids, redis, bypass_cache) if tool_ids else _empty(),
         get_prompts(conn, prompt_ids, redis, bypass_cache) if prompt_ids else _empty(),
-        get_instructions(conn, instruction_ids, redis, bypass_cache) if instruction_ids else _empty(),
+        get_instructions(conn, instruction_ids, redis, bypass_cache)
+        if instruction_ids
+        else _empty(),
     )
 
     # Collect IDs for final level
@@ -101,9 +103,13 @@ async def resolve_system_context(
 
     # Step 4: parallel fetch providers + args + args_outputs
     providers, args_list, args_outputs_list = await asyncio.gather(
-        get_providers(conn, provider_ids, redis, bypass_cache) if provider_ids else _empty(),
+        get_providers(conn, provider_ids, redis, bypass_cache)
+        if provider_ids
+        else _empty(),
         get_args(conn, args_ids, redis, bypass_cache) if args_ids else _empty(),
-        get_args_outputs(conn, args_output_ids, redis, bypass_cache) if args_output_ids else _empty(),
+        get_args_outputs(conn, args_output_ids, redis, bypass_cache)
+        if args_output_ids
+        else _empty(),
     )
 
     return SystemContext(

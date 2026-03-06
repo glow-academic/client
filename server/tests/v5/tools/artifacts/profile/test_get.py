@@ -79,7 +79,12 @@ async def test_no_junctions_when_all_false(conn, redis_client):
 
     p = items[0]
     for field in [
-        "name_ids", "department_ids", "flag_ids", "email_ids",
-        "profile_ids", "request_limit_ids", "role_ids",
+        "name_ids",
+        "department_ids",
+        "flag_ids",
+        "email_ids",
+        "profile_ids",
+        "request_limit_ids",
+        "role_ids",
     ]:
         assert getattr(p, field) is None

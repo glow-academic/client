@@ -51,7 +51,9 @@ async def test_sets_mcp_flag(conn, redis_client):
     auth = await create_auth(conn, redis_client, name="test-auth-mcp")
     item = await create_item(conn, "item-mcp", "desc", redis_client)
     key = await create_key(conn, redis_client, name="test-key-mcp")
-    result = await create_auth_item_key(conn, auth.id, item.id, key.id, redis_client, mcp=True)
+    result = await create_auth_item_key(
+        conn, auth.id, item.id, key.id, redis_client, mcp=True
+    )
 
     assert result.mcp is True
     assert result.generated is True

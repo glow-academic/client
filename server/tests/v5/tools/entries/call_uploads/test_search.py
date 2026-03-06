@@ -1,6 +1,5 @@
 """Tests for call_uploads search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.call_uploads.create import create_call_upload

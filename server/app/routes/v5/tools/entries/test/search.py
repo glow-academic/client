@@ -1,81 +1,56 @@
-"""test/search internal — reusable data-access layer."""
+"""Test search — filtered/paginated query against test_mv."""
 
 from datetime import datetime
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.test.types import GetTestResponse
 from app.sql.types import (
     GetTestListViewSqlParams,
     GetTestListViewSqlRow,
     QGetTestListViewV4Option,
-    SearchTestEntriesSqlParams,
-    SearchTestEntriesSqlRow,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/entries/test/search_test_entries_complete.sql"
+MV_NAME = "test_mv"
 
 LIST_SQL_PATH = "app/sql/queries/views/test/list/get_test_list_view_complete.sql"
 
 
-async def search_test_entries_internal(
+async def search_tests(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     eval_id: UUID | None = None,
     profile_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search test entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetTestResponse]:
+    """Search test entries from test_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "test"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/test/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "eval_id": str(eval_id) if eval_id else None,
-            "profile_id": str(profile_id) if profile_id else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT test_id, eval_id, profile_id, department_ids,
+               test_name, test_description,
+               num_invocations, infinite_mode, archived, test_created_at
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR eval_id = $1)
+          AND ($2::uuid IS NULL OR profile_id = $2)
+        ORDER BY test_created_at DESC
+        LIMIT $3 OFFSET $4
+        """,
+        eval_id,
+        profile_id,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchTestEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        eval_id=eval_id,
-        profile_id=profile_id,
-    )
-    result = cast(
-        SearchTestEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [GetTestResponse(**dict(r)) for r in rows]
 
 
 async def get_test_list_internal(

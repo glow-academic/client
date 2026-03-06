@@ -4,11 +4,15 @@ import pytest
 
 from app.routes.v5.tools.entries.attempt.create import create_attempt
 from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
-from app.routes.v5.tools.entries.attempt_chat_bridge.create import create_attempt_chat_bridge
+from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
+    create_attempt_chat_bridge,
+)
 from app.routes.v5.tools.entries.attempt_grade.create import create_attempt_grade
 from app.routes.v5.tools.entries.attempt_message.create import create_attempt_message
 from app.routes.v5.tools.entries.attempt_strength.create import create_attempt_strength
-from app.routes.v5.tools.entries.attempt_strength.refresh import refresh_attempt_strength
+from app.routes.v5.tools.entries.attempt_strength.refresh import (
+    refresh_attempt_strength,
+)
 from app.routes.v5.tools.entries.attempt_strength.search import search_attempt_strengths
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.chat.create import create_chat
@@ -37,7 +41,10 @@ async def _setup(conn, profile_id):
         conn, call_id=call2.id, group_id=group.id, chat_id=chat.id
     )
     await create_attempt_chat_bridge(
-        conn, attempt_id=attempt.id, attempt_chat_id=attempt_chat.id, session_id=session.id
+        conn,
+        attempt_id=attempt.id,
+        attempt_chat_id=attempt_chat.id,
+        session_id=session.id,
     )
     msg = await create_message(conn, run_id=run.id, role="user")
     await create_attempt_message(
@@ -122,9 +129,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, msg, grade = await _setup(conn, profile_id)
 
-    items = await search_attempt_strengths(
-        conn, message_id=msg.id, bypass_mv=True
-    )
+    items = await search_attempt_strengths(conn, message_id=msg.id, bypass_mv=True)
 
     ids = [item.strength_id for item in items]
     assert result.id in ids

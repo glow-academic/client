@@ -1,6 +1,5 @@
 """Tests for search_auths — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.auth.create import create_auth
@@ -72,9 +71,15 @@ async def test_pagination(conn, redis_client):
         name = await create_name(conn, f"page-{tag}-{i:02d}", redis_client)
         a = await create_auth(conn, name_id=name.id)
         created.append(a.id)
-    page1 = await search_auths(conn, search=f"page-{tag}", limit_count=2, offset_count=0)
-    page2 = await search_auths(conn, search=f"page-{tag}", limit_count=2, offset_count=2)
-    page3 = await search_auths(conn, search=f"page-{tag}", limit_count=2, offset_count=4)
+    page1 = await search_auths(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=0
+    )
+    page2 = await search_auths(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=2
+    )
+    page3 = await search_auths(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=4
+    )
     assert len(page1) == 2
     assert len(page2) == 2
     assert len(page3) == 1

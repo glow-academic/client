@@ -27,7 +27,9 @@ async def test_visible_via_get(conn, redis_client):
         conn, "Visible Group", "VG", "visible desc", 60, 40, redis_client
     )
 
-    items = await get_standard_groups(conn, [result.id], redis_client, bypass_cache=True)
+    items = await get_standard_groups(
+        conn, [result.id], redis_client, bypass_cache=True
+    )
 
     assert len(items) == 1
     assert items[0].id == result.id

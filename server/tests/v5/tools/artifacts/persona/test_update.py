@@ -1,6 +1,5 @@
 """Tests for update_persona — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.persona.create import create_persona
@@ -31,7 +30,9 @@ async def _create_with_junctions(conn, redis_client):
     d1 = await create_department(conn, redis=redis_client)
     d2 = await create_department(conn, redis=redis_client)
 
-    result = await create_persona(conn, name_id=n.id, color_id=c.id, department_ids=[d1.id, d2.id])
+    result = await create_persona(
+        conn, name_id=n.id, color_id=c.id, department_ids=[d1.id, d2.id]
+    )
     return result.id, n.id, c.id, d1.id, d2.id
 
 
@@ -69,7 +70,9 @@ async def test_keeps_unchanged_single_junction(conn, redis_client):
 
 async def test_skips_junction_when_unset(conn, redis_client):
     pid, name_id, color_id, _, _ = await _create_with_junctions(conn, redis_client)
-    new_color = await create_color(conn, f"c-{_u()}", "desc", f"#{_u()[:6]}", redis_client)
+    new_color = await create_color(
+        conn, f"c-{_u()}", "desc", f"#{_u()[:6]}", redis_client
+    )
 
     await update_persona(conn, pid, color_id=new_color.id)
 

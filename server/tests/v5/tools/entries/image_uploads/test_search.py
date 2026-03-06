@@ -1,6 +1,5 @@
 """Tests for image_uploads search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.image_uploads.create import create_image_upload

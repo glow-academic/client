@@ -53,9 +53,12 @@ async def search_settings(
 
     if department_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="setting_departments_junction",
-            owner_col=OWNER_COL, resource_col="departments_id",
+            owner_col=OWNER_COL,
+            resource_col="departments_id",
             ids=department_ids,
         )
 

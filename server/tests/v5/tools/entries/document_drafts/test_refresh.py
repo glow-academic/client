@@ -20,11 +20,15 @@ async def test_new_draft_appears_in_mv_after_refresh(conn, profile_id):
     session, group = await _setup(conn, profile_id)
     result = await create_document_draft(conn, group_id=group.id, session_id=session.id)
 
-    row = await conn.fetchrow("SELECT id FROM document_drafts_mv WHERE id = $1", result.id)
+    row = await conn.fetchrow(
+        "SELECT id FROM document_drafts_mv WHERE id = $1", result.id
+    )
     assert row is None
 
     await refresh_document_drafts(conn)
 
-    row = await conn.fetchrow("SELECT id FROM document_drafts_mv WHERE id = $1", result.id)
+    row = await conn.fetchrow(
+        "SELECT id FROM document_drafts_mv WHERE id = $1", result.id
+    )
     assert row is not None
     assert row["id"] == result.id

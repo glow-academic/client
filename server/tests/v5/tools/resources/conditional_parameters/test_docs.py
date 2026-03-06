@@ -2,7 +2,9 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.conditional_parameters.docs import get_conditional_parameters_docs
+from app.routes.v5.tools.resources.conditional_parameters.docs import (
+    get_conditional_parameters_docs,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -27,9 +29,12 @@ async def test_includes_all_operations(conn):
     assert "get_conditional_parameters" in op_names
     assert "search_conditional_parameters" in op_names
 
+
 async def test_search_operation_has_params(conn):
     result = await get_conditional_parameters_docs(conn)
-    search_op = next(op for op in result.operations if op.name == "search_conditional_parameters")
+    search_op = next(
+        op for op in result.operations if op.name == "search_conditional_parameters"
+    )
     param_names = [p.name for p in search_op.params]
     assert "limit_count" in param_names
     assert "offset_count" in param_names

@@ -47,9 +47,13 @@ async def test_create_without_connections_returns_empty_list(conn, profile_id):
 async def test_create_with_connections(conn, profile_id):
     session = await _session(conn, profile_id)
     persona_id = await conn.fetchval("SELECT id FROM personas_resource LIMIT 1")
-    assert persona_id is not None, "Need at least one personas_resource row as seed data"
+    assert persona_id is not None, (
+        "Need at least one personas_resource row as seed data"
+    )
 
-    result = await create_personas(conn, session_id=session.id, persona_ids=[persona_id])
+    result = await create_personas(
+        conn, session_id=session.id, persona_ids=[persona_id]
+    )
 
     items = await get_personas(conn, [result.id])
 

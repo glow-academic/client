@@ -1,6 +1,5 @@
 """Tests for get_emulations."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.grants.create import create_grant

@@ -1,6 +1,5 @@
 """Tests for text_uploads search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.text_uploads.create import create_text_upload

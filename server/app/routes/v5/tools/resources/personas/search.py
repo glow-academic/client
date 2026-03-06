@@ -13,11 +13,14 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 
 JUNCTION_ARTIFACTS = [
-    "cohort_profile", "persona", "scenario",
+    "cohort_profile",
+    "persona",
+    "scenario",
 ]
 
 DRAFT_ARTIFACTS = [
-    "chat", "scenario",
+    "chat",
+    "scenario",
 ]
 
 
@@ -42,7 +45,9 @@ async def search_personas(
         return []
 
     artifact_filters = {
-        "cohort_profile": cohort_profile, "persona": persona, "scenario": scenario,
+        "cohort_profile": cohort_profile,
+        "persona": persona,
+        "scenario": scenario,
     }
 
     tags = ["resources", "personas"]
@@ -64,7 +69,8 @@ async def search_personas(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetPersonaResponse.model_validate(item) for item in cached.get("items", [])
+                GetPersonaResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     # Build extra conditions for persona-specific filters

@@ -1,6 +1,5 @@
 """Tests for search_modalities."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.modalities.create import create_modality
@@ -28,7 +27,9 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_modalities(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
+    items = await search_modalities(
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
+    )
 
     assert items == []
 
@@ -43,7 +44,9 @@ async def test_excludes_ids(conn, redis_client):
     a = await create_modality(conn, "text", redis_client, is_input=True)
 
     items = await search_modalities(
-        conn, redis_client, exclude_ids=[a.id],
+        conn,
+        redis_client,
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]
@@ -69,6 +72,8 @@ async def test_cache_hit(conn, redis_client):
 async def test_bypass_cache(conn, redis_client):
     await create_modality(conn, "text", redis_client)
 
-    items = await search_modalities(conn, redis_client, search="text", bypass_cache=True)
+    items = await search_modalities(
+        conn, redis_client, search="text", bypass_cache=True
+    )
 
     assert len(items) >= 1

@@ -30,7 +30,11 @@ SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
 
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
     ("persona_departments_junction", "departments_id", "persona_departments_pkey"),
-    ("persona_parameter_fields_junction", "parameter_fields_id", "persona_parameter_fields_junction_pkey"),
+    (
+        "persona_parameter_fields_junction",
+        "parameter_fields_id",
+        "persona_parameter_fields_junction_pkey",
+    ),
     ("persona_personas_junction", "personas_id", "persona_personas_junction_pkey"),
     ("persona_voices_junction", "voices_id", "persona_voices_junction_pkey"),
 ]

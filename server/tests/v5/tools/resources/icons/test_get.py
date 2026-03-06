@@ -1,6 +1,5 @@
 """Tests for get_icons."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.icons.create import create_icon

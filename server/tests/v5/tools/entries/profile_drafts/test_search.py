@@ -1,6 +1,5 @@
 """Tests for profile_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.profile_drafts.create import create_profile_draft

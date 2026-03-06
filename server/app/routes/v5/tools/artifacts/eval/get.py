@@ -11,13 +11,28 @@ TABLE = "eval_artifact"
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
     ("names", "eval_names_junction", "names_id", "name_ids"),
-    ("descriptions", "eval_descriptions_junction", "descriptions_id", "description_ids"),
+    (
+        "descriptions",
+        "eval_descriptions_junction",
+        "descriptions_id",
+        "description_ids",
+    ),
     ("departments", "eval_departments_junction", "departments_id", "department_ids"),
     ("flags", "eval_flags_junction", "flags_id", "flag_ids"),
     ("models", "eval_models_junction", "models_id", "model_ids"),
     ("model_flags", "eval_model_flags_junction", "model_flags_id", "model_flag_ids"),
-    ("model_positions", "eval_model_positions_junction", "model_positions_id", "model_position_ids"),
-    ("model_rubrics", "eval_model_rubrics_junction", "model_rubrics_id", "model_rubric_ids"),
+    (
+        "model_positions",
+        "eval_model_positions_junction",
+        "model_positions_id",
+        "model_position_ids",
+    ),
+    (
+        "model_rubrics",
+        "eval_model_rubrics_junction",
+        "model_rubrics_id",
+        "model_rubric_ids",
+    ),
     ("rubrics", "eval_rubrics_junction", "rubrics_id", "rubric_ids"),
     ("evals", "eval_evals_junction", "evals_id", "eval_ids"),
 ]
@@ -55,22 +70,33 @@ async def get_evals(
         "evals": evals,
     }
 
-    active = [(table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]]
+    active = [
+        (table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]
+    ]
 
-    columns = ["p.id", "p.created_at", "p.updated_at", "p.generated", "p.mcp", "p.active"]
+    columns = [
+        "p.id",
+        "p.created_at",
+        "p.updated_at",
+        "p.generated",
+        "p.mcp",
+        "p.active",
+    ]
     joins: list[str] = []
 
     for i, (table, col, field) in enumerate(active):
         alias = f"j{i}"
-        joins.append(f"LEFT JOIN {table} {alias} ON {alias}.eval_id = p.id AND {alias}.active = true")
+        joins.append(
+            f"LEFT JOIN {table} {alias} ON {alias}.eval_id = p.id AND {alias}.active = true"
+        )
         columns.append(
             f"ARRAY_AGG(DISTINCT {alias}.{col}) FILTER (WHERE {alias}.{col} IS NOT NULL) AS {field}"
         )
 
     query = f"""
-        SELECT {', '.join(columns)}
+        SELECT {", ".join(columns)}
         FROM {TABLE} p
-        {' '.join(joins)}
+        {" ".join(joins)}
         WHERE p.id = ANY($1)
         GROUP BY p.id, p.created_at, p.updated_at, p.generated, p.mcp, p.active
     """

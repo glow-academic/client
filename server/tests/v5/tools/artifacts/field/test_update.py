@@ -1,6 +1,5 @@
 """Tests for update_field — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.field.create import create_field

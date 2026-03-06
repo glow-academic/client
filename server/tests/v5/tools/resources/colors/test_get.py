@@ -1,6 +1,5 @@
 """Tests for get_colors."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.colors.create import create_color

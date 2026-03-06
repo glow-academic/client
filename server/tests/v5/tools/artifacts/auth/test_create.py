@@ -1,6 +1,5 @@
 """Tests for create_auth — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.auth.create import create_auth
@@ -52,9 +51,13 @@ async def test_links_single_select_junctions(conn, redis_client):
     desc = await create_description(conn, f"d-{_u()}", redis_client)
     slug = await create_slug(conn, f"s-{_u()}", redis_client)
 
-    result = await create_auth(conn, name_id=name.id, description_id=desc.id, slug_id=slug.id)
+    result = await create_auth(
+        conn, name_id=name.id, description_id=desc.id, slug_id=slug.id
+    )
 
-    items = await get_auths(conn, [result.id], names=True, descriptions=True, slugs=True)
+    items = await get_auths(
+        conn, [result.id], names=True, descriptions=True, slugs=True
+    )
     p = items[0]
     assert p.name_ids == [name.id]
     assert p.description_ids == [desc.id]
@@ -90,8 +93,14 @@ async def test_no_junctions_when_none_provided(conn, redis_client):
     items = await get_auths(
         conn,
         [result.id],
-        names=True, descriptions=True, departments=True,
-        flags=True, items=True, protocols=True, slugs=True, auths=True,
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+        items=True,
+        protocols=True,
+        slugs=True,
+        auths=True,
     )
     p = items[0]
     assert p.name_ids == []

@@ -190,13 +190,19 @@ async def export_leaderboard(
         async def fetch_simulations() -> list:
             async with pool.acquire() as c:
                 return await get_simulations(
-                    conn=c, ids=list(simulation_id_set), redis=get_redis_client(), bypass_cache=True
+                    conn=c,
+                    ids=list(simulation_id_set),
+                    redis=get_redis_client(),
+                    bypass_cache=True,
                 )
 
         async def fetch_scenarios() -> list:
             async with pool.acquire() as c:
                 return await get_scenarios(
-                    conn=c, ids=list(scenario_id_set), redis=get_redis_client(), bypass_cache=True
+                    conn=c,
+                    ids=list(scenario_id_set),
+                    redis=get_redis_client(),
+                    bypass_cache=True,
                 )
 
         profiles, simulations, scenarios = await asyncio.gather(

@@ -1,6 +1,5 @@
 """Tests for create_rubric — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.rubric.create import create_rubric
@@ -62,10 +61,16 @@ async def test_links_flags_with_value(conn, redis_client):
 async def test_no_junctions_when_none_provided(conn, redis_client):
     result = await create_rubric(conn)
     items = await get_rubrics(
-        conn, [result.id],
-        names=True, descriptions=True, departments=True,
-        flags=True, points=True, standard_groups=True,
-        standards=True, rubrics=True,
+        conn,
+        [result.id],
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+        points=True,
+        standard_groups=True,
+        standards=True,
+        rubrics=True,
     )
     p = items[0]
     assert p.name_ids == []

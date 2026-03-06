@@ -1,6 +1,5 @@
 """Tests for search_tools — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.tool.create import create_tool
@@ -73,9 +72,15 @@ async def test_pagination(conn, redis_client):
         name = await create_name(conn, f"page-{tag}-{i:02d}", redis_client)
         t = await create_tool(conn, name_id=name.id)
         created.append(t.id)
-    page1 = await search_tools(conn, search=f"page-{tag}", limit_count=2, offset_count=0)
-    page2 = await search_tools(conn, search=f"page-{tag}", limit_count=2, offset_count=2)
-    page3 = await search_tools(conn, search=f"page-{tag}", limit_count=2, offset_count=4)
+    page1 = await search_tools(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=0
+    )
+    page2 = await search_tools(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=2
+    )
+    page3 = await search_tools(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=4
+    )
     assert len(page1) == 2
     assert len(page2) == 2
     assert len(page3) == 1

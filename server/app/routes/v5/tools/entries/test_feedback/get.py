@@ -16,7 +16,5 @@ async def get_test_feedbacks(
 ) -> list[GetTestFeedbackResponse]:
     if not ids:
         return []
-    rows = await conn.fetch(
-        f"SELECT * FROM {MV_NAME} WHERE feedback_id = ANY($1)", ids
-    )
+    rows = await conn.fetch(f"SELECT * FROM {MV_NAME} WHERE feedback_id = ANY($1)", ids)
     return [GetTestFeedbackResponse(**dict(r)) for r in rows]

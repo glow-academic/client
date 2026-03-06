@@ -6,7 +6,9 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_redis_client
-from app.routes.v5.tools.resources.scenario_flags.search import search_scenario_flags as search_scenario_flags_fn
+from app.routes.v5.tools.resources.scenario_flags.search import (
+    search_scenario_flags as search_scenario_flags_fn,
+)
 from app.sql.types import (
     SearchScenarioFlagsApiRequest,
     SearchScenarioFlagsApiResponse,

@@ -29,7 +29,11 @@ MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
     ("document_departments_junction", "departments_id", "document_departments_pkey"),
     ("document_files_junction", "files_id", "document_files_junction_pkey"),
     ("document_images_junction", "images_id", "document_images_junction_pkey"),
-    ("document_parameter_fields_junction", "parameter_fields_id", "document_parameter_fields_junction_pkey"),
+    (
+        "document_parameter_fields_junction",
+        "parameter_fields_id",
+        "document_parameter_fields_junction_pkey",
+    ),
     ("document_texts_junction", "texts_id", "document_texts_junction_pkey"),
     ("document_documents_junction", "documents_id", "document_documents_junction_pkey"),
 ]

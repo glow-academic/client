@@ -1,6 +1,5 @@
 """Tests for get_texts."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.texts.create import create_text

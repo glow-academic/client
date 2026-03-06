@@ -31,7 +31,9 @@ async def test_respects_offset(conn, redis_client):
         await create_threshold(conn, 200 + i, redis_client)
 
     all_items = await search_thresholds(conn, redis_client, limit_count=100)
-    offset_items = await search_thresholds(conn, redis_client, limit_count=100, offset_count=1)
+    offset_items = await search_thresholds(
+        conn, redis_client, limit_count=100, offset_count=1
+    )
 
     assert len(offset_items) == len(all_items) - 1
 
@@ -41,7 +43,9 @@ async def test_excludes_ids(conn, redis_client):
     b = await create_threshold(conn, 302, redis_client)
 
     items = await search_thresholds(
-        conn, redis_client, exclude_ids=[a.id],
+        conn,
+        redis_client,
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]

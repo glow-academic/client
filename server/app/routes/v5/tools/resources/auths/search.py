@@ -37,7 +37,8 @@ async def search_auths(
         return []
 
     artifact_filters = {
-        "auth": auth, "setting": setting,
+        "auth": auth,
+        "setting": setting,
     }
 
     tags = ["resources", "auths"]
@@ -66,7 +67,10 @@ async def search_auths(
     extra_conditions: list[tuple[str, object]] = []
     if department_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.department_ids && ${idx}::uuid[])", department_ids),
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.department_ids && ${idx}::uuid[])",
+                department_ids,
+            ),
         )
 
     ids = await search_resource_ids(

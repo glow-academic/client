@@ -2,7 +2,9 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.attempt_highlight.docs import get_attempt_highlight_docs
+from app.routes.v5.tools.entries.attempt_highlight.docs import (
+    get_attempt_highlight_docs,
+)
 
 pytestmark = pytest.mark.asyncio
 

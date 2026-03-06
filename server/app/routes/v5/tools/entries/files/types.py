@@ -1,5 +1,6 @@
 """Files entry types — handcrafted, co-located with handler."""
 
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -15,3 +16,12 @@ class GetFileResponse(BaseModel):
     active: bool
     mcp: bool
     generated: bool
+
+
+class SearchFileResponse(BaseModel):
+    file_id: UUID
+    files_id: UUID
+    file_path: str
+    mime_type: str
+    size: int
+    created_at: datetime

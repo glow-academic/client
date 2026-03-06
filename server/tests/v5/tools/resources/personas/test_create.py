@@ -9,7 +9,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_creates_new_persona(conn, redis_client):
-    result = await create_persona(conn, redis_client, name="test-persona", description="desc")
+    result = await create_persona(
+        conn, redis_client, name="test-persona", description="desc"
+    )
 
     assert result.name == "test-persona"
     assert result.description == "desc"

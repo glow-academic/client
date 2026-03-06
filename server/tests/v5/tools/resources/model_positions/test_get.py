@@ -1,6 +1,5 @@
 """Tests for get_model_positions."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.model_positions.get import get_model_positions
@@ -12,7 +11,9 @@ pytestmark = pytest.mark.asyncio
 
 async def test_gets_created_model_position(conn, redis_client):
     model = await create_model(conn, "test-model", redis=redis_client)
-    from app.routes.v5.tools.resources.model_positions.create import create_model_position
+    from app.routes.v5.tools.resources.model_positions.create import (
+        create_model_position,
+    )
 
     item = await create_model_position(conn, model.id, 1, redis_client)
 
@@ -39,7 +40,9 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 async def test_cache_hit_skips_db(conn, redis_client):
     model = await create_model(conn, "test-model-cache", redis=redis_client)
-    from app.routes.v5.tools.resources.model_positions.create import create_model_position
+    from app.routes.v5.tools.resources.model_positions.create import (
+        create_model_position,
+    )
 
     item = await create_model_position(conn, model.id, 2, redis_client)
 
@@ -55,7 +58,9 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     model = await create_model(conn, "test-model-bypass", redis=redis_client)
-    from app.routes.v5.tools.resources.model_positions.create import create_model_position
+    from app.routes.v5.tools.resources.model_positions.create import (
+        create_model_position,
+    )
 
     item = await create_model_position(conn, model.id, 3, redis_client)
 

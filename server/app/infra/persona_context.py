@@ -118,9 +118,7 @@ async def resolve_persona_context(
         if persona_id
         else _empty()
     )
-    draft_task = (
-        get_persona_drafts(conn, [draft_id]) if draft_id else _empty()
-    )
+    draft_task = get_persona_drafts(conn, [draft_id]) if draft_id else _empty()
 
     artifacts, drafts = await asyncio.gather(artifact_task, draft_task)
 
@@ -164,57 +162,100 @@ async def resolve_persona_context(
         # Names
         get_names(conn, merged.name_ids, redis, bypass_cache),
         search_names(
-            conn, redis, draft_id=group_id,
-            exclude_ids=merged.name_ids, bypass_cache=bypass_cache, persona=True,
+            conn,
+            redis,
+            draft_id=group_id,
+            exclude_ids=merged.name_ids,
+            bypass_cache=bypass_cache,
+            persona=True,
         ),
         # Descriptions
         get_descriptions(conn, merged.description_ids, redis, bypass_cache),
         search_descriptions(
-            conn, redis, search=descriptions_search, draft_id=group_id,
-            suggest_source="all", exclude_ids=merged.description_ids,
-            bypass_cache=bypass_cache, persona=True,
+            conn,
+            redis,
+            search=descriptions_search,
+            draft_id=group_id,
+            suggest_source="all",
+            exclude_ids=merged.description_ids,
+            bypass_cache=bypass_cache,
+            persona=True,
         ),
         # Colors
         get_colors(conn, merged.color_ids, redis, bypass_cache),
         search_colors(
-            conn, redis, search=color_search, limit_count=20, offset_count=0,
+            conn,
+            redis,
+            search=color_search,
+            limit_count=20,
+            offset_count=0,
             draft_id=group_id,
             suggest_source="selected" if color_show_selected else "all",
-            exclude_ids=merged.color_ids, bypass_cache=bypass_cache, persona=True,
+            exclude_ids=merged.color_ids,
+            bypass_cache=bypass_cache,
+            persona=True,
         ),
         # Icons
         get_icons(conn, merged.icon_ids, redis, bypass_cache),
         search_icons(
-            conn, redis, search=icon_search, limit_count=20, offset_count=0,
+            conn,
+            redis,
+            search=icon_search,
+            limit_count=20,
+            offset_count=0,
             draft_id=group_id,
             suggest_source="selected" if icon_show_selected else "all",
-            exclude_ids=merged.icon_ids, bypass_cache=bypass_cache, persona=True,
+            exclude_ids=merged.icon_ids,
+            bypass_cache=bypass_cache,
+            persona=True,
         ),
         # Instructions
         get_instructions(conn, merged.instruction_ids, redis, bypass_cache),
         search_instructions(
-            conn, redis, search=instructions_search, limit_count=20, offset_count=0,
-            draft_id=group_id, suggest_source="all",
-            exclude_ids=merged.instruction_ids, bypass_cache=bypass_cache, persona=True,
+            conn,
+            redis,
+            search=instructions_search,
+            limit_count=20,
+            offset_count=0,
+            draft_id=group_id,
+            suggest_source="all",
+            exclude_ids=merged.instruction_ids,
+            bypass_cache=bypass_cache,
+            persona=True,
         ),
         # Flags
         get_flags(conn, merged.flag_ids, redis, bypass_cache),
         search_flags(
-            conn, redis, search=None, limit_count=50, offset_count=0,
-            exclude_ids=merged.flag_ids, bypass_cache=bypass_cache, persona=True,
+            conn,
+            redis,
+            search=None,
+            limit_count=50,
+            offset_count=0,
+            exclude_ids=merged.flag_ids,
+            bypass_cache=bypass_cache,
+            persona=True,
         ),
         # Departments
         get_departments(conn, merged.department_ids, redis, bypass_cache),
         search_departments(
-            conn, redis, search=None, limit_count=20, offset_count=0,
-            department_ids=user_dept_ids, suggest_source="all",
-            exclude_ids=merged.department_ids, bypass_cache=bypass_cache,
+            conn,
+            redis,
+            search=None,
+            limit_count=20,
+            offset_count=0,
+            department_ids=user_dept_ids,
+            suggest_source="all",
+            exclude_ids=merged.department_ids,
+            bypass_cache=bypass_cache,
         ),
         # Parameter fields
         get_parameter_fields(conn, merged.parameter_field_ids, redis, bypass_cache),
         (
             search_parameter_fields(
-                conn, redis, parameter_ids=param_ids, bypass_cache=bypass_cache,
+                conn,
+                redis,
+                parameter_ids=param_ids,
+                bypass_cache=bypass_cache,
             )
             if param_ids
             else _empty()
@@ -222,30 +263,56 @@ async def resolve_persona_context(
         # Examples
         get_examples(conn, merged.example_ids, redis, bypass_cache),
         search_examples(
-            conn, redis, search=None, limit_count=20, offset_count=0,
-            persona_id=persona_id, department_ids=user_dept_ids,
-            draft_id=group_id, suggest_source="all",
-            exclude_ids=merged.example_ids, bypass_cache=bypass_cache, persona=True,
+            conn,
+            redis,
+            search=None,
+            limit_count=20,
+            offset_count=0,
+            persona_id=persona_id,
+            department_ids=user_dept_ids,
+            draft_id=group_id,
+            suggest_source="all",
+            exclude_ids=merged.example_ids,
+            bypass_cache=bypass_cache,
+            persona=True,
         ),
         # Voices
         get_voices(conn, merged.voice_ids, redis, bypass_cache),
         search_voices(
-            conn, redis, search=None, limit_count=20, offset_count=0,
-            exclude_ids=merged.voice_ids, bypass_cache=bypass_cache,
+            conn,
+            redis,
+            search=None,
+            limit_count=20,
+            offset_count=0,
+            exclude_ids=merged.voice_ids,
+            bypass_cache=bypass_cache,
         ),
         # Parameters (from URL, not saved state)
         get_parameters(conn, param_ids, redis, bypass_cache) if param_ids else _empty(),
         search_parameters(
-            conn, redis, search=None, limit_count=20, offset_count=0,
-            persona_parameter=True, document_parameter=None,
-            scenario_parameter=None, video_parameter=None,
-            suggest_source="all", exclude_ids=param_ids,
-            bypass_cache=bypass_cache, persona=False,
+            conn,
+            redis,
+            search=None,
+            limit_count=20,
+            offset_count=0,
+            persona_parameter=True,
+            document_parameter=None,
+            scenario_parameter=None,
+            video_parameter=None,
+            suggest_source="all",
+            exclude_ids=param_ids,
+            bypass_cache=bypass_cache,
+            persona=False,
         ),
         # Fields catalog
         search_fields(
-            conn, redis, search=None, limit_count=200, offset_count=0,
-            department_ids=user_dept_ids, bypass_cache=bypass_cache,
+            conn,
+            redis,
+            search=None,
+            limit_count=200,
+            offset_count=0,
+            department_ids=user_dept_ids,
+            bypass_cache=bypass_cache,
         ),
         # Scenario count: any active scenarios using this persona?
         (
@@ -271,17 +338,40 @@ async def resolve_persona_context(
         group_id=group_id,
         draft_version=draft_version,
         resources={
-            "names": ResourcePair(selected=names_selected, suggestions=names_suggestions),
-            "descriptions": ResourcePair(selected=descriptions_selected, suggestions=descriptions_suggestions),
-            "colors": ResourcePair(selected=colors_selected, suggestions=colors_suggestions),
-            "icons": ResourcePair(selected=icons_selected, suggestions=icons_suggestions),
-            "instructions": ResourcePair(selected=instructions_selected, suggestions=instructions_suggestions),
-            "flags": ResourcePair(selected=flags_selected, suggestions=flags_suggestions_filtered),
-            "departments": ResourcePair(selected=departments_selected, suggestions=departments_suggestions),
-            "parameter_fields": ResourcePair(selected=parameter_fields_selected, suggestions=parameter_fields_suggestions),
-            "examples": ResourcePair(selected=examples_selected, suggestions=examples_suggestions),
-            "voices": ResourcePair(selected=voices_selected, suggestions=voices_suggestions),
-            "parameters": ResourcePair(selected=parameters_selected, suggestions=parameters_suggestions),
+            "names": ResourcePair(
+                selected=names_selected, suggestions=names_suggestions
+            ),
+            "descriptions": ResourcePair(
+                selected=descriptions_selected, suggestions=descriptions_suggestions
+            ),
+            "colors": ResourcePair(
+                selected=colors_selected, suggestions=colors_suggestions
+            ),
+            "icons": ResourcePair(
+                selected=icons_selected, suggestions=icons_suggestions
+            ),
+            "instructions": ResourcePair(
+                selected=instructions_selected, suggestions=instructions_suggestions
+            ),
+            "flags": ResourcePair(
+                selected=flags_selected, suggestions=flags_suggestions_filtered
+            ),
+            "departments": ResourcePair(
+                selected=departments_selected, suggestions=departments_suggestions
+            ),
+            "parameter_fields": ResourcePair(
+                selected=parameter_fields_selected,
+                suggestions=parameter_fields_suggestions,
+            ),
+            "examples": ResourcePair(
+                selected=examples_selected, suggestions=examples_suggestions
+            ),
+            "voices": ResourcePair(
+                selected=voices_selected, suggestions=voices_suggestions
+            ),
+            "parameters": ResourcePair(
+                selected=parameters_selected, suggestions=parameters_suggestions
+            ),
             "fields": ResourcePair(selected=[], suggestions=fields_catalog),
         },
         entries={

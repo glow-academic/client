@@ -31,7 +31,9 @@ async def get_items(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_items_resource(conn, request.ids, get_redis_client(), bypass_cache)
+        items = await get_items_resource(
+            conn, request.ids, get_redis_client(), bypass_cache
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetItemsApiResponse(items=items)
     except HTTPException:

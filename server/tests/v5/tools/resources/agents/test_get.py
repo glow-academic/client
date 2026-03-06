@@ -1,6 +1,5 @@
 """Tests for get_agents."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.agents.create import create_agent

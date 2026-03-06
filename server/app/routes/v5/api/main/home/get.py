@@ -772,7 +772,10 @@ async def get_home_internal(
             return []
         async with pool.acquire() as c:
             return await get_standard_groups(
-                c, standard_group_ids_list, get_redis_client(), bypass_cache=bypass_cache
+                c,
+                standard_group_ids_list,
+                get_redis_client(),
+                bypass_cache=bypass_cache,
             )
 
     async def fetch_standards() -> list:

@@ -19,7 +19,11 @@ async def _setup(conn, profile_id):
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     parent = await create_message(conn, run_id=run.id, role="user")
     upload = await create_upload(
-        conn, session_id=session.id, file_path="test/file.bin", mime_type="application/octet-stream", size=1024
+        conn,
+        session_id=session.id,
+        file_path="test/file.bin",
+        mime_type="application/octet-stream",
+        size=1024,
     )
     return session, parent, upload
 
@@ -30,11 +34,15 @@ async def test_new_upload_appears_in_mv_after_refresh(conn, profile_id):
         conn, message_id=parent.id, upload_id=upload.id, session_id=session.id
     )
 
-    row = await conn.fetchrow("SELECT id FROM message_uploads_mv WHERE id = $1", result.id)
+    row = await conn.fetchrow(
+        "SELECT id FROM message_uploads_mv WHERE id = $1", result.id
+    )
     assert row is None
 
     await refresh_message_uploads(conn)
 
-    row = await conn.fetchrow("SELECT id FROM message_uploads_mv WHERE id = $1", result.id)
+    row = await conn.fetchrow(
+        "SELECT id FROM message_uploads_mv WHERE id = $1", result.id
+    )
     assert row is not None
     assert row["id"] == result.id

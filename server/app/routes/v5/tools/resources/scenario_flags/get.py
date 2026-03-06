@@ -22,13 +22,16 @@ async def get_scenario_flags(
         return []
 
     tags = ["resources", "scenario_flags"]
-    key = cache_key("/api/v5/resources/scenario_flags/get", {"ids": [str(id) for id in ids]})
+    key = cache_key(
+        "/api/v5/resources/scenario_flags/get", {"ids": [str(id) for id in ids]}
+    )
 
     if not bypass_cache:
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetScenarioFlagResponse.model_validate(item) for item in cached.get("items", [])
+                GetScenarioFlagResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

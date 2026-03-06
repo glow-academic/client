@@ -1,6 +1,5 @@
 """Tests for delete_agents — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.agent.create import create_agent

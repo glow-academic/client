@@ -1,6 +1,5 @@
 """Tests for get_arg_positions."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.arg_positions.get import get_arg_positions

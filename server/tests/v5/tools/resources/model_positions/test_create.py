@@ -23,7 +23,9 @@ async def test_visible_via_get(conn, redis_client):
     model = await create_model(conn, "test-model-visible", redis=redis_client)
     result = await create_model_position(conn, model.id, 5, redis_client)
 
-    items = await get_model_positions(conn, [result.id], redis_client, bypass_cache=True)
+    items = await get_model_positions(
+        conn, [result.id], redis_client, bypass_cache=True
+    )
 
     assert len(items) == 1
     assert items[0].id == result.id

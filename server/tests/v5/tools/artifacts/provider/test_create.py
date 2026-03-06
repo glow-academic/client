@@ -1,6 +1,5 @@
 """Tests for create_provider — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.provider.create import create_provider
@@ -65,7 +64,9 @@ async def test_links_multi_select_junctions(conn, redis_client):
     ep = await create_endpoint(conn, f"https://ep-{_u()}.example.com", redis_client)
 
     result = await create_provider(
-        conn, department_ids=[d1.id, d2.id], endpoint_ids=[ep.id],
+        conn,
+        department_ids=[d1.id, d2.id],
+        endpoint_ids=[ep.id],
     )
 
     items = await get_providers(conn, [result.id], departments=True, endpoints=True)
@@ -88,9 +89,16 @@ async def test_no_junctions_when_none_provided(conn, redis_client):
     result = await create_provider(conn)
 
     items = await get_providers(
-        conn, [result.id],
-        names=True, descriptions=True, departments=True,
-        flags=True, endpoints=True, keys=True, values=True, providers=True,
+        conn,
+        [result.id],
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+        endpoints=True,
+        keys=True,
+        values=True,
+        providers=True,
     )
     p = items[0]
     assert p.name_ids == []

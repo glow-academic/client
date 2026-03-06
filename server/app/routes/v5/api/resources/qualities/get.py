@@ -6,7 +6,9 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_redis_client
-from app.routes.v5.tools.resources.qualities.get import get_qualities as get_qualities_resource
+from app.routes.v5.tools.resources.qualities.get import (
+    get_qualities as get_qualities_resource,
+)
 from app.sql.types import (
     GetQualitiesApiRequest,
     GetQualitiesApiResponse,
@@ -31,7 +33,9 @@ async def get_qualities(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_qualities_resource(conn, request.ids, get_redis_client(), bypass_cache)
+        items = await get_qualities_resource(
+            conn, request.ids, get_redis_client(), bypass_cache
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetQualitiesApiResponse(items=items)
     except HTTPException:

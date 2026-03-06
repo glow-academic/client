@@ -61,7 +61,9 @@ async def get_scenarios(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        items = await get_scenarios_resource(conn, request.ids, get_redis_client(), bypass_cache)
+        items = await get_scenarios_resource(
+            conn, request.ids, get_redis_client(), bypass_cache
+        )
 
         # Create response
         response_data = GetScenariosApiResponse(items=items)

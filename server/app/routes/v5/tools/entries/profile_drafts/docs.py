@@ -16,11 +16,15 @@ async def get_profile_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     """Get full documentation for the profile_drafts entry."""
     mv_info = await get_mv_info(conn, "profile_drafts_mv")
     entry_table = await get_table_info(conn, "profile_drafts_entry")
-    departments_connection = await get_table_info(conn, "profile_drafts_departments_connection")
+    departments_connection = await get_table_info(
+        conn, "profile_drafts_departments_connection"
+    )
     emails_connection = await get_table_info(conn, "profile_drafts_emails_connection")
     flags_connection = await get_table_info(conn, "profile_drafts_flags_connection")
     names_connection = await get_table_info(conn, "profile_drafts_names_connection")
-    request_limits_connection = await get_table_info(conn, "profile_drafts_request_limits_connection")
+    request_limits_connection = await get_table_info(
+        conn, "profile_drafts_request_limits_connection"
+    )
     roles_connection = await get_table_info(conn, "profile_drafts_roles_connection")
 
     tables = [

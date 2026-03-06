@@ -32,7 +32,9 @@ class FakeDebugInfo:
 
 
 def _patch(target, return_value):
-    return patch(f"{MODULE}.{target}", new_callable=AsyncMock, return_value=return_value)
+    return patch(
+        f"{MODULE}.{target}", new_callable=AsyncMock, return_value=return_value
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -101,7 +103,10 @@ class TestResolveRunsContextCallArgs:
             _patch("search_debug_info", []) as mock_debug,
         ):
             await resolve_runs_context(
-                None, profile_id=profile_id, date_from=date_from, date_to=date_to,
+                None,
+                profile_id=profile_id,
+                date_from=date_from,
+                date_to=date_to,
             )
 
         # Both fetchers receive the same date range

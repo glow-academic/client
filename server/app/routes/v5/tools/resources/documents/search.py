@@ -68,7 +68,8 @@ async def search_documents(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetDocumentResponse.model_validate(item) for item in cached.get("items", [])
+                GetDocumentResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     # Build extra conditions for document-specific filters
@@ -78,7 +79,10 @@ async def search_documents(
     # Department access: user can see if document has matching department OR has no departments
     if department_ids:
         extra_conditions.append(
-            ("({alias}.department_ids && ${idx} OR COALESCE(array_length({alias}.department_ids, 1), 0) = 0)", department_ids),
+            (
+                "({alias}.department_ids && ${idx} OR COALESCE(array_length({alias}.department_ids, 1), 0) = 0)",
+                department_ids,
+            ),
         )
     if upload_ids:
         extra_conditions.append(

@@ -19,7 +19,8 @@ JUNCTION_ARTIFACTS = [
 ]
 
 DRAFT_ARTIFACTS = [
-    "chat", "document",
+    "chat",
+    "document",
 ]
 
 
@@ -80,7 +81,8 @@ async def search_parameters(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetParameterResponse.model_validate(item) for item in cached.get("items", [])
+                GetParameterResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     # Build extra conditions for parameter-specific filters

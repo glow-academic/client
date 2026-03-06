@@ -1,6 +1,5 @@
 """Tests for get_artifacts."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.artifacts.create import create_artifact

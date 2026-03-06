@@ -37,9 +37,17 @@ async def create_field_draft(
         raise ValueError("Failed to create field_drafts entry")
 
     connections: list[tuple[str, str, list[UUID]]] = [
-        ("field_drafts_conditional_parameters_connection", "conditional_parameters_id", conditional_parameter_ids or []),
+        (
+            "field_drafts_conditional_parameters_connection",
+            "conditional_parameters_id",
+            conditional_parameter_ids or [],
+        ),
         ("field_drafts_departments_connection", "departments_id", department_ids or []),
-        ("field_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "field_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("field_drafts_flags_connection", "flags_id", flag_ids or []),
         ("field_drafts_names_connection", "names_id", name_ids or []),
         ("field_drafts_profiles_connection", "profiles_id", profile_ids or []),

@@ -1,6 +1,5 @@
 """Tests for delete_parameters — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.parameter.create import create_parameter

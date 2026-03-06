@@ -22,13 +22,21 @@ OWNER_COL = "parameter_id"
 # (junction_table, resource_column, pk_constraint)
 SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
     ("parameter_names_junction", "names_id", "parameter_names_pkey"),
-    ("parameter_descriptions_junction", "descriptions_id", "parameter_descriptions_pkey"),
+    (
+        "parameter_descriptions_junction",
+        "descriptions_id",
+        "parameter_descriptions_pkey",
+    ),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
     ("parameter_departments_junction", "departments_id", "parameter_departments_pkey"),
     ("parameter_fields_junction", "fields_id", "parameter_fields_pkey"),
-    ("parameter_parameters_junction", "parameters_id", "parameter_parameters_junction_pkey"),
+    (
+        "parameter_parameters_junction",
+        "parameters_id",
+        "parameter_parameters_junction_pkey",
+    ),
 ]
 
 

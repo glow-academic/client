@@ -42,23 +42,38 @@ async def search_agents(
     extra_conditions: list[tuple[str, object]] = []
     if department_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.department_ids && ${idx}::uuid[])", department_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.department_ids && ${idx}::uuid[])",
+                department_ids,
+            )
         )
     if tool_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.tool_ids && ${idx}::uuid[])", tool_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.tool_ids && ${idx}::uuid[])",
+                tool_ids,
+            )
         )
     if instruction_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.instruction_ids && ${idx}::uuid[])", instruction_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.instruction_ids && ${idx}::uuid[])",
+                instruction_ids,
+            )
         )
     if model_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.model_id = ANY(${idx}::uuid[]))", model_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.model_id = ANY(${idx}::uuid[]))",
+                model_ids,
+            )
         )
     if prompt_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.prompt_id = ANY(${idx}::uuid[]))", prompt_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.prompt_id = ANY(${idx}::uuid[]))",
+                prompt_ids,
+            )
         )
     if quality is not None:
         extra_conditions.append(("{alias}.quality::text = ${idx}", quality))

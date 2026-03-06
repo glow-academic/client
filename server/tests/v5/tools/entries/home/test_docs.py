@@ -41,6 +41,7 @@ async def test_includes_all_operations(conn):
     op_names = [op.name for op in result.operations]
     assert "create_home" in op_names
     assert "get_homes" in op_names
+    assert "search_homes" in op_names
 
 
 async def test_create_operation_has_params(conn):

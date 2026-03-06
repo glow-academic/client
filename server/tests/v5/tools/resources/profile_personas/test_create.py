@@ -26,7 +26,9 @@ async def test_visible_via_get(conn, redis_client):
     persona = await create_persona(conn, redis_client, name="test-persona-visible")
     result = await create_profile_persona(conn, profile.id, persona.id, redis_client)
 
-    items = await get_profile_personas(conn, [result.id], redis_client, bypass_cache=True)
+    items = await get_profile_personas(
+        conn, [result.id], redis_client, bypass_cache=True
+    )
 
     assert len(items) == 1
     assert items[0].id == result.id
@@ -46,7 +48,9 @@ async def test_returns_existing_on_conflict(conn, redis_client):
 async def test_sets_mcp_flag(conn, redis_client):
     profile = await create_profile(conn, redis_client, name="test-profile-mcp")
     persona = await create_persona(conn, redis_client, name="test-persona-mcp")
-    result = await create_profile_persona(conn, profile.id, persona.id, redis_client, mcp=True)
+    result = await create_profile_persona(
+        conn, profile.id, persona.id, redis_client, mcp=True
+    )
 
     assert result.mcp is True
     assert result.generated is True

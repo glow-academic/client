@@ -44,7 +44,9 @@ async def test_includes_all_operations(conn):
 async def test_create_operation_has_params(conn):
     result = await get_message_uploads_docs(conn)
 
-    create_op = next(op for op in result.operations if op.name == "create_message_upload")
+    create_op = next(
+        op for op in result.operations if op.name == "create_message_upload"
+    )
     param_names = [p.name for p in create_op.params]
     assert "message_id" in param_names
     assert "upload_id" in param_names

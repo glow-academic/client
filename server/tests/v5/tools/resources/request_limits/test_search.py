@@ -42,9 +42,7 @@ async def test_excludes_ids(conn, redis_client):
     a = await create_request_limit(conn, 301, redis_client)
     b = await create_request_limit(conn, 302, redis_client)
 
-    items = await search_request_limits(
-        conn, redis_client, exclude_ids=[a.id]
-    )
+    items = await search_request_limits(conn, redis_client, exclude_ids=[a.id])
 
     ids = [i.id for i in items]
     assert a.id not in ids

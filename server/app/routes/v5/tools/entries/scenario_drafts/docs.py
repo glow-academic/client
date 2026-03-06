@@ -16,19 +16,39 @@ async def get_scenario_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     """Get full documentation for the scenario_drafts entry."""
     mv_info = await get_mv_info(conn, "scenario_drafts_mv")
     entry_table = await get_table_info(conn, "scenario_drafts_entry")
-    departments_connection = await get_table_info(conn, "scenario_drafts_departments_connection")
-    descriptions_connection = await get_table_info(conn, "scenario_drafts_descriptions_connection")
-    documents_connection = await get_table_info(conn, "scenario_drafts_documents_connection")
+    departments_connection = await get_table_info(
+        conn, "scenario_drafts_departments_connection"
+    )
+    descriptions_connection = await get_table_info(
+        conn, "scenario_drafts_descriptions_connection"
+    )
+    documents_connection = await get_table_info(
+        conn, "scenario_drafts_documents_connection"
+    )
     flags_connection = await get_table_info(conn, "scenario_drafts_flags_connection")
     images_connection = await get_table_info(conn, "scenario_drafts_images_connection")
     names_connection = await get_table_info(conn, "scenario_drafts_names_connection")
-    objectives_connection = await get_table_info(conn, "scenario_drafts_objectives_connection")
-    options_connection = await get_table_info(conn, "scenario_drafts_options_connection")
-    parameter_fields_connection = await get_table_info(conn, "scenario_drafts_parameter_fields_connection")
-    personas_connection = await get_table_info(conn, "scenario_drafts_personas_connection")
-    problem_statements_connection = await get_table_info(conn, "scenario_drafts_problem_statements_connection")
-    profiles_connection = await get_table_info(conn, "scenario_drafts_profiles_connection")
-    questions_connection = await get_table_info(conn, "scenario_drafts_questions_connection")
+    objectives_connection = await get_table_info(
+        conn, "scenario_drafts_objectives_connection"
+    )
+    options_connection = await get_table_info(
+        conn, "scenario_drafts_options_connection"
+    )
+    parameter_fields_connection = await get_table_info(
+        conn, "scenario_drafts_parameter_fields_connection"
+    )
+    personas_connection = await get_table_info(
+        conn, "scenario_drafts_personas_connection"
+    )
+    problem_statements_connection = await get_table_info(
+        conn, "scenario_drafts_problem_statements_connection"
+    )
+    profiles_connection = await get_table_info(
+        conn, "scenario_drafts_profiles_connection"
+    )
+    questions_connection = await get_table_info(
+        conn, "scenario_drafts_questions_connection"
+    )
     videos_connection = await get_table_info(conn, "scenario_drafts_videos_connection")
 
     tables = [

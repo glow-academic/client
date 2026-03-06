@@ -46,7 +46,9 @@ async def test_includes_all_operations(conn):
 async def test_create_operation_has_params(conn):
     result = await get_test_invocation_runs_docs(conn)
 
-    create_op = next(op for op in result.operations if op.name == "create_test_invocation_runs")
+    create_op = next(
+        op for op in result.operations if op.name == "create_test_invocation_runs"
+    )
     param_names = [p.name for p in create_op.params]
     assert "test_invocation_id" in param_names
     assert "agent_ids" in param_names

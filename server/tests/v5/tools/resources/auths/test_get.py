@@ -1,6 +1,5 @@
 """Tests for get_auths."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.auths.create import create_auth
@@ -12,8 +11,12 @@ pytestmark = pytest.mark.asyncio
 
 async def test_gets_created_auth(conn, redis_client):
     created = await create_auth(
-        conn, redis_client, name="test-auth", description="Test auth desc",
-        slug="test-slug", protocol="oidc",
+        conn,
+        redis_client,
+        name="test-auth",
+        description="Test auth desc",
+        slug="test-slug",
+        protocol="oidc",
     )
 
     items = await get_auths(conn, [created.id], redis_client)

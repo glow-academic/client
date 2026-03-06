@@ -1,10 +1,13 @@
 """Tests for search_conditional_parameters."""
 
-
 import pytest
 
-from app.routes.v5.tools.resources.conditional_parameters.create import create_conditional_parameter
-from app.routes.v5.tools.resources.conditional_parameters.search import search_conditional_parameters
+from app.routes.v5.tools.resources.conditional_parameters.create import (
+    create_conditional_parameter,
+)
+from app.routes.v5.tools.resources.conditional_parameters.search import (
+    search_conditional_parameters,
+)
 from app.routes.v5.tools.resources.parameters.create import create_parameter
 from tests.helpers import unique_tag
 
@@ -57,9 +60,7 @@ async def test_respects_offset(conn, redis_client):
     for _ in range(3):
         await _make(conn, redis_client)
 
-    all_items = await search_conditional_parameters(
-        conn, redis_client, limit_count=100
-    )
+    all_items = await search_conditional_parameters(conn, redis_client, limit_count=100)
     offset_items = await search_conditional_parameters(
         conn, redis_client, limit_count=100, offset_count=1
     )
@@ -72,7 +73,9 @@ async def test_excludes_ids(conn, redis_client):
     b = await _make(conn, redis_client)
 
     items = await search_conditional_parameters(
-        conn, redis_client, exclude_ids=[a.id],
+        conn,
+        redis_client,
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]
@@ -99,8 +102,6 @@ async def test_cache_hit(conn, redis_client):
 async def test_bypass_cache(conn, redis_client):
     await _make(conn, redis_client)
 
-    items = await search_conditional_parameters(
-        conn, redis_client, bypass_cache=True
-    )
+    items = await search_conditional_parameters(conn, redis_client, bypass_cache=True)
 
     assert len(items) >= 1

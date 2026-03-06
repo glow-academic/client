@@ -29,7 +29,7 @@ async def get_attempt_messages(
     rows = await conn.fetch(
         f"""
         SELECT message_id, chat_id, attempt_id, type,
-               created_at, completed, text_id,
+               created_at, completed, runs_id, text_id,
                history_file_path, audio_id
         FROM {MV_NAME}
         WHERE message_id = ANY($1)
@@ -37,20 +37,7 @@ async def get_attempt_messages(
         ids,
     )
 
-    return [
-        GetAttemptMessageResponse(
-            message_id=r["message_id"],
-            chat_id=r["chat_id"],
-            attempt_id=r["attempt_id"],
-            type=r["type"],
-            created_at=r["created_at"],
-            completed=r["completed"],
-            text_id=r["text_id"],
-            history_file_path=r["history_file_path"],
-            audio_id=r["audio_id"],
-        )
-        for r in rows
-    ]
+    return [GetAttemptMessageResponse(**dict(r)) for r in rows]
 
 
 async def get_attempt_message_internal(

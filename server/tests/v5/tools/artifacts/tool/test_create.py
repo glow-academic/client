@@ -1,15 +1,18 @@
 """Tests for create_tool — black-box using resource + artifact tools only."""
 
-
 import pytest
 
-from app.routes.v5.tools.artifacts.tool.create import create_tool as create_tool_artifact
+from app.routes.v5.tools.artifacts.tool.create import (
+    create_tool as create_tool_artifact,
+)
 from app.routes.v5.tools.artifacts.tool.get import get_tools
 from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.names.create import create_name
-from app.routes.v5.tools.resources.tools.create import create_tool as create_tool_resource
+from app.routes.v5.tools.resources.tools.create import (
+    create_tool as create_tool_resource,
+)
 from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
@@ -65,7 +68,9 @@ async def test_links_multi_select_junctions(conn, redis_client):
     tool_res = await create_tool_resource(conn, redis=redis_client)
 
     result = await create_tool_artifact(
-        conn, department_ids=[d1.id, d2.id], tool_ids=[tool_res.id],
+        conn,
+        department_ids=[d1.id, d2.id],
+        tool_ids=[tool_res.id],
     )
 
     items = await get_tools(conn, [result.id], departments=True, tools=True)
@@ -88,10 +93,20 @@ async def test_no_junctions_when_none_provided(conn, redis_client):
     result = await create_tool_artifact(conn)
 
     items = await get_tools(
-        conn, [result.id],
-        names=True, descriptions=True, departments=True, flags=True,
-        args=True, args_outputs=True, arg_positions=True,
-        artifacts=True, entries=True, operations=True, resources=True, tools=True,
+        conn,
+        [result.id],
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+        args=True,
+        args_outputs=True,
+        arg_positions=True,
+        artifacts=True,
+        entries=True,
+        operations=True,
+        resources=True,
+        tools=True,
     )
     t = items[0]
     assert t.name_ids == []

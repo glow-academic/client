@@ -1,13 +1,14 @@
 """Tests for create_department — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.department.create import (
     create_department as create_dept_artifact,
 )
 from app.routes.v5.tools.artifacts.department.get import get_departments
-from app.routes.v5.tools.resources.departments.create import create_department as create_department_resource
+from app.routes.v5.tools.resources.departments.create import (
+    create_department as create_department_resource,
+)
 from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.names.create import create_name
@@ -86,8 +87,11 @@ async def test_no_junctions_when_none_provided(conn, redis_client):
     items = await get_departments(
         conn,
         [result.id],
-        names=True, descriptions=True, flags=True,
-        settings=True, departments=True,
+        names=True,
+        descriptions=True,
+        flags=True,
+        settings=True,
+        departments=True,
     )
     p = items[0]
     assert p.name_ids == []

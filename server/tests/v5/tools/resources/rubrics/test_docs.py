@@ -27,6 +27,7 @@ async def test_includes_all_operations(conn):
     assert "get_rubrics" in op_names
     assert "search_rubrics" in op_names
 
+
 async def test_search_operation_has_params(conn):
     result = await get_rubrics_docs(conn)
     search_op = next(op for op in result.operations if op.name == "search_rubrics")

@@ -20,3 +20,12 @@ class GetUploadResponse(BaseModel):
     active: bool
     mcp: bool
     generated: bool
+
+
+class SearchUploadResponse(BaseModel):
+    files_id: UUID
+    upload_id: UUID
+    file_path: str
+    mime_type: str
+    size: int
+    created_at: datetime

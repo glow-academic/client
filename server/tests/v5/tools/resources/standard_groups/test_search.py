@@ -1,6 +1,5 @@
 """Tests for search_standard_groups."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.standard_groups.create import create_standard_group
@@ -26,7 +25,9 @@ async def test_search_is_case_insensitive(conn, redis_client):
         conn, "CaseTest-Search-SG", "CTS", "desc", 100, 70, redis_client
     )
 
-    items = await search_standard_groups(conn, redis_client, search="casetest-search-sg")
+    items = await search_standard_groups(
+        conn, redis_client, search="casetest-search-sg"
+    )
 
     assert any(i.name == "CaseTest-Search-SG" for i in items)
 
@@ -77,7 +78,10 @@ async def test_excludes_ids(conn, redis_client):
     )
 
     items = await search_standard_groups(
-        conn, redis_client, search="exclude-", exclude_ids=[a.id],
+        conn,
+        redis_client,
+        search="exclude-",
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]

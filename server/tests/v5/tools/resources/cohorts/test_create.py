@@ -9,7 +9,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_creates_new_cohort(conn, redis_client):
-    result = await create_cohort(conn, redis_client, name="test-cohort", description="desc")
+    result = await create_cohort(
+        conn, redis_client, name="test-cohort", description="desc"
+    )
 
     assert result.name == "test-cohort"
     assert result.description == "desc"

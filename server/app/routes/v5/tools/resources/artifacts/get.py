@@ -28,7 +28,8 @@ async def get_artifacts(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetArtifactResponse.model_validate(item) for item in cached.get("items", [])
+                GetArtifactResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

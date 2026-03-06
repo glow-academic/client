@@ -27,9 +27,12 @@ async def test_includes_all_operations(conn):
     assert "get_request_limits" in op_names
     assert "search_request_limits" in op_names
 
+
 async def test_search_operation_has_params(conn):
     result = await get_request_limits_docs(conn)
-    search_op = next(op for op in result.operations if op.name == "search_request_limits")
+    search_op = next(
+        op for op in result.operations if op.name == "search_request_limits"
+    )
     param_names = [p.name for p in search_op.params]
     assert "limit_count" in param_names
     assert "offset_count" in param_names

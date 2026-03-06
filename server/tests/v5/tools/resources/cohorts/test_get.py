@@ -1,6 +1,5 @@
 """Tests for get_cohorts."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.cohorts.create import create_cohort
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_cohort(conn, redis_client):
-    created = await create_cohort(conn, redis_client, name="test-cohort", description="desc")
+    created = await create_cohort(
+        conn, redis_client, name="test-cohort", description="desc"
+    )
 
     items = await get_cohorts(conn, [created.id], redis_client)
 

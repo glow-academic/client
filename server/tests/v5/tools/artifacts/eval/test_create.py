@@ -1,6 +1,5 @@
 """Tests for create_eval — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.eval.create import create_eval
@@ -62,11 +61,18 @@ async def test_links_flags_with_value(conn, redis_client):
 async def test_no_junctions_when_none_provided(conn, redis_client):
     result = await create_eval(conn)
     items = await get_evals(
-        conn, [result.id],
-        names=True, descriptions=True, departments=True,
-        flags=True, models=True, model_flags=True,
-        model_positions=True, model_rubrics=True,
-        rubrics=True, evals=True,
+        conn,
+        [result.id],
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+        models=True,
+        model_flags=True,
+        model_positions=True,
+        model_rubrics=True,
+        rubrics=True,
+        evals=True,
     )
     p = items[0]
     assert p.name_ids == []

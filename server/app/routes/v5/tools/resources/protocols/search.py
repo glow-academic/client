@@ -56,7 +56,8 @@ async def search_protocols(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetProtocolResponse.model_validate(item) for item in cached.get("items", [])
+                GetProtocolResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     ids = await search_resource_ids(

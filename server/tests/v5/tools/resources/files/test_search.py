@@ -33,7 +33,9 @@ async def test_respects_offset(conn, redis_client):
         created.append(f)
 
     all_items = await search_files(conn, redis_client, limit_count=100)
-    offset_items = await search_files(conn, redis_client, limit_count=100, offset_count=1)
+    offset_items = await search_files(
+        conn, redis_client, limit_count=100, offset_count=1
+    )
 
     assert len(offset_items) == len(all_items) - 1
 

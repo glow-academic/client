@@ -23,7 +23,9 @@ async def execute_tool_fn(
             return result
         return json.dumps(result, default=str)
     except Exception as e:
-        return json.dumps({
-            "success": False,
-            "message": f"Tool execution error: {e}",
-        })
+        return json.dumps(
+            {
+                "success": False,
+                "message": f"Tool execution error: {e}",
+            }
+        )

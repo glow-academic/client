@@ -1,6 +1,5 @@
 """Tests for get_models."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.models.create import create_model
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_model(conn, redis_client):
-    created = await create_model(conn, "gpt-4", "test-model", "Test model desc", redis_client)
+    created = await create_model(
+        conn, "gpt-4", "test-model", "Test model desc", redis_client
+    )
 
     items = await get_models(conn, [created.id], redis_client)
 
@@ -42,7 +43,9 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 
 async def test_cache_hit_skips_db(conn, redis_client):
-    created = await create_model(conn, "gpt-4-cache", "test-model-cache-hit", redis=redis_client)
+    created = await create_model(
+        conn, "gpt-4-cache", "test-model-cache-hit", redis=redis_client
+    )
 
     # First call populates cache
     items = await get_models(conn, [created.id], redis_client)
@@ -55,7 +58,9 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
-    created = await create_model(conn, "gpt-4-bypass", "test-model-bypass", redis=redis_client)
+    created = await create_model(
+        conn, "gpt-4-bypass", "test-model-bypass", redis=redis_client
+    )
 
     items = await get_models(conn, [created.id], redis_client, bypass_cache=True)
     assert len(items) == 1

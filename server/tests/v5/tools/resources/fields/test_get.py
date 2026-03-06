@@ -1,6 +1,5 @@
 """Tests for get_fields."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.fields.create import create_field

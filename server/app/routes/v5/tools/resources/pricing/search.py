@@ -39,7 +39,10 @@ async def search_pricing(
         extra_conditions.append(("{alias}.pricing_type::text = ${idx}", pricing_type))
     if unit_names:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::text[], 1), 0) = 0 OR {alias}.unit_name = ANY(${idx}::text[]))", unit_names)
+            (
+                "(COALESCE(array_length(${idx}::text[], 1), 0) = 0 OR {alias}.unit_name = ANY(${idx}::text[]))",
+                unit_names,
+            )
         )
 
     tags = ["resources", "pricing"]

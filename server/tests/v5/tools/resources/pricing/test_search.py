@@ -1,6 +1,5 @@
 """Tests for search_pricing."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.pricing.create import create_pricing
@@ -19,7 +18,9 @@ async def test_finds_created_pricing(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_pricing(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
+    items = await search_pricing(
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
+    )
 
     assert items == []
 
@@ -34,7 +35,9 @@ async def test_excludes_ids(conn, redis_client):
     a = await create_pricing(conn, "input", 0.02, "tokens", "tokens", 500, redis_client)
 
     items = await search_pricing(
-        conn, redis_client, exclude_ids=[a.id],
+        conn,
+        redis_client,
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]

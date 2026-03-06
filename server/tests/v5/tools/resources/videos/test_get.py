@@ -1,6 +1,5 @@
 """Tests for get_videos."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.videos.create import create_video

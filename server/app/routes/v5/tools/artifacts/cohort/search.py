@@ -56,25 +56,34 @@ async def search_cohorts(
     # Junction filters
     if department_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="cohort_departments_junction",
-            owner_col=OWNER_COL, resource_col="departments_id",
+            owner_col=OWNER_COL,
+            resource_col="departments_id",
             ids=department_ids,
         )
 
     if simulation_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="cohort_simulations_junction",
-            owner_col=OWNER_COL, resource_col="simulations_id",
+            owner_col=OWNER_COL,
+            resource_col="simulations_id",
             ids=simulation_ids,
         )
 
     if profile_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="cohort_profiles_junction",
-            owner_col=OWNER_COL, resource_col="profiles_id",
+            owner_col=OWNER_COL,
+            resource_col="profiles_id",
             ids=profile_ids,
         )
 

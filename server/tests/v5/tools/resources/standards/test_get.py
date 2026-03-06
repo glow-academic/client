@@ -1,6 +1,5 @@
 """Tests for get_standards."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.standard_groups.create import create_standard_group
@@ -12,7 +11,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_standard(conn, redis_client):
-    sg = await create_standard_group(conn, "Test Group", "TG", "desc", 100, 70, redis_client)
+    sg = await create_standard_group(
+        conn, "Test Group", "TG", "desc", 100, 70, redis_client
+    )
     item = await create_standard(conn, "Test Standard", "desc", 10, sg.id, redis_client)
 
     items = await get_standards(conn, [item.id], redis_client)
@@ -39,8 +40,12 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 
 async def test_cache_hit_skips_db(conn, redis_client):
-    sg = await create_standard_group(conn, "Test Group Cache", "TGC", "desc", 100, 70, redis_client)
-    item = await create_standard(conn, "Test Standard Cache", "desc", 10, sg.id, redis_client)
+    sg = await create_standard_group(
+        conn, "Test Group Cache", "TGC", "desc", 100, 70, redis_client
+    )
+    item = await create_standard(
+        conn, "Test Standard Cache", "desc", 10, sg.id, redis_client
+    )
 
     # First call populates cache
     items = await get_standards(conn, [item.id], redis_client)
@@ -53,8 +58,12 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
-    sg = await create_standard_group(conn, "Test Group Bypass", "TGB", "desc", 100, 70, redis_client)
-    item = await create_standard(conn, "Test Standard Bypass", "desc", 10, sg.id, redis_client)
+    sg = await create_standard_group(
+        conn, "Test Group Bypass", "TGB", "desc", 100, 70, redis_client
+    )
+    item = await create_standard(
+        conn, "Test Standard Bypass", "desc", 10, sg.id, redis_client
+    )
 
     items = await get_standards(conn, [item.id], redis_client, bypass_cache=True)
     assert len(items) == 1

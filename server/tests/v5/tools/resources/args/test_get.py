@@ -1,6 +1,5 @@
 """Tests for get_args."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.args.create import create_arg

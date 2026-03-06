@@ -1,6 +1,5 @@
 """Tests for get_thresholds."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.thresholds.create import create_threshold

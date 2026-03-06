@@ -1,6 +1,5 @@
 """Tests for search_agents."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.agents.create import create_agent
@@ -28,7 +27,9 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_agents(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
+    items = await search_agents(
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
+    )
 
     assert items == []
 
@@ -47,7 +48,10 @@ async def test_excludes_ids(conn, redis_client):
     b = await create_agent(conn, name=f"exclude-b-{unique_tag()}", redis=redis_client)
 
     items = await search_agents(
-        conn, redis_client, search="exclude-", exclude_ids=[a.id],
+        conn,
+        redis_client,
+        search="exclude-",
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]

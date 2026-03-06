@@ -4,7 +4,9 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.tools.entries.document_drafts.types import CreateDocumentDraftResponse
+from app.routes.v5.tools.entries.document_drafts.types import (
+    CreateDocumentDraftResponse,
+)
 
 
 async def create_document_draft(
@@ -41,13 +43,25 @@ async def create_document_draft(
         raise ValueError("Failed to create document_drafts entry")
 
     connections: list[tuple[str, str, list[UUID]]] = [
-        ("document_drafts_departments_connection", "departments_id", department_ids or []),
-        ("document_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "document_drafts_departments_connection",
+            "departments_id",
+            department_ids or [],
+        ),
+        (
+            "document_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("document_drafts_files_connection", "files_id", file_ids or []),
         ("document_drafts_flags_connection", "flags_id", flag_ids or []),
         ("document_drafts_images_connection", "images_id", image_ids or []),
         ("document_drafts_names_connection", "names_id", name_ids or []),
-        ("document_drafts_parameter_fields_connection", "parameter_fields_id", parameter_field_ids or []),
+        (
+            "document_drafts_parameter_fields_connection",
+            "parameter_fields_id",
+            parameter_field_ids or [],
+        ),
         ("document_drafts_parameters_connection", "parameters_id", parameter_ids or []),
         ("document_drafts_profiles_connection", "profiles_id", profile_ids or []),
         ("document_drafts_texts_connection", "texts_id", text_ids or []),

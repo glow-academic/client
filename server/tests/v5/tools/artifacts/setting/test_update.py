@@ -1,6 +1,5 @@
 """Tests for update_setting — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.setting.create import create_setting

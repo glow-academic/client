@@ -40,7 +40,7 @@ from app.routes.v5.tools.entries.attempt_message_tree.refresh import (
     refresh_attempt_message_tree_internal,
 )
 from app.routes.v5.tools.entries.messages.create import create_message
-from app.routes.v5.tools.entries.messages.search import search_messages_entries_internal
+from app.routes.v5.tools.entries.messages.search import search_messages
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
@@ -188,17 +188,11 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
 
             # Step 5a: Insert tree edges for message branching
             # Look up the user message_id just created in this run
-            messages = await search_messages_entries_internal(
-                conn, run_id=run_id, bypass_cache=True
-            )
+            messages = await search_messages(conn, run_id=run_id, bypass_mv=True)
             user_message_id = None
             for msg in messages:
-                if msg.get("role") == "user":
-                    msg_id = msg.get("id")
-                    if msg_id:
-                        user_message_id = (
-                            uuid.UUID(msg_id) if isinstance(msg_id, str) else msg_id
-                        )
+                if msg.role == "user":
+                    user_message_id = msg.message_id
                     break
 
             if user_message_id:

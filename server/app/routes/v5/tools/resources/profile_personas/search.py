@@ -7,7 +7,9 @@ from redis.asyncio import Redis
 
 from app.infra.search.search_resource import search_resource_ids
 from app.routes.v5.tools.resources.profile_personas.get import get_profile_personas
-from app.routes.v5.tools.resources.profile_personas.types import GetProfilePersonaResponse
+from app.routes.v5.tools.resources.profile_personas.types import (
+    GetProfilePersonaResponse,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -38,13 +40,9 @@ async def search_profile_personas(
     extra_conditions: list[tuple[str, object]] = []
 
     if profile_ids:
-        extra_conditions.append(
-            ("{alias}.profile_id = ANY(${idx})", profile_ids)
-        )
+        extra_conditions.append(("{alias}.profile_id = ANY(${idx})", profile_ids))
     if persona_ids:
-        extra_conditions.append(
-            ("{alias}.persona_id = ANY(${idx})", persona_ids)
-        )
+        extra_conditions.append(("{alias}.persona_id = ANY(${idx})", persona_ids))
 
     tags = ["resources", "profile_personas"]
     key = cache_key(

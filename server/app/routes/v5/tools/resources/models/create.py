@@ -1,4 +1,5 @@
 """Models CREATE — reusable data-access layer."""
+
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -26,7 +27,10 @@ async def create_model(
         VALUES ($1, $2, $3, true, $4, $4)
         RETURNING id
         """,
-        value, name, description, mcp,
+        value,
+        name,
+        description,
+        mcp,
     )
     await invalidate_tags(["resources", "models"], redis=redis)
     items = await get_models(conn, [model_id], redis, bypass_cache=True)

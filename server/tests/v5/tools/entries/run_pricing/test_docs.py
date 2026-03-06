@@ -44,7 +44,9 @@ async def test_includes_all_operations(conn):
 async def test_create_operation_has_params(conn):
     result = await get_run_pricing_docs(conn)
 
-    create_op = next(op for op in result.operations if op.name == "create_run_pricing_entry_internal")
+    create_op = next(
+        op for op in result.operations if op.name == "create_run_pricing_entry_internal"
+    )
     param_names = [p.name for p in create_op.params]
     assert "session_id" in param_names
     assert "pricing_type" in param_names

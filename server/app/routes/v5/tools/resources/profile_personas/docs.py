@@ -7,7 +7,9 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.resources.profile_personas.create import create_profile_persona
 from app.routes.v5.tools.resources.profile_personas.get import get_profile_personas
-from app.routes.v5.tools.resources.profile_personas.search import search_profile_personas
+from app.routes.v5.tools.resources.profile_personas.search import (
+    search_profile_personas,
+)
 
 
 async def get_profile_personas_docs(conn: asyncpg.Connection) -> DocsResponse:

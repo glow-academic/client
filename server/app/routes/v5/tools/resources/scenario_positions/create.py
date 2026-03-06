@@ -6,7 +6,9 @@ import asyncpg  # type: ignore
 from redis.asyncio import Redis
 
 from app.routes.v5.tools.resources.scenario_positions.get import get_scenario_positions
-from app.routes.v5.tools.resources.scenario_positions.types import GetScenarioPositionResponse
+from app.routes.v5.tools.resources.scenario_positions.types import (
+    GetScenarioPositionResponse,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

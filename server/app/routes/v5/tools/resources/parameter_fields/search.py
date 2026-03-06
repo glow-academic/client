@@ -7,7 +7,9 @@ from redis.asyncio import Redis
 
 from app.infra.search.search_resource import search_resource_ids
 from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
-from app.routes.v5.tools.resources.parameter_fields.types import GetParameterFieldResponse
+from app.routes.v5.tools.resources.parameter_fields.types import (
+    GetParameterFieldResponse,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -45,21 +47,19 @@ async def search_parameter_fields(
     extra_conditions: list[tuple[str, object]] = []
 
     if parameter_ids:
-        extra_conditions.append(
-            ("{alias}.parameter_id = ANY(${idx})", parameter_ids)
-        )
+        extra_conditions.append(("{alias}.parameter_id = ANY(${idx})", parameter_ids))
     if field_ids:
-        extra_conditions.append(
-            ("{alias}.field_id = ANY(${idx})", field_ids)
-        )
+        extra_conditions.append(("{alias}.field_id = ANY(${idx})", field_ids))
     if conditional_parameter_ids:
-        extra_conditions.append((
-            "EXISTS (SELECT 1 FROM conditional_parameters_resource cpr "
-            "JOIN fields_resource fr ON cpr.id = ANY(fr.conditional_parameter_ids) "
-            "WHERE fr.id = {alias}.field_id AND cpr.active = true "
-            "AND cpr.parameter_id = ANY(${idx}))",
-            conditional_parameter_ids,
-        ))
+        extra_conditions.append(
+            (
+                "EXISTS (SELECT 1 FROM conditional_parameters_resource cpr "
+                "JOIN fields_resource fr ON cpr.id = ANY(fr.conditional_parameter_ids) "
+                "WHERE fr.id = {alias}.field_id AND cpr.active = true "
+                "AND cpr.parameter_id = ANY(${idx}))",
+                conditional_parameter_ids,
+            )
+        )
 
     tags = ["resources", "parameter_fields"]
     key = cache_key(

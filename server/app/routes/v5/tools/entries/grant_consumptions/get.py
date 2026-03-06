@@ -19,8 +19,6 @@ async def get_grant_consumptions(
     if not ids:
         return []
 
-    rows = await conn.fetch(
-        f"SELECT * FROM {MV_NAME} WHERE id = ANY($1)", ids
-    )
+    rows = await conn.fetch(f"SELECT * FROM {MV_NAME} WHERE id = ANY($1)", ids)
 
     return [GetGrantConsumptionResponse(**dict(r)) for r in rows]

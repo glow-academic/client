@@ -11,8 +11,18 @@ TABLE = "provider_artifact"
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
     ("names", "provider_names_junction", "names_id", "name_ids"),
-    ("descriptions", "provider_descriptions_junction", "descriptions_id", "description_ids"),
-    ("departments", "provider_departments_junction", "departments_id", "department_ids"),
+    (
+        "descriptions",
+        "provider_descriptions_junction",
+        "descriptions_id",
+        "description_ids",
+    ),
+    (
+        "departments",
+        "provider_departments_junction",
+        "departments_id",
+        "department_ids",
+    ),
     ("flags", "provider_flags_junction", "flags_id", "flag_ids"),
     ("endpoints", "provider_endpoints_junction", "endpoints_id", "endpoint_ids"),
     ("keys", "provider_keys_junction", "keys_id", "key_ids"),
@@ -49,22 +59,33 @@ async def get_providers(
         "providers": providers,
     }
 
-    active = [(table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]]
+    active = [
+        (table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]
+    ]
 
-    columns = ["p.id", "p.created_at", "p.updated_at", "p.generated", "p.mcp", "p.active"]
+    columns = [
+        "p.id",
+        "p.created_at",
+        "p.updated_at",
+        "p.generated",
+        "p.mcp",
+        "p.active",
+    ]
     joins: list[str] = []
 
     for i, (table, col, field) in enumerate(active):
         alias = f"j{i}"
-        joins.append(f"LEFT JOIN {table} {alias} ON {alias}.provider_id = p.id AND {alias}.active = true")
+        joins.append(
+            f"LEFT JOIN {table} {alias} ON {alias}.provider_id = p.id AND {alias}.active = true"
+        )
         columns.append(
             f"ARRAY_AGG(DISTINCT {alias}.{col}) FILTER (WHERE {alias}.{col} IS NOT NULL) AS {field}"
         )
 
     query = f"""
-        SELECT {', '.join(columns)}
+        SELECT {", ".join(columns)}
         FROM {TABLE} p
-        {' '.join(joins)}
+        {" ".join(joins)}
         WHERE p.id = ANY($1)
         GROUP BY p.id, p.created_at, p.updated_at, p.generated, p.mcp, p.active
     """

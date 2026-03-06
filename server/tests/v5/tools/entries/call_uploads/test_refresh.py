@@ -19,7 +19,11 @@ async def _setup(conn, profile_id):
     run = await create_run(conn, group_id=group.id, session_id=session.id)
     parent = await create_call(conn, run_id=run.id, session_id=session.id)
     upload = await create_upload(
-        conn, session_id=session.id, file_path="test/file.bin", mime_type="application/octet-stream", size=1024
+        conn,
+        session_id=session.id,
+        file_path="test/file.bin",
+        mime_type="application/octet-stream",
+        size=1024,
     )
     return session, parent, upload
 

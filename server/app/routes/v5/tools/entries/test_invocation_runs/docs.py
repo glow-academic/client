@@ -29,14 +29,10 @@ async def get_test_invocation_runs_docs(
     agents_connection = await get_table_info(
         conn, "test_invocation_runs_agents_connection"
     )
-    runs_connection = await get_table_info(
-        conn, "test_invocation_runs_runs_connection"
-    )
+    runs_connection = await get_table_info(conn, "test_invocation_runs_runs_connection")
 
     tables = [
-        t
-        for t in [entry_table, agents_connection, runs_connection]
-        if t is not None
+        t for t in [entry_table, agents_connection, runs_connection] if t is not None
     ]
 
     return DocsResponse(

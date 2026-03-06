@@ -43,14 +43,30 @@ async def create_persona_draft(
 
     connections: list[tuple[str, str, list[UUID]]] = [
         ("persona_drafts_colors_connection", "colors_id", color_ids or []),
-        ("persona_drafts_departments_connection", "departments_id", department_ids or []),
-        ("persona_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "persona_drafts_departments_connection",
+            "departments_id",
+            department_ids or [],
+        ),
+        (
+            "persona_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("persona_drafts_examples_connection", "examples_id", example_ids or []),
         ("persona_drafts_flags_connection", "flags_id", flag_ids or []),
         ("persona_drafts_icons_connection", "icons_id", icon_ids or []),
-        ("persona_drafts_instructions_connection", "instructions_id", instruction_ids or []),
+        (
+            "persona_drafts_instructions_connection",
+            "instructions_id",
+            instruction_ids or [],
+        ),
         ("persona_drafts_names_connection", "names_id", name_ids or []),
-        ("persona_drafts_parameter_fields_connection", "parameter_fields_id", parameter_field_ids or []),
+        (
+            "persona_drafts_parameter_fields_connection",
+            "parameter_fields_id",
+            parameter_field_ids or [],
+        ),
         ("persona_drafts_profiles_connection", "profiles_id", profile_ids or []),
         ("persona_drafts_voices_connection", "voices_id", voice_ids or []),
     ]

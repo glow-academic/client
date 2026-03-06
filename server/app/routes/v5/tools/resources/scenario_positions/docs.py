@@ -5,9 +5,13 @@ import asyncpg
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
-from app.routes.v5.tools.resources.scenario_positions.create import create_scenario_position
+from app.routes.v5.tools.resources.scenario_positions.create import (
+    create_scenario_position,
+)
 from app.routes.v5.tools.resources.scenario_positions.get import get_scenario_positions
-from app.routes.v5.tools.resources.scenario_positions.search import search_scenario_positions
+from app.routes.v5.tools.resources.scenario_positions.search import (
+    search_scenario_positions,
+)
 
 
 async def get_scenario_positions_docs(conn: asyncpg.Connection) -> DocsResponse:

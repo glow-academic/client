@@ -16,16 +16,28 @@ async def get_model_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     """Get full documentation for the model_drafts entry."""
     mv_info = await get_mv_info(conn, "model_drafts_mv")
     entry_table = await get_table_info(conn, "model_drafts_entry")
-    departments_connection = await get_table_info(conn, "model_drafts_departments_connection")
-    descriptions_connection = await get_table_info(conn, "model_drafts_descriptions_connection")
+    departments_connection = await get_table_info(
+        conn, "model_drafts_departments_connection"
+    )
+    descriptions_connection = await get_table_info(
+        conn, "model_drafts_descriptions_connection"
+    )
     flags_connection = await get_table_info(conn, "model_drafts_flags_connection")
-    modalities_connection = await get_table_info(conn, "model_drafts_modalities_connection")
+    modalities_connection = await get_table_info(
+        conn, "model_drafts_modalities_connection"
+    )
     names_connection = await get_table_info(conn, "model_drafts_names_connection")
     pricing_connection = await get_table_info(conn, "model_drafts_pricing_connection")
     profiles_connection = await get_table_info(conn, "model_drafts_profiles_connection")
-    providers_connection = await get_table_info(conn, "model_drafts_providers_connection")
-    qualities_connection = await get_table_info(conn, "model_drafts_qualities_connection")
-    reasoning_levels_connection = await get_table_info(conn, "model_drafts_reasoning_levels_connection")
+    providers_connection = await get_table_info(
+        conn, "model_drafts_providers_connection"
+    )
+    qualities_connection = await get_table_info(
+        conn, "model_drafts_qualities_connection"
+    )
+    reasoning_levels_connection = await get_table_info(
+        conn, "model_drafts_reasoning_levels_connection"
+    )
     temperature_levels_connection = await get_table_info(
         conn, "model_drafts_temperature_levels_connection"
     )

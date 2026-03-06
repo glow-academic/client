@@ -17,15 +17,27 @@ async def get_persona_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     mv_info = await get_mv_info(conn, "persona_drafts_mv")
     entry_table = await get_table_info(conn, "persona_drafts_entry")
     colors_connection = await get_table_info(conn, "persona_drafts_colors_connection")
-    departments_connection = await get_table_info(conn, "persona_drafts_departments_connection")
-    descriptions_connection = await get_table_info(conn, "persona_drafts_descriptions_connection")
-    examples_connection = await get_table_info(conn, "persona_drafts_examples_connection")
+    departments_connection = await get_table_info(
+        conn, "persona_drafts_departments_connection"
+    )
+    descriptions_connection = await get_table_info(
+        conn, "persona_drafts_descriptions_connection"
+    )
+    examples_connection = await get_table_info(
+        conn, "persona_drafts_examples_connection"
+    )
     flags_connection = await get_table_info(conn, "persona_drafts_flags_connection")
     icons_connection = await get_table_info(conn, "persona_drafts_icons_connection")
-    instructions_connection = await get_table_info(conn, "persona_drafts_instructions_connection")
+    instructions_connection = await get_table_info(
+        conn, "persona_drafts_instructions_connection"
+    )
     names_connection = await get_table_info(conn, "persona_drafts_names_connection")
-    parameter_fields_connection = await get_table_info(conn, "persona_drafts_parameter_fields_connection")
-    profiles_connection = await get_table_info(conn, "persona_drafts_profiles_connection")
+    parameter_fields_connection = await get_table_info(
+        conn, "persona_drafts_parameter_fields_connection"
+    )
+    profiles_connection = await get_table_info(
+        conn, "persona_drafts_profiles_connection"
+    )
     voices_connection = await get_table_info(conn, "persona_drafts_voices_connection")
 
     tables = [

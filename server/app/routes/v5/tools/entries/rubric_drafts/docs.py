@@ -16,14 +16,24 @@ async def get_rubric_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     """Get full documentation for the rubric_drafts entry."""
     mv_info = await get_mv_info(conn, "rubric_drafts_mv")
     entry_table = await get_table_info(conn, "rubric_drafts_entry")
-    departments_connection = await get_table_info(conn, "rubric_drafts_departments_connection")
-    descriptions_connection = await get_table_info(conn, "rubric_drafts_descriptions_connection")
+    departments_connection = await get_table_info(
+        conn, "rubric_drafts_departments_connection"
+    )
+    descriptions_connection = await get_table_info(
+        conn, "rubric_drafts_descriptions_connection"
+    )
     flags_connection = await get_table_info(conn, "rubric_drafts_flags_connection")
     names_connection = await get_table_info(conn, "rubric_drafts_names_connection")
     points_connection = await get_table_info(conn, "rubric_drafts_points_connection")
-    profiles_connection = await get_table_info(conn, "rubric_drafts_profiles_connection")
-    standard_groups_connection = await get_table_info(conn, "rubric_drafts_standard_groups_connection")
-    standards_connection = await get_table_info(conn, "rubric_drafts_standards_connection")
+    profiles_connection = await get_table_info(
+        conn, "rubric_drafts_profiles_connection"
+    )
+    standard_groups_connection = await get_table_info(
+        conn, "rubric_drafts_standard_groups_connection"
+    )
+    standards_connection = await get_table_info(
+        conn, "rubric_drafts_standards_connection"
+    )
 
     tables = [
         t

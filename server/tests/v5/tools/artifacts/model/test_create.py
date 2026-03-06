@@ -1,6 +1,5 @@
 """Tests for create_model — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.model.create import create_model
@@ -93,11 +92,21 @@ async def test_no_junctions_when_none_provided(conn, redis_client):
     result = await create_model(conn)
 
     items = await get_models(
-        conn, [result.id],
-        names=True, descriptions=True, departments=True,
-        flags=True, modalities=True, pricing=True,
-        providers=True, qualities=True, reasoning_levels=True,
-        temperature_levels=True, values=True, voices=True, models=True,
+        conn,
+        [result.id],
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+        modalities=True,
+        pricing=True,
+        providers=True,
+        qualities=True,
+        reasoning_levels=True,
+        temperature_levels=True,
+        values=True,
+        voices=True,
+        models=True,
     )
     p = items[0]
     assert p.name_ids == []

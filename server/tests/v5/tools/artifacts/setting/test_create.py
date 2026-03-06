@@ -1,6 +1,5 @@
 """Tests for create_setting — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.setting.create import create_setting
@@ -62,12 +61,21 @@ async def test_links_flags_with_value(conn, redis_client):
 async def test_no_junctions_when_none_provided(conn, redis_client):
     result = await create_setting(conn)
     items = await get_settings(
-        conn, [result.id],
-        names=True, descriptions=True, departments=True,
-        flags=True, colors=True, profiles=True,
-        auth_item_keys=True, provider_keys=True,
-        thresholds=True, systems=True, settings=True,
-        auths=True, auth_item_values=True,
+        conn,
+        [result.id],
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+        colors=True,
+        profiles=True,
+        auth_item_keys=True,
+        provider_keys=True,
+        thresholds=True,
+        systems=True,
+        settings=True,
+        auths=True,
+        auth_item_values=True,
     )
     p = items[0]
     assert p.name_ids == []

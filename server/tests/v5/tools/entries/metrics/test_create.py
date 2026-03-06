@@ -40,9 +40,7 @@ async def test_roundtrip_via_db(conn, profile_id):
         session.id,
     )
 
-    row = await conn.fetchrow(
-        "SELECT * FROM metrics_entry WHERE id = $1", entry_id
-    )
+    row = await conn.fetchrow("SELECT * FROM metrics_entry WHERE id = $1", entry_id)
 
     assert row is not None
     assert row["id"] == entry_id

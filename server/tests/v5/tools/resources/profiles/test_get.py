@@ -1,6 +1,5 @@
 """Tests for get_profiles."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.profiles.create import create_profile

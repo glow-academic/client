@@ -1,6 +1,5 @@
 """Tests for get_personas."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.personas.create import create_persona
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_persona(conn, redis_client):
-    created = await create_persona(conn, redis_client, name="test-persona", description="desc")
+    created = await create_persona(
+        conn, redis_client, name="test-persona", description="desc"
+    )
 
     items = await get_personas(conn, [created.id], redis_client)
 

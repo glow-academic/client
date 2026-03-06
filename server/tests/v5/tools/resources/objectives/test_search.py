@@ -1,6 +1,5 @@
 """Tests for search_objectives."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.objectives.create import create_objective
@@ -37,9 +36,7 @@ async def test_returns_empty_for_no_match(conn, redis_client):
 
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
-        await create_objective(
-            conn, f"limit-test-obj-{unique_tag()}", redis_client
-        )
+        await create_objective(conn, f"limit-test-obj-{unique_tag()}", redis_client)
 
     items = await search_objectives(
         conn, redis_client, search="limit-test-obj-", limit_count=2
@@ -50,9 +47,7 @@ async def test_respects_limit(conn, redis_client):
 
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
-        await create_objective(
-            conn, f"offset-test-obj-{unique_tag()}", redis_client
-        )
+        await create_objective(conn, f"offset-test-obj-{unique_tag()}", redis_client)
 
     all_items = await search_objectives(
         conn, redis_client, search="offset-test-obj-", limit_count=10
@@ -65,12 +60,8 @@ async def test_respects_offset(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    a = await create_objective(
-        conn, f"exclude-a-obj-{unique_tag()}", redis_client
-    )
-    b = await create_objective(
-        conn, f"exclude-b-obj-{unique_tag()}", redis_client
-    )
+    a = await create_objective(conn, f"exclude-a-obj-{unique_tag()}", redis_client)
+    b = await create_objective(conn, f"exclude-b-obj-{unique_tag()}", redis_client)
 
     items = await search_objectives(
         conn, redis_client, search="exclude-", exclude_ids=[a.id]
@@ -88,9 +79,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_cache_hit(conn, redis_client):
-    await create_objective(
-        conn, f"cache-hit-obj-{unique_tag()}", redis_client
-    )
+    await create_objective(conn, f"cache-hit-obj-{unique_tag()}", redis_client)
 
     items1 = await search_objectives(conn, redis_client, search="cache-hit-obj-")
     items2 = await search_objectives(conn, redis_client, search="cache-hit-obj-")
@@ -100,9 +89,7 @@ async def test_cache_hit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    await create_objective(
-        conn, f"bypass-obj-{unique_tag()}", redis_client
-    )
+    await create_objective(conn, f"bypass-obj-{unique_tag()}", redis_client)
 
     items = await search_objectives(
         conn, redis_client, search="bypass-obj-", bypass_cache=True

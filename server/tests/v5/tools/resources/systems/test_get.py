@@ -1,6 +1,5 @@
 """Tests for get_systems."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.systems.create import create_system

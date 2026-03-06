@@ -1,6 +1,5 @@
 """Tests for update_tool — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.tool.create import create_tool
@@ -32,7 +31,10 @@ async def _create_with_junctions(conn, redis_client):
     d2 = await create_department(conn, redis=redis_client)
 
     result = await create_tool(
-        conn, name_id=n.id, description_id=desc.id, department_ids=[d1.id, d2.id],
+        conn,
+        name_id=n.id,
+        description_id=desc.id,
+        department_ids=[d1.id, d2.id],
     )
     return result.id, n.id, desc.id, d1.id, d2.id
 

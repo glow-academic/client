@@ -6,7 +6,9 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_redis_client
-from app.routes.v5.tools.resources.model_rubrics.search import search_model_rubrics as search_model_rubrics_fn
+from app.routes.v5.tools.resources.model_rubrics.search import (
+    search_model_rubrics as search_model_rubrics_fn,
+)
 from app.sql.types import (
     SearchModelRubricsApiRequest,
     SearchModelRubricsApiResponse,

@@ -434,7 +434,11 @@ async def get_agent_internal(
                 c, description_ids, get_redis_client(), cache
             )
             suggestions = await search_descriptions(
-                c, get_redis_client(), exclude_ids=description_ids, bypass_cache=bypass_cache, agent=True,
+                c,
+                get_redis_client(),
+                exclude_ids=description_ids,
+                bypass_cache=bypass_cache,
+                agent=True,
             )
             return (selected, suggestions)
 
@@ -492,9 +496,14 @@ async def get_agent_internal(
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags(
-                c, get_redis_client(), search=None, limit_count=50,
-                offset_count=0, exclude_ids=flag_ids,
-                bypass_cache=bypass_cache, agent=True,
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=flag_ids,
+                bypass_cache=bypass_cache,
+                agent=True,
             )
             # Filter to only agent-specific flags
             suggestions = [f for f in all_flags if f.name in AGENT_FLAG_NAMES]
@@ -619,9 +628,7 @@ async def get_agent_internal(
     prompts = _dedupe_by_id(prompts_selected + prompts_suggestions, "id")
     instructions = _dedupe_by_id(instructions_selected + instructions_suggestions, "id")
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
-    departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "id"
-    )
+    departments = _dedupe_by_id(departments_selected + departments_suggestions, "id")
     tools = _dedupe_by_id(tools_selected + tools_suggestions, "id")
     temperature_levels = _dedupe_by_id(
         temperature_levels_selected + temperature_levels_suggestions, "id"
@@ -719,9 +726,7 @@ async def get_agent_internal(
     instructions_resource = next(
         (i for i in instructions if i.id == selected_instructions_id), None
     )
-    department_resources = [
-        d for d in departments if d.id in selected_department_ids
-    ]
+    department_resources = [d for d in departments if d.id in selected_department_ids]
     tool_resources = [t for t in tools if t.id in set(selected_tool_ids)]
     temperature_level_resource = next(
         (t for t in temperature_levels if t.id == selected_temperature_level_id), None

@@ -1,6 +1,5 @@
 """Tests for get_endpoints."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.endpoints.create import create_endpoint

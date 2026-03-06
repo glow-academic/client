@@ -9,7 +9,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_creates_new_simulation(conn, redis_client):
-    result = await create_simulation(conn, redis_client, name="test-sim", description="desc")
+    result = await create_simulation(
+        conn, redis_client, name="test-sim", description="desc"
+    )
 
     assert result.name == "test-sim"
     assert result.description == "desc"

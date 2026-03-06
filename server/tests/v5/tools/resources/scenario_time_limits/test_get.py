@@ -1,10 +1,13 @@
 """Tests for get_scenario_time_limits."""
 
-
 import pytest
 
-from app.routes.v5.tools.resources.scenario_time_limits.create import create_scenario_time_limit
-from app.routes.v5.tools.resources.scenario_time_limits.get import get_scenario_time_limits
+from app.routes.v5.tools.resources.scenario_time_limits.create import (
+    create_scenario_time_limit,
+)
+from app.routes.v5.tools.resources.scenario_time_limits.get import (
+    get_scenario_time_limits,
+)
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
 from tests.helpers import nonexistent_id
 
@@ -55,12 +58,16 @@ async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     scenario = await create_scenario(conn, redis_client)
     item = await create_scenario_time_limit(conn, scenario.id, 900, redis_client)
 
-    items = await get_scenario_time_limits(conn, [item.id], redis_client, bypass_cache=True)
+    items = await get_scenario_time_limits(
+        conn, [item.id], redis_client, bypass_cache=True
+    )
     assert len(items) == 1
 
     from app.utils.cache.cache_key import cache_key
     from app.utils.cache.get_cached import get_cached
 
-    key = cache_key("/api/v5/resources/scenario_time_limits/get", {"ids": [str(item.id)]})
+    key = cache_key(
+        "/api/v5/resources/scenario_time_limits/get", {"ids": [str(item.id)]}
+    )
     cached = await get_cached(key, redis=redis_client)
     assert cached is None

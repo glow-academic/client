@@ -9,7 +9,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_creates_new_pricing(conn, redis_client):
-    result = await create_pricing(conn, "input", 0.5, "tokens", "tokens", 1000, redis_client)
+    result = await create_pricing(
+        conn, "input", 0.5, "tokens", "tokens", 1000, redis_client
+    )
 
     assert result.pricing_type == "input"
     assert result.price == pytest.approx(0.5)
@@ -21,7 +23,9 @@ async def test_creates_new_pricing(conn, redis_client):
 
 
 async def test_visible_via_get(conn, redis_client):
-    result = await create_pricing(conn, "output", 0.3, "chars", "tokens", 200, redis_client)
+    result = await create_pricing(
+        conn, "output", 0.3, "chars", "tokens", 200, redis_client
+    )
 
     items = await get_pricing(conn, [result.id], redis_client, bypass_cache=True)
 
@@ -31,8 +35,12 @@ async def test_visible_via_get(conn, redis_client):
 
 
 async def test_creates_second_row_for_same_params(conn, redis_client):
-    first = await create_pricing(conn, "input", 0.5, "tokens", "tokens", 1000, redis_client)
-    second = await create_pricing(conn, "input", 0.5, "tokens", "tokens", 1000, redis_client)
+    first = await create_pricing(
+        conn, "input", 0.5, "tokens", "tokens", 1000, redis_client
+    )
+    second = await create_pricing(
+        conn, "input", 0.5, "tokens", "tokens", 1000, redis_client
+    )
 
     assert first.id != second.id
     assert second.pricing_type == "input"

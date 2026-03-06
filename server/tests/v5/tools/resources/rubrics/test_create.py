@@ -9,7 +9,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_creates_new_rubric(conn, redis_client):
-    result = await create_rubric(conn, redis_client, name="test-rubric", description="desc")
+    result = await create_rubric(
+        conn, redis_client, name="test-rubric", description="desc"
+    )
 
     assert result.name == "test-rubric"
     assert result.description == "desc"

@@ -14,8 +14,13 @@ async def test_creates_new_provider_key(conn, redis_client):
     provider = await create_provider(conn, "test-provider", redis=redis_client)
     key = await create_key(conn, redis_client, name="test-key", key="sk-test-123")
     result = await create_provider_key(
-        conn, provider.id, key.id, redis_client,
-        key="sk-pk-123", name="test-pk", description="Test pk desc"
+        conn,
+        provider.id,
+        key.id,
+        redis_client,
+        key="sk-pk-123",
+        name="test-pk",
+        description="Test pk desc",
     )
 
     assert result.provider_id == provider.id
@@ -29,7 +34,9 @@ async def test_creates_new_provider_key(conn, redis_client):
 
 async def test_visible_via_get(conn, redis_client):
     provider = await create_provider(conn, "test-provider-visible", redis=redis_client)
-    key = await create_key(conn, redis_client, name="test-key-visible", key="sk-visible-123")
+    key = await create_key(
+        conn, redis_client, name="test-key-visible", key="sk-visible-123"
+    )
     result = await create_provider_key(
         conn, provider.id, key.id, redis_client, name="visible-pk"
     )
@@ -43,9 +50,15 @@ async def test_visible_via_get(conn, redis_client):
 
 async def test_creates_second_row(conn, redis_client):
     provider = await create_provider(conn, "test-provider-second", redis=redis_client)
-    key = await create_key(conn, redis_client, name="test-key-second", key="sk-second-123")
-    first = await create_provider_key(conn, provider.id, key.id, redis_client, name="pk-first")
-    second = await create_provider_key(conn, provider.id, key.id, redis_client, name="pk-second")
+    key = await create_key(
+        conn, redis_client, name="test-key-second", key="sk-second-123"
+    )
+    first = await create_provider_key(
+        conn, provider.id, key.id, redis_client, name="pk-first"
+    )
+    second = await create_provider_key(
+        conn, provider.id, key.id, redis_client, name="pk-second"
+    )
 
     assert first.id != second.id
 

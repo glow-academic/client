@@ -18,3 +18,13 @@ class GetUploadCompletionResponse(BaseModel):
     active: bool
     mcp: bool
     generated: bool
+
+
+class SearchUploadCompletionResponse(BaseModel):
+    id: UUID
+    created_at: datetime
+    generated: bool
+    mcp: bool
+    active: bool
+    upload_id: UUID
+    session_id: UUID

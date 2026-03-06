@@ -45,7 +45,9 @@ async def test_includes_all_operations(conn):
 async def test_create_operation_has_params(conn):
     result = await get_attempt_feedback_docs(conn)
 
-    create_op = next(op for op in result.operations if op.name == "create_attempt_feedback")
+    create_op = next(
+        op for op in result.operations if op.name == "create_attempt_feedback"
+    )
     param_names = [p.name for p in create_op.params]
     assert "grade_id" in param_names
     assert "call_id" in param_names

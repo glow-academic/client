@@ -12,15 +12,50 @@ ARTIFACT_FK = "simulation_id"
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
     ("names", "simulation_names_junction", "names_id", "name_ids"),
-    ("descriptions", "simulation_descriptions_junction", "descriptions_id", "description_ids"),
-    ("departments", "simulation_departments_junction", "departments_id", "department_ids"),
+    (
+        "descriptions",
+        "simulation_descriptions_junction",
+        "descriptions_id",
+        "description_ids",
+    ),
+    (
+        "departments",
+        "simulation_departments_junction",
+        "departments_id",
+        "department_ids",
+    ),
     ("flags", "simulation_flags_junction", "flags_id", "flag_ids"),
     ("scenarios", "simulation_scenarios_junction", "scenarios_id", "scenario_ids"),
-    ("scenario_flags", "simulation_scenario_flags_junction", "scenario_flags_id", "scenario_flag_ids"),
-    ("scenario_positions", "simulation_scenario_positions_junction", "scenario_positions_id", "scenario_position_ids"),
-    ("scenario_rubrics", "simulation_scenario_rubrics_junction", "scenario_rubrics_id", "scenario_rubric_ids"),
-    ("scenario_time_limits", "simulation_scenario_time_limits_junction", "scenario_time_limits_id", "scenario_time_limit_ids"),
-    ("simulations", "simulation_simulations_junction", "simulations_id", "simulation_ids"),
+    (
+        "scenario_flags",
+        "simulation_scenario_flags_junction",
+        "scenario_flags_id",
+        "scenario_flag_ids",
+    ),
+    (
+        "scenario_positions",
+        "simulation_scenario_positions_junction",
+        "scenario_positions_id",
+        "scenario_position_ids",
+    ),
+    (
+        "scenario_rubrics",
+        "simulation_scenario_rubrics_junction",
+        "scenario_rubrics_id",
+        "scenario_rubric_ids",
+    ),
+    (
+        "scenario_time_limits",
+        "simulation_scenario_time_limits_junction",
+        "scenario_time_limits_id",
+        "scenario_time_limit_ids",
+    ),
+    (
+        "simulations",
+        "simulation_simulations_junction",
+        "simulations_id",
+        "simulation_ids",
+    ),
 ]
 
 
@@ -56,23 +91,34 @@ async def get_simulations(
         "simulations": simulations,
     }
 
-    active = [(table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]]
+    active = [
+        (table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]
+    ]
 
     # Build dynamic query
-    columns = ["p.id", "p.created_at", "p.updated_at", "p.generated", "p.mcp", "p.active"]
+    columns = [
+        "p.id",
+        "p.created_at",
+        "p.updated_at",
+        "p.generated",
+        "p.mcp",
+        "p.active",
+    ]
     joins: list[str] = []
 
     for i, (table, col, field) in enumerate(active):
         alias = f"j{i}"
-        joins.append(f"LEFT JOIN {table} {alias} ON {alias}.{ARTIFACT_FK} = p.id AND {alias}.active = true")
+        joins.append(
+            f"LEFT JOIN {table} {alias} ON {alias}.{ARTIFACT_FK} = p.id AND {alias}.active = true"
+        )
         columns.append(
             f"ARRAY_AGG(DISTINCT {alias}.{col}) FILTER (WHERE {alias}.{col} IS NOT NULL) AS {field}"
         )
 
     query = f"""
-        SELECT {', '.join(columns)}
+        SELECT {", ".join(columns)}
         FROM {TABLE} p
-        {' '.join(joins)}
+        {" ".join(joins)}
         WHERE p.id = ANY($1)
         GROUP BY p.id, p.created_at, p.updated_at, p.generated, p.mcp, p.active
     """

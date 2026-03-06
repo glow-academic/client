@@ -2,8 +2,12 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.scenario_time_limits.create import create_scenario_time_limit
-from app.routes.v5.tools.resources.scenario_time_limits.get import get_scenario_time_limits
+from app.routes.v5.tools.resources.scenario_time_limits.create import (
+    create_scenario_time_limit,
+)
+from app.routes.v5.tools.resources.scenario_time_limits.get import (
+    get_scenario_time_limits,
+)
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
 
 pytestmark = pytest.mark.asyncio
@@ -24,7 +28,9 @@ async def test_visible_via_get(conn, redis_client):
     scenario = await create_scenario(conn, redis_client)
     result = await create_scenario_time_limit(conn, scenario.id, 600, redis_client)
 
-    items = await get_scenario_time_limits(conn, [result.id], redis_client, bypass_cache=True)
+    items = await get_scenario_time_limits(
+        conn, [result.id], redis_client, bypass_cache=True
+    )
 
     assert len(items) == 1
     assert items[0].id == result.id
@@ -41,7 +47,9 @@ async def test_creates_second_row(conn, redis_client):
 
 async def test_sets_mcp_flag(conn, redis_client):
     scenario = await create_scenario(conn, redis_client)
-    result = await create_scenario_time_limit(conn, scenario.id, 900, redis_client, mcp=True)
+    result = await create_scenario_time_limit(
+        conn, scenario.id, 900, redis_client, mcp=True
+    )
 
     assert result.mcp is True
     assert result.generated is True

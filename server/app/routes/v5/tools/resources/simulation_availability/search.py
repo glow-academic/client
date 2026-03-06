@@ -6,7 +6,9 @@ import asyncpg  # type: ignore
 from redis.asyncio import Redis
 
 from app.infra.search.search_resource import search_resource_ids
-from app.routes.v5.tools.resources.simulation_availability.get import get_simulation_availability
+from app.routes.v5.tools.resources.simulation_availability.get import (
+    get_simulation_availability,
+)
 from app.routes.v5.tools.resources.simulation_availability.types import (
     GetSimulationAvailabilityResponse,
 )
@@ -47,7 +49,9 @@ async def search_simulation_availability(
         extra_conditions.append(("{alias}.simulation_id = ANY(${idx})", simulation_ids))
 
     if availability_type is not None:
-        extra_conditions.append(("{alias}.type = ${idx}::availability_type", availability_type))
+        extra_conditions.append(
+            ("{alias}.type = ${idx}::availability_type", availability_type)
+        )
 
     tags = ["resources", "simulation_availability"]
     key = cache_key(

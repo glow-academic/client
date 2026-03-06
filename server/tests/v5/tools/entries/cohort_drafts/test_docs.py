@@ -54,7 +54,9 @@ async def test_create_operation_has_params(conn):
 async def test_search_operation_has_filters(conn):
     result = await get_cohort_drafts_docs(conn)
 
-    search_op = next(op for op in result.operations if op.name == "search_cohort_drafts")
+    search_op = next(
+        op for op in result.operations if op.name == "search_cohort_drafts"
+    )
     param_names = [p.name for p in search_op.params]
     assert "group_id" in param_names
     assert "session_id" in param_names

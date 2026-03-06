@@ -1,6 +1,5 @@
 """Tests for get_resources."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.resources.create import create_resource

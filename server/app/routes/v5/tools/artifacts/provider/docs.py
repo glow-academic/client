@@ -27,10 +27,25 @@ async def get_provider_docs(conn: asyncpg.Connection) -> DocsResponse:
         ),
         tables=tables,
         operations=[
-            get_operation_info(create_provider, description="Creates a new provider artifact with optional resource links."),
-            get_operation_info(update_provider, description="Updates an existing provider's resource links."),
-            get_operation_info(get_providers, description="Batch retrieves providers by IDs with optional junction data."),
-            get_operation_info(search_providers, description="Filtered paginated search returning matching provider IDs."),
-            get_operation_info(delete_providers, description="Deletes providers by IDs. Supports soft delete (active=false) or hard delete (cascade)."),
+            get_operation_info(
+                create_provider,
+                description="Creates a new provider artifact with optional resource links.",
+            ),
+            get_operation_info(
+                update_provider,
+                description="Updates an existing provider's resource links.",
+            ),
+            get_operation_info(
+                get_providers,
+                description="Batch retrieves providers by IDs with optional junction data.",
+            ),
+            get_operation_info(
+                search_providers,
+                description="Filtered paginated search returning matching provider IDs.",
+            ),
+            get_operation_info(
+                delete_providers,
+                description="Deletes providers by IDs. Supports soft delete (active=false) or hard delete (cascade).",
+            ),
         ],
     )

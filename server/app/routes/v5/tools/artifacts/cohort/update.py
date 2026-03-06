@@ -28,10 +28,22 @@ SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
     ("cohort_departments_junction", "departments_id", "cohort_departments_pkey"),
     ("cohort_profiles_junction", "profiles_id", "cohort_profiles_junction_pkey"),
-    ("cohort_profile_personas_junction", "profile_personas_id", "cohort_profile_personas_junction_pkey"),
+    (
+        "cohort_profile_personas_junction",
+        "profile_personas_id",
+        "cohort_profile_personas_junction_pkey",
+    ),
     ("cohort_simulations_junction", "simulations_id", "cohort_simulations_pkey"),
-    ("cohort_simulation_availability_junction", "simulation_availability_id", "cohort_simulation_availability_junction_pkey"),
-    ("cohort_simulation_positions_junction", "simulation_positions_id", "cohort_simulation_positions_pkey"),
+    (
+        "cohort_simulation_availability_junction",
+        "simulation_availability_id",
+        "cohort_simulation_availability_junction_pkey",
+    ),
+    (
+        "cohort_simulation_positions_junction",
+        "simulation_positions_id",
+        "cohort_simulation_positions_pkey",
+    ),
     ("cohort_cohorts_junction", "cohorts_id", "cohort_cohorts_junction_pkey"),
 ]
 

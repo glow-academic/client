@@ -13,9 +13,23 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 
 JUNCTION_ARTIFACTS = [
-    "agent", "auth", "cohort", "department", "document", "eval", "field",
-    "model", "parameter", "persona", "profile", "provider", "rubric",
-    "scenario", "setting", "simulation", "tool",
+    "agent",
+    "auth",
+    "cohort",
+    "department",
+    "document",
+    "eval",
+    "field",
+    "model",
+    "parameter",
+    "persona",
+    "profile",
+    "provider",
+    "rubric",
+    "scenario",
+    "setting",
+    "simulation",
+    "tool",
 ]
 
 
@@ -52,12 +66,23 @@ async def search_flags(
         return []
 
     artifact_filters = {
-        "agent": agent, "auth": auth, "cohort": cohort,
-        "department": department, "document": document, "eval": eval,
-        "field": field, "model": model, "parameter": parameter,
-        "persona": persona, "profile": profile, "provider": provider,
-        "rubric": rubric, "scenario": scenario, "setting": setting,
-        "simulation": simulation, "tool": tool,
+        "agent": agent,
+        "auth": auth,
+        "cohort": cohort,
+        "department": department,
+        "document": document,
+        "eval": eval,
+        "field": field,
+        "model": model,
+        "parameter": parameter,
+        "persona": persona,
+        "profile": profile,
+        "provider": provider,
+        "rubric": rubric,
+        "scenario": scenario,
+        "setting": setting,
+        "simulation": simulation,
+        "tool": tool,
     }
 
     extra_conditions: list[tuple[str, object]] = []

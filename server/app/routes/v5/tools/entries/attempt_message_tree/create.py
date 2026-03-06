@@ -35,4 +35,6 @@ async def create_attempt_message_tree(
     )
     if row is None:
         return None
-    return CreateAttemptMessageTreeResponse(parent_id=row["parent_id"], child_id=row["child_id"])
+    return CreateAttemptMessageTreeResponse(
+        parent_id=row["parent_id"], child_id=row["child_id"]
+    )

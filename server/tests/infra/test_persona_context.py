@@ -107,34 +107,36 @@ def _draft(
 
 def _mock_all_fetchers():
     """Return a context manager that mocks all get/search fetchers to return []."""
-    return _MultiPatch({
-        f"{MODULE}.get_persona_artifacts": [],
-        f"{MODULE}.get_persona_drafts": [],
-        f"{MODULE}.get_names": [],
-        f"{MODULE}.search_names": [],
-        f"{MODULE}.get_descriptions": [],
-        f"{MODULE}.search_descriptions": [],
-        f"{MODULE}.get_colors": [],
-        f"{MODULE}.search_colors": [],
-        f"{MODULE}.get_icons": [],
-        f"{MODULE}.search_icons": [],
-        f"{MODULE}.get_instructions": [],
-        f"{MODULE}.search_instructions": [],
-        f"{MODULE}.get_flags": [],
-        f"{MODULE}.search_flags": [],
-        f"{MODULE}.get_departments": [],
-        f"{MODULE}.search_departments": [],
-        f"{MODULE}.get_parameter_fields": [],
-        f"{MODULE}.search_parameter_fields": [],
-        f"{MODULE}.get_examples": [],
-        f"{MODULE}.search_examples": [],
-        f"{MODULE}.get_voices": [],
-        f"{MODULE}.search_voices": [],
-        f"{MODULE}.get_parameters": [],
-        f"{MODULE}.search_parameters": [],
-        f"{MODULE}.search_fields": [],
-        f"{MODULE}.search_scenarios": [],
-    })
+    return _MultiPatch(
+        {
+            f"{MODULE}.get_persona_artifacts": [],
+            f"{MODULE}.get_persona_drafts": [],
+            f"{MODULE}.get_names": [],
+            f"{MODULE}.search_names": [],
+            f"{MODULE}.get_descriptions": [],
+            f"{MODULE}.search_descriptions": [],
+            f"{MODULE}.get_colors": [],
+            f"{MODULE}.search_colors": [],
+            f"{MODULE}.get_icons": [],
+            f"{MODULE}.search_icons": [],
+            f"{MODULE}.get_instructions": [],
+            f"{MODULE}.search_instructions": [],
+            f"{MODULE}.get_flags": [],
+            f"{MODULE}.search_flags": [],
+            f"{MODULE}.get_departments": [],
+            f"{MODULE}.search_departments": [],
+            f"{MODULE}.get_parameter_fields": [],
+            f"{MODULE}.search_parameter_fields": [],
+            f"{MODULE}.get_examples": [],
+            f"{MODULE}.search_examples": [],
+            f"{MODULE}.get_voices": [],
+            f"{MODULE}.search_voices": [],
+            f"{MODULE}.get_parameters": [],
+            f"{MODULE}.search_parameters": [],
+            f"{MODULE}.search_fields": [],
+            f"{MODULE}.search_scenarios": [],
+        }
+    )
 
 
 class _MultiPatch:
@@ -227,11 +229,21 @@ class TestMergeJunctionIds:
 
     def test_all_fields_override(self):
         """Draft overrides every field when all are populated."""
-        pub = {f: [uuid4()] for f in [
-            "name_ids", "description_ids", "color_ids", "icon_ids",
-            "instruction_ids", "flag_ids", "department_ids",
-            "parameter_field_ids", "example_ids", "voice_ids",
-        ]}
+        pub = {
+            f: [uuid4()]
+            for f in [
+                "name_ids",
+                "description_ids",
+                "color_ids",
+                "icon_ids",
+                "instruction_ids",
+                "flag_ids",
+                "department_ids",
+                "parameter_field_ids",
+                "example_ids",
+                "voice_ids",
+            ]
+        }
         draft_vals = {f: [uuid4()] for f in pub}
 
         artifact = _persona_artifact(**pub)
@@ -259,7 +271,10 @@ class TestResolvePersonaContextEmpty:
 
         with _mock_all_fetchers():
             result = await resolve_persona_context(
-                None, None, persona_id=None, group_id=group_id,
+                None,
+                None,
+                persona_id=None,
+                group_id=group_id,
             )
 
         assert result.artifact_id is None
@@ -284,7 +299,10 @@ class TestResolvePersonaContextEmpty:
             m.override(f"{MODULE}.get_names", [selected_name])
 
             result = await resolve_persona_context(
-                None, None, persona_id=persona_id, group_id=group_id,
+                None,
+                None,
+                persona_id=persona_id,
+                group_id=group_id,
             )
 
         # Verify artifact fetcher called with correct persona_id
@@ -316,7 +334,8 @@ class TestResolvePersonaContextDraft:
         draft_id = uuid4()
 
         artifact = _persona_artifact(
-            persona_id=persona_id, name_ids=[published_name_id],
+            persona_id=persona_id,
+            name_ids=[published_name_id],
         )
         draft = _draft(draft_id=draft_id, name_ids=[draft_name_id], version=3)
         draft_name_obj = object()
@@ -327,7 +346,8 @@ class TestResolvePersonaContextDraft:
             m.override(f"{MODULE}.get_names", [draft_name_obj])
 
             result = await resolve_persona_context(
-                None, None,
+                None,
+                None,
                 persona_id=persona_id,
                 group_id=group_id,
                 draft_id=draft_id,
@@ -363,7 +383,10 @@ class TestResolvePersonaContextResources:
             m.override(f"{MODULE}.search_names", [suggestion_obj])
 
             result = await resolve_persona_context(
-                None, None, persona_id=persona_id, group_id=group_id,
+                None,
+                None,
+                persona_id=persona_id,
+                group_id=group_id,
             )
 
         assert result.resources["names"].selected == [selected_obj]
@@ -375,19 +398,33 @@ class TestResolvePersonaContextResources:
 
         with _mock_all_fetchers():
             result = await resolve_persona_context(
-                None, None, persona_id=None, group_id=group_id,
+                None,
+                None,
+                persona_id=None,
+                group_id=group_id,
             )
 
         resource_names = [
-            "names", "descriptions", "colors", "icons", "instructions",
-            "flags", "departments", "parameter_fields", "examples",
-            "voices", "parameters", "fields",
+            "names",
+            "descriptions",
+            "colors",
+            "icons",
+            "instructions",
+            "flags",
+            "departments",
+            "parameter_fields",
+            "examples",
+            "voices",
+            "parameters",
+            "fields",
         ]
         for rname in resource_names:
             pair = result.resources[rname]
             assert isinstance(pair, ResourcePair), f"{rname} should be a ResourcePair"
             assert isinstance(pair.selected, list), f"{rname}.selected should be list"
-            assert isinstance(pair.suggestions, list), f"{rname}.suggestions should be list"
+            assert isinstance(pair.suggestions, list), (
+                f"{rname}.suggestions should be list"
+            )
 
     async def test_inactive_artifact(self):
         persona_id = uuid4()
@@ -398,7 +435,10 @@ class TestResolvePersonaContextResources:
             m.override(f"{MODULE}.get_persona_artifacts", [artifact])
 
             result = await resolve_persona_context(
-                None, None, persona_id=persona_id, group_id=group_id,
+                None,
+                None,
+                persona_id=persona_id,
+                group_id=group_id,
             )
 
         assert result.active is False
@@ -419,7 +459,10 @@ class TestResolvePersonaContextResources:
             m.override(f"{MODULE}.search_flags", [persona_flag, other_flag])
 
             result = await resolve_persona_context(
-                None, None, persona_id=persona_id, group_id=group_id,
+                None,
+                None,
+                persona_id=persona_id,
+                group_id=group_id,
             )
 
         assert len(result.resources["flags"].suggestions) == 1
@@ -433,7 +476,8 @@ class TestResolvePersonaContextResources:
         scenario_id = uuid4()
 
         artifact = _persona_artifact(
-            persona_id=persona_id, persona_ids=[personas_resource_id],
+            persona_id=persona_id,
+            persona_ids=[personas_resource_id],
         )
 
         with _mock_all_fetchers() as m:
@@ -441,7 +485,10 @@ class TestResolvePersonaContextResources:
             m.override(f"{MODULE}.search_scenarios", [scenario_id])
 
             result = await resolve_persona_context(
-                None, None, persona_id=persona_id, group_id=group_id,
+                None,
+                None,
+                persona_id=persona_id,
+                group_id=group_id,
             )
 
         assert result.entries["has_active_scenarios"] is True
@@ -458,7 +505,8 @@ class TestResolvePersonaContextResources:
         personas_resource_id = uuid4()
 
         artifact = _persona_artifact(
-            persona_id=persona_id, persona_ids=[personas_resource_id],
+            persona_id=persona_id,
+            persona_ids=[personas_resource_id],
         )
 
         with _mock_all_fetchers() as m:
@@ -466,7 +514,10 @@ class TestResolvePersonaContextResources:
             # search_scenarios returns empty — no active scenarios
 
             result = await resolve_persona_context(
-                None, None, persona_id=persona_id, group_id=group_id,
+                None,
+                None,
+                persona_id=persona_id,
+                group_id=group_id,
             )
 
         assert result.entries["has_active_scenarios"] is False

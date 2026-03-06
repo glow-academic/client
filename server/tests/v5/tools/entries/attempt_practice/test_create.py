@@ -47,7 +47,9 @@ async def _attempt_practice(conn, profile_id, bundle, **overrides):
 
 
 async def test_returns_ids(conn, profile_id, simulation_bundle):
-    result, attempt, practice = await _attempt_practice(conn, profile_id, simulation_bundle)
+    result, attempt, practice = await _attempt_practice(
+        conn, profile_id, simulation_bundle
+    )
 
     assert result.attempt_id == attempt.id
     assert result.practice_id == practice.id
@@ -65,7 +67,9 @@ async def test_row_exists(conn, profile_id, simulation_bundle):
 
 
 async def test_passes_mcp_flag(conn, profile_id, simulation_bundle):
-    result, _, _ = await _attempt_practice(conn, profile_id, simulation_bundle, mcp=True)
+    result, _, _ = await _attempt_practice(
+        conn, profile_id, simulation_bundle, mcp=True
+    )
 
     row = await conn.fetchrow(
         "SELECT mcp FROM attempt_practice_entry WHERE attempt_id = $1",

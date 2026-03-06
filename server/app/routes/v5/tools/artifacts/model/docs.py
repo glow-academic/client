@@ -27,10 +27,24 @@ async def get_model_docs(conn: asyncpg.Connection) -> DocsResponse:
         ),
         tables=tables,
         operations=[
-            get_operation_info(create_model, description="Creates a new model artifact with optional resource links."),
-            get_operation_info(update_model, description="Updates an existing model's resource links."),
-            get_operation_info(get_models, description="Batch retrieves models by IDs with optional junction data."),
-            get_operation_info(search_models, description="Filtered paginated search returning matching model IDs."),
-            get_operation_info(delete_models, description="Deletes models by IDs. Supports soft delete (active=false) or hard delete (cascade)."),
+            get_operation_info(
+                create_model,
+                description="Creates a new model artifact with optional resource links.",
+            ),
+            get_operation_info(
+                update_model, description="Updates an existing model's resource links."
+            ),
+            get_operation_info(
+                get_models,
+                description="Batch retrieves models by IDs with optional junction data.",
+            ),
+            get_operation_info(
+                search_models,
+                description="Filtered paginated search returning matching model IDs.",
+            ),
+            get_operation_info(
+                delete_models,
+                description="Deletes models by IDs. Supports soft delete (active=false) or hard delete (cascade).",
+            ),
         ],
     )

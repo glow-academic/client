@@ -1,4 +1,5 @@
 """Tools CREATE — reusable data-access layer."""
+
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -25,7 +26,9 @@ async def create_tool(
         VALUES ($1, $2, true, $3, $3)
         RETURNING id
         """,
-        name, description, mcp,
+        name,
+        description,
+        mcp,
     )
     await invalidate_tags(["resources", "tools"], redis=redis)
     items = await get_tools(conn, [new_tool_id], redis, bypass_cache=True)

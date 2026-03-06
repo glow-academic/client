@@ -31,8 +31,7 @@ async def get_items(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetItemResponse.model_validate(item)
-                for item in cached.get("items", [])
+                GetItemResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

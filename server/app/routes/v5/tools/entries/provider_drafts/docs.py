@@ -16,13 +16,21 @@ async def get_provider_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     """Get full documentation for the provider_drafts entry."""
     mv_info = await get_mv_info(conn, "provider_drafts_mv")
     entry_table = await get_table_info(conn, "provider_drafts_entry")
-    departments_connection = await get_table_info(conn, "provider_drafts_departments_connection")
-    descriptions_connection = await get_table_info(conn, "provider_drafts_descriptions_connection")
-    endpoints_connection = await get_table_info(conn, "provider_drafts_endpoints_connection")
+    departments_connection = await get_table_info(
+        conn, "provider_drafts_departments_connection"
+    )
+    descriptions_connection = await get_table_info(
+        conn, "provider_drafts_descriptions_connection"
+    )
+    endpoints_connection = await get_table_info(
+        conn, "provider_drafts_endpoints_connection"
+    )
     flags_connection = await get_table_info(conn, "provider_drafts_flags_connection")
     keys_connection = await get_table_info(conn, "provider_drafts_keys_connection")
     names_connection = await get_table_info(conn, "provider_drafts_names_connection")
-    profiles_connection = await get_table_info(conn, "provider_drafts_profiles_connection")
+    profiles_connection = await get_table_info(
+        conn, "provider_drafts_profiles_connection"
+    )
     values_connection = await get_table_info(conn, "provider_drafts_values_connection")
 
     tables = [

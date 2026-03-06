@@ -130,9 +130,14 @@ def _mock_persona_resolver(mock_resolver):
 class TestResolveWebsocketContextEmpty:
     async def test_returns_none_when_profile_not_found(self):
         """No profile → returns None."""
-        with patch(f"{MODULE}.resolve_common_context", new_callable=AsyncMock, return_value=None):
+        with patch(
+            f"{MODULE}.resolve_common_context",
+            new_callable=AsyncMock,
+            return_value=None,
+        ):
             result = await resolve_websocket_context(
-                None, None,
+                None,
+                None,
                 profile_id=uuid4(),
                 requests=[],
             )
@@ -144,11 +149,16 @@ class TestResolveWebsocketContextEmpty:
         common = FakeCommonContext()
 
         with (
-            patch(f"{MODULE}.resolve_common_context", new_callable=AsyncMock, return_value=common),
+            patch(
+                f"{MODULE}.resolve_common_context",
+                new_callable=AsyncMock,
+                return_value=common,
+            ),
             patch(f"{MODULE}.score_tools", return_value=_empty_scores()),
         ):
             result = await resolve_websocket_context(
-                None, None,
+                None,
+                None,
                 profile_id=uuid4(),
                 requests=[],
             )
@@ -163,17 +173,24 @@ class TestResolveWebsocketContextEmpty:
         common = FakeCommonContext()
 
         with (
-            patch(f"{MODULE}.resolve_common_context", new_callable=AsyncMock, return_value=common),
+            patch(
+                f"{MODULE}.resolve_common_context",
+                new_callable=AsyncMock,
+                return_value=common,
+            ),
             pytest.raises(ValueError, match="Unknown artifact type: nonexistent"),
         ):
             await resolve_websocket_context(
-                None, None,
+                None,
+                None,
                 profile_id=uuid4(),
-                requests=[ArtifactRequest(
-                    artifact_type="nonexistent",
-                    artifact_id=uuid4(),
-                    group_id=uuid4(),
-                )],
+                requests=[
+                    ArtifactRequest(
+                        artifact_type="nonexistent",
+                        artifact_id=uuid4(),
+                        group_id=uuid4(),
+                    )
+                ],
             )
 
 
@@ -184,23 +201,32 @@ class TestResolveWebsocketContextSingleArtifact:
         persona_id = uuid4()
         group_id = uuid4()
         common = FakeCommonContext()
-        persona_ctx = _persona_artifact_context(artifact_id=persona_id, group_id=group_id)
+        persona_ctx = _persona_artifact_context(
+            artifact_id=persona_id, group_id=group_id
+        )
 
         mock_resolver = AsyncMock(return_value=persona_ctx)
         original = _mock_persona_resolver(mock_resolver)
         try:
             with (
-                patch(f"{MODULE}.resolve_common_context", new_callable=AsyncMock, return_value=common),
+                patch(
+                    f"{MODULE}.resolve_common_context",
+                    new_callable=AsyncMock,
+                    return_value=common,
+                ),
                 patch(f"{MODULE}.score_tools", return_value=_empty_scores()),
             ):
                 result = await resolve_websocket_context(
-                    None, None,
+                    None,
+                    None,
                     profile_id=uuid4(),
-                    requests=[ArtifactRequest(
-                        artifact_type="persona",
-                        artifact_id=persona_id,
-                        group_id=group_id,
-                    )],
+                    requests=[
+                        ArtifactRequest(
+                            artifact_type="persona",
+                            artifact_id=persona_id,
+                            group_id=group_id,
+                        )
+                    ],
                 )
         finally:
             ARTIFACT_RESOLVERS["persona"] = original
@@ -233,18 +259,25 @@ class TestResolveWebsocketContextSingleArtifact:
         original = _mock_persona_resolver(mock_resolver)
         try:
             with (
-                patch(f"{MODULE}.resolve_common_context", new_callable=AsyncMock, return_value=common),
+                patch(
+                    f"{MODULE}.resolve_common_context",
+                    new_callable=AsyncMock,
+                    return_value=common,
+                ),
                 patch(f"{MODULE}.score_tools", return_value=_empty_scores()),
             ):
                 await resolve_websocket_context(
-                    None, None,
+                    None,
+                    None,
                     profile_id=uuid4(),
-                    requests=[ArtifactRequest(
-                        artifact_type="persona",
-                        artifact_id=uuid4(),
-                        group_id=uuid4(),
-                        params={"color_search": "blue", "icon_search": "star"},
-                    )],
+                    requests=[
+                        ArtifactRequest(
+                            artifact_type="persona",
+                            artifact_id=uuid4(),
+                            group_id=uuid4(),
+                            params={"color_search": "blue", "icon_search": "star"},
+                        )
+                    ],
                 )
         finally:
             ARTIFACT_RESOLVERS["persona"] = original
@@ -263,17 +296,24 @@ class TestResolveWebsocketContextSingleArtifact:
         original = _mock_persona_resolver(mock_resolver)
         try:
             with (
-                patch(f"{MODULE}.resolve_common_context", new_callable=AsyncMock, return_value=common),
+                patch(
+                    f"{MODULE}.resolve_common_context",
+                    new_callable=AsyncMock,
+                    return_value=common,
+                ),
                 patch(f"{MODULE}.score_tools", return_value=_empty_scores()),
             ):
                 await resolve_websocket_context(
-                    None, None,
+                    None,
+                    None,
                     profile_id=uuid4(),
-                    requests=[ArtifactRequest(
-                        artifact_type="persona",
-                        artifact_id=persona_id,
-                        group_id=uuid4(),
-                    )],
+                    requests=[
+                        ArtifactRequest(
+                            artifact_type="persona",
+                            artifact_id=persona_id,
+                            group_id=uuid4(),
+                        )
+                    ],
                 )
         finally:
             ARTIFACT_RESOLVERS["persona"] = original
@@ -292,17 +332,24 @@ class TestResolveWebsocketContextSingleArtifact:
         original = _mock_persona_resolver(mock_resolver)
         try:
             with (
-                patch(f"{MODULE}.resolve_common_context", new_callable=AsyncMock, return_value=common),
+                patch(
+                    f"{MODULE}.resolve_common_context",
+                    new_callable=AsyncMock,
+                    return_value=common,
+                ),
                 patch(f"{MODULE}.score_tools", return_value=_empty_scores()),
             ):
                 await resolve_websocket_context(
-                    None, None,
+                    None,
+                    None,
                     profile_id=uuid4(),
-                    requests=[ArtifactRequest(
-                        artifact_type="persona",
-                        artifact_id=uuid4(),
-                        group_id=uuid4(),
-                    )],
+                    requests=[
+                        ArtifactRequest(
+                            artifact_type="persona",
+                            artifact_id=uuid4(),
+                            group_id=uuid4(),
+                        )
+                    ],
                 )
         finally:
             ARTIFACT_RESOLVERS["persona"] = original
@@ -321,17 +368,26 @@ class TestResolveWebsocketContextScoring:
         original = _mock_persona_resolver(mock_resolver)
         try:
             with (
-                patch(f"{MODULE}.resolve_common_context", new_callable=AsyncMock, return_value=common),
-                patch(f"{MODULE}.score_tools", return_value=_empty_scores()) as mock_score,
+                patch(
+                    f"{MODULE}.resolve_common_context",
+                    new_callable=AsyncMock,
+                    return_value=common,
+                ),
+                patch(
+                    f"{MODULE}.score_tools", return_value=_empty_scores()
+                ) as mock_score,
             ):
                 await resolve_websocket_context(
-                    None, None,
+                    None,
+                    None,
                     profile_id=uuid4(),
-                    requests=[ArtifactRequest(
-                        artifact_type="persona",
-                        artifact_id=uuid4(),
-                        group_id=uuid4(),
-                    )],
+                    requests=[
+                        ArtifactRequest(
+                            artifact_type="persona",
+                            artifact_id=uuid4(),
+                            group_id=uuid4(),
+                        )
+                    ],
                 )
         finally:
             ARTIFACT_RESOLVERS["persona"] = original
@@ -351,18 +407,29 @@ class TestResolveWebsocketContextScoring:
         original = _mock_persona_resolver(mock_resolver)
         try:
             with (
-                patch(f"{MODULE}.resolve_common_context", new_callable=AsyncMock, return_value=common),
+                patch(
+                    f"{MODULE}.resolve_common_context",
+                    new_callable=AsyncMock,
+                    return_value=common,
+                ),
                 patch(f"{MODULE}.score_tools", return_value=scores),
-                patch(f"{MODULE}.resolve_system_context", new_callable=AsyncMock, return_value=fake_sc) as mock_sys,
+                patch(
+                    f"{MODULE}.resolve_system_context",
+                    new_callable=AsyncMock,
+                    return_value=fake_sc,
+                ) as mock_sys,
             ):
                 result = await resolve_websocket_context(
-                    None, None,
+                    None,
+                    None,
                     profile_id=uuid4(),
-                    requests=[ArtifactRequest(
-                        artifact_type="persona",
-                        artifact_id=uuid4(),
-                        group_id=uuid4(),
-                    )],
+                    requests=[
+                        ArtifactRequest(
+                            artifact_type="persona",
+                            artifact_id=uuid4(),
+                            group_id=uuid4(),
+                        )
+                    ],
                 )
         finally:
             ARTIFACT_RESOLVERS["persona"] = original
@@ -384,18 +451,27 @@ class TestResolveWebsocketContextScoring:
         original = _mock_persona_resolver(mock_resolver)
         try:
             with (
-                patch(f"{MODULE}.resolve_common_context", new_callable=AsyncMock, return_value=common),
+                patch(
+                    f"{MODULE}.resolve_common_context",
+                    new_callable=AsyncMock,
+                    return_value=common,
+                ),
                 patch(f"{MODULE}.score_tools", return_value=_empty_scores()),
-                patch(f"{MODULE}.resolve_system_context", new_callable=AsyncMock) as mock_sys,
+                patch(
+                    f"{MODULE}.resolve_system_context", new_callable=AsyncMock
+                ) as mock_sys,
             ):
                 result = await resolve_websocket_context(
-                    None, None,
+                    None,
+                    None,
                     profile_id=uuid4(),
-                    requests=[ArtifactRequest(
-                        artifact_type="persona",
-                        artifact_id=uuid4(),
-                        group_id=uuid4(),
-                    )],
+                    requests=[
+                        ArtifactRequest(
+                            artifact_type="persona",
+                            artifact_id=uuid4(),
+                            group_id=uuid4(),
+                        )
+                    ],
                 )
         finally:
             ARTIFACT_RESOLVERS["persona"] = original
@@ -434,15 +510,25 @@ class TestResolveWebsocketContextScoring:
 
         best = {
             "names": ResolvedTool(
-                system_id=system_id_1, agent_id=uuid4(), tool_id=uuid4(),
-                operation="create", target_type="resource", target="names",
+                system_id=system_id_1,
+                agent_id=uuid4(),
+                tool_id=uuid4(),
+                operation="create",
+                target_type="resource",
+                target="names",
             ),
             "descriptions": ResolvedTool(
-                system_id=system_id_2, agent_id=uuid4(), tool_id=uuid4(),
-                operation="create", target_type="resource", target="descriptions",
+                system_id=system_id_2,
+                agent_id=uuid4(),
+                tool_id=uuid4(),
+                operation="create",
+                target_type="resource",
+                target="descriptions",
             ),
         }
-        scores = ArtifactToolScores(best=best, has_any={"names": True, "descriptions": True})
+        scores = ArtifactToolScores(
+            best=best, has_any={"names": True, "descriptions": True}
+        )
 
         common = FakeCommonContext()
         persona_ctx = _persona_artifact_context()
@@ -451,18 +537,29 @@ class TestResolveWebsocketContextScoring:
         original = _mock_persona_resolver(mock_resolver)
         try:
             with (
-                patch(f"{MODULE}.resolve_common_context", new_callable=AsyncMock, return_value=common),
+                patch(
+                    f"{MODULE}.resolve_common_context",
+                    new_callable=AsyncMock,
+                    return_value=common,
+                ),
                 patch(f"{MODULE}.score_tools", return_value=scores),
-                patch(f"{MODULE}.resolve_system_context", new_callable=AsyncMock, side_effect=[sc1, sc2]),
+                patch(
+                    f"{MODULE}.resolve_system_context",
+                    new_callable=AsyncMock,
+                    side_effect=[sc1, sc2],
+                ),
             ):
                 result = await resolve_websocket_context(
-                    None, None,
+                    None,
+                    None,
                     profile_id=uuid4(),
-                    requests=[ArtifactRequest(
-                        artifact_type="persona",
-                        artifact_id=uuid4(),
-                        group_id=uuid4(),
-                    )],
+                    requests=[
+                        ArtifactRequest(
+                            artifact_type="persona",
+                            artifact_id=uuid4(),
+                            group_id=uuid4(),
+                        )
+                    ],
                 )
         finally:
             ARTIFACT_RESOLVERS["persona"] = original

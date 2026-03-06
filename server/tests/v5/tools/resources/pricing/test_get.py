@@ -1,6 +1,5 @@
 """Tests for get_pricing."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.pricing.create import create_pricing
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_pricing(conn, redis_client):
-    created = await create_pricing(conn, "input", 0.5, "tokens", "tokens", 1000, redis_client)
+    created = await create_pricing(
+        conn, "input", 0.5, "tokens", "tokens", 1000, redis_client
+    )
 
     items = await get_pricing(conn, [created.id], redis_client)
 
@@ -38,7 +39,9 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 
 async def test_cache_hit_skips_db(conn, redis_client):
-    created = await create_pricing(conn, "output", 0.2, "tokens", "tokens", 500, redis_client)
+    created = await create_pricing(
+        conn, "output", 0.2, "tokens", "tokens", 500, redis_client
+    )
 
     # First call populates cache
     items = await get_pricing(conn, [created.id], redis_client)
@@ -52,7 +55,9 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
-    created = await create_pricing(conn, "input", 1.0, "tokens", "tokens", 1000, redis_client)
+    created = await create_pricing(
+        conn, "input", 1.0, "tokens", "tokens", 1000, redis_client
+    )
 
     items = await get_pricing(conn, [created.id], redis_client, bypass_cache=True)
     assert len(items) == 1

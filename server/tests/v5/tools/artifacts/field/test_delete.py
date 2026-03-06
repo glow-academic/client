@@ -1,6 +1,5 @@
 """Tests for delete_fields — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.field.create import create_field

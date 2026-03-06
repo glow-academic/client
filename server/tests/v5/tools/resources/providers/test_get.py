@@ -1,6 +1,5 @@
 """Tests for get_providers."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.providers.create import create_provider
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_provider(conn, redis_client):
-    created = await create_provider(conn, "test-provider", "Test provider desc", redis_client)
+    created = await create_provider(
+        conn, "test-provider", "Test provider desc", redis_client
+    )
 
     items = await get_providers(conn, [created.id], redis_client)
 

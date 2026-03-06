@@ -10,7 +10,7 @@ from app.routes.v5.tools.entries.attempt_home.create import create_attempt_home
 from app.routes.v5.tools.entries.attempt_home.get import get_attempt_home
 from app.routes.v5.tools.entries.attempt_home.refresh import refresh_attempt_home
 from app.routes.v5.tools.entries.attempt_home.search import (
-    search_attempt_home_entries_internal,
+    search_attempt_homes,
 )
 
 
@@ -48,7 +48,7 @@ async def get_attempt_home_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Refreshes attempt_home_mv concurrently to reflect latest writes.",
             ),
             get_operation_info(
-                search_attempt_home_entries_internal,
+                search_attempt_homes,
                 description="Filtered paginated search against attempt_home_mv.",
             ),
         ],

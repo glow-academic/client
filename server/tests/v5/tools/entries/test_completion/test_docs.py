@@ -38,13 +38,15 @@ async def test_includes_all_operations(conn):
     assert "create_test_completion" in op_names
     assert "refresh_test_completion" in op_names
     assert "get_test_completions" in op_names
-    assert "search_test_completion_entries_internal" in op_names
+    assert "search_test_completions" in op_names
 
 
 async def test_create_operation_has_params(conn):
     result = await get_test_completion_docs(conn)
 
-    create_op = next(op for op in result.operations if op.name == "create_test_completion")
+    create_op = next(
+        op for op in result.operations if op.name == "create_test_completion"
+    )
     param_names = [p.name for p in create_op.params]
     assert "invocation_id" in param_names
     assert "call_id" in param_names

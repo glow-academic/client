@@ -1,6 +1,5 @@
 """Tests for get_keys."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.keys.create import create_key

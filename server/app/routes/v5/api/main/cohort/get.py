@@ -401,7 +401,14 @@ async def get_cohort_internal(
                 c, description_ids, get_redis_client(), cache
             )
             suggestions = await search_descriptions(
-                c, get_redis_client(), search=descriptions_search, draft_id=effective_group_id, suggest_source="all", exclude_ids=description_ids, bypass_cache=bypass_cache, cohort=True,
+                c,
+                get_redis_client(),
+                search=descriptions_search,
+                draft_id=effective_group_id,
+                suggest_source="all",
+                exclude_ids=description_ids,
+                bypass_cache=bypass_cache,
+                cohort=True,
             )
             return (selected, suggestions)
 
@@ -412,9 +419,14 @@ async def get_cohort_internal(
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags(
-                c, get_redis_client(), search=None, limit_count=50,
-                offset_count=0, exclude_ids=flag_ids,
-                bypass_cache=bypass_cache, cohort=True,
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=flag_ids,
+                bypass_cache=bypass_cache,
+                cohort=True,
             )
             # Filter to only cohort-specific flags (business logic in Python)
             suggestions = [f for f in all_flags if f.type in COHORT_FLAG_TYPES]
@@ -481,7 +493,10 @@ async def get_cohort_internal(
             return []
         async with pool.acquire() as c:
             items = await get_simulation_availability(
-                c, simulation_availability_ids, get_redis_client(), bypass_cache=bypass_cache
+                c,
+                simulation_availability_ids,
+                get_redis_client(),
+                bypass_cache=bypass_cache,
             )
             return [
                 CohortSimulationAvailability(
@@ -658,9 +673,7 @@ async def get_cohort_internal(
     description_suggestions_ids = [d.id for d in descriptions_suggestions]
     department_suggestions_ids = [d.id for d in departments_suggestions]
     simulation_suggestions_ids = [s.simulation_id for s in simulations_suggestions]
-    profile_suggestions_ids = [
-        p.id for p in profiles_suggestions if p.id
-    ]
+    profile_suggestions_ids = [p.id for p in profiles_suggestions if p.id]
 
     # Compute final show flags based on actual data
     show_name = compute_show_name()

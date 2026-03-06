@@ -1,6 +1,5 @@
 """Tests for persona_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.persona_drafts.create import create_persona_draft

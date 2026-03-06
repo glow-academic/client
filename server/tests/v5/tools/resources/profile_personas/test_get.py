@@ -1,6 +1,5 @@
 """Tests for get_profile_personas."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.personas.create import create_persona

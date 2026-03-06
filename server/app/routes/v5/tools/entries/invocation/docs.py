@@ -34,9 +34,7 @@ async def get_invocation_docs(conn: asyncpg.Connection) -> DocsResponse:
     )
     models_connection = await get_table_info(conn, "invocation_models_connection")
     names_connection = await get_table_info(conn, "invocation_names_connection")
-    qualities_connection = await get_table_info(
-        conn, "invocation_qualities_connection"
-    )
+    qualities_connection = await get_table_info(conn, "invocation_qualities_connection")
     reasoning_levels_connection = await get_table_info(
         conn, "invocation_reasoning_levels_connection"
     )

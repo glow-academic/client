@@ -9,9 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.test_completion.create import create_test_completion
 from app.routes.v5.tools.entries.test_completion.get import get_test_completions
 from app.routes.v5.tools.entries.test_completion.refresh import refresh_test_completion
-from app.routes.v5.tools.entries.test_completion.search import (
-    search_test_completion_entries_internal,
-)
+from app.routes.v5.tools.entries.test_completion.search import search_test_completions
 
 
 async def get_test_completion_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -49,11 +47,8 @@ async def get_test_completion_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves test_completion entries by IDs from test_completion_mv.",
             ),
             get_operation_info(
-                search_test_completion_entries_internal,
-                description=(
-                    "Filtered paginated search against test_completion entries by search text "
-                    "and profile_id. Results cached for 60 seconds."
-                ),
+                search_test_completions,
+                description="Filtered paginated search against test_completion_mv.",
             ),
         ],
     )

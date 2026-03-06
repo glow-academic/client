@@ -35,7 +35,9 @@ async def search_questions(
 
     extra_conditions: list[tuple[str, object]] = []
     if allow_multiple is not None:
-        extra_conditions.append(("{alias}.allow_multiple = ${idx}::boolean", allow_multiple))
+        extra_conditions.append(
+            ("{alias}.allow_multiple = ${idx}::boolean", allow_multiple)
+        )
 
     tags = ["resources", "questions"]
     key = cache_key(
@@ -54,7 +56,8 @@ async def search_questions(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetQuestionResponse.model_validate(item) for item in cached.get("items", [])
+                GetQuestionResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     ids = await search_resource_ids(

@@ -13,15 +13,44 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 
 JUNCTION_ARTIFACTS = [
-    "agent", "auth", "cohort", "department", "document", "eval", "field",
-    "model", "parameter", "persona", "profile", "provider", "rubric",
-    "scenario", "setting", "simulation", "tool",
+    "agent",
+    "auth",
+    "cohort",
+    "department",
+    "document",
+    "eval",
+    "field",
+    "model",
+    "parameter",
+    "persona",
+    "profile",
+    "provider",
+    "rubric",
+    "scenario",
+    "setting",
+    "simulation",
+    "tool",
 ]
 
 DRAFT_ARTIFACTS = [
-    "agent", "auth", "chat", "cohort", "document", "eval",
-    "field", "invocation", "model", "parameter", "persona", "profile",
-    "provider", "rubric", "scenario", "setting", "simulation", "tool",
+    "agent",
+    "auth",
+    "chat",
+    "cohort",
+    "document",
+    "eval",
+    "field",
+    "invocation",
+    "model",
+    "parameter",
+    "persona",
+    "profile",
+    "provider",
+    "rubric",
+    "scenario",
+    "setting",
+    "simulation",
+    "tool",
 ]
 
 
@@ -61,12 +90,23 @@ async def search_departments(
         return []
 
     artifact_filters = {
-        "agent": agent, "auth": auth, "cohort": cohort,
-        "department": department, "document": document, "eval": eval,
-        "field": field, "model": model, "parameter": parameter,
-        "persona": persona, "profile": profile, "provider": provider,
-        "rubric": rubric, "scenario": scenario, "setting": setting,
-        "simulation": simulation, "tool": tool,
+        "agent": agent,
+        "auth": auth,
+        "cohort": cohort,
+        "department": department,
+        "document": document,
+        "eval": eval,
+        "field": field,
+        "model": model,
+        "parameter": parameter,
+        "persona": persona,
+        "profile": profile,
+        "provider": provider,
+        "rubric": rubric,
+        "scenario": scenario,
+        "setting": setting,
+        "simulation": simulation,
+        "tool": tool,
     }
 
     tags = ["resources", "departments"]
@@ -89,7 +129,8 @@ async def search_departments(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetDepartmentResponse.model_validate(item) for item in cached.get("items", [])
+                GetDepartmentResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     # Build extra conditions for department-specific filters

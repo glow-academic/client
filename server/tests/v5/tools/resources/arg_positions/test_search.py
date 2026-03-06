@@ -13,7 +13,9 @@ async def test_finds_created_arg_position(conn, redis_client):
     arg = await create_arg(conn, "search-ap-test", "text", redis_client)
     item = await create_arg_position(conn, arg.id, 1, redis_client)
 
-    items = await search_arg_positions(conn, redis_client, limit_count=500, bypass_cache=True)
+    items = await search_arg_positions(
+        conn, redis_client, limit_count=500, bypass_cache=True
+    )
 
     assert len(items) >= 1
     assert any(i.id == item.id for i in items)
@@ -47,7 +49,9 @@ async def test_excludes_ids(conn, redis_client):
     a = await create_arg_position(conn, arg.id, 301, redis_client)
     b = await create_arg_position(conn, arg.id, 302, redis_client)
 
-    items = await search_arg_positions(conn, redis_client, limit_count=500, exclude_ids=[a.id])
+    items = await search_arg_positions(
+        conn, redis_client, limit_count=500, exclude_ids=[a.id]
+    )
 
     ids = [i.id for i in items]
     assert a.id not in ids
@@ -75,6 +79,8 @@ async def test_bypass_cache(conn, redis_client):
     arg = await create_arg(conn, "search-ap-bypass", "text", redis_client)
     await create_arg_position(conn, arg.id, 600, redis_client)
 
-    items = await search_arg_positions(conn, redis_client, limit_count=500, bypass_cache=True)
+    items = await search_arg_positions(
+        conn, redis_client, limit_count=500, bypass_cache=True
+    )
 
     assert len(items) >= 1

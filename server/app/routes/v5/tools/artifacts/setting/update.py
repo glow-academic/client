@@ -28,11 +28,23 @@ SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
     ("setting_departments_junction", "departments_id", "setting_departments_pkey"),
     ("setting_auths_junction", "auths_id", "setting_auths_pkey"),
-    ("setting_auth_item_keys_junction", "auth_item_keys_id", "setting_auth_item_keys_junction_pkey"),
-    ("setting_auth_item_values_junction", "auth_item_values_id", "setting_auth_item_values_junction_pkey"),
+    (
+        "setting_auth_item_keys_junction",
+        "auth_item_keys_id",
+        "setting_auth_item_keys_junction_pkey",
+    ),
+    (
+        "setting_auth_item_values_junction",
+        "auth_item_values_id",
+        "setting_auth_item_values_junction_pkey",
+    ),
     ("setting_colors_junction", "colors_id", "setting_colors_pkey"),
     ("setting_profiles_junction", "profiles_id", "setting_profiles_pkey"),
-    ("setting_provider_keys_junction", "provider_keys_id", "setting_provider_keys_junction_pkey"),
+    (
+        "setting_provider_keys_junction",
+        "provider_keys_id",
+        "setting_provider_keys_junction_pkey",
+    ),
     ("setting_systems_junction", "systems_id", "setting_systems_junction_pkey"),
     ("setting_thresholds_junction", "thresholds_id", "setting_thresholds_pkey"),
     ("setting_settings_junction", "settings_id", "setting_settings_junction_pkey"),

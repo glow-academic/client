@@ -13,13 +13,30 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 
 JUNCTION_ARTIFACTS = [
-    "cohort", "profile", "setting",
+    "cohort",
+    "profile",
+    "setting",
 ]
 
 DRAFT_ARTIFACTS = [
-    "agent", "auth", "chat", "cohort", "department", "document", "eval",
-    "field", "invocation", "model", "parameter", "persona", "provider",
-    "rubric", "scenario", "setting", "simulation", "tool",
+    "agent",
+    "auth",
+    "chat",
+    "cohort",
+    "department",
+    "document",
+    "eval",
+    "field",
+    "invocation",
+    "model",
+    "parameter",
+    "persona",
+    "provider",
+    "rubric",
+    "scenario",
+    "setting",
+    "simulation",
+    "tool",
 ]
 
 
@@ -46,7 +63,9 @@ async def search_profiles(
         return []
 
     artifact_filters = {
-        "cohort": cohort, "profile": profile, "setting": setting,
+        "cohort": cohort,
+        "profile": profile,
+        "setting": setting,
     }
 
     tags = ["resources", "profiles"]
@@ -70,7 +89,8 @@ async def search_profiles(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetProfileResponse.model_validate(item) for item in cached.get("items", [])
+                GetProfileResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     # Build extra conditions for profile-specific filters

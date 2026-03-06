@@ -1,6 +1,5 @@
 """Tests for rubric_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.rubric_drafts.create import create_rubric_draft

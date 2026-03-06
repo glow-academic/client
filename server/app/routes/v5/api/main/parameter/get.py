@@ -281,7 +281,12 @@ async def get_parameter_internal(
                 c, description_ids, get_redis_client(), cache
             )
             suggestions = await search_descriptions(
-                c, get_redis_client(), draft_id=effective_group_id, exclude_ids=description_ids, bypass_cache=bypass_cache, parameter=True,
+                c,
+                get_redis_client(),
+                draft_id=effective_group_id,
+                exclude_ids=description_ids,
+                bypass_cache=bypass_cache,
+                parameter=True,
             )
             return (selected, suggestions)
 
@@ -289,9 +294,14 @@ async def get_parameter_internal(
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags(
-                c, get_redis_client(), search=None, limit_count=50,
-                offset_count=0, exclude_ids=flag_ids,
-                bypass_cache=bypass_cache, parameter=True,
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=flag_ids,
+                bypass_cache=bypass_cache,
+                parameter=True,
             )
             suggestions = [f for f in all_flags if f.name in PARAMETER_FLAG_NAMES]
             return (selected, suggestions)
@@ -317,8 +327,12 @@ async def get_parameter_internal(
 
     async def fetch_fields():
         async with pool.acquire() as c:
-            selected = await get_parameter_fields(c, field_ids, get_redis_client(), bypass_cache)
-            available = await search_parameter_fields(c, get_redis_client(), bypass_cache=bypass_cache)
+            selected = await get_parameter_fields(
+                c, field_ids, get_redis_client(), bypass_cache
+            )
+            available = await search_parameter_fields(
+                c, get_redis_client(), bypass_cache=bypass_cache
+            )
             return (selected, available)
 
     (
@@ -338,9 +352,7 @@ async def get_parameter_internal(
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
-    departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "id"
-    )
+    departments = _dedupe_by_id(departments_selected + departments_suggestions, "id")
     parameter_fields = _dedupe_by_id(fields_selected + fields_suggestions, "field_id")
 
     name_resource = next((n for n in names if n.id == selected_name_id), None)
@@ -350,9 +362,7 @@ async def get_parameter_internal(
     )
     flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
 
-    department_resources = [
-        d for d in departments if d.id in selected_department_ids
-    ]
+    department_resources = [d for d in departments if d.id in selected_department_ids]
     field_resources = [f for f in parameter_fields if f.id in selected_field_ids]
 
     name_suggestion_ids = [n.id for n in names_suggestions]

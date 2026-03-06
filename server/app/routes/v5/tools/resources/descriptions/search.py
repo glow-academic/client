@@ -13,15 +13,43 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 
 JUNCTION_ARTIFACTS = [
-    "agent", "auth", "cohort", "department", "document", "eval", "field",
-    "model", "parameter", "persona", "provider", "rubric",
-    "scenario", "setting", "simulation", "tool",
+    "agent",
+    "auth",
+    "cohort",
+    "department",
+    "document",
+    "eval",
+    "field",
+    "model",
+    "parameter",
+    "persona",
+    "provider",
+    "rubric",
+    "scenario",
+    "setting",
+    "simulation",
+    "tool",
 ]
 
 DRAFT_ARTIFACTS = [
-    "agent", "auth", "chat", "cohort", "department", "document", "eval",
-    "field", "invocation", "model", "parameter", "persona",
-    "provider", "rubric", "scenario", "setting", "simulation", "tool",
+    "agent",
+    "auth",
+    "chat",
+    "cohort",
+    "department",
+    "document",
+    "eval",
+    "field",
+    "invocation",
+    "model",
+    "parameter",
+    "persona",
+    "provider",
+    "rubric",
+    "scenario",
+    "setting",
+    "simulation",
+    "tool",
 ]
 
 
@@ -58,12 +86,22 @@ async def search_descriptions(
         return []
 
     artifact_filters = {
-        "agent": agent, "auth": auth, "cohort": cohort,
-        "department": department, "document": document, "eval": eval,
-        "field": field, "model": model, "parameter": parameter,
-        "persona": persona, "provider": provider,
-        "rubric": rubric, "scenario": scenario, "setting": setting,
-        "simulation": simulation, "tool": tool,
+        "agent": agent,
+        "auth": auth,
+        "cohort": cohort,
+        "department": department,
+        "document": document,
+        "eval": eval,
+        "field": field,
+        "model": model,
+        "parameter": parameter,
+        "persona": persona,
+        "provider": provider,
+        "rubric": rubric,
+        "scenario": scenario,
+        "setting": setting,
+        "simulation": simulation,
+        "tool": tool,
     }
 
     tags = ["resources", "descriptions"]
@@ -84,7 +122,8 @@ async def search_descriptions(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetDescriptionResponse.model_validate(item) for item in cached.get("items", [])
+                GetDescriptionResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     ids = await search_resource_ids(

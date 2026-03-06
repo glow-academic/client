@@ -1,6 +1,5 @@
 """Tests for get_emails."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.emails.create import create_email

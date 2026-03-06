@@ -1,6 +1,5 @@
 """Tests for get_model_rubrics."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.model_rubrics.get import get_model_rubrics

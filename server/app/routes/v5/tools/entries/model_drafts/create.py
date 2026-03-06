@@ -45,7 +45,11 @@ async def create_model_draft(
 
     connections: list[tuple[str, str, list[UUID]]] = [
         ("model_drafts_departments_connection", "departments_id", department_ids or []),
-        ("model_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "model_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("model_drafts_flags_connection", "flags_id", flag_ids or []),
         ("model_drafts_modalities_connection", "modalities_id", modality_ids or []),
         ("model_drafts_names_connection", "names_id", name_ids or []),
@@ -53,8 +57,16 @@ async def create_model_draft(
         ("model_drafts_profiles_connection", "profiles_id", profile_ids or []),
         ("model_drafts_providers_connection", "providers_id", provider_ids or []),
         ("model_drafts_qualities_connection", "qualities_id", quality_ids or []),
-        ("model_drafts_reasoning_levels_connection", "reasoning_levels_id", reasoning_level_ids or []),
-        ("model_drafts_temperature_levels_connection", "temperature_levels_id", temperature_level_ids or []),
+        (
+            "model_drafts_reasoning_levels_connection",
+            "reasoning_levels_id",
+            reasoning_level_ids or [],
+        ),
+        (
+            "model_drafts_temperature_levels_connection",
+            "temperature_levels_id",
+            temperature_level_ids or [],
+        ),
         ("model_drafts_values_connection", "values_id", value_ids or []),
         ("model_drafts_voices_connection", "voices_id", voice_ids or []),
     ]

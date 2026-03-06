@@ -2,7 +2,9 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.attempt_chat_bridge.docs import get_attempt_chat_bridge_docs
+from app.routes.v5.tools.entries.attempt_chat_bridge.docs import (
+    get_attempt_chat_bridge_docs,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -43,7 +45,9 @@ async def test_includes_all_operations(conn):
 async def test_create_operation_has_params(conn):
     result = await get_attempt_chat_bridge_docs(conn)
 
-    create_op = next(op for op in result.operations if op.name == "create_attempt_chat_bridge")
+    create_op = next(
+        op for op in result.operations if op.name == "create_attempt_chat_bridge"
+    )
     param_names = [p.name for p in create_op.params]
     assert "attempt_id" in param_names
     assert "attempt_chat_id" in param_names

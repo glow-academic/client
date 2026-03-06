@@ -1,72 +1,40 @@
-"""audios/search internal — reusable data-access layer."""
+"""Audios search — filtered/paginated query against audios_mv."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchAudiosEntriesSqlParams,
-    SearchAudiosEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.audios.types import SearchAudioResponse
 
-SQL_PATH = "app/sql/queries/entries/audios/search_audios_entries_complete.sql"
+MV_NAME = "audios_mv"
 
 
-async def search_audios_entries_internal(
+async def search_audios(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     files_id: UUID | None = None,
     voice_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search audios entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[SearchAudioResponse]:
+    """Search audios from audios_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "audios"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/audios/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "files_id": str(files_id) if files_id else None,
-            "voice_id": str(voice_id) if voice_id else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT audio_id, files_id, file_path, mime_type, size,
+               length_seconds, voice_id, created_at
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR files_id = $1)
+          AND ($2::uuid IS NULL OR voice_id = $2)
+        ORDER BY created_at DESC
+        LIMIT $3 OFFSET $4
+        """,
+        files_id,
+        voice_id,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchAudiosEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        files_id=files_id,
-        voice_id=voice_id,
-    )
-    result = cast(
-        SearchAudiosEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [SearchAudioResponse(**dict(r)) for r in rows]

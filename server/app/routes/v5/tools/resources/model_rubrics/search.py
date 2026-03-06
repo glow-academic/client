@@ -36,13 +36,9 @@ async def search_model_rubrics(
     extra_conditions: list[tuple[str, object]] = []
 
     if model_ids:
-        extra_conditions.append(
-            ("{alias}.model_id = ANY(${idx})", model_ids)
-        )
+        extra_conditions.append(("{alias}.model_id = ANY(${idx})", model_ids))
     if rubric_ids:
-        extra_conditions.append(
-            ("{alias}.rubric_id = ANY(${idx})", rubric_ids)
-        )
+        extra_conditions.append(("{alias}.rubric_id = ANY(${idx})", rubric_ids))
 
     tags = ["resources", "model_rubrics"]
     key = cache_key(

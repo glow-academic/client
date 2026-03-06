@@ -19,8 +19,12 @@ async def get_field_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     conditional_parameters_connection = await get_table_info(
         conn, "field_drafts_conditional_parameters_connection"
     )
-    departments_connection = await get_table_info(conn, "field_drafts_departments_connection")
-    descriptions_connection = await get_table_info(conn, "field_drafts_descriptions_connection")
+    departments_connection = await get_table_info(
+        conn, "field_drafts_departments_connection"
+    )
+    descriptions_connection = await get_table_info(
+        conn, "field_drafts_descriptions_connection"
+    )
     flags_connection = await get_table_info(conn, "field_drafts_flags_connection")
     names_connection = await get_table_info(conn, "field_drafts_names_connection")
     profiles_connection = await get_table_info(conn, "field_drafts_profiles_connection")

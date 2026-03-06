@@ -8,7 +8,7 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.benchmark.create import create_benchmark
 from app.routes.v5.tools.entries.benchmark.get import get_benchmarks
-from app.routes.v5.tools.entries.benchmark.search import search_benchmark_entries_internal
+from app.routes.v5.tools.entries.benchmark.search import search_benchmarks
 
 
 async def get_benchmark_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -17,7 +17,9 @@ async def get_benchmark_docs(conn: asyncpg.Connection) -> DocsResponse:
     entry_table = await get_table_info(conn, "benchmark_entry")
     evals_connection = await get_table_info(conn, "benchmark_evals_connection")
     profiles_connection = await get_table_info(conn, "benchmark_profiles_connection")
-    departments_connection = await get_table_info(conn, "benchmark_departments_connection")
+    departments_connection = await get_table_info(
+        conn, "benchmark_departments_connection"
+    )
 
     tables = [
         t
@@ -53,7 +55,7 @@ async def get_benchmark_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves benchmark entries by IDs from benchmark_mv.",
             ),
             get_operation_info(
-                search_benchmark_entries_internal,
+                search_benchmarks,
                 description="Filtered paginated search against benchmark_mv.",
             ),
         ],

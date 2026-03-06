@@ -1,6 +1,5 @@
 """Tests for get_parameters."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.parameters.create import create_parameter
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_parameter(conn, redis_client):
-    created = await create_parameter(conn, redis_client, name="test-param", description="desc")
+    created = await create_parameter(
+        conn, redis_client, name="test-param", description="desc"
+    )
 
     items = await get_parameters(conn, [created.id], redis_client)
 

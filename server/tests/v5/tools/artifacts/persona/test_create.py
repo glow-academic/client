@@ -1,6 +1,5 @@
 """Tests for create_persona — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.persona.create import create_persona
@@ -54,7 +53,9 @@ async def test_links_single_select_junctions(conn, redis_client):
     color = await create_color(conn, f"c-{_u()}", "desc", f"#{_u()[:6]}", redis_client)
     icon = await create_icon(conn, f"i-{_u()}", "desc", f"val-{_u()}", redis_client)
 
-    result = await create_persona(conn, name_id=name.id, color_id=color.id, icon_id=icon.id)
+    result = await create_persona(
+        conn, name_id=name.id, color_id=color.id, icon_id=icon.id
+    )
 
     items = await get_personas(conn, [result.id], names=True, colors=True, icons=True)
     p = items[0]
@@ -68,7 +69,9 @@ async def test_links_multi_select_junctions(conn, redis_client):
     d2 = await create_department(conn, redis=redis_client)
     v1 = await create_voice(conn, f"v-{_u()}", redis_client)
 
-    result = await create_persona(conn, department_ids=[d1.id, d2.id], voice_ids=[v1.id])
+    result = await create_persona(
+        conn, department_ids=[d1.id, d2.id], voice_ids=[v1.id]
+    )
 
     items = await get_personas(conn, [result.id], departments=True, voices=True)
     p = items[0]
@@ -100,10 +103,19 @@ async def test_no_junctions_when_none_provided(conn, redis_client):
     result = await create_persona(conn)
 
     items = await get_personas(
-        conn, [result.id],
-        names=True, descriptions=True, colors=True, departments=True,
-        examples=True, flags=True, icons=True, instructions=True,
-        parameter_fields=True, personas=True, voices=True,
+        conn,
+        [result.id],
+        names=True,
+        descriptions=True,
+        colors=True,
+        departments=True,
+        examples=True,
+        flags=True,
+        icons=True,
+        instructions=True,
+        parameter_fields=True,
+        personas=True,
+        voices=True,
     )
     p = items[0]
     assert p.name_ids == []

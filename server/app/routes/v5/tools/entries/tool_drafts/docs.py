@@ -16,16 +16,26 @@ async def get_tool_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     """Get full documentation for the tool_drafts entry."""
     mv_info = await get_mv_info(conn, "tool_drafts_mv")
     entry_table = await get_table_info(conn, "tool_drafts_entry")
-    arg_positions_connection = await get_table_info(conn, "tool_drafts_arg_positions_connection")
+    arg_positions_connection = await get_table_info(
+        conn, "tool_drafts_arg_positions_connection"
+    )
     args_connection = await get_table_info(conn, "tool_drafts_args_connection")
-    args_outputs_connection = await get_table_info(conn, "tool_drafts_args_outputs_connection")
-    departments_connection = await get_table_info(conn, "tool_drafts_departments_connection")
-    descriptions_connection = await get_table_info(conn, "tool_drafts_descriptions_connection")
+    args_outputs_connection = await get_table_info(
+        conn, "tool_drafts_args_outputs_connection"
+    )
+    departments_connection = await get_table_info(
+        conn, "tool_drafts_departments_connection"
+    )
+    descriptions_connection = await get_table_info(
+        conn, "tool_drafts_descriptions_connection"
+    )
     entries_connection = await get_table_info(conn, "tool_drafts_entries_connection")
     flags_connection = await get_table_info(conn, "tool_drafts_flags_connection")
     names_connection = await get_table_info(conn, "tool_drafts_names_connection")
     profiles_connection = await get_table_info(conn, "tool_drafts_profiles_connection")
-    resources_connection = await get_table_info(conn, "tool_drafts_resources_connection")
+    resources_connection = await get_table_info(
+        conn, "tool_drafts_resources_connection"
+    )
 
     tables = [
         t

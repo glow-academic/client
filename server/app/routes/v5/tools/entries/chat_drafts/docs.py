@@ -16,22 +16,40 @@ async def get_chat_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     """Get full documentation for the chat_drafts entry."""
     mv_info = await get_mv_info(conn, "chat_drafts_mv")
     entry_table = await get_table_info(conn, "chat_drafts_entry")
-    departments_connection = await get_table_info(conn, "chat_drafts_departments_connection")
-    descriptions_connection = await get_table_info(conn, "chat_drafts_descriptions_connection")
-    documents_connection = await get_table_info(conn, "chat_drafts_documents_connection")
+    departments_connection = await get_table_info(
+        conn, "chat_drafts_departments_connection"
+    )
+    descriptions_connection = await get_table_info(
+        conn, "chat_drafts_descriptions_connection"
+    )
+    documents_connection = await get_table_info(
+        conn, "chat_drafts_documents_connection"
+    )
     fields_connection = await get_table_info(conn, "chat_drafts_fields_connection")
     flags_connection = await get_table_info(conn, "chat_drafts_flags_connection")
     images_connection = await get_table_info(conn, "chat_drafts_images_connection")
     names_connection = await get_table_info(conn, "chat_drafts_names_connection")
-    objectives_connection = await get_table_info(conn, "chat_drafts_objectives_connection")
+    objectives_connection = await get_table_info(
+        conn, "chat_drafts_objectives_connection"
+    )
     options_connection = await get_table_info(conn, "chat_drafts_options_connection")
-    parameter_fields_connection = await get_table_info(conn, "chat_drafts_parameter_fields_connection")
-    parameters_connection = await get_table_info(conn, "chat_drafts_parameters_connection")
+    parameter_fields_connection = await get_table_info(
+        conn, "chat_drafts_parameter_fields_connection"
+    )
+    parameters_connection = await get_table_info(
+        conn, "chat_drafts_parameters_connection"
+    )
     personas_connection = await get_table_info(conn, "chat_drafts_personas_connection")
-    problem_statements_connection = await get_table_info(conn, "chat_drafts_problem_statements_connection")
+    problem_statements_connection = await get_table_info(
+        conn, "chat_drafts_problem_statements_connection"
+    )
     profiles_connection = await get_table_info(conn, "chat_drafts_profiles_connection")
-    questions_connection = await get_table_info(conn, "chat_drafts_questions_connection")
-    scenarios_connection = await get_table_info(conn, "chat_drafts_scenarios_connection")
+    questions_connection = await get_table_info(
+        conn, "chat_drafts_questions_connection"
+    )
+    scenarios_connection = await get_table_info(
+        conn, "chat_drafts_scenarios_connection"
+    )
     videos_connection = await get_table_info(conn, "chat_drafts_videos_connection")
 
     tables = [

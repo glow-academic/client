@@ -1,11 +1,12 @@
 """Tests for create_field — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.field.create import create_field
 from app.routes.v5.tools.artifacts.field.get import get_fields
-from app.routes.v5.tools.resources.conditional_parameters.create import create_conditional_parameter
+from app.routes.v5.tools.resources.conditional_parameters.create import (
+    create_conditional_parameter,
+)
 from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.flags.create import create_flag
@@ -64,7 +65,9 @@ async def test_links_multi_select_junctions(conn, redis_client):
     d1 = await create_department(conn, redis=redis_client)
     d2 = await create_department(conn, redis=redis_client)
 
-    param = await create_parameter(conn, redis_client, name=f"p-{_u()}", description="desc")
+    param = await create_parameter(
+        conn, redis_client, name=f"p-{_u()}", description="desc"
+    )
     cp1 = await create_conditional_parameter(conn, param.id, redis_client)
 
     result = await create_field(
@@ -93,9 +96,14 @@ async def test_no_junctions_when_none_provided(conn, redis_client):
     result = await create_field(conn)
 
     items = await get_fields(
-        conn, [result.id],
-        names=True, descriptions=True, departments=True,
-        flags=True, conditional_parameters=True, fields=True,
+        conn,
+        [result.id],
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+        conditional_parameters=True,
+        fields=True,
     )
     p = items[0]
     assert p.name_ids == []

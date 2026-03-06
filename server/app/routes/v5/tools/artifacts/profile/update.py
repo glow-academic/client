@@ -22,7 +22,11 @@ OWNER_COL = "profile_id"
 # (junction_table, resource_column, pk_constraint)
 SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
     ("profile_names_junction", "names_id", "profile_names_pkey"),
-    ("profile_request_limits_junction", "request_limits_id", "profile_request_limits_pkey"),
+    (
+        "profile_request_limits_junction",
+        "request_limits_id",
+        "profile_request_limits_pkey",
+    ),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [

@@ -1,6 +1,5 @@
 """Tests for setting_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.setting_drafts.create import create_setting_draft

@@ -46,7 +46,9 @@ async def test_creates_second_row(conn, redis_client):
 async def test_sets_mcp_flag(conn, redis_client):
     scenario = await create_scenario(conn, redis_client)
     flag = await create_flag(conn, "test-flag-mcp", "desc", "icon", redis_client)
-    result = await create_scenario_flag(conn, scenario.id, flag.id, redis_client, mcp=True)
+    result = await create_scenario_flag(
+        conn, scenario.id, flag.id, redis_client, mcp=True
+    )
 
     assert result.mcp is True
     assert result.generated is True

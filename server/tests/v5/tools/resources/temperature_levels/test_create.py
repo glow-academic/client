@@ -2,7 +2,9 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.temperature_levels.create import create_temperature_level
+from app.routes.v5.tools.resources.temperature_levels.create import (
+    create_temperature_level,
+)
 from app.routes.v5.tools.resources.temperature_levels.get import get_temperature_levels
 
 pytestmark = pytest.mark.asyncio
@@ -19,7 +21,9 @@ async def test_creates_new_temperature_level(conn, redis_client):
 async def test_visible_via_get(conn, redis_client):
     result = await create_temperature_level(conn, 0.3, redis_client)
 
-    items = await get_temperature_levels(conn, [result.id], redis_client, bypass_cache=True)
+    items = await get_temperature_levels(
+        conn, [result.id], redis_client, bypass_cache=True
+    )
 
     assert len(items) == 1
     assert items[0].id == result.id

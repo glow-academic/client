@@ -303,9 +303,7 @@ async def get_test_internal(
                 rubrics_list = await get_rubrics(
                     c, list(rubric_ids), get_redis_client(), bypass_cache=bypass_cache
                 )
-                return {
-                    r.id: r.name for r in rubrics_list if r.id and r.name
-                }
+                return {r.id: r.name for r in rubrics_list if r.id and r.name}
 
         (eval_name, eval_description), name_map, rubric_name_map = await asyncio.gather(
             fetch_eval_info(),

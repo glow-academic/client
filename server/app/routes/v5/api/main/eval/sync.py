@@ -77,7 +77,9 @@ async def sync_benchmark_entries(
     # ── Pass 1: Parallel fetch all sub-resources ──
     async def _fetch_model_flags() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_model_flags(c, model_flag_ids, get_redis_client(), bypass_cache=True)
+            return await get_model_flags(
+                c, model_flag_ids, get_redis_client(), bypass_cache=True
+            )
 
     async def _fetch_model_rubrics() -> list[Any]:
         async with pool.acquire() as c:

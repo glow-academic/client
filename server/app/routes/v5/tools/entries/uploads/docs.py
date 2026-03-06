@@ -9,7 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.routes.v5.tools.entries.uploads.get import get_upload
 from app.routes.v5.tools.entries.uploads.refresh import refresh_uploads_internal
-from app.routes.v5.tools.entries.uploads.search import search_uploads_entries_internal
+from app.routes.v5.tools.entries.uploads.search import search_uploads
 
 
 async def get_uploads_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -46,7 +46,7 @@ async def get_uploads_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves uploads entries by ID from uploads_mv.",
             ),
             get_operation_info(
-                search_uploads_entries_internal,
+                search_uploads,
                 description="Filtered paginated search against uploads_mv.",
             ),
         ],

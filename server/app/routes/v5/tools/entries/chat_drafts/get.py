@@ -118,7 +118,9 @@ async def get_chat_drafts_entries_internal(
     if not bypass_cache:
         cached = await get_cached(cache_key_val, redis=get_redis_client())
         if cached:
-            return [GetChatDraftResponse.model_validate(i) for i in cached.get("items", [])]
+            return [
+                GetChatDraftResponse.model_validate(i) for i in cached.get("items", [])
+            ]
 
     items = await get_chat_drafts(conn, ids)
 

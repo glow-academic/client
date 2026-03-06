@@ -22,11 +22,19 @@ OWNER_COL = "department_id"
 # (junction_table, resource_column, pk_constraint)
 SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
     ("department_names_junction", "names_id", "department_names_pkey"),
-    ("department_descriptions_junction", "descriptions_id", "department_descriptions_pkey"),
+    (
+        "department_descriptions_junction",
+        "descriptions_id",
+        "department_descriptions_pkey",
+    ),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
-    ("department_departments_junction", "departments_id", "department_departments_junction_pkey"),
+    (
+        "department_departments_junction",
+        "departments_id",
+        "department_departments_junction_pkey",
+    ),
     ("department_settings_junction", "settings_id", "department_settings_pkey"),
 ]
 

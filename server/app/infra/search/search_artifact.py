@@ -79,7 +79,7 @@ async def execute_artifact_search(
     query = f"""
         SELECT a.id
         FROM {table} a
-        {order_join or ''}
+        {order_join or ""}
         WHERE {where}
         GROUP BY a.id
         ORDER BY {order_expr}

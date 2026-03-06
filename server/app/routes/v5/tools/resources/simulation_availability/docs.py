@@ -5,9 +5,15 @@ import asyncpg
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
-from app.routes.v5.tools.resources.simulation_availability.create import create_simulation_availability
-from app.routes.v5.tools.resources.simulation_availability.get import get_simulation_availability
-from app.routes.v5.tools.resources.simulation_availability.search import search_simulation_availability
+from app.routes.v5.tools.resources.simulation_availability.create import (
+    create_simulation_availability,
+)
+from app.routes.v5.tools.resources.simulation_availability.get import (
+    get_simulation_availability,
+)
+from app.routes.v5.tools.resources.simulation_availability.search import (
+    search_simulation_availability,
+)
 
 
 async def get_simulation_availability_docs(conn: asyncpg.Connection) -> DocsResponse:

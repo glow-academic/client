@@ -4,7 +4,6 @@ Uses persona_* tables as a concrete test bed, but the helpers
 themselves are artifact-agnostic.
 """
 
-
 import pytest
 
 from app.infra.search.search_artifact import (
@@ -109,7 +108,9 @@ async def test_junction_filter_matches(conn):
     conditions: list[str] = []
     params: list[object] = []
     idx = add_junction_filter(
-        conditions, params, 1,
+        conditions,
+        params,
+        1,
         junction_table="persona_departments_junction",
         owner_col="persona_id",
         resource_col="departments_id",
@@ -139,7 +140,9 @@ async def test_junction_filter_excludes_non_matching(conn):
     conditions: list[str] = []
     params: list[object] = []
     idx = add_junction_filter(
-        conditions, params, 1,
+        conditions,
+        params,
+        1,
         junction_table="persona_departments_junction",
         owner_col="persona_id",
         resource_col="departments_id",
@@ -172,7 +175,9 @@ async def test_junction_filter_ignores_inactive_links(conn):
     conditions: list[str] = []
     params: list[object] = []
     idx = add_junction_filter(
-        conditions, params, 1,
+        conditions,
+        params,
+        1,
         junction_table="persona_departments_junction",
         owner_col="persona_id",
         resource_col="departments_id",
@@ -204,7 +209,9 @@ async def test_text_search_matches_substring(conn):
     conditions: list[str] = []
     params: list[object] = []
     idx = add_text_search(
-        conditions, params, 1,
+        conditions,
+        params,
+        1,
         junction_table="persona_names_junction",
         owner_col="persona_id",
         resource_col="names_id",
@@ -235,7 +242,9 @@ async def test_text_search_case_insensitive(conn):
     conditions: list[str] = []
     params: list[object] = []
     idx = add_text_search(
-        conditions, params, 1,
+        conditions,
+        params,
+        1,
         junction_table="persona_names_junction",
         owner_col="persona_id",
         resource_col="names_id",
@@ -263,7 +272,9 @@ async def test_text_search_no_match(conn):
     conditions: list[str] = []
     params: list[object] = []
     idx = add_text_search(
-        conditions, params, 1,
+        conditions,
+        params,
+        1,
         junction_table="persona_names_junction",
         owner_col="persona_id",
         resource_col="names_id",
@@ -292,7 +303,9 @@ async def test_text_search_on_description(conn):
     conditions: list[str] = []
     params: list[object] = []
     idx = add_text_search(
-        conditions, params, 1,
+        conditions,
+        params,
+        1,
         junction_table="persona_descriptions_junction",
         owner_col="persona_id",
         resource_col="descriptions_id",
@@ -359,7 +372,9 @@ async def test_execute_pagination(conn):
     conditions: list[str] = []
     params: list[object] = []
     idx = add_text_search(
-        conditions, params, 1,
+        conditions,
+        params,
+        1,
         junction_table="persona_names_junction",
         owner_col="persona_id",
         resource_col="names_id",
@@ -429,7 +444,9 @@ async def test_execute_combined_filters(conn):
     idx = 1
 
     idx = add_text_search(
-        conditions, params, idx,
+        conditions,
+        params,
+        idx,
         junction_table="persona_names_junction",
         owner_col="persona_id",
         resource_col="names_id",
@@ -438,7 +455,9 @@ async def test_execute_combined_filters(conn):
         search=f"combo-{tag}",
     )
     idx = add_junction_filter(
-        conditions, params, idx,
+        conditions,
+        params,
+        idx,
         junction_table="persona_departments_junction",
         owner_col="persona_id",
         resource_col="departments_id",

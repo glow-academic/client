@@ -35,7 +35,9 @@ async def get_evals(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_evals_resource(conn, request.ids, get_redis_client(), bypass_cache)
+        items = await get_evals_resource(
+            conn, request.ids, get_redis_client(), bypass_cache
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetEvalsApiResponse(items=items)
     except HTTPException:

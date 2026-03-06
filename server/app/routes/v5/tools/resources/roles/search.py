@@ -36,7 +36,8 @@ async def search_roles(
         return []
 
     artifact_filters = {
-        "profile": profile, "setting": setting,
+        "profile": profile,
+        "setting": setting,
     }
 
     tags = ["resources", "roles"]

@@ -11,7 +11,9 @@ pytestmark = pytest.mark.asyncio
 
 async def test_creates_new_standard(conn, redis_client):
     sg = await create_standard_group(conn, "group", "sg", "desc", 10, 5, redis_client)
-    result = await create_standard(conn, "Test Standard", "desc", 10, sg.id, redis_client)
+    result = await create_standard(
+        conn, "Test Standard", "desc", 10, sg.id, redis_client
+    )
 
     assert result.name == "Test Standard"
     assert result.description == "desc"
@@ -22,8 +24,12 @@ async def test_creates_new_standard(conn, redis_client):
 
 
 async def test_visible_via_get(conn, redis_client):
-    sg = await create_standard_group(conn, "group-visible", "sgv", "desc", 10, 5, redis_client)
-    result = await create_standard(conn, "Visible Standard", "desc", 5, sg.id, redis_client)
+    sg = await create_standard_group(
+        conn, "group-visible", "sgv", "desc", 10, 5, redis_client
+    )
+    result = await create_standard(
+        conn, "Visible Standard", "desc", 5, sg.id, redis_client
+    )
 
     items = await get_standards(conn, [result.id], redis_client, bypass_cache=True)
 
@@ -33,7 +39,9 @@ async def test_visible_via_get(conn, redis_client):
 
 
 async def test_creates_second_row(conn, redis_client):
-    sg = await create_standard_group(conn, "group-second", "sgs", "desc", 10, 5, redis_client)
+    sg = await create_standard_group(
+        conn, "group-second", "sgs", "desc", 10, 5, redis_client
+    )
     first = await create_standard(conn, "Standard A", "desc", 10, sg.id, redis_client)
     second = await create_standard(conn, "Standard B", "desc", 10, sg.id, redis_client)
 
@@ -41,7 +49,9 @@ async def test_creates_second_row(conn, redis_client):
 
 
 async def test_sets_mcp_flag(conn, redis_client):
-    sg = await create_standard_group(conn, "group-mcp", "sgm", "desc", 10, 5, redis_client)
+    sg = await create_standard_group(
+        conn, "group-mcp", "sgm", "desc", 10, 5, redis_client
+    )
     result = await create_standard(
         conn, "MCP Standard", "desc", 10, sg.id, redis_client, mcp=True
     )

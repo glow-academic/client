@@ -18,5 +18,7 @@ async def get_attempt_chat_bridge(
     """Get attempt_chat_bridge entries by attempt_id from MV."""
     if not attempt_ids:
         return []
-    rows = await conn.fetch(f"SELECT * FROM {MV_NAME} WHERE attempt_id = ANY($1)", attempt_ids)
+    rows = await conn.fetch(
+        f"SELECT * FROM {MV_NAME} WHERE attempt_id = ANY($1)", attempt_ids
+    )
     return [GetAttemptChatBridgeResponse(**dict(r)) for r in rows]

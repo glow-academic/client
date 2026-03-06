@@ -1,6 +1,5 @@
 """Tests for search_videos."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.videos.create import create_video
@@ -27,7 +26,9 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_videos(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
+    items = await search_videos(
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
+    )
 
     assert items == []
 
@@ -45,8 +46,12 @@ async def test_respects_offset(conn, redis_client):
     for i in range(3):
         await create_video(conn, f"offset-test-{unique_tag()}", "desc", redis_client)
 
-    all_items = await search_videos(conn, redis_client, search="offset-test-", limit_count=10)
-    offset_items = await search_videos(conn, redis_client, search="offset-test-", limit_count=10, offset_count=1)
+    all_items = await search_videos(
+        conn, redis_client, search="offset-test-", limit_count=10
+    )
+    offset_items = await search_videos(
+        conn, redis_client, search="offset-test-", limit_count=10, offset_count=1
+    )
 
     assert len(offset_items) == len(all_items) - 1
 
@@ -56,7 +61,10 @@ async def test_excludes_ids(conn, redis_client):
     b = await create_video(conn, f"exclude-b-{unique_tag()}", "desc", redis_client)
 
     items = await search_videos(
-        conn, redis_client, search="exclude-", exclude_ids=[a.id],
+        conn,
+        redis_client,
+        search="exclude-",
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]

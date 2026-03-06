@@ -1,65 +1,38 @@
-"""attempt_message_tree/search internal — reusable data-access layer."""
+"""Attempt message tree search — filtered/paginated query against attempt_message_tree_mv."""
 
-from typing import cast
+from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchAttemptMessageTreeEntriesSqlParams,
-    SearchAttemptMessageTreeEntriesSqlRow,
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.attempt_message_tree.types import (
+    GetAttemptMessageTreeResponse,
 )
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/entries/attempt_message_tree/search_attempt_message_tree_entries_complete.sql"
+MV_NAME = "attempt_message_tree_mv"
 
 
-async def search_attempt_message_tree_entries_internal(
+async def search_attempt_message_trees(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search attempt_message_tree entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    message_id: UUID | None = None,
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetAttemptMessageTreeResponse]:
+    """Search attempt_message_tree entries from attempt_message_tree_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "attempt_message_tree"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/attempt_message_tree/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT message_id, branch_path, depth
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR message_id = $1)
+        ORDER BY depth DESC
+        LIMIT $2 OFFSET $3
+        """,
+        message_id,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchAttemptMessageTreeEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-    )
-    result = cast(
-        SearchAttemptMessageTreeEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [GetAttemptMessageTreeResponse(**dict(r)) for r in rows]

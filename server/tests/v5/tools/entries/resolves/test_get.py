@@ -1,6 +1,5 @@
 """Tests for get_resolves."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.calls.create import create_call

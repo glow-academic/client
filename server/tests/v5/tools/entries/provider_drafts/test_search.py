@@ -1,6 +1,5 @@
 """Tests for provider_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.provider_drafts.create import create_provider_draft

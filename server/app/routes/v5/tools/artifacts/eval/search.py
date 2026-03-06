@@ -54,9 +54,12 @@ async def search_evals(
     # Junction filters
     if department_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="eval_departments_junction",
-            owner_col=OWNER_COL, resource_col="departments_id",
+            owner_col=OWNER_COL,
+            resource_col="departments_id",
             ids=department_ids,
         )
 

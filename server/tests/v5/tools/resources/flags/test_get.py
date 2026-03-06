@@ -1,6 +1,5 @@
 """Tests for get_flags."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.flags.create import create_flag

@@ -1,6 +1,5 @@
 """Tests for document_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.document_drafts.create import create_document_draft
@@ -20,9 +19,7 @@ async def _setup(conn, profile_id):
 
 async def test_search_finds_created(conn, profile_id):
     session, group = await _setup(conn, profile_id)
-    result = await create_document_draft(
-        conn, group_id=group.id, session_id=session.id
-    )
+    result = await create_document_draft(conn, group_id=group.id, session_id=session.id)
 
     items = await search_document_drafts(conn, group_id=group.id)
 
@@ -41,9 +38,7 @@ async def test_search_filters_by_group(conn, profile_id):
 
 async def test_search_filters_by_session(conn, profile_id):
     session, group = await _setup(conn, profile_id)
-    result = await create_document_draft(
-        conn, group_id=group.id, session_id=session.id
-    )
+    result = await create_document_draft(conn, group_id=group.id, session_id=session.id)
 
     items = await search_document_drafts(conn, session_id=session.id)
 

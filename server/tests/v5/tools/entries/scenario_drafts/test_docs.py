@@ -45,7 +45,9 @@ async def test_includes_all_operations(conn):
 async def test_create_operation_has_params(conn):
     result = await get_scenario_drafts_docs(conn)
 
-    create_op = next(op for op in result.operations if op.name == "create_scenario_draft")
+    create_op = next(
+        op for op in result.operations if op.name == "create_scenario_draft"
+    )
     param_names = [p.name for p in create_op.params]
     assert "group_id" in param_names
     assert "session_id" in param_names
@@ -54,7 +56,9 @@ async def test_create_operation_has_params(conn):
 async def test_search_operation_has_filters(conn):
     result = await get_scenario_drafts_docs(conn)
 
-    search_op = next(op for op in result.operations if op.name == "search_scenario_drafts")
+    search_op = next(
+        op for op in result.operations if op.name == "search_scenario_drafts"
+    )
     param_names = [p.name for p in search_op.params]
     assert "group_id" in param_names
     assert "session_id" in param_names

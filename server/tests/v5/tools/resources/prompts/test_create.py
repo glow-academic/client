@@ -34,10 +34,18 @@ async def test_visible_via_get(conn, redis_client):
 
 async def test_creates_second_row(conn, redis_client):
     first = await create_prompt(
-        conn, "Duplicate system prompt.", "duplicate-prompt", "Duplicate desc.", redis_client
+        conn,
+        "Duplicate system prompt.",
+        "duplicate-prompt",
+        "Duplicate desc.",
+        redis_client,
     )
     second = await create_prompt(
-        conn, "Duplicate system prompt.", "duplicate-prompt", "Duplicate desc.", redis_client
+        conn,
+        "Duplicate system prompt.",
+        "duplicate-prompt",
+        "Duplicate desc.",
+        redis_client,
     )
 
     assert first.id != second.id

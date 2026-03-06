@@ -64,7 +64,9 @@ async def get_auth_profile_internal(
 
     async def fetch_roles():
         async with pool.acquire() as c:
-            return await get_roles(c, None, get_redis_client(), bypass_cache=bypass_cache)
+            return await get_roles(
+                c, None, get_redis_client(), bypass_cache=bypass_cache
+            )
 
     async def fetch_session():
         if not profile_id:

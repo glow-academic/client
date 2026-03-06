@@ -8,7 +8,9 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.parameter_drafts.create import create_parameter_draft
 from app.routes.v5.tools.entries.parameter_drafts.get import get_parameter_drafts
-from app.routes.v5.tools.entries.parameter_drafts.refresh import refresh_parameter_drafts
+from app.routes.v5.tools.entries.parameter_drafts.refresh import (
+    refresh_parameter_drafts,
+)
 from app.routes.v5.tools.entries.parameter_drafts.search import search_parameter_drafts
 
 
@@ -16,12 +18,18 @@ async def get_parameter_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     """Get full documentation for the parameter_drafts entry."""
     mv_info = await get_mv_info(conn, "parameter_drafts_mv")
     entry_table = await get_table_info(conn, "parameter_drafts_entry")
-    departments_connection = await get_table_info(conn, "parameter_drafts_departments_connection")
-    descriptions_connection = await get_table_info(conn, "parameter_drafts_descriptions_connection")
+    departments_connection = await get_table_info(
+        conn, "parameter_drafts_departments_connection"
+    )
+    descriptions_connection = await get_table_info(
+        conn, "parameter_drafts_descriptions_connection"
+    )
     fields_connection = await get_table_info(conn, "parameter_drafts_fields_connection")
     flags_connection = await get_table_info(conn, "parameter_drafts_flags_connection")
     names_connection = await get_table_info(conn, "parameter_drafts_names_connection")
-    profiles_connection = await get_table_info(conn, "parameter_drafts_profiles_connection")
+    profiles_connection = await get_table_info(
+        conn, "parameter_drafts_profiles_connection"
+    )
 
     tables = [
         t

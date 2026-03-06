@@ -6,10 +6,16 @@ from app.infra.docs.get_mv_info import get_mv_info
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
-from app.routes.v5.tools.entries.attempt_completion.create import create_attempt_completion
+from app.routes.v5.tools.entries.attempt_completion.create import (
+    create_attempt_completion,
+)
 from app.routes.v5.tools.entries.attempt_completion.get import get_attempt_completions
-from app.routes.v5.tools.entries.attempt_completion.refresh import refresh_attempt_completion
-from app.routes.v5.tools.entries.attempt_completion.search import search_attempt_completions
+from app.routes.v5.tools.entries.attempt_completion.refresh import (
+    refresh_attempt_completion,
+)
+from app.routes.v5.tools.entries.attempt_completion.search import (
+    search_attempt_completions,
+)
 
 
 async def get_attempt_completion_docs(conn: asyncpg.Connection) -> DocsResponse:

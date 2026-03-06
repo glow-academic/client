@@ -5,9 +5,15 @@ import asyncpg
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
-from app.routes.v5.tools.resources.scenario_time_limits.create import create_scenario_time_limit
-from app.routes.v5.tools.resources.scenario_time_limits.get import get_scenario_time_limits
-from app.routes.v5.tools.resources.scenario_time_limits.search import search_scenario_time_limits
+from app.routes.v5.tools.resources.scenario_time_limits.create import (
+    create_scenario_time_limit,
+)
+from app.routes.v5.tools.resources.scenario_time_limits.get import (
+    get_scenario_time_limits,
+)
+from app.routes.v5.tools.resources.scenario_time_limits.search import (
+    search_scenario_time_limits,
+)
 
 
 async def get_scenario_time_limits_docs(conn: asyncpg.Connection) -> DocsResponse:

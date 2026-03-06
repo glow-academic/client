@@ -1,6 +1,5 @@
 """Tests for get_slugs."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.slugs.create import create_slug

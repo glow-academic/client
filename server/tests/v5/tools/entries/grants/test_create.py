@@ -23,9 +23,7 @@ async def test_roundtrip_via_db(conn, profile_id):
     session = await _session(conn, profile_id)
     result = await create_grant(conn, session_id=session.id)
 
-    row = await conn.fetchrow(
-        "SELECT * FROM grants_entry WHERE id = $1", result.id
-    )
+    row = await conn.fetchrow("SELECT * FROM grants_entry WHERE id = $1", result.id)
 
     assert row is not None
     assert row["id"] == result.id
@@ -39,9 +37,7 @@ async def test_default_expiry(conn, profile_id):
     session = await _session(conn, profile_id)
     result = await create_grant(conn, session_id=session.id)
 
-    row = await conn.fetchrow(
-        "SELECT * FROM grants_entry WHERE id = $1", result.id
-    )
+    row = await conn.fetchrow("SELECT * FROM grants_entry WHERE id = $1", result.id)
 
     assert row is not None
     assert row["expires_at"] is not None

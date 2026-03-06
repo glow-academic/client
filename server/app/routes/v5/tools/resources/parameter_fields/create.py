@@ -6,7 +6,9 @@ import asyncpg  # type: ignore
 from redis.asyncio import Redis
 
 from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
-from app.routes.v5.tools.resources.parameter_fields.types import GetParameterFieldResponse
+from app.routes.v5.tools.resources.parameter_fields.types import (
+    GetParameterFieldResponse,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 
@@ -32,5 +34,7 @@ async def create_parameter_field(
     )
 
     await invalidate_tags(["resources", "parameter_fields"], redis=redis)
-    items = await get_parameter_fields(conn, [parameter_field_id], redis, bypass_cache=True)
+    items = await get_parameter_fields(
+        conn, [parameter_field_id], redis, bypass_cache=True
+    )
     return items[0]

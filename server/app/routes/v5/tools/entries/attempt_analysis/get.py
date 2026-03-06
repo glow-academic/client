@@ -16,7 +16,5 @@ async def get_attempt_analyses(
 ) -> list[GetAttemptAnalysisResponse]:
     if not ids:
         return []
-    rows = await conn.fetch(
-        f"SELECT * FROM {MV_NAME} WHERE analysis_id = ANY($1)", ids
-    )
+    rows = await conn.fetch(f"SELECT * FROM {MV_NAME} WHERE analysis_id = ANY($1)", ids)
     return [GetAttemptAnalysisResponse(**dict(r)) for r in rows]

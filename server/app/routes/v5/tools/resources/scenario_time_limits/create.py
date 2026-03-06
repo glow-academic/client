@@ -5,8 +5,12 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.resources.scenario_time_limits.get import get_scenario_time_limits
-from app.routes.v5.tools.resources.scenario_time_limits.types import GetScenarioTimeLimitResponse
+from app.routes.v5.tools.resources.scenario_time_limits.get import (
+    get_scenario_time_limits,
+)
+from app.routes.v5.tools.resources.scenario_time_limits.types import (
+    GetScenarioTimeLimitResponse,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

@@ -98,9 +98,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, msg = await _setup(conn, profile_id)
 
-    items = await search_attempt_hints(
-        conn, message_id=msg.id, bypass_mv=True
-    )
+    items = await search_attempt_hints(conn, message_id=msg.id, bypass_mv=True)
 
     ids = [item.hint_id for item in items]
     assert result.id in ids

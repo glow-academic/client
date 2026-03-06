@@ -43,26 +43,20 @@ from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_cha
 from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
     create_attempt_chat_bridge,
 )
-from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.attempt_chat_bridge.search import (
     search_attempt_chat_bridge_entries_internal,
 )
 from app.routes.v5.tools.entries.attempt_completion.create import (
     create_attempt_completion_entry_internal,
 )
-from app.routes.v5.tools.entries.attempt_home.search import (
-    search_attempt_home_entries_internal,
-)
+from app.routes.v5.tools.entries.attempt_home.search import search_attempt_homes
 from app.routes.v5.tools.entries.attempt_practice.search import (
-    search_attempt_practice_entries_internal,
+    search_attempt_practice_entries,
 )
+from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.chat.get import get_chat_entries_internal
-from app.routes.v5.tools.entries.home_chat.search import (
-    search_home_chat_entries_internal,
-)
-from app.routes.v5.tools.entries.practice_chat.search import (
-    search_practice_chat_entries_internal,
-)
+from app.routes.v5.tools.entries.home_chat.search import search_home_chats
+from app.routes.v5.tools.entries.practice_chat.search import search_practice_chats
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.logging.db_logger import get_logger
 
@@ -240,31 +234,29 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
 
             # 3c. Get parent chat_ids from practice/home
             if is_practice:
-                practice_entries = await search_attempt_practice_entries_internal(
-                    conn, attempt_id=attempt_id, bypass_cache=True
+                practice_entries = await search_attempt_practice_entries(
+                    conn, attempt_id=attempt_id, bypass_mv=True
                 )
                 if not practice_entries:
                     raise ValueError("No practice link for this attempt")
-                practice_id = uuid.UUID(practice_entries[0].get("practice_id"))
-                parent_chat_links = await search_practice_chat_entries_internal(
-                    conn, practice_id=practice_id, limit_count=1000, bypass_cache=True
+                practice_id = practice_entries[0].practice_id
+                parent_chat_links = await search_practice_chats(
+                    conn, practice_id=practice_id, limit=1000, bypass_mv=True
                 )
             else:
-                home_entries = await search_attempt_home_entries_internal(
-                    conn, attempt_id=attempt_id, bypass_cache=True
+                home_entries = await search_attempt_homes(
+                    conn, attempt_id=attempt_id, bypass_mv=True
                 )
                 if not home_entries:
                     raise ValueError("No home link for this attempt")
-                home_id = uuid.UUID(home_entries[0].get("home_id"))
-                parent_chat_links = await search_home_chat_entries_internal(
-                    conn, home_id=home_id, limit_count=1000, bypass_cache=True
+                home_id = home_entries[0].home_id
+                parent_chat_links = await search_home_chats(
+                    conn, home_id=home_id, limit=1000, bypass_mv=True
                 )
 
             # Extract all parent chat_ids
             all_parent_chat_ids = [
-                uuid.UUID(link.get("chat_id"))
-                for link in parent_chat_links
-                if link.get("chat_id")
+                link.chat_id for link in parent_chat_links if link.chat_id
             ]
 
             # 3d. Get chat entry details for all parent chats (includes position)

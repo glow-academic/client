@@ -2,8 +2,12 @@
 
 import pytest
 
-from app.routes.v5.tools.resources.conditional_parameters.create import create_conditional_parameter
-from app.routes.v5.tools.resources.conditional_parameters.get import get_conditional_parameters
+from app.routes.v5.tools.resources.conditional_parameters.create import (
+    create_conditional_parameter,
+)
+from app.routes.v5.tools.resources.conditional_parameters.get import (
+    get_conditional_parameters,
+)
 from app.routes.v5.tools.resources.parameters.create import create_parameter
 
 pytestmark = pytest.mark.asyncio
@@ -22,7 +26,9 @@ async def test_visible_via_get(conn, redis_client):
     param = await create_parameter(conn, redis_client, name="test-param-visible")
     result = await create_conditional_parameter(conn, param.id, redis_client)
 
-    items = await get_conditional_parameters(conn, [result.id], redis_client, bypass_cache=True)
+    items = await get_conditional_parameters(
+        conn, [result.id], redis_client, bypass_cache=True
+    )
 
     assert len(items) == 1
     assert items[0].id == result.id

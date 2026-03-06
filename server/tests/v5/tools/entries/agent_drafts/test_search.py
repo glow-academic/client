@@ -1,6 +1,5 @@
 """Tests for agent_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.agent_drafts.create import create_agent_draft

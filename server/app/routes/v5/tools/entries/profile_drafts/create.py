@@ -37,11 +37,19 @@ async def create_profile_draft(
         raise ValueError("Failed to create profile_drafts entry")
 
     connections: list[tuple[str, str, list[UUID]]] = [
-        ("profile_drafts_departments_connection", "departments_id", department_ids or []),
+        (
+            "profile_drafts_departments_connection",
+            "departments_id",
+            department_ids or [],
+        ),
         ("profile_drafts_emails_connection", "emails_id", email_ids or []),
         ("profile_drafts_flags_connection", "flags_id", flag_ids or []),
         ("profile_drafts_names_connection", "names_id", name_ids or []),
-        ("profile_drafts_request_limits_connection", "request_limits_id", request_limit_ids or []),
+        (
+            "profile_drafts_request_limits_connection",
+            "request_limits_id",
+            request_limit_ids or [],
+        ),
         ("profile_drafts_roles_connection", "roles_id", role_ids or []),
     ]
 

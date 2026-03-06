@@ -194,8 +194,12 @@ async def _resolve_scenario_values(
         from app.routes.v5.tools.resources.flags.search import search_flags
 
         all_flags = await search_flags(
-            conn, get_redis_client(), search=None, limit_count=1000,
-            flag_type="scenario_active", scenario=True,
+            conn,
+            get_redis_client(),
+            search=None,
+            limit_count=1000,
+            flag_type="scenario_active",
+            scenario=True,
         )
         match = next((f for f in all_flags if f.type == "scenario_active"), None)
         if match and match.id:
@@ -217,11 +221,7 @@ async def _resolve_scenario_values(
         all_depts = await search_departments(
             conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
-        dept_name_map = {
-            d.name.lower(): d.id
-            for d in all_depts
-            if d.name and d.id
-        }
+        dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []
         for dept_name in item.departments:
             dept_id = dept_name_map.get(dept_name.lower())
@@ -246,9 +246,7 @@ async def _resolve_scenario_values(
             conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
         persona_name_map = {
-            p.name.lower(): p.id
-            for p in all_personas
-            if p.name and p.id
+            p.name.lower(): p.id for p in all_personas if p.name and p.id
         }
         resolved_ids = []
         for persona_name in item.personas:
@@ -273,9 +271,7 @@ async def _resolve_scenario_values(
         all_docs = await search_documents(
             conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
-        doc_name_map = {
-            d.name.lower(): d.id for d in all_docs if d.name and d.id
-        }
+        doc_name_map = {d.name.lower(): d.id for d in all_docs if d.name and d.id}
         resolved_ids = []
         for doc_name in item.documents:
             did = doc_name_map.get(doc_name.lower())
@@ -297,12 +293,14 @@ async def _resolve_scenario_values(
             search_parameter_fields,
         )
 
-        all_pf = await search_parameter_fields(
-            conn, get_redis_client(), scenario=True
-        )
+        all_pf = await search_parameter_fields(conn, get_redis_client(), scenario=True)
         # Fetch field names for the parameter_fields (name lives on fields_resource)
         field_ids_list = [pf.field_id for pf in all_pf if pf.field_id]
-        fields_list = await get_fields(conn, field_ids_list, get_redis_client()) if field_ids_list else []
+        fields_list = (
+            await get_fields(conn, field_ids_list, get_redis_client())
+            if field_ids_list
+            else []
+        )
         field_name_map = {f.id: f.name for f in fields_list if f.name}
         pf_name_map = {
             field_name_map[pf.field_id].lower(): pf.id
@@ -333,9 +331,7 @@ async def _resolve_scenario_values(
             conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
         obj_name_map = {
-            o.objective.lower(): o.id
-            for o in all_objectives
-            if o.objective and o.id
+            o.objective.lower(): o.id for o in all_objectives if o.objective and o.id
         }
         resolved_ids = []
         for obj_name in item.objectives:
@@ -358,9 +354,7 @@ async def _resolve_scenario_values(
         all_images = await search_images(
             conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
-        img_name_map = {
-            i.name.lower(): i.id for i in all_images if i.name and i.id
-        }
+        img_name_map = {i.name.lower(): i.id for i in all_images if i.name and i.id}
         resolved_ids = []
         for img_name in item.images:
             iid = img_name_map.get(img_name.lower())
@@ -382,9 +376,7 @@ async def _resolve_scenario_values(
         all_videos = await search_videos(
             conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
-        vid_name_map = {
-            v.name.lower(): v.id for v in all_videos if v.name and v.id
-        }
+        vid_name_map = {v.name.lower(): v.id for v in all_videos if v.name and v.id}
         resolved_ids = []
         for vid_name in item.videos:
             vid = vid_name_map.get(vid_name.lower())
@@ -433,9 +425,7 @@ async def _resolve_scenario_values(
             conn, get_redis_client(), search=None, limit_count=1000, scenario=True
         )
         opt_name_map = {
-            o.option_text.lower(): o.id
-            for o in all_options
-            if o.option_text and o.id
+            o.option_text.lower(): o.id for o in all_options if o.option_text and o.id
         }
         resolved_ids = []
         for opt_name in item.options:

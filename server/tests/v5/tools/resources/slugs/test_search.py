@@ -1,6 +1,5 @@
 """Tests for search_slugs."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.slugs.create import create_slug
@@ -28,7 +27,9 @@ async def test_search_is_case_insensitive(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_slugs(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
+    items = await search_slugs(
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
+    )
 
     assert items == []
 
@@ -46,8 +47,12 @@ async def test_respects_offset(conn, redis_client):
     for i in range(3):
         await create_slug(conn, f"offset-slug-{unique_tag()}", redis_client)
 
-    all_items = await search_slugs(conn, redis_client, search="offset-slug-", limit_count=10)
-    offset_items = await search_slugs(conn, redis_client, search="offset-slug-", limit_count=10, offset_count=1)
+    all_items = await search_slugs(
+        conn, redis_client, search="offset-slug-", limit_count=10
+    )
+    offset_items = await search_slugs(
+        conn, redis_client, search="offset-slug-", limit_count=10, offset_count=1
+    )
 
     assert len(offset_items) == len(all_items) - 1
 
@@ -57,7 +62,10 @@ async def test_excludes_ids(conn, redis_client):
     b = await create_slug(conn, f"exclude-sb-{unique_tag()}", redis_client)
 
     items = await search_slugs(
-        conn, redis_client, search="exclude-s", exclude_ids=[a.id],
+        conn,
+        redis_client,
+        search="exclude-s",
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]
@@ -84,6 +92,8 @@ async def test_cache_hit(conn, redis_client):
 async def test_bypass_cache(conn, redis_client):
     await create_slug(conn, f"bypass-slug-{unique_tag()}", redis_client)
 
-    items = await search_slugs(conn, redis_client, search="bypass-slug-", bypass_cache=True)
+    items = await search_slugs(
+        conn, redis_client, search="bypass-slug-", bypass_cache=True
+    )
 
     assert len(items) >= 1

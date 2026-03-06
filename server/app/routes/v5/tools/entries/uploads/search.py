@@ -1,69 +1,36 @@
-"""uploads/search internal — reusable data-access layer."""
+"""Uploads search — filtered/paginated query against uploads_mv."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchUploadsEntriesSqlParams,
-    SearchUploadsEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.uploads.types import SearchUploadResponse
 
-SQL_PATH = "app/sql/queries/entries/uploads/search_uploads_entries_complete.sql"
+MV_NAME = "uploads_mv"
 
 
-async def search_uploads_entries_internal(
+async def search_uploads(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     upload_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search uploads entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[SearchUploadResponse]:
+    """Search uploads from uploads_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "uploads"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/uploads/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "upload_id": str(upload_id) if upload_id else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT files_id, upload_id, file_path, mime_type, size, created_at
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR upload_id = $1)
+        ORDER BY created_at DESC
+        LIMIT $2 OFFSET $3
+        """,
+        upload_id,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchUploadsEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        upload_id=upload_id,
-    )
-    result = cast(
-        SearchUploadsEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [SearchUploadResponse(**dict(r)) for r in rows]

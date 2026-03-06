@@ -1,6 +1,5 @@
 """Tests for eval_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.eval_drafts.create import create_eval_draft

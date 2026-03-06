@@ -1,6 +1,5 @@
 """Tests for video_uploads search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.video_uploads.create import create_video_upload

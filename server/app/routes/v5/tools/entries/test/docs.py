@@ -11,7 +11,7 @@ from app.routes.v5.tools.entries.test.get import get_tests
 from app.routes.v5.tools.entries.test.refresh import refresh_test
 from app.routes.v5.tools.entries.test.search import (
     get_test_list_internal,
-    search_test_entries_internal,
+    search_tests,
 )
 
 
@@ -51,10 +51,10 @@ async def get_test_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves test entries by IDs from test_mv.",
             ),
             get_operation_info(
-                search_test_entries_internal,
+                search_tests,
                 description=(
-                    "Filtered paginated search against test entries by search text, "
-                    "eval_id, and profile_id. Results cached for 60 seconds."
+                    "Filtered paginated search against test entries "
+                    "by eval_id and profile_id from test_mv."
                 ),
             ),
             get_operation_info(

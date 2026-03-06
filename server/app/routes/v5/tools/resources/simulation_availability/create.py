@@ -6,7 +6,9 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.resources.simulation_availability.get import get_simulation_availability
+from app.routes.v5.tools.resources.simulation_availability.get import (
+    get_simulation_availability,
+)
 from app.routes.v5.tools.resources.simulation_availability.types import (
     GetSimulationAvailabilityResponse,
 )

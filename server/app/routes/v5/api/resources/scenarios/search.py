@@ -10,7 +10,9 @@ from app.routes.v5.api.main.simulation.types import (
     SearchScenariosApiRequest,
     SearchScenariosApiResponse,
 )
-from app.routes.v5.tools.resources.scenarios.search import search_scenarios as search_scenarios_fn
+from app.routes.v5.tools.resources.scenarios.search import (
+    search_scenarios as search_scenarios_fn,
+)
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

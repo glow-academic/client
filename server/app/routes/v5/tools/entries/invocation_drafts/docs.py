@@ -8,30 +8,48 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.invocation_drafts.create import create_invocation_draft
 from app.routes.v5.tools.entries.invocation_drafts.get import get_invocation_drafts
-from app.routes.v5.tools.entries.invocation_drafts.refresh import refresh_invocation_drafts
-from app.routes.v5.tools.entries.invocation_drafts.search import search_invocation_drafts
+from app.routes.v5.tools.entries.invocation_drafts.refresh import (
+    refresh_invocation_drafts,
+)
+from app.routes.v5.tools.entries.invocation_drafts.search import (
+    search_invocation_drafts,
+)
 
 
 async def get_invocation_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     """Get full documentation for the invocation_drafts entry."""
     mv_info = await get_mv_info(conn, "invocation_drafts_mv")
     entry_table = await get_table_info(conn, "invocation_drafts_entry")
-    departments_connection = await get_table_info(conn, "invocation_drafts_departments_connection")
-    descriptions_connection = await get_table_info(conn, "invocation_drafts_descriptions_connection")
+    departments_connection = await get_table_info(
+        conn, "invocation_drafts_departments_connection"
+    )
+    descriptions_connection = await get_table_info(
+        conn, "invocation_drafts_descriptions_connection"
+    )
     flags_connection = await get_table_info(conn, "invocation_drafts_flags_connection")
     keys_connection = await get_table_info(conn, "invocation_drafts_keys_connection")
-    model_flags_connection = await get_table_info(conn, "invocation_drafts_model_flags_connection")
-    model_positions_connection = await get_table_info(conn, "invocation_drafts_model_positions_connection")
-    model_rubrics_connection = await get_table_info(conn, "invocation_drafts_model_rubrics_connection")
+    model_flags_connection = await get_table_info(
+        conn, "invocation_drafts_model_flags_connection"
+    )
+    model_positions_connection = await get_table_info(
+        conn, "invocation_drafts_model_positions_connection"
+    )
+    model_rubrics_connection = await get_table_info(
+        conn, "invocation_drafts_model_rubrics_connection"
+    )
     names_connection = await get_table_info(conn, "invocation_drafts_names_connection")
-    profiles_connection = await get_table_info(conn, "invocation_drafts_profiles_connection")
+    profiles_connection = await get_table_info(
+        conn, "invocation_drafts_profiles_connection"
+    )
     reasoning_levels_connection = await get_table_info(
         conn, "invocation_drafts_reasoning_levels_connection"
     )
     temperature_levels_connection = await get_table_info(
         conn, "invocation_drafts_temperature_levels_connection"
     )
-    voices_connection = await get_table_info(conn, "invocation_drafts_voices_connection")
+    voices_connection = await get_table_info(
+        conn, "invocation_drafts_voices_connection"
+    )
 
     tables = [
         t

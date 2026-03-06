@@ -7,7 +7,7 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.messages.create import create_message
 from app.routes.v5.tools.entries.messages.get import get_message
-from app.routes.v5.tools.entries.messages.search import search_messages_entries_internal
+from app.routes.v5.tools.entries.messages.search import search_messages
 
 
 async def get_messages_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -36,8 +36,8 @@ async def get_messages_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Retrieves a single message entry by ID from messages_entry.",
             ),
             get_operation_info(
-                search_messages_entries_internal,
-                description="Filtered paginated search against messages_entry.",
+                search_messages,
+                description="Filtered paginated search against messages_mv.",
             ),
         ],
     )

@@ -7,7 +7,9 @@ from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
 from app.routes.v5.tools.entries.attempt_grade.create import create_attempt_grade
 from app.routes.v5.tools.entries.attempt_feedback.create import create_attempt_feedback
 from app.routes.v5.tools.entries.attempt_feedback.get import get_attempt_feedbacks
-from app.routes.v5.tools.entries.attempt_feedback.refresh import refresh_attempt_feedback
+from app.routes.v5.tools.entries.attempt_feedback.refresh import (
+    refresh_attempt_feedback,
+)
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.chat.create import create_chat
 from app.routes.v5.tools.entries.groups.create import create_group
@@ -41,9 +43,7 @@ async def _attempt_feedback(conn, profile_id, **overrides):
         passed=True,
         score=85,
     )
-    defaults = dict(
-        grade_id=grade.id, call_id=call2.id, total=10, feedback="Good job"
-    )
+    defaults = dict(grade_id=grade.id, call_id=call2.id, total=10, feedback="Good job")
     defaults.update(overrides)
     result = await create_attempt_feedback(conn, **defaults)
     return result

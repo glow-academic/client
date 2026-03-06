@@ -47,7 +47,9 @@ class FakeRunsContext:
 
 
 def _patch(target, return_value):
-    return patch(f"{MODULE}.{target}", new_callable=AsyncMock, return_value=return_value)
+    return patch(
+        f"{MODULE}.{target}", new_callable=AsyncMock, return_value=return_value
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -60,7 +62,9 @@ class TestResolveCommonContextEmpty:
     async def test_profile_not_found_returns_none(self):
         with _patch("resolve_profile_context", None) as mock_profile:
             result = await resolve_common_context(
-                None, None, profile_id=uuid4(),
+                None,
+                None,
+                profile_id=uuid4(),
             )
 
         assert result is None
@@ -78,7 +82,9 @@ class TestResolveCommonContextEmpty:
             _patch("resolve_runs_context", runs),
         ):
             result = await resolve_common_context(
-                None, None, profile_id=uuid4(),
+                None,
+                None,
+                profile_id=uuid4(),
             )
 
         assert result is not None
@@ -99,7 +105,9 @@ class TestResolveCommonContextCallArgs:
             _patch("resolve_runs_context", FakeRunsContext()),
         ):
             await resolve_common_context(
-                None, None, profile_id=profile_id,
+                None,
+                None,
+                profile_id=profile_id,
             )
 
         # profile_id passed as second positional arg
@@ -116,7 +124,9 @@ class TestResolveCommonContextCallArgs:
             _patch("resolve_runs_context", FakeRunsContext()),
         ):
             await resolve_common_context(
-                None, None, profile_id=uuid4(),
+                None,
+                None,
+                profile_id=uuid4(),
             )
 
         # settings_id passed as second positional arg to resolve_tool_graph
@@ -132,7 +142,9 @@ class TestResolveCommonContextCallArgs:
             _patch("resolve_runs_context", FakeRunsContext()) as mock_runs,
         ):
             await resolve_common_context(
-                None, None, profile_id=profile_id,
+                None,
+                None,
+                profile_id=profile_id,
             )
 
         assert mock_runs.call_args.kwargs["profile_id"] == profile_id
@@ -148,7 +160,10 @@ class TestResolveCommonContextCallArgs:
             _patch("resolve_runs_context", FakeRunsContext()) as mock_runs,
         ):
             await resolve_common_context(
-                None, None, profile_id=profile_id, group_id=group_id,
+                None,
+                None,
+                profile_id=profile_id,
+                group_id=group_id,
             )
 
         assert mock_runs.call_args.kwargs["group_id"] == group_id
@@ -165,7 +180,9 @@ class TestResolveCommonContextCallArgs:
             _patch("resolve_runs_context", runs),
         ):
             result = await resolve_common_context(
-                None, None, profile_id=uuid4(),
+                None,
+                None,
+                profile_id=uuid4(),
             )
 
         assert isinstance(result, CommonContext)
@@ -183,7 +200,10 @@ class TestResolveCommonContextCallArgs:
             _patch("resolve_runs_context", FakeRunsContext()),
         ):
             await resolve_common_context(
-                None, None, profile_id=uuid4(), bypass_cache=True,
+                None,
+                None,
+                profile_id=uuid4(),
+                bypass_cache=True,
             )
 
         # bypass_cache passed to profile context

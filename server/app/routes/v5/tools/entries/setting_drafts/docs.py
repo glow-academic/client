@@ -17,17 +17,29 @@ async def get_setting_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     mv_info = await get_mv_info(conn, "setting_drafts_mv")
     entry_table = await get_table_info(conn, "setting_drafts_entry")
     agents_connection = await get_table_info(conn, "setting_drafts_agents_connection")
-    auth_item_keys_connection = await get_table_info(conn, "setting_drafts_auth_item_keys_connection")
+    auth_item_keys_connection = await get_table_info(
+        conn, "setting_drafts_auth_item_keys_connection"
+    )
     auths_connection = await get_table_info(conn, "setting_drafts_auths_connection")
     colors_connection = await get_table_info(conn, "setting_drafts_colors_connection")
-    departments_connection = await get_table_info(conn, "setting_drafts_departments_connection")
-    descriptions_connection = await get_table_info(conn, "setting_drafts_descriptions_connection")
+    departments_connection = await get_table_info(
+        conn, "setting_drafts_departments_connection"
+    )
+    descriptions_connection = await get_table_info(
+        conn, "setting_drafts_descriptions_connection"
+    )
     flags_connection = await get_table_info(conn, "setting_drafts_flags_connection")
     items_connection = await get_table_info(conn, "setting_drafts_items_connection")
     names_connection = await get_table_info(conn, "setting_drafts_names_connection")
-    profiles_connection = await get_table_info(conn, "setting_drafts_profiles_connection")
-    provider_keys_connection = await get_table_info(conn, "setting_drafts_provider_keys_connection")
-    thresholds_connection = await get_table_info(conn, "setting_drafts_thresholds_connection")
+    profiles_connection = await get_table_info(
+        conn, "setting_drafts_profiles_connection"
+    )
+    provider_keys_connection = await get_table_info(
+        conn, "setting_drafts_provider_keys_connection"
+    )
+    thresholds_connection = await get_table_info(
+        conn, "setting_drafts_thresholds_connection"
+    )
 
     tables = [
         t

@@ -441,7 +441,12 @@ async def get_model_internal(
                 c, description_ids, get_redis_client(), cache
             )
             suggestions = await search_descriptions(
-                c, get_redis_client(), draft_id=effective_group_id, exclude_ids=description_ids, bypass_cache=bypass_cache, model=True,
+                c,
+                get_redis_client(),
+                draft_id=effective_group_id,
+                exclude_ids=description_ids,
+                bypass_cache=bypass_cache,
+                model=True,
             )
             return (selected, suggestions)
 
@@ -463,9 +468,14 @@ async def get_model_internal(
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags(
-                c, get_redis_client(), search=None, limit_count=50,
-                offset_count=0, exclude_ids=flag_ids,
-                bypass_cache=bypass_cache, model=True,
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=flag_ids,
+                bypass_cache=bypass_cache,
+                model=True,
             )
             suggestions = [f for f in all_flags if f.name in MODEL_FLAG_NAMES]
             return (selected, suggestions)
@@ -508,7 +518,9 @@ async def get_model_internal(
 
     async def fetch_pricing():
         async with pool.acquire() as c:
-            selected = await get_pricing(c, selected_pricing_ids, get_redis_client(), bypass_cache)
+            selected = await get_pricing(
+                c, selected_pricing_ids, get_redis_client(), bypass_cache
+            )
             return (selected, [])
 
     async def fetch_reasoning_levels():
@@ -567,9 +579,7 @@ async def get_model_internal(
     values = _dedupe_by_id(values_selected + values_suggestions, "id")
     providers = _dedupe_by_id(providers_selected + providers_suggestions, "id")
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
-    departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "id"
-    )
+    departments = _dedupe_by_id(departments_selected + departments_suggestions, "id")
     modalities = _dedupe_by_id(modalities_selected + modalities_suggestions, "id")
     temperature_levels = _dedupe_by_id(
         temperature_levels_selected + temperature_levels_suggestions,
@@ -593,9 +603,7 @@ async def get_model_internal(
         (p for p in providers if p.id == selected_provider_id), None
     )
 
-    department_resources = [
-        d for d in departments if d.id in selected_department_ids
-    ]
+    department_resources = [d for d in departments if d.id in selected_department_ids]
     modality_resources = [m for m in modalities if m.id in selected_modality_ids]
     temperature_level_resources = [
         t

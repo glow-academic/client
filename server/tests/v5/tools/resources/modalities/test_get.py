@@ -1,6 +1,5 @@
 """Tests for get_modalities."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.modalities.create import create_modality

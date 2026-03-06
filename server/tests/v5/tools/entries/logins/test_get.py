@@ -1,6 +1,5 @@
 """Tests for get_logins."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.logins.create import create_login

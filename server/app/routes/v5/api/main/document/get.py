@@ -369,7 +369,12 @@ async def get_document_internal(
                 c, description_ids, get_redis_client(), cache
             )
             suggestions = await search_descriptions(
-                c, get_redis_client(), draft_id=effective_group_id, exclude_ids=description_ids, bypass_cache=bypass_cache, document=True,
+                c,
+                get_redis_client(),
+                draft_id=effective_group_id,
+                exclude_ids=description_ids,
+                bypass_cache=bypass_cache,
+                document=True,
             )
             return (selected, suggestions)
 
@@ -380,9 +385,14 @@ async def get_document_internal(
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags(
-                c, get_redis_client(), search=None, limit_count=50,
-                offset_count=0, exclude_ids=flag_ids,
-                bypass_cache=bypass_cache, document=True,
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=flag_ids,
+                bypass_cache=bypass_cache,
+                document=True,
             )
             # Filter to only document-specific flags
             suggestions = [f for f in all_flags if f.name in DOCUMENT_FLAG_NAMES]
@@ -409,7 +419,9 @@ async def get_document_internal(
 
     async def fetch_fields():
         async with pool.acquire() as c:
-            selected = await get_parameter_fields(c, field_ids, get_redis_client(), bypass_cache)
+            selected = await get_parameter_fields(
+                c, field_ids, get_redis_client(), bypass_cache
+            )
             # Search for available fields scoped to user departments
             suggestions = await search_fields(
                 c,
@@ -426,7 +438,9 @@ async def get_document_internal(
 
     async def fetch_uploads():
         async with pool.acquire() as c:
-            selected = await get_uploads(c, upload_ids, get_redis_client(), bypass_cache)
+            selected = await get_uploads(
+                c, upload_ids, get_redis_client(), bypass_cache
+            )
             suggestions = await search_uploads(
                 c,
                 get_redis_client(),
@@ -491,9 +505,7 @@ async def get_document_internal(
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
-    departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "id"
-    )
+    departments = _dedupe_by_id(departments_selected + departments_suggestions, "id")
     fields = _dedupe_by_id(fields_selected, "field_id")
     uploads = _dedupe_by_id(uploads_selected + uploads_suggestions, "id")
     images = _dedupe_by_id(images_selected + images_suggestions, "id")
@@ -507,9 +519,7 @@ async def get_document_internal(
     )
     flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
 
-    department_resources = [
-        d for d in departments if d.id in selected_department_ids
-    ]
+    department_resources = [d for d in departments if d.id in selected_department_ids]
     field_resources = [f for f in fields if f.field_id in selected_field_ids]
     upload_resources = [u for u in uploads if u.id in selected_upload_ids]
     image_resources = [i for i in images if i.id in selected_image_ids]

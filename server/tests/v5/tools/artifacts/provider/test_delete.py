@@ -1,6 +1,5 @@
 """Tests for delete_providers — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.provider.create import create_provider

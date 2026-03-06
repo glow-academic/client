@@ -1,6 +1,5 @@
 """Tests for get_roles."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.roles.create import create_role
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_role(conn, redis_client):
-    created = await create_role(conn, "admin", redis_client, name="Admin Role", description="desc")
+    created = await create_role(
+        conn, "admin", redis_client, name="Admin Role", description="desc"
+    )
 
     items = await get_roles(conn, [created.id], redis_client)
 

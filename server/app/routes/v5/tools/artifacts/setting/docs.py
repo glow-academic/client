@@ -28,10 +28,25 @@ async def get_setting_docs(conn: asyncpg.Connection) -> DocsResponse:
         ),
         tables=tables,
         operations=[
-            get_operation_info(create_setting, description="Creates a new setting artifact with optional resource links."),
-            get_operation_info(update_setting, description="Updates an existing setting's resource links."),
-            get_operation_info(get_settings, description="Batch retrieves settings by IDs with optional junction data."),
-            get_operation_info(search_settings, description="Filtered paginated search returning matching setting IDs."),
-            get_operation_info(delete_settings, description="Deletes settings by IDs. Supports soft delete (active=false) or hard delete (cascade)."),
+            get_operation_info(
+                create_setting,
+                description="Creates a new setting artifact with optional resource links.",
+            ),
+            get_operation_info(
+                update_setting,
+                description="Updates an existing setting's resource links.",
+            ),
+            get_operation_info(
+                get_settings,
+                description="Batch retrieves settings by IDs with optional junction data.",
+            ),
+            get_operation_info(
+                search_settings,
+                description="Filtered paginated search returning matching setting IDs.",
+            ),
+            get_operation_info(
+                delete_settings,
+                description="Deletes settings by IDs. Supports soft delete (active=false) or hard delete (cascade).",
+            ),
         ],
     )

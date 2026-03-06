@@ -12,9 +12,7 @@ from app.routes.v5.tools.entries.personas.get import get_personas
 async def get_personas_docs(conn: asyncpg.Connection) -> DocsResponse:
     """Get full documentation for the personas entry."""
     entry_table = await get_table_info(conn, "personas_entry")
-    personas_connection = await get_table_info(
-        conn, "personas_personas_connection"
-    )
+    personas_connection = await get_table_info(conn, "personas_personas_connection")
 
     tables = [t for t in [entry_table, personas_connection] if t is not None]
 

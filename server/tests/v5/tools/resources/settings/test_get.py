@@ -1,6 +1,5 @@
 """Tests for get_settings."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.settings.create import create_setting
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_setting(conn, redis_client):
-    created = await create_setting(conn, "test-setting", "Test setting desc", redis_client)
+    created = await create_setting(
+        conn, "test-setting", "Test setting desc", redis_client
+    )
 
     items = await get_settings(conn, [created.id], redis_client)
 

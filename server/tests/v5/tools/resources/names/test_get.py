@@ -1,6 +1,5 @@
 """Tests for get_names."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.names.create import create_name

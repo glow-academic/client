@@ -19,9 +19,7 @@ async def test_creates_new_icon(conn, redis_client):
 
 
 async def test_visible_via_get(conn, redis_client):
-    result = await create_icon(
-        conn, "test-icon-visible", "desc", "bell", redis_client
-    )
+    result = await create_icon(conn, "test-icon-visible", "desc", "bell", redis_client)
 
     items = await get_icons(conn, [result.id], redis_client, bypass_cache=True)
     assert len(items) == 1
@@ -36,7 +34,9 @@ async def test_creates_second_row(conn, redis_client):
 
 
 async def test_sets_mcp_flag(conn, redis_client):
-    result = await create_icon(conn, "mcp-icon", "desc", "robot", redis_client, mcp=True)
+    result = await create_icon(
+        conn, "mcp-icon", "desc", "robot", redis_client, mcp=True
+    )
 
     assert result.mcp is True
     assert result.generated is True

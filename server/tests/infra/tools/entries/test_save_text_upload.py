@@ -1,6 +1,5 @@
 """Tests for save_text_upload."""
 
-
 from app.infra.tools.entries.save_text_upload import save_text_upload
 from tests.helpers import nonexistent_id
 

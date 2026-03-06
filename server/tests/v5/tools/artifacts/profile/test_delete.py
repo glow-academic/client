@@ -1,6 +1,5 @@
 """Tests for delete_profiles — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.profile.create import create_profile

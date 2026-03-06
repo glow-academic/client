@@ -1,6 +1,5 @@
 """Tests for search_emails."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.emails.create import create_email
@@ -70,12 +69,8 @@ async def test_respects_offset(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    a = await create_email(
-        conn, f"exclude-a-{unique_tag()}@example.com", redis_client
-    )
-    b = await create_email(
-        conn, f"exclude-b-{unique_tag()}@example.com", redis_client
-    )
+    a = await create_email(conn, f"exclude-a-{unique_tag()}@example.com", redis_client)
+    b = await create_email(conn, f"exclude-b-{unique_tag()}@example.com", redis_client)
 
     items = await search_emails(
         conn, redis_client, search="exclude-", exclude_ids=[a.id]
@@ -93,9 +88,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 
 async def test_cache_hit(conn, redis_client):
-    await create_email(
-        conn, f"cache-hit-{unique_tag()}@example.com", redis_client
-    )
+    await create_email(conn, f"cache-hit-{unique_tag()}@example.com", redis_client)
 
     items1 = await search_emails(conn, redis_client, search="cache-hit-")
     items2 = await search_emails(conn, redis_client, search="cache-hit-")
@@ -105,12 +98,8 @@ async def test_cache_hit(conn, redis_client):
 
 
 async def test_bypass_cache(conn, redis_client):
-    await create_email(
-        conn, f"bypass-{unique_tag()}@example.com", redis_client
-    )
+    await create_email(conn, f"bypass-{unique_tag()}@example.com", redis_client)
 
-    items = await search_emails(
-        conn, redis_client, search="bypass-", bypass_cache=True
-    )
+    items = await search_emails(conn, redis_client, search="bypass-", bypass_cache=True)
 
     assert len(items) >= 1

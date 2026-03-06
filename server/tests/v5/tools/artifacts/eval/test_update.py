@@ -1,6 +1,5 @@
 """Tests for update_eval — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.eval.create import create_eval

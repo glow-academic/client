@@ -7,9 +7,9 @@ from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.practice_chat.create import create_practice_chat
-from app.routes.v5.tools.entries.practice_chat.get import get_practice_chat_entries_internal
+from app.routes.v5.tools.entries.practice_chat.get import get_practice_chats
 from app.routes.v5.tools.entries.practice_chat.refresh import refresh_practice_chat
-from app.routes.v5.tools.entries.practice_chat.search import search_practice_chat_entries_internal
+from app.routes.v5.tools.entries.practice_chat.search import search_practice_chats
 
 
 async def get_practice_chat_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -41,11 +41,11 @@ async def get_practice_chat_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Refreshes practice_chat_mv concurrently to reflect latest writes.",
             ),
             get_operation_info(
-                get_practice_chat_entries_internal,
+                get_practice_chats,
                 description="Batch retrieves practice_chat entries by IDs from practice_chat_mv.",
             ),
             get_operation_info(
-                search_practice_chat_entries_internal,
+                search_practice_chats,
                 description="Filtered paginated search against practice_chat_mv.",
             ),
         ],

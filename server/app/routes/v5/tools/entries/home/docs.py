@@ -8,6 +8,7 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.home.create import create_home
 from app.routes.v5.tools.entries.home.get import get_homes
+from app.routes.v5.tools.entries.home.search import search_homes
 
 
 async def get_home_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -64,6 +65,10 @@ async def get_home_docs(conn: asyncpg.Connection) -> DocsResponse:
             get_operation_info(
                 get_homes,
                 description="Batch retrieves home entries by IDs from home_mv with aggregated resource IDs.",
+            ),
+            get_operation_info(
+                search_homes,
+                description="Filtered paginated search against home_mv.",
             ),
         ],
     )

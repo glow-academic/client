@@ -1,6 +1,5 @@
 """Tests for search_evals — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.eval.create import create_eval
@@ -91,9 +90,15 @@ async def test_pagination(conn, redis_client):
         e = await create_eval(conn, name_id=name.id)
         created.append(e.id)
 
-    page1 = await search_evals(conn, search=f"page-{tag}", limit_count=2, offset_count=0)
-    page2 = await search_evals(conn, search=f"page-{tag}", limit_count=2, offset_count=2)
-    page3 = await search_evals(conn, search=f"page-{tag}", limit_count=2, offset_count=4)
+    page1 = await search_evals(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=0
+    )
+    page2 = await search_evals(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=2
+    )
+    page3 = await search_evals(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=4
+    )
 
     assert len(page1) == 2
     assert len(page2) == 2

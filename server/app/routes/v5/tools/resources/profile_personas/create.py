@@ -6,7 +6,9 @@ import asyncpg  # type: ignore
 from redis.asyncio import Redis
 
 from app.routes.v5.tools.resources.profile_personas.get import get_profile_personas
-from app.routes.v5.tools.resources.profile_personas.types import GetProfilePersonaResponse
+from app.routes.v5.tools.resources.profile_personas.types import (
+    GetProfilePersonaResponse,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

@@ -291,7 +291,12 @@ async def get_setting_internal(
                 c, description_ids, get_redis_client(), cache
             )
             suggestions = await search_descriptions(
-                c, get_redis_client(), draft_id=effective_group_id, exclude_ids=description_ids, bypass_cache=bypass_cache, setting=True,
+                c,
+                get_redis_client(),
+                draft_id=effective_group_id,
+                exclude_ids=description_ids,
+                bypass_cache=bypass_cache,
+                setting=True,
             )
             return (selected, suggestions)
 
@@ -318,9 +323,14 @@ async def get_setting_internal(
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags(
-                c, get_redis_client(), search=None, limit_count=50,
-                offset_count=0, exclude_ids=flag_ids,
-                bypass_cache=bypass_cache, setting=True,
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=flag_ids,
+                bypass_cache=bypass_cache,
+                setting=True,
             )
             suggestions = [f for f in all_flags if f.name in SETTING_FLAG_NAMES]
             return (selected, suggestions)
@@ -420,7 +430,9 @@ async def get_setting_internal(
 
     async def fetch_roles():
         async with pool.acquire() as c:
-            all_roles = await get_roles(c, None, get_redis_client(), bypass_cache=bypass_cache)
+            all_roles = await get_roles(
+                c, None, get_redis_client(), bypass_cache=bypass_cache
+            )
             suggestions = await search_roles(
                 c,
                 get_redis_client(),
@@ -492,9 +504,7 @@ async def get_setting_internal(
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
     colors = _dedupe_by_id(colors_selected + colors_suggestions, "id")
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
-    departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "id"
-    )
+    departments = _dedupe_by_id(departments_selected + departments_suggestions, "id")
     profiles = _dedupe_by_id(profiles_selected + profiles_suggestions, "id")
     auths = _dedupe_by_id(auths_selected + auths_suggestions, "id")
     provider_keys = _dedupe_by_id(
@@ -524,9 +534,7 @@ async def get_setting_internal(
     aik_id_set = set(selected_auth_item_key_ids)
 
     color_resources = [c for c in colors if c.id in color_id_set]
-    department_resources = [
-        d for d in departments if d.id in department_id_set
-    ]
+    department_resources = [d for d in departments if d.id in department_id_set]
     profile_resources = [p for p in profiles if p.id in profile_id_set]
     auth_resources = [a for a in auths if a.id in auth_id_set]
     provider_key_resources = [pk for pk in provider_keys if pk.id in pk_id_set]

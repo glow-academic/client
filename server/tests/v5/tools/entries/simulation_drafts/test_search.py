@@ -1,6 +1,5 @@
 """Tests for simulation_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.simulation_drafts.create import (

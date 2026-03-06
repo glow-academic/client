@@ -7,7 +7,9 @@ from redis.asyncio import Redis
 
 from app.infra.search.search_resource import search_resource_ids
 from app.routes.v5.tools.resources.scenario_rubrics.get import get_scenario_rubrics
-from app.routes.v5.tools.resources.scenario_rubrics.types import GetScenarioRubricResponse
+from app.routes.v5.tools.resources.scenario_rubrics.types import (
+    GetScenarioRubricResponse,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -38,13 +40,9 @@ async def search_scenario_rubrics(
     extra_conditions: list[tuple[str, object]] = []
 
     if scenario_ids:
-        extra_conditions.append(
-            ("{alias}.scenario_id = ANY(${idx})", scenario_ids)
-        )
+        extra_conditions.append(("{alias}.scenario_id = ANY(${idx})", scenario_ids))
     if rubric_ids:
-        extra_conditions.append(
-            ("{alias}.rubric_id = ANY(${idx})", rubric_ids)
-        )
+        extra_conditions.append(("{alias}.rubric_id = ANY(${idx})", rubric_ids))
 
     tags = ["resources", "scenario_rubrics"]
     key = cache_key(

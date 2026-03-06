@@ -34,9 +34,7 @@ async def test_creates_second_row(conn, redis_client):
 
 
 async def test_sets_mcp_flag(conn, redis_client):
-    result = await create_question(
-        conn, "MCP question?", 30, redis_client, mcp=True
-    )
+    result = await create_question(conn, "MCP question?", 30, redis_client, mcp=True)
 
     assert result.mcp is True
     assert result.generated is True

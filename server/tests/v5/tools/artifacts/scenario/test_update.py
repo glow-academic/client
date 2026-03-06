@@ -1,6 +1,5 @@
 """Tests for update_scenario — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.scenario.create import create_scenario

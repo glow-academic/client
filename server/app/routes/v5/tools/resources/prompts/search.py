@@ -48,7 +48,8 @@ async def search_prompts(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetPromptResponse.model_validate(item) for item in cached.get("items", [])
+                GetPromptResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     ids = await search_resource_ids(

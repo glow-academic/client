@@ -45,26 +45,48 @@ async def search_scenarios(
     extra_conditions: list[tuple[str, object]] = []
     if department_ids:
         extra_conditions.append(
-            ("({alias}.department_ids IS NULL OR array_length({alias}.department_ids, 1) IS NULL OR {alias}.department_ids && ${idx}::uuid[])", department_ids)
+            (
+                "({alias}.department_ids IS NULL OR array_length({alias}.department_ids, 1) IS NULL OR {alias}.department_ids && ${idx}::uuid[])",
+                department_ids,
+            )
         )
     if persona_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.persona_ids && ${idx}::uuid[])", persona_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.persona_ids && ${idx}::uuid[])",
+                persona_ids,
+            )
         )
     if parameter_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.parameter_field_ids && ${idx}::uuid[])", parameter_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.parameter_field_ids && ${idx}::uuid[])",
+                parameter_ids,
+            )
         )
     if problem_statement_enabled is not None:
-        extra_conditions.append(("{alias}.problem_statement_enabled = ${idx}::boolean", problem_statement_enabled))
+        extra_conditions.append(
+            (
+                "{alias}.problem_statement_enabled = ${idx}::boolean",
+                problem_statement_enabled,
+            )
+        )
     if objectives_enabled is not None:
-        extra_conditions.append(("{alias}.objectives_enabled = ${idx}::boolean", objectives_enabled))
+        extra_conditions.append(
+            ("{alias}.objectives_enabled = ${idx}::boolean", objectives_enabled)
+        )
     if video_enabled is not None:
-        extra_conditions.append(("{alias}.video_enabled = ${idx}::boolean", video_enabled))
+        extra_conditions.append(
+            ("{alias}.video_enabled = ${idx}::boolean", video_enabled)
+        )
     if images_enabled is not None:
-        extra_conditions.append(("{alias}.images_enabled = ${idx}::boolean", images_enabled))
+        extra_conditions.append(
+            ("{alias}.images_enabled = ${idx}::boolean", images_enabled)
+        )
     if questions_enabled is not None:
-        extra_conditions.append(("{alias}.questions_enabled = ${idx}::boolean", questions_enabled))
+        extra_conditions.append(
+            ("{alias}.questions_enabled = ${idx}::boolean", questions_enabled)
+        )
 
     tags = ["resources", "scenarios"]
     key = cache_key(
@@ -73,7 +95,9 @@ async def search_scenarios(
             "search": search,
             "limit_count": limit_count,
             "offset_count": offset_count,
-            "department_ids": [str(i) for i in department_ids] if department_ids else None,
+            "department_ids": [str(i) for i in department_ids]
+            if department_ids
+            else None,
             "suggest_source": suggest_source,
             "exclude_ids": [str(i) for i in exclude_ids] if exclude_ids else None,
             "persona_ids": sorted(str(i) for i in (persona_ids or [])),
@@ -91,7 +115,8 @@ async def search_scenarios(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetScenarioResponse.model_validate(item) for item in cached.get("items", [])
+                GetScenarioResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     ids = await search_resource_ids(

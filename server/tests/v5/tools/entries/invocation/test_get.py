@@ -80,7 +80,9 @@ async def test_get_with_connections(conn):
     assert name_id is not None, "Seed data must have at least one names_resource row"
 
     dept_id = await conn.fetchval("SELECT id FROM departments_resource LIMIT 1")
-    assert dept_id is not None, "Seed data must have at least one departments_resource row"
+    assert dept_id is not None, (
+        "Seed data must have at least one departments_resource row"
+    )
 
     created = await create_invocation(
         conn,

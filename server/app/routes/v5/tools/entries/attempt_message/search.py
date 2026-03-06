@@ -1,81 +1,50 @@
-"""attempt_message/search internal — reusable data-access layer."""
+"""Attempt message search — filtered/paginated query against attempt_message_mv."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchAttemptMessageEntriesSqlParams,
-    SearchAttemptMessageEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.attempt_message.types import GetAttemptMessageResponse
 
-SQL_PATH = "app/sql/queries/entries/attempt_message/search_attempt_message_entries_complete.sql"
+MV_NAME = "attempt_message_mv"
 
 
-async def search_attempt_message_entries_internal(
+async def search_attempt_messages(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     chat_id: UUID | None = None,
     attempt_id: UUID | None = None,
     runs_id: UUID | None = None,
     text_id: UUID | None = None,
     audio_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search attempt_message entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetAttemptMessageResponse]:
+    """Search attempt_message entries from attempt_message_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "attempt_message"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/attempt_message/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "chat_id": str(chat_id) if chat_id else None,
-            "attempt_id": str(attempt_id) if attempt_id else None,
-            "runs_id": str(runs_id) if runs_id else None,
-            "text_id": str(text_id) if text_id else None,
-            "audio_id": str(audio_id) if audio_id else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT message_id, chat_id, attempt_id, type,
+               created_at, completed, runs_id, text_id,
+               history_file_path, audio_id
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR chat_id = $1)
+          AND ($2::uuid IS NULL OR attempt_id = $2)
+          AND ($3::uuid IS NULL OR runs_id = $3)
+          AND ($4::uuid IS NULL OR text_id = $4)
+          AND ($5::uuid IS NULL OR audio_id = $5)
+        ORDER BY created_at DESC
+        LIMIT $6 OFFSET $7
+        """,
+        chat_id,
+        attempt_id,
+        runs_id,
+        text_id,
+        audio_id,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchAttemptMessageEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        chat_id=chat_id,
-        attempt_id=attempt_id,
-        runs_id=runs_id,
-        text_id=text_id,
-        audio_id=audio_id,
-    )
-    result = cast(
-        SearchAttemptMessageEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [GetAttemptMessageResponse(**dict(r)) for r in rows]

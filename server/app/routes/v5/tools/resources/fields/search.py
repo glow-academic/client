@@ -13,11 +13,13 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 
 JUNCTION_ARTIFACTS = [
-    "field", "parameter",
+    "field",
+    "parameter",
 ]
 
 DRAFT_ARTIFACTS = [
-    "chat", "parameter",
+    "chat",
+    "parameter",
 ]
 
 
@@ -42,7 +44,8 @@ async def search_fields(
         return []
 
     artifact_filters = {
-        "field": field, "parameter": parameter,
+        "field": field,
+        "parameter": parameter,
     }
 
     tags = ["resources", "fields"]
@@ -67,7 +70,8 @@ async def search_fields(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetFieldResponse.model_validate(item) for item in cached.get("items", [])
+                GetFieldResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     # Build extra conditions for field-specific filters

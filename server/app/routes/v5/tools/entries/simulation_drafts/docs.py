@@ -8,28 +8,44 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.simulation_drafts.create import create_simulation_draft
 from app.routes.v5.tools.entries.simulation_drafts.get import get_simulation_drafts
-from app.routes.v5.tools.entries.simulation_drafts.refresh import refresh_simulation_drafts
-from app.routes.v5.tools.entries.simulation_drafts.search import search_simulation_drafts
+from app.routes.v5.tools.entries.simulation_drafts.refresh import (
+    refresh_simulation_drafts,
+)
+from app.routes.v5.tools.entries.simulation_drafts.search import (
+    search_simulation_drafts,
+)
 
 
 async def get_simulation_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     """Get full documentation for the simulation_drafts entry."""
     mv_info = await get_mv_info(conn, "simulation_drafts_mv")
     entry_table = await get_table_info(conn, "simulation_drafts_entry")
-    departments_connection = await get_table_info(conn, "simulation_drafts_departments_connection")
-    descriptions_connection = await get_table_info(conn, "simulation_drafts_descriptions_connection")
+    departments_connection = await get_table_info(
+        conn, "simulation_drafts_departments_connection"
+    )
+    descriptions_connection = await get_table_info(
+        conn, "simulation_drafts_descriptions_connection"
+    )
     flags_connection = await get_table_info(conn, "simulation_drafts_flags_connection")
     names_connection = await get_table_info(conn, "simulation_drafts_names_connection")
-    profiles_connection = await get_table_info(conn, "simulation_drafts_profiles_connection")
-    scenario_flags_connection = await get_table_info(conn, "simulation_drafts_scenario_flags_connection")
+    profiles_connection = await get_table_info(
+        conn, "simulation_drafts_profiles_connection"
+    )
+    scenario_flags_connection = await get_table_info(
+        conn, "simulation_drafts_scenario_flags_connection"
+    )
     scenario_positions_connection = await get_table_info(
         conn, "simulation_drafts_scenario_positions_connection"
     )
-    scenario_rubrics_connection = await get_table_info(conn, "simulation_drafts_scenario_rubrics_connection")
+    scenario_rubrics_connection = await get_table_info(
+        conn, "simulation_drafts_scenario_rubrics_connection"
+    )
     scenario_time_limits_connection = await get_table_info(
         conn, "simulation_drafts_scenario_time_limits_connection"
     )
-    scenarios_connection = await get_table_info(conn, "simulation_drafts_scenarios_connection")
+    scenarios_connection = await get_table_info(
+        conn, "simulation_drafts_scenarios_connection"
+    )
 
     tables = [
         t

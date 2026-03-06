@@ -22,7 +22,9 @@ async def test_visible_via_get(conn, redis_client):
     field = await create_field(conn, "test-field-visible", redis=redis_client)
     result = await create_parameter_field(conn, field.id, redis_client)
 
-    items = await get_parameter_fields(conn, [result.id], redis_client, bypass_cache=True)
+    items = await get_parameter_fields(
+        conn, [result.id], redis_client, bypass_cache=True
+    )
 
     assert len(items) == 1
     assert items[0].id == result.id

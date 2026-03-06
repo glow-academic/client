@@ -107,7 +107,8 @@ async def get_persona_client(
     # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
     common = await resolve_common_context(
-        conn, redis,
+        conn,
+        redis,
         profile_id=profile_id,
         group_id=group_id,
         bypass_cache=bypass_cache,
@@ -124,7 +125,8 @@ async def get_persona_client(
     # ── Step 2: Persona artifact context ──────────────────────────────────
 
     persona = await resolve_persona_context(
-        conn, redis,
+        conn,
+        redis,
         persona_id=persona_id,
         group_id=group_id,
         draft_id=draft_id,
@@ -148,7 +150,9 @@ async def get_persona_client(
                 detail=f"Persona {persona_id} not found",
             )
 
-        persona_department_ids = [d.id for d in persona.resources["departments"].selected]
+        persona_department_ids = [
+            d.id for d in persona.resources["departments"].selected
+        ]
         if not has_access(profile.role, profile.department_ids, persona_department_ids):
             raise HTTPException(
                 status_code=403,
@@ -195,12 +199,27 @@ async def get_persona_client(
     icons_has_tools = scores.has_any.get("icons", False)
     instructions_has_tools = scores.has_any.get("instructions", False)
 
-    all_colors = dedupe_by_id(persona.resources["colors"].selected + persona.resources["colors"].suggestions)
-    all_icons = dedupe_by_id(persona.resources["icons"].selected + persona.resources["icons"].suggestions)
-    all_departments = dedupe_by_id(persona.resources["departments"].selected + persona.resources["departments"].suggestions)
-    all_examples = dedupe_by_id(persona.resources["examples"].selected + persona.resources["examples"].suggestions)
-    all_parameters = dedupe_by_id(persona.resources["parameters"].selected + persona.resources["parameters"].suggestions)
-    all_voices = dedupe_by_id(persona.resources["voices"].selected + persona.resources["voices"].suggestions)
+    all_colors = dedupe_by_id(
+        persona.resources["colors"].selected + persona.resources["colors"].suggestions
+    )
+    all_icons = dedupe_by_id(
+        persona.resources["icons"].selected + persona.resources["icons"].suggestions
+    )
+    all_departments = dedupe_by_id(
+        persona.resources["departments"].selected
+        + persona.resources["departments"].suggestions
+    )
+    all_examples = dedupe_by_id(
+        persona.resources["examples"].selected
+        + persona.resources["examples"].suggestions
+    )
+    all_parameters = dedupe_by_id(
+        persona.resources["parameters"].selected
+        + persona.resources["parameters"].suggestions
+    )
+    all_voices = dedupe_by_id(
+        persona.resources["voices"].selected + persona.resources["voices"].suggestions
+    )
 
     show_flags_map = {
         "names": compute_show_name(names_has_tools),
@@ -210,7 +229,9 @@ async def get_persona_client(
         "instructions": compute_show_instructions(instructions_has_tools),
         "flags": compute_show_flag(),
         "departments": compute_show_departments(len(all_departments)),
-        "parameter_fields": compute_show_parameter_fields(len(persona.resources["fields"].suggestions)),
+        "parameter_fields": compute_show_parameter_fields(
+            len(persona.resources["fields"].suggestions)
+        ),
         "examples": compute_show_examples(len(all_examples)),
         "parameters": compute_show_parameters(len(all_parameters)),
         "voices": compute_show_voices(len(all_voices)),
@@ -231,29 +252,36 @@ async def get_persona_client(
     }
 
     show_ai_generate_map = {
-        r: compute_show_ai_generate(agent_ids, r)
-        for r in PERSONA_RESOURCES
+        r: compute_show_ai_generate(agent_ids, r) for r in PERSONA_RESOURCES
     }
 
-    basic_show_ai_generate = any([
-        show_ai_generate_map.get("names", False),
-        show_ai_generate_map.get("descriptions", False),
-        show_ai_generate_map.get("flags", False),
-        show_ai_generate_map.get("departments", False),
-    ])
-    content_show_ai_generate = any([
-        show_ai_generate_map.get("instructions", False),
-        show_ai_generate_map.get("examples", False),
-        show_ai_generate_map.get("voices", False),
-    ])
-    parameters_step_show_ai_generate = any([
-        show_ai_generate_map.get("parameters", False),
-        show_ai_generate_map.get("parameter_fields", False),
-    ])
+    basic_show_ai_generate = any(
+        [
+            show_ai_generate_map.get("names", False),
+            show_ai_generate_map.get("descriptions", False),
+            show_ai_generate_map.get("flags", False),
+            show_ai_generate_map.get("departments", False),
+        ]
+    )
+    content_show_ai_generate = any(
+        [
+            show_ai_generate_map.get("instructions", False),
+            show_ai_generate_map.get("examples", False),
+            show_ai_generate_map.get("voices", False),
+        ]
+    )
+    parameters_step_show_ai_generate = any(
+        [
+            show_ai_generate_map.get("parameters", False),
+            show_ai_generate_map.get("parameter_fields", False),
+        ]
+    )
 
     # ── Step 7: Response assembly ─────────────────────────────────────────
 
-    all_flags = dedupe_by_id(persona.resources["flags"].selected + persona.resources["flags"].suggestions)
+    all_flags = dedupe_by_id(
+        persona.resources["flags"].selected + persona.resources["flags"].suggestions
+    )
     persona_flags = [
         PersonaFlagConfig(
             key=f.name,
@@ -280,7 +308,11 @@ async def get_persona_client(
         )
 
     resolved_parameter_ids = list(
-        {str(pf.parameter_id) for pf in persona.resources["parameter_fields"].selected if pf.parameter_id}
+        {
+            str(pf.parameter_id)
+            for pf in persona.resources["parameter_fields"].selected
+            if pf.parameter_id
+        }
     )
 
     suggestions_map = {
@@ -305,9 +337,17 @@ async def get_persona_client(
             "tool_id": tool_ids_map.get(resource_key),
         }
 
-    all_names = dedupe_by_id(persona.resources["names"].selected + persona.resources["names"].suggestions)
-    all_descriptions = dedupe_by_id(persona.resources["descriptions"].selected + persona.resources["descriptions"].suggestions)
-    all_instructions = dedupe_by_id(persona.resources["instructions"].selected + persona.resources["instructions"].suggestions)
+    all_names = dedupe_by_id(
+        persona.resources["names"].selected + persona.resources["names"].suggestions
+    )
+    all_descriptions = dedupe_by_id(
+        persona.resources["descriptions"].selected
+        + persona.resources["descriptions"].suggestions
+    )
+    all_instructions = dedupe_by_id(
+        persona.resources["instructions"].selected
+        + persona.resources["instructions"].suggestions
+    )
 
     return GetPersonaApiResponse(
         # Context
@@ -324,27 +364,37 @@ async def get_persona_client(
         # Per-resource sections
         names=PersonaNameSection(
             **_section("names"),
-            resource=persona.resources["names"].selected[0] if persona.resources["names"].selected else None,
+            resource=persona.resources["names"].selected[0]
+            if persona.resources["names"].selected
+            else None,
             resources=all_names,
         ),
         descriptions=PersonaDescriptionSection(
             **_section("descriptions"),
-            resource=persona.resources["descriptions"].selected[0] if persona.resources["descriptions"].selected else None,
+            resource=persona.resources["descriptions"].selected[0]
+            if persona.resources["descriptions"].selected
+            else None,
             resources=all_descriptions,
         ),
         colors=PersonaColorSection(
             **_section("colors"),
-            resource=persona.resources["colors"].selected[0] if persona.resources["colors"].selected else None,
+            resource=persona.resources["colors"].selected[0]
+            if persona.resources["colors"].selected
+            else None,
             resources=all_colors,
         ),
         icons=PersonaIconSection(
             **_section("icons"),
-            resource=persona.resources["icons"].selected[0] if persona.resources["icons"].selected else None,
+            resource=persona.resources["icons"].selected[0]
+            if persona.resources["icons"].selected
+            else None,
             resources=all_icons,
         ),
         instructions=PersonaInstructionSection(
             **_section("instructions"),
-            resource=persona.resources["instructions"].selected[0] if persona.resources["instructions"].selected else None,
+            resource=persona.resources["instructions"].selected[0]
+            if persona.resources["instructions"].selected
+            else None,
             resources=all_instructions,
         ),
         flags=PersonaFlagSection(
@@ -430,7 +480,8 @@ async def get_persona(
         redis = get_redis_client()
 
         response_data = await get_persona_client(
-            conn, redis,
+            conn,
+            redis,
             profile_id=profile_id,
             persona_id=request.persona_id,
             draft_id=request.draft_id,

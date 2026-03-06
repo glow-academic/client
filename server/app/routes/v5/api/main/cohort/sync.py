@@ -143,7 +143,9 @@ async def sync_cohort_entries(
     # asyncpg "another operation is in progress" on concurrent queries.
     async def _fetch_scenarios() -> list[Any]:
         async with pool.acquire() as c:
-            return await get_scenarios(c, all_scenario_ids, get_redis_client(), bypass_cache=True)
+            return await get_scenarios(
+                c, all_scenario_ids, get_redis_client(), bypass_cache=True
+            )
 
     async def _fetch_scenario_rubrics() -> list[Any]:
         async with pool.acquire() as c:
@@ -253,9 +255,7 @@ async def sync_cohort_entries(
     sg_standards_map: dict[UUID, list[UUID]] = {}
     for std in standards:
         if std.standard_group_id and std.id:
-            sg_standards_map.setdefault(std.standard_group_id, []).append(
-                std.id
-            )
+            sg_standards_map.setdefault(std.standard_group_id, []).append(std.id)
 
     # scenario_flag_id → {column_name: True}
     flag_map: dict[UUID, dict[str, bool]] = {}

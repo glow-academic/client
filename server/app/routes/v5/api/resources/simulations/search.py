@@ -10,7 +10,9 @@ from app.routes.v5.api.resources.simulations.types import (
     SearchSimulationsApiRequest,
     SearchSimulationsApiResponse,
 )
-from app.routes.v5.tools.resources.simulations.search import search_simulations as search_simulations_fn
+from app.routes.v5.tools.resources.simulations.search import (
+    search_simulations as search_simulations_fn,
+)
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

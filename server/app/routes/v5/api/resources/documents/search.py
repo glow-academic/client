@@ -6,7 +6,9 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_redis_client
-from app.routes.v5.tools.resources.documents.search import search_documents as search_documents_fn
+from app.routes.v5.tools.resources.documents.search import (
+    search_documents as search_documents_fn,
+)
 from app.sql.types import (
     QGetDocumentsV4Item,
     SearchDocumentsApiRequest,

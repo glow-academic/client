@@ -1,6 +1,5 @@
 """Tests for cohort_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.cohort_drafts.create import create_cohort_draft

@@ -1,6 +1,5 @@
 """Tests for get_images."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.images.create import create_image

@@ -58,14 +58,18 @@ async def search_systems(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetSystemResponse.model_validate(item) for item in cached.get("items", [])
+                GetSystemResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     # Build extra conditions for systems-specific filters
     extra_conditions: list[tuple[str, object]] = []
     if agent_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.agent_ids && ${idx}::uuid[])", agent_ids),
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.agent_ids && ${idx}::uuid[])",
+                agent_ids,
+            ),
         )
 
     ids = await search_resource_ids(

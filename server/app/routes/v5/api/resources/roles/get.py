@@ -43,7 +43,12 @@ async def get_roles(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_roles_resource(conn=conn, ids=request.ids or [], redis=get_redis_client(), bypass_cache=bypass_cache)
+        items = await get_roles_resource(
+            conn=conn,
+            ids=request.ids or [],
+            redis=get_redis_client(),
+            bypass_cache=bypass_cache,
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetRolesApiResponse(items=items)
     except HTTPException:

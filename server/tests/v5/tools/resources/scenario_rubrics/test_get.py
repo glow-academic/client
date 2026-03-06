@@ -1,6 +1,5 @@
 """Tests for get_scenario_rubrics."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.rubrics.create import create_rubric

@@ -1,6 +1,5 @@
 """Tests for update_model — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.model.create import create_model

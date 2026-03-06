@@ -12,12 +12,27 @@ ARTIFACT_FK = "tool_id"
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
     ("names", "tool_names_junction", "names_id", "name_ids"),
-    ("descriptions", "tool_descriptions_junction", "descriptions_id", "description_ids"),
+    (
+        "descriptions",
+        "tool_descriptions_junction",
+        "descriptions_id",
+        "description_ids",
+    ),
     ("departments", "tool_departments_junction", "departments_id", "department_ids"),
     ("flags", "tool_flags_junction", "flags_id", "flag_ids"),
     ("args", "tool_args_junction", "args_id", "args_ids"),
-    ("args_outputs", "tool_args_outputs_junction", "args_outputs_id", "args_outputs_ids"),
-    ("arg_positions", "tool_arg_positions_junction", "arg_positions_id", "arg_positions_ids"),
+    (
+        "args_outputs",
+        "tool_args_outputs_junction",
+        "args_outputs_id",
+        "args_outputs_ids",
+    ),
+    (
+        "arg_positions",
+        "tool_arg_positions_junction",
+        "arg_positions_id",
+        "arg_positions_ids",
+    ),
     ("artifacts", "tool_artifacts_junction", "artifacts_id", "artifact_ids"),
     ("entries", "tool_entries_junction", "entries_id", "entry_ids"),
     ("operations", "tool_operations_junction", "operations_id", "operation_ids"),
@@ -62,23 +77,34 @@ async def get_tools(
         "tools": tools,
     }
 
-    active = [(table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]]
+    active = [
+        (table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]
+    ]
 
     # Build dynamic query
-    columns = ["p.id", "p.created_at", "p.updated_at", "p.generated", "p.mcp", "p.active"]
+    columns = [
+        "p.id",
+        "p.created_at",
+        "p.updated_at",
+        "p.generated",
+        "p.mcp",
+        "p.active",
+    ]
     joins: list[str] = []
 
     for i, (table, col, field) in enumerate(active):
         alias = f"j{i}"
-        joins.append(f"LEFT JOIN {table} {alias} ON {alias}.{ARTIFACT_FK} = p.id AND {alias}.active = true")
+        joins.append(
+            f"LEFT JOIN {table} {alias} ON {alias}.{ARTIFACT_FK} = p.id AND {alias}.active = true"
+        )
         columns.append(
             f"ARRAY_AGG(DISTINCT {alias}.{col}) FILTER (WHERE {alias}.{col} IS NOT NULL) AS {field}"
         )
 
     query = f"""
-        SELECT {', '.join(columns)}
+        SELECT {", ".join(columns)}
         FROM {TABLE} p
-        {' '.join(joins)}
+        {" ".join(joins)}
         WHERE p.id = ANY($1)
         GROUP BY p.id, p.created_at, p.updated_at, p.generated, p.mcp, p.active
     """

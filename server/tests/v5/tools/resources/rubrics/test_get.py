@@ -1,6 +1,5 @@
 """Tests for get_rubrics."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.rubrics.create import create_rubric
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_rubric(conn, redis_client):
-    created = await create_rubric(conn, redis_client, name="test-rubric", description="desc")
+    created = await create_rubric(
+        conn, redis_client, name="test-rubric", description="desc"
+    )
 
     items = await get_rubrics(conn, [created.id], redis_client)
 

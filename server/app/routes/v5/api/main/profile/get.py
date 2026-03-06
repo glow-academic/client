@@ -405,9 +405,14 @@ async def get_profile_internal(
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags(
-                c, get_redis_client(), search=None, limit_count=50,
-                offset_count=0, exclude_ids=flag_ids,
-                bypass_cache=bypass_cache, profile=True,
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=flag_ids,
+                bypass_cache=bypass_cache,
+                profile=True,
             )
             # Filter to only profile-specific flags
             suggestions = [f for f in all_flags if f.name in PROFILE_FLAG_NAMES]
@@ -503,9 +508,7 @@ async def get_profile_internal(
         request_limits_selected + request_limits_suggestions, "id"
     )
     flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
-    departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "id"
-    )
+    departments = _dedupe_by_id(departments_selected + departments_suggestions, "id")
 
     # Compute final show flags based on actual data
     show_name = compute_show_name(names_has_tools)
@@ -576,9 +579,7 @@ async def get_profile_internal(
     request_limit_resource = next(
         (r for r in request_limits if r.id == selected_request_limit_id), None
     )
-    department_resources = [
-        d for d in departments if d.id in selected_department_ids
-    ]
+    department_resources = [d for d in departments if d.id in selected_department_ids]
 
     selected_flag_resource = (
         next(

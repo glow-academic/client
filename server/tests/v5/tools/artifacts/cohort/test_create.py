@@ -1,6 +1,5 @@
 """Tests for create_cohort — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.cohort.create import create_cohort
@@ -62,11 +61,18 @@ async def test_links_flags_with_value(conn, redis_client):
 async def test_no_junctions_when_none_provided(conn, redis_client):
     result = await create_cohort(conn)
     items = await get_cohorts(
-        conn, [result.id],
-        names=True, descriptions=True, departments=True,
-        flags=True, profiles=True, profile_personas=True,
-        simulations=True, simulation_availability=True,
-        simulation_positions=True, cohorts=True,
+        conn,
+        [result.id],
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+        profiles=True,
+        profile_personas=True,
+        simulations=True,
+        simulation_availability=True,
+        simulation_positions=True,
+        cohorts=True,
     )
     p = items[0]
     assert p.name_ids == []

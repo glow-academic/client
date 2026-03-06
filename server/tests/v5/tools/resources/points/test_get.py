@@ -1,6 +1,5 @@
 """Tests for get_points."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.points.create import create_point

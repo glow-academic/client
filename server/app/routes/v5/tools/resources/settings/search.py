@@ -40,24 +40,35 @@ async def search_settings(
     extra_conditions: list[tuple[str, object]] = []
     if department_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.department_ids && ${idx}::uuid[])", department_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.department_ids && ${idx}::uuid[])",
+                department_ids,
+            )
         )
     if agent_ids:
-        extra_conditions.append((
-            "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR EXISTS ("
-            "SELECT 1 FROM setting_systems_junction ssj "
-            "JOIN systems_resource sr ON sr.id = ssj.systems_id "
-            "WHERE ssj.setting_id = {alias}.id AND ssj.active = true AND sr.active = true "
-            "AND sr.agent_ids && ${idx}::uuid[]))",
-            agent_ids,
-        ))
+        extra_conditions.append(
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR EXISTS ("
+                "SELECT 1 FROM setting_systems_junction ssj "
+                "JOIN systems_resource sr ON sr.id = ssj.systems_id "
+                "WHERE ssj.setting_id = {alias}.id AND ssj.active = true AND sr.active = true "
+                "AND sr.agent_ids && ${idx}::uuid[]))",
+                agent_ids,
+            )
+        )
     if provider_key_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.provider_key_ids && ${idx}::uuid[])", provider_key_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.provider_key_ids && ${idx}::uuid[])",
+                provider_key_ids,
+            )
         )
     if auth_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.auth_ids && ${idx}::uuid[])", auth_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.auth_ids && ${idx}::uuid[])",
+                auth_ids,
+            )
         )
 
     tags = ["resources", "settings"]

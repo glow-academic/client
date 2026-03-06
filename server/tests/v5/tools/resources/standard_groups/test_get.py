@@ -1,6 +1,5 @@
 """Tests for get_standard_groups."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.standard_groups.create import create_standard_group
@@ -59,7 +58,9 @@ async def test_bypass_cache_skips_read_and_write(conn, redis_client):
         conn, "Bypass Group", "BG", "bypass desc", 80, 60, redis_client
     )
 
-    items = await get_standard_groups(conn, [created.id], redis_client, bypass_cache=True)
+    items = await get_standard_groups(
+        conn, [created.id], redis_client, bypass_cache=True
+    )
     assert len(items) == 1
 
     from app.utils.cache.cache_key import cache_key

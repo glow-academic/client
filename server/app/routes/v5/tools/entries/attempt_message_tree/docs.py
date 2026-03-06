@@ -16,7 +16,7 @@ from app.routes.v5.tools.entries.attempt_message_tree.refresh import (
     refresh_attempt_message_tree,
 )
 from app.routes.v5.tools.entries.attempt_message_tree.search import (
-    search_attempt_message_tree_entries_internal,
+    search_attempt_message_trees,
 )
 
 
@@ -56,7 +56,7 @@ async def get_attempt_message_tree_docs(conn: asyncpg.Connection) -> DocsRespons
                 description="Batch retrieves message trees by IDs from attempt_message_tree_mv.",
             ),
             get_operation_info(
-                search_attempt_message_tree_entries_internal,
+                search_attempt_message_trees,
                 description="Filtered paginated search against attempt_message_tree_mv.",
             ),
         ],

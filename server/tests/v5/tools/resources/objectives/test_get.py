@@ -1,6 +1,5 @@
 """Tests for get_objectives."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.objectives.create import create_objective

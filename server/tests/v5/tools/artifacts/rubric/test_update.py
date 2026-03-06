@@ -1,6 +1,5 @@
 """Tests for update_rubric — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.rubric.create import create_rubric

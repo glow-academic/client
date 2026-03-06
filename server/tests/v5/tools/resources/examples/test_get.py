@@ -1,6 +1,5 @@
 """Tests for get_examples."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.examples.create import create_example

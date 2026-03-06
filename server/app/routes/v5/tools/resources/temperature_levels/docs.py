@@ -5,9 +5,13 @@ import asyncpg
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
-from app.routes.v5.tools.resources.temperature_levels.create import create_temperature_level
+from app.routes.v5.tools.resources.temperature_levels.create import (
+    create_temperature_level,
+)
 from app.routes.v5.tools.resources.temperature_levels.get import get_temperature_levels
-from app.routes.v5.tools.resources.temperature_levels.search import search_temperature_levels
+from app.routes.v5.tools.resources.temperature_levels.search import (
+    search_temperature_levels,
+)
 
 
 async def get_temperature_levels_docs(conn: asyncpg.Connection) -> DocsResponse:

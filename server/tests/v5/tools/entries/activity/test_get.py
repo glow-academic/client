@@ -1,6 +1,5 @@
 """Tests for get_activity."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.activity.create import create_activity

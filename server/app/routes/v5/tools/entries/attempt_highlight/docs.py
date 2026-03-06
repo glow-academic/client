@@ -6,10 +6,16 @@ from app.infra.docs.get_mv_info import get_mv_info
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
-from app.routes.v5.tools.entries.attempt_highlight.create import create_attempt_highlight
+from app.routes.v5.tools.entries.attempt_highlight.create import (
+    create_attempt_highlight,
+)
 from app.routes.v5.tools.entries.attempt_highlight.get import get_attempt_highlights
-from app.routes.v5.tools.entries.attempt_highlight.refresh import refresh_attempt_highlight
-from app.routes.v5.tools.entries.attempt_highlight.search import search_attempt_highlights
+from app.routes.v5.tools.entries.attempt_highlight.refresh import (
+    refresh_attempt_highlight,
+)
+from app.routes.v5.tools.entries.attempt_highlight.search import (
+    search_attempt_highlights,
+)
 
 
 async def get_attempt_highlight_docs(conn: asyncpg.Connection) -> DocsResponse:

@@ -6,7 +6,9 @@ import asyncpg  # type: ignore
 from redis.asyncio import Redis
 
 from app.infra.search.search_resource import search_resource_ids
-from app.routes.v5.tools.resources.scenario_time_limits.get import get_scenario_time_limits
+from app.routes.v5.tools.resources.scenario_time_limits.get import (
+    get_scenario_time_limits,
+)
 from app.routes.v5.tools.resources.scenario_time_limits.types import (
     GetScenarioTimeLimitResponse,
 )

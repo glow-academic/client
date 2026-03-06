@@ -1,6 +1,5 @@
 """Tests for delete_cohorts — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.cohort.create import create_cohort

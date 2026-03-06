@@ -18,5 +18,7 @@ async def get_attempt_practice(
     """Get attempt_practice entries by attempt_id from MV."""
     if not attempt_ids:
         return []
-    rows = await conn.fetch(f"SELECT * FROM {MV_NAME} WHERE attempt_id = ANY($1)", attempt_ids)
+    rows = await conn.fetch(
+        f"SELECT * FROM {MV_NAME} WHERE attempt_id = ANY($1)", attempt_ids
+    )
     return [GetAttemptPracticeResponse(**dict(r)) for r in rows]

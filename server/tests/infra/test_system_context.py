@@ -25,7 +25,15 @@ class FakeSystem:
 
 
 class FakeAgent:
-    def __init__(self, *, agent_id=None, model_id=None, tool_ids=None, prompt_id=None, instruction_ids=None):
+    def __init__(
+        self,
+        *,
+        agent_id=None,
+        model_id=None,
+        tool_ids=None,
+        prompt_id=None,
+        instruction_ids=None,
+    ):
         self.id = agent_id or uuid4()
         self.model_id = model_id
         self.tool_ids = tool_ids or []
@@ -47,7 +55,9 @@ class FakeTool:
 
 
 def _patch(target, return_value):
-    return patch(f"{MODULE}.{target}", new_callable=AsyncMock, return_value=return_value)
+    return patch(
+        f"{MODULE}.{target}", new_callable=AsyncMock, return_value=return_value
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -103,11 +113,16 @@ class TestResolveSystemContextCallArgs:
 
         system = FakeSystem(system_id=system_id, agent_ids=[agent_id])
         agent = FakeAgent(
-            agent_id=agent_id, model_id=model_id, tool_ids=[tool_id],
-            prompt_id=prompt_id, instruction_ids=[instruction_id],
+            agent_id=agent_id,
+            model_id=model_id,
+            tool_ids=[tool_id],
+            prompt_id=prompt_id,
+            instruction_ids=[instruction_id],
         )
         model = FakeModel(model_id=model_id, provider_id=provider_id)
-        tool = FakeTool(tool_id=tool_id, args_ids=[arg_id], args_output_ids=[arg_output_id])
+        tool = FakeTool(
+            tool_id=tool_id, args_ids=[arg_id], args_output_ids=[arg_output_id]
+        )
         provider = object()
         arg = object()
         arg_output = object()
@@ -188,8 +203,13 @@ class TestResolveSystemContextCallArgs:
         shared_prompt_id = uuid4()
         shared_instruction_id = uuid4()
         unique_instruction_id = uuid4()
-        agent1 = FakeAgent(prompt_id=shared_prompt_id, instruction_ids=[shared_instruction_id])
-        agent2 = FakeAgent(prompt_id=shared_prompt_id, instruction_ids=[shared_instruction_id, unique_instruction_id])
+        agent1 = FakeAgent(
+            prompt_id=shared_prompt_id, instruction_ids=[shared_instruction_id]
+        )
+        agent2 = FakeAgent(
+            prompt_id=shared_prompt_id,
+            instruction_ids=[shared_instruction_id, unique_instruction_id],
+        )
         system = FakeSystem(system_id=system_id, agent_ids=[agent1.id, agent2.id])
 
         with (
@@ -207,7 +227,10 @@ class TestResolveSystemContextCallArgs:
 
         # Deduped: 1 unique prompt ID, 2 unique instruction IDs
         assert mock_prompts.call_args[0][1] == [shared_prompt_id]
-        assert set(mock_instructions.call_args[0][1]) == {shared_instruction_id, unique_instruction_id}
+        assert set(mock_instructions.call_args[0][1]) == {
+            shared_instruction_id,
+            unique_instruction_id,
+        }
 
     async def test_multiple_tools_dedup_args_and_outputs(self):
         """Two tools sharing args — get_args/get_args_outputs called with deduped IDs."""
@@ -215,7 +238,9 @@ class TestResolveSystemContextCallArgs:
         shared_arg_id = uuid4()
         shared_output_id = uuid4()
         unique_arg_id = uuid4()
-        tool1 = FakeTool(args_ids=[shared_arg_id, unique_arg_id], args_output_ids=[shared_output_id])
+        tool1 = FakeTool(
+            args_ids=[shared_arg_id, unique_arg_id], args_output_ids=[shared_output_id]
+        )
         tool2 = FakeTool(args_ids=[shared_arg_id], args_output_ids=[shared_output_id])
         agent = FakeAgent(model_id=None, tool_ids=[tool1.id, tool2.id])
         system = FakeSystem(system_id=system_id, agent_ids=[agent.id])
@@ -266,7 +291,9 @@ class TestResolveSystemContextCallArgs:
     async def test_agent_no_prompt_skips_prompt_fetch(self):
         """Agent with prompt_id=None — get_prompts not called."""
         system_id = uuid4()
-        agent = FakeAgent(model_id=None, tool_ids=[], prompt_id=None, instruction_ids=[])
+        agent = FakeAgent(
+            model_id=None, tool_ids=[], prompt_id=None, instruction_ids=[]
+        )
         system = FakeSystem(system_id=system_id, agent_ids=[agent.id])
 
         with (

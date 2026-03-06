@@ -32,9 +32,7 @@ async def test_roundtrip_via_db(conn, profile_id):
         session_id=session.id,
     )
 
-    row = await conn.fetchrow(
-        "SELECT * FROM health_entry WHERE id = $1", result.id
-    )
+    row = await conn.fetchrow("SELECT * FROM health_entry WHERE id = $1", result.id)
 
     assert row is not None
     assert row["id"] == result.id
@@ -53,9 +51,7 @@ async def test_defaults(conn, profile_id):
         conn, service="db", ok=False, latency_ms=100.0, session_id=session.id
     )
 
-    row = await conn.fetchrow(
-        "SELECT * FROM health_entry WHERE id = $1", result.id
-    )
+    row = await conn.fetchrow("SELECT * FROM health_entry WHERE id = $1", result.id)
 
     assert row is not None
     assert row["ts"] is not None

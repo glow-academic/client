@@ -268,7 +268,12 @@ async def get_provider_internal(
                 c, description_ids, get_redis_client(), cache
             )
             suggestions = await search_descriptions(
-                c, get_redis_client(), draft_id=effective_group_id, exclude_ids=description_ids, bypass_cache=bypass_cache, provider=True,
+                c,
+                get_redis_client(),
+                draft_id=effective_group_id,
+                exclude_ids=description_ids,
+                bypass_cache=bypass_cache,
+                provider=True,
             )
             return (selected, suggestions)
 
@@ -276,9 +281,14 @@ async def get_provider_internal(
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags(
-                c, get_redis_client(), search=None, limit_count=50,
-                offset_count=0, exclude_ids=flag_ids,
-                bypass_cache=bypass_cache, provider=True,
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=flag_ids,
+                bypass_cache=bypass_cache,
+                provider=True,
             )
             suggestions = [f for f in all_flags if (f.name or "") == "provider_active"]
             return (selected, suggestions)
@@ -356,9 +366,7 @@ async def get_provider_internal(
     names = _dedupe_by_id(names_selected + names_suggestions, "id")
     descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
     raw_flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
-    departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "id"
-    )
+    departments = _dedupe_by_id(departments_selected + departments_suggestions, "id")
     values = _dedupe_by_id(values_selected + values_suggestions, "id")
     endpoints = _dedupe_by_id(endpoints_selected + endpoints_suggestions, "id")
     keys = _dedupe_by_id(keys_selected + keys_suggestions, "id")
@@ -372,9 +380,7 @@ async def get_provider_internal(
         (e for e in endpoints if e.id == selected_endpoint_id), None
     )
     key_resource = next((k for k in keys if k.id == selected_key_id), None)
-    department_resources = [
-        d for d in departments if d.id in selected_department_ids
-    ]
+    department_resources = [d for d in departments if d.id in selected_department_ids]
 
     show_flags_map = {
         "names": compute_show_name(
@@ -478,9 +484,7 @@ async def get_provider_internal(
         suggestions_map={
             "names": [n.id for n in names_suggestions if n.id],
             "descriptions": [d.id for d in descriptions_suggestions if d.id],
-            "departments": [
-                d.id for d in departments_suggestions if d.id
-            ],
+            "departments": [d.id for d in departments_suggestions if d.id],
             "values": [v.id for v in values_suggestions if v.id],
             "endpoints": [e.id for e in endpoints_suggestions if e.id],
             "keys": [k.id for k in keys_suggestions if k.id],

@@ -4,7 +4,9 @@ import pytest
 
 from app.routes.v5.tools.entries.attempt.create import create_attempt
 from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
-from app.routes.v5.tools.entries.attempt_chat_bridge.create import create_attempt_chat_bridge
+from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
+    create_attempt_chat_bridge,
+)
 from app.routes.v5.tools.entries.attempt_grade.create import create_attempt_grade
 from app.routes.v5.tools.entries.attempt_improvement.create import (
     create_attempt_improvement,
@@ -40,7 +42,10 @@ async def _attempt_improvement(conn, profile_id, **overrides):
         conn, call_id=call2.id, group_id=group.id, chat_id=chat.id
     )
     await create_attempt_chat_bridge(
-        conn, attempt_id=attempt.id, attempt_chat_id=attempt_chat.id, session_id=session.id
+        conn,
+        attempt_id=attempt.id,
+        attempt_chat_id=attempt_chat.id,
+        session_id=session.id,
     )
     msg = await create_message(conn, run_id=run.id, role="user")
     await create_attempt_message(

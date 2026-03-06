@@ -6,7 +6,9 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_redis_client
-from app.routes.v5.tools.resources.entries.get import get_entries as get_entries_resource
+from app.routes.v5.tools.resources.entries.get import (
+    get_entries as get_entries_resource,
+)
 from app.sql.types import (
     GetEntriesApiRequest,
     GetEntriesApiResponse,
@@ -35,7 +37,9 @@ async def get_entries(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_entries_resource(conn, request.ids, get_redis_client(), bypass_cache)
+        items = await get_entries_resource(
+            conn, request.ids, get_redis_client(), bypass_cache
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetEntriesApiResponse(items=items)
     except HTTPException:

@@ -42,14 +42,26 @@ async def create_agent_draft(
 
     connections: list[tuple[str, str, list[UUID]]] = [
         ("agent_drafts_names_connection", "names_id", name_ids or []),
-        ("agent_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "agent_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("agent_drafts_flags_connection", "flags_id", flag_ids or []),
         ("agent_drafts_departments_connection", "departments_id", department_ids or []),
         ("agent_drafts_models_connection", "models_id", model_ids or []),
         ("agent_drafts_tools_connection", "tools_id", tool_ids or []),
         ("agent_drafts_profiles_connection", "profiles_id", profile_ids or []),
-        ("agent_drafts_reasoning_levels_connection", "reasoning_levels_id", reasoning_level_ids or []),
-        ("agent_drafts_temperature_levels_connection", "temperature_levels_id", temperature_level_ids or []),
+        (
+            "agent_drafts_reasoning_levels_connection",
+            "reasoning_levels_id",
+            reasoning_level_ids or [],
+        ),
+        (
+            "agent_drafts_temperature_levels_connection",
+            "temperature_levels_id",
+            temperature_level_ids or [],
+        ),
         ("agent_drafts_voices_connection", "voices_id", voice_ids or []),
     ]
 

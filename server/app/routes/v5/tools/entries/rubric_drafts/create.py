@@ -39,13 +39,25 @@ async def create_rubric_draft(
         raise ValueError("Failed to create rubric_drafts entry")
 
     connections: list[tuple[str, str, list[UUID]]] = [
-        ("rubric_drafts_departments_connection", "departments_id", department_ids or []),
-        ("rubric_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "rubric_drafts_departments_connection",
+            "departments_id",
+            department_ids or [],
+        ),
+        (
+            "rubric_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("rubric_drafts_flags_connection", "flags_id", flag_ids or []),
         ("rubric_drafts_names_connection", "names_id", name_ids or []),
         ("rubric_drafts_points_connection", "points_id", point_ids or []),
         ("rubric_drafts_profiles_connection", "profiles_id", profile_ids or []),
-        ("rubric_drafts_standard_groups_connection", "standard_groups_id", standard_group_ids or []),
+        (
+            "rubric_drafts_standard_groups_connection",
+            "standard_groups_id",
+            standard_group_ids or [],
+        ),
         ("rubric_drafts_standards_connection", "standards_id", standard_ids or []),
     ]
 

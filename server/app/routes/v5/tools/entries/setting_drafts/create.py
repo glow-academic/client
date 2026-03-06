@@ -44,16 +44,32 @@ async def create_setting_draft(
 
     connections: list[tuple[str, str, list[UUID]]] = [
         ("setting_drafts_agents_connection", "agents_id", agent_ids or []),
-        ("setting_drafts_auth_item_keys_connection", "auth_item_keys_id", auth_item_key_ids or []),
+        (
+            "setting_drafts_auth_item_keys_connection",
+            "auth_item_keys_id",
+            auth_item_key_ids or [],
+        ),
         ("setting_drafts_auths_connection", "auths_id", auth_ids or []),
         ("setting_drafts_colors_connection", "colors_id", color_ids or []),
-        ("setting_drafts_departments_connection", "departments_id", department_ids or []),
-        ("setting_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "setting_drafts_departments_connection",
+            "departments_id",
+            department_ids or [],
+        ),
+        (
+            "setting_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("setting_drafts_flags_connection", "flags_id", flag_ids or []),
         ("setting_drafts_items_connection", "items_id", item_ids or []),
         ("setting_drafts_names_connection", "names_id", name_ids or []),
         ("setting_drafts_profiles_connection", "profiles_id", profile_ids or []),
-        ("setting_drafts_provider_keys_connection", "provider_keys_id", provider_key_ids or []),
+        (
+            "setting_drafts_provider_keys_connection",
+            "provider_keys_id",
+            provider_key_ids or [],
+        ),
         ("setting_drafts_thresholds_connection", "thresholds_id", threshold_ids or []),
     ]
 

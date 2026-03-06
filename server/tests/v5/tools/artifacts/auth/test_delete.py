@@ -1,6 +1,5 @@
 """Tests for delete_auths — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.auth.create import create_auth

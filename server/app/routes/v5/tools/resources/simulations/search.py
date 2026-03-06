@@ -42,11 +42,17 @@ async def search_simulations(
     extra_conditions: list[tuple[str, object]] = []
     if department_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.department_ids && ${idx}::uuid[])", department_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.department_ids && ${idx}::uuid[])",
+                department_ids,
+            )
         )
     if scenario_ids:
         extra_conditions.append(
-            ("(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.scenario_ids && ${idx}::uuid[])", scenario_ids)
+            (
+                "(COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 OR {alias}.scenario_ids && ${idx}::uuid[])",
+                scenario_ids,
+            )
         )
 
     tags = ["resources", "simulations"]
@@ -69,7 +75,8 @@ async def search_simulations(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetSimulationResponse.model_validate(item) for item in cached.get("items", [])
+                GetSimulationResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     ids = await search_resource_ids(

@@ -57,9 +57,12 @@ async def search_parameters(
     # Junction filters
     if department_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="parameter_departments_junction",
-            owner_col=OWNER_COL, resource_col="departments_id",
+            owner_col=OWNER_COL,
+            resource_col="departments_id",
             ids=department_ids,
         )
 
@@ -82,9 +85,12 @@ async def search_parameters(
     # Field filter: field_ids are fields_resource IDs — direct junction lookup
     if field_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="parameter_fields_junction",
-            owner_col=OWNER_COL, resource_col="fields_id",
+            owner_col=OWNER_COL,
+            resource_col="fields_id",
             ids=field_ids,
         )
 

@@ -152,9 +152,7 @@ async def _link_draft_resources(
                     tool_id=tool_id,
                 )
             except Exception as e:
-                logger.warning(
-                    f"link_{resource_key} failed for {rid} (non-fatal): {e}"
-                )
+                logger.warning(f"link_{resource_key} failed for {rid} (non-fatal): {e}")
 
 
 @router.patch(

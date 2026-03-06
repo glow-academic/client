@@ -9,7 +9,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_creates_new_document(conn, redis_client):
-    result = await create_document(conn, redis_client, name="test-doc", description="desc")
+    result = await create_document(
+        conn, redis_client, name="test-doc", description="desc"
+    )
 
     assert result.name == "test-doc"
     assert result.description == "desc"

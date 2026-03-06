@@ -1,72 +1,40 @@
-"""calls/search internal — reusable data-access layer."""
+"""Calls search — filtered/paginated query against calls_mv."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchCallsEntriesSqlParams,
-    SearchCallsEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.calls.types import SearchCallResponse
 
-SQL_PATH = "app/sql/queries/entries/calls/search_calls_entries_complete.sql"
+MV_NAME = "calls_mv"
 
 
-async def search_calls_entries_internal(
+async def search_calls(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     run_id: UUID | None = None,
     tool_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search calls entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[SearchCallResponse]:
+    """Search calls from calls_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "calls"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/calls/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "run_id": str(run_id) if run_id else None,
-            "tool_id": str(tool_id) if tool_id else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT call_id, run_id, call_created_at,
+               files_id, file_path, mime_type, tool_id
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR run_id = $1)
+          AND ($2::uuid IS NULL OR tool_id = $2)
+        ORDER BY call_created_at DESC
+        LIMIT $3 OFFSET $4
+        """,
+        run_id,
+        tool_id,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchCallsEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        run_id=run_id,
-        tool_id=tool_id,
-    )
-    result = cast(
-        SearchCallsEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [SearchCallResponse(**dict(r)) for r in rows]

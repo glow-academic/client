@@ -4,7 +4,9 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.tools.entries.department_drafts.types import GetDepartmentDraftResponse
+from app.routes.v5.tools.entries.department_drafts.types import (
+    GetDepartmentDraftResponse,
+)
 
 
 async def get_department_drafts(

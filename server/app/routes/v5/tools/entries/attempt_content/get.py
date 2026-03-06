@@ -17,7 +17,5 @@ async def get_attempt_contents(
     """Fetch attempt contents by content IDs."""
     if not ids:
         return []
-    rows = await conn.fetch(
-        f"SELECT * FROM {MV_NAME} WHERE content_id = ANY($1)", ids
-    )
+    rows = await conn.fetch(f"SELECT * FROM {MV_NAME} WHERE content_id = ANY($1)", ids)
     return [GetAttemptContentResponse(**dict(r)) for r in rows]

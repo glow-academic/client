@@ -7,7 +7,9 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.resources.parameter_fields.create import create_parameter_field
 from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
-from app.routes.v5.tools.resources.parameter_fields.search import search_parameter_fields
+from app.routes.v5.tools.resources.parameter_fields.search import (
+    search_parameter_fields,
+)
 
 
 async def get_parameter_fields_docs(conn: asyncpg.Connection) -> DocsResponse:

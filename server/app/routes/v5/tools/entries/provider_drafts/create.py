@@ -4,7 +4,9 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.tools.entries.provider_drafts.types import CreateProviderDraftResponse
+from app.routes.v5.tools.entries.provider_drafts.types import (
+    CreateProviderDraftResponse,
+)
 
 
 async def create_provider_draft(
@@ -39,8 +41,16 @@ async def create_provider_draft(
         raise ValueError("Failed to create provider_drafts entry")
 
     connections: list[tuple[str, str, list[UUID]]] = [
-        ("provider_drafts_departments_connection", "departments_id", department_ids or []),
-        ("provider_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "provider_drafts_departments_connection",
+            "departments_id",
+            department_ids or [],
+        ),
+        (
+            "provider_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("provider_drafts_endpoints_connection", "endpoints_id", endpoint_ids or []),
         ("provider_drafts_flags_connection", "flags_id", flag_ids or []),
         ("provider_drafts_keys_connection", "keys_id", key_ids or []),

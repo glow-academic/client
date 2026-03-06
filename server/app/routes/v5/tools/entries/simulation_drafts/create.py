@@ -4,7 +4,9 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.tools.entries.simulation_drafts.types import CreateSimulationDraftResponse
+from app.routes.v5.tools.entries.simulation_drafts.types import (
+    CreateSimulationDraftResponse,
+)
 
 
 async def create_simulation_draft(
@@ -41,15 +43,39 @@ async def create_simulation_draft(
         raise ValueError("Failed to create simulation_drafts entry")
 
     connections: list[tuple[str, str, list[UUID]]] = [
-        ("simulation_drafts_departments_connection", "departments_id", department_ids or []),
-        ("simulation_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "simulation_drafts_departments_connection",
+            "departments_id",
+            department_ids or [],
+        ),
+        (
+            "simulation_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("simulation_drafts_flags_connection", "flags_id", flag_ids or []),
         ("simulation_drafts_names_connection", "names_id", name_ids or []),
         ("simulation_drafts_profiles_connection", "profiles_id", profile_ids or []),
-        ("simulation_drafts_scenario_flags_connection", "scenario_flags_id", scenario_flag_ids or []),
-        ("simulation_drafts_scenario_positions_connection", "scenario_positions_id", scenario_position_ids or []),
-        ("simulation_drafts_scenario_rubrics_connection", "scenario_rubrics_id", scenario_rubric_ids or []),
-        ("simulation_drafts_scenario_time_limits_connection", "scenario_time_limits_id", scenario_time_limit_ids or []),
+        (
+            "simulation_drafts_scenario_flags_connection",
+            "scenario_flags_id",
+            scenario_flag_ids or [],
+        ),
+        (
+            "simulation_drafts_scenario_positions_connection",
+            "scenario_positions_id",
+            scenario_position_ids or [],
+        ),
+        (
+            "simulation_drafts_scenario_rubrics_connection",
+            "scenario_rubrics_id",
+            scenario_rubric_ids or [],
+        ),
+        (
+            "simulation_drafts_scenario_time_limits_connection",
+            "scenario_time_limits_id",
+            scenario_time_limit_ids or [],
+        ),
         ("simulation_drafts_scenarios_connection", "scenarios_id", scenario_ids or []),
     ]
 

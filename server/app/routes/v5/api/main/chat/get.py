@@ -354,7 +354,10 @@ async def get_chat_internal(
         if not all_ids:
             return (resource_key, [])
         async with pool.acquire() as c:
-            return (resource_key, await fetch_fn(c, all_ids, get_redis_client(), bypass_cache))
+            return (
+                resource_key,
+                await fetch_fn(c, all_ids, get_redis_client(), bypass_cache),
+            )
 
     fetch_tasks = [
         _fetch_resource(rk, va, fn) for rk, va, _da, fn, _ia in RESOURCE_CONFIG
@@ -410,7 +413,12 @@ async def get_chat_internal(
     config_providers: list[Any] = []
     if config_provider_resource_ids:
         async with pool.acquire() as conn:
-            config_providers = await get_providers(                conn, config_provider_resource_ids, get_redis_client(), bypass_cache=bypass_cache            )
+            config_providers = await get_providers(
+                conn,
+                config_provider_resource_ids,
+                get_redis_client(),
+                bypass_cache=bypass_cache,
+            )
 
     # 9. Simulation/scenario context (from chat websocket)
     selected_department_ids = selected_ids.get("departments", [])
@@ -499,7 +507,9 @@ async def get_chat_websocket(
 
     async def fetch_config_profile():
         async with pool.acquire() as conn:
-            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
+            return await get_profiles(
+                conn, [profile_id], get_redis_client(), bypass_cache
+            )
 
     async def fetch_runs_today():
         from datetime import UTC, datetime
@@ -542,7 +552,10 @@ async def get_chat_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             async def fetch_args_outputs():
@@ -550,7 +563,10 @@ async def get_chat_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_output_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             config_args, config_args_outputs = await asyncio.gather(

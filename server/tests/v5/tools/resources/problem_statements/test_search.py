@@ -1,6 +1,5 @@
 """Tests for search_problem_statements."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.problem_statements.create import (
@@ -110,12 +109,8 @@ async def test_cache_hit(conn, redis_client):
         conn, f"cache-hit-ps-{unique_tag()}", "text", redis_client
     )
 
-    items1 = await search_problem_statements(
-        conn, redis_client, search="cache-hit-ps-"
-    )
-    items2 = await search_problem_statements(
-        conn, redis_client, search="cache-hit-ps-"
-    )
+    items1 = await search_problem_statements(conn, redis_client, search="cache-hit-ps-")
+    items2 = await search_problem_statements(conn, redis_client, search="cache-hit-ps-")
 
     assert len(items1) >= 1
     assert len(items1) == len(items2)

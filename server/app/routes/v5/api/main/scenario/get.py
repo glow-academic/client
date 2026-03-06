@@ -471,7 +471,13 @@ async def get_scenario_internal(
                 c, selected_description_ids, get_redis_client(), cache
             )
             suggestions = await search_descriptions(
-                c, get_redis_client(), search=description_search, draft_id=effective_group_id, exclude_ids=selected_description_ids, bypass_cache=bypass_cache, scenario=True,
+                c,
+                get_redis_client(),
+                search=description_search,
+                draft_id=effective_group_id,
+                exclude_ids=selected_description_ids,
+                bypass_cache=bypass_cache,
+                scenario=True,
             )
             return (selected, suggestions)
 
@@ -522,9 +528,14 @@ async def get_scenario_internal(
             )
             # Search for all available scenario flags (by type)
             all_flags = await search_flags(
-                c, get_redis_client(), search=None, limit_count=50,
-                offset_count=0, exclude_ids=all_selected_ids,
-                bypass_cache=bypass_cache, scenario=True,
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=all_selected_ids,
+                bypass_cache=bypass_cache,
+                scenario=True,
             )
             # Filter to only scenario-specific flags (business logic in Python)
             suggestions = [f for f in all_flags if f.type in SCENARIO_FLAG_TYPES]
@@ -641,7 +652,9 @@ async def get_scenario_internal(
 
     async def fetch_images():
         async with pool.acquire() as c:
-            selected = await get_images(c, selected_image_ids, get_redis_client(), bypass_cache)
+            selected = await get_images(
+                c, selected_image_ids, get_redis_client(), bypass_cache
+            )
             suggestions = await search_images(
                 c,
                 get_redis_client(),
@@ -656,7 +669,9 @@ async def get_scenario_internal(
 
     async def fetch_videos():
         async with pool.acquire() as c:
-            selected = await get_videos(c, selected_video_ids, get_redis_client(), bypass_cache)
+            selected = await get_videos(
+                c, selected_video_ids, get_redis_client(), bypass_cache
+            )
             suggestions = await search_videos(
                 c,
                 get_redis_client(),
@@ -688,7 +703,9 @@ async def get_scenario_internal(
 
     async def fetch_options():
         async with pool.acquire() as c:
-            selected = await get_options(c, selected_option_ids, get_redis_client(), bypass_cache)
+            selected = await get_options(
+                c, selected_option_ids, get_redis_client(), bypass_cache
+            )
             suggestions = await search_options(
                 c,
                 get_redis_client(),
@@ -752,9 +769,7 @@ async def get_scenario_internal(
         }
 
         all_persona_ids_for_video = [
-            p.id
-            for p in personas_selected + personas_suggestions
-            if p.id
+            p.id for p in personas_selected + personas_suggestions if p.id
         ]
         if all_persona_ids_for_video:
             persona_param_rows = await filter_conn.fetch(
@@ -777,9 +792,7 @@ async def get_scenario_internal(
             persona_to_params = {}
 
         all_document_ids_for_video = [
-            d.id
-            for d in documents_selected + documents_suggestions
-            if d.id
+            d.id for d in documents_selected + documents_suggestions if d.id
         ]
         if all_document_ids_for_video:
             doc_param_rows = await filter_conn.fetch(
@@ -828,9 +841,7 @@ async def get_scenario_internal(
         "id",
     )
     all_scenario_flags = _dedupe_by_id(flags_selected + flags_suggestions, "name")
-    departments = _dedupe_by_id(
-        departments_selected + departments_suggestions, "id"
-    )
+    departments = _dedupe_by_id(departments_selected + departments_suggestions, "id")
     personas = _dedupe_by_id(personas_selected + personas_suggestions, "id")
     documents = _dedupe_by_id(documents_selected + documents_suggestions, "id")
     parameters = _dedupe_by_id(
@@ -985,9 +996,7 @@ async def get_scenario_internal(
 
     def _document_to_dict(document: Any) -> dict[str, Any]:
         d = _to_dict(document)
-        video_document, non_video_document = compute_document_video_flags(
-            document.id
-        )
+        video_document, non_video_document = compute_document_video_flags(document.id)
         d["video_document"] = video_document
         d["non_video_document"] = non_video_document
         if document.upload_id and document.upload_id in upload_id_map:
@@ -1021,9 +1030,7 @@ async def get_scenario_internal(
     ]
     persona_resources = personas_selected
     document_resources = documents_selected
-    parameter_resources = [
-        p for p in parameters if p.id in set(selected_parameter_ids)
-    ]
+    parameter_resources = [p for p in parameters if p.id in set(selected_parameter_ids)]
     parameter_field_resources = [
         f for f in parameter_fields if f.id in set(selected_parameter_field_ids)
     ]
@@ -1090,9 +1097,7 @@ async def get_scenario_internal(
     suggestions_map: dict[str, list[UUID]] = {
         "names": [n.id for n in names_suggestions],
         "descriptions": [d.id for d in descriptions_suggestions],
-        "problem_statements": [
-            ps.id for ps in problem_statements_suggestions
-        ],
+        "problem_statements": [ps.id for ps in problem_statements_suggestions],
         "departments": [d.id for d in departments_suggestions],
         "personas": [p.id for p in personas_suggestions],
         "documents": [d.id for d in documents_suggestions],

@@ -17,6 +17,7 @@ class GetAttemptMessageResponse(BaseModel):
     type: str | None
     created_at: datetime | None
     completed: bool | None
+    runs_id: UUID | None
     text_id: UUID | None
     history_file_path: str | None
     audio_id: UUID | None

@@ -44,7 +44,9 @@ async def _test_invocation_bridge(conn, profile_id, **overrides):
 
 
 async def test_returns_ids(conn, profile_id):
-    result, test_invocation, invocation = await _test_invocation_bridge(conn, profile_id)
+    result, test_invocation, invocation = await _test_invocation_bridge(
+        conn, profile_id
+    )
 
     assert result.test_invocation_id == test_invocation.id
     assert result.invocation_id == invocation.id

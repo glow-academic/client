@@ -1,6 +1,5 @@
 """Tests for search_points."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.points.create import create_point
@@ -63,7 +62,9 @@ async def test_excludes_ids(conn, redis_client):
     b = await create_point(conn, 302, redis_client)
 
     items = await search_points(
-        conn, redis_client, exclude_ids=[a.id],
+        conn,
+        redis_client,
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]

@@ -1,6 +1,5 @@
 """Tests for delete_departments — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.department.create import create_department

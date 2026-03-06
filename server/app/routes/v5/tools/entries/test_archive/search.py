@@ -1,71 +1,36 @@
-"""test_archive/search internal — reusable data-access layer."""
+"""Test archive search — filtered/paginated query against test_archive_mv."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchTestArchiveEntriesSqlParams,
-    SearchTestArchiveEntriesSqlRow,
-)
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.test_archive.types import GetTestArchiveResponse
 
-SQL_PATH = (
-    "app/sql/queries/entries/test_archive/search_test_archive_entries_complete.sql"
-)
+MV_NAME = "test_archive_mv"
 
 
-async def search_test_archive_entries_internal(
+async def search_test_archives(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     test_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search test_archive entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetTestArchiveResponse]:
+    """Search test_archive entries from test_archive_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "test_archive"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/test_archive/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "test_id": str(test_id) if test_id else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT id, created_at, generated, mcp, active, test_id, archived, call_id
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR test_id = $1)
+        ORDER BY created_at DESC
+        LIMIT $2 OFFSET $3
+        """,
+        test_id,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchTestArchiveEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        test_id=test_id,
-    )
-    result = cast(
-        SearchTestArchiveEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [GetTestArchiveResponse(**dict(r)) for r in rows]

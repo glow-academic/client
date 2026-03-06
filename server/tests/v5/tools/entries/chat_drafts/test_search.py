@@ -1,6 +1,5 @@
 """Tests for chat_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.chat_drafts.create import create_chat_draft

@@ -57,25 +57,34 @@ async def search_agents(
     # Junction filters
     if department_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="agent_departments_junction",
-            owner_col=OWNER_COL, resource_col="departments_id",
+            owner_col=OWNER_COL,
+            resource_col="departments_id",
             ids=department_ids,
         )
 
     if model_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="agent_models_junction",
-            owner_col=OWNER_COL, resource_col="models_id",
+            owner_col=OWNER_COL,
+            resource_col="models_id",
             ids=model_ids,
         )
 
     if tool_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="agent_tools_junction",
-            owner_col=OWNER_COL, resource_col="tools_id",
+            owner_col=OWNER_COL,
+            resource_col="tools_id",
             ids=tool_ids,
         )
 

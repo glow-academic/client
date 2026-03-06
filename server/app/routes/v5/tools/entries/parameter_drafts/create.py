@@ -4,7 +4,9 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.tools.entries.parameter_drafts.types import CreateParameterDraftResponse
+from app.routes.v5.tools.entries.parameter_drafts.types import (
+    CreateParameterDraftResponse,
+)
 
 
 async def create_parameter_draft(
@@ -37,8 +39,16 @@ async def create_parameter_draft(
         raise ValueError("Failed to create parameter_drafts entry")
 
     connections: list[tuple[str, str, list[UUID]]] = [
-        ("parameter_drafts_departments_connection", "departments_id", department_ids or []),
-        ("parameter_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "parameter_drafts_departments_connection",
+            "departments_id",
+            department_ids or [],
+        ),
+        (
+            "parameter_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("parameter_drafts_fields_connection", "fields_id", field_ids or []),
         ("parameter_drafts_flags_connection", "flags_id", flag_ids or []),
         ("parameter_drafts_names_connection", "names_id", name_ids or []),

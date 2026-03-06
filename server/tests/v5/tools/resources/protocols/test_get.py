@@ -1,6 +1,5 @@
 """Tests for get_protocols."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.protocols.create import create_protocol

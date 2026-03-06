@@ -1,6 +1,5 @@
 """Tests for get_departments."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.departments.create import create_department

@@ -1,6 +1,5 @@
 """Tests for delete_tools — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.tool.create import create_tool

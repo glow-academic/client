@@ -56,8 +56,7 @@ async def _make_resource(conn):
 
 async def _active_ids(conn, owner_id):
     rows = await conn.fetch(
-        f"SELECT {RESOURCE_COL} FROM {TABLE} "
-        f"WHERE {OWNER_COL} = $1 AND active = true",
+        f"SELECT {RESOURCE_COL} FROM {TABLE} WHERE {OWNER_COL} = $1 AND active = true",
         owner_id,
     )
     return {r[RESOURCE_COL] for r in rows}
@@ -136,22 +135,31 @@ async def test_upsert_single_replaces_old(conn):
     r2 = await _make_resource(conn)
 
     await insert_single(
-        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
-        resource_col=RESOURCE_COL, resource_id=r1,
+        conn,
+        table=TABLE,
+        owner_col=OWNER_COL,
+        owner_id=oid,
+        resource_col=RESOURCE_COL,
+        resource_id=r1,
     )
 
     await upsert_single(
-        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
-        resource_col=RESOURCE_COL, resource_id=r2, constraint=CONSTRAINT,
+        conn,
+        table=TABLE,
+        owner_col=OWNER_COL,
+        owner_id=oid,
+        resource_col=RESOURCE_COL,
+        resource_id=r2,
+        constraint=CONSTRAINT,
     )
 
     assert await _active_ids(conn, oid) == {r2}
 
     # Old row deactivated, not deleted
     old = await conn.fetchval(
-        f"SELECT active FROM {TABLE} "
-        f"WHERE {OWNER_COL} = $1 AND {RESOURCE_COL} = $2",
-        oid, r1,
+        f"SELECT active FROM {TABLE} WHERE {OWNER_COL} = $1 AND {RESOURCE_COL} = $2",
+        oid,
+        r1,
     )
     assert old is False
 
@@ -162,13 +170,22 @@ async def test_upsert_single_keeps_same(conn):
     r1 = await _make_resource(conn)
 
     await insert_single(
-        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
-        resource_col=RESOURCE_COL, resource_id=r1,
+        conn,
+        table=TABLE,
+        owner_col=OWNER_COL,
+        owner_id=oid,
+        resource_col=RESOURCE_COL,
+        resource_id=r1,
     )
 
     await upsert_single(
-        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
-        resource_col=RESOURCE_COL, resource_id=r1, constraint=CONSTRAINT,
+        conn,
+        table=TABLE,
+        owner_col=OWNER_COL,
+        owner_id=oid,
+        resource_col=RESOURCE_COL,
+        resource_id=r1,
+        constraint=CONSTRAINT,
     )
 
     assert await _active_ids(conn, oid) == {r1}
@@ -186,13 +203,22 @@ async def test_upsert_multi_adds_new(conn):
     r2 = await _make_resource(conn)
 
     await insert_multi(
-        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
-        resource_col=RESOURCE_COL, resource_ids=[r1],
+        conn,
+        table=TABLE,
+        owner_col=OWNER_COL,
+        owner_id=oid,
+        resource_col=RESOURCE_COL,
+        resource_ids=[r1],
     )
 
     await upsert_multi(
-        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
-        resource_col=RESOURCE_COL, resource_ids=[r1, r2], constraint=CONSTRAINT,
+        conn,
+        table=TABLE,
+        owner_col=OWNER_COL,
+        owner_id=oid,
+        resource_col=RESOURCE_COL,
+        resource_ids=[r1, r2],
+        constraint=CONSTRAINT,
     )
 
     assert await _active_ids(conn, oid) == {r1, r2}
@@ -205,21 +231,30 @@ async def test_upsert_multi_removes_old(conn):
     r2 = await _make_resource(conn)
 
     await insert_multi(
-        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
-        resource_col=RESOURCE_COL, resource_ids=[r1, r2],
+        conn,
+        table=TABLE,
+        owner_col=OWNER_COL,
+        owner_id=oid,
+        resource_col=RESOURCE_COL,
+        resource_ids=[r1, r2],
     )
 
     await upsert_multi(
-        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
-        resource_col=RESOURCE_COL, resource_ids=[r1], constraint=CONSTRAINT,
+        conn,
+        table=TABLE,
+        owner_col=OWNER_COL,
+        owner_id=oid,
+        resource_col=RESOURCE_COL,
+        resource_ids=[r1],
+        constraint=CONSTRAINT,
     )
 
     assert await _active_ids(conn, oid) == {r1}
 
     r2_active = await conn.fetchval(
-        f"SELECT active FROM {TABLE} "
-        f"WHERE {OWNER_COL} = $1 AND {RESOURCE_COL} = $2",
-        oid, r2,
+        f"SELECT active FROM {TABLE} WHERE {OWNER_COL} = $1 AND {RESOURCE_COL} = $2",
+        oid,
+        r2,
     )
     assert r2_active is False
 
@@ -230,13 +265,22 @@ async def test_upsert_multi_clears_all(conn):
     r1 = await _make_resource(conn)
 
     await insert_multi(
-        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
-        resource_col=RESOURCE_COL, resource_ids=[r1],
+        conn,
+        table=TABLE,
+        owner_col=OWNER_COL,
+        owner_id=oid,
+        resource_col=RESOURCE_COL,
+        resource_ids=[r1],
     )
 
     await upsert_multi(
-        conn, table=TABLE, owner_col=OWNER_COL, owner_id=oid,
-        resource_col=RESOURCE_COL, resource_ids=[], constraint=CONSTRAINT,
+        conn,
+        table=TABLE,
+        owner_col=OWNER_COL,
+        owner_id=oid,
+        resource_col=RESOURCE_COL,
+        resource_ids=[],
+        constraint=CONSTRAINT,
     )
 
     assert await _active_ids(conn, oid) == set()

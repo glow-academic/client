@@ -1,6 +1,5 @@
 """Tests for get_evals."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.evals.create import create_eval
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_eval(conn, redis_client):
-    created = await create_eval(conn, redis_client, name="test-eval", description="desc")
+    created = await create_eval(
+        conn, redis_client, name="test-eval", description="desc"
+    )
 
     items = await get_evals(conn, [created.id], redis_client)
 

@@ -38,7 +38,7 @@ async def test_includes_all_operations(conn):
     assert "create_text" in op_names
     assert "refresh_texts_internal" in op_names
     assert "get_text" in op_names
-    assert "search_texts_entries_internal" in op_names
+    assert "search_texts" in op_names
 
 
 async def test_create_operation_has_params(conn):

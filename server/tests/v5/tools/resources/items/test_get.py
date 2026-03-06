@@ -1,6 +1,5 @@
 """Tests for get_items."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.items.create import create_item

@@ -5,8 +5,12 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.resources.conditional_parameters.get import get_conditional_parameters
-from app.routes.v5.tools.resources.conditional_parameters.types import GetConditionalParameterResponse
+from app.routes.v5.tools.resources.conditional_parameters.get import (
+    get_conditional_parameters,
+)
+from app.routes.v5.tools.resources.conditional_parameters.types import (
+    GetConditionalParameterResponse,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 
@@ -31,5 +35,7 @@ async def create_conditional_parameter(
     )
 
     await invalidate_tags(["resources", "conditional_parameters"], redis=redis)
-    items = await get_conditional_parameters(conn, [conditional_parameter_id], redis, bypass_cache=True)
+    items = await get_conditional_parameters(
+        conn, [conditional_parameter_id], redis, bypass_cache=True
+    )
     return items[0]

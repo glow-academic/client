@@ -9,7 +9,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_creates_new_scenario(conn, redis_client):
-    result = await create_scenario(conn, redis_client, name="test-scenario", description="desc")
+    result = await create_scenario(
+        conn, redis_client, name="test-scenario", description="desc"
+    )
 
     assert result.name == "test-scenario"
     assert result.description == "desc"

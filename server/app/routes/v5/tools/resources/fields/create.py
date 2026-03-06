@@ -1,4 +1,5 @@
 """Fields CREATE — reusable data-access layer."""
+
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -25,7 +26,9 @@ async def create_field(
         VALUES ($1, $2, '', true, $3, $3)
         RETURNING id
         """,
-        name, description, mcp,
+        name,
+        description,
+        mcp,
     )
     await invalidate_tags(["resources", "fields"], redis=redis)
     items = await get_fields(conn, [field_id], redis, bypass_cache=True)

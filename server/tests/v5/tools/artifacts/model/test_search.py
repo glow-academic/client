@@ -1,6 +1,5 @@
 """Tests for search_models — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.model.create import create_model
@@ -85,9 +84,15 @@ async def test_pagination(conn, redis_client):
         name = await create_name(conn, f"page-{tag}-{i:02d}", redis_client)
         m = await create_model(conn, name_id=name.id)
         created.append(m.id)
-    page1 = await search_models(conn, search=f"page-{tag}", limit_count=2, offset_count=0)
-    page2 = await search_models(conn, search=f"page-{tag}", limit_count=2, offset_count=2)
-    page3 = await search_models(conn, search=f"page-{tag}", limit_count=2, offset_count=4)
+    page1 = await search_models(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=0
+    )
+    page2 = await search_models(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=2
+    )
+    page3 = await search_models(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=4
+    )
     assert len(page1) == 2
     assert len(page2) == 2
     assert len(page3) == 1

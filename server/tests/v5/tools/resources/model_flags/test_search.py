@@ -1,6 +1,5 @@
 """Tests for search_model_flags."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.flags.create import create_flag
@@ -15,7 +14,9 @@ pytestmark = pytest.mark.asyncio
 async def _create_model_flag_with_deps(conn, redis_client, flag_name: str):
     """Helper: create a model + flag + model_flag."""
     model = await create_model(conn, value=f"model-{unique_tag()}", redis=redis_client)
-    flag = await create_flag(conn, name=flag_name, description="", icon="", redis=redis_client)
+    flag = await create_flag(
+        conn, name=flag_name, description="", icon="", redis=redis_client
+    )
     mf = await create_model_flag(conn, model.id, flag.id, redis_client)
     return mf
 
@@ -29,14 +30,18 @@ async def test_finds_created_model_flag(conn, redis_client):
 
 
 async def test_returns_empty_for_no_match(conn, redis_client):
-    items = await search_model_flags(conn, redis_client, search="zzz-no-match-zzz-" + unique_tag())
+    items = await search_model_flags(
+        conn, redis_client, search="zzz-no-match-zzz-" + unique_tag()
+    )
 
     assert items == []
 
 
 async def test_respects_limit(conn, redis_client):
     for i in range(3):
-        await _create_model_flag_with_deps(conn, redis_client, f"limit-test-{unique_tag()}")
+        await _create_model_flag_with_deps(
+            conn, redis_client, f"limit-test-{unique_tag()}"
+        )
 
     items = await search_model_flags(conn, redis_client, limit_count=2)
 
@@ -44,11 +49,17 @@ async def test_respects_limit(conn, redis_client):
 
 
 async def test_excludes_ids(conn, redis_client):
-    a = await _create_model_flag_with_deps(conn, redis_client, f"exclude-a-{unique_tag()}")
-    b = await _create_model_flag_with_deps(conn, redis_client, f"exclude-b-{unique_tag()}")
+    a = await _create_model_flag_with_deps(
+        conn, redis_client, f"exclude-a-{unique_tag()}"
+    )
+    b = await _create_model_flag_with_deps(
+        conn, redis_client, f"exclude-b-{unique_tag()}"
+    )
 
     items = await search_model_flags(
-        conn, redis_client, exclude_ids=[a.id],
+        conn,
+        redis_client,
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]

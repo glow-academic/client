@@ -1,6 +1,5 @@
 """Tests for get_prompts."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.prompts.create import create_prompt
@@ -12,7 +11,11 @@ pytestmark = pytest.mark.asyncio
 
 async def test_gets_created_prompt(conn, redis_client):
     created = await create_prompt(
-        conn, "You are a helpful assistant.", "test-prompt", "A test prompt.", redis_client
+        conn,
+        "You are a helpful assistant.",
+        "test-prompt",
+        "A test prompt.",
+        redis_client,
     )
 
     items = await get_prompts(conn, [created.id], redis_client)

@@ -1,6 +1,5 @@
 """Tests for search_personas."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.personas.create import create_personas
@@ -37,9 +36,13 @@ async def test_search_filters_by_session(conn, profile_id):
 async def test_search_returns_connections(conn, profile_id):
     session = await _session(conn, profile_id)
     persona_id = await conn.fetchval("SELECT id FROM personas_resource LIMIT 1")
-    assert persona_id is not None, "Need at least one personas_resource row as seed data"
+    assert persona_id is not None, (
+        "Need at least one personas_resource row as seed data"
+    )
 
-    result = await create_personas(conn, session_id=session.id, persona_ids=[persona_id])
+    result = await create_personas(
+        conn, session_id=session.id, persona_ids=[persona_id]
+    )
 
     items = await search_personas(conn, session_id=session.id)
 

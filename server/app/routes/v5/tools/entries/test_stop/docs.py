@@ -9,7 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.test_stop.create import create_test_stop
 from app.routes.v5.tools.entries.test_stop.get import get_test_stops
 from app.routes.v5.tools.entries.test_stop.refresh import refresh_test_stop
-from app.routes.v5.tools.entries.test_stop.search import search_test_stop_entries_internal
+from app.routes.v5.tools.entries.test_stop.search import search_test_stops
 
 
 async def get_test_stop_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -45,11 +45,8 @@ async def get_test_stop_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves test_stop entries by IDs from test_stop_mv.",
             ),
             get_operation_info(
-                search_test_stop_entries_internal,
-                description=(
-                    "Filtered paginated search against test_stop entries by search text "
-                    "and profile_id. Results cached for 60 seconds."
-                ),
+                search_test_stops,
+                description="Filtered paginated search against test_stop_mv.",
             ),
         ],
     )

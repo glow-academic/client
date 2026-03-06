@@ -1,6 +1,5 @@
 """Tests for delete_documents — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.document.create import create_document

@@ -19,7 +19,9 @@ async def test_creates_new_reasoning_level(conn, redis_client):
 async def test_visible_via_get(conn, redis_client):
     result = await create_reasoning_level(conn, "medium", redis_client)
 
-    items = await get_reasoning_levels(conn, [result.id], redis_client, bypass_cache=True)
+    items = await get_reasoning_levels(
+        conn, [result.id], redis_client, bypass_cache=True
+    )
 
     assert len(items) == 1
     assert items[0].id == result.id

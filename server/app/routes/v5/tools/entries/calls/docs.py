@@ -7,7 +7,7 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.calls.get import get_call
-from app.routes.v5.tools.entries.calls.search import search_calls_entries_internal
+from app.routes.v5.tools.entries.calls.search import search_calls
 
 
 async def get_calls_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -40,8 +40,8 @@ async def get_calls_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Retrieves a single call entry by ID from calls_entry.",
             ),
             get_operation_info(
-                search_calls_entries_internal,
-                description="Filtered paginated search against calls_entry.",
+                search_calls,
+                description="Filtered paginated search against calls_mv.",
             ),
         ],
     )

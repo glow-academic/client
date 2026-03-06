@@ -19,7 +19,9 @@ async def test_creates_new_model(conn, redis_client):
 
 
 async def test_visible_via_get(conn, redis_client):
-    result = await create_model(conn, "gpt-4-visible", "test-model-visible", redis=redis_client)
+    result = await create_model(
+        conn, "gpt-4-visible", "test-model-visible", redis=redis_client
+    )
 
     items = await get_models(conn, [result.id], redis_client, bypass_cache=True)
 

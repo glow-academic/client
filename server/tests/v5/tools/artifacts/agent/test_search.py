@@ -1,6 +1,5 @@
 """Tests for search_agents — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.agent.create import create_agent
@@ -57,10 +56,12 @@ async def test_department_filter(conn, redis_client):
 
 async def test_model_ids_filter(conn, redis_client):
     m1 = await conn.fetchval(
-        "INSERT INTO models_resource (name, value) VALUES ($1, $1) RETURNING id", f"m-{_u()}"
+        "INSERT INTO models_resource (name, value) VALUES ($1, $1) RETURNING id",
+        f"m-{_u()}",
     )
     m2 = await conn.fetchval(
-        "INSERT INTO models_resource (name, value) VALUES ($1, $1) RETURNING id", f"m-{_u()}"
+        "INSERT INTO models_resource (name, value) VALUES ($1, $1) RETURNING id",
+        f"m-{_u()}",
     )
     a1 = await create_agent(conn, model_ids=[m1])
     a2 = await create_agent(conn, model_ids=[m2])
@@ -99,9 +100,15 @@ async def test_pagination(conn, redis_client):
         name = await create_name(conn, f"page-{tag}-{i:02d}", redis_client)
         a = await create_agent(conn, name_id=name.id)
         created.append(a.id)
-    page1 = await search_agents(conn, search=f"page-{tag}", limit_count=2, offset_count=0)
-    page2 = await search_agents(conn, search=f"page-{tag}", limit_count=2, offset_count=2)
-    page3 = await search_agents(conn, search=f"page-{tag}", limit_count=2, offset_count=4)
+    page1 = await search_agents(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=0
+    )
+    page2 = await search_agents(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=2
+    )
+    page3 = await search_agents(
+        conn, search=f"page-{tag}", limit_count=2, offset_count=4
+    )
     assert len(page1) == 2
     assert len(page2) == 2
     assert len(page3) == 1

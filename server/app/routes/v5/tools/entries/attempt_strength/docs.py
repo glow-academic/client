@@ -8,7 +8,9 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_strength.create import create_attempt_strength
 from app.routes.v5.tools.entries.attempt_strength.get import get_attempt_strengths
-from app.routes.v5.tools.entries.attempt_strength.refresh import refresh_attempt_strength
+from app.routes.v5.tools.entries.attempt_strength.refresh import (
+    refresh_attempt_strength,
+)
 from app.routes.v5.tools.entries.attempt_strength.search import search_attempt_strengths
 
 

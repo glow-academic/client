@@ -29,8 +29,16 @@ MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
     ("eval_departments_junction", "departments_id", "eval_departments_pkey"),
     ("eval_models_junction", "models_id", "eval_models_junction_pkey"),
     ("eval_model_flags_junction", "model_flags_id", "eval_model_flags_junction_pkey"),
-    ("eval_model_positions_junction", "model_positions_id", "eval_model_positions_junction_pkey"),
-    ("eval_model_rubrics_junction", "model_rubrics_id", "eval_model_rubrics_junction_pkey"),
+    (
+        "eval_model_positions_junction",
+        "model_positions_id",
+        "eval_model_positions_junction_pkey",
+    ),
+    (
+        "eval_model_rubrics_junction",
+        "model_rubrics_id",
+        "eval_model_rubrics_junction_pkey",
+    ),
     ("eval_rubrics_junction", "rubrics_id", "eval_rubrics_junction_pkey"),
     ("eval_evals_junction", "evals_id", "eval_evals_junction_pkey"),
 ]

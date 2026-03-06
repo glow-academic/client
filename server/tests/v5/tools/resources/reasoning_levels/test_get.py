@@ -1,6 +1,5 @@
 """Tests for get_reasoning_levels."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.reasoning_levels.create import create_reasoning_level
@@ -49,12 +48,16 @@ async def test_cache_hit_skips_db(conn, redis_client):
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     created = await create_reasoning_level(conn, "low", redis_client)
 
-    items = await get_reasoning_levels(conn, [created.id], redis_client, bypass_cache=True)
+    items = await get_reasoning_levels(
+        conn, [created.id], redis_client, bypass_cache=True
+    )
     assert len(items) == 1
 
     from app.utils.cache.cache_key import cache_key
     from app.utils.cache.get_cached import get_cached
 
-    key = cache_key("/api/v5/resources/reasoning_levels/get", {"ids": [str(created.id)]})
+    key = cache_key(
+        "/api/v5/resources/reasoning_levels/get", {"ids": [str(created.id)]}
+    )
     cached = await get_cached(key, redis=redis_client)
     assert cached is None

@@ -22,13 +22,16 @@ async def get_operations(
         return []
 
     tags = ["resources", "operations"]
-    key = cache_key("/api/v5/resources/operations/get", {"ids": [str(id) for id in ids]})
+    key = cache_key(
+        "/api/v5/resources/operations/get", {"ids": [str(id) for id in ids]}
+    )
 
     if not bypass_cache:
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetOperationResponse.model_validate(item) for item in cached.get("items", [])
+                GetOperationResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

@@ -62,7 +62,8 @@ async def search_videos(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetVideoResponse.model_validate(item) for item in cached.get("items", [])
+                GetVideoResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     ids = await search_resource_ids(

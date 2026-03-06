@@ -1,6 +1,5 @@
 """Tests for get_simulations."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.simulations.create import create_simulation
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_simulation(conn, redis_client):
-    created = await create_simulation(conn, redis_client, name="test-sim", description="desc")
+    created = await create_simulation(
+        conn, redis_client, name="test-sim", description="desc"
+    )
 
     items = await get_simulations(conn, [created.id], redis_client)
 

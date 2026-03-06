@@ -12,18 +12,38 @@ ARTIFACT_FK = "setting_id"
 # (flag_name, junction_table, junction_column, response_field)
 JUNCTIONS: list[tuple[str, str, str, str]] = [
     ("names", "setting_names_junction", "names_id", "name_ids"),
-    ("descriptions", "setting_descriptions_junction", "descriptions_id", "description_ids"),
+    (
+        "descriptions",
+        "setting_descriptions_junction",
+        "descriptions_id",
+        "description_ids",
+    ),
     ("departments", "setting_departments_junction", "departments_id", "department_ids"),
     ("flags", "setting_flags_junction", "flags_id", "flag_ids"),
     ("colors", "setting_colors_junction", "colors_id", "color_ids"),
     ("profiles", "setting_profiles_junction", "profiles_id", "profile_ids"),
-    ("auth_item_keys", "setting_auth_item_keys_junction", "auth_item_keys_id", "auth_item_keys_ids"),
-    ("provider_keys", "setting_provider_keys_junction", "provider_keys_id", "provider_key_ids"),
+    (
+        "auth_item_keys",
+        "setting_auth_item_keys_junction",
+        "auth_item_keys_id",
+        "auth_item_keys_ids",
+    ),
+    (
+        "provider_keys",
+        "setting_provider_keys_junction",
+        "provider_keys_id",
+        "provider_key_ids",
+    ),
     ("thresholds", "setting_thresholds_junction", "thresholds_id", "threshold_ids"),
     ("systems", "setting_systems_junction", "systems_id", "systems_ids"),
     ("settings", "setting_settings_junction", "settings_id", "setting_ids"),
     ("auths", "setting_auths_junction", "auths_id", "auth_ids"),
-    ("auth_item_values", "setting_auth_item_values_junction", "auth_item_values_id", "auth_item_value_ids"),
+    (
+        "auth_item_values",
+        "setting_auth_item_values_junction",
+        "auth_item_values_id",
+        "auth_item_value_ids",
+    ),
 ]
 
 
@@ -65,23 +85,34 @@ async def get_settings(
         "auth_item_values": auth_item_values,
     }
 
-    active = [(table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]]
+    active = [
+        (table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]
+    ]
 
     # Build dynamic query
-    columns = ["p.id", "p.created_at", "p.updated_at", "p.generated", "p.mcp", "p.active"]
+    columns = [
+        "p.id",
+        "p.created_at",
+        "p.updated_at",
+        "p.generated",
+        "p.mcp",
+        "p.active",
+    ]
     joins: list[str] = []
 
     for i, (table, col, field) in enumerate(active):
         alias = f"j{i}"
-        joins.append(f"LEFT JOIN {table} {alias} ON {alias}.{ARTIFACT_FK} = p.id AND {alias}.active = true")
+        joins.append(
+            f"LEFT JOIN {table} {alias} ON {alias}.{ARTIFACT_FK} = p.id AND {alias}.active = true"
+        )
         columns.append(
             f"ARRAY_AGG(DISTINCT {alias}.{col}) FILTER (WHERE {alias}.{col} IS NOT NULL) AS {field}"
         )
 
     query = f"""
-        SELECT {', '.join(columns)}
+        SELECT {", ".join(columns)}
         FROM {TABLE} p
-        {' '.join(joins)}
+        {" ".join(joins)}
         WHERE p.id = ANY($1)
         GROUP BY p.id, p.created_at, p.updated_at, p.generated, p.mcp, p.active
     """

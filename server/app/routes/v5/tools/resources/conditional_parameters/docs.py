@@ -5,9 +5,15 @@ import asyncpg
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
-from app.routes.v5.tools.resources.conditional_parameters.create import create_conditional_parameter
-from app.routes.v5.tools.resources.conditional_parameters.get import get_conditional_parameters
-from app.routes.v5.tools.resources.conditional_parameters.search import search_conditional_parameters
+from app.routes.v5.tools.resources.conditional_parameters.create import (
+    create_conditional_parameter,
+)
+from app.routes.v5.tools.resources.conditional_parameters.get import (
+    get_conditional_parameters,
+)
+from app.routes.v5.tools.resources.conditional_parameters.search import (
+    search_conditional_parameters,
+)
 
 
 async def get_conditional_parameters_docs(conn: asyncpg.Connection) -> DocsResponse:

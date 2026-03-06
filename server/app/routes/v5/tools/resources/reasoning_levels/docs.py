@@ -7,7 +7,9 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.resources.reasoning_levels.create import create_reasoning_level
 from app.routes.v5.tools.resources.reasoning_levels.get import get_reasoning_levels
-from app.routes.v5.tools.resources.reasoning_levels.search import search_reasoning_levels
+from app.routes.v5.tools.resources.reasoning_levels.search import (
+    search_reasoning_levels,
+)
 
 
 async def get_reasoning_levels_docs(conn: asyncpg.Connection) -> DocsResponse:

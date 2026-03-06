@@ -27,6 +27,7 @@ async def test_includes_all_operations(conn):
     assert "get_model_flags" in op_names
     assert "search_model_flags" in op_names
 
+
 async def test_search_operation_has_params(conn):
     result = await get_model_flags_docs(conn)
     search_op = next(op for op in result.operations if op.name == "search_model_flags")

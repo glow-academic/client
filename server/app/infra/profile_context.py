@@ -22,6 +22,7 @@ from app.routes.v5.tools.artifacts.profile.get import (
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.emails.get import get_emails
 from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.roles.get import get_roles
 
 
@@ -45,6 +46,7 @@ class ProfileContext:
     primary_department_id: UUID | None
     department_ids: list[UUID]  # all department IDs
     settings_id: UUID | None  # from primary department's setting_ids[0]
+    requests_per_day: int | None  # rate limit from profiles_resource
     is_active: bool
 
 
@@ -95,13 +97,14 @@ async def resolve_profile_context(
     profiles_id = profile_ids[0]
 
     # Step 2: hydrate all resources in parallel
-    names_res, roles_res, depts_res, emails_res = await asyncio.gather(
+    names_res, roles_res, depts_res, emails_res, profiles_res = await asyncio.gather(
         get_names(conn, name_ids, redis, bypass_cache) if name_ids else _empty(),
         get_roles(conn, role_ids, redis, bypass_cache) if role_ids else _empty(),
         get_departments(conn, department_ids, redis, bypass_cache)
         if department_ids
         else _empty(),
         get_emails(conn, email_ids, redis, bypass_cache) if email_ids else _empty(),
+        get_profiles(conn, profile_ids, redis, bypass_cache),
     )
 
     # Step 3: extract values
@@ -138,6 +141,9 @@ async def resolve_profile_context(
     all_emails = [e.email for e in emails_res]
     all_department_ids = [d.id for d in depts_res]
 
+    # Rate limit from profiles_resource
+    requests_per_day = profiles_res[0].requests_per_day if profiles_res else None
+
     # is_active: check if profile has an active "profile_active" flag
     # The artifact's active field reflects this
     is_active = artifact.active
@@ -154,6 +160,7 @@ async def resolve_profile_context(
         primary_department_id=primary_department_id,
         department_ids=all_department_ids,
         settings_id=settings_id,
+        requests_per_day=requests_per_day,
         is_active=is_active,
     )
 

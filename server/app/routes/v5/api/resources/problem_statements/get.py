@@ -44,7 +44,9 @@ async def get_problem_statement(
 
     try:
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-        items = await get_problem_statements_resource(conn, [request.id], get_redis_client(), bypass_cache)
+        items = await get_problem_statements_resource(
+            conn, [request.id], get_redis_client(), bypass_cache
+        )
         item = items[0] if items else None
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetProblemStatementApiResponse(item=item)

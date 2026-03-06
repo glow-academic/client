@@ -1,6 +1,5 @@
 """Tests for get_voices."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.voices.create import create_voice

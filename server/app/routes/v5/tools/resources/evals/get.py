@@ -28,8 +28,7 @@ async def get_evals(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetEvalResponse.model_validate(item)
-                for item in cached.get("items", [])
+                GetEvalResponse.model_validate(item) for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

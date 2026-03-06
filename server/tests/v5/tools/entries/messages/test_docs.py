@@ -34,7 +34,7 @@ async def test_includes_all_operations(conn):
     op_names = [op.name for op in result.operations]
     assert "create_message" in op_names
     assert "get_message" in op_names
-    assert "search_messages_entries_internal" in op_names
+    assert "search_messages" in op_names
 
 
 async def test_create_operation_has_params(conn):

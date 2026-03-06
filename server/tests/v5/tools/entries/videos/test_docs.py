@@ -38,7 +38,7 @@ async def test_includes_all_operations(conn):
     assert "create_video" in op_names
     assert "refresh_videos_internal" in op_names
     assert "get_video" in op_names
-    assert "search_videos_entries_internal" in op_names
+    assert "search_videos" in op_names
 
 
 async def test_create_operation_has_params(conn):

@@ -5,7 +5,9 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.resources.conditional_parameters.types import GetConditionalParameterResponse
+from app.routes.v5.tools.resources.conditional_parameters.types import (
+    GetConditionalParameterResponse,
+)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -22,13 +24,16 @@ async def get_conditional_parameters(
         return []
 
     tags = ["resources", "conditional_parameters"]
-    key = cache_key("/api/v5/resources/conditional_parameters/get", {"ids": [str(id) for id in ids]})
+    key = cache_key(
+        "/api/v5/resources/conditional_parameters/get", {"ids": [str(id) for id in ids]}
+    )
 
     if not bypass_cache:
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetConditionalParameterResponse.model_validate(item) for item in cached.get("items", [])
+                GetConditionalParameterResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

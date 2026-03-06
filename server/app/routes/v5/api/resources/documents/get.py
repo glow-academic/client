@@ -9,7 +9,9 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_redis_client
-from app.routes.v5.tools.resources.documents.get import get_documents as get_documents_resource
+from app.routes.v5.tools.resources.documents.get import (
+    get_documents as get_documents_resource,
+)
 from app.sql.types import (
     GetDocumentResourceApiRequest,
     GetDocumentResourceApiResponse,
@@ -42,7 +44,9 @@ async def get_document(
 
     try:
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-        items = await get_documents_resource(conn, [request.id], get_redis_client(), bypass_cache)
+        items = await get_documents_resource(
+            conn, [request.id], get_redis_client(), bypass_cache
+        )
         item = items[0] if items else None
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetDocumentResourceApiResponse(item=item)

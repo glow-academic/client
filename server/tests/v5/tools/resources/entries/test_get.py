@@ -1,6 +1,5 @@
 """Tests for get_entries."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.entries.create import create_entry

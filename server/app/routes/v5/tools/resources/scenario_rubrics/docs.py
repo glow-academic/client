@@ -7,7 +7,9 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.resources.scenario_rubrics.create import create_scenario_rubric
 from app.routes.v5.tools.resources.scenario_rubrics.get import get_scenario_rubrics
-from app.routes.v5.tools.resources.scenario_rubrics.search import search_scenario_rubrics
+from app.routes.v5.tools.resources.scenario_rubrics.search import (
+    search_scenario_rubrics,
+)
 
 
 async def get_scenario_rubrics_docs(conn: asyncpg.Connection) -> DocsResponse:

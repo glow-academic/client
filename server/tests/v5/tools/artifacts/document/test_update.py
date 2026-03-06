@@ -1,6 +1,5 @@
 """Tests for update_document — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.document.create import create_document

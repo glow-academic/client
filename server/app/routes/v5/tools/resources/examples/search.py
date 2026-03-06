@@ -42,15 +42,17 @@ async def search_examples(
 
     extra_conditions: list[tuple[str, object]] = []
     if persona_id:
-        extra_conditions.append((
-            "EXISTS (SELECT 1 FROM persona_examples_junction pe "
-            "JOIN personas_resource pr ON pr.id = pe.persona_id "
-            "WHERE pe.examples_id = {alias}.id AND pe.active = true "
-            "AND (COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 "
-            "OR pr.department_ids && ${idx}::uuid[] "
-            "OR COALESCE(array_length(pr.department_ids, 1), 0) = 0))",
-            department_ids or [],
-        ))
+        extra_conditions.append(
+            (
+                "EXISTS (SELECT 1 FROM persona_examples_junction pe "
+                "JOIN personas_resource pr ON pr.id = pe.persona_id "
+                "WHERE pe.examples_id = {alias}.id AND pe.active = true "
+                "AND (COALESCE(array_length(${idx}::uuid[], 1), 0) = 0 "
+                "OR pr.department_ids && ${idx}::uuid[] "
+                "OR COALESCE(array_length(pr.department_ids, 1), 0) = 0))",
+                department_ids or [],
+            )
+        )
 
     tags = ["resources", "examples"]
     key = cache_key(

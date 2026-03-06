@@ -211,7 +211,12 @@ async def get_invocation_internal(
         if not all_ids:
             return (resource_key, [])
         async with pool.acquire() as conn:
-            return (resource_key, await fetch_fn(conn, all_ids, get_redis_client(), bypass_cache=bypass_cache))
+            return (
+                resource_key,
+                await fetch_fn(
+                    conn, all_ids, get_redis_client(), bypass_cache=bypass_cache
+                ),
+            )
 
     fetch_tasks = [_fetch_resource(rk, va, fn) for rk, va, fn, _ia in RESOURCE_CONFIG]
     fetch_results = await asyncio.gather(*fetch_tasks)
@@ -256,7 +261,9 @@ async def get_invocation_internal(
     config_providers: list[Any] = []
     if config_provider_ids:
         async with pool.acquire() as conn:
-            config_providers = await get_providers(                conn, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache            )
+            config_providers = await get_providers(
+                conn, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
 
     return SuiteInternalData(
         suite_entry_id=view_data.suite_entry_id,
@@ -365,7 +372,9 @@ async def get_invocation_websocket(
 
     async def fetch_config_profile():
         async with pool.acquire() as conn:
-            return await get_profiles(conn, [profile_id], get_redis_client(), bypass_cache)
+            return await get_profiles(
+                conn, [profile_id], get_redis_client(), bypass_cache
+            )
 
     async def fetch_runs_today():
         from datetime import UTC, datetime
@@ -408,7 +417,10 @@ async def get_invocation_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
-                        c, list(set(all_args_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             async def fetch_args_outputs():
@@ -416,7 +428,10 @@ async def get_invocation_websocket(
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
-                        c, list(set(all_args_output_ids)), get_redis_client(), bypass_cache=bypass_cache
+                        c,
+                        list(set(all_args_output_ids)),
+                        get_redis_client(),
+                        bypass_cache=bypass_cache,
                     )
 
             config_args, config_args_outputs = await asyncio.gather(

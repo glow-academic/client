@@ -1,6 +1,5 @@
 """Tests for delete_models — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.model.create import create_model

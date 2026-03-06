@@ -4,7 +4,9 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.tools.entries.invocation_drafts.types import CreateInvocationDraftResponse
+from app.routes.v5.tools.entries.invocation_drafts.types import (
+    CreateInvocationDraftResponse,
+)
 
 
 async def create_invocation_draft(
@@ -43,17 +45,45 @@ async def create_invocation_draft(
         raise ValueError("Failed to create invocation_drafts entry")
 
     connections: list[tuple[str, str, list[UUID]]] = [
-        ("invocation_drafts_departments_connection", "departments_id", department_ids or []),
-        ("invocation_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "invocation_drafts_departments_connection",
+            "departments_id",
+            department_ids or [],
+        ),
+        (
+            "invocation_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("invocation_drafts_flags_connection", "flags_id", flag_ids or []),
         ("invocation_drafts_keys_connection", "keys_id", key_ids or []),
-        ("invocation_drafts_model_flags_connection", "model_flags_id", model_flag_ids or []),
-        ("invocation_drafts_model_positions_connection", "model_positions_id", model_position_ids or []),
-        ("invocation_drafts_model_rubrics_connection", "model_rubrics_id", model_rubric_ids or []),
+        (
+            "invocation_drafts_model_flags_connection",
+            "model_flags_id",
+            model_flag_ids or [],
+        ),
+        (
+            "invocation_drafts_model_positions_connection",
+            "model_positions_id",
+            model_position_ids or [],
+        ),
+        (
+            "invocation_drafts_model_rubrics_connection",
+            "model_rubrics_id",
+            model_rubric_ids or [],
+        ),
         ("invocation_drafts_names_connection", "names_id", name_ids or []),
         ("invocation_drafts_profiles_connection", "profiles_id", profile_ids or []),
-        ("invocation_drafts_reasoning_levels_connection", "reasoning_levels_id", reasoning_level_ids or []),
-        ("invocation_drafts_temperature_levels_connection", "temperature_levels_id", temperature_level_ids or []),
+        (
+            "invocation_drafts_reasoning_levels_connection",
+            "reasoning_levels_id",
+            reasoning_level_ids or [],
+        ),
+        (
+            "invocation_drafts_temperature_levels_connection",
+            "temperature_levels_id",
+            temperature_level_ids or [],
+        ),
         ("invocation_drafts_voices_connection", "voices_id", voice_ids or []),
     ]
 

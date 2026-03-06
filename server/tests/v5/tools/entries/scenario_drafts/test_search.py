@@ -1,6 +1,5 @@
 """Tests for scenario_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.scenario_drafts.create import create_scenario_draft

@@ -1,6 +1,5 @@
 """Tests for get_grant_consumptions."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.grant_consumptions.create import (

@@ -53,7 +53,9 @@ async def test_visible_via_get_after_refresh(conn, profile_id, simulation_bundle
 
 
 async def test_links_practice_and_chat(conn, profile_id, simulation_bundle):
-    _, practice, chat, result = await _practice_chat(conn, profile_id, simulation_bundle)
+    _, practice, chat, result = await _practice_chat(
+        conn, profile_id, simulation_bundle
+    )
     await refresh_practice_chat(conn)
 
     items = await get_practice_chats(conn, [result.id])

@@ -1,6 +1,5 @@
 """Tests for search_entries."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.entries.create import create_entry
@@ -66,7 +65,11 @@ async def test_excludes_ids(conn, redis_client):
     b = await create_entry(conn, "texts", redis_client)
 
     items = await search_entries(
-        conn, redis_client, search="te", exclude_ids=[a.id], limit_count=100,
+        conn,
+        redis_client,
+        search="te",
+        exclude_ids=[a.id],
+        limit_count=100,
     )
 
     ids = [i.id for i in items]

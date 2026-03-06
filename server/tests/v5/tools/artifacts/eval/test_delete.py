@@ -1,6 +1,5 @@
 """Tests for delete_evals — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.eval.create import create_eval

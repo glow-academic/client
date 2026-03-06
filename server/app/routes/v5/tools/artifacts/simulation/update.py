@@ -22,17 +22,45 @@ OWNER_COL = "simulation_id"
 # (junction_table, resource_column, pk_constraint)
 SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
     ("simulation_names_junction", "names_id", "simulation_names_pkey"),
-    ("simulation_descriptions_junction", "descriptions_id", "simulation_descriptions_pkey"),
+    (
+        "simulation_descriptions_junction",
+        "descriptions_id",
+        "simulation_descriptions_pkey",
+    ),
 ]
 
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
-    ("simulation_departments_junction", "departments_id", "simulation_departments_pkey"),
+    (
+        "simulation_departments_junction",
+        "departments_id",
+        "simulation_departments_pkey",
+    ),
     ("simulation_scenarios_junction", "scenarios_id", "simulation_scenarios_pkey"),
-    ("simulation_scenario_flags_junction", "scenario_flags_id", "simulation_scenario_flags_new_pkey"),
-    ("simulation_scenario_positions_junction", "scenario_positions_id", "simulation_scenario_positions_pkey"),
-    ("simulation_scenario_rubrics_junction", "scenario_rubrics_id", "simulation_scenario_rubrics_pkey"),
-    ("simulation_scenario_time_limits_junction", "scenario_time_limits_id", "simulation_scenario_time_limits_pkey"),
-    ("simulation_simulations_junction", "simulations_id", "simulation_simulations_junction_pkey"),
+    (
+        "simulation_scenario_flags_junction",
+        "scenario_flags_id",
+        "simulation_scenario_flags_new_pkey",
+    ),
+    (
+        "simulation_scenario_positions_junction",
+        "scenario_positions_id",
+        "simulation_scenario_positions_pkey",
+    ),
+    (
+        "simulation_scenario_rubrics_junction",
+        "scenario_rubrics_id",
+        "simulation_scenario_rubrics_pkey",
+    ),
+    (
+        "simulation_scenario_time_limits_junction",
+        "scenario_time_limits_id",
+        "simulation_scenario_time_limits_pkey",
+    ),
+    (
+        "simulation_simulations_junction",
+        "simulations_id",
+        "simulation_simulations_junction_pkey",
+    ),
 ]
 
 

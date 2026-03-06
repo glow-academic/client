@@ -28,10 +28,24 @@ async def get_tool_docs(conn: asyncpg.Connection) -> DocsResponse:
         ),
         tables=tables,
         operations=[
-            get_operation_info(create_tool, description="Creates a new tool artifact with optional resource links."),
-            get_operation_info(update_tool, description="Updates an existing tool's resource links."),
-            get_operation_info(get_tools, description="Batch retrieves tools by IDs with optional junction data."),
-            get_operation_info(search_tools, description="Filtered paginated search returning matching tool IDs."),
-            get_operation_info(delete_tools, description="Deletes tools by IDs. Supports soft delete (active=false) or hard delete (cascade)."),
+            get_operation_info(
+                create_tool,
+                description="Creates a new tool artifact with optional resource links.",
+            ),
+            get_operation_info(
+                update_tool, description="Updates an existing tool's resource links."
+            ),
+            get_operation_info(
+                get_tools,
+                description="Batch retrieves tools by IDs with optional junction data.",
+            ),
+            get_operation_info(
+                search_tools,
+                description="Filtered paginated search returning matching tool IDs.",
+            ),
+            get_operation_info(
+                delete_tools,
+                description="Deletes tools by IDs. Supports soft delete (active=false) or hard delete (cascade).",
+            ),
         ],
     )

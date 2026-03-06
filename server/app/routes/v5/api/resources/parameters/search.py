@@ -6,7 +6,9 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_redis_client
-from app.routes.v5.tools.resources.parameters.search import search_parameters as search_parameters_fn
+from app.routes.v5.tools.resources.parameters.search import (
+    search_parameters as search_parameters_fn,
+)
 from app.sql.types import (
     SearchParametersApiRequest,
     SearchParametersApiResponse,

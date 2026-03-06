@@ -1,6 +1,5 @@
 """Tests for tool_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.tool_drafts.create import create_tool_draft

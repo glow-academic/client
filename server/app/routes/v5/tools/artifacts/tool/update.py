@@ -27,7 +27,11 @@ SINGLE_JUNCTIONS: list[tuple[str, str, str]] = [
 
 MULTI_JUNCTIONS: list[tuple[str, str, str]] = [
     ("tool_departments_junction", "departments_id", "tool_departments_pkey"),
-    ("tool_arg_positions_junction", "arg_positions_id", "tool_arg_positions_junction_pkey"),
+    (
+        "tool_arg_positions_junction",
+        "arg_positions_id",
+        "tool_arg_positions_junction_pkey",
+    ),
     ("tool_args_junction", "args_id", "tool_args_pkey"),
     ("tool_args_outputs_junction", "args_outputs_id", "tool_args_outputs_pkey"),
     ("tool_artifacts_junction", "artifacts_id", "tool_artifacts_junction_pkey"),

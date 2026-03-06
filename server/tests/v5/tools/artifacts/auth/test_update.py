@@ -1,6 +1,5 @@
 """Tests for update_auth — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.auth.create import create_auth
@@ -31,7 +30,9 @@ async def _create_with_junctions(conn, redis_client):
     d1 = await create_department(conn, redis=redis_client)
     d2 = await create_department(conn, redis=redis_client)
 
-    result = await create_auth(conn, name_id=n.id, slug_id=s.id, department_ids=[d1.id, d2.id])
+    result = await create_auth(
+        conn, name_id=n.id, slug_id=s.id, department_ids=[d1.id, d2.id]
+    )
     return result.id, n.id, s.id, d1.id, d2.id
 
 

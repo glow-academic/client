@@ -1,6 +1,5 @@
 """Tests for search_endpoints."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.endpoints.create import create_endpoint
@@ -24,7 +23,9 @@ async def test_search_is_case_insensitive(conn, redis_client):
     url = f"https://CaseTest-Search-Endpoint-{unique_tag()}.example.com"
     await create_endpoint(conn, url, redis_client)
 
-    items = await search_endpoints(conn, redis_client, search="casetest-search-endpoint")
+    items = await search_endpoints(
+        conn, redis_client, search="casetest-search-endpoint"
+    )
 
     assert any(i.base_url == url for i in items)
 
@@ -40,7 +41,9 @@ async def test_returns_empty_for_no_match(conn, redis_client):
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
         await create_endpoint(
-            conn, f"https://limit-test-endpoint-{unique_tag()}.example.com", redis_client
+            conn,
+            f"https://limit-test-endpoint-{unique_tag()}.example.com",
+            redis_client,
         )
 
     items = await search_endpoints(
@@ -53,14 +56,20 @@ async def test_respects_limit(conn, redis_client):
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
         await create_endpoint(
-            conn, f"https://offset-test-endpoint-{unique_tag()}.example.com", redis_client
+            conn,
+            f"https://offset-test-endpoint-{unique_tag()}.example.com",
+            redis_client,
         )
 
     all_items = await search_endpoints(
         conn, redis_client, search="offset-test-endpoint-", limit_count=10
     )
     offset_items = await search_endpoints(
-        conn, redis_client, search="offset-test-endpoint-", limit_count=10, offset_count=1
+        conn,
+        redis_client,
+        search="offset-test-endpoint-",
+        limit_count=10,
+        offset_count=1,
     )
 
     assert len(offset_items) == len(all_items) - 1
@@ -75,7 +84,10 @@ async def test_excludes_ids(conn, redis_client):
     )
 
     items = await search_endpoints(
-        conn, redis_client, search="exclude-", exclude_ids=[a.id],
+        conn,
+        redis_client,
+        search="exclude-",
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]

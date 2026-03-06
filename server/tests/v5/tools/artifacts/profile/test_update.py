@@ -1,6 +1,5 @@
 """Tests for update_profile — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.profile.create import create_profile

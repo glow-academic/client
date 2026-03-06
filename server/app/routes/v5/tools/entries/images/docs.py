@@ -7,7 +7,7 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.images.create import create_image
 from app.routes.v5.tools.entries.images.get import get_image
-from app.routes.v5.tools.entries.images.search import search_images_entries_internal
+from app.routes.v5.tools.entries.images.search import search_images
 
 
 async def get_images_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -36,8 +36,8 @@ async def get_images_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Retrieves a single image entry by ID from images_entry.",
             ),
             get_operation_info(
-                search_images_entries_internal,
-                description="Filtered paginated search against images_entry.",
+                search_images,
+                description="Filtered paginated search against images_mv with optional file and quality filters.",
             ),
         ],
     )

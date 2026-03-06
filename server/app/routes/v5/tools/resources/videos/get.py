@@ -28,7 +28,8 @@ async def get_videos(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetVideoResponse.model_validate(item) for item in cached.get("items", [])
+                GetVideoResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

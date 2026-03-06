@@ -34,9 +34,7 @@ async def get_test_invocation_groups_docs(
     )
 
     tables = [
-        t
-        for t in [entry_table, agents_connection, groups_connection]
-        if t is not None
+        t for t in [entry_table, agents_connection, groups_connection] if t is not None
     ]
 
     return DocsResponse(

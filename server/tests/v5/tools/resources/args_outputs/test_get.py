@@ -1,6 +1,5 @@
 """Tests for get_args_outputs."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs

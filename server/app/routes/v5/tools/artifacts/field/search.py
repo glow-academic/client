@@ -57,18 +57,24 @@ async def search_fields(
     # Junction filters
     if department_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="field_departments_junction",
-            owner_col=OWNER_COL, resource_col="departments_id",
+            owner_col=OWNER_COL,
+            resource_col="departments_id",
             ids=department_ids,
         )
 
     # Parameter filter: field → parameter_fields_junction (field_id) → parameter_id
     if parameter_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="parameter_fields_junction",
-            owner_col="field_id", resource_col="parameter_id",
+            owner_col="field_id",
+            resource_col="parameter_id",
             ids=parameter_ids,
         )
 

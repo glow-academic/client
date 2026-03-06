@@ -18,7 +18,9 @@ async def _setup(conn, profile_id):
 
 async def test_create_returns_id(conn, profile_id):
     session, group = await _setup(conn, profile_id)
-    result = await create_parameter_draft(conn, group_id=group.id, session_id=session.id)
+    result = await create_parameter_draft(
+        conn, group_id=group.id, session_id=session.id
+    )
 
     assert result.id is not None
 
@@ -43,7 +45,9 @@ async def test_roundtrip_base_fields(conn, profile_id):
 
 async def test_create_without_connections_returns_empty_lists(conn, profile_id):
     session, group = await _setup(conn, profile_id)
-    result = await create_parameter_draft(conn, group_id=group.id, session_id=session.id)
+    result = await create_parameter_draft(
+        conn, group_id=group.id, session_id=session.id
+    )
 
     items = await get_parameter_drafts(conn, [result.id])
 

@@ -1,6 +1,5 @@
 """Tests for create_agent — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.agent.create import create_agent
@@ -83,9 +82,16 @@ async def test_no_junctions_when_none_provided(conn, redis_client):
     items = await get_agents(
         conn,
         [result.id],
-        names=True, descriptions=True, departments=True,
-        flags=True, models=True, reasoning_levels=True,
-        temperature_levels=True, tools=True, voices=True, agents=True,
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+        models=True,
+        reasoning_levels=True,
+        temperature_levels=True,
+        tools=True,
+        voices=True,
+        agents=True,
     )
     p = items[0]
     assert p.name_ids == []

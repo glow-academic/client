@@ -176,9 +176,7 @@ class TestScoreToolsMultiAgent:
         # Generalist covers only names (1 artifact resource)
         t_gen_names = _resolved(agent_id=generalist_id, target="names")
 
-        graph = SettingsToolGraph(
-            tools=[t_spec_names, t_spec_colors, t_gen_names]
-        )
+        graph = SettingsToolGraph(tools=[t_spec_names, t_spec_colors, t_gen_names])
         result = score_tools(graph, {"names", "colors"})
 
         assert result.best["names"] is t_spec_names
@@ -197,6 +195,109 @@ class TestScoreToolsMultiAgent:
 
         expected = t_a if id_a > id_b else t_b
         assert result.best["names"] is expected
+
+
+class TestScoreToolsModality:
+    def test_available_modalities_computed_from_tools(self):
+        """available_modalities is the union of all agent modalities."""
+        agent_id = uuid4()
+        tool_id = uuid4()
+        # Agent has a tool that creates images (entry)
+        t1 = _resolved(
+            agent_id=agent_id,
+            tool_id=tool_id,
+            target="images",
+            target_type="entry",
+            operation="create",
+        )
+        t2 = _resolved(
+            agent_id=agent_id,
+            tool_id=tool_id,
+            target="names",
+            target_type="resource",
+            operation="create",
+        )
+        graph = SettingsToolGraph(tools=[t1, t2])
+
+        result = score_tools(graph, {"images", "names"})
+        # get_tool_output_modalities for (create, ["names"], ["images"], []) → {"image", "call"}
+        assert "image" in result.available_modalities
+        assert "call" in result.available_modalities
+
+    def test_modality_filter_excludes_non_matching_agents(self):
+        """modality='image' filters out agents that can't produce images."""
+        # Agent A: only creates resources (call modality)
+        agent_a = uuid4()
+        tool_a = uuid4()
+        t_a = _resolved(
+            agent_id=agent_a,
+            tool_id=tool_a,
+            target="names",
+            target_type="resource",
+            operation="create",
+        )
+
+        # Agent B: creates images (image modality)
+        agent_b = uuid4()
+        tool_b = uuid4()
+        t_b_names = _resolved(
+            agent_id=agent_b,
+            tool_id=tool_b,
+            target="names",
+            target_type="resource",
+            operation="create",
+        )
+        t_b_images = _resolved(
+            agent_id=agent_b,
+            tool_id=tool_b,
+            target="images",
+            target_type="entry",
+            operation="create",
+        )
+
+        graph = SettingsToolGraph(tools=[t_a, t_b_names, t_b_images])
+        result = score_tools(graph, {"names", "images"}, modality="image")
+
+        # Agent A filtered out — only agent B can produce images
+        assert result.best["names"] is t_b_names
+        assert result.best["images"] is t_b_images
+
+    def test_modality_filter_no_matching_agents_returns_none(self):
+        """modality='image' with no image-capable agents → all best = None."""
+        agent_id = uuid4()
+        tool_id = uuid4()
+        t = _resolved(
+            agent_id=agent_id,
+            tool_id=tool_id,
+            target="names",
+            target_type="resource",
+            operation="create",
+        )
+        graph = SettingsToolGraph(tools=[t])
+
+        result = score_tools(graph, {"names"}, modality="image")
+        assert result.best["names"] is None
+        assert result.has_any["names"] is True  # tool exists, just filtered out
+
+    def test_modality_none_behaves_as_before(self):
+        """modality=None → no filtering, same behavior as before."""
+        agent_id = uuid4()
+        tool_id = uuid4()
+        t = _resolved(
+            agent_id=agent_id,
+            tool_id=tool_id,
+            target="names",
+            target_type="resource",
+            operation="create",
+        )
+        graph = SettingsToolGraph(tools=[t])
+
+        result = score_tools(graph, {"names"}, modality=None)
+        assert result.best["names"] is t
+
+    def test_empty_graph_has_empty_modalities(self):
+        result = score_tools(SettingsToolGraph(), {"names"})
+        assert result.available_modalities == set()
 
 
 class TestScoreToolsTargetTypes:
@@ -239,7 +340,9 @@ class TestResolveToolGraphEmpty:
 
     async def test_no_systems_returns_empty(self):
         setting = _setting(system_ids=[])
-        with patch(f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]):
+        with patch(
+            f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]
+        ):
             result = await resolve_tool_graph(None, setting.id, None)
         assert result.tools == []
 
@@ -247,8 +350,12 @@ class TestResolveToolGraphEmpty:
         system = _system(agent_ids=[])
         setting = _setting(system_ids=[system.id])
         with (
-            patch(f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]),
-            patch(f"{MODULE}.get_systems", new_callable=AsyncMock, return_value=[system]),
+            patch(
+                f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]
+            ),
+            patch(
+                f"{MODULE}.get_systems", new_callable=AsyncMock, return_value=[system]
+            ),
         ):
             result = await resolve_tool_graph(None, setting.id, None)
         assert result.tools == []
@@ -263,8 +370,12 @@ class TestResolveToolGraphChain:
         setting = _setting(system_ids=[system.id])
 
         with (
-            patch(f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]),
-            patch(f"{MODULE}.get_systems", new_callable=AsyncMock, return_value=[system]),
+            patch(
+                f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]
+            ),
+            patch(
+                f"{MODULE}.get_systems", new_callable=AsyncMock, return_value=[system]
+            ),
             patch(f"{MODULE}.get_agents", new_callable=AsyncMock, return_value=[agent]),
             patch(f"{MODULE}.get_tools", new_callable=AsyncMock, return_value=[tool]),
         ):
@@ -284,8 +395,12 @@ class TestResolveToolGraphChain:
         setting = _setting(system_ids=[system.id])
 
         with (
-            patch(f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]),
-            patch(f"{MODULE}.get_systems", new_callable=AsyncMock, return_value=[system]),
+            patch(
+                f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]
+            ),
+            patch(
+                f"{MODULE}.get_systems", new_callable=AsyncMock, return_value=[system]
+            ),
             patch(f"{MODULE}.get_agents", new_callable=AsyncMock, return_value=[agent]),
             patch(f"{MODULE}.get_tools", new_callable=AsyncMock, return_value=[tool]),
         ):
@@ -305,10 +420,24 @@ class TestResolveToolGraphChain:
         setting = _setting(system_ids=[system_a.id, system_b.id])
 
         with (
-            patch(f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]),
-            patch(f"{MODULE}.get_systems", new_callable=AsyncMock, return_value=[system_a, system_b]),
-            patch(f"{MODULE}.get_agents", new_callable=AsyncMock, return_value=[agent_a, agent_b]),
-            patch(f"{MODULE}.get_tools", new_callable=AsyncMock, return_value=[tool_a, tool_b]),
+            patch(
+                f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]
+            ),
+            patch(
+                f"{MODULE}.get_systems",
+                new_callable=AsyncMock,
+                return_value=[system_a, system_b],
+            ),
+            patch(
+                f"{MODULE}.get_agents",
+                new_callable=AsyncMock,
+                return_value=[agent_a, agent_b],
+            ),
+            patch(
+                f"{MODULE}.get_tools",
+                new_callable=AsyncMock,
+                return_value=[tool_a, tool_b],
+            ),
         ):
             result = await resolve_tool_graph(None, setting.id, None)
 
@@ -329,8 +458,14 @@ class TestResolveToolGraphChain:
         setting = _setting(system_ids=[system_a.id, system_b.id])
 
         with (
-            patch(f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]),
-            patch(f"{MODULE}.get_systems", new_callable=AsyncMock, return_value=[system_a, system_b]),
+            patch(
+                f"{MODULE}.get_settings", new_callable=AsyncMock, return_value=[setting]
+            ),
+            patch(
+                f"{MODULE}.get_systems",
+                new_callable=AsyncMock,
+                return_value=[system_a, system_b],
+            ),
             patch(f"{MODULE}.get_agents", new_callable=AsyncMock, return_value=[agent]),
             patch(f"{MODULE}.get_tools", new_callable=AsyncMock, return_value=[tool]),
         ):

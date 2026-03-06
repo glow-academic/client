@@ -35,7 +35,12 @@ async def get_fields(
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
-        items = await get_fields_resource(conn=conn, ids=request.ids or [], redis=get_redis_client(), bypass_cache=bypass_cache)
+        items = await get_fields_resource(
+            conn=conn,
+            ids=request.ids or [],
+            redis=get_redis_client(),
+            bypass_cache=bypass_cache,
+        )
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetFieldsApiResponse(items=items)
     except HTTPException:

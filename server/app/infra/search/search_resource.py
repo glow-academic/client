@@ -51,7 +51,9 @@ async def search_resource_ids(
     if search and search_column:
         all_cols = [search_column] + (additional_search_columns or [])
         if len(all_cols) == 1:
-            conditions.append(f"LOWER({alias}.{all_cols[0]}) LIKE '%' || LOWER(${idx}) || '%'")
+            conditions.append(
+                f"LOWER({alias}.{all_cols[0]}) LIKE '%' || LOWER(${idx}) || '%'"
+            )
         else:
             or_parts = [
                 f"LOWER(COALESCE({alias}.{col}, '')) LIKE '%' || LOWER(${idx}) || '%'"

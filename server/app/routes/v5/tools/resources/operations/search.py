@@ -50,7 +50,8 @@ async def search_operations(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetOperationResponse.model_validate(item) for item in cached.get("items", [])
+                GetOperationResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     ids = await search_resource_ids(

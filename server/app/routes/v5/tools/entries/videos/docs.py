@@ -9,7 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.videos.create import create_video
 from app.routes.v5.tools.entries.videos.get import get_video
 from app.routes.v5.tools.entries.videos.refresh import refresh_videos_internal
-from app.routes.v5.tools.entries.videos.search import search_videos_entries_internal
+from app.routes.v5.tools.entries.videos.search import search_videos
 
 
 async def get_videos_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -43,7 +43,7 @@ async def get_videos_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves videos entries by IDs from videos_mv.",
             ),
             get_operation_info(
-                search_videos_entries_internal,
+                search_videos,
                 description="Filtered paginated search against videos_mv.",
             ),
         ],

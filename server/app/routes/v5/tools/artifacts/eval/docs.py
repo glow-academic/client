@@ -27,10 +27,24 @@ async def get_eval_docs(conn: asyncpg.Connection) -> DocsResponse:
         ),
         tables=tables,
         operations=[
-            get_operation_info(create_eval, description="Creates a new eval artifact with optional resource links."),
-            get_operation_info(update_eval, description="Updates an existing eval's resource links."),
-            get_operation_info(get_evals, description="Batch retrieves evals by IDs with optional junction data."),
-            get_operation_info(search_evals, description="Filtered paginated search returning matching eval IDs."),
-            get_operation_info(delete_evals, description="Deletes evals by IDs. Supports soft delete (active=false) or hard delete (cascade)."),
+            get_operation_info(
+                create_eval,
+                description="Creates a new eval artifact with optional resource links.",
+            ),
+            get_operation_info(
+                update_eval, description="Updates an existing eval's resource links."
+            ),
+            get_operation_info(
+                get_evals,
+                description="Batch retrieves evals by IDs with optional junction data.",
+            ),
+            get_operation_info(
+                search_evals,
+                description="Filtered paginated search returning matching eval IDs.",
+            ),
+            get_operation_info(
+                delete_evals,
+                description="Deletes evals by IDs. Supports soft delete (active=false) or hard delete (cascade).",
+            ),
         ],
     )

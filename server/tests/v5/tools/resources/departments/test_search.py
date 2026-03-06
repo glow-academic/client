@@ -1,6 +1,5 @@
 """Tests for search_departments."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.departments.create import create_department
@@ -39,7 +38,9 @@ async def test_respects_limit(conn, redis_client):
     for i in range(5):
         await create_department(conn, f"limit-dept-{unique_tag()}", redis=redis_client)
 
-    items = await search_departments(conn, redis_client, search="limit-dept-", limit_count=2)
+    items = await search_departments(
+        conn, redis_client, search="limit-dept-", limit_count=2
+    )
 
     assert len(items) <= 2
 
@@ -47,7 +48,9 @@ async def test_respects_limit(conn, redis_client):
 async def test_respects_offset(conn, redis_client):
     names = []
     for i in range(3):
-        n = await create_department(conn, f"offset-dept-{unique_tag()}", redis=redis_client)
+        n = await create_department(
+            conn, f"offset-dept-{unique_tag()}", redis=redis_client
+        )
         names.append(n)
 
     all_items = await search_departments(
@@ -65,7 +68,10 @@ async def test_excludes_ids(conn, redis_client):
     b = await create_department(conn, f"exclude-b-{unique_tag()}", redis=redis_client)
 
     items = await search_departments(
-        conn, redis_client, search="exclude-", exclude_ids=[a.id],
+        conn,
+        redis_client,
+        search="exclude-",
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]
@@ -92,6 +98,8 @@ async def test_cache_hit(conn, redis_client):
 async def test_bypass_cache(conn, redis_client):
     await create_department(conn, f"bypass-{unique_tag()}", redis=redis_client)
 
-    items = await search_departments(conn, redis_client, search="bypass-", bypass_cache=True)
+    items = await search_departments(
+        conn, redis_client, search="bypass-", bypass_cache=True
+    )
 
     assert len(items) >= 1

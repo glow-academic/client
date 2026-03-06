@@ -46,7 +46,9 @@ async def test_creates_second_row(conn, redis_client):
 async def test_sets_mcp_flag(conn, redis_client):
     model = await create_model(conn, "test-model-mcp", redis=redis_client)
     rubric = await create_rubric(conn, redis_client, name="test-rubric-mcp")
-    result = await create_model_rubric(conn, model.id, rubric.id, redis_client, mcp=True)
+    result = await create_model_rubric(
+        conn, model.id, rubric.id, redis_client, mcp=True
+    )
 
     assert result.mcp is True
     assert result.generated is True

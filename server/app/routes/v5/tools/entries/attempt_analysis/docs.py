@@ -8,8 +8,10 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_analysis.create import create_attempt_analysis
 from app.routes.v5.tools.entries.attempt_analysis.get import get_attempt_analyses
-from app.routes.v5.tools.entries.attempt_analysis.refresh import refresh_attempt_analysis
-from app.routes.v5.tools.entries.attempt_analysis.search import search_attempt_analysis_entries_internal
+from app.routes.v5.tools.entries.attempt_analysis.refresh import (
+    refresh_attempt_analysis,
+)
+from app.routes.v5.tools.entries.attempt_analysis.search import search_attempt_analyses
 
 
 async def get_attempt_analysis_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -43,7 +45,7 @@ async def get_attempt_analysis_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves analyses by IDs from attempt_analysis_mv.",
             ),
             get_operation_info(
-                search_attempt_analysis_entries_internal,
+                search_attempt_analyses,
                 description="Filtered paginated search against attempt_analysis_mv.",
             ),
         ],

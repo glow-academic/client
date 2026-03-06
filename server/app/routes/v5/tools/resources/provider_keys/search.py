@@ -60,7 +60,8 @@ async def search_provider_keys(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetProviderKeyResponse.model_validate(item) for item in cached.get("items", [])
+                GetProviderKeyResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     # Build extra conditions for provider_keys-specific filters

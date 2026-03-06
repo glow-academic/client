@@ -28,7 +28,8 @@ async def get_fields(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetFieldResponse.model_validate(item) for item in cached.get("items", [])
+                GetFieldResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     rows = await conn.fetch(

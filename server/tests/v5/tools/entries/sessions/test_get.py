@@ -1,6 +1,5 @@
 """Tests for get_sessions."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.sessions.create import create_session

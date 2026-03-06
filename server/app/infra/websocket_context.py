@@ -36,8 +36,16 @@ from app.infra.types import (
 
 # Scoring resource sets per artifact type (avoids importing route-layer modules)
 PERSONA_SCORING_RESOURCES: set[str] = {
-    "names", "descriptions", "colors", "icons", "instructions",
-    "flags", "departments", "parameter_fields", "examples", "voices",
+    "names",
+    "descriptions",
+    "colors",
+    "icons",
+    "instructions",
+    "flags",
+    "departments",
+    "parameter_fields",
+    "examples",
+    "voices",
 }
 # TODO: SCENARIO_SCORING_RESOURCES, SIMULATION_SCORING_RESOURCES, etc.
 
@@ -95,7 +103,8 @@ async def resolve_websocket_context(
     # ── Step 1: Common context ────────────────────────────────────────────
 
     common = await resolve_common_context(
-        conn, redis,
+        conn,
+        redis,
         profile_id=profile_id,
         bypass_cache=bypass_cache,
     )
@@ -121,9 +130,7 @@ async def resolve_websocket_context(
             **(req.params or {}),
             "bypass_cache": bypass_cache,
         }
-        artifact_tasks.append(
-            config.resolver(conn, redis, **resolver_kwargs)
-        )
+        artifact_tasks.append(config.resolver(conn, redis, **resolver_kwargs))
 
     artifact_contexts: list[ArtifactContext] = await asyncio.gather(*artifact_tasks)
 
@@ -146,39 +153,32 @@ async def resolve_websocket_context(
     # ── Step 5: Resolve system contexts in parallel ───────────────────────
 
     if system_ids:
-        system_contexts = await asyncio.gather(*[
-            resolve_system_context(
-                conn, redis, system_id=sid, bypass_cache=bypass_cache,
-            )
-            for sid in system_ids
-        ])
+        system_contexts = await asyncio.gather(
+            *[
+                resolve_system_context(
+                    conn,
+                    redis,
+                    system_id=sid,
+                    bypass_cache=bypass_cache,
+                )
+                for sid in system_ids
+            ]
+        )
         system_contexts = [sc for sc in system_contexts if sc is not None]
     else:
         system_contexts = []
 
     # ── Step 6: Dedupe + flatten ──────────────────────────────────────────
 
-    all_agents = dedupe_by_id(
-        [a for sc in system_contexts for a in sc.agents]
-    )
-    all_models = dedupe_by_id(
-        [m for sc in system_contexts for m in sc.models]
-    )
-    all_providers = dedupe_by_id(
-        [p for sc in system_contexts for p in sc.providers]
-    )
-    all_tools = dedupe_by_id(
-        [t for sc in system_contexts for t in sc.tools]
-    )
-    all_args = dedupe_by_id(
-        [a for sc in system_contexts for a in sc.args]
-    )
+    all_agents = dedupe_by_id([a for sc in system_contexts for a in sc.agents])
+    all_models = dedupe_by_id([m for sc in system_contexts for m in sc.models])
+    all_providers = dedupe_by_id([p for sc in system_contexts for p in sc.providers])
+    all_tools = dedupe_by_id([t for sc in system_contexts for t in sc.tools])
+    all_args = dedupe_by_id([a for sc in system_contexts for a in sc.args])
     all_args_outputs = dedupe_by_id(
         [ao for sc in system_contexts for ao in sc.args_outputs]
     )
-    all_prompts = dedupe_by_id(
-        [p for sc in system_contexts for p in sc.prompts]
-    )
+    all_prompts = dedupe_by_id([p for sc in system_contexts for p in sc.prompts])
     all_instructions = dedupe_by_id(
         [i for sc in system_contexts for i in sc.instructions]
     )
@@ -204,9 +204,7 @@ async def resolve_websocket_context(
             resources_flat[f"search.{rname}"] = pair.suggestions
 
         # Namespace entries: get.X
-        entries_flat: dict[str, Any] = {
-            f"get.{k}": v for k, v in ctx.entries.items()
-        }
+        entries_flat: dict[str, Any] = {f"get.{k}": v for k, v in ctx.entries.items()}
 
         artifacts_dict[key] = ArtifactWebsocketContext(
             params=req.params or {},

@@ -15,7 +15,5 @@ async def get_attempt_hints(
     """Fetch attempt hints by hint IDs."""
     if not ids:
         return []
-    rows = await conn.fetch(
-        f"SELECT * FROM {MV_NAME} WHERE hint_id = ANY($1)", ids
-    )
+    rows = await conn.fetch(f"SELECT * FROM {MV_NAME} WHERE hint_id = ANY($1)", ids)
     return [GetAttemptHintResponse(**dict(r)) for r in rows]

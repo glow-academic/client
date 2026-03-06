@@ -48,18 +48,38 @@ async def create_invocation(
 
     connections: list[tuple[str, str, list[UUID]]] = [
         ("invocation_departments_connection", "departments_id", department_ids or []),
-        ("invocation_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "invocation_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("invocation_flags_connection", "flags_id", flag_ids or []),
         ("invocation_keys_connection", "keys_id", key_ids or []),
         ("invocation_modalities_connection", "modalities_id", modality_ids or []),
         ("invocation_model_flags_connection", "model_flags_id", model_flag_ids or []),
-        ("invocation_model_positions_connection", "model_positions_id", model_position_ids or []),
-        ("invocation_model_rubrics_connection", "model_rubrics_id", model_rubric_ids or []),
+        (
+            "invocation_model_positions_connection",
+            "model_positions_id",
+            model_position_ids or [],
+        ),
+        (
+            "invocation_model_rubrics_connection",
+            "model_rubrics_id",
+            model_rubric_ids or [],
+        ),
         ("invocation_models_connection", "models_id", model_ids or []),
         ("invocation_names_connection", "names_id", name_ids or []),
         ("invocation_qualities_connection", "qualities_id", quality_ids or []),
-        ("invocation_reasoning_levels_connection", "reasoning_levels_id", reasoning_level_ids or []),
-        ("invocation_temperature_levels_connection", "temperature_levels_id", temperature_level_ids or []),
+        (
+            "invocation_reasoning_levels_connection",
+            "reasoning_levels_id",
+            reasoning_level_ids or [],
+        ),
+        (
+            "invocation_temperature_levels_connection",
+            "temperature_levels_id",
+            temperature_level_ids or [],
+        ),
         ("invocation_voices_connection", "voices_id", voice_ids or []),
     ]
 

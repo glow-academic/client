@@ -18,5 +18,8 @@ async def get_test_invocation_bridge(
     """Get test_invocation_bridge entries by test_invocation_id from MV."""
     if not test_invocation_ids:
         return []
-    rows = await conn.fetch(f"SELECT * FROM {MV_NAME} WHERE test_invocation_id = ANY($1)", test_invocation_ids)
+    rows = await conn.fetch(
+        f"SELECT * FROM {MV_NAME} WHERE test_invocation_id = ANY($1)",
+        test_invocation_ids,
+    )
     return [GetTestInvocationBridgeResponse(**dict(r)) for r in rows]

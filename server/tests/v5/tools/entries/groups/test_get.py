@@ -1,6 +1,5 @@
 """Tests for get_groups."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.groups.create import create_group

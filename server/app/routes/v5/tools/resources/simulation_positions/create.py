@@ -5,8 +5,12 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from redis.asyncio import Redis
 
-from app.routes.v5.tools.resources.simulation_positions.get import get_simulation_positions
-from app.routes.v5.tools.resources.simulation_positions.types import GetSimulationPositionResponse
+from app.routes.v5.tools.resources.simulation_positions.get import (
+    get_simulation_positions,
+)
+from app.routes.v5.tools.resources.simulation_positions.types import (
+    GetSimulationPositionResponse,
+)
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 

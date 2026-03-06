@@ -1,6 +1,5 @@
 """Tests for get_instructions."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.instructions.create import create_instruction

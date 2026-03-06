@@ -1,6 +1,5 @@
 """Tests for delete_settings — black-box using tool functions only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.setting.create import create_setting

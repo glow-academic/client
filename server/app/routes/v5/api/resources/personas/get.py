@@ -9,7 +9,9 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_redis_client
-from app.routes.v5.tools.resources.personas.get import get_personas as get_personas_resource
+from app.routes.v5.tools.resources.personas.get import (
+    get_personas as get_personas_resource,
+)
 from app.sql.types import (
     GetPersonaResourceApiRequest,
     GetPersonaResourceApiResponse,
@@ -34,7 +36,12 @@ async def get_persona(
 
     try:
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-        items = await get_personas_resource(conn=conn, ids=[request.id], redis=get_redis_client(), bypass_cache=bypass_cache)
+        items = await get_personas_resource(
+            conn=conn,
+            ids=[request.id],
+            redis=get_redis_client(),
+            bypass_cache=bypass_cache,
+        )
         item = items[0] if items else None
         response.headers["X-Cache-Tags"] = ",".join(tags)
         return GetPersonaResourceApiResponse(item=item)

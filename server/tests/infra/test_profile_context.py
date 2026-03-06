@@ -14,6 +14,7 @@ from app.routes.v5.tools.artifacts.profile.types import GetProfilesResponse
 from app.routes.v5.tools.resources.departments.types import GetDepartmentResponse
 from app.routes.v5.tools.resources.emails.types import GetEmailResponse
 from app.routes.v5.tools.resources.names.types import GetNameResponse
+from app.routes.v5.tools.resources.profiles.types import GetProfileResponse
 from app.routes.v5.tools.resources.roles.types import GetRoleResponse
 
 
@@ -123,6 +124,29 @@ def _email(
     )
 
 
+def _profile(
+    *,
+    profile_id=None,
+    requests_per_day=None,
+) -> GetProfileResponse:
+    return GetProfileResponse(
+        id=profile_id or uuid4(),
+        name="Test User",
+        description=None,
+        role="admin",
+        department_ids=[],
+        role_id=None,
+        emails=[],
+        primary_email=None,
+        requests_per_day=requests_per_day,
+        last_login=NOW,
+        created_at=NOW,
+        active=True,
+        mcp=False,
+        generated=False,
+    )
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 # resolve_profile_context
 # ═══════════════════════════════════════════════════════════════════════════
@@ -188,13 +212,29 @@ class TestResolveProfileContextFull:
             email="jane@org.com",
             is_primary=True,
         )
+        profile = _profile(profile_id=profiles_id, requests_per_day=100)
 
         with (
-            patch(f"{MODULE}.get_profile_artifacts", new_callable=AsyncMock, return_value=[artifact]) as mock_artifacts,
-            patch(f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[name]) as mock_names,
-            patch(f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[role]) as mock_roles,
-            patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[dept]) as mock_depts,
-            patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[email]) as mock_emails,
+            patch(
+                f"{MODULE}.get_profile_artifacts",
+                new_callable=AsyncMock,
+                return_value=[artifact],
+            ) as mock_artifacts,
+            patch(
+                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[name]
+            ) as mock_names,
+            patch(
+                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[role]
+            ) as mock_roles,
+            patch(
+                f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[dept]
+            ) as mock_depts,
+            patch(
+                f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[email]
+            ) as mock_emails,
+            patch(
+                f"{MODULE}.get_profiles", new_callable=AsyncMock, return_value=[profile]
+            ) as mock_profiles,
         ):
             result = await resolve_profile_context(None, artifact.id, None)
 
@@ -204,6 +244,7 @@ class TestResolveProfileContextFull:
         assert mock_roles.call_args[0][1] == [role_id]
         assert mock_depts.call_args[0][1] == [dept_id]
         assert mock_emails.call_args[0][1] == [email_id]
+        assert mock_profiles.call_args[0][1] == [profiles_id]
 
         # Verify assembly
         assert result is not None
@@ -218,6 +259,7 @@ class TestResolveProfileContextFull:
         assert result.primary_department_id == dept_id
         assert result.department_ids == [dept_id]
         assert result.settings_id == settings_id
+        assert result.requests_per_day == 100
         assert result.is_active is True
 
     async def test_multiple_departments_picks_primary(self):
@@ -247,11 +289,28 @@ class TestResolveProfileContextFull:
         )
 
         with (
-            patch(f"{MODULE}.get_profile_artifacts", new_callable=AsyncMock, return_value=[artifact]),
-            patch(f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]),
-            patch(f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]),
-            patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[dept_primary, dept_other]),
+            patch(
+                f"{MODULE}.get_profile_artifacts",
+                new_callable=AsyncMock,
+                return_value=[artifact],
+            ),
+            patch(
+                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
+            ),
+            patch(
+                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
+            ),
+            patch(
+                f"{MODULE}.get_departments",
+                new_callable=AsyncMock,
+                return_value=[dept_primary, dept_other],
+            ),
             patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
+            patch(
+                f"{MODULE}.get_profiles",
+                new_callable=AsyncMock,
+                return_value=[_profile(profile_id=profiles_id)],
+            ),
         ):
             result = await resolve_profile_context(None, artifact.id, None)
 
@@ -285,11 +344,28 @@ class TestResolveProfileContextFull:
         )
 
         with (
-            patch(f"{MODULE}.get_profile_artifacts", new_callable=AsyncMock, return_value=[artifact]),
-            patch(f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]),
-            patch(f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]),
+            patch(
+                f"{MODULE}.get_profile_artifacts",
+                new_callable=AsyncMock,
+                return_value=[artifact],
+            ),
+            patch(
+                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
+            ),
+            patch(
+                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
+            ),
             patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[]),
-            patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[email_primary, email_other]),
+            patch(
+                f"{MODULE}.get_emails",
+                new_callable=AsyncMock,
+                return_value=[email_primary, email_other],
+            ),
+            patch(
+                f"{MODULE}.get_profiles",
+                new_callable=AsyncMock,
+                return_value=[_profile(profile_id=profiles_id)],
+            ),
         ):
             result = await resolve_profile_context(None, artifact.id, None)
 
@@ -312,11 +388,26 @@ class TestResolveProfileContextFull:
         dept = _department(dept_id=dept_id, is_primary=False)
 
         with (
-            patch(f"{MODULE}.get_profile_artifacts", new_callable=AsyncMock, return_value=[artifact]),
-            patch(f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]),
-            patch(f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]),
-            patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[dept]),
+            patch(
+                f"{MODULE}.get_profile_artifacts",
+                new_callable=AsyncMock,
+                return_value=[artifact],
+            ),
+            patch(
+                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
+            ),
+            patch(
+                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
+            ),
+            patch(
+                f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[dept]
+            ),
             patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
+            patch(
+                f"{MODULE}.get_profiles",
+                new_callable=AsyncMock,
+                return_value=[_profile(profile_id=profiles_id)],
+            ),
         ):
             result = await resolve_profile_context(None, artifact.id, None)
 
@@ -337,11 +428,24 @@ class TestResolveProfileContextFull:
         )
 
         with (
-            patch(f"{MODULE}.get_profile_artifacts", new_callable=AsyncMock, return_value=[artifact]),
-            patch(f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]),
-            patch(f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]),
+            patch(
+                f"{MODULE}.get_profile_artifacts",
+                new_callable=AsyncMock,
+                return_value=[artifact],
+            ),
+            patch(
+                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
+            ),
+            patch(
+                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
+            ),
             patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[]),
             patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
+            patch(
+                f"{MODULE}.get_profiles",
+                new_callable=AsyncMock,
+                return_value=[_profile(profile_id=profiles_id)],
+            ),
         ):
             result = await resolve_profile_context(None, artifact.id, None)
 
@@ -360,9 +464,20 @@ class TestResolveProfileContextFull:
         )
 
         with (
-            patch(f"{MODULE}.get_profile_artifacts", new_callable=AsyncMock, return_value=[artifact]),
-            patch(f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]),
+            patch(
+                f"{MODULE}.get_profile_artifacts",
+                new_callable=AsyncMock,
+                return_value=[artifact],
+            ),
+            patch(
+                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
+            ),
             patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
+            patch(
+                f"{MODULE}.get_profiles",
+                new_callable=AsyncMock,
+                return_value=[_profile(profile_id=profiles_id)],
+            ),
         ):
             result = await resolve_profile_context(None, artifact.id, None)
 
@@ -388,14 +503,103 @@ class TestResolveProfileContextFull:
         dept = _department(dept_id=dept_id, is_primary=True, setting_ids=[])
 
         with (
-            patch(f"{MODULE}.get_profile_artifacts", new_callable=AsyncMock, return_value=[artifact]),
-            patch(f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]),
-            patch(f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]),
-            patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[dept]),
+            patch(
+                f"{MODULE}.get_profile_artifacts",
+                new_callable=AsyncMock,
+                return_value=[artifact],
+            ),
+            patch(
+                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
+            ),
+            patch(
+                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
+            ),
+            patch(
+                f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[dept]
+            ),
             patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
+            patch(
+                f"{MODULE}.get_profiles",
+                new_callable=AsyncMock,
+                return_value=[_profile(profile_id=profiles_id)],
+            ),
         ):
             result = await resolve_profile_context(None, artifact.id, None)
 
         assert result is not None
         assert result.primary_department_id == dept_id
         assert result.settings_id is None
+
+    async def test_requests_per_day_flows_through(self):
+        """requests_per_day is extracted from profiles_resource."""
+        profiles_id = uuid4()
+
+        artifact = _profile_artifact(
+            name_ids=[uuid4()],
+            role_ids=[uuid4()],
+            department_ids=[],
+            email_ids=[],
+            profile_ids=[profiles_id],
+        )
+
+        with (
+            patch(
+                f"{MODULE}.get_profile_artifacts",
+                new_callable=AsyncMock,
+                return_value=[artifact],
+            ),
+            patch(
+                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
+            ),
+            patch(
+                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
+            ),
+            patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[]),
+            patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
+            patch(
+                f"{MODULE}.get_profiles",
+                new_callable=AsyncMock,
+                return_value=[_profile(profile_id=profiles_id, requests_per_day=50)],
+            ),
+        ):
+            result = await resolve_profile_context(None, artifact.id, None)
+
+        assert result is not None
+        assert result.requests_per_day == 50
+
+    async def test_requests_per_day_none_when_not_set(self):
+        """requests_per_day is None when profiles_resource has no limit."""
+        profiles_id = uuid4()
+
+        artifact = _profile_artifact(
+            name_ids=[uuid4()],
+            role_ids=[uuid4()],
+            department_ids=[],
+            email_ids=[],
+            profile_ids=[profiles_id],
+        )
+
+        with (
+            patch(
+                f"{MODULE}.get_profile_artifacts",
+                new_callable=AsyncMock,
+                return_value=[artifact],
+            ),
+            patch(
+                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
+            ),
+            patch(
+                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
+            ),
+            patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[]),
+            patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
+            patch(
+                f"{MODULE}.get_profiles",
+                new_callable=AsyncMock,
+                return_value=[_profile(profile_id=profiles_id, requests_per_day=None)],
+            ),
+        ):
+            result = await resolve_profile_context(None, artifact.id, None)
+
+        assert result is not None
+        assert result.requests_per_day is None

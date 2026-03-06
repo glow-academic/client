@@ -1,6 +1,5 @@
 """Tests for field_drafts search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.field_drafts.create import create_field_draft

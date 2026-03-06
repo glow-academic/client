@@ -192,8 +192,12 @@ async def _resolve_cohort_values(
         from app.routes.v5.tools.resources.flags.search import search_flags
 
         all_flags = await search_flags(
-            conn, get_redis_client(), search=None, limit_count=1000,
-            flag_type="cohort_active", cohort=True,
+            conn,
+            get_redis_client(),
+            search=None,
+            limit_count=1000,
+            flag_type="cohort_active",
+            cohort=True,
         )
         match = next((f for f in all_flags if f.type == "cohort_active"), None)
         if match and match.id:
@@ -217,11 +221,7 @@ async def _resolve_cohort_values(
         all_depts = await search_departments(
             conn, get_redis_client(), search=None, limit_count=1000, cohort=True
         )
-        dept_name_map = {
-            d.name.lower(): d.id
-            for d in all_depts
-            if d.name and d.id
-        }
+        dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []
         for dept_name in item.departments:
             dept_id = dept_name_map.get(dept_name.lower())
@@ -244,9 +244,7 @@ async def _resolve_cohort_values(
             conn, get_redis_client(), search=None, limit_count=1000, cohort=True
         )
         sim_name_map = {
-            s.name.lower(): s.id
-            for s in all_simulations
-            if s.name and s.id
+            s.name.lower(): s.id for s in all_simulations if s.name and s.id
         }
         resolved_ids = []
         for sim_name in item.simulations:
@@ -272,9 +270,7 @@ async def _resolve_cohort_values(
             conn, get_redis_client(), search=None, limit_count=1000
         )
         profile_name_map = {
-            p.name.lower(): p.id
-            for p in all_profiles
-            if p.name and p.id
+            p.name.lower(): p.id for p in all_profiles if p.name and p.id
         }
         resolved_ids = []
         for profile_name in item.profiles:

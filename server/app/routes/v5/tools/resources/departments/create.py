@@ -1,4 +1,5 @@
 """Departments CREATE — reusable data-access layer."""
+
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -25,7 +26,9 @@ async def create_department(
         VALUES ($1, $2, true, $3, $3)
         RETURNING id
         """,
-        name, description, mcp,
+        name,
+        description,
+        mcp,
     )
     await invalidate_tags(["resources", "departments"], redis=redis)
     items = await get_departments(conn, [dept_id], redis, bypass_cache=True)

@@ -27,10 +27,25 @@ async def get_document_docs(conn: asyncpg.Connection) -> DocsResponse:
         ),
         tables=tables,
         operations=[
-            get_operation_info(create_document, description="Creates a new document artifact with optional resource links."),
-            get_operation_info(update_document, description="Updates an existing document's resource links."),
-            get_operation_info(get_documents, description="Batch retrieves documents by IDs with optional junction data."),
-            get_operation_info(search_documents, description="Filtered paginated search returning matching document IDs."),
-            get_operation_info(delete_documents, description="Deletes documents by IDs. Supports soft delete (active=false) or hard delete (cascade)."),
+            get_operation_info(
+                create_document,
+                description="Creates a new document artifact with optional resource links.",
+            ),
+            get_operation_info(
+                update_document,
+                description="Updates an existing document's resource links.",
+            ),
+            get_operation_info(
+                get_documents,
+                description="Batch retrieves documents by IDs with optional junction data.",
+            ),
+            get_operation_info(
+                search_documents,
+                description="Filtered paginated search returning matching document IDs.",
+            ),
+            get_operation_info(
+                delete_documents,
+                description="Deletes documents by IDs. Supports soft delete (active=false) or hard delete (cascade).",
+            ),
         ],
     )

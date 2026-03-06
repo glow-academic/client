@@ -1,6 +1,5 @@
 """Tests for search_standards."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.standard_groups.create import create_standard_group
@@ -64,11 +63,11 @@ async def test_returns_empty_for_no_match(conn, redis_client):
 async def test_respects_limit(conn, redis_client):
     group = await _make_group(conn, redis_client)
     for i in range(5):
-        await _make_standard(
-            conn, redis_client, f"limit-std-{unique_tag()}", group.id
-        )
+        await _make_standard(conn, redis_client, f"limit-std-{unique_tag()}", group.id)
 
-    items = await search_standards(conn, redis_client, search="limit-std-", limit_count=2)
+    items = await search_standards(
+        conn, redis_client, search="limit-std-", limit_count=2
+    )
 
     assert len(items) <= 2
 
@@ -76,9 +75,7 @@ async def test_respects_limit(conn, redis_client):
 async def test_respects_offset(conn, redis_client):
     group = await _make_group(conn, redis_client)
     for i in range(3):
-        await _make_standard(
-            conn, redis_client, f"offset-std-{unique_tag()}", group.id
-        )
+        await _make_standard(conn, redis_client, f"offset-std-{unique_tag()}", group.id)
 
     all_items = await search_standards(
         conn, redis_client, search="offset-std-", limit_count=10
@@ -92,15 +89,14 @@ async def test_respects_offset(conn, redis_client):
 
 async def test_excludes_ids(conn, redis_client):
     group = await _make_group(conn, redis_client)
-    a = await _make_standard(
-        conn, redis_client, f"exclude-a-{unique_tag()}", group.id
-    )
-    b = await _make_standard(
-        conn, redis_client, f"exclude-b-{unique_tag()}", group.id
-    )
+    a = await _make_standard(conn, redis_client, f"exclude-a-{unique_tag()}", group.id)
+    b = await _make_standard(conn, redis_client, f"exclude-b-{unique_tag()}", group.id)
 
     items = await search_standards(
-        conn, redis_client, search="exclude-", exclude_ids=[a.id],
+        conn,
+        redis_client,
+        search="exclude-",
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]
@@ -134,9 +130,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 async def test_cache_hit(conn, redis_client):
     group = await _make_group(conn, redis_client)
-    await _make_standard(
-        conn, redis_client, f"cache-hit-{unique_tag()}", group.id
-    )
+    await _make_standard(conn, redis_client, f"cache-hit-{unique_tag()}", group.id)
 
     items1 = await search_standards(conn, redis_client, search="cache-hit-")
     items2 = await search_standards(conn, redis_client, search="cache-hit-")
@@ -147,10 +141,10 @@ async def test_cache_hit(conn, redis_client):
 
 async def test_bypass_cache(conn, redis_client):
     group = await _make_group(conn, redis_client)
-    await _make_standard(
-        conn, redis_client, f"bypass-{unique_tag()}", group.id
-    )
+    await _make_standard(conn, redis_client, f"bypass-{unique_tag()}", group.id)
 
-    items = await search_standards(conn, redis_client, search="bypass-", bypass_cache=True)
+    items = await search_standards(
+        conn, redis_client, search="bypass-", bypass_cache=True
+    )
 
     assert len(items) >= 1

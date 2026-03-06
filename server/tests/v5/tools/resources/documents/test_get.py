@@ -1,6 +1,5 @@
 """Tests for get_documents."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.documents.create import create_document
@@ -11,7 +10,9 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_document(conn, redis_client):
-    created = await create_document(conn, redis_client, name="test-doc", description="desc")
+    created = await create_document(
+        conn, redis_client, name="test-doc", description="desc"
+    )
 
     items = await get_documents(conn, [created.id], redis_client)
 

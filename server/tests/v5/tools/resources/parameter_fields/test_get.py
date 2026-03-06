@@ -1,6 +1,5 @@
 """Tests for get_parameter_fields."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
@@ -12,7 +11,9 @@ pytestmark = pytest.mark.asyncio
 
 async def test_gets_created_parameter_field(conn, redis_client):
     field = await create_field(conn, "test-field", redis=redis_client)
-    from app.routes.v5.tools.resources.parameter_fields.create import create_parameter_field
+    from app.routes.v5.tools.resources.parameter_fields.create import (
+        create_parameter_field,
+    )
 
     item = await create_parameter_field(conn, field.id, redis_client)
 
@@ -38,7 +39,9 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 async def test_cache_hit_skips_db(conn, redis_client):
     field = await create_field(conn, "test-field-cache", redis=redis_client)
-    from app.routes.v5.tools.resources.parameter_fields.create import create_parameter_field
+    from app.routes.v5.tools.resources.parameter_fields.create import (
+        create_parameter_field,
+    )
 
     item = await create_parameter_field(conn, field.id, redis_client)
 
@@ -54,7 +57,9 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     field = await create_field(conn, "test-field-bypass", redis=redis_client)
-    from app.routes.v5.tools.resources.parameter_fields.create import create_parameter_field
+    from app.routes.v5.tools.resources.parameter_fields.create import (
+        create_parameter_field,
+    )
 
     item = await create_parameter_field(conn, field.id, redis_client)
 

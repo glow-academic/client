@@ -17,14 +17,22 @@ async def get_agent_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     mv_info = await get_mv_info(conn, "agent_drafts_mv")
     entry_table = await get_table_info(conn, "agent_drafts_entry")
     names_connection = await get_table_info(conn, "agent_drafts_names_connection")
-    descriptions_connection = await get_table_info(conn, "agent_drafts_descriptions_connection")
+    descriptions_connection = await get_table_info(
+        conn, "agent_drafts_descriptions_connection"
+    )
     flags_connection = await get_table_info(conn, "agent_drafts_flags_connection")
-    departments_connection = await get_table_info(conn, "agent_drafts_departments_connection")
+    departments_connection = await get_table_info(
+        conn, "agent_drafts_departments_connection"
+    )
     models_connection = await get_table_info(conn, "agent_drafts_models_connection")
     tools_connection = await get_table_info(conn, "agent_drafts_tools_connection")
     profiles_connection = await get_table_info(conn, "agent_drafts_profiles_connection")
-    reasoning_levels_connection = await get_table_info(conn, "agent_drafts_reasoning_levels_connection")
-    temperature_levels_connection = await get_table_info(conn, "agent_drafts_temperature_levels_connection")
+    reasoning_levels_connection = await get_table_info(
+        conn, "agent_drafts_reasoning_levels_connection"
+    )
+    temperature_levels_connection = await get_table_info(
+        conn, "agent_drafts_temperature_levels_connection"
+    )
     voices_connection = await get_table_info(conn, "agent_drafts_voices_connection")
 
     tables = [

@@ -4,7 +4,9 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.tools.entries.department_drafts.types import CreateDepartmentDraftResponse
+from app.routes.v5.tools.entries.department_drafts.types import (
+    CreateDepartmentDraftResponse,
+)
 
 
 async def create_department_draft(
@@ -36,7 +38,11 @@ async def create_department_draft(
         raise ValueError("Failed to create department_drafts entry")
 
     connections: list[tuple[str, str, list[UUID]]] = [
-        ("department_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "department_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("department_drafts_flags_connection", "flags_id", flag_ids or []),
         ("department_drafts_names_connection", "names_id", name_ids or []),
         ("department_drafts_profiles_connection", "profiles_id", profile_ids or []),

@@ -1,6 +1,5 @@
 """Tests for update_agent — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.agent.create import create_agent

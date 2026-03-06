@@ -1,6 +1,5 @@
 """Tests for search_operations."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.operations.create import create_operation
@@ -40,7 +39,9 @@ async def test_respects_limit(conn, redis_client):
     for i in range(5):
         await create_operation(conn, f"limit-op-{unique_tag()}", redis_client)
 
-    items = await search_operations(conn, redis_client, search="limit-op-", limit_count=2)
+    items = await search_operations(
+        conn, redis_client, search="limit-op-", limit_count=2
+    )
 
     assert len(items) <= 2
 
@@ -50,7 +51,9 @@ async def test_respects_offset(conn, redis_client):
     for i in range(3):
         await create_operation(conn, f"offset-op-{tag}-{i}", redis_client)
 
-    all_items = await search_operations(conn, redis_client, search=f"offset-op-{tag}", limit_count=10)
+    all_items = await search_operations(
+        conn, redis_client, search=f"offset-op-{tag}", limit_count=10
+    )
     offset_items = await search_operations(
         conn, redis_client, search=f"offset-op-{tag}", limit_count=10, offset_count=1
     )
@@ -64,7 +67,10 @@ async def test_excludes_ids(conn, redis_client):
     b = await create_operation(conn, f"exclude-b-{tag}", redis_client)
 
     items = await search_operations(
-        conn, redis_client, search="exclude-", exclude_ids=[a.id],
+        conn,
+        redis_client,
+        search="exclude-",
+        exclude_ids=[a.id],
     )
 
     ids = [i.id for i in items]
@@ -82,6 +88,8 @@ async def test_bypass_cache(conn, redis_client):
     tag = unique_tag()
     await create_operation(conn, f"bypass-op-{tag}", redis_client)
 
-    items = await search_operations(conn, redis_client, search=f"bypass-op-{tag}", bypass_cache=True)
+    items = await search_operations(
+        conn, redis_client, search=f"bypass-op-{tag}", bypass_cache=True
+    )
 
     assert len(items) >= 1

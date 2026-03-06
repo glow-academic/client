@@ -17,6 +17,7 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
+from app.registry.modalities import get_tool_output_modalities
 from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.agents.types import GetAgentResponse
 from app.routes.v5.tools.resources.settings.get import get_settings
@@ -63,6 +64,9 @@ class ArtifactToolScores:
 
     best: dict[str, ResolvedTool | None]  # target -> best resolved tool
     has_any: dict[str, bool]  # target -> whether any tool exists
+    available_modalities: set[str] = field(
+        default_factory=set
+    )  # union of all agent modalities
 
 
 # ---------------------------------------------------------------------------
@@ -184,22 +188,44 @@ async def resolve_tool_graph(
 def score_tools(
     graph: SettingsToolGraph,
     artifact_resources: set[str],
+    modality: str | None = None,
 ) -> ArtifactToolScores:
     """Score and pick the best tool per target for a given artifact.
 
     Scoring (per target):
       1. Only consider tools whose target is in artifact_resources
       2. Per agent, compute coverage = how many artifact_resources it covers
-      3. Pick the agent with highest coverage (specialist wins)
-      4. Deterministic tiebreak by agent_id
+      3. If modality specified, hard-filter to agents supporting that modality
+      4. Pick the agent with highest coverage (specialist wins)
+      5. Deterministic tiebreak by agent_id
 
-    Returns the best ResolvedTool per target, plus has_any flags.
+    Returns the best ResolvedTool per target, has_any flags, and available_modalities.
     """
     if not graph.tools:
         return ArtifactToolScores(
             best=dict.fromkeys(artifact_resources),
             has_any={r: False for r in artifact_resources},
+            available_modalities=set(),
         )
+
+    # Group resolved tools by (agent_id, tool_id) to reconstruct per-tool target lists
+    tool_groups: dict[tuple[UUID, UUID], list[ResolvedTool]] = {}
+    for t in graph.tools:
+        tool_groups.setdefault((t.agent_id, t.tool_id), []).append(t)
+
+    # Compute per-agent modalities from their tools
+    agent_modalities: dict[UUID, set[str]] = {}
+    for (agent_id, _tool_id), tools in tool_groups.items():
+        resources = [t.target for t in tools if t.target_type == "resource"]
+        entries = [t.target for t in tools if t.target_type == "entry"]
+        artifacts = [t.target for t in tools if t.target_type == "artifact"]
+        operation = tools[0].operation
+        tool_mods = get_tool_output_modalities(operation, resources, entries, artifacts)
+        agent_modalities.setdefault(agent_id, set()).update(tool_mods)
+
+    available_modalities = (
+        set().union(*agent_modalities.values()) if agent_modalities else set()
+    )
 
     # Compute per-agent coverage: how many artifact_resources does each agent touch?
     agent_targets: dict[UUID, set[str]] = {}
@@ -210,6 +236,13 @@ def score_tools(
         agent_id: len(targets & artifact_resources)
         for agent_id, targets in agent_targets.items()
     }
+
+    # If modality specified, determine which agents support it
+    eligible_agents: set[UUID] | None = None
+    if modality is not None:
+        eligible_agents = {
+            agent_id for agent_id, mods in agent_modalities.items() if modality in mods
+        }
 
     # For each artifact resource, find the best tool
     best: dict[str, ResolvedTool | None] = {}
@@ -223,10 +256,22 @@ def score_tools(
             best[resource] = None
             continue
 
+        # Apply modality filter if specified
+        if eligible_agents is not None:
+            candidates = [t for t in candidates if t.agent_id in eligible_agents]
+
+        if not candidates:
+            best[resource] = None
+            continue
+
         # Pick by: highest coverage, then agent_id for determinism
         best[resource] = max(
             candidates,
             key=lambda t: (agent_coverage.get(t.agent_id, 0), t.agent_id),
         )
 
-    return ArtifactToolScores(best=best, has_any=has_any)
+    return ArtifactToolScores(
+        best=best,
+        has_any=has_any,
+        available_modalities=available_modalities,
+    )

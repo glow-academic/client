@@ -39,7 +39,11 @@ async def create_eval_draft(
 
     connections: list[tuple[str, str, list[UUID]]] = [
         ("eval_drafts_departments_connection", "departments_id", department_ids or []),
-        ("eval_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "eval_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("eval_drafts_flags_connection", "flags_id", flag_ids or []),
         ("eval_drafts_models_connection", "models_id", model_ids or []),
         ("eval_drafts_names_connection", "names_id", name_ids or []),

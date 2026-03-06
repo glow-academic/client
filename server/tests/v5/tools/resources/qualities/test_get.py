@@ -1,6 +1,5 @@
 """Tests for get_qualities."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.qualities.create import create_quality

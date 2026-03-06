@@ -1,6 +1,5 @@
 """Tests for get_values."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.values.create import create_value

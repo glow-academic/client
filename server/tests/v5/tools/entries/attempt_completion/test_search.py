@@ -70,9 +70,7 @@ async def test_pagination_limit(conn, profile_id):
     result, attempt_chat = await _setup(conn, profile_id)
     await refresh_attempt_completion(conn)
 
-    items = await search_attempt_completions(
-        conn, chat_id=attempt_chat.id, limit=1
-    )
+    items = await search_attempt_completions(conn, chat_id=attempt_chat.id, limit=1)
 
     assert len(items) <= 1
 

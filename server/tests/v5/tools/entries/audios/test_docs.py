@@ -37,7 +37,7 @@ async def test_includes_all_operations(conn):
     op_names = [op.name for op in result.operations]
     assert "create_audio" in op_names
     assert "refresh_audios_internal" in op_names
-    assert "search_audios_entries_internal" in op_names
+    assert "search_audios" in op_names
 
 
 async def test_create_operation_has_params(conn):

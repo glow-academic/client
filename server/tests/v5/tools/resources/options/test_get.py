@@ -1,6 +1,5 @@
 """Tests for get_options."""
 
-
 import pytest
 
 from app.routes.v5.tools.resources.options.create import create_option

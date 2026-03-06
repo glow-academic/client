@@ -16,7 +16,5 @@ async def get_attempt_strengths(
 ) -> list[GetAttemptStrengthResponse]:
     if not ids:
         return []
-    rows = await conn.fetch(
-        f"SELECT * FROM {MV_NAME} WHERE strength_id = ANY($1)", ids
-    )
+    rows = await conn.fetch(f"SELECT * FROM {MV_NAME} WHERE strength_id = ANY($1)", ids)
     return [GetAttemptStrengthResponse(**dict(r)) for r in rows]

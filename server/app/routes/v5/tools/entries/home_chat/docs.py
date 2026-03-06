@@ -8,6 +8,7 @@ from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.home_chat.create import create_home_chat
 from app.routes.v5.tools.entries.home_chat.get import get_home_chats
+from app.routes.v5.tools.entries.home_chat.search import search_home_chats
 
 
 async def get_home_chat_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -35,6 +36,10 @@ async def get_home_chat_docs(conn: asyncpg.Connection) -> DocsResponse:
             get_operation_info(
                 get_home_chats,
                 description="Batch retrieves home_chat entries by IDs from home_chat_mv.",
+            ),
+            get_operation_info(
+                search_home_chats,
+                description="Filtered paginated search against home_chat_mv.",
             ),
         ],
     )

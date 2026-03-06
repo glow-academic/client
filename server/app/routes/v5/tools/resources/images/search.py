@@ -13,11 +13,14 @@ from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 
 JUNCTION_ARTIFACTS = [
-    "document", "scenario",
+    "document",
+    "scenario",
 ]
 
 DRAFT_ARTIFACTS = [
-    "chat", "document", "scenario",
+    "chat",
+    "document",
+    "scenario",
 ]
 
 
@@ -41,7 +44,8 @@ async def search_images(
         return []
 
     artifact_filters = {
-        "document": document, "scenario": scenario,
+        "document": document,
+        "scenario": scenario,
     }
 
     tags = ["resources", "images"]
@@ -63,7 +67,8 @@ async def search_images(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetImageResponse.model_validate(item) for item in cached.get("items", [])
+                GetImageResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     # Build extra conditions for image-specific filters

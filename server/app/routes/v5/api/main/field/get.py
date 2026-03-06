@@ -277,7 +277,13 @@ async def get_field_internal(
             return (
                 await get_descriptions(c, description_ids, get_redis_client(), cache),
                 await search_descriptions(
-                    c, get_redis_client(), search=description_search, draft_id=effective_group_id, exclude_ids=description_ids, bypass_cache=bypass_cache, field=True,
+                    c,
+                    get_redis_client(),
+                    search=description_search,
+                    draft_id=effective_group_id,
+                    exclude_ids=description_ids,
+                    bypass_cache=bypass_cache,
+                    field=True,
                 ),
             )
 
@@ -285,9 +291,14 @@ async def get_field_internal(
         async with pool.acquire() as c:
             selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
             all_flags = await search_flags(
-                c, get_redis_client(), search=None, limit_count=50,
-                offset_count=0, exclude_ids=flag_ids,
-                bypass_cache=bypass_cache, field=True,
+                c,
+                get_redis_client(),
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=flag_ids,
+                bypass_cache=bypass_cache,
+                field=True,
             )
             suggestions = [f for f in all_flags if f.name == "field_active"]
             return (selected, suggestions)
@@ -324,7 +335,10 @@ async def get_field_internal(
             )
             return (
                 await get_parameters(
-                    c, selected_conditional_parameter_ids, get_redis_client(), bypass_cache
+                    c,
+                    selected_conditional_parameter_ids,
+                    get_redis_client(),
+                    bypass_cache,
                 ),
                 await search_parameters(
                     c,

@@ -641,19 +641,28 @@ async def get_dashboard_internal(
     async def _get_simulations() -> list[Any]:
         async with pool.acquire() as c:
             return await get_simulations(
-                conn=c, ids=list(simulation_ids_set), redis=get_redis_client(), bypass_cache=bypass_cache
+                conn=c,
+                ids=list(simulation_ids_set),
+                redis=get_redis_client(),
+                bypass_cache=bypass_cache,
             )
 
     async def _get_personas() -> list[Any]:
         async with pool.acquire() as c:
             return await get_personas(
-                conn=c, ids=list(persona_ids_set), redis=get_redis_client(), bypass_cache=bypass_cache
+                conn=c,
+                ids=list(persona_ids_set),
+                redis=get_redis_client(),
+                bypass_cache=bypass_cache,
             )
 
     async def _get_scenarios() -> list[Any]:
         async with pool.acquire() as c:
             return await get_scenarios(
-                conn=c, ids=list(scenario_ids_set), redis=get_redis_client(), bypass_cache=bypass_cache
+                conn=c,
+                ids=list(scenario_ids_set),
+                redis=get_redis_client(),
+                bypass_cache=bypass_cache,
             )
 
     async def _get_rubric_resources() -> tuple[list[Any], dict[str, str]]:
@@ -762,7 +771,10 @@ async def get_dashboard_internal(
 
     async with pool.acquire() as c:
         documents = await get_documents(
-            conn=c, ids=list(document_ids_set), redis=get_redis_client(), bypass_cache=bypass_cache
+            conn=c,
+            ids=list(document_ids_set),
+            redis=get_redis_client(),
+            bypass_cache=bypass_cache,
         )
 
     # Phase 4d — Hydrate parameter_fields, then parameters + fields
@@ -779,7 +791,10 @@ async def get_dashboard_internal(
 
     async with pool.acquire() as c:
         parameter_fields = await get_parameter_fields(
-            conn=c, ids=list(all_pf_ids), redis=get_redis_client(), bypass_cache=bypass_cache
+            conn=c,
+            ids=list(all_pf_ids),
+            redis=get_redis_client(),
+            bypass_cache=bypass_cache,
         )
 
     parameter_ids_set: set[UUID] = set()
@@ -796,7 +811,10 @@ async def get_dashboard_internal(
     async def _get_parameters() -> list[Any]:
         async with pool.acquire() as c:
             return await get_parameters(
-                conn=c, ids=list(parameter_ids_set), redis=get_redis_client(), bypass_cache=bypass_cache
+                conn=c,
+                ids=list(parameter_ids_set),
+                redis=get_redis_client(),
+                bypass_cache=bypass_cache,
             )
 
     async def _get_fields() -> list[Any]:

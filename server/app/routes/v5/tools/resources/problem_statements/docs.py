@@ -5,9 +5,13 @@ import asyncpg
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
-from app.routes.v5.tools.resources.problem_statements.create import create_problem_statement
+from app.routes.v5.tools.resources.problem_statements.create import (
+    create_problem_statement,
+)
 from app.routes.v5.tools.resources.problem_statements.get import get_problem_statements
-from app.routes.v5.tools.resources.problem_statements.search import search_problem_statements
+from app.routes.v5.tools.resources.problem_statements.search import (
+    search_problem_statements,
+)
 
 
 async def get_problem_statements_docs(conn: asyncpg.Connection) -> DocsResponse:

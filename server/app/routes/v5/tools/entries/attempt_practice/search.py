@@ -1,72 +1,41 @@
-"""attempt_practice/search internal — reusable data-access layer."""
+"""Attempt practice search — filtered/paginated query against attempt_practice_mv."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    SearchAttemptPracticeEntriesSqlParams,
-    SearchAttemptPracticeEntriesSqlRow,
+from app.infra.docs.resolve_mv_source import resolve_mv_source
+from app.routes.v5.tools.entries.attempt_practice.types import (
+    GetAttemptPracticeResponse,
 )
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
-SQL_PATH = "app/sql/queries/entries/attempt_practice/search_attempt_practice_entries_complete.sql"
+MV_NAME = "attempt_practice_mv"
 
 
-async def search_attempt_practice_entries_internal(
+async def search_attempt_practice_entries(
     conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
     attempt_id: UUID | None = None,
     practice_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search attempt_practice entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[GetAttemptPracticeResponse]:
+    """Search attempt_practice entries from attempt_practice_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
-    tags = ["entries", "attempt_practice"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/attempt_practice/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "attempt_id": str(attempt_id) if attempt_id else None,
-            "practice_id": str(practice_id) if practice_id else None,
-        },
+    rows = await conn.fetch(
+        f"""
+        SELECT attempt_id, practice_id, created_at, active, generated, mcp, session_id
+        FROM {source}
+        WHERE ($1::uuid IS NULL OR attempt_id = $1)
+          AND ($2::uuid IS NULL OR practice_id = $2)
+        ORDER BY created_at DESC
+        LIMIT $3 OFFSET $4
+        """,
+        attempt_id,
+        practice_id,
+        limit,
+        offset,
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    params = SearchAttemptPracticeEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        attempt_id=attempt_id,
-        practice_id=practice_id,
-    )
-    result = cast(
-        SearchAttemptPracticeEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    items: list[dict] = result.items if result and result.items else []
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
+    return [GetAttemptPracticeResponse(**dict(r)) for r in rows]

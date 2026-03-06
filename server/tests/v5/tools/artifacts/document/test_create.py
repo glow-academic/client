@@ -1,6 +1,5 @@
 """Tests for create_document — black-box using resource + artifact tools only."""
 
-
 import pytest
 
 from app.routes.v5.tools.artifacts.document.create import create_document
@@ -73,9 +72,15 @@ async def test_no_junctions_when_none_provided(conn, redis_client):
     items = await get_documents(
         conn,
         [result.id],
-        names=True, descriptions=True, departments=True,
-        flags=True, files=True, images=True,
-        parameter_fields=True, texts=True, documents=True,
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+        files=True,
+        images=True,
+        parameter_fields=True,
+        texts=True,
+        documents=True,
     )
     p = items[0]
     assert p.name_ids == []

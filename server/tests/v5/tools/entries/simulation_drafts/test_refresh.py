@@ -3,7 +3,9 @@
 import pytest
 
 from app.routes.v5.tools.entries.simulation_drafts.create import create_simulation_draft
-from app.routes.v5.tools.entries.simulation_drafts.refresh import refresh_simulation_drafts
+from app.routes.v5.tools.entries.simulation_drafts.refresh import (
+    refresh_simulation_drafts,
+)
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.sessions.create import create_session
 
@@ -18,13 +20,19 @@ async def _setup(conn, profile_id):
 
 async def test_new_draft_appears_in_mv_after_refresh(conn, profile_id):
     session, group = await _setup(conn, profile_id)
-    result = await create_simulation_draft(conn, group_id=group.id, session_id=session.id)
+    result = await create_simulation_draft(
+        conn, group_id=group.id, session_id=session.id
+    )
 
-    row = await conn.fetchrow("SELECT id FROM simulation_drafts_mv WHERE id = $1", result.id)
+    row = await conn.fetchrow(
+        "SELECT id FROM simulation_drafts_mv WHERE id = $1", result.id
+    )
     assert row is None
 
     await refresh_simulation_drafts(conn)
 
-    row = await conn.fetchrow("SELECT id FROM simulation_drafts_mv WHERE id = $1", result.id)
+    row = await conn.fetchrow(
+        "SELECT id FROM simulation_drafts_mv WHERE id = $1", result.id
+    )
     assert row is not None
     assert row["id"] == result.id

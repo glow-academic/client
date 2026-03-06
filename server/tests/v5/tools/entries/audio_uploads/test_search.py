@@ -1,6 +1,5 @@
 """Tests for audio_uploads search."""
 
-
 import pytest
 
 from app.routes.v5.tools.entries.audio_uploads.create import create_audio_upload

@@ -28,10 +28,25 @@ async def get_scenario_docs(conn: asyncpg.Connection) -> DocsResponse:
         ),
         tables=tables,
         operations=[
-            get_operation_info(create_scenario, description="Creates a new scenario artifact with optional resource links."),
-            get_operation_info(update_scenario, description="Updates an existing scenario's resource links."),
-            get_operation_info(get_scenarios, description="Batch retrieves scenarios by IDs with optional junction data."),
-            get_operation_info(search_scenarios, description="Filtered paginated search returning matching scenario IDs."),
-            get_operation_info(delete_scenarios, description="Deletes scenarios by IDs. Supports soft delete (active=false) or hard delete (cascade)."),
+            get_operation_info(
+                create_scenario,
+                description="Creates a new scenario artifact with optional resource links.",
+            ),
+            get_operation_info(
+                update_scenario,
+                description="Updates an existing scenario's resource links.",
+            ),
+            get_operation_info(
+                get_scenarios,
+                description="Batch retrieves scenarios by IDs with optional junction data.",
+            ),
+            get_operation_info(
+                search_scenarios,
+                description="Filtered paginated search returning matching scenario IDs.",
+            ),
+            get_operation_info(
+                delete_scenarios,
+                description="Deletes scenarios by IDs. Supports soft delete (active=false) or hard delete (cascade).",
+            ),
         ],
     )

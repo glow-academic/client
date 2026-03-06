@@ -40,15 +40,39 @@ async def create_cohort_draft(
         raise ValueError("Failed to create cohort_drafts entry")
 
     connections: list[tuple[str, str, list[UUID]]] = [
-        ("cohort_drafts_departments_connection", "departments_id", department_ids or []),
-        ("cohort_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "cohort_drafts_departments_connection",
+            "departments_id",
+            department_ids or [],
+        ),
+        (
+            "cohort_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("cohort_drafts_flags_connection", "flags_id", flag_ids or []),
         ("cohort_drafts_names_connection", "names_id", name_ids or []),
-        ("cohort_drafts_profile_personas_connection", "profile_personas_id", profile_persona_ids or []),
+        (
+            "cohort_drafts_profile_personas_connection",
+            "profile_personas_id",
+            profile_persona_ids or [],
+        ),
         ("cohort_drafts_profiles_connection", "profiles_id", profile_ids or []),
-        ("cohort_drafts_simulation_availability_connection", "simulation_availability_id", simulation_availability_ids or []),
-        ("cohort_drafts_simulation_positions_connection", "simulation_positions_id", simulation_position_ids or []),
-        ("cohort_drafts_simulations_connection", "simulations_id", simulation_ids or []),
+        (
+            "cohort_drafts_simulation_availability_connection",
+            "simulation_availability_id",
+            simulation_availability_ids or [],
+        ),
+        (
+            "cohort_drafts_simulation_positions_connection",
+            "simulation_positions_id",
+            simulation_position_ids or [],
+        ),
+        (
+            "cohort_drafts_simulations_connection",
+            "simulations_id",
+            simulation_ids or [],
+        ),
     ]
 
     for table, col, ids in connections:

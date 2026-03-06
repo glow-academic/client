@@ -62,7 +62,8 @@ async def search_args_outputs(
         cached = await get_cached(key, redis=redis)
         if cached:
             return [
-                GetArgOutputResponse.model_validate(item) for item in cached.get("items", [])
+                GetArgOutputResponse.model_validate(item)
+                for item in cached.get("items", [])
             ]
 
     ids = await search_resource_ids(

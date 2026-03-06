@@ -2,7 +2,9 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.test_invocation_bridge.docs import get_test_invocation_bridge_docs
+from app.routes.v5.tools.entries.test_invocation_bridge.docs import (
+    get_test_invocation_bridge_docs,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -42,7 +44,9 @@ async def test_includes_all_operations(conn):
 async def test_create_operation_has_params(conn):
     result = await get_test_invocation_bridge_docs(conn)
 
-    create_op = next(op for op in result.operations if op.name == "create_test_invocation_bridge")
+    create_op = next(
+        op for op in result.operations if op.name == "create_test_invocation_bridge"
+    )
     param_names = [p.name for p in create_op.params]
     assert "test_invocation_id" in param_names
     assert "invocation_id" in param_names

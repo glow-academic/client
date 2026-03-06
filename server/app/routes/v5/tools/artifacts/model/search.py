@@ -56,17 +56,23 @@ async def search_models(
     # Junction filters
     if department_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="model_departments_junction",
-            owner_col=OWNER_COL, resource_col="departments_id",
+            owner_col=OWNER_COL,
+            resource_col="departments_id",
             ids=department_ids,
         )
 
     if provider_ids:
         idx = add_junction_filter(
-            conditions, params, idx,
+            conditions,
+            params,
+            idx,
             junction_table="model_providers_junction",
-            owner_col=OWNER_COL, resource_col="providers_id",
+            owner_col=OWNER_COL,
+            resource_col="providers_id",
             ids=provider_ids,
         )
 

@@ -40,7 +40,7 @@ async def test_includes_all_operations(conn):
     op_names = [op.name for op in result.operations]
     assert "create_benchmark" in op_names
     assert "get_benchmarks" in op_names
-    assert "search_benchmark_entries_internal" in op_names
+    assert "search_benchmarks" in op_names
 
 
 async def test_create_operation_has_params(conn):

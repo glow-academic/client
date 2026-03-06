@@ -9,7 +9,9 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
 from app.routes.v5.tools.entries.attempt_chat.get import get_attempt_chats
 from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_chat
-from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chat_entries_internal
+from app.routes.v5.tools.entries.attempt_chat.search import (
+    search_attempt_chat_entries_internal,
+)
 
 
 async def get_attempt_chat_docs(conn: asyncpg.Connection) -> DocsResponse:

@@ -40,7 +40,11 @@ async def create_auth_draft(
 
     connections: list[tuple[str, str, list[UUID]]] = [
         ("auth_drafts_departments_connection", "departments_id", department_ids or []),
-        ("auth_drafts_descriptions_connection", "descriptions_id", description_ids or []),
+        (
+            "auth_drafts_descriptions_connection",
+            "descriptions_id",
+            description_ids or [],
+        ),
         ("auth_drafts_flags_connection", "flags_id", flag_ids or []),
         ("auth_drafts_items_connection", "items_id", item_ids or []),
         ("auth_drafts_names_connection", "names_id", name_ids or []),

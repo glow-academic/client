@@ -17,7 +17,5 @@ async def get_attempt_responses(
     """Fetch attempt responses by response IDs."""
     if not ids:
         return []
-    rows = await conn.fetch(
-        f"SELECT * FROM {MV_NAME} WHERE response_id = ANY($1)", ids
-    )
+    rows = await conn.fetch(f"SELECT * FROM {MV_NAME} WHERE response_id = ANY($1)", ids)
     return [GetAttemptResponsesResponse(**dict(r)) for r in rows]

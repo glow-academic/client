@@ -237,7 +237,12 @@ async def _resolve_persona_values(
 
     if item.color is not None and item.color_id is None:
         results = await search_colors(
-            conn, get_redis_client(), search=item.color, limit_count=20, persona=True, setting=False
+            conn,
+            get_redis_client(),
+            search=item.color,
+            limit_count=20,
+            persona=True,
+            setting=False,
         )
         match = next(
             (r for r in results if r.name and r.name.lower() == item.color.lower()),
@@ -271,8 +276,12 @@ async def _resolve_persona_values(
 
     if item.active_flag is not None and item.active_flag_id is None:
         results = await search_flags(
-            conn, get_redis_client(), search=None, flag_type="persona_active",
-            limit_count=100, persona=True,
+            conn,
+            get_redis_client(),
+            search=None,
+            flag_type="persona_active",
+            limit_count=100,
+            persona=True,
         )
         match = next(
             (r for r in results if r.type == "persona_active"),
@@ -294,11 +303,7 @@ async def _resolve_persona_values(
         all_depts = await search_departments(
             conn, get_redis_client(), search=None, limit_count=1000, persona=True
         )
-        dept_name_map = {
-            d.name.lower(): d.id
-            for d in all_depts
-            if d.name and d.id
-        }
+        dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []
         for dept_name in item.departments:
             dept_id = dept_name_map.get(dept_name.lower())
@@ -316,7 +321,13 @@ async def _resolve_persona_values(
 
     if item.voices is not None and item.voice_ids is None:
         all_voices = await search_voices(
-            conn, get_redis_client(), search=None, limit_count=1000, persona=True, agent=False, model=False
+            conn,
+            get_redis_client(),
+            search=None,
+            limit_count=1000,
+            persona=True,
+            agent=False,
+            model=False,
         )
         voice_name_map = {v.voice.lower(): v.id for v in all_voices if v.voice and v.id}
         resolved_ids = []
@@ -337,12 +348,14 @@ async def _resolve_persona_values(
     if item.parameter_fields is not None and item.parameter_field_ids is None:
         from app.routes.v5.tools.resources.fields.get import get_fields
 
-        all_pf = await search_parameter_fields(
-            conn, get_redis_client(), persona=True
-        )
+        all_pf = await search_parameter_fields(conn, get_redis_client(), persona=True)
         # Fetch field names for the parameter_fields (name lives on fields_resource)
         field_ids_list = [pf.field_id for pf in all_pf if pf.field_id]
-        fields_list = await get_fields(conn, field_ids_list, get_redis_client()) if field_ids_list else []
+        fields_list = (
+            await get_fields(conn, field_ids_list, get_redis_client())
+            if field_ids_list
+            else []
+        )
         field_name_map = {f.id: f.name for f in fields_list if f.name}
         pf_name_map = {
             field_name_map[pf.field_id].lower(): pf.id
