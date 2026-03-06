@@ -2,26 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 from app.routes.v5.tools.resources.parameters.types import GetParameterResponse
-from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetDepartmentsV4Item,
-    QGetDescriptionsV4Item,
-    QGetFieldDraftsEntriesV4Item,
-    QGetModelsV4Item,
-    QGetNamesV4Item,
-    QGetProvidersV4Item,
-    QGetToolsV4Item,
-)
 
 
 class FieldFlagConfig(BaseModel):
@@ -38,13 +25,13 @@ class FieldFlagConfig(BaseModel):
 
 
 class FieldNameSection(BaseResourceSection):
-    resource: QGetNamesV4Item | None = None
-    resources: list[QGetNamesV4Item] | None = None
+    resource: object | None = None
+    resources: list | None = None
 
 
 class FieldDescriptionSection(BaseResourceSection):
-    resource: QGetDescriptionsV4Item | None = None
-    resources: list[QGetDescriptionsV4Item] | None = None
+    resource: object | None = None
+    resources: list | None = None
 
 
 class FieldFlagSection(BaseResourceSection):
@@ -53,8 +40,8 @@ class FieldFlagSection(BaseResourceSection):
 
 
 class FieldDepartmentSection(BaseResourceSection):
-    current: list[QGetDepartmentsV4Item] | None = None
-    resources: list[QGetDepartmentsV4Item] | None = None
+    current: list | None = None
+    resources: list | None = None
 
 
 class FieldConditionalParameterSection(BaseResourceSection):
@@ -67,8 +54,8 @@ class GetFieldApiRequest(BaseModel):
 
     field_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID | None = None
-    description_search: str | None = None
+    group_id: UUID
+    descriptions_search: str | None = None
     conditional_parameter_search: str | None = None
     conditional_parameter_show_selected: bool | None = None
 
@@ -90,61 +77,6 @@ class GetFieldApiResponse(BaseModel):
     flags: FieldFlagSection | None = None
     departments: FieldDepartmentSection | None = None
     conditional_parameters: FieldConditionalParameterSection | None = None
-
-
-class FieldWebsocketEntries(BaseModel):
-    draft_field: QGetFieldDraftsEntriesV4Item | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class FieldWebsocketResources(BaseModel):
-    names: list[QGetNamesV4Item] | None = None
-    descriptions: list[QGetDescriptionsV4Item] | None = None
-    flags: list[FieldFlagConfig] | None = None
-    departments: list[QGetDepartmentsV4Item] | None = None
-    conditional_parameters: list[GetParameterResponse] | None = None
-
-
-class GetFieldWebsocketResponse(InternalResponseBase):
-    entries: FieldWebsocketEntries | None = None
-    resources: FieldWebsocketResources
-
-
-@dataclass
-class FieldInternalData:
-    actor_name: str | None
-    field_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
-
-    agent_ids: dict[str, UUID | None]
-    show_flags_map: dict[str, bool]
-    required_flags_map: dict[str, bool]
-    suggestions_map: dict[str, list[UUID]]
-    show_ai_generate_map: dict[str, bool]
-    basic_show_ai_generate: bool
-
-    selected_names: list[QGetNamesV4Item] | None
-    all_names: list[QGetNamesV4Item] | None
-    selected_descriptions: list[QGetDescriptionsV4Item] | None
-    all_descriptions: list[QGetDescriptionsV4Item] | None
-    selected_flags: list[FieldFlagConfig] | None
-    all_flags: list[FieldFlagConfig] | None
-    selected_departments: list[QGetDepartmentsV4Item] | None
-    all_departments: list[QGetDepartmentsV4Item] | None
-    selected_conditional_parameters: list[GetParameterResponse] | None
-    all_conditional_parameters: list[GetParameterResponse] | None
-
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
-    config_agents: list[QGetAgentsV4Item] | None
-    config_models: list[QGetModelsV4Item] | None
-    config_providers: list[QGetProvidersV4Item] | None
-    config_tools: list[QGetToolsV4Item] | None
-
-    draft_view: QGetFieldDraftsEntriesV4Item | None
 
 
 # ========== List Endpoint Types ==========

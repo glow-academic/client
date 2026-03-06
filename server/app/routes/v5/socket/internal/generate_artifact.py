@@ -22,8 +22,8 @@ from app.infra.artifacts import (
     format_messages_for_litellm,
     stream_litellm_events,
 )
-from app.infra.globals import get_internal_sio
-from app.routes.v5.socket.internal.generate_artifact_new import execute_resource_entry_tool
+from app.infra.globals import UPLOAD_FOLDER, get_internal_sio
+from app.infra.tools.tool_executor import execute_tool_call
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.tool_call_utils import (
@@ -1066,17 +1066,35 @@ async def _generate_artifact_impl(
                         )
                     else:
                         # Resource/entry tool path — registry + create_tool_call
-                        tool_result_str = await execute_resource_entry_tool(
-                            data=data,
-                            tool_name=tool_name,
-                            arguments_dict=arguments_dict,
-                            resolved_tool_id=tool_id_by_name.get(tool_name),
-                            tool_call_id=tool_call_id,
-                            resource_type=tool_resource_type_by_name.get(tool_name),
-                            entry_type=tool_entry_type_by_name.get(tool_name),
-                            is_creatable=tool_createable_by_name.get(tool_name),
-                            soft=True,
-                        )
+                        resolved_tool_id = tool_id_by_name.get(tool_name)
+                        if not resolved_tool_id:
+                            tool_result_str = json.dumps(
+                                {
+                                    "success": False,
+                                    "message": f"Tool not found: {tool_name}",
+                                    "error_stage": "tool_resolve",
+                                }
+                            )
+                        else:
+                            _group_id = uuid.UUID(data.group_id) if data.group_id else uuid.UUID(int=0)
+                            _session_id = uuid.UUID(data.session_id) if data.session_id else uuid.UUID(int=0)
+                            _profile_id = uuid.UUID(data.profile_id) if data.profile_id else uuid.UUID(int=0)
+                            async with get_db_connection() as conn:
+                                tool_result_str = await execute_tool_call(
+                                    conn=conn,
+                                    tool_name=tool_name,
+                                    arguments=arguments_dict,
+                                    tool_id=resolved_tool_id,
+                                    group_id=_group_id,
+                                    session_id=_session_id,
+                                    profile_id=_profile_id,
+                                    upload_folder=UPLOAD_FOLDER,
+                                    run_id=uuid.UUID(data.run_id) if data.run_id else None,
+                                    resource_type=tool_resource_type_by_name.get(tool_name),
+                                    entry_type=tool_entry_type_by_name.get(tool_name),
+                                    is_creatable=tool_createable_by_name.get(tool_name),
+                                    soft=True,
+                                )
 
                     # Parse result for internal tracking
                     try:

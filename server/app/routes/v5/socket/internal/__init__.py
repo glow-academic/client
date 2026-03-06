@@ -37,28 +37,24 @@ from . import (
     attempt,  # noqa: F401 — registers attempt_* internal events
     generate,  # noqa: F401 — registers generate (rate limit gate)
     generate_artifact,  # noqa: F401 — registers generate_artifact internal event
-    generate_artifact_new,  # noqa: F401 — provides execute_resource_entry_tool (imported by generate_artifact)
     generate_call_complete,  # noqa: F401 — registers generate_call_complete handler
     generate_call_progress,  # noqa: F401 — registers generate_call_progress handler
     generate_call_start,  # noqa: F401 — registers generate_call_start handler
     generate_image_complete,  # noqa: F401 — registers generate_image_complete handler
     generate_image_progress,  # noqa: F401 — registers generate_image_progress handler
     generate_image_start,  # noqa: F401 — registers generate_image_start handler
-    generate_prepare,  # noqa: F401 — kept for reference (handler deactivated)
-    generate_prepare_new,  # noqa: F401 — registers generate_prepare handler
-    generate_run_complete,  # noqa: F401 — kept for reference (handler deactivated)
-    generate_run_complete_new,  # noqa: F401 — registers generate_run_complete handler
+    generate_prepare,  # noqa: F401 — registers generate_prepare handler
+    generate_run_complete,  # noqa: F401 — registers generate_run_complete handler
     generate_text_complete,  # noqa: F401 — registers generate_text_complete handler
     generate_text_progress,  # noqa: F401 — registers generate_text_progress handler
     generate_text_start,  # noqa: F401 — registers generate_text_start handler
     generate_video_complete,  # noqa: F401 — registers generate_video_complete handler
     generate_video_progress,  # noqa: F401 — registers generate_video_progress handler
     generate_video_start,  # noqa: F401 — registers generate_video_start handler
-    generation_ended_new,  # noqa: F401 — registers test_ended handler for generation resolution
+    generation_ended,  # noqa: F401 — registers test_ended handler for generation resolution
     generation_error,  # noqa: F401 — registers error handler
     generation_media,  # noqa: F401 — registers media generation handler
-    generation_progress,  # noqa: F401 — kept for reference (handler deactivated)
-    generation_progress_new,  # noqa: F401 — registers generate_call_complete progress handler
-    generation_resolve_new,  # noqa: F401 — registers test_grade_progress handler for generation
+    generation_progress,  # noqa: F401 — registers generate_call_complete progress handler
+    generation_resolve,  # noqa: F401 — registers test_grade_progress handler for generation
     test,  # noqa: F401 — registers test_* internal events
 )

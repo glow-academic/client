@@ -1,39 +1,42 @@
-"""Internal test_start handler — creates a new test, then delegates to test_proceed.
+"""Internal test_start handler (new) — uses black-box entry functions.
 
-Handles: @internal_sio.on("test_start")
+Replaces test/start.py.
 
-Flow:
-1. Call socket_start_test_v4 (creates test_entry + profile link + benchmark bridge)
-2. Emit test_proceed with test_id
+Differences from start.py:
+  - Uses create_test (black box) instead of socket_start_test_v4 SQL function
+  - Uses create_benchmark_test (black box) for optional benchmark bridge
+  - benchmark_id is optional — generation resolution creates tests without one
+  - If data contains generation_run_id, stores a Redis link
+    generation_test_link:{test_id} → generation_run_id so generation_ended
+    can look up the generation context after test grading completes.
+  - profiles_id can be passed directly (from generation pipeline) or resolved
+    from profile_id via profile_profiles_junction.
 """
 
 from __future__ import annotations
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
-from app.infra.globals import get_internal_sio
+from app.infra.globals import get_internal_sio, get_redis_client
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.routes.v5.socket.client.types import TestStartPayload
 from app.routes.v5.socket.internal.test.types import (
     TestErrorData,
     TestProceedData,
 )
-from app.sql.types import StartTestSqlParams, StartTestSqlRow
+from app.routes.v5.tools.entries.benchmark_test.create import create_benchmark_test
+from app.routes.v5.tools.entries.test.create import create_test
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
 
-SQL_PATH_START_TEST = "app/sql/queries/generate/test/start_test_complete.sql"
 
-
-# @internal_sio.on("test_start")  # Swapped to test/start_new.py
-async def test_start_handler(data: dict[str, Any]) -> None:
-    """Handle test_start — create a new test, then emit test_proceed."""
+@internal_sio.on("test_start")  # type: ignore
+async def test_start_handler_new(data: dict[str, Any]) -> None:
+    """Handle test_start — create test via black boxes, optional benchmark bridge."""
     sid = data.get("sid", "")
     if not sid:
         return
@@ -44,38 +47,79 @@ async def test_start_handler(data: dict[str, Any]) -> None:
 
     try:
         profile_id = uuid.UUID(profile_id_str)
-        payload = TestStartPayload(**data)
     except Exception as e:
-        logger.exception(f"Invalid test_start payload: {e}")
+        logger.exception(f"Invalid profile_id in test_start: {e}")
         return
 
+    benchmark_id_raw = data.get("benchmark_id")
+    benchmark_id = uuid.UUID(str(benchmark_id_raw)) if benchmark_id_raw else None
+    infinite_mode = data.get("infinite_mode", False)
+
+    # profiles_id: prefer propagated value, else resolve from profile_id
+    profiles_id_str = data.get("profiles_id")
+    session_id_str = data.get("session_id")
+
     try:
-        # Step 1: Create test via SQL function
         async with get_db_connection() as conn:
-            row = cast(
-                StartTestSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH_START_TEST,
-                    params=StartTestSqlParams(
-                        p_profile_id=profile_id,
-                        p_benchmark_id=payload.benchmark_id,
-                        p_infinite_mode=payload.infinite_mode,
-                    ),
-                ),
+            # Resolve profiles_id if not provided
+            if profiles_id_str:
+                profiles_id = uuid.UUID(profiles_id_str)
+            else:
+                profiles_id = await conn.fetchval(
+                    """SELECT profile_id FROM profile_profiles_junction
+                    WHERE profile_id = $1 AND active = true LIMIT 1""",
+                    profile_id,
+                )
+                if profiles_id is None:
+                    raise ValueError(
+                        f"profiles_resource not found for profile_id {profile_id}"
+                    )
+
+            # Step 1: Create test entry (black box)
+            result = await create_test(
+                conn,
+                profiles_id=profiles_id,
+                infinite_mode=infinite_mode,
             )
+            test_id = result.id
 
-        if not row or not row.items:
-            raise ValueError("Failed to create test")
+            # Step 2: Optional benchmark bridge (black box)
+            if benchmark_id:
+                session_id = (
+                    uuid.UUID(session_id_str) if session_id_str
+                    else uuid.UUID(int=0)
+                )
+                await create_benchmark_test(
+                    conn,
+                    benchmark_id=benchmark_id,
+                    test_id=test_id,
+                    session_id=session_id,
+                )
 
-        test_id = row.items[0].test_id
+        # Step 3: Link test_id → generation_run_id for generation resolution
+        generation_run_id = data.get("generation_run_id")
+        if generation_run_id:
+            try:
+                redis = get_redis_client()
+                if redis:
+                    await redis.setex(
+                        f"generation_test_link:{test_id}",
+                        3600,
+                        generation_run_id,
+                    )
+            except Exception:
+                logger.warning(
+                    f"Failed to store generation_test_link for test {test_id}"
+                )
 
-        # Step 2: Refresh MVs so the test is visible immediately
+        # Step 4: Refresh MVs so the test is visible immediately
         async with get_db_connection() as conn:
             await conn.execute("REFRESH MATERIALIZED VIEW test_invocation_mv")
-        await invalidate_tags(["test", "tests", "benchmark"], redis=get_redis_client())
+        await invalidate_tags(
+            ["test", "tests", "benchmark"], redis=get_redis_client()
+        )
 
-        # Step 3: Delegate to test_proceed
+        # Step 5: Delegate to test_proceed
         await internal_sio.emit(
             "test_proceed",
             TestProceedData(
