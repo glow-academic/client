@@ -31150,6 +31150,35 @@ class SaveSimulationApiResponse(BaseModel):
 
 
 
+# Generated from: simulation_text_stop_run
+
+class SimulationTextStopRunSqlParams(BaseModel):
+
+    chat_id: UUID
+
+    def to_tuple(self) -> tuple[Any, ...]:
+        return (
+            self.chat_id,
+        )
+
+class SimulationTextStopRunSqlRow(BaseModel):
+
+    success: bool | None = None
+    cancelled_message_id: UUID | None = None
+    final_content: str | None = None
+
+class SimulationTextStopRunApiRequest(BaseModel):
+
+    chat_id: UUID
+
+class SimulationTextStopRunApiResponse(BaseModel):
+
+    success: bool | None = None
+    cancelled_message_id: UUID | None = None
+    final_content: str | None = None
+
+
+
 # Generated from: validate_simulation_resource_error
 
 class ValidateSimulationResourceErrorSqlParams(BaseModel):
@@ -37017,6 +37046,12 @@ _registry: dict[str, tuple[str, str, str, str]] = {
         "SaveSimulationApiRequest",
         "SaveSimulationApiResponse",
     ),
+    "app/sql/queries/simulations/simulation_text_stop_run_complete.sql": (
+        "SimulationTextStopRunSqlParams",
+        "SimulationTextStopRunSqlRow",
+        "SimulationTextStopRunApiRequest",
+        "SimulationTextStopRunApiResponse",
+    ),
     "app/sql/queries/simulations/validate_simulation_resource_error_complete.sql": (
         "ValidateSimulationResourceErrorSqlParams",
         "ValidateSimulationResourceErrorSqlRow",
@@ -41110,6 +41145,11 @@ if TYPE_CHECKING:
     @overload
     def load_sql_query(
         file_path: Literal["app/sql/queries/simulations/save_simulation_complete.sql"]
+    ) -> SqlString: ...
+
+    @overload
+    def load_sql_query(
+        file_path: Literal["app/sql/queries/simulations/simulation_text_stop_run_complete.sql"]
     ) -> SqlString: ...
 
     @overload

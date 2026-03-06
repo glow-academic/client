@@ -18,7 +18,7 @@ latest_message AS (
         COALESCE(ce.content, '') as content
     FROM attempt_chat_entry c
     JOIN attempt_message_entry sm ON sm.chat_id = c.id
-    JOIN messages_entry me ON me.id = sm.message_id
+    JOIN messages_entry me ON me.id = sm.id
     LEFT JOIN LATERAL (
         SELECT content
         FROM attempt_content_entry ce
