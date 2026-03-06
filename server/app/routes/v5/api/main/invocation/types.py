@@ -13,19 +13,6 @@ from pydantic import BaseModel
 
 from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetDepartmentsV4Item,
-    QGetInstructionsV4Item,
-    QGetKeysV4Item,
-    QGetModelsV4Item,
-    QGetPromptsV4Item,
-    QGetProvidersV4Item,
-    QGetReasoningLevelsV4Item,
-    QGetTemperatureLevelsV4Item,
-    QGetToolsV4Item,
-    QGetVoicesV4Item,
-)
 
 # =============================================================================
 # GET Request / Response
@@ -79,7 +66,8 @@ class SuiteMultiResourceAction(BaseModel):
 class GetSuiteRequest(BaseModel):
     """Client API request for one benchmark bundle customization payload."""
 
-    suite_entry_id: UUID
+    test_id: UUID
+    group_id: UUID
     draft_id: UUID | None = None
 
 
@@ -94,49 +82,69 @@ class BaseSuiteSection(BaseModel):
     show_ai_generate: bool = False
 
 
+class SuiteNameSection(BaseSuiteSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
+class SuiteDescriptionSection(BaseSuiteSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
+class SuiteFlagSection(BaseSuiteSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
 class SuiteDepartmentSection(BaseSuiteSection):
-    current: list[QGetDepartmentsV4Item] | None = None
-    resources: list[QGetDepartmentsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
-class SuiteModelSection(BaseSuiteSection):
-    current: list[QGetModelsV4Item] | None = None
-    resources: list[QGetModelsV4Item] | None = None
-
-
-class SuitePromptSection(BaseSuiteSection):
-    current: list[QGetPromptsV4Item] | None = None
-    resources: list[QGetPromptsV4Item] | None = None
-
-
-class SuiteInstructionSection(BaseSuiteSection):
-    current: list[QGetInstructionsV4Item] | None = None
-    resources: list[QGetInstructionsV4Item] | None = None
-
-
-class SuiteVoiceSection(BaseSuiteSection):
-    current: list[QGetVoicesV4Item] | None = None
-    resources: list[QGetVoicesV4Item] | None = None
-
-
-class SuiteTemperatureLevelSection(BaseSuiteSection):
-    current: list[QGetTemperatureLevelsV4Item] | None = None
-    resources: list[QGetTemperatureLevelsV4Item] | None = None
-
-
-class SuiteReasoningLevelSection(BaseSuiteSection):
-    current: list[QGetReasoningLevelsV4Item] | None = None
-    resources: list[QGetReasoningLevelsV4Item] | None = None
-
-
-class SuiteToolSection(BaseSuiteSection):
-    current: list[QGetToolsV4Item] | None = None
-    resources: list[QGetToolsV4Item] | None = None
+class SuiteValueSection(BaseSuiteSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class SuiteKeySection(BaseSuiteSection):
-    current: list[QGetKeysV4Item] | None = None
-    resources: list[QGetKeysV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
+class SuiteEndpointSection(BaseSuiteSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
+class SuiteModalitySection(BaseSuiteSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
+class SuiteTemperatureLevelSection(BaseSuiteSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
+class SuitePricingSection(BaseSuiteSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
+class SuiteReasoningLevelSection(BaseSuiteSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
+class SuiteQualitySection(BaseSuiteSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
+class SuiteVoiceSection(BaseSuiteSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 # --- GET response (section-first) ---
@@ -145,27 +153,25 @@ class SuiteKeySection(BaseSuiteSection):
 class GetSuiteResponse(BaseModel):
     """Client-facing bundle response — section-first pattern."""
 
-    suite_entry_id: UUID
-    benchmark_id: UUID | None = None
+    test_id: UUID
     profile_has_access: bool = False
     draft_version: int | None = None
+    group_id: UUID | None = None
 
-    # 9 section-first resources
+    # 13 section-first resources
+    names: SuiteNameSection | None = None
+    descriptions: SuiteDescriptionSection | None = None
+    values: SuiteValueSection | None = None
+    flags: SuiteFlagSection | None = None
     departments: SuiteDepartmentSection | None = None
-    models: SuiteModelSection | None = None
-    prompts: SuitePromptSection | None = None
-    instructions: SuiteInstructionSection | None = None
-    voices: SuiteVoiceSection | None = None
-    temperature_levels: SuiteTemperatureLevelSection | None = None
-    reasoning_levels: SuiteReasoningLevelSection | None = None
-    tools: SuiteToolSection | None = None
     keys: SuiteKeySection | None = None
-
-    # Config chain (settings-derived, distinct from section resources above)
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
-    config_tools: list[QGetToolsV4Item] | None = None
+    endpoints: SuiteEndpointSection | None = None
+    modalities: SuiteModalitySection | None = None
+    temperature_levels: SuiteTemperatureLevelSection | None = None
+    pricing: SuitePricingSection | None = None
+    reasoning_levels: SuiteReasoningLevelSection | None = None
+    qualities: SuiteQualitySection | None = None
+    voices: SuiteVoiceSection | None = None
 
 
 # --- Websocket types (mirrors training bundle websocket pattern) ---
@@ -174,15 +180,19 @@ class GetSuiteResponse(BaseModel):
 class SuiteWebsocketResources(BaseModel):
     """Hydrated resources for bundle websocket — selected only."""
 
-    departments: list[QGetDepartmentsV4Item] | None = None
-    models: list[QGetModelsV4Item] | None = None
-    prompts: list[QGetPromptsV4Item] | None = None
-    instructions: list[QGetInstructionsV4Item] | None = None
-    voices: list[QGetVoicesV4Item] | None = None
-    temperature_levels: list[QGetTemperatureLevelsV4Item] | None = None
-    reasoning_levels: list[QGetReasoningLevelsV4Item] | None = None
-    tools: list[QGetToolsV4Item] | None = None
-    keys: list[QGetKeysV4Item] | None = None
+    names: list[Any] | None = None
+    descriptions: list[Any] | None = None
+    values: list[Any] | None = None
+    flags: list[Any] | None = None
+    departments: list[Any] | None = None
+    keys: list[Any] | None = None
+    endpoints: list[Any] | None = None
+    modalities: list[Any] | None = None
+    temperature_levels: list[Any] | None = None
+    pricing: list[Any] | None = None
+    reasoning_levels: list[Any] | None = None
+    qualities: list[Any] | None = None
+    voices: list[Any] | None = None
 
 
 class SuiteWebsocketEntries(BaseModel):

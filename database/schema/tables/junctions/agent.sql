@@ -122,6 +122,21 @@ CREATE TABLE public.agent_reasoning_levels_junction (
 
 --
 
+-- Name: agent_rubrics_junction; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.agent_rubrics_junction (
+    agent_id uuid NOT NULL,
+    rubrics_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+
 -- Name: agent_temperature_levels_junction; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -235,6 +250,15 @@ ALTER TABLE ONLY public.agent_qualities_junction
 
 ALTER TABLE ONLY public.agent_reasoning_levels_junction
     ADD CONSTRAINT agent_reasoning_levels_junction_pkey PRIMARY KEY (agent_id, reasoning_levels_id);
+
+
+--
+
+-- Name: agent_rubrics_junction agent_rubrics_junction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_rubrics_junction
+    ADD CONSTRAINT agent_rubrics_junction_pkey PRIMARY KEY (agent_id, rubrics_id);
 
 
 --

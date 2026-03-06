@@ -37,7 +37,10 @@ async def get_invocation_drafts(
             COALESCE(ARRAY_AGG(DISTINCT p.profiles_id) FILTER (WHERE p.profiles_id IS NOT NULL), '{}') AS profile_ids,
             COALESCE(ARRAY_AGG(DISTINCT rl.reasoning_levels_id) FILTER (WHERE rl.reasoning_levels_id IS NOT NULL), '{}') AS reasoning_level_ids,
             COALESCE(ARRAY_AGG(DISTINCT tl.temperature_levels_id) FILTER (WHERE tl.temperature_levels_id IS NOT NULL), '{}') AS temperature_level_ids,
-            COALESCE(ARRAY_AGG(DISTINCT v.voices_id) FILTER (WHERE v.voices_id IS NOT NULL), '{}') AS voice_ids
+            COALESCE(ARRAY_AGG(DISTINCT v.voices_id) FILTER (WHERE v.voices_id IS NOT NULL), '{}') AS voice_ids,
+            COALESCE(ARRAY_AGG(DISTINCT val.values_id) FILTER (WHERE val.values_id IS NOT NULL), '{}') AS value_ids,
+            COALESCE(ARRAY_AGG(DISTINCT pr.pricing_id) FILTER (WHERE pr.pricing_id IS NOT NULL), '{}') AS pricing_ids,
+            COALESCE(ARRAY_AGG(DISTINCT ep.endpoints_id) FILTER (WHERE ep.endpoints_id IS NOT NULL), '{}') AS endpoint_ids
         FROM invocation_drafts_entry d
         LEFT JOIN invocation_drafts_departments_connection dep ON dep.draft_id = d.id
         LEFT JOIN invocation_drafts_descriptions_connection desc_c ON desc_c.draft_id = d.id
@@ -51,6 +54,9 @@ async def get_invocation_drafts(
         LEFT JOIN invocation_drafts_reasoning_levels_connection rl ON rl.draft_id = d.id
         LEFT JOIN invocation_drafts_temperature_levels_connection tl ON tl.draft_id = d.id
         LEFT JOIN invocation_drafts_voices_connection v ON v.draft_id = d.id
+        LEFT JOIN invocation_drafts_values_connection val ON val.invocation_drafts_id = d.id
+        LEFT JOIN invocation_drafts_pricing_connection pr ON pr.invocation_drafts_id = d.id
+        LEFT JOIN invocation_drafts_endpoints_connection ep ON ep.invocation_drafts_id = d.id
         WHERE d.id = ANY($1)
           AND d.active = true
         GROUP BY d.id, d.version, d.created_at, d.generated, d.mcp, d.active,
@@ -82,6 +88,9 @@ async def get_invocation_drafts(
             reasoning_level_ids=r["reasoning_level_ids"],
             temperature_level_ids=r["temperature_level_ids"],
             voice_ids=r["voice_ids"],
+            value_ids=r["value_ids"],
+            pricing_ids=r["pricing_ids"],
+            endpoint_ids=r["endpoint_ids"],
         )
         for r in rows
     ]

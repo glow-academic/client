@@ -146,6 +146,24 @@ ALTER TABLE ONLY public.agent_reasoning_levels_junction
 
 --
 
+-- Name: agent_rubrics_junction agent_rubrics_junction_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_rubrics_junction
+    ADD CONSTRAINT agent_rubrics_junction_agent_id_fkey FOREIGN KEY (agent_id) REFERENCES public.agent_artifact(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: agent_rubrics_junction agent_rubrics_junction_rubrics_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_rubrics_junction
+    ADD CONSTRAINT agent_rubrics_junction_rubrics_id_fkey FOREIGN KEY (rubrics_id) REFERENCES public.rubrics_resource(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: agent_temperature_levels_junction agent_temperature_levels_junction_agent_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

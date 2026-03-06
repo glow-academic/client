@@ -31,3 +31,6 @@ class GetInvocationDraftResponse(BaseModel):
     reasoning_level_ids: list[UUID]
     temperature_level_ids: list[UUID]
     voice_ids: list[UUID]
+    value_ids: list[UUID]
+    pricing_ids: list[UUID]
+    endpoint_ids: list[UUID]

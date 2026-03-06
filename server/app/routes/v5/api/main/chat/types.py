@@ -17,25 +17,6 @@ from pydantic import BaseModel, Field
 
 from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetDepartmentsV4Item,
-    QGetDocumentsV4Item,
-    QGetImagesV4Item,
-    QGetModelsV4Item,
-    QGetObjectivesV4Item,
-    QGetOptionsV4Item,
-    QGetParameterFieldsV4Item,
-    QGetParametersV4Item,
-    QGetPersonasV4Item,
-    QGetProblemStatementsV4Item,
-    QGetProvidersV4Item,
-    QGetQuestionsV4Item,
-    QGetScenariosV4Item,
-    QGetToolsV4Item,
-    QGetTrainingDraftsEntriesV4Item,
-    QGetVideosV4Item,
-)
 
 # =============================================================================
 # Shared types
@@ -275,6 +256,7 @@ class GetChatRequest(BaseModel):
     chat_entry_id: UUID
     attempt_id: UUID | None = None
     draft_id: UUID | None = None
+    group_id: UUID
 
 
 # --- Section types (one per resource) ---
@@ -292,63 +274,78 @@ class BaseChatSection(BaseModel):
 
 
 class ChatDepartmentSection(BaseChatSection):
-    current: list[QGetDepartmentsV4Item] | None = None
-    resources: list[QGetDepartmentsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ChatPersonaSection(BaseChatSection):
-    current: list[QGetPersonasV4Item] | None = None
-    resources: list[QGetPersonasV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ChatDocumentSection(BaseChatSection):
-    current: list[QGetDocumentsV4Item] | None = None
-    resources: list[QGetDocumentsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ChatParameterFieldSection(BaseChatSection):
-    current: list[QGetParameterFieldsV4Item] | None = None
-    resources: list[QGetParameterFieldsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ChatScenarioSection(BaseChatSection):
-    current: list[QGetScenariosV4Item] | None = None
-    resources: list[QGetScenariosV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
-class ChatParameterSection(BaseChatSection):
-    current: list[QGetParametersV4Item] | None = None
-    resources: list[QGetParametersV4Item] | None = None
+class ChatFieldSection(BaseChatSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ChatQuestionSection(BaseChatSection):
-    current: list[QGetQuestionsV4Item] | None = None
-    resources: list[QGetQuestionsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ChatOptionSection(BaseChatSection):
-    current: list[QGetOptionsV4Item] | None = None
-    resources: list[QGetOptionsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ChatVideoSection(BaseChatSection):
-    current: list[QGetVideosV4Item] | None = None
-    resources: list[QGetVideosV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ChatImageSection(BaseChatSection):
-    current: list[QGetImagesV4Item] | None = None
-    resources: list[QGetImagesV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ChatProblemStatementSection(BaseChatSection):
-    current: list[QGetProblemStatementsV4Item] | None = None
-    resources: list[QGetProblemStatementsV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 class ChatObjectiveSection(BaseChatSection):
-    current: list[QGetObjectivesV4Item] | None = None
-    resources: list[QGetObjectivesV4Item] | None = None
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
+class ChatNameSection(BaseChatSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
+class ChatDescriptionSection(BaseChatSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
+class ChatFlagSection(BaseChatSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
 
 
 # --- Scenario flags type ---
@@ -371,34 +368,26 @@ class GetChatResponse(BaseModel):
     """Client-facing chat bundle response — section-first pattern."""
 
     chat_entry_id: UUID
-    parent_id: UUID | None = None
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    scenario_id: UUID | None = None
-    profile_has_access: bool = False
-    group_id: UUID | None = None
+    attempt_id: UUID | None = None
+    group_id: UUID
     draft_version: int | None = None
-    scenario_flags: ChatScenarioFlags | None = None
 
-    # 14 section-first resources
+    # 15 section-first resources
+    names: ChatNameSection | None = None
+    descriptions: ChatDescriptionSection | None = None
+    flags: ChatFlagSection | None = None
     departments: ChatDepartmentSection | None = None
     personas: ChatPersonaSection | None = None
     documents: ChatDocumentSection | None = None
     parameter_fields: ChatParameterFieldSection | None = None
     scenarios: ChatScenarioSection | None = None
-    parameters: ChatParameterSection | None = None
+    fields: ChatFieldSection | None = None
     questions: ChatQuestionSection | None = None
     options: ChatOptionSection | None = None
     videos: ChatVideoSection | None = None
     images: ChatImageSection | None = None
     problem_statements: ChatProblemStatementSection | None = None
     objectives: ChatObjectiveSection | None = None
-
-    # Config chain (hydrated for websocket/generation)
-    config_agents: list[QGetAgentsV4Item] | None = None
-    config_models: list[QGetModelsV4Item] | None = None
-    config_providers: list[QGetProvidersV4Item] | None = None
-    config_tools: list[QGetToolsV4Item] | None = None
 
 
 # =============================================================================
@@ -409,25 +398,28 @@ class GetChatResponse(BaseModel):
 class ChatWebsocketEntries(BaseModel):
     """Draft view for chat bundle websocket consumers."""
 
-    draft_training: QGetTrainingDraftsEntriesV4Item | None = None
+    draft_training: Any | None = None
     runs: GetRunListViewResponse | None = None
 
 
 class ChatWebsocketResources(BaseModel):
     """Hydrated resources for chat bundle websocket — selected only."""
 
-    departments: list[QGetDepartmentsV4Item] | None = None
-    personas: list[QGetPersonasV4Item] | None = None
-    documents: list[QGetDocumentsV4Item] | None = None
-    parameter_fields: list[QGetParameterFieldsV4Item] | None = None
-    scenarios: list[QGetScenariosV4Item] | None = None
-    parameters: list[QGetParametersV4Item] | None = None
-    questions: list[QGetQuestionsV4Item] | None = None
-    options: list[QGetOptionsV4Item] | None = None
-    videos: list[QGetVideosV4Item] | None = None
-    images: list[QGetImagesV4Item] | None = None
-    problem_statements: list[QGetProblemStatementsV4Item] | None = None
-    objectives: list[QGetObjectivesV4Item] | None = None
+    names: list[Any] | None = None
+    descriptions: list[Any] | None = None
+    flags: list[Any] | None = None
+    departments: list[Any] | None = None
+    personas: list[Any] | None = None
+    documents: list[Any] | None = None
+    parameter_fields: list[Any] | None = None
+    scenarios: list[Any] | None = None
+    fields: list[Any] | None = None
+    questions: list[Any] | None = None
+    options: list[Any] | None = None
+    videos: list[Any] | None = None
+    images: list[Any] | None = None
+    problem_statements: list[Any] | None = None
+    objectives: list[Any] | None = None
 
 
 class GetChatWebsocketResponse(InternalResponseBase):

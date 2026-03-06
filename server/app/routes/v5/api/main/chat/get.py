@@ -1,78 +1,49 @@
-"""Chat bundle artifact endpoint.
+"""Chat bundle artifact endpoint — composable infra architecture.
 
-Section-first three-layer implementation (mirrors scenario/get.py):
-1) get_chat_internal() - MV view → draft override → hydrate all 14 → config chain
-2) get_chat_websocket() - thin wrapper for socket consumers
-3) get_chat_client() - HTTP section-first payload formatter
+Uses composable infra layers:
+  1. resolve_common_context — profile + tool graph + runs
+  2. resolve_chat_context — draft-only → hydrated resources
+  3. score_tools — tool graph + artifact resources → per-resource tool picks
+  4. Pure Python — show/required flags, response assembly
 """
 
-import asyncio
-from collections.abc import Callable, Coroutine
-from dataclasses import dataclass, field
-from typing import Any, TypeVar, cast
+from __future__ import annotations
+
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+from redis.asyncio import Redis
 
-from app.infra.globals import get_pool, get_redis_client
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.main.chat.permissions import (
-    CHAT_BUNDLE_RESOURCES,
-    compute_bundle_section_show,
-)
+from app.infra.chat_context import resolve_chat_context
+from app.infra.common_context import resolve_common_context
+from app.infra.globals import get_db, get_redis_client
+from app.infra.tool_graph import score_tools
+from app.routes.v5.api.main.chat.permissions import CHAT_BUNDLE_RESOURCES
 from app.routes.v5.api.main.chat.types import (
     BaseChatSection,
     ChatDepartmentSection,
+    ChatDescriptionSection,
     ChatDocumentSection,
+    ChatFieldSection,
+    ChatFlagSection,
     ChatImageSection,
+    ChatNameSection,
     ChatObjectiveSection,
     ChatOptionSection,
     ChatParameterFieldSection,
-    ChatParameterSection,
     ChatPersonaSection,
     ChatProblemStatementSection,
     ChatQuestionSection,
-    ChatScenarioFlags,
     ChatScenarioSection,
     ChatStartWebsocketEntries,
     ChatStartWebsocketResources,
     ChatVideoSection,
-    ChatWebsocketEntries,
-    ChatWebsocketResources,
     GetChatRequest,
     GetChatResponse,
     GetChatStartWebsocketResponse,
-    GetChatWebsocketResponse,
 )
-from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.resources.args.get import get_args
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.documents.get import get_documents
-from app.routes.v5.tools.resources.images.get import get_images
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.objectives.get import get_objectives
-from app.routes.v5.tools.resources.options.get import get_options
-from app.routes.v5.tools.resources.parameter_fields.get import (
-    get_parameter_fields,
-)
-from app.routes.v5.tools.resources.parameters.get import get_parameters
-from app.routes.v5.tools.resources.personas.get import get_personas
-from app.routes.v5.tools.resources.problem_statements.get import (
-    get_problem_statements,
-)
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.questions.get import get_questions
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.videos.get import get_videos
-from app.routes.v5.tools.entries.chat.get import get_chat_view_internal
-from app.routes.v5.tools.entries.chat_drafts.get import (
-    get_chat_drafts_entries_internal,
-)
-from app.routes.v5.tools.entries.chat_drafts.types import GetChatDraftResponse
 from app.sql.types import (
     GetTrainingStartContextSqlParams,
     GetTrainingStartContextSqlRow,
@@ -86,8 +57,28 @@ SQL_PATH_START_CONTEXT = (
     "app/sql/queries/generate/training/get_training_start_context_complete.sql"
 )
 
+# Section class mapping for building typed sections
+_SECTION_CLASSES: dict[str, type] = {
+    "names": ChatNameSection,
+    "descriptions": ChatDescriptionSection,
+    "flags": ChatFlagSection,
+    "departments": ChatDepartmentSection,
+    "personas": ChatPersonaSection,
+    "documents": ChatDocumentSection,
+    "parameter_fields": ChatParameterFieldSection,
+    "scenarios": ChatScenarioSection,
+    "fields": ChatFieldSection,
+    "questions": ChatQuestionSection,
+    "options": ChatOptionSection,
+    "videos": ChatVideoSection,
+    "images": ChatImageSection,
+    "problem_statements": ChatProblemStatementSection,
+    "objectives": ChatObjectiveSection,
+}
+
+
 # =============================================================================
-# Chat Start Context (moved from list.py)
+# Chat Start Context (kept from original)
 # =============================================================================
 
 
@@ -148,539 +139,108 @@ async def get_chat_start_context(
 
 
 # =============================================================================
-# Internal Data
+# WebSocket Layer (stub — kept as-is for now)
 # =============================================================================
 
 
-@dataclass
-class ChatInternalData:
-    chat_entry_id: UUID
-    parent_id: UUID | None
-    simulation_id: UUID | None
-    simulation_name: str | None
-    scenario_id: UUID | None
-    profile_has_access: bool
-    group_id: UUID | None
-    draft_version: int | None
-    scenario_flags: dict[str, bool] = field(default_factory=dict)
-    show_flags_map: dict[str, bool] = field(default_factory=dict)
-    resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
-    # Per-resource: all (suggestions) and current (selected)
-    all_resources: dict[str, list[Any]] = field(default_factory=dict)
-    current_resources: dict[str, list[Any]] = field(default_factory=dict)
-    # Config chain
-    config_agents: list[Any] = field(default_factory=list)
-    config_models: list[Any] = field(default_factory=list)
-    config_providers: list[Any] = field(default_factory=list)
-    config_tools: list[Any] = field(default_factory=list)
-    # Draft view
-    draft_item: GetChatDraftResponse | None = None
-
-
-# =============================================================================
-# Helpers
-# =============================================================================
-
-T = TypeVar("T")
-
-
-def _ids_from_attr(obj: Any, attr: str) -> list[UUID]:
-    """Extract IDs from a view_data attribute — handles both list and single UUID."""
-    val = getattr(obj, attr, None)
-    if val is None:
-        return []
-    if isinstance(val, list):
-        return list(val)
-    return [val]
-
-
-def _filter_by_ids(items: list[T], ids: list[UUID], id_attr: str) -> list[T]:
-    if not items or not ids:
-        return []
-    id_set = {str(i) for i in ids}
-    output: list[T] = []
-    for item in items:
-        value = getattr(item, id_attr, None)
-        if value and str(value) in id_set:
-            output.append(item)
-    return output
-
-
-# Resource key → (view_data attr for IDs, draft_item attr, get_*_internal func, id_attr for filtering)
-RESOURCE_CONFIG: list[tuple[str, str, str, Any, str]] = [
-    (
-        "departments",
-        "department_ids",
-        "department_ids",
-        get_departments,
-        "department_id",
-    ),
-    ("personas", "persona_ids", "persona_ids", get_personas, "persona_id"),
-    (
-        "documents",
-        "document_ids",
-        "document_ids",
-        get_documents,
-        "document_id",
-    ),
-    (
-        "parameter_fields",
-        "parameter_field_ids",
-        "parameter_field_ids",
-        get_parameter_fields,
-        "field_id",
-    ),
-    ("scenarios", "scenario_id", None, get_scenarios, "scenario_id"),
-    (
-        "parameters",
-        "parameter_ids",
-        "parameter_ids",
-        get_parameters,
-        "parameter_id",
-    ),
-    (
-        "questions",
-        "question_ids",
-        "question_ids",
-        get_questions,
-        "question_id",
-    ),
-    ("options", "option_ids", "option_ids", get_options, "option_id"),
-    ("videos", "video_ids", "video_ids", get_videos, "video_id"),
-    ("images", "image_ids", "image_ids", get_images, "image_id"),
-    (
-        "problem_statements",
-        "problem_statement_ids",
-        "problem_statement_ids",
-        get_problem_statements,
-        "problem_statement_id",
-    ),
-    (
-        "objectives",
-        "objective_ids",
-        "objective_ids",
-        get_objectives,
-        "objective_id",
-    ),
-]
-
-# =============================================================================
-# Internal fetch
-# =============================================================================
-
-
-async def get_chat_internal(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    chat_entry_id: UUID,
-    attempt_id: UUID | None = None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> ChatInternalData:
-    """Shared IDs-first + hydration internal fetch for chat bundle artifact."""
-    # 1. Fetch MV view data (all 14 ID arrays + 6 flags)
-    async with pool.acquire() as conn:
-        view_data = await get_chat_view_internal(
-            conn=conn,
-            profile_id=profile_id,
-            chat_entry_id=chat_entry_id,
-        )
-
-    if not view_data.chat_entry_id:
-        raise HTTPException(status_code=404, detail="Chat bundle not found")
-
-    # Access check: if attempt_id provided, verify profile owns the attempt
-    if attempt_id:
-        async with pool.acquire() as conn:
-            row = await conn.fetchrow(
-                """SELECT 1 FROM attempt_mv mv
-                   JOIN profile_profiles_junction ppj
-                     ON ppj.profiles_id = mv.profile_id AND ppj.active = true
-                   WHERE mv.attempt_id = $1 AND ppj.profile_id = $2""",
-                attempt_id,
-                profile_id,
-            )
-            if not row:
-                raise HTTPException(
-                    status_code=403,
-                    detail="You do not have access to this chat bundle.",
-                )
-    elif not view_data.profile_has_access:
-        raise HTTPException(
-            status_code=403,
-            detail="You do not have access to this chat bundle.",
-        )
-
-    # 2. Fetch draft if provided
-    draft_item: GetChatDraftResponse | None = None
-    if draft_id is not None:
-        async with pool.acquire() as conn:
-            draft_items = await get_chat_drafts_entries_internal(
-                conn=conn,
-                ids=[draft_id],
-                bypass_cache=bypass_cache,
-            )
-        if draft_items:
-            draft_item = draft_items[0]
-
-    # 3. Scenario flags from MV
-    scenario_flags: dict[str, bool] = {
-        "video_enabled": view_data.video_enabled,
-        "problem_statement_enabled": view_data.problem_statement_enabled,
-        "objectives_enabled": view_data.objectives_enabled,
-        "images_enabled": view_data.images_enabled,
-        "questions_enabled": view_data.questions_enabled,
-    }
-
-    # 4. Draft override for all 13 customizable resource ID arrays
-    selected_ids: dict[str, list[UUID]] = {}
-    for resource_key, view_attr, draft_attr, _fetch_fn, _id_attr in RESOURCE_CONFIG:
-        mv_ids = _ids_from_attr(view_data, view_attr)
-        if draft_attr and draft_item:
-            draft_val = getattr(draft_item, draft_attr, None)
-            selected_ids[resource_key] = list(draft_val) if draft_val else mv_ids
-        else:
-            selected_ids[resource_key] = mv_ids
-
-    # 5. Hydrate ALL 14 resources in parallel (each acquires its own connection)
-    FetchFn = Callable[..., Coroutine[Any, Any, list[Any]]]
-
-    async def _fetch_resource(
-        resource_key: str,
-        view_attr: str,
-        fetch_fn: FetchFn,
-    ) -> tuple[str, list[Any]]:
-        all_ids = _ids_from_attr(view_data, view_attr)
-        if not all_ids:
-            return (resource_key, [])
-        async with pool.acquire() as c:
-            return (
-                resource_key,
-                await fetch_fn(c, all_ids, get_redis_client(), bypass_cache),
-            )
-
-    fetch_tasks = [
-        _fetch_resource(rk, va, fn) for rk, va, _da, fn, _ia in RESOURCE_CONFIG
-    ]
-    fetch_results = await asyncio.gather(*fetch_tasks)
-
-    all_resources: dict[str, list[Any]] = {}
-    for resource_key, items in fetch_results:
-        all_resources[resource_key] = items
-
-    # 6. Filter current selections from full lists
-    current_resources: dict[str, list[Any]] = {}
-    for resource_key, _view_attr, _draft_attr, _fetch_fn, id_attr in RESOURCE_CONFIG:
-        current_resources[resource_key] = _filter_by_ids(
-            all_resources.get(resource_key, []),
-            selected_ids.get(resource_key, []),
-            id_attr,
-        )
-
-    # 7. Compute show flags using scenario flags
-    show_flags_map: dict[str, bool] = {}
-    for resource_key, _va, _da, _fn, _ia in RESOURCE_CONFIG:
-        show_flags_map[resource_key] = compute_bundle_section_show(
-            resource_key, scenario_flags
-        )
-
-    # 8. Settings-based agent resolution + config chain
-    async with pool.acquire() as settings_conn:
-        settings_data = await get_auth_settings_internal(
-            settings_conn, profile_id, bypass_cache
-        )
-    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, CHAT_BUNDLE_RESOURCES
-    )
-
-    # Config chain from settings (agents + tools already hydrated, models need fetch)
-    config_agents = list(settings_data.settings_agents)
-    config_tools = list(settings_data.settings_tools)
-
-    config_model_resource_ids = list(
-        dict.fromkeys(a.model_id for a in settings_data.settings_agents if a.model_id)
-    )
-    config_models: list[Any] = []
-    if config_model_resource_ids:
-        async with pool.acquire() as conn:
-            config_models = await get_models(
-                conn, config_model_resource_ids, get_redis_client(), bypass_cache
-            )
-
-    config_provider_resource_ids = list(
-        dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
-    )
-    config_providers: list[Any] = []
-    if config_provider_resource_ids:
-        async with pool.acquire() as conn:
-            config_providers = await get_providers(
-                conn,
-                config_provider_resource_ids,
-                get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-
-    # 9. Simulation/scenario context (from chat websocket)
-    selected_department_ids = selected_ids.get("departments", [])
-    selected_department_id = (
-        selected_department_ids[0] if selected_department_ids else None
-    )
-    if not selected_department_id and view_data.department_ids:
-        selected_department_id = view_data.department_ids[0]
-
-    simulation_id: UUID | None = None
-    scenario_id: UUID | None = None
-
-    if selected_department_id is not None:
-        async with pool.acquire() as conn:
-            start_ctx = await get_chat_start_context(
-                conn=conn,
-                profile_id=profile_id,
-                chat_entry_id=chat_entry_id,
-                department_id=selected_department_id,
-                draft_id=draft_id,
-            )
-        simulation_id = start_ctx.resources.simulation_id
-        scenario_id = start_ctx.resources.scenario_id
-
-    # 10. Resolve simulation name
-    simulation_name: str | None = None
-    if simulation_id:
-        from app.routes.v5.tools.resources.simulations.get import (
-            get_simulations,
-        )
-
-        async with pool.acquire() as conn:
-            sim_list = await get_simulations(
-                conn, [simulation_id], get_redis_client(), bypass_cache=bypass_cache
-            )
-        if sim_list:
-            simulation_name = sim_list[0].name
-
-    # 11. Resource agent IDs (from settings-based resolution)
-    resource_agent_ids = agent_ids
-
-    return ChatInternalData(
-        chat_entry_id=view_data.chat_entry_id,
-        parent_id=view_data.parent_id,
-        simulation_id=simulation_id,
-        simulation_name=simulation_name,
-        scenario_id=scenario_id,
-        profile_has_access=view_data.profile_has_access,
-        group_id=draft_item.group_id if draft_item else None,
-        draft_version=draft_item.version if draft_item else None,
-        scenario_flags=scenario_flags,
-        show_flags_map=show_flags_map,
-        resource_agent_ids=resource_agent_ids,
-        all_resources=all_resources,
-        current_resources=current_resources,
-        config_agents=config_agents,
-        config_models=config_models,
-        config_providers=config_providers,
-        config_tools=config_tools,
-        draft_item=draft_item,
+async def get_chat_websocket(*args, **kwargs):
+    """Stub — will be rewritten to use composable infra functions."""
+    raise NotImplementedError(
+        "get_chat_websocket needs to be rewritten with infra functions"
     )
 
 
 # =============================================================================
-# WebSocket Layer
+# Client/BFF Layer — composable infra architecture
 # =============================================================================
-
-
-async def get_chat_websocket(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    chat_entry_id: UUID,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> GetChatWebsocketResponse:
-    """Thin wrapper for chat websocket consumers — selected resources only."""
-
-    async def fetch_bundle():
-        return await get_chat_internal(
-            pool=pool,
-            profile_id=profile_id,
-            chat_entry_id=chat_entry_id,
-            draft_id=draft_id,
-            bypass_cache=bypass_cache,
-        )
-
-    async def fetch_config_profile():
-        async with pool.acquire() as conn:
-            return await get_profiles(
-                conn, [profile_id], get_redis_client(), bypass_cache
-            )
-
-    async def fetch_runs_today():
-        from datetime import UTC, datetime
-
-        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
-        async with pool.acquire() as conn:
-            return await get_run_list_entries_internal(
-                conn=conn,
-                profile_id_filter=profile_id,
-                date_from=today_utc,
-                date_to=tomorrow_utc,
-                page_limit=1,
-                bypass_cache=True,
-            )
-
-    (data, config_profile_result, runs_result) = await asyncio.gather(
-        fetch_bundle(),
-        fetch_config_profile(),
-        fetch_runs_today(),
-    )
-
-    # Pre-fetch args and args_outputs from tool IDs (both cached via *_internal)
-    config_tools = data.config_tools or []
-    config_args = None
-    config_args_outputs = None
-    if config_tools and pool:
-        all_args_ids: list[UUID] = []
-        all_args_output_ids: list[UUID] = []
-        for tool in config_tools:
-            if tool.args_ids:
-                all_args_ids.extend(tool.args_ids)
-            if tool.args_output_ids:
-                all_args_output_ids.extend(tool.args_output_ids)
-
-        if all_args_ids or all_args_output_ids:
-
-            async def fetch_args():
-                if not all_args_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args(
-                        c,
-                        list(set(all_args_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            async def fetch_args_outputs():
-                if not all_args_output_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args_outputs(
-                        c,
-                        list(set(all_args_output_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            config_args, config_args_outputs = await asyncio.gather(
-                fetch_args(),
-                fetch_args_outputs(),
-            )
-
-    return GetChatWebsocketResponse(
-        entries=ChatWebsocketEntries(
-            draft_training=data.draft_item,
-            runs=runs_result,
-        ),
-        resources=ChatWebsocketResources(
-            departments=data.current_resources.get("departments") or None,
-            personas=data.current_resources.get("personas") or None,
-            documents=data.current_resources.get("documents") or None,
-            parameter_fields=data.current_resources.get("parameter_fields") or None,
-            scenarios=data.current_resources.get("scenarios") or None,
-            parameters=data.current_resources.get("parameters") or None,
-            questions=data.current_resources.get("questions") or None,
-            options=data.current_resources.get("options") or None,
-            videos=data.current_resources.get("videos") or None,
-            images=data.current_resources.get("images") or None,
-            problem_statements=data.current_resources.get("problem_statements") or None,
-            objectives=data.current_resources.get("objectives") or None,
-        ),
-        params=GetChatRequest(chat_entry_id=chat_entry_id, draft_id=draft_id),
-        agents=data.config_agents or None,
-        models=data.config_models or None,
-        providers=data.config_providers or None,
-        tools=data.config_tools or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        resource_agent_ids=data.resource_agent_ids,
-        group_id=data.group_id,
-    )
-
-
-# =============================================================================
-# Client/BFF Layer
-# =============================================================================
-
-# Section class mapping for building typed sections
-_SECTION_CLASSES: dict[str, type] = {
-    "departments": ChatDepartmentSection,
-    "personas": ChatPersonaSection,
-    "documents": ChatDocumentSection,
-    "parameter_fields": ChatParameterFieldSection,
-    "scenarios": ChatScenarioSection,
-    "parameters": ChatParameterSection,
-    "questions": ChatQuestionSection,
-    "options": ChatOptionSection,
-    "videos": ChatVideoSection,
-    "images": ChatImageSection,
-    "problem_statements": ChatProblemStatementSection,
-    "objectives": ChatObjectiveSection,
-}
 
 
 async def get_chat_client(
-    pool: asyncpg.Pool,
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
     profile_id: UUID,
-    chat_entry_id: UUID,
+    chat_entry_id: UUID | None = None,
     attempt_id: UUID | None = None,
     draft_id: UUID | None = None,
+    group_id: UUID,
     bypass_cache: bool = False,
 ) -> GetChatResponse:
-    """HTTP-facing chat bundle response formatter — section-first pattern."""
-    data = await get_chat_internal(
-        pool=pool,
+    """HTTP-facing chat bundle response — composable infra pattern.
+
+    Flow:
+      1. resolve_common_context(profile_id) → profile, tool_graph, runs
+      2. resolve_chat_context(group_id, draft_id) → hydrated resources from draft
+      3. score_tools(tool_graph, CHAT_BUNDLE_RESOURCES) → per-resource tool picks
+      4. Pure Python: show flags, response assembly
+    """
+
+    # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
+
+    common = await resolve_common_context(
+        conn,
+        redis,
         profile_id=profile_id,
-        chat_entry_id=chat_entry_id,
-        attempt_id=attempt_id,
-        draft_id=draft_id,
+        group_id=group_id,
         bypass_cache=bypass_cache,
     )
 
+    if common is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
+        )
+
+    # ── Step 2: Chat artifact context (draft-only) ────────────────────────
+
+    ctx = await resolve_chat_context(
+        conn,
+        redis,
+        group_id=group_id,
+        draft_id=draft_id,
+        user_department_ids=common.profile.department_ids,
+        bypass_cache=bypass_cache,
+    )
+
+    # ── Step 3: Tool scoring ──────────────────────────────────────────────
+
+    scores = score_tools(common.tool_graph, CHAT_BUNDLE_RESOURCES)
+
+    # ── Step 4: Pure Python — section assembly ────────────────────────────
+
     def _section(resource_key: str) -> BaseChatSection:
         cls = _SECTION_CLASSES[resource_key]
+        pair = ctx.resources.get(resource_key)
+        if not pair:
+            return cls(show=True, required=False)
         return cls(
-            show=data.show_flags_map.get(resource_key, True),
+            show=True,
             required=False,
-            show_ai_generate=data.resource_agent_ids.get(resource_key) is not None,
-            current=data.current_resources.get(resource_key) or None,
-            resources=data.all_resources.get(resource_key) or None,
+            show_ai_generate=scores.best.get(resource_key) is not None,
+            current=pair.selected or None,
+            resources=pair.suggestions or None,
         )
 
     return GetChatResponse(
-        chat_entry_id=data.chat_entry_id,
-        parent_id=data.parent_id,
-        simulation_id=data.simulation_id,
-        simulation_name=data.simulation_name,
-        scenario_id=data.scenario_id,
-        profile_has_access=data.profile_has_access,
-        group_id=data.group_id,
-        draft_version=data.draft_version,
-        scenario_flags=ChatScenarioFlags(**data.scenario_flags),
+        chat_entry_id=chat_entry_id or group_id,
+        attempt_id=attempt_id,
+        group_id=group_id,
+        draft_version=ctx.draft_version,
+        names=_section("names"),
+        descriptions=_section("descriptions"),
+        flags=_section("flags"),
         departments=_section("departments"),
         personas=_section("personas"),
         documents=_section("documents"),
         parameter_fields=_section("parameter_fields"),
         scenarios=_section("scenarios"),
-        parameters=_section("parameters"),
+        fields=_section("fields"),
         questions=_section("questions"),
         options=_section("options"),
         videos=_section("videos"),
         images=_section("images"),
         problem_statements=_section("problem_statements"),
         objectives=_section("objectives"),
-        config_agents=data.config_agents or None,
-        config_models=data.config_models or None,
-        config_providers=data.config_providers or None,
-        config_tools=data.config_tools or None,
     )
 
 
@@ -693,6 +253,7 @@ async def get_chat_client(
 async def chat_get(
     request: GetChatRequest,
     http_request: Request,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetChatResponse:
     """Get hydrated resources for chat bundle customization."""
     try:
@@ -703,18 +264,17 @@ async def chat_get(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        pool = get_pool()
-        if not pool:
-            raise RuntimeError("Database pool not initialized")
-
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+        redis = get_redis_client()
 
         return await get_chat_client(
-            pool=pool,
+            conn,
+            redis,
             profile_id=cast(UUID, profile_id),
             chat_entry_id=request.chat_entry_id,
             attempt_id=request.attempt_id,
             draft_id=request.draft_id,
+            group_id=request.group_id,
             bypass_cache=bypass_cache,
         )
     except HTTPException:

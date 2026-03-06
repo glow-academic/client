@@ -1,59 +1,44 @@
-"""Invocation bundle artifact endpoint.
+"""Invocation GET endpoint — composable infra architecture.
 
-Section-first three-layer implementation (mirrors training/bundle.py):
-1) get_invocation_internal() - MV view -> hydrate all 9 -> filter current
-2) get_invocation_client() - HTTP section-first payload formatter
+Uses composable infra layers:
+  1. resolve_common_context — profile + tool graph + runs
+  2. resolve_invocation_context — draft-only → hydrated resources
+  3. score_tools — tool graph + artifact resources → per-resource tool picks
+  4. Pure Python — response assembly
 """
 
-import asyncio
-from collections.abc import Callable, Coroutine
-from dataclasses import dataclass, field
-from typing import Any, TypeVar, cast
+from __future__ import annotations
+
+from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+from redis.asyncio import Redis
 
-from app.infra.globals import get_pool, get_redis_client
-from app.routes.auth.settings import get_auth_settings_internal
+from app.infra.common_context import resolve_common_context
+from app.infra.globals import get_db, get_redis_client
+from app.infra.invocation_context import resolve_invocation_context
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.invocation.types import (
     BaseSuiteSection,
-    GetInvocationApiRequest,
     GetSuiteRequest,
     GetSuiteResponse,
     GetSuiteWebsocketResponse,
     SuiteDepartmentSection,
-    SuiteInstructionSection,
+    SuiteDescriptionSection,
+    SuiteEndpointSection,
+    SuiteFlagSection,
     SuiteKeySection,
-    SuiteModelSection,
-    SuitePromptSection,
+    SuiteModalitySection,
+    SuiteNameSection,
+    SuitePricingSection,
+    SuiteQualitySection,
     SuiteReasoningLevelSection,
     SuiteTemperatureLevelSection,
-    SuiteToolSection,
+    SuiteValueSection,
     SuiteVoiceSection,
-    SuiteWebsocketEntries,
-    SuiteWebsocketResources,
 )
-from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-from app.routes.v5.tools.entries.invocation.get import get_invocation_view_internal
-from app.routes.v5.tools.resources.args.get import get_args
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.instructions.get import get_instructions
-from app.routes.v5.tools.resources.keys.get import get_keys
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.prompts.get import get_prompts
-from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.reasoning_levels.get import (
-    get_reasoning_levels,
-)
-from app.routes.v5.tools.resources.temperature_levels.get import (
-    get_temperature_levels,
-)
-from app.routes.v5.tools.resources.tools.get import get_tools
-from app.routes.v5.tools.resources.voices.get import get_voices
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
@@ -62,293 +47,135 @@ router = APIRouter()
 # Constants
 # =============================================================================
 
-BENCHMARK_BUNDLE_RESOURCES: set[str] = {
+INVOCATION_BUNDLE_RESOURCES: set[str] = {
+    "names",
+    "descriptions",
+    "values",
+    "flags",
     "departments",
-    "models",
-    "prompts",
-    "instructions",
-    "voices",
-    "temperature_levels",
-    "reasoning_levels",
-    "tools",
     "keys",
+    "endpoints",
+    "modalities",
+    "temperature_levels",
+    "pricing",
+    "reasoning_levels",
+    "qualities",
+    "voices",
 }
-
-# =============================================================================
-# Internal Data
-# =============================================================================
-
-
-@dataclass
-class SuiteInternalData:
-    suite_entry_id: UUID
-    benchmark_id: UUID | None
-    profile_has_access: bool
-    group_id: UUID | None = None
-    draft_version: int | None = None
-    draft_item: Any | None = None
-    # Per-resource: all (suggestions) and current (selected)
-    all_resources: dict[str, list[Any]] = field(default_factory=dict)
-    current_resources: dict[str, list[Any]] = field(default_factory=dict)
-    resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
-    # Config chain
-    config_agents: list[Any] = field(default_factory=list)
-    config_models: list[Any] = field(default_factory=list)
-    config_providers: list[Any] = field(default_factory=list)
-    config_tools: list[Any] = field(default_factory=list)
-
-
-# =============================================================================
-# Helpers
-# =============================================================================
-
-T = TypeVar("T")
-
-
-def _filter_by_ids(items: list[T], ids: list[UUID], id_attr: str) -> list[T]:
-    if not items or not ids:
-        return []
-    id_set = {str(i) for i in ids}
-    output: list[T] = []
-    for item in items:
-        value = getattr(item, id_attr, None)
-        if value and str(value) in id_set:
-            output.append(item)
-    return output
-
-
-# Resource key -> (view_data attr for IDs, get_*_internal func, id_attr for filtering)
-RESOURCE_CONFIG: list[tuple[str, str, Any, str]] = [
-    ("departments", "department_ids", get_departments, "department_id"),
-    ("models", "model_ids", get_models, "id"),
-    ("prompts", "prompt_ids", get_prompts, "id"),
-    ("instructions", "instruction_ids", get_instructions, "id"),
-    ("voices", "voice_ids", get_voices, "id"),
-    (
-        "temperature_levels",
-        "temperature_level_ids",
-        get_temperature_levels,
-        "id",
-    ),
-    (
-        "reasoning_levels",
-        "reasoning_level_ids",
-        get_reasoning_levels,
-        "id",
-    ),
-    ("tools", "tool_ids", get_tools, "id"),
-    ("keys", "key_ids", get_keys, "id"),
-]
-
-# =============================================================================
-# Internal fetch
-# =============================================================================
-
-
-async def get_invocation_internal(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    suite_entry_id: UUID,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> SuiteInternalData:
-    """Shared IDs-first + hydration internal fetch for benchmark bundle artifact."""
-    from app.routes.v5.tools.entries.invocation_drafts.get import (
-        get_invocation_drafts_entries_internal,
-    )
-    from app.routes.v5.tools.entries.invocation_drafts.types import (
-        GetInvocationDraftResponse,
-    )
-
-    # 1. Fetch MV view data (all 9 ID arrays)
-    async with pool.acquire() as conn:
-        view_data = await get_invocation_view_internal(
-            conn=conn,
-            profile_id=profile_id,
-            suite_entry_id=suite_entry_id,
-        )
-
-    if not view_data.suite_entry_id:
-        raise HTTPException(status_code=404, detail="Benchmark bundle not found")
-
-    if not view_data.profile_has_access:
-        raise HTTPException(
-            status_code=403,
-            detail="You do not have access to this benchmark bundle.",
-        )
-
-    # 2. Fetch draft if provided
-    draft_item: GetInvocationDraftResponse | None = None
-    if draft_id is not None:
-        async with pool.acquire() as conn:
-            draft_items = await get_invocation_drafts_entries_internal(
-                conn=conn,
-                ids=[draft_id],
-                bypass_cache=bypass_cache,
-            )
-            if draft_items:
-                draft_item = draft_items[0]
-
-    # 3. Build selected IDs — draft overrides MV when present
-    selected_ids: dict[str, list[UUID]] = {}
-    for resource_key, view_attr, _fetch_fn, _id_attr in RESOURCE_CONFIG:
-        if draft_item is not None:
-            draft_ids_val = getattr(draft_item, view_attr, None)
-            selected_ids[resource_key] = list(draft_ids_val) if draft_ids_val else []
-        else:
-            mv_ids = list(getattr(view_data, view_attr, []) or [])
-            selected_ids[resource_key] = mv_ids
-
-    # 4. Hydrate ALL 9 resources in parallel
-    FetchFn = Callable[..., Coroutine[Any, Any, list[Any]]]
-
-    async def _fetch_resource(
-        resource_key: str,
-        view_attr: str,
-        fetch_fn: FetchFn,
-    ) -> tuple[str, list[Any]]:
-        all_ids = list(getattr(view_data, view_attr, []) or [])
-        if not all_ids:
-            return (resource_key, [])
-        async with pool.acquire() as conn:
-            return (
-                resource_key,
-                await fetch_fn(
-                    conn, all_ids, get_redis_client(), bypass_cache=bypass_cache
-                ),
-            )
-
-    fetch_tasks = [_fetch_resource(rk, va, fn) for rk, va, fn, _ia in RESOURCE_CONFIG]
-    fetch_results = await asyncio.gather(*fetch_tasks)
-
-    all_resources: dict[str, list[Any]] = {}
-    for resource_key, items in fetch_results:
-        all_resources[resource_key] = items
-
-    # 5. Filter current selections from full lists
-    current_resources: dict[str, list[Any]] = {}
-    for resource_key, _view_attr, _fetch_fn, id_attr in RESOURCE_CONFIG:
-        current_resources[resource_key] = _filter_by_ids(
-            all_resources.get(resource_key, []),
-            selected_ids.get(resource_key, []),
-            id_attr,
-        )
-
-    # 6. Settings-based agent resolution + config chain
-    async with pool.acquire() as conn:
-        settings_data = await get_auth_settings_internal(conn, profile_id, bypass_cache)
-    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, BENCHMARK_BUNDLE_RESOURCES
-    )
-
-    # Config chain (agents + tools already hydrated, models need fetch)
-    config_agents = list(settings_data.settings_agents)
-    config_tools = list(settings_data.settings_tools)
-
-    config_model_ids = list(
-        dict.fromkeys(a.model_id for a in settings_data.settings_agents if a.model_id)
-    )
-    config_models: list[Any] = []
-    if config_model_ids:
-        async with pool.acquire() as conn:
-            config_models = await get_models(
-                conn, config_model_ids, get_redis_client(), bypass_cache
-            )
-
-    config_provider_ids = list(
-        dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
-    )
-    config_providers: list[Any] = []
-    if config_provider_ids:
-        async with pool.acquire() as conn:
-            config_providers = await get_providers(
-                conn, config_provider_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-
-    return SuiteInternalData(
-        suite_entry_id=view_data.suite_entry_id,
-        benchmark_id=view_data.benchmark_id,
-        profile_has_access=view_data.profile_has_access,
-        group_id=draft_item.group_id if draft_item else None,
-        draft_version=draft_item.version if draft_item else None,
-        draft_item=draft_item,
-        all_resources=all_resources,
-        current_resources=current_resources,
-        resource_agent_ids=agent_ids,
-        config_agents=config_agents,
-        config_models=config_models,
-        config_providers=config_providers,
-        config_tools=config_tools,
-    )
-
-
-# =============================================================================
-# Client/BFF Layer
-# =============================================================================
 
 # Section class mapping for building typed sections
 _SECTION_CLASSES: dict[str, type] = {
+    "names": SuiteNameSection,
+    "descriptions": SuiteDescriptionSection,
+    "values": SuiteValueSection,
+    "flags": SuiteFlagSection,
     "departments": SuiteDepartmentSection,
-    "models": SuiteModelSection,
-    "prompts": SuitePromptSection,
-    "instructions": SuiteInstructionSection,
-    "voices": SuiteVoiceSection,
-    "temperature_levels": SuiteTemperatureLevelSection,
-    "reasoning_levels": SuiteReasoningLevelSection,
-    "tools": SuiteToolSection,
     "keys": SuiteKeySection,
+    "endpoints": SuiteEndpointSection,
+    "modalities": SuiteModalitySection,
+    "temperature_levels": SuiteTemperatureLevelSection,
+    "pricing": SuitePricingSection,
+    "reasoning_levels": SuiteReasoningLevelSection,
+    "qualities": SuiteQualitySection,
+    "voices": SuiteVoiceSection,
 }
 
 
+# =============================================================================
+# Client/BFF Layer — composable infra architecture
+# =============================================================================
+
+
 async def get_invocation_client(
-    pool: asyncpg.Pool,
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
     profile_id: UUID,
-    suite_entry_id: UUID,
+    test_id: UUID,
     draft_id: UUID | None = None,
+    group_id: UUID,
     bypass_cache: bool = False,
 ) -> GetSuiteResponse:
-    """HTTP-facing bundle response formatter — section-first pattern."""
-    data = await get_invocation_internal(
-        pool=pool,
+    """HTTP-facing bundle response using composable infra functions.
+
+    Flow:
+      1. resolve_common_context(profile_id) → profile, tool_graph, runs
+      2. resolve_invocation_context(group_id, draft_id) → hydrated resources
+      3. score_tools(tool_graph, INVOCATION_BUNDLE_RESOURCES) → per-resource tool picks
+      4. Pure Python: response assembly
+    """
+
+    # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
+
+    common = await resolve_common_context(
+        conn,
+        redis,
         profile_id=profile_id,
-        suite_entry_id=suite_entry_id,
-        draft_id=draft_id,
+        group_id=group_id,
         bypass_cache=bypass_cache,
     )
 
+    if common is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
+        )
+
+    profile = common.profile
+
+    # ── Step 2: Invocation context (draft-only) ───────────────────────────
+
+    invocation = await resolve_invocation_context(
+        conn,
+        redis,
+        group_id=group_id,
+        draft_id=draft_id,
+        user_department_ids=profile.department_ids,
+        bypass_cache=bypass_cache,
+    )
+
+    # ── Step 3: Tool scoring ──────────────────────────────────────────────
+
+    scores = score_tools(common.tool_graph, INVOCATION_BUNDLE_RESOURCES)
+
+    # ── Step 4: Response assembly ─────────────────────────────────────────
+
     def _section(resource_key: str) -> BaseSuiteSection:
         cls = _SECTION_CLASSES[resource_key]
+        pair = invocation.resources.get(resource_key)
+        if not pair:
+            return cls(show=True, required=False)
         return cls(
             show=True,
             required=False,
-            show_ai_generate=data.resource_agent_ids.get(resource_key) is not None,
-            current=data.current_resources.get(resource_key) or None,
-            resources=data.all_resources.get(resource_key) or None,
+            show_ai_generate=scores.best.get(resource_key) is not None,
+            current=pair.selected or None,
+            resources=pair.suggestions or None,
         )
 
     return GetSuiteResponse(
-        suite_entry_id=data.suite_entry_id,
-        benchmark_id=data.benchmark_id,
-        profile_has_access=data.profile_has_access,
-        draft_version=data.draft_version,
+        test_id=test_id,
+        profile_has_access=True,
+        draft_version=invocation.draft_version,
+        group_id=group_id,
+        names=_section("names"),
+        descriptions=_section("descriptions"),
+        values=_section("values"),
+        flags=_section("flags"),
         departments=_section("departments"),
-        models=_section("models"),
-        prompts=_section("prompts"),
-        instructions=_section("instructions"),
-        voices=_section("voices"),
-        temperature_levels=_section("temperature_levels"),
-        reasoning_levels=_section("reasoning_levels"),
-        tools=_section("tools"),
         keys=_section("keys"),
-        config_agents=data.config_agents or None,
-        config_models=data.config_models or None,
-        config_providers=data.config_providers or None,
-        config_tools=data.config_tools or None,
+        endpoints=_section("endpoints"),
+        modalities=_section("modalities"),
+        temperature_levels=_section("temperature_levels"),
+        pricing=_section("pricing"),
+        reasoning_levels=_section("reasoning_levels"),
+        qualities=_section("qualities"),
+        voices=_section("voices"),
     )
 
 
 # =============================================================================
-# WebSocket Layer
+# WebSocket Layer (stub — to be rewritten with infra functions)
 # =============================================================================
 
 
@@ -359,116 +186,9 @@ async def get_invocation_websocket(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetSuiteWebsocketResponse:
-    """Thin wrapper for websocket consumers — selected resources only."""
-
-    async def fetch_bundle():
-        return await get_invocation_internal(
-            pool=pool,
-            profile_id=profile_id,
-            suite_entry_id=suite_entry_id,
-            draft_id=draft_id,
-            bypass_cache=bypass_cache,
-        )
-
-    async def fetch_config_profile():
-        async with pool.acquire() as conn:
-            return await get_profiles(
-                conn, [profile_id], get_redis_client(), bypass_cache
-            )
-
-    async def fetch_runs_today():
-        from datetime import UTC, datetime
-
-        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
-        async with pool.acquire() as conn:
-            return await get_run_list_entries_internal(
-                conn=conn,
-                profile_id_filter=profile_id,
-                date_from=today_utc,
-                date_to=tomorrow_utc,
-                page_limit=1,
-                bypass_cache=True,
-            )
-
-    (data, config_profile_result, runs_result) = await asyncio.gather(
-        fetch_bundle(),
-        fetch_config_profile(),
-        fetch_runs_today(),
-    )
-
-    # Pre-fetch args and args_outputs from tool IDs (both cached via *_internal)
-    config_args = None
-    config_args_outputs = None
-    config_tools_list = data.config_tools or []
-    if config_tools_list:
-        all_args_ids: list[UUID] = []
-        all_args_output_ids: list[UUID] = []
-        for tool in config_tools_list:
-            if tool.args_ids:
-                all_args_ids.extend(tool.args_ids)
-            if tool.args_output_ids:
-                all_args_output_ids.extend(tool.args_output_ids)
-
-        if all_args_ids or all_args_output_ids:
-
-            async def fetch_args():
-                if not all_args_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args(
-                        c,
-                        list(set(all_args_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            async def fetch_args_outputs():
-                if not all_args_output_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args_outputs(
-                        c,
-                        list(set(all_args_output_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            config_args, config_args_outputs = await asyncio.gather(
-                fetch_args(),
-                fetch_args_outputs(),
-            )
-
-    websocket_resources = SuiteWebsocketResources(
-        departments=data.current_resources.get("departments") or None,
-        models=data.current_resources.get("models") or None,
-        prompts=data.current_resources.get("prompts") or None,
-        instructions=data.current_resources.get("instructions") or None,
-        voices=data.current_resources.get("voices") or None,
-        temperature_levels=data.current_resources.get("temperature_levels") or None,
-        reasoning_levels=data.current_resources.get("reasoning_levels") or None,
-        tools=data.current_resources.get("tools") or None,
-        keys=data.current_resources.get("keys") or None,
-    )
-
-    return GetSuiteWebsocketResponse(
-        entries=SuiteWebsocketEntries(
-            draft_suite=data.draft_item,
-            runs=runs_result,
-        ),
-        resources=websocket_resources,
-        params=GetInvocationApiRequest(
-            benchmark_entry_id=suite_entry_id, draft_id=draft_id
-        ),
-        agents=data.config_agents or None,
-        models=data.config_models or None,
-        providers=data.config_providers or None,
-        tools=data.config_tools or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        resource_agent_ids=data.resource_agent_ids,
-        group_id=data.group_id,
+    """Stub — will be rewritten to use composable infra functions."""
+    raise NotImplementedError(
+        "get_invocation_websocket needs to be rewritten with infra functions"
     )
 
 
@@ -481,6 +201,7 @@ async def get_invocation_websocket(
 async def invocation_get(
     request: GetSuiteRequest,
     http_request: Request,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSuiteResponse:
     """Get hydrated resources for benchmark bundle customization."""
     try:
@@ -492,16 +213,15 @@ async def invocation_get(
             )
 
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-
-        pool = get_pool()
-        if not pool:
-            raise RuntimeError("Database pool not initialized")
+        redis = get_redis_client()
 
         return await get_invocation_client(
-            pool=pool,
-            profile_id=cast(UUID, profile_id),
-            suite_entry_id=request.suite_entry_id,
+            conn,
+            redis,
+            profile_id=profile_id,
+            test_id=request.test_id,
             draft_id=request.draft_id,
+            group_id=request.group_id,
             bypass_cache=bypass_cache,
         )
     except HTTPException:

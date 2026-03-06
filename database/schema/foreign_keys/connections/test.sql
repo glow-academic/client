@@ -155,6 +155,24 @@ ALTER TABLE ONLY public.test_invocation_voices_connection
 
 --
 
+-- Name: test_invocation_agents_connection test_invocation_agents_connection_agents_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_agents_connection
+    ADD CONSTRAINT test_invocation_agents_connection_agents_id_fkey FOREIGN KEY (agents_id) REFERENCES public.agents_resource(id);
+
+
+--
+
+-- Name: test_invocation_agents_connection test_invocation_agents_connection_test_invocation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_agents_connection
+    ADD CONSTRAINT test_invocation_agents_connection_test_invocation_id_fkey FOREIGN KEY (test_invocation_id) REFERENCES public.test_invocation_entry(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: test_invocation_departments_connection test_invocation_departments_connection_departments_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 

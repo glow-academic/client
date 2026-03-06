@@ -32,6 +32,21 @@ CREATE TABLE public.test_evals_connection (
 
 --
 
+-- Name: test_invocation_agents_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.test_invocation_agents_connection (
+    test_invocation_id uuid NOT NULL,
+    agents_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+
 -- Name: test_invocation_departments_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -259,6 +274,15 @@ ALTER TABLE ONLY public.test_invocation_temperature_levels_connection
 
 ALTER TABLE ONLY public.test_invocation_voices_connection
     ADD CONSTRAINT invocation_resolved_voices_connection_pkey PRIMARY KEY (test_invocation_id, voices_id);
+
+
+--
+
+-- Name: test_invocation_agents_connection test_invocation_agents_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_agents_connection
+    ADD CONSTRAINT test_invocation_agents_connection_pkey PRIMARY KEY (test_invocation_id, agents_id);
 
 
 --

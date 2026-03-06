@@ -245,18 +245,19 @@ def compute_show_continue(
 # =============================================================================
 
 CHAT_BUNDLE_RESOURCES: set[str] = {
+    "names",
+    "descriptions",
+    "flags",
     "departments",
     "personas",
     "documents",
     "parameter_fields",
     "scenarios",
-    "parameters",
     "fields",
     "questions",
     "options",
     "videos",
     "images",
-    "templates",
     "problem_statements",
     "objectives",
 }

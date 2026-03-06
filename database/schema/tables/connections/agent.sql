@@ -130,6 +130,22 @@ CREATE TABLE public.agent_drafts_reasoning_levels_connection (
 
 --
 
+-- Name: agent_drafts_rubrics_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.agent_drafts_rubrics_connection (
+    draft_id uuid NOT NULL,
+    rubrics_id uuid NOT NULL,
+    version integer DEFAULT 0 NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    active boolean DEFAULT true NOT NULL
+);
+
+
+--
+
 -- Name: agent_drafts_temperature_levels_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -246,6 +262,15 @@ ALTER TABLE ONLY public.agent_drafts_qualities_connection
 
 ALTER TABLE ONLY public.agent_drafts_reasoning_levels_connection
     ADD CONSTRAINT agent_drafts_reasoning_levels_connection_pkey PRIMARY KEY (draft_id, reasoning_levels_id);
+
+
+--
+
+-- Name: agent_drafts_rubrics_connection agent_drafts_rubrics_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_drafts_rubrics_connection
+    ADD CONSTRAINT agent_drafts_rubrics_connection_pkey PRIMARY KEY (draft_id, rubrics_id);
 
 
 --

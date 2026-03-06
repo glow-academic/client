@@ -146,6 +146,24 @@ ALTER TABLE ONLY public.agent_drafts_reasoning_levels_connection
 
 --
 
+-- Name: agent_drafts_rubrics_connection agent_drafts_rubrics_connection_draft_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_drafts_rubrics_connection
+    ADD CONSTRAINT agent_drafts_rubrics_connection_draft_id_fkey FOREIGN KEY (draft_id) REFERENCES public.agent_drafts_entry(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: agent_drafts_rubrics_connection agent_drafts_rubrics_connection_rubrics_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agent_drafts_rubrics_connection
+    ADD CONSTRAINT agent_drafts_rubrics_connection_rubrics_id_fkey FOREIGN KEY (rubrics_id) REFERENCES public.rubrics_resource(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: agent_drafts_temperature_levels_connection agent_drafts_temperature_levels_conn_temperature_levels_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
