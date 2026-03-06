@@ -75,6 +75,8 @@ async def resolve_invocation_context(
     group_id: UUID,
     draft_id: UUID | None = None,
     user_department_ids: list[UUID] | None = None,
+    # Search filters
+    descriptions_search: str | None = None,
     bypass_cache: bool = False,
 ) -> ArtifactContext:
     """Resolve an invocation into fully hydrated resources for the GET endpoint.
@@ -150,6 +152,7 @@ async def resolve_invocation_context(
         search_descriptions(
             conn,
             redis,
+            search=descriptions_search,
             draft_id=group_id,
             exclude_ids=description_ids,
             bypass_cache=bypass_cache,

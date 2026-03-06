@@ -84,6 +84,11 @@ class AgentQualitySection(BaseResourceSection):
     resources: list[Any] | None = None
 
 
+class AgentRubricSection(BaseResourceSection):
+    current: list[Any] | None = None
+    resources: list[Any] | None = None
+
+
 class GetAgentApiRequest(BaseModel):
     """Request model for get agent endpoint."""
 
@@ -117,6 +122,7 @@ class GetAgentApiResponse(BaseModel):
     reasoning_levels: AgentReasoningLevelSection | None = None
     voices: AgentVoiceSection | None = None
     qualities: AgentQualitySection | None = None
+    rubrics: AgentRubricSection | None = None
 
 
 class AgentResourceAction(BaseModel):

@@ -19,6 +19,7 @@ class GetMessageResponse(BaseModel):
     active: bool
     mcp: bool
     generated: bool
+    agent_ids: list[UUID] = []
 
 
 class SearchMessageResponse(BaseModel):

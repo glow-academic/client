@@ -33,7 +33,8 @@ async def search_agent_drafts(
             COALESCE(ARRAY_AGG(DISTINCT p.profiles_id) FILTER (WHERE p.profiles_id IS NOT NULL), '{}') AS profile_ids,
             COALESCE(ARRAY_AGG(DISTINCT rl.reasoning_levels_id) FILTER (WHERE rl.reasoning_levels_id IS NOT NULL), '{}') AS reasoning_level_ids,
             COALESCE(ARRAY_AGG(DISTINCT tl.temperature_levels_id) FILTER (WHERE tl.temperature_levels_id IS NOT NULL), '{}') AS temperature_level_ids,
-            COALESCE(ARRAY_AGG(DISTINCT v.voices_id) FILTER (WHERE v.voices_id IS NOT NULL), '{}') AS voice_ids
+            COALESCE(ARRAY_AGG(DISTINCT v.voices_id) FILTER (WHERE v.voices_id IS NOT NULL), '{}') AS voice_ids,
+            COALESCE(ARRAY_AGG(DISTINCT rb.rubrics_id) FILTER (WHERE rb.rubrics_id IS NOT NULL), '{}') AS rubric_ids
         FROM agent_drafts_entry d
         LEFT JOIN agent_drafts_names_connection n ON n.draft_id = d.id
         LEFT JOIN agent_drafts_descriptions_connection desc_c ON desc_c.draft_id = d.id
@@ -45,6 +46,7 @@ async def search_agent_drafts(
         LEFT JOIN agent_drafts_reasoning_levels_connection rl ON rl.draft_id = d.id
         LEFT JOIN agent_drafts_temperature_levels_connection tl ON tl.draft_id = d.id
         LEFT JOIN agent_drafts_voices_connection v ON v.draft_id = d.id
+        LEFT JOIN agent_drafts_rubrics_connection rb ON rb.draft_id = d.id
         WHERE d.active = true
           AND ($1::uuid[] IS NULL OR d.group_id = ANY($1))
           AND ($2::uuid[] IS NULL OR d.session_id = ANY($2))
@@ -85,6 +87,7 @@ async def search_agent_drafts(
             reasoning_level_ids=r["reasoning_level_ids"],
             temperature_level_ids=r["temperature_level_ids"],
             voice_ids=r["voice_ids"],
+            rubric_ids=r["rubric_ids"],
         )
         for r in rows
     ]

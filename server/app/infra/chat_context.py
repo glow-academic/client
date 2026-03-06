@@ -73,6 +73,18 @@ async def resolve_chat_context(
     group_id: UUID,
     draft_id: UUID | None = None,
     user_department_ids: list[UUID] | None = None,
+    # Search filters
+    description_search: str | None = None,
+    persona_search: str | None = None,
+    document_search: str | None = None,
+    problem_statement_search: str | None = None,
+    image_search: str | None = None,
+    video_search: str | None = None,
+    question_search: str | None = None,
+    option_search: str | None = None,
+    # Show-selected toggles
+    persona_show_selected: bool | None = None,
+    document_show_selected: bool | None = None,
     bypass_cache: bool = False,
 ) -> ArtifactContext:
     """Resolve a chat entry into fully hydrated resources for the GET endpoint.
@@ -157,6 +169,7 @@ async def resolve_chat_context(
         search_descriptions(
             conn,
             redis,
+            search=description_search,
             draft_id=group_id,
             exclude_ids=description_ids,
             bypass_cache=bypass_cache,
@@ -190,9 +203,12 @@ async def resolve_chat_context(
         search_personas(
             conn,
             redis,
-            search=None,
+            search=persona_search,
             limit_count=20,
             offset_count=0,
+            department_ids=user_dept_ids,
+            draft_id=group_id,
+            suggest_source="selected" if persona_show_selected else None,
             exclude_ids=persona_ids,
             bypass_cache=bypass_cache,
         ),
@@ -201,9 +217,12 @@ async def resolve_chat_context(
         search_documents(
             conn,
             redis,
-            search=None,
+            search=document_search,
             limit_count=20,
             offset_count=0,
+            department_ids=user_dept_ids,
+            draft_id=group_id,
+            suggest_source="selected" if document_show_selected else None,
             exclude_ids=document_ids,
             bypass_cache=bypass_cache,
         ),
@@ -244,7 +263,7 @@ async def resolve_chat_context(
         search_questions(
             conn,
             redis,
-            search=None,
+            search=question_search,
             limit_count=20,
             offset_count=0,
             exclude_ids=question_ids,
@@ -255,7 +274,7 @@ async def resolve_chat_context(
         search_options(
             conn,
             redis,
-            search=None,
+            search=option_search,
             limit_count=20,
             offset_count=0,
             exclude_ids=option_ids,
@@ -266,7 +285,7 @@ async def resolve_chat_context(
         search_videos(
             conn,
             redis,
-            search=None,
+            search=video_search,
             limit_count=20,
             offset_count=0,
             exclude_ids=video_ids,
@@ -277,7 +296,7 @@ async def resolve_chat_context(
         search_images(
             conn,
             redis,
-            search=None,
+            search=image_search,
             limit_count=20,
             offset_count=0,
             exclude_ids=image_ids,
@@ -288,7 +307,7 @@ async def resolve_chat_context(
         search_problem_statements(
             conn,
             redis,
-            search=None,
+            search=problem_statement_search,
             limit_count=20,
             offset_count=0,
             exclude_ids=problem_statement_ids,

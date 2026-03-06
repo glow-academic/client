@@ -71,3 +71,4 @@ class WebsocketContext:
     args_outputs: list
     prompts: list
     instructions: list
+    rubrics: list

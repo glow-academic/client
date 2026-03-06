@@ -69,6 +69,8 @@ class GetSuiteRequest(BaseModel):
     test_id: UUID
     group_id: UUID
     draft_id: UUID | None = None
+    # Search filters
+    descriptions_search: str | None = None
 
 
 # --- Section types (one per resource) ---

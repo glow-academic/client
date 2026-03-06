@@ -23,6 +23,7 @@ async def search_messages(
     conn: asyncpg.Connection,
     run_ids: list[UUID] | None = None,
     role: str | None = None,
+    agent_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -32,17 +33,20 @@ async def search_messages(
 
     rows = await conn.fetch(
         f"""
-        SELECT message_id, run_id, role, message_created_at,
-               text_upload_ids, audio_upload_ids, image_upload_ids,
-               video_upload_ids, file_upload_ids, call_upload_ids
-        FROM {source}
-        WHERE ($1::uuid[] IS NULL OR run_id = ANY($1))
-          AND ($2::text IS NULL OR role = $2)
-        ORDER BY message_created_at DESC
-        LIMIT $3 OFFSET $4
+        SELECT DISTINCT m.message_id, m.run_id, m.role, m.message_created_at,
+               m.text_upload_ids, m.audio_upload_ids, m.image_upload_ids,
+               m.video_upload_ids, m.file_upload_ids, m.call_upload_ids
+        FROM {source} m
+        LEFT JOIN messages_agents_connection mac ON mac.message_id = m.message_id
+        WHERE ($1::uuid[] IS NULL OR m.run_id = ANY($1))
+          AND ($2::text IS NULL OR m.role = $2)
+          AND ($3::uuid[] IS NULL OR mac.agents_id = ANY($3))
+        ORDER BY m.message_created_at DESC
+        LIMIT $4 OFFSET $5
         """,
         run_ids,
         role,
+        agent_ids,
         limit,
         offset,
     )

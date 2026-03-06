@@ -37,6 +37,7 @@ from app.routes.v5.api.main.agent.permissions import (
     compute_prompts_required,
     compute_qualities_required,
     compute_reasoning_levels_required,
+    compute_rubrics_required,
     compute_show_departments,
     compute_show_description,
     compute_show_flag,
@@ -46,6 +47,7 @@ from app.routes.v5.api.main.agent.permissions import (
     compute_show_prompts,
     compute_show_qualities,
     compute_show_reasoning_levels,
+    compute_show_rubrics,
     compute_show_temperature_levels,
     compute_show_tools,
     compute_show_voices,
@@ -66,6 +68,7 @@ from app.routes.v5.api.main.agent.types import (
     AgentPromptSection,
     AgentQualitySection,
     AgentReasoningLevelSection,
+    AgentRubricSection,
     AgentTemperatureLevelSection,
     AgentToolSection,
     AgentVoiceSection,
@@ -189,6 +192,7 @@ async def get_agent_client(
     reasoning_levels_has_tools = scores.has_any.get("reasoning_levels", False)
     voices_has_tools = scores.has_any.get("voices", False)
     qualities_has_tools = scores.has_any.get("qualities", False)
+    rubrics_has_tools = scores.has_any.get("rubrics", False)
 
     missing_tools = get_missing_tools(
         names_has_tools=names_has_tools,
@@ -245,6 +249,7 @@ async def get_agent_client(
         "reasoning_levels": compute_show_reasoning_levels(reasoning_levels_has_tools),
         "voices": compute_show_voices(voices_has_tools),
         "qualities": compute_show_qualities(qualities_has_tools),
+        "rubrics": compute_show_rubrics(rubrics_has_tools),
     }
 
     required_flags_map = {
@@ -260,6 +265,7 @@ async def get_agent_client(
         "reasoning_levels": compute_reasoning_levels_required(),
         "voices": compute_voices_required(),
         "qualities": compute_qualities_required(),
+        "rubrics": compute_rubrics_required(),
     }
 
     def compute_show_ai_generate(resource: str) -> bool:
@@ -348,6 +354,10 @@ async def get_agent_client(
         agent_ctx.resources["qualities"].selected
         + agent_ctx.resources["qualities"].suggestions
     )
+    all_rubrics = dedupe_by_id(
+        agent_ctx.resources["rubrics"].selected
+        + agent_ctx.resources["rubrics"].suggestions
+    )
 
     # Suggestions maps (IDs only)
     suggestions_map = {
@@ -372,6 +382,7 @@ async def get_agent_client(
         ],
         "voices": [v.id for v in agent_ctx.resources["voices"].suggestions],
         "qualities": [q.id for q in agent_ctx.resources["qualities"].suggestions],
+        "rubrics": [r.id for r in agent_ctx.resources["rubrics"].suggestions],
     }
 
     def _section(resource_key: str) -> dict:
@@ -465,6 +476,11 @@ async def get_agent_client(
             **_section("qualities"),
             current=agent_ctx.resources["qualities"].selected or None,
             resources=all_qualities,
+        ),
+        rubrics=AgentRubricSection(
+            **_section("rubrics"),
+            current=agent_ctx.resources["rubrics"].selected or None,
+            resources=all_rubrics,
         ),
     )
 

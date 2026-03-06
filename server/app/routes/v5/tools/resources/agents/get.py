@@ -36,7 +36,7 @@ async def get_agents(
         """
         SELECT id, name, description, department_ids,
                temperature, reasoning, quality,
-               model_id, prompt_id, tool_ids, instruction_ids,
+               model_id, prompt_id, rubric_id, tool_ids, instruction_ids,
                voices, created_at, active, mcp, generated
         FROM agents_resource
         WHERE id = ANY($1)
@@ -56,6 +56,7 @@ async def get_agents(
             quality=r["quality"],
             model_id=r["model_id"],
             prompt_id=r["prompt_id"],
+            rubric_id=r["rubric_id"],
             tool_ids=r["tool_ids"] or [],
             instruction_ids=r["instruction_ids"] or [],
             voices=r["voices"] or [],

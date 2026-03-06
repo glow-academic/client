@@ -13,8 +13,9 @@ async def create_message(
     role: str,
     mcp: bool = False,
     soft: bool = False,
+    agent_ids: list[UUID] | None = None,
 ) -> CreateMessageResponse:
-    """Create a messages entry."""
+    """Create a messages entry with optional agent connections."""
     row = await conn.fetchrow(
         """
         INSERT INTO messages_entry (run_id, role, active, mcp, generated)
@@ -29,5 +30,16 @@ async def create_message(
 
     if row is None:
         raise ValueError("Failed to create messages entry")
+
+    if agent_ids:
+        for agent_id in agent_ids:
+            await conn.execute(
+                """
+                INSERT INTO messages_agents_connection (message_id, agents_id)
+                VALUES ($1, $2)
+                """,
+                row["id"],
+                agent_id,
+            )
 
     return CreateMessageResponse(id=row["id"], created_at=row["created_at"])

@@ -16,6 +16,7 @@ class GetAgentResponse(BaseModel):
     quality: str | None
     model_id: UUID | None
     prompt_id: UUID | None
+    rubric_id: UUID | None
     tool_ids: list[UUID]
     instruction_ids: list[UUID]
     voices: list[str]

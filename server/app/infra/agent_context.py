@@ -34,6 +34,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.prompts.get import get_prompts
 from app.routes.v5.tools.resources.qualities.get import get_qualities
 from app.routes.v5.tools.resources.reasoning_levels.get import get_reasoning_levels
+from app.routes.v5.tools.resources.rubrics.get import get_rubrics
 from app.routes.v5.tools.resources.temperature_levels.get import get_temperature_levels
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.voices.get import get_voices
@@ -48,6 +49,7 @@ from app.routes.v5.tools.resources.names.search import search_names
 from app.routes.v5.tools.resources.prompts.search import search_prompts
 from app.routes.v5.tools.resources.qualities.search import search_qualities
 from app.routes.v5.tools.resources.reasoning_levels.search import search_reasoning_levels
+from app.routes.v5.tools.resources.rubrics.search import search_rubrics
 from app.routes.v5.tools.resources.temperature_levels.search import (
     search_temperature_levels,
 )
@@ -102,6 +104,7 @@ async def resolve_agent_context(
             reasoning_levels=True,
             voices=True,
             qualities=True,
+            rubrics=True,
         )
         if agent_id
         else _empty()
@@ -144,6 +147,8 @@ async def resolve_agent_context(
         voices_suggestions,
         qualities_selected,
         qualities_suggestions,
+        rubrics_selected,
+        rubrics_suggestions,
     ) = await asyncio.gather(
         # Names
         get_names(conn, merged.name_ids, redis, bypass_cache),
@@ -282,6 +287,17 @@ async def resolve_agent_context(
             exclude_ids=merged.quality_ids,
             bypass_cache=bypass_cache,
         ),
+        # Rubrics
+        get_rubrics(conn, merged.rubric_ids, redis, bypass_cache),
+        search_rubrics(
+            conn,
+            redis,
+            search=None,
+            limit_count=20,
+            offset_count=0,
+            exclude_ids=merged.rubric_ids,
+            bypass_cache=bypass_cache,
+        ),
     )
 
     # Filter flags to agent-specific types
@@ -333,6 +349,9 @@ async def resolve_agent_context(
             "qualities": ResourcePair(
                 selected=qualities_selected, suggestions=qualities_suggestions
             ),
+            "rubrics": ResourcePair(
+                selected=rubrics_selected, suggestions=rubrics_suggestions
+            ),
         },
         entries={},
     )
@@ -359,6 +378,7 @@ class _MergedIds:
     reasoning_level_ids: list[UUID]
     voice_ids: list[UUID]
     quality_ids: list[UUID]
+    rubric_ids: list[UUID]
 
 
 def _merge_junction_ids(artifact, draft) -> _MergedIds:
@@ -380,6 +400,7 @@ def _merge_junction_ids(artifact, draft) -> _MergedIds:
     reasoning_level_ids = list(artifact.reasoning_level_ids or []) if artifact else []
     voice_ids = list(artifact.voice_ids or []) if artifact else []
     quality_ids = list(artifact.quality_ids or []) if artifact else []
+    rubric_ids = list(artifact.rubric_ids or []) if artifact else []
 
     # Agent artifact does NOT store prompt_ids / instruction_ids in junctions
     # — prompts and instructions are content resources fetched via the junction
@@ -411,6 +432,8 @@ def _merge_junction_ids(artifact, draft) -> _MergedIds:
             voice_ids = list(draft.voice_ids)
         if draft.quality_ids:
             quality_ids = list(draft.quality_ids)
+        if draft.rubric_ids:
+            rubric_ids = list(draft.rubric_ids)
 
     return _MergedIds(
         name_ids=name_ids,
@@ -425,6 +448,7 @@ def _merge_junction_ids(artifact, draft) -> _MergedIds:
         reasoning_level_ids=reasoning_level_ids,
         voice_ids=voice_ids,
         quality_ids=quality_ids,
+        rubric_ids=rubric_ids,
     )
 
 

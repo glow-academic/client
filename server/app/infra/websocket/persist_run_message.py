@@ -27,6 +27,7 @@ async def persist_run_message(
     role: str,
     content: str,
     upload_folder: Path | None = None,
+    agent_ids: list[UUID] | None = None,
 ) -> CreateRunMessageResult:
     """Write text to disk, create upload record, and link to a message on a run.
 
@@ -60,4 +61,5 @@ async def persist_run_message(
         session_id=session_id,
         role=role,
         upload_id=upload_result.id,
+        agent_ids=agent_ids,
     )

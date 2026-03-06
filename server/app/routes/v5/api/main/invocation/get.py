@@ -94,6 +94,7 @@ async def get_invocation_client(
     test_id: UUID,
     draft_id: UUID | None = None,
     group_id: UUID,
+    descriptions_search: str | None = None,
     bypass_cache: bool = False,
 ) -> GetSuiteResponse:
     """HTTP-facing bundle response using composable infra functions.
@@ -131,6 +132,7 @@ async def get_invocation_client(
         group_id=group_id,
         draft_id=draft_id,
         user_department_ids=profile.department_ids,
+        descriptions_search=descriptions_search,
         bypass_cache=bypass_cache,
     )
 
@@ -222,6 +224,7 @@ async def invocation_get(
             test_id=request.test_id,
             draft_id=request.draft_id,
             group_id=request.group_id,
+            descriptions_search=request.descriptions_search,
             bypass_cache=bypass_cache,
         )
     except HTTPException:

@@ -19,3 +19,12 @@ ALTER TABLE ONLY public.agents_resource
 
 
 --
+
+-- Name: agents_resource agents_resource_rubric_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.agents_resource
+    ADD CONSTRAINT agents_resource_rubric_id_fkey FOREIGN KEY (rubric_id) REFERENCES public.rubrics_resource(id) ON DELETE SET NULL;
+
+
+--

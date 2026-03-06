@@ -257,6 +257,18 @@ class GetChatRequest(BaseModel):
     attempt_id: UUID | None = None
     draft_id: UUID | None = None
     group_id: UUID
+    # Search filters (analogous to scenario)
+    description_search: str | None = None
+    persona_search: str | None = None
+    document_search: str | None = None
+    problem_statement_search: str | None = None
+    image_search: str | None = None
+    video_search: str | None = None
+    question_search: str | None = None
+    option_search: str | None = None
+    # Show-selected toggles
+    persona_show_selected: bool | None = None
+    document_show_selected: bool | None = None
 
 
 # --- Section types (one per resource) ---

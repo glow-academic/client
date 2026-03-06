@@ -232,6 +232,16 @@ def compute_qualities_required() -> bool:
     return False
 
 
+def compute_show_rubrics(rubrics_has_tools: bool) -> bool:
+    """Determine if rubrics picker should be shown."""
+    return rubrics_has_tools
+
+
+def compute_rubrics_required() -> bool:
+    """Determine if rubrics is required."""
+    return False
+
+
 # ========== List Endpoint Permission Functions ==========
 
 
@@ -349,6 +359,7 @@ AGENT_RESOURCES: set[str] = {
     "reasoning_levels",
     "voices",
     "qualities",
+    "rubrics",
 }
 
 # Resources that require an active tool to show AI generate button
@@ -422,6 +433,11 @@ AGENT_DOMAIN_METADATA: dict[str, dict[str, str | bool]] = {
         "name": "Quality",
         "description": "Quality settings",
         "icon": "sparkles",
+    },
+    "rubrics": {
+        "name": "Rubrics",
+        "description": "Evaluation rubrics",
+        "icon": "clipboard-check",
     },
 }
 

@@ -21,7 +21,8 @@ CREATE TABLE public.agents_resource (
     model_id uuid,
     prompt_id uuid,
     instruction_ids uuid[] DEFAULT ARRAY[]::uuid[],
-    voices text[] DEFAULT ARRAY[]::text[] NOT NULL
+    voices text[] DEFAULT ARRAY[]::text[] NOT NULL,
+    rubric_id uuid
 );
 
 

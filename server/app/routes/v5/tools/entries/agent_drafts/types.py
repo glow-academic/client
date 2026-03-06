@@ -30,3 +30,4 @@ class GetAgentDraftResponse(BaseModel):
     temperature_level_ids: list[UUID]
     voice_ids: list[UUID]
     quality_ids: list[UUID]
+    rubric_ids: list[UUID] = []

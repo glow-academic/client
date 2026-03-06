@@ -164,6 +164,18 @@ async def get_chat_client(
     attempt_id: UUID | None = None,
     draft_id: UUID | None = None,
     group_id: UUID,
+    # Search filters
+    description_search: str | None = None,
+    persona_search: str | None = None,
+    document_search: str | None = None,
+    problem_statement_search: str | None = None,
+    image_search: str | None = None,
+    video_search: str | None = None,
+    question_search: str | None = None,
+    option_search: str | None = None,
+    # Show-selected toggles
+    persona_show_selected: bool | None = None,
+    document_show_selected: bool | None = None,
     bypass_cache: bool = False,
 ) -> GetChatResponse:
     """HTTP-facing chat bundle response — composable infra pattern.
@@ -199,6 +211,16 @@ async def get_chat_client(
         group_id=group_id,
         draft_id=draft_id,
         user_department_ids=common.profile.department_ids,
+        description_search=description_search,
+        persona_search=persona_search,
+        document_search=document_search,
+        problem_statement_search=problem_statement_search,
+        image_search=image_search,
+        video_search=video_search,
+        question_search=question_search,
+        option_search=option_search,
+        persona_show_selected=persona_show_selected,
+        document_show_selected=document_show_selected,
         bypass_cache=bypass_cache,
     )
 
@@ -275,6 +297,16 @@ async def chat_get(
             attempt_id=request.attempt_id,
             draft_id=request.draft_id,
             group_id=request.group_id,
+            description_search=request.description_search,
+            persona_search=request.persona_search,
+            document_search=request.document_search,
+            problem_statement_search=request.problem_statement_search,
+            image_search=request.image_search,
+            video_search=request.video_search,
+            question_search=request.question_search,
+            option_search=request.option_search,
+            persona_show_selected=request.persona_show_selected,
+            document_show_selected=request.document_show_selected,
             bypass_cache=bypass_cache,
         )
     except HTTPException:

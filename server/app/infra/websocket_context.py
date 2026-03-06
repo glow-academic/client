@@ -182,6 +182,7 @@ async def resolve_websocket_context(
     all_instructions = dedupe_by_id(
         [i for sc in system_contexts for i in sc.instructions]
     )
+    all_rubrics = dedupe_by_id([r for sc in system_contexts for r in sc.rubrics])
 
     # Dedupe systems by system_id
     seen_system_ids: set[UUID] = set()
@@ -226,4 +227,5 @@ async def resolve_websocket_context(
         args_outputs=all_args_outputs,
         prompts=all_prompts,
         instructions=all_instructions,
+        rubrics=all_rubrics,
     )
