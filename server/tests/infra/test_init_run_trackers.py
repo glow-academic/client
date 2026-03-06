@@ -1,33 +1,33 @@
-"""Tests for infra.websocket.init_run_trackers — Redis tracker initialization.
+"""Tests for infra.websocket.init_run_trackers — combined tracker initialization.
 
 Uses real Redis from testcontainers via redis_client fixture.
 """
 
+import json
+
 import pytest
 
 from app.infra.websocket.init_run_trackers import GENERATION_TTL, init_run_trackers
+from app.infra.websocket.run_tracker import WorkUnit
 
 
 @pytest.mark.asyncio
 class TestInitRunTrackers:
-    async def test_sets_generation_and_resource_keys(self, redis_client):
-        """Both generation and resource progress keys are set."""
+    async def test_sets_legacy_keys(self, redis_client):
+        """Legacy generation and resource progress keys are set."""
         await init_run_trackers(
             redis_client, run_id="run-123", num_agents=3, num_resources=5
         )
 
-        # Verify generation key
         gen = await redis_client.hgetall("generation:run-123")
         assert gen[b"expected"] == b"3"
         assert gen[b"completed"] == b"0"
         assert gen[b"tool_results"] == b"[]"
 
-        # Verify resource progress key
         res = await redis_client.hgetall("resource_progress:run-123")
         assert res[b"total"] == b"5"
         assert res[b"completed"] == b"0"
 
-        # Verify TTL is set (should be close to GENERATION_TTL)
         gen_ttl = await redis_client.ttl("generation:run-123")
         assert gen_ttl > 0 and gen_ttl <= GENERATION_TTL
 
@@ -66,3 +66,51 @@ class TestInitRunTrackers:
 
         res = await redis_client.hgetall("resource_progress:run-ow")
         assert res[b"total"] == b"10"
+
+
+@pytest.mark.asyncio
+class TestInitRunTrackersWithUnits:
+    async def test_sets_both_legacy_and_new_keys(self, redis_client):
+        """When units are provided, both legacy and new tracker keys are set."""
+        units = [
+            WorkUnit(agent_id="a1", target_type="resource", target_name="images", modality="image"),
+            WorkUnit(agent_id="a2", target_type="entry", target_name="contents"),
+        ]
+        await init_run_trackers(
+            redis_client,
+            run_id="run-both",
+            num_agents=2,
+            num_resources=1,
+            units=units,
+        )
+
+        # Legacy keys still set
+        gen = await redis_client.hgetall("generation:run-both")
+        assert gen[b"expected"] == b"2"
+
+        res = await redis_client.hgetall("resource_progress:run-both")
+        assert res[b"total"] == b"1"
+
+        # New tracker keys also set
+        meta = await redis_client.hgetall("run:run-both:meta")
+        assert meta[b"num_agents"] == b"2"
+
+        raw_units = await redis_client.hgetall("run:run-both:units")
+        assert len(raw_units) == 2
+        img = json.loads(raw_units[b"a1:resource:images"])
+        assert img["state"] == "generating"
+        assert img["modality"] == "image"
+
+    async def test_no_units_skips_new_tracker(self, redis_client):
+        """Without units param, only legacy keys are created."""
+        await init_run_trackers(
+            redis_client, run_id="run-legacy", num_agents=1, num_resources=1
+        )
+
+        # Legacy exists
+        gen = await redis_client.hgetall("generation:run-legacy")
+        assert gen[b"expected"] == b"1"
+
+        # New tracker does NOT exist
+        meta = await redis_client.hgetall("run:run-legacy:meta")
+        assert meta == {}
