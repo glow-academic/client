@@ -20,14 +20,14 @@ async def _call(conn, profile_id):
     session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
-    call = await create_call(conn, run_ids=[run.id], session_id=session.id)
+    call = await create_call(conn, run_id=run.id, session_id=session.id)
     return run, call
 
 
 async def test_finds_created_debug_info(conn, profile_id):
     run, call = await _call(conn, profile_id)
     result = await create_debug_info(
-        conn, call_ids=[call.id], content="debug output", run_ids=[run.id]
+        conn, call_id=call.id, content="debug output", run_id=run.id
     )
     await refresh_debug_info(conn)
 
@@ -40,7 +40,7 @@ async def test_finds_created_debug_info(conn, profile_id):
 async def test_filters_by_call_id(conn, profile_id):
     run, call = await _call(conn, profile_id)
     await create_debug_info(
-        conn, call_ids=[call.id], content="debug output", run_ids=[run.id]
+        conn, call_id=call.id, content="debug output", run_id=run.id
     )
     await refresh_debug_info(conn)
 
@@ -52,7 +52,7 @@ async def test_filters_by_call_id(conn, profile_id):
 async def test_filters_by_run_id(conn, profile_id):
     run, call = await _call(conn, profile_id)
     result = await create_debug_info(
-        conn, call_ids=[call.id], content="debug output", run_ids=[run.id]
+        conn, call_id=call.id, content="debug output", run_id=run.id
     )
     await refresh_debug_info(conn)
 
@@ -65,10 +65,10 @@ async def test_filters_by_run_id(conn, profile_id):
 async def test_filters_by_mcp(conn, profile_id):
     run, call = await _call(conn, profile_id)
     r_mcp = await create_debug_info(
-        conn, call_ids=[call.id], content="mcp debug", run_ids=[run.id], mcp=True
+        conn, call_id=call.id, content="mcp debug", run_id=run.id, mcp=True
     )
     r_normal = await create_debug_info(
-        conn, call_ids=[call.id], content="normal debug", run_ids=[run.id], mcp=False
+        conn, call_id=call.id, content="normal debug", run_id=run.id, mcp=False
     )
     await refresh_debug_info(conn)
 
@@ -82,7 +82,7 @@ async def test_filters_by_mcp(conn, profile_id):
 async def test_filters_by_date_from(conn, profile_id):
     run, call = await _call(conn, profile_id)
     result = await create_debug_info(
-        conn, call_ids=[call.id], content="debug output", run_ids=[run.id]
+        conn, call_id=call.id, content="debug output", run_id=run.id
     )
     await refresh_debug_info(conn)
 
@@ -96,7 +96,7 @@ async def test_filters_by_date_from(conn, profile_id):
 async def test_filters_by_date_to(conn, profile_id):
     run, call = await _call(conn, profile_id)
     result = await create_debug_info(
-        conn, call_ids=[call.id], content="debug output", run_ids=[run.id]
+        conn, call_id=call.id, content="debug output", run_id=run.id
     )
     await refresh_debug_info(conn)
 
@@ -110,10 +110,10 @@ async def test_filters_by_date_to(conn, profile_id):
 async def test_pagination_limit(conn, profile_id):
     run, call = await _call(conn, profile_id)
     await create_debug_info(
-        conn, call_ids=[call.id], content="debug output 1", run_ids=[run.id]
+        conn, call_id=call.id, content="debug output 1", run_id=run.id
     )
     await create_debug_info(
-        conn, call_ids=[call.id], content="debug output 2", run_ids=[run.id]
+        conn, call_id=call.id, content="debug output 2", run_id=run.id
     )
     await refresh_debug_info(conn)
 
@@ -125,7 +125,7 @@ async def test_pagination_limit(conn, profile_id):
 async def test_returns_all_without_filter(conn, profile_id):
     run, call = await _call(conn, profile_id)
     await create_debug_info(
-        conn, call_ids=[call.id], content="debug output", run_ids=[run.id]
+        conn, call_id=call.id, content="debug output", run_id=run.id
     )
     await refresh_debug_info(conn)
 
@@ -137,7 +137,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv(conn, profile_id):
     run, call = await _call(conn, profile_id)
     result = await create_debug_info(
-        conn, call_ids=[call.id], content="debug output", run_ids=[run.id]
+        conn, call_id=call.id, content="debug output", run_id=run.id
     )
 
     items = await search_debug_info(conn, call_ids=[call.id], bypass_mv=True)

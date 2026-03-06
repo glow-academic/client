@@ -47,7 +47,7 @@ async def _setup(conn, profile_id):
         score=85,
     )
     result = await create_attempt_feedback(
-        conn, grade_ids=[grade.id], call_id=call2.id, total=10, feedback="Good job"
+        conn, grade_id=grade.id, call_id=call2.id, total=10, feedback="Good job"
     )
     return result, grade
 

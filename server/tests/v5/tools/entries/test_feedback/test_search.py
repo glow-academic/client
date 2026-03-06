@@ -40,7 +40,7 @@ async def _setup(conn, profile_id):
     )
     result = await create_test_feedback(
         conn,
-        grade_ids=[test_grade.id],
+        grade_id=test_grade.id,
         call_id=call2.id,
         total=10,
         feedback="Good job",

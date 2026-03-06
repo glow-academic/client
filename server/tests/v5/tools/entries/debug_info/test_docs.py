@@ -46,8 +46,8 @@ async def test_search_has_filters(conn):
 
     search_op = next(op for op in result.operations if op.name == "search_debug_info")
     param_names = [p.name for p in search_op.params]
-    assert "call_id" in param_names
-    assert "run_id" in param_names
+    assert "call_ids" in param_names
+    assert "run_ids" in param_names
     assert "date_from" in param_names
     assert "date_to" in param_names
     assert "mcp" in param_names

@@ -41,12 +41,12 @@ async def _setup(conn, profile_id):
     await create_attempt_chat_bridge(
         conn,
         attempt_id=attempt.id,
-        attempt_chat_ids=[attempt_chat.id],
+        attempt_chat_id=attempt_chat.id,
         session_id=session.id,
     )
     result = await create_attempt_grade(
         conn,
-        chat_ids=[attempt_chat.id],
+        chat_id=attempt_chat.id,
         call_id=call2.id,
         run_id=run.id,
         time_taken=120,

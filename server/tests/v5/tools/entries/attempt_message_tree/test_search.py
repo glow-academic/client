@@ -49,7 +49,7 @@ async def _setup(conn, profile_id):
         conn, chat_id=chat.id, call_id=call2.id, message_id=msg1.id
     )
     await create_attempt_message(
-        conn, chat_id=chat.id, call_id=call2.id, message_ids=[msg2.id]
+        conn, chat_id=chat.id, call_id=call2.id, message_id=msg2.id
     )
     result = await create_attempt_message_tree(
         conn, parent_id=msg1.id, child_id=msg2.id, session_id=session.id

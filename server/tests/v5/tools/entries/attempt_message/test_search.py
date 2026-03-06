@@ -43,13 +43,13 @@ async def _setup(conn, profile_id):
     await create_attempt_chat_bridge(
         conn,
         attempt_id=attempt.id,
-        attempt_chat_ids=[attempt_chat.id],
+        attempt_chat_id=attempt_chat.id,
         session_id=session.id,
     )
     msg = await create_message(conn, run_id=run.id, role="user")
     call3 = await create_call(conn, run_id=run.id, session_id=session.id)
     result = await create_attempt_message(
-        conn, chat_ids=[attempt_chat.id], message_id=msg.id, call_id=call3.id
+        conn, chat_id=attempt_chat.id, message_id=msg.id, call_id=call3.id
     )
     return result, attempt_chat, attempt
 

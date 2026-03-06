@@ -73,7 +73,7 @@ async def _setup(conn, profile_id):
         description="Student greeted well",
     )
     result = await create_attempt_highlight(
-        conn, strength_ids=[strength.id], call_id=call2.id, section="Good opening"
+        conn, strength_id=strength.id, call_id=call2.id, section="Good opening"
     )
     return result, strength
 

@@ -29,8 +29,8 @@ async def _setup(conn, profile_id, bundle):
     chat = await create_chat(conn, session_id=session.id)
     home_chat = await create_home_chat(
         conn,
-        home_ids=[home.id],
-        chat_ids=[chat.id],
+        home_id=home.id,
+        chat_id=chat.id,
         session_id=session.id,
     )
     return home, chat, home_chat

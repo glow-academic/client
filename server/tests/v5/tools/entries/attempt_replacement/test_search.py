@@ -76,7 +76,7 @@ async def _setup(conn, profile_id):
     )
     result = await create_attempt_replacement(
         conn,
-        improvement_ids=[improvement.id],
+        improvement_id=improvement.id,
         call_id=call2.id,
         section="Old text",
         replace="New text",

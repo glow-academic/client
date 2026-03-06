@@ -73,7 +73,7 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, test_invocation = await _setup(conn, profile_id)
 
     items = await search_test_stops(
-        conn, invocation_id=test_invocation.id, bypass_mv=True
+        conn, invocation_ids=[test_invocation.id], bypass_mv=True
     )
 
     ids = [item.id for item in items]

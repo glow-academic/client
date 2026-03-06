@@ -42,7 +42,7 @@ async def _setup(conn, profile_id, **overrides):
         conn, call_id=call2.id, group_id=group.id, chat_id=chat.id
     )
     defaults = dict(
-        chat_ids=[attempt_chat.id],
+        chat_id=attempt_chat.id,
         call_id=call2.id,
         run_id=run.id,
     )

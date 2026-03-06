@@ -46,7 +46,7 @@ async def test_search_operation_has_filters(conn):
 
     search_op = next(op for op in result.operations if op.name == "search_groups")
     param_names = [p.name for p in search_op.params]
-    assert "session_id" in param_names
+    assert "session_ids" in param_names
     assert "name" in param_names
     assert "date_from" in param_names
     assert "date_to" in param_names

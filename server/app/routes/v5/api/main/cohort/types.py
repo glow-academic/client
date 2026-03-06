@@ -14,9 +14,6 @@ from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 from app.routes.v5.tools.resources.personas.types import GetPersonaResponse
-from app.sql.types import (
-    QGetCohortDraftsEntriesV4Item,
-)
 
 # =============================================================================
 # Resource Types (imported from SQL types for reuse)
@@ -242,8 +239,30 @@ class GetCohortWebsocketResponse(InternalResponseBase):
     resources: "CohortWebsocketResources"
 
 
+class CohortDraftEntry(BaseModel):
+    """Cohort draft entry for websocket."""
+
+    draft_id: UUID | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+    version: int | None = None
+    generated: bool | None = None
+    mcp: bool | None = None
+    active: bool | None = None
+    group_id: UUID | None = None
+    name_ids: list[UUID] | None = None
+    description_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_ids: list[UUID] | None = None
+    simulation_availability_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
+    profile_persona_ids: list[UUID] | None = None
+
+
 class CohortWebsocketEntries(BaseModel):
-    draft_cohort: QGetCohortDraftsEntriesV4Item | None = None
+    draft_cohort: CohortDraftEntry | None = None
     runs: GetRunListViewResponse | None = None
 
 

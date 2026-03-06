@@ -42,7 +42,7 @@ async def _setup(conn, profile_id):
         conn, call_id=call2.id, group_id=group.id, chat_id=chat.id
     )
     result = await create_attempt_completion(
-        conn, chat_ids=[attempt_chat.id], call_id=call2.id, end_reason="completed"
+        conn, chat_id=attempt_chat.id, call_id=call2.id, end_reason="completed"
     )
     return result, attempt_chat
 

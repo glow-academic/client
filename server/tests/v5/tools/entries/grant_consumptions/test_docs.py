@@ -46,7 +46,7 @@ async def test_search_has_filters(conn):
         op for op in result.operations if op.name == "search_grant_consumptions"
     )
     param_names = [p.name for p in search_op.params]
-    assert "grant_id" in param_names
+    assert "grant_ids" in param_names
     assert "date_from" in param_names
     assert "date_to" in param_names
     assert "mcp" in param_names

@@ -24,7 +24,7 @@ async def _setup(conn, profile_id):
     call = await create_call(conn, run_id=run.id, session_id=session.id)
     test = await create_test(conn, call_id=call.id, profiles_id=profile_id)
     call2 = await create_call(conn, run_id=run.id, session_id=session.id)
-    result = await create_test_invocation(conn, test_ids=[test.id], call_id=call2.id)
+    result = await create_test_invocation(conn, test_id=test.id, call_id=call2.id)
     return result, test
 
 

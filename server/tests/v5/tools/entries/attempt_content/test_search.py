@@ -50,12 +50,12 @@ async def _setup(conn, profile_id):
     msg = await create_message(conn, run_id=run.id, role="user")
     call3 = await create_call(conn, run_id=run.id, session_id=session.id)
     await create_attempt_message(
-        conn, chat_id=attempt_chat.id, message_ids=[msg.id], call_id=call3.id
+        conn, chat_id=attempt_chat.id, message_id=msg.id, call_id=call3.id
     )
     content_persona = await create_persona(conn)
     result = await create_attempt_content(
         conn,
-        message_ids=[msg.id],
+        message_id=msg.id,
         call_id=call3.id,
         content="Test content",
         persona_id=content_persona.id,

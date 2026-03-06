@@ -48,7 +48,7 @@ async def _setup(conn, profile_id):
     )
     msg = await create_message(conn, run_id=run.id, role="user")
     await create_attempt_message(
-        conn, chat_id=attempt_chat.id, call_id=call2.id, message_ids=[msg.id]
+        conn, chat_id=attempt_chat.id, call_id=call2.id, message_id=msg.id
     )
     grade = await create_attempt_grade(
         conn,
@@ -61,8 +61,8 @@ async def _setup(conn, profile_id):
     )
     result = await create_attempt_strength(
         conn,
-        grade_ids=[grade.id],
-        message_ids=[msg.id],
+        grade_id=grade.id,
+        message_id=msg.id,
         call_id=call2.id,
         name="Good greeting",
         description="Student greeted well",

@@ -56,7 +56,7 @@ async def test_pagination_limit(conn, profile_id):
     await refresh_test_completion(conn)
 
     items = await search_test_completions(
-        conn, invocation_id=test_invocation.id, limit=1
+        conn, invocation_ids=[test_invocation.id], limit=1
     )
 
     assert len(items) <= 1
@@ -75,7 +75,7 @@ async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, test_invocation = await _setup(conn, profile_id)
 
     items = await search_test_completions(
-        conn, invocation_id=test_invocation.id, bypass_mv=True
+        conn, invocation_ids=[test_invocation.id], bypass_mv=True
     )
 
     ids = [item.id for item in items]

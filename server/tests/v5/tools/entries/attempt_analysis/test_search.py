@@ -45,7 +45,7 @@ async def _setup(conn, profile_id):
         score=85,
     )
     result = await create_attempt_analysis(
-        conn, grade_ids=[grade.id], call_id=call2.id, content="Test analysis"
+        conn, grade_id=grade.id, call_id=call2.id, content="Test analysis"
     )
     return result, grade
 
