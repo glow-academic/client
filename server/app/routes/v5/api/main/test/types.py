@@ -14,13 +14,16 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.routes.v5.api.main.types import InternalResponseBase
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetModelsV4Item,
-    QGetProvidersV4Item,
-    QGetTestInvocationViewV4Item,
-    QGetTestListViewV4Item,
+from app.routes.v5.tools.entries.messages.types import SearchMessageResponse
+from app.routes.v5.tools.entries.test.types import GetTestResponse
+from app.routes.v5.tools.entries.test_feedback.types import GetTestFeedbackResponse
+from app.routes.v5.tools.entries.test_grade.types import GetTestGradeResponse
+from app.routes.v5.tools.entries.test_invocation.types import GetTestInvocationResponse
+from app.routes.v5.tools.entries.test_invocation_groups.types import (
+    GetTestInvocationGroupsResponse,
+)
+from app.routes.v5.tools.entries.test_invocation_runs.types import (
+    GetTestInvocationRunsResponse,
 )
 
 # =============================================================================
@@ -37,7 +40,6 @@ class GetTestArtifactRequest(BaseModel):
 class TestRunItem(BaseModel):
     """A single run row for the UI table, derived from a benchmark invocation."""
 
-    # Backward-compatible alias (same value as invocation_id)
     chat_id: str
     invocation_id: str
     run_id: str | None = None
@@ -46,7 +48,7 @@ class TestRunItem(BaseModel):
     model_name: str | None = None
     agent_name: str | None = None
     status: str = "not_started"
-    grade_score: int | None = None
+    grade_score: float | None = None
     grade_passed: bool | None = None
 
 
@@ -58,26 +60,39 @@ class TestStatusSummary(BaseModel):
 
 
 class TestEntries(BaseModel):
-    """View payloads grouped by view type."""
+    """Entry payloads grouped by type."""
 
-    test: list[QGetTestListViewV4Item] | None = None
-    test_invocation: list[QGetTestInvocationViewV4Item] | None = None
-    runs: GetRunListViewResponse | None = None
+    tests: list[GetTestResponse] | None = None
+    invocations: list[GetTestInvocationResponse] | None = None
+    runs: list[GetTestInvocationRunsResponse] | None = None
+    groups: list[GetTestInvocationGroupsResponse] | None = None
+    grades: list[GetTestGradeResponse] | None = None
+    feedback: list[GetTestFeedbackResponse] | None = None
+    messages: list[SearchMessageResponse] | None = None
 
 
 class TestResources(BaseModel):
-    """Content resource maps keyed by ID string."""
+    """Resource maps keyed by ID string."""
 
     evals: dict[str, dict] | None = None
     rubrics: dict[str, dict] | None = None
-    names: dict[str, str] | None = None
+    agents: dict[str, dict] | None = None
+    models: dict[str, dict] | None = None
+    voices: dict[str, dict] | None = None
+    temperature_levels: dict[str, dict] | None = None
+    reasoning_levels: dict[str, dict] | None = None
+    modalities: dict[str, dict] | None = None
+    prompts: dict[str, dict] | None = None
+    instructions: dict[str, dict] | None = None
+    tools: dict[str, dict] | None = None
+    qualities: dict[str, dict] | None = None
 
 
 class GetTestArtifactResponse(BaseModel):
     """Response for benchmark test artifact detail."""
 
-    test: QGetTestListViewV4Item | None = None
-    invocations: list[QGetTestInvocationViewV4Item] = Field(default_factory=list)
+    test: GetTestResponse | None = None
+    invocations: list[GetTestInvocationResponse] = Field(default_factory=list)
     status: str = "pending"
 
     # Hydrated eval info
@@ -92,7 +107,7 @@ class GetTestArtifactResponse(BaseModel):
     # Status summary
     status_summary: TestStatusSummary | None = None
 
-    # Normalized views and resources
+    # Normalized entries and resources
     entries: TestEntries | None = None
     resources: TestResources | None = None
 
@@ -111,40 +126,25 @@ class TestInternalData:
     into their specific response types.
     """
 
-    # Raw MV results
-    test: QGetTestListViewV4Item | None = None
-    invocations: list[QGetTestInvocationViewV4Item] = field(default_factory=list)
-
-    # Config chain
-    group_id: UUID | None = None
-    agent_ids: dict[str, UUID | None] = field(default_factory=dict)
+    # Raw entry results
+    test: GetTestResponse | None = None
+    invocations: list[GetTestInvocationResponse] = field(default_factory=list)
 
     # Hydrated eval info
     eval_name: str | None = None
     eval_description: str | None = None
 
-    # Rubric info (collected from invocations)
+    # Rubric info
     rubric_name_map: dict[UUID, str] = field(default_factory=dict)
-
-    # Run-level hydration
-    run_name_map: dict[UUID, tuple[UUID | None, UUID | None]] = field(
-        default_factory=dict
-    )
-    run_bundle_map: dict[UUID, UUID] = field(default_factory=dict)
-    name_map: dict[UUID, str] = field(default_factory=dict)
 
     # Computed
     runs: list[TestRunItem] = field(default_factory=list)
     status: str = "pending"
     status_summary: TestStatusSummary = field(default_factory=TestStatusSummary)
 
-    # Resources payload
+    # Full entries + resources
+    entries_payload: TestEntries = field(default_factory=TestEntries)
     resources_payload: TestResources = field(default_factory=TestResources)
-
-    # Config resources (from group -> config chain)
-    config_agent_resources: list[QGetAgentsV4Item] | None = None
-    config_model_resources: list[QGetModelsV4Item] | None = None
-    config_provider_resources: list[QGetProvidersV4Item] | None = None
 
 
 # =============================================================================
@@ -152,20 +152,16 @@ class TestInternalData:
 # =============================================================================
 
 
-class TestWebsocketResources(BaseModel):
-    """Content resources for websocket."""
-
-    # Content resources
-    evals: dict[str, dict] | None = None
-    rubrics: dict[str, dict] | None = None
-    names: dict[str, str] | None = None
-
-
 class GetTestWebsocketResponse(InternalResponseBase):
     """Minimal response for WebSocket handlers."""
 
     entries: TestEntries | None = None
-    resources: TestWebsocketResources | None = None
+    resources: TestResources | None = None
+
+
+# =============================================================================
+# List types (used by other endpoints)
+# =============================================================================
 
 
 class GetTestListRequest(BaseModel):

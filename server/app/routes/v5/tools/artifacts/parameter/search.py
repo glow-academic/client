@@ -17,7 +17,11 @@ async def search_parameters(
     conn: asyncpg.Connection,
     *,
     search: str | None = None,
+    name_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
+    parameter_ids: list[UUID] | None = None,
     scenario_ids: list[UUID] | None = None,
     field_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
@@ -55,6 +59,28 @@ async def search_parameters(
         idx += 1
 
     # Junction filters
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="parameter_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
+    if description_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="parameter_descriptions_junction",
+            owner_col=OWNER_COL,
+            resource_col="descriptions_id",
+            ids=description_ids,
+        )
+
     if department_ids:
         idx = add_junction_filter(
             conditions,
@@ -64,6 +90,28 @@ async def search_parameters(
             owner_col=OWNER_COL,
             resource_col="departments_id",
             ids=department_ids,
+        )
+
+    if flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="parameter_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
+            ids=flag_ids,
+        )
+
+    if parameter_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="parameter_parameters_junction",
+            owner_col=OWNER_COL,
+            resource_col="parameters_id",
+            ids=parameter_ids,
         )
 
     # Scenario filter: scenario_ids are scenario_artifact IDs

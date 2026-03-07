@@ -20,6 +20,11 @@ async def search_fields(
     department_ids: list[UUID] | None = None,
     parameter_ids: list[UUID] | None = None,
     persona_ids: list[UUID] | None = None,
+    name_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
+    conditional_parameter_ids: list[UUID] | None = None,
+    field_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
     limit_count: int = 20,
@@ -93,6 +98,61 @@ async def search_fields(
         )
         params.append(persona_ids)
         idx += 1
+
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="field_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
+    if description_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="field_descriptions_junction",
+            owner_col=OWNER_COL,
+            resource_col="descriptions_id",
+            ids=description_ids,
+        )
+
+    if conditional_parameter_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="field_conditional_parameters_junction",
+            owner_col=OWNER_COL,
+            resource_col="conditional_parameters_id",
+            ids=conditional_parameter_ids,
+        )
+
+    if field_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="field_fields_junction",
+            owner_col=OWNER_COL,
+            resource_col="fields_id",
+            ids=field_ids,
+        )
+
+    if flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="field_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
+            ids=flag_ids,
+        )
 
     # Exclude
     if exclude_ids:

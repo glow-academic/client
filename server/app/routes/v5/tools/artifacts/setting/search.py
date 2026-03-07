@@ -17,7 +17,18 @@ async def search_settings(
     conn: asyncpg.Connection,
     *,
     search: str | None = None,
+    name_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
+    auth_item_key_ids: list[UUID] | None = None,
+    auth_ids: list[UUID] | None = None,
+    color_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
+    profile_ids: list[UUID] | None = None,
+    provider_key_ids: list[UUID] | None = None,
+    setting_ids: list[UUID] | None = None,
+    system_ids: list[UUID] | None = None,
+    threshold_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
     limit_count: int = 20,
@@ -51,6 +62,28 @@ async def search_settings(
         params.append(search)
         idx += 1
 
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="setting_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
+    if description_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="setting_descriptions_junction",
+            owner_col=OWNER_COL,
+            resource_col="descriptions_id",
+            ids=description_ids,
+        )
+
     if department_ids:
         idx = add_junction_filter(
             conditions,
@@ -60,6 +93,105 @@ async def search_settings(
             owner_col=OWNER_COL,
             resource_col="departments_id",
             ids=department_ids,
+        )
+
+    if auth_item_key_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="setting_auth_item_keys_junction",
+            owner_col=OWNER_COL,
+            resource_col="auth_item_keys_id",
+            ids=auth_item_key_ids,
+        )
+
+    if auth_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="setting_auths_junction",
+            owner_col=OWNER_COL,
+            resource_col="auths_id",
+            ids=auth_ids,
+        )
+
+    if color_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="setting_colors_junction",
+            owner_col=OWNER_COL,
+            resource_col="colors_id",
+            ids=color_ids,
+        )
+
+    if flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="setting_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
+            ids=flag_ids,
+        )
+
+    if profile_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="setting_profiles_junction",
+            owner_col=OWNER_COL,
+            resource_col="profiles_id",
+            ids=profile_ids,
+        )
+
+    if provider_key_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="setting_provider_keys_junction",
+            owner_col=OWNER_COL,
+            resource_col="provider_keys_id",
+            ids=provider_key_ids,
+        )
+
+    if setting_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="setting_settings_junction",
+            owner_col=OWNER_COL,
+            resource_col="settings_id",
+            ids=setting_ids,
+        )
+
+    if system_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="setting_systems_junction",
+            owner_col=OWNER_COL,
+            resource_col="systems_id",
+            ids=system_ids,
+        )
+
+    if threshold_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="setting_thresholds_junction",
+            owner_col=OWNER_COL,
+            resource_col="thresholds_id",
+            ids=threshold_ids,
         )
 
     # Exclude

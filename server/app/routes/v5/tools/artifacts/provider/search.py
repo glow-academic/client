@@ -17,7 +17,14 @@ async def search_providers(
     conn: asyncpg.Connection,
     *,
     search: str | None = None,
+    name_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
+    endpoint_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
+    key_ids: list[UUID] | None = None,
+    provider_ids: list[UUID] | None = None,
+    value_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
     limit_count: int = 20,
@@ -53,6 +60,28 @@ async def search_providers(
         idx += 1
 
     # Junction filters
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="provider_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
+    if description_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="provider_descriptions_junction",
+            owner_col=OWNER_COL,
+            resource_col="descriptions_id",
+            ids=description_ids,
+        )
+
     if department_ids:
         idx = add_junction_filter(
             conditions,
@@ -62,6 +91,61 @@ async def search_providers(
             owner_col=OWNER_COL,
             resource_col="departments_id",
             ids=department_ids,
+        )
+
+    if endpoint_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="provider_endpoints_junction",
+            owner_col=OWNER_COL,
+            resource_col="endpoints_id",
+            ids=endpoint_ids,
+        )
+
+    if flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="provider_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
+            ids=flag_ids,
+        )
+
+    if key_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="provider_keys_junction",
+            owner_col=OWNER_COL,
+            resource_col="keys_id",
+            ids=key_ids,
+        )
+
+    if provider_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="provider_providers_junction",
+            owner_col=OWNER_COL,
+            resource_col="providers_id",
+            ids=provider_ids,
+        )
+
+    if value_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="provider_values_junction",
+            owner_col=OWNER_COL,
+            resource_col="values_id",
+            ids=value_ids,
         )
 
     # Exclude

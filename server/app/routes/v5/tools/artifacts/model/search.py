@@ -19,6 +19,17 @@ async def search_models(
     search: str | None = None,
     department_ids: list[UUID] | None = None,
     provider_ids: list[UUID] | None = None,
+    name_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
+    modality_ids: list[UUID] | None = None,
+    model_ids: list[UUID] | None = None,
+    pricing_ids: list[UUID] | None = None,
+    quality_ids: list[UUID] | None = None,
+    reasoning_level_ids: list[UUID] | None = None,
+    temperature_level_ids: list[UUID] | None = None,
+    value_ids: list[UUID] | None = None,
+    voice_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
     limit_count: int = 20,
@@ -74,6 +85,127 @@ async def search_models(
             owner_col=OWNER_COL,
             resource_col="providers_id",
             ids=provider_ids,
+        )
+
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="model_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
+    if description_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="model_descriptions_junction",
+            owner_col=OWNER_COL,
+            resource_col="descriptions_id",
+            ids=description_ids,
+        )
+
+    if flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="model_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
+            ids=flag_ids,
+        )
+
+    if modality_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="model_modalities_junction",
+            owner_col=OWNER_COL,
+            resource_col="modalities_id",
+            ids=modality_ids,
+        )
+
+    if model_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="model_models_junction",
+            owner_col=OWNER_COL,
+            resource_col="models_id",
+            ids=model_ids,
+        )
+
+    if pricing_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="model_pricing_junction",
+            owner_col=OWNER_COL,
+            resource_col="pricing_id",
+            ids=pricing_ids,
+        )
+
+    if quality_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="model_qualities_junction",
+            owner_col=OWNER_COL,
+            resource_col="qualities_id",
+            ids=quality_ids,
+        )
+
+    if reasoning_level_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="model_reasoning_levels_junction",
+            owner_col=OWNER_COL,
+            resource_col="reasoning_levels_id",
+            ids=reasoning_level_ids,
+        )
+
+    if temperature_level_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="model_temperature_levels_junction",
+            owner_col=OWNER_COL,
+            resource_col="temperature_levels_id",
+            ids=temperature_level_ids,
+        )
+
+    if value_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="model_values_junction",
+            owner_col=OWNER_COL,
+            resource_col="values_id",
+            ids=value_ids,
+        )
+
+    if voice_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="model_voices_junction",
+            owner_col=OWNER_COL,
+            resource_col="voices_id",
+            ids=voice_ids,
         )
 
     # Exclude

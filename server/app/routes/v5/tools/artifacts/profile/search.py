@@ -17,7 +17,13 @@ async def search_profiles(
     conn: asyncpg.Connection,
     *,
     search: str | None = None,
+    name_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
+    email_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
+    profile_ids: list[UUID] | None = None,
+    request_limit_ids: list[UUID] | None = None,
+    role_ids: list[UUID] | None = None,
     cohort_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
@@ -46,6 +52,17 @@ async def search_profiles(
         idx += 1
 
     # Junction filters
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="profile_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
     if department_ids:
         idx = add_junction_filter(
             conditions,
@@ -55,6 +72,61 @@ async def search_profiles(
             owner_col=OWNER_COL,
             resource_col="departments_id",
             ids=department_ids,
+        )
+
+    if email_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="profile_emails_junction",
+            owner_col=OWNER_COL,
+            resource_col="emails_id",
+            ids=email_ids,
+        )
+
+    if flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="profile_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
+            ids=flag_ids,
+        )
+
+    if profile_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="profile_profiles_junction",
+            owner_col=OWNER_COL,
+            resource_col="profiles_id",
+            ids=profile_ids,
+        )
+
+    if request_limit_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="profile_request_limits_junction",
+            owner_col=OWNER_COL,
+            resource_col="request_limits_id",
+            ids=request_limit_ids,
+        )
+
+    if role_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="profile_roles_junction",
+            owner_col=OWNER_COL,
+            resource_col="roles_id",
+            ids=role_ids,
         )
 
     # Cohort filter — 2-hop: profile_artifact → profile_profiles_junction → profiles_resource

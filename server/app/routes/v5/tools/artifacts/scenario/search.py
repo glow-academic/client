@@ -17,9 +17,20 @@ async def search_scenarios(
     conn: asyncpg.Connection,
     *,
     search: str | None = None,
+    name_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
     document_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
+    image_ids: list[UUID] | None = None,
+    objective_ids: list[UUID] | None = None,
+    option_ids: list[UUID] | None = None,
+    parameter_field_ids: list[UUID] | None = None,
     persona_ids: list[UUID] | None = None,
+    problem_statement_ids: list[UUID] | None = None,
+    question_ids: list[UUID] | None = None,
+    scenario_ids: list[UUID] | None = None,
+    video_ids: list[UUID] | None = None,
     parameter_ids: list[UUID] | None = None,
     simulation_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
@@ -57,6 +68,28 @@ async def search_scenarios(
         idx += 1
 
     # Junction filters
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="scenario_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
+    if description_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="scenario_descriptions_junction",
+            owner_col=OWNER_COL,
+            resource_col="descriptions_id",
+            ids=description_ids,
+        )
+
     if department_ids:
         idx = add_junction_filter(
             conditions,
@@ -78,6 +111,105 @@ async def search_scenarios(
             owner_col=OWNER_COL,
             resource_col="documents_id",
             ids=document_ids,
+        )
+
+    if flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="scenario_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
+            ids=flag_ids,
+        )
+
+    if image_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="scenario_images_junction",
+            owner_col=OWNER_COL,
+            resource_col="images_id",
+            ids=image_ids,
+        )
+
+    if objective_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="scenario_objectives_junction",
+            owner_col=OWNER_COL,
+            resource_col="objectives_id",
+            ids=objective_ids,
+        )
+
+    if option_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="scenario_options_junction",
+            owner_col=OWNER_COL,
+            resource_col="options_id",
+            ids=option_ids,
+        )
+
+    if parameter_field_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="scenario_parameter_fields_junction",
+            owner_col=OWNER_COL,
+            resource_col="parameter_fields_id",
+            ids=parameter_field_ids,
+        )
+
+    if problem_statement_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="scenario_problem_statements_junction",
+            owner_col=OWNER_COL,
+            resource_col="problem_statements_id",
+            ids=problem_statement_ids,
+        )
+
+    if question_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="scenario_questions_junction",
+            owner_col=OWNER_COL,
+            resource_col="questions_id",
+            ids=question_ids,
+        )
+
+    if scenario_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="scenario_scenarios_junction",
+            owner_col=OWNER_COL,
+            resource_col="scenarios_id",
+            ids=scenario_ids,
+        )
+
+    if video_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="scenario_videos_junction",
+            owner_col=OWNER_COL,
+            resource_col="videos_id",
+            ids=video_ids,
         )
 
     # parameter_ids are parameter_artifact IDs — two-hop through parameter_fields_resource

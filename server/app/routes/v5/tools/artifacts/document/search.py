@@ -20,6 +20,15 @@ async def search_documents(
     department_ids: list[UUID] | None = None,
     scenario_ids: list[UUID] | None = None,
     field_ids: list[UUID] | None = None,
+    name_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
+    document_ids: list[UUID] | None = None,
+    file_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
+    image_ids: list[UUID] | None = None,
+    parameter_field_ids: list[UUID] | None = None,
+    parameter_ids: list[UUID] | None = None,
+    text_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
     limit_count: int = 20,
@@ -95,6 +104,105 @@ async def search_documents(
         )
         params.append(field_ids)
         idx += 1
+
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="document_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
+    if description_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="document_descriptions_junction",
+            owner_col=OWNER_COL,
+            resource_col="descriptions_id",
+            ids=description_ids,
+        )
+
+    if document_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="document_documents_junction",
+            owner_col=OWNER_COL,
+            resource_col="documents_id",
+            ids=document_ids,
+        )
+
+    if file_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="document_files_junction",
+            owner_col=OWNER_COL,
+            resource_col="files_id",
+            ids=file_ids,
+        )
+
+    if flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="document_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
+            ids=flag_ids,
+        )
+
+    if image_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="document_images_junction",
+            owner_col=OWNER_COL,
+            resource_col="images_id",
+            ids=image_ids,
+        )
+
+    if parameter_field_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="document_parameter_fields_junction",
+            owner_col=OWNER_COL,
+            resource_col="parameter_fields_id",
+            ids=parameter_field_ids,
+        )
+
+    if parameter_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="document_parameters_junction",
+            owner_col=OWNER_COL,
+            resource_col="parameters_id",
+            ids=parameter_ids,
+        )
+
+    if text_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="document_texts_junction",
+            owner_col=OWNER_COL,
+            resource_col="texts_id",
+            ids=text_ids,
+        )
 
     # Exclude
     if exclude_ids:

@@ -17,8 +17,16 @@ async def search_simulations(
     conn: asyncpg.Connection,
     *,
     search: str | None = None,
+    name_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
+    scenario_flag_ids: list[UUID] | None = None,
+    scenario_position_ids: list[UUID] | None = None,
+    scenario_rubric_ids: list[UUID] | None = None,
+    scenario_time_limit_ids: list[UUID] | None = None,
     scenario_ids: list[UUID] | None = None,
+    simulation_ids: list[UUID] | None = None,
     cohort_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
@@ -55,6 +63,28 @@ async def search_simulations(
         idx += 1
 
     # Junction filters
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="simulation_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
+    if description_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="simulation_descriptions_junction",
+            owner_col=OWNER_COL,
+            resource_col="descriptions_id",
+            ids=description_ids,
+        )
+
     if department_ids:
         idx = add_junction_filter(
             conditions,
@@ -64,6 +94,61 @@ async def search_simulations(
             owner_col=OWNER_COL,
             resource_col="departments_id",
             ids=department_ids,
+        )
+
+    if flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="simulation_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
+            ids=flag_ids,
+        )
+
+    if scenario_flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="simulation_scenario_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="scenario_flags_id",
+            ids=scenario_flag_ids,
+        )
+
+    if scenario_position_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="simulation_scenario_positions_junction",
+            owner_col=OWNER_COL,
+            resource_col="scenario_positions_id",
+            ids=scenario_position_ids,
+        )
+
+    if scenario_rubric_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="simulation_scenario_rubrics_junction",
+            owner_col=OWNER_COL,
+            resource_col="scenario_rubrics_id",
+            ids=scenario_rubric_ids,
+        )
+
+    if scenario_time_limit_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="simulation_scenario_time_limits_junction",
+            owner_col=OWNER_COL,
+            resource_col="scenario_time_limits_id",
+            ids=scenario_time_limit_ids,
         )
 
     # scenario_ids are scenarios_resource IDs — direct junction lookup
@@ -76,6 +161,17 @@ async def search_simulations(
             owner_col=OWNER_COL,
             resource_col="scenarios_id",
             ids=scenario_ids,
+        )
+
+    if simulation_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="simulation_simulations_junction",
+            owner_col=OWNER_COL,
+            resource_col="simulations_id",
+            ids=simulation_ids,
         )
 
     # cohort_ids are cohort_artifact IDs — reverse lookup: simulation → simulations_resource → cohort_simulations_junction

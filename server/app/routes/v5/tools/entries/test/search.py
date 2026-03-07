@@ -24,6 +24,7 @@ LIST_SQL_PATH = "app/sql/queries/views/test/list/get_test_list_view_complete.sql
 
 async def search_tests(
     conn: asyncpg.Connection,
+    test_ids: list[UUID] | None = None,
     eval_ids: list[UUID] | None = None,
     profile_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
@@ -46,15 +47,17 @@ async def search_tests(
                test_name, test_description,
                num_invocations, infinite_mode, is_dynamic, archived, test_created_at
         FROM {source}
-        WHERE ($1::uuid[] IS NULL OR eval_id = ANY($1))
-          AND ($2::uuid[] IS NULL OR profile_id = ANY($2))
-          AND ($3::uuid[] IS NULL OR department_ids && $3)
-          AND ($4::timestamptz IS NULL OR test_created_at >= $4)
-          AND ($5::timestamptz IS NULL OR test_created_at <= $5)
-          AND ($6::bool IS NULL OR archived = $6)
+        WHERE ($1::uuid[] IS NULL OR test_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR eval_id = ANY($2))
+          AND ($3::uuid[] IS NULL OR profile_id = ANY($3))
+          AND ($4::uuid[] IS NULL OR department_ids && $4)
+          AND ($5::timestamptz IS NULL OR test_created_at >= $5)
+          AND ($6::timestamptz IS NULL OR test_created_at <= $6)
+          AND ($7::bool IS NULL OR archived = $7)
         ORDER BY test_created_at {order}
-        LIMIT $7 OFFSET $8
+        LIMIT $8 OFFSET $9
         """,
+        test_ids,
         eval_ids,
         profile_ids,
         department_ids,

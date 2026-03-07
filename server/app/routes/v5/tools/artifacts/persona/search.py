@@ -17,8 +17,14 @@ async def search_personas(
     conn: asyncpg.Connection,
     *,
     search: str | None = None,
+    name_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
+    example_ids: list[UUID] | None = None,
     flag_ids: list[UUID] | None = None,
+    instruction_ids: list[UUID] | None = None,
+    parameter_field_ids: list[UUID] | None = None,
+    persona_ids: list[UUID] | None = None,
     voice_ids: list[UUID] | None = None,
     color_ids: list[UUID] | None = None,
     icon_ids: list[UUID] | None = None,
@@ -57,6 +63,28 @@ async def search_personas(
         idx += 1
 
     # Junction filters
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="persona_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
+    if description_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="persona_descriptions_junction",
+            owner_col=OWNER_COL,
+            resource_col="descriptions_id",
+            ids=description_ids,
+        )
+
     if department_ids:
         idx = add_junction_filter(
             conditions,
@@ -68,6 +96,17 @@ async def search_personas(
             ids=department_ids,
         )
 
+    if example_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="persona_examples_junction",
+            owner_col=OWNER_COL,
+            resource_col="examples_id",
+            ids=example_ids,
+        )
+
     if flag_ids:
         idx = add_junction_filter(
             conditions,
@@ -77,6 +116,39 @@ async def search_personas(
             owner_col=OWNER_COL,
             resource_col="flags_id",
             ids=flag_ids,
+        )
+
+    if instruction_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="persona_instructions_junction",
+            owner_col=OWNER_COL,
+            resource_col="instructions_id",
+            ids=instruction_ids,
+        )
+
+    if parameter_field_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="persona_parameter_fields_junction",
+            owner_col=OWNER_COL,
+            resource_col="parameter_fields_id",
+            ids=parameter_field_ids,
+        )
+
+    if persona_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="persona_personas_junction",
+            owner_col=OWNER_COL,
+            resource_col="personas_id",
+            ids=persona_ids,
         )
 
     if voice_ids:

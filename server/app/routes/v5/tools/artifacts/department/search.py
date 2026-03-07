@@ -5,6 +5,7 @@ from uuid import UUID
 import asyncpg
 
 from app.infra.search.search_artifact import (
+    add_junction_filter,
     execute_artifact_search,
 )
 
@@ -16,6 +17,11 @@ async def search_departments(
     conn: asyncpg.Connection,
     *,
     search: str | None = None,
+    name_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
+    department_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
+    setting_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
     limit_count: int = 20,
@@ -48,6 +54,62 @@ async def search_departments(
         )
         params.append(search)
         idx += 1
+
+    # Junction filters
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="department_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
+    if description_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="department_descriptions_junction",
+            owner_col=OWNER_COL,
+            resource_col="descriptions_id",
+            ids=description_ids,
+        )
+
+    if department_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="department_departments_junction",
+            owner_col=OWNER_COL,
+            resource_col="departments_id",
+            ids=department_ids,
+        )
+
+    if flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="department_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
+            ids=flag_ids,
+        )
+
+    if setting_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="department_settings_junction",
+            owner_col=OWNER_COL,
+            resource_col="settings_id",
+            ids=setting_ids,
+        )
 
     # Exclude
     if exclude_ids:

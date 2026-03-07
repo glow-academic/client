@@ -17,7 +17,18 @@ async def search_tools(
     conn: asyncpg.Connection,
     *,
     search: str | None = None,
+    name_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
+    arg_position_ids: list[UUID] | None = None,
+    arg_ids: list[UUID] | None = None,
+    args_output_ids: list[UUID] | None = None,
+    artifact_ids: list[UUID] | None = None,
+    entry_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
+    operation_ids: list[UUID] | None = None,
+    resource_ids: list[UUID] | None = None,
+    tool_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
     limit_count: int = 20,
@@ -53,6 +64,28 @@ async def search_tools(
         idx += 1
 
     # Junction filters
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="tool_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
+    if description_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="tool_descriptions_junction",
+            owner_col=OWNER_COL,
+            resource_col="descriptions_id",
+            ids=description_ids,
+        )
+
     if department_ids:
         idx = add_junction_filter(
             conditions,
@@ -62,6 +95,105 @@ async def search_tools(
             owner_col=OWNER_COL,
             resource_col="departments_id",
             ids=department_ids,
+        )
+
+    if arg_position_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="tool_arg_positions_junction",
+            owner_col=OWNER_COL,
+            resource_col="arg_positions_id",
+            ids=arg_position_ids,
+        )
+
+    if arg_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="tool_args_junction",
+            owner_col=OWNER_COL,
+            resource_col="args_id",
+            ids=arg_ids,
+        )
+
+    if args_output_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="tool_args_outputs_junction",
+            owner_col=OWNER_COL,
+            resource_col="args_outputs_id",
+            ids=args_output_ids,
+        )
+
+    if artifact_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="tool_artifacts_junction",
+            owner_col=OWNER_COL,
+            resource_col="artifacts_id",
+            ids=artifact_ids,
+        )
+
+    if entry_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="tool_entries_junction",
+            owner_col=OWNER_COL,
+            resource_col="entries_id",
+            ids=entry_ids,
+        )
+
+    if flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="tool_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
+            ids=flag_ids,
+        )
+
+    if operation_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="tool_operations_junction",
+            owner_col=OWNER_COL,
+            resource_col="operations_id",
+            ids=operation_ids,
+        )
+
+    if resource_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="tool_resources_junction",
+            owner_col=OWNER_COL,
+            resource_col="resources_id",
+            ids=resource_ids,
+        )
+
+    if tool_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="tool_tools_junction",
+            owner_col=OWNER_COL,
+            resource_col="tools_id",
+            ids=tool_ids,
         )
 
     # Exclude

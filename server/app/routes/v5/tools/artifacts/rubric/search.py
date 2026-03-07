@@ -17,7 +17,14 @@ async def search_rubrics(
     conn: asyncpg.Connection,
     *,
     search: str | None = None,
+    name_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
+    point_ids: list[UUID] | None = None,
+    rubric_ids: list[UUID] | None = None,
+    standard_group_ids: list[UUID] | None = None,
+    standard_ids: list[UUID] | None = None,
     simulation_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
@@ -53,6 +60,28 @@ async def search_rubrics(
         idx += 1
 
     # Junction filters
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="rubric_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
+    if description_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="rubric_descriptions_junction",
+            owner_col=OWNER_COL,
+            resource_col="descriptions_id",
+            ids=description_ids,
+        )
+
     if department_ids:
         idx = add_junction_filter(
             conditions,
@@ -62,6 +91,61 @@ async def search_rubrics(
             owner_col=OWNER_COL,
             resource_col="departments_id",
             ids=department_ids,
+        )
+
+    if flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="rubric_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
+            ids=flag_ids,
+        )
+
+    if point_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="rubric_points_junction",
+            owner_col=OWNER_COL,
+            resource_col="points_id",
+            ids=point_ids,
+        )
+
+    if rubric_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="rubric_rubrics_junction",
+            owner_col=OWNER_COL,
+            resource_col="rubrics_id",
+            ids=rubric_ids,
+        )
+
+    if standard_group_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="rubric_standard_groups_junction",
+            owner_col=OWNER_COL,
+            resource_col="standard_groups_id",
+            ids=standard_group_ids,
+        )
+
+    if standard_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="rubric_standards_junction",
+            owner_col=OWNER_COL,
+            resource_col="standards_id",
+            ids=standard_ids,
         )
 
     # Simulation filter — rubrics link to simulations through scenario_rubrics_resource

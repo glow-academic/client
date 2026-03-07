@@ -18,6 +18,15 @@ async def search_evals(
     *,
     search: str | None = None,
     department_ids: list[UUID] | None = None,
+    name_ids: list[UUID] | None = None,
+    description_ids: list[UUID] | None = None,
+    eval_ids: list[UUID] | None = None,
+    flag_ids: list[UUID] | None = None,
+    model_flag_ids: list[UUID] | None = None,
+    model_position_ids: list[UUID] | None = None,
+    model_rubric_ids: list[UUID] | None = None,
+    model_ids: list[UUID] | None = None,
+    rubric_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
     limit_count: int = 20,
@@ -61,6 +70,105 @@ async def search_evals(
             owner_col=OWNER_COL,
             resource_col="departments_id",
             ids=department_ids,
+        )
+
+    if name_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="eval_names_junction",
+            owner_col=OWNER_COL,
+            resource_col="names_id",
+            ids=name_ids,
+        )
+
+    if description_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="eval_descriptions_junction",
+            owner_col=OWNER_COL,
+            resource_col="descriptions_id",
+            ids=description_ids,
+        )
+
+    if eval_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="eval_evals_junction",
+            owner_col=OWNER_COL,
+            resource_col="evals_id",
+            ids=eval_ids,
+        )
+
+    if flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="eval_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="flags_id",
+            ids=flag_ids,
+        )
+
+    if model_flag_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="eval_model_flags_junction",
+            owner_col=OWNER_COL,
+            resource_col="model_flags_id",
+            ids=model_flag_ids,
+        )
+
+    if model_position_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="eval_model_positions_junction",
+            owner_col=OWNER_COL,
+            resource_col="model_positions_id",
+            ids=model_position_ids,
+        )
+
+    if model_rubric_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="eval_model_rubrics_junction",
+            owner_col=OWNER_COL,
+            resource_col="model_rubrics_id",
+            ids=model_rubric_ids,
+        )
+
+    if model_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="eval_models_junction",
+            owner_col=OWNER_COL,
+            resource_col="models_id",
+            ids=model_ids,
+        )
+
+    if rubric_ids:
+        idx = add_junction_filter(
+            conditions,
+            params,
+            idx,
+            junction_table="eval_rubrics_junction",
+            owner_col=OWNER_COL,
+            resource_col="rubrics_id",
+            ids=rubric_ids,
         )
 
     # Exclude
