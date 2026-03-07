@@ -1,4 +1,4 @@
--- Get attempt_completion entries by IDs from attempt_completion_mv
+-- Get attempt_completion entries by IDs from attempt_chat_completion_mv
 
 DO $$
 DECLARE
@@ -27,14 +27,16 @@ BEGIN
         jsonb_build_object(
             'id', m.id,
             'chat_id', m.chat_id,
-            'end_reason', m.end_reason,
+            'stop', m.stop,
+            'error', m.error,
+            'message', m.message,
             'created_at', m.created_at,
             'active', m.active,
             'generated', m.generated,
             'mcp', m.mcp
         )
     ) AS items
-    FROM attempt_completion_mv m
+    FROM attempt_chat_completion_mv m
     WHERE m.id = ANY(ids);
 END;
 $$;

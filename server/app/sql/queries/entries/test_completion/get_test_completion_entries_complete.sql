@@ -1,4 +1,4 @@
--- Get test_completion entries by IDs from test_completion_mv
+-- Get test_completion entries by IDs from test_invocation_completion_mv
 
 DO $$
 DECLARE
@@ -31,10 +31,12 @@ BEGIN
             'mcp', m.mcp,
             'active', m.active,
             'invocation_id', m.invocation_id,
-            'end_reason', m.end_reason
+            'stop', m.stop,
+            'error', m.error,
+            'message', m.message
         )
     ) AS items
-    FROM test_completion_mv m
+    FROM test_invocation_completion_mv m
     WHERE m.id = ANY(ids);
 END;
 $$;

@@ -7,14 +7,14 @@ BEGIN
     FOR r IN
         SELECT oidvectortypes(proargtypes) AS sig
         FROM pg_proc
-        WHERE proname = 'api_create_messages_completions_entry_v4'
+        WHERE proname = 'api_create_attempt_message_completion_entry_v4'
           AND pronamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
     LOOP
-        EXECUTE format('DROP FUNCTION IF EXISTS api_create_messages_completions_entry_v4(%s)', r.sig);
+        EXECUTE format('DROP FUNCTION IF EXISTS api_create_attempt_message_completion_entry_v4(%s)', r.sig);
     END LOOP;
 END $$;
 
-CREATE OR REPLACE FUNCTION public.api_create_messages_completions_entry_v4(
+CREATE OR REPLACE FUNCTION public.api_create_attempt_message_completion_entry_v4(
     message_id uuid,
     session_id uuid DEFAULT NULL,
     mcp boolean DEFAULT false
@@ -22,8 +22,8 @@ CREATE OR REPLACE FUNCTION public.api_create_messages_completions_entry_v4(
 LANGUAGE plpgsql AS $$
 DECLARE v_id uuid;
 BEGIN
-    INSERT INTO messages_completions_entry (session_id, message_id, mcp, generated)
-    VALUES (api_create_messages_completions_entry_v4.session_id, api_create_messages_completions_entry_v4.message_id, api_create_messages_completions_entry_v4.mcp, true)
-    RETURNING messages_completions_entry.id INTO v_id;
+    INSERT INTO attempt_message_completion_entry (session_id, attempt_message_id, mcp, generated)
+    VALUES (api_create_attempt_message_completion_entry_v4.session_id, api_create_attempt_message_completion_entry_v4.message_id, api_create_attempt_message_completion_entry_v4.mcp, true)
+    RETURNING attempt_message_completion_entry.id INTO v_id;
     RETURN QUERY SELECT v_id;
 END; $$;
