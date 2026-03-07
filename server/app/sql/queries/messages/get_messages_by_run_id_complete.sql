@@ -46,7 +46,7 @@ messages_data AS (
         m.role::text,
         fc.content,
         m.created_at,
-        (mc.message_id IS NOT NULL) AS completed,
+        (mc.attempt_message_id IS NOT NULL) AS completed,
         aue.upload_id
     FROM params p
     JOIN messages_entry m ON m.run_id = p.run_id
@@ -54,8 +54,8 @@ messages_data AS (
     LEFT JOIN message_uploads_entry mue ON mue.message_id = m.id AND mue.active = true
     LEFT JOIN audio_uploads_entry aue ON aue.upload_id = mue.upload_id AND aue.active = true
     LEFT JOIN LATERAL (
-        SELECT message_id FROM messages_completions_entry
-        WHERE message_id = m.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
+        SELECT attempt_message_id FROM attempt_message_completion_entry
+        WHERE attempt_message_id = m.id AND active = TRUE ORDER BY created_at DESC LIMIT 1
     ) mc ON true
     WHERE p.run_id IS NOT NULL
     ORDER BY m.created_at ASC  -- Order by creation time

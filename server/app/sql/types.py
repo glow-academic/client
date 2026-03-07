@@ -4864,7 +4864,9 @@ class CreateAttemptCompletionEntriesSqlParams(BaseModel):
 
     run_id: UUID
     chat_id: UUID
-    end_reason: str | None = None
+    stop: bool | None = False
+    error: bool | None = False
+    message: str | None = None
     tool_id: UUID | None = None
     upload_id: UUID | None = None
     session_id: UUID | None = None
@@ -4874,7 +4876,9 @@ class CreateAttemptCompletionEntriesSqlParams(BaseModel):
         return (
             self.run_id,
             self.chat_id,
-            self.end_reason,
+            self.stop,
+            self.error,
+            self.message,
             self.tool_id,
             self.upload_id,
             self.session_id,
@@ -4891,7 +4895,9 @@ class CreateAttemptCompletionEntriesApiRequest(BaseModel):
 
     run_id: UUID
     chat_id: UUID
-    end_reason: str | None = None
+    stop: bool | None = False
+    error: bool | None = False
+    message: str | None = None
     tool_id: UUID | None = None
     upload_id: UUID | None = None
     session_id: UUID | None = None
@@ -6486,7 +6492,9 @@ class CreateConversationsCompletionsEntriesSqlParams(BaseModel):
 
     run_id: UUID
     conversation_id: UUID
-    end_reason: str | None = None
+    stop: bool | None = False
+    error: bool | None = False
+    message: str | None = None
     tool_id: UUID | None = None
     upload_id: UUID | None = None
     session_id: UUID | None = None
@@ -6496,7 +6504,9 @@ class CreateConversationsCompletionsEntriesSqlParams(BaseModel):
         return (
             self.run_id,
             self.conversation_id,
-            self.end_reason,
+            self.stop,
+            self.error,
+            self.message,
             self.tool_id,
             self.upload_id,
             self.session_id,
@@ -6513,7 +6523,9 @@ class CreateConversationsCompletionsEntriesApiRequest(BaseModel):
 
     run_id: UUID
     conversation_id: UUID
-    end_reason: str | None = None
+    stop: bool | None = False
+    error: bool | None = False
+    message: str | None = None
     tool_id: UUID | None = None
     upload_id: UUID | None = None
     session_id: UUID | None = None
@@ -9488,7 +9500,9 @@ class CreateTestCompletionEntriesSqlParams(BaseModel):
 
     run_id: UUID
     invocation_id: UUID
-    end_reason: str | None = None
+    stop: bool | None = False
+    error: bool | None = False
+    message: str | None = None
     tool_id: UUID | None = None
     upload_id: UUID | None = None
     session_id: UUID | None = None
@@ -9498,7 +9512,9 @@ class CreateTestCompletionEntriesSqlParams(BaseModel):
         return (
             self.run_id,
             self.invocation_id,
-            self.end_reason,
+            self.stop,
+            self.error,
+            self.message,
             self.tool_id,
             self.upload_id,
             self.session_id,
@@ -9515,7 +9531,9 @@ class CreateTestCompletionEntriesApiRequest(BaseModel):
 
     run_id: UUID
     invocation_id: UUID
-    end_reason: str | None = None
+    stop: bool | None = False
+    error: bool | None = False
+    message: str | None = None
     tool_id: UUID | None = None
     upload_id: UUID | None = None
     session_id: UUID | None = None
@@ -10251,14 +10269,18 @@ class CreateUploadsCompletionsEntriesSqlParams(BaseModel):
 
     session_id: UUID
     upload_id: UUID
-    end_reason: str | None = None
+    stop: bool | None = False
+    error: bool | None = False
+    message: str | None = None
     mcp: bool | None = False
 
     def to_tuple(self) -> tuple[Any, ...]:
         return (
             self.session_id,
             self.upload_id,
-            self.end_reason,
+            self.stop,
+            self.error,
+            self.message,
             self.mcp,
         )
 
@@ -10270,7 +10292,9 @@ class CreateUploadsCompletionsEntriesApiRequest(BaseModel):
 
     session_id: UUID
     upload_id: UUID
-    end_reason: str | None = None
+    stop: bool | None = False
+    error: bool | None = False
+    message: str | None = None
     mcp: bool | None = False
 
 class CreateUploadsCompletionsEntriesApiResponse(BaseModel):

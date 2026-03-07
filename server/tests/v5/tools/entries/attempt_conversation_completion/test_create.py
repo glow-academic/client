@@ -1,17 +1,17 @@
-"""Tests for create_attempt_conversation_completions."""
+"""Tests for create_attempt_conversation_completion."""
 
 import pytest
 
 from app.routes.v5.tools.entries.attempt.create import create_attempt
 from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
-from app.routes.v5.tools.entries.attempt_conversation_completions.create import (
-    create_attempt_conversation_completions,
+from app.routes.v5.tools.entries.attempt_conversation_completion.create import (
+    create_attempt_conversation_completion,
 )
-from app.routes.v5.tools.entries.attempt_conversation_completions.get import (
+from app.routes.v5.tools.entries.attempt_conversation_completion.get import (
     get_attempt_conversation_completions,
 )
-from app.routes.v5.tools.entries.attempt_conversation_completions.refresh import (
-    refresh_attempt_conversation_completions,
+from app.routes.v5.tools.entries.attempt_conversation_completion.refresh import (
+    refresh_attempt_conversation_completion,
 )
 from app.routes.v5.tools.entries.attempt_conversations.create import (
     create_attempt_conversations,
@@ -26,7 +26,7 @@ from app.routes.v5.tools.entries.sessions.create import create_session
 pytestmark = pytest.mark.asyncio
 
 
-async def _attempt_conversation_completions(conn, profile_id, **overrides):
+async def _attempt_conversation_completion(conn, profile_id, **overrides):
     session = await create_session(conn, profile_id=profile_id)
     group = await create_group(conn, session_id=session.id)
     run = await create_run(conn, group_id=group.id, session_id=session.id)
@@ -49,21 +49,23 @@ async def _attempt_conversation_completions(conn, profile_id, **overrides):
     defaults = dict(
         conversation_id=conversation.id,
         call_id=call2.id,
-        end_reason="completed",
+        stop=False,
+        error=False,
+        message="",
     )
     defaults.update(overrides)
-    return await create_attempt_conversation_completions(conn, **defaults)
+    return await create_attempt_conversation_completion(conn, **defaults)
 
 
 async def test_returns_id(conn, profile_id):
-    result = await _attempt_conversation_completions(conn, profile_id)
+    result = await _attempt_conversation_completion(conn, profile_id)
 
     assert result.id is not None
 
 
 async def test_visible_via_get_after_refresh(conn, profile_id):
-    result = await _attempt_conversation_completions(conn, profile_id)
-    await refresh_attempt_conversation_completions(conn)
+    result = await _attempt_conversation_completion(conn, profile_id)
+    await refresh_attempt_conversation_completion(conn)
 
     items = await get_attempt_conversation_completions(conn, [result.id])
 
@@ -71,10 +73,10 @@ async def test_visible_via_get_after_refresh(conn, profile_id):
 
 
 async def test_passes_mcp_flag(conn, profile_id):
-    result = await _attempt_conversation_completions(conn, profile_id, mcp=True)
+    result = await _attempt_conversation_completion(conn, profile_id, mcp=True)
 
     row = await conn.fetchrow(
-        "SELECT mcp FROM attempt_conversation_completions_entry WHERE id = $1",
+        "SELECT mcp FROM attempt_conversation_completion_entry WHERE id = $1",
         result.id,
     )
     assert row is not None

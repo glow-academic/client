@@ -1,4 +1,4 @@
--- Get messages_completions entries by IDs from messages_completions_mv
+-- Get messages_completions entries by IDs from attempt_message_completion_mv
 
 DO $$
 DECLARE
@@ -30,10 +30,10 @@ BEGIN
             'generated', m.generated,
             'mcp', m.mcp,
             'active', m.active,
-            'message_id', m.message_id
+            'attempt_message_id', m.attempt_message_id
         )
     ) AS items
-    FROM messages_completions_mv m
+    FROM attempt_message_completion_mv m
     WHERE m.id = ANY(ids);
 END;
 $$;

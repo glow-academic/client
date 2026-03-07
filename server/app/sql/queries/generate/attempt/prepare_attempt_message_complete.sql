@@ -89,7 +89,7 @@ BEGIN
     RETURNING messages_entry.id INTO v_user_message_id;
 
     -- Mark user message as completed (append-only)
-    INSERT INTO messages_completions_entry (message_id)
+    INSERT INTO attempt_message_completion_entry (attempt_message_id)
     VALUES (v_user_message_id);
 
     -- Link user message to simulation chat

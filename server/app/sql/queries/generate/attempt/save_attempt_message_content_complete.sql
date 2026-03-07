@@ -34,7 +34,7 @@ WITH message_run AS (
     SELECT id, run_id FROM messages_entry WHERE id = p_message_id
 ),
 new_completion AS (
-    INSERT INTO messages_completions_entry (message_id)
+    INSERT INTO attempt_message_completion_entry (attempt_message_id)
     SELECT p_message_id
     FROM message_run
     RETURNING id

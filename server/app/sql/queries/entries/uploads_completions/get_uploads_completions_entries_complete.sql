@@ -1,4 +1,4 @@
--- Get uploads_completions entries by IDs from uploads_completions_mv
+-- Get uploads_completions entries by IDs from upload_completion_mv
 
 DO $$
 DECLARE
@@ -31,10 +31,12 @@ BEGIN
             'mcp', m.mcp,
             'active', m.active,
             'upload_id', m.upload_id,
-            'end_reason', m.end_reason
+            'stop', m.stop,
+            'error', m.error,
+            'message', m.message
         )
     ) AS items
-    FROM uploads_completions_mv m
+    FROM upload_completion_mv m
     WHERE m.id = ANY(ids);
 END;
 $$;

@@ -36,9 +36,9 @@ latest_message AS (
     LIMIT 1
 ),
 mark_completed AS (
-    INSERT INTO messages_completions_entry (message_id)
+    INSERT INTO attempt_message_completion_entry (attempt_message_id)
     SELECT id FROM latest_message
-    RETURNING message_id AS id
+    RETURNING attempt_message_id AS id
 )
 SELECT
     (SELECT id FROM mark_completed) IS NOT NULL as success,

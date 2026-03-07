@@ -57,7 +57,7 @@ chat_data AS (
         c.id as chat_id,
         ac.attempt_id,
         EXISTS (
-            SELECT 1 FROM attempt_completion_entry comp
+            SELECT 1 FROM attempt_chat_completion_entry comp
             WHERE comp.chat_id = c.id AND comp.active = TRUE
         ) as chat_is_completed
     FROM attempt_chat_entry c

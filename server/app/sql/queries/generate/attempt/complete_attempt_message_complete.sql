@@ -30,7 +30,7 @@ VOLATILE
 AS $$
 BEGIN
     -- Mark message as completed (append-only)
-    INSERT INTO messages_completions_entry (message_id)
+    INSERT INTO attempt_message_completion_entry (attempt_message_id)
     VALUES (p_message_id);
 
     -- Insert token usage (append-only)

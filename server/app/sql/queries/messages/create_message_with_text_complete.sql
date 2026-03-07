@@ -43,7 +43,7 @@ link_message_upload AS (
 ),
 -- Mark as completed if requested (append-only)
 mark_completed AS (
-    INSERT INTO messages_completions_entry (message_id)
+    INSERT INTO attempt_message_completion_entry (attempt_message_id)
     SELECT nm.id FROM new_message nm
     WHERE COALESCE($4::boolean, TRUE) = TRUE
     RETURNING id

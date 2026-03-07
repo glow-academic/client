@@ -1,4 +1,4 @@
--- Get attempt_conversation_completions entries by IDs from attempt_conversation_completions_mv
+-- Get attempt_conversation_completions entries by IDs from attempt_conversation_completion_mv
 
 DO $$
 DECLARE
@@ -31,10 +31,12 @@ BEGIN
             'mcp', m.mcp,
             'active', m.active,
             'conversation_id', m.conversation_id,
-            'end_reason', m.end_reason
+            'stop', m.stop,
+            'error', m.error,
+            'message', m.message
         )
     ) AS items
-    FROM attempt_conversation_completions_mv m
+    FROM attempt_conversation_completion_mv m
     WHERE m.id = ANY(ids);
 END;
 $$;
