@@ -463,25 +463,6 @@ class ListPersonaApiResponse(BaseModel):
     import_fields: list[ImportField] | None = None
 
 
-# ========== Resource Action Types (for tool call tracking) ==========
-
-
-class PersonaResourceAction(BaseModel):
-    """Single-select resource with tool call tracking."""
-
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None  # Set if resource was just created (flush)
-    link_tool_id: UUID | None = None  # Set if selection changed from previous
-
-
-class PersonaMultiResourceAction(BaseModel):
-    """Multi-select resource with tool call tracking."""
-
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
 # ========== Save Endpoint Types ==========
 
 
@@ -661,122 +642,52 @@ class DuplicatePersonaApiResponse(BaseModel):
     message: str
 
 
-# ========== Draft Endpoint Types ==========
+# ========== Draft Endpoint Types (composable infra) ==========
 
 
 class PatchPersonaDraftApiRequest(BaseModel):
-    """Request model for patch persona draft endpoint - flat resource IDs."""
+    """Request model for new-style persona draft endpoint.
 
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id, instructions/instructions_id, examples/example_ids
+    ID-only for non-creatable resources:
+      - color_id, icon_id, flag_id, department_ids, parameter_field_ids, voice_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
     expected_version: int = 0
-    group_id: UUID | None = None  # Tool tracking context from GET response
-    # All optional (partial update)
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
     name_id: UUID | None = None
+    description: str | None = None
     description_id: UUID | None = None
+    instructions: str | None = None
+    instructions_id: UUID | None = None
+
+    # Creatable multi-select — provide values or IDs
+    examples: list[str] | None = None
+    example_ids: list[UUID] | None = None
+
+    # Non-creatable — ID-only
     color_id: UUID | None = None
     icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
+    flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
     voice_ids: list[UUID] | None = None
 
 
 class PatchPersonaDraftApiResponse(BaseModel):
-    """Response model for patch persona draft endpoint."""
+    """Response model for new-style persona draft endpoint."""
 
     success: bool
     draft_id: UUID
     new_version: int
     message: str
-
-
-class PatchPersonaDraftSqlParams(BaseModel):
-    """SQL parameters for patch persona draft - builds composites from flat IDs."""
-
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: PersonaResourceAction
-    descriptions: PersonaResourceAction
-    colors: PersonaResourceAction
-    icons: PersonaResourceAction
-    instructions: PersonaResourceAction
-    flags: PersonaResourceAction
-    departments: PersonaMultiResourceAction
-    parameter_fields: PersonaMultiResourceAction
-    examples: PersonaMultiResourceAction
-    parameters: PersonaMultiResourceAction
-    voices: PersonaMultiResourceAction
-    expected_version: int = 0
-    active_value: bool = True
-
-    @classmethod
-    def from_request(
-        cls,
-        request: PatchPersonaDraftApiRequest,
-        profile_id: UUID,
-        group_id: UUID | None = None,
-        active_value: bool = True,
-    ) -> PatchPersonaDraftSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=group_id,
-            names=PersonaResourceAction(resource_id=request.name_id),
-            descriptions=PersonaResourceAction(resource_id=request.description_id),
-            colors=PersonaResourceAction(resource_id=request.color_id),
-            icons=PersonaResourceAction(resource_id=request.icon_id),
-            instructions=PersonaResourceAction(resource_id=request.instructions_id),
-            flags=PersonaResourceAction(resource_id=request.active_flag_id),
-            departments=PersonaMultiResourceAction(resource_ids=request.department_ids),
-            parameter_fields=PersonaMultiResourceAction(
-                resource_ids=request.parameter_field_ids
-            ),
-            examples=PersonaMultiResourceAction(resource_ids=request.example_ids),
-            parameters=PersonaMultiResourceAction(resource_ids=request.parameter_ids),
-            voices=PersonaMultiResourceAction(resource_ids=request.voice_ids),
-            expected_version=request.expected_version,
-            active_value=active_value,
-        )
-
-    def to_tuple(self) -> tuple:
-        """Convert to tuple for SQL execution."""
-
-        def single(a: PersonaResourceAction) -> tuple:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: PersonaMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.colors),
-            single(self.icons),
-            single(self.instructions),
-            single(self.flags),
-            multi(self.departments),
-            multi(self.parameter_fields),
-            multi(self.examples),
-            multi(self.parameters),
-            multi(self.voices),
-            self.expected_version,
-            self.active_value,
-        )
-
-
-class PatchPersonaDraftSqlRow(BaseModel):
-    """SQL row for patch persona draft."""
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 # ========== Export Endpoint Types ==========

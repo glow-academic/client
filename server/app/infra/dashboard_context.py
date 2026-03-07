@@ -5,13 +5,14 @@ Two context resolvers:
   - resolve_dashboard_context: metrics bundle (header, primary, secondary, footer)
   - resolve_dashboard_search_context: history table (attempt list, paginated)
 
-Both use attempt_chat_mv as the core data grain. Rubric scores and message
-stats come from compiled SQL (no raw MV exists for those).
+Both use attempt_chat_mv as the core data grain. Message stats, rubric scores,
+and training doc IDs are computed from raw entry/connection tables + Python.
 """
 
 from __future__ import annotations
 
 import asyncio
+from collections import defaultdict
 from datetime import UTC, date, datetime
 from uuid import UUID
 
@@ -19,12 +20,10 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.types import ArtifactContext, ResourcePair
-
-# Compiled SQL (no raw MV alternative)
 from app.routes.v5.api.main.dashboard.shared import (
-    fetch_training_doc_ids,
-    get_message_stats_internal,
-    get_rubric_scores_internal,
+    MessageStats,
+    RubricScoreItem,
+    RubricScoresResponse,
 )
 
 # Entry fetchers
@@ -80,6 +79,240 @@ def _to_chat_item(r: GetAttemptChatResponse) -> ChatItem:
     )
 
 
+# ---------------------------------------------------------------------------
+# Raw entry queries (replacing compiled SQL)
+# ---------------------------------------------------------------------------
+
+
+async def _fetch_message_stats_raw(
+    conn: asyncpg.Connection,
+    chat_ids: list[UUID],
+) -> dict[UUID, MessageStats]:
+    """Fetch message stats from raw entry tables.
+
+    Replaces get_message_stats_internal (compiled SQL).
+    Queries attempt_message_entry + messages_entry directly.
+    """
+    if not chat_ids:
+        return {}
+
+    rows = await conn.fetch(
+        """
+        SELECT
+            sm.chat_id,
+            COUNT(*)::int AS num_messages_total,
+            ROUND(
+                AVG(
+                    EXTRACT(EPOCH FROM (sm.updated_at - sm.created_at))
+                ) FILTER (WHERE m.role = 'assistant'::message_type),
+                2
+            ) AS avg_response_sec
+        FROM attempt_message_entry sm
+        JOIN messages_entry m ON m.id = sm.id
+        WHERE sm.chat_id = ANY($1::uuid[])
+          AND m.active = TRUE
+          AND m.role IN ('user'::message_type, 'assistant'::message_type)
+        GROUP BY sm.chat_id
+        """,
+        chat_ids,
+    )
+
+    stats_map: dict[UUID, MessageStats] = {}
+    for row in rows:
+        cid = row["chat_id"]
+        stats_map[cid] = MessageStats(
+            chat_id=cid,
+            num_messages_total=row["num_messages_total"] or 0,
+            avg_response_sec=(
+                float(row["avg_response_sec"])
+                if row["avg_response_sec"] is not None
+                else None
+            ),
+        )
+    return stats_map
+
+
+async def _fetch_training_doc_ids_raw(
+    conn: asyncpg.Connection,
+    attempt_chat_ids: list[UUID],
+) -> dict[UUID, list[UUID]]:
+    """Fetch document_ids from attempt_chat_documents_connection.
+
+    Replaces fetch_training_doc_ids (compiled SQL with 15-join training config).
+    Dashboard only needs document_ids per attempt_chat_id.
+    """
+    if not attempt_chat_ids:
+        return {}
+
+    rows = await conn.fetch(
+        """
+        SELECT attempt_chat_id, documents_id
+        FROM attempt_chat_documents_connection
+        WHERE attempt_chat_id = ANY($1::uuid[])
+          AND active = TRUE
+        """,
+        attempt_chat_ids,
+    )
+
+    doc_map: dict[UUID, list[UUID]] = defaultdict(list)
+    for row in rows:
+        doc_map[row["attempt_chat_id"]].append(row["documents_id"])
+    return dict(doc_map)
+
+
+async def _fetch_rubric_scores_raw(
+    conn: asyncpg.Connection,
+    *,
+    profile_id: UUID | None = None,
+    cohort_ids: list[UUID] | None = None,
+    department_ids: list[UUID] | None = None,
+    simulation_ids: list[UUID] | None = None,
+    attempt_type: str | None = None,
+    is_archived: bool = False,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> RubricScoresResponse:
+    """Fetch rubric scores from raw entry/junction/resource tables + Python stitching.
+
+    Replaces get_rubric_scores_internal (compiled SQL).
+
+    Join chain:
+      attempt_chat_mv → attempt_grade_entry (latest grade per chat)
+                       → attempt_chat_entry
+                       → attempt_chat_rubrics_connection (rubric per chat)
+                       → attempt_feedback_entry (feedback scores)
+                       → feedbacks_standards_connection (feedback→standard links)
+                       → standards_resource (standard→standard_group mapping)
+                       → rubric_standard_groups_junction (rubric→standard_group)
+                       → standard_groups_resource (points per standard_group)
+
+    Computes: score_percent = 100 * SUM(feedback.total) / standard_group.points
+    per (chat_id, standard_group_id).
+    """
+    # Build filter conditions dynamically
+    conditions = ["ch.is_archived = $1"]
+    params: list[object] = [is_archived]
+    idx = 2
+
+    if profile_id is not None:
+        conditions.append(f"ch.profile_id = ${idx}")
+        params.append(profile_id)
+        idx += 1
+
+    if cohort_ids:
+        conditions.append(f"ch.cohort_id = ANY(${idx}::uuid[])")
+        params.append(cohort_ids)
+        idx += 1
+
+    if department_ids:
+        conditions.append(f"ch.department_id = ANY(${idx}::uuid[])")
+        params.append(department_ids)
+        idx += 1
+
+    if simulation_ids:
+        conditions.append(f"ch.simulation_id = ANY(${idx}::uuid[])")
+        params.append(simulation_ids)
+        idx += 1
+
+    if attempt_type is not None:
+        conditions.append(f"ch.attempt_type = ${idx}")
+        params.append(attempt_type)
+        idx += 1
+
+    if date_from is not None:
+        conditions.append(f"ch.attempt_date >= ${idx}")
+        params.append(date_from)
+        idx += 1
+
+    if date_to is not None:
+        conditions.append(f"ch.attempt_date <= ${idx}")
+        params.append(date_to)
+        idx += 1
+
+    where_clause = " AND ".join(conditions)
+
+    rows = await conn.fetch(
+        f"""
+        WITH latest_grade AS (
+            SELECT DISTINCT ON (g.chat_id)
+                g.id AS grade_id,
+                g.chat_id
+            FROM attempt_grade_entry g
+            WHERE g.active = TRUE
+            ORDER BY g.chat_id, g.created_at DESC
+        ),
+        chat_rubric AS (
+            SELECT DISTINCT ON (acrc.attempt_chat_id)
+                acrc.attempt_chat_id,
+                acrc.rubric_id
+            FROM attempt_chat_rubrics_connection acrc
+            WHERE acrc.active = TRUE
+            ORDER BY acrc.attempt_chat_id, acrc.created_at DESC
+        )
+        SELECT
+            ch.chat_id,
+            sg.id AS standard_group_id,
+            gr.rubric_id,
+            CASE WHEN sg.points > 0
+                 THEN TRUNC((100.0 * SUM(fe.total)::numeric / sg.points::numeric), 2)
+                 ELSE NULL
+            END AS score_percent,
+            ch.simulation_id,
+            ch.profile_id,
+            ch.cohort_id,
+            ch.department_id,
+            ch.attempt_date,
+            ch.attempt_type,
+            ch.is_archived
+        FROM attempt_chat_mv ch
+        JOIN latest_grade lg ON lg.chat_id = ch.chat_id
+        JOIN attempt_chat_entry ace ON ace.id = lg.chat_id AND ace.active = TRUE
+        JOIN chat_rubric gr ON gr.attempt_chat_id = ace.id
+        JOIN attempt_feedback_entry fe ON fe.grade_id = lg.grade_id AND fe.active = TRUE
+        JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
+        JOIN standards_resource s ON s.id = fsc.standard_id
+        JOIN rubric_rubrics_junction rrj
+            ON rrj.rubric_id = gr.rubric_id AND rrj.active = TRUE
+        JOIN rubric_standard_groups_junction rsg
+            ON rsg.rubric_id = rrj.rubric_id AND rsg.active = TRUE
+        JOIN standard_groups_resource sg
+            ON sg.id = rsg.standard_groups_id AND sg.id = s.standard_groups_id
+        WHERE {where_clause}
+        GROUP BY
+            ch.chat_id, sg.id, gr.rubric_id, sg.points,
+            ch.simulation_id, ch.profile_id, ch.cohort_id, ch.department_id,
+            ch.attempt_date, ch.attempt_type, ch.is_archived
+        ORDER BY ch.attempt_date DESC NULLS LAST, ch.chat_id DESC
+        """,
+        *params,
+    )
+
+    items: list[RubricScoreItem] = []
+    for row in rows:
+        score = row["score_percent"]
+        items.append(
+            RubricScoreItem(
+                chat_id=row["chat_id"],
+                standard_group_id=row["standard_group_id"],
+                rubric_id=row["rubric_id"],
+                score_percent=(
+                    float(score)
+                    if score is not None and not isinstance(score, float)
+                    else score
+                ),
+                simulation_id=row["simulation_id"],
+                profile_id=row["profile_id"],
+                cohort_id=row["cohort_id"],
+                department_id=row["department_id"],
+                attempt_date=row["attempt_date"],
+                attempt_type=row["attempt_type"],
+                is_archived=row["is_archived"] or False,
+            )
+        )
+
+    return RubricScoresResponse(items=items, total_count=len(items))
+
+
 async def resolve_dashboard_context(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -110,7 +343,7 @@ async def resolve_dashboard_context(
     """
 
     # ── Phase 1: Parallel fetch core data ────────────────────────────
-    async def _fetch_chats():
+    async def _fetch_chats() -> list[ChatItem]:
         async with pool.acquire() as c:
             raw = await search_attempt_chats(
                 c,
@@ -126,22 +359,21 @@ async def resolve_dashboard_context(
             )
         return [_to_chat_item(r) for r in raw]
 
-    async def _fetch_rubric_scores():
+    async def _fetch_rubric_scores() -> RubricScoresResponse:
         async with pool.acquire() as c:
-            return await get_rubric_scores_internal(
-                conn=c,
+            return await _fetch_rubric_scores_raw(
+                c,
                 profile_id=target_profile_id,
                 cohort_ids=cohort_ids,
-                department_ids=department_ids,
+                department_ids=list(department_ids) if department_ids else None,
                 simulation_ids=simulation_ids,
                 attempt_type=attempt_type,
                 is_archived=is_archived,
                 date_from=date_from,
                 date_to=date_to,
-                bypass_cache=bypass_cache,
             )
 
-    async def _fetch_thresholds():
+    async def _fetch_thresholds() -> dict[str, int | float]:
         from app.sql.types import GetActiveSettingsSqlParams, GetActiveSettingsSqlRow
 
         profile_for_settings = actor_profile_id or target_profile_id
@@ -201,25 +433,25 @@ async def resolve_dashboard_context(
             simulation_ids_set.add(item.simulation_id)
 
     # ── Phase 3: Parallel resource hydration + enrichment data ───────
-    async def _get_simulations():
+    async def _get_simulations() -> list:
         async with pool.acquire() as c:
             return await get_simulations(
                 c, list(simulation_ids_set), redis, bypass_cache=bypass_cache
             )
 
-    async def _get_personas():
+    async def _get_personas() -> list:
         async with pool.acquire() as c:
             return await get_personas(
                 c, list(persona_ids_set), redis, bypass_cache=bypass_cache
             )
 
-    async def _get_scenarios():
+    async def _get_scenarios() -> list:
         async with pool.acquire() as c:
             return await get_scenarios(
                 c, list(scenario_ids_set), redis, bypass_cache=bypass_cache
             )
 
-    async def _get_rubric_resources():
+    async def _get_rubric_resources() -> tuple:
         async with pool.acquire() as c:
             rubrics = await get_rubrics(
                 c, list(rubric_ids_set), redis, bypass_cache=bypass_cache
@@ -237,15 +469,13 @@ async def resolve_dashboard_context(
                 )
         return rubrics, standard_groups
 
-    async def _get_message_stats():
+    async def _get_message_stats() -> dict[UUID, MessageStats]:
         if not chat_ids:
             return {}
         async with pool.acquire() as c:
-            return await get_message_stats_internal(
-                c, chat_ids, bypass_cache=bypass_cache
-            )
+            return await _fetch_message_stats_raw(c, chat_ids)
 
-    async def _get_cohort_names():
+    async def _get_cohort_names() -> list:
         if not cohort_ids_set:
             return []
         async with pool.acquire() as c:
@@ -254,7 +484,7 @@ async def resolve_dashboard_context(
                 list(cohort_ids_set),
             )
 
-    async def _get_scenario_counts():
+    async def _get_scenario_counts() -> list:
         if not simulation_ids_set:
             return []
         async with pool.acquire() as c:
@@ -268,15 +498,13 @@ async def resolve_dashboard_context(
                 list(simulation_ids_set),
             )
 
-    async def _get_training_doc_ids():
+    async def _get_training_doc_ids() -> dict[UUID, list[UUID]]:
         if not attempt_chat_ids_set:
             return {}
         async with pool.acquire() as c:
-            return await fetch_training_doc_ids(
-                c, list(attempt_chat_ids_set), bypass_cache=bypass_cache
-            )
+            return await _fetch_training_doc_ids_raw(c, list(attempt_chat_ids_set))
 
-    async def _get_profiles():
+    async def _get_profiles() -> list:
         if not target_profile_id:
             return []
         async with pool.acquire() as c:
@@ -355,13 +583,13 @@ async def resolve_dashboard_context(
         if pf.field_id:
             field_ids_set.add(pf.field_id)
 
-    async def _get_parameters():
+    async def _get_parameters() -> list:
         async with pool.acquire() as c:
             return await get_parameters(
                 c, list(parameter_ids_set), redis, bypass_cache=bypass_cache
             )
 
-    async def _get_fields():
+    async def _get_fields() -> list:
         async with pool.acquire() as c:
             return await get_fields(
                 c, list(field_ids_set), redis, bypass_cache=bypass_cache
@@ -518,7 +746,7 @@ async def resolve_dashboard_search_context(
             h_scenario_ids.update(item.scenario_ids)
 
     # Step 4: Parallel resource hydration
-    async def _h_sims():
+    async def _h_sims() -> list:
         if not h_sim_ids:
             return []
         async with pool.acquire() as c:
@@ -526,7 +754,7 @@ async def resolve_dashboard_search_context(
                 c, list(h_sim_ids), redis, bypass_cache=bypass_cache
             )
 
-    async def _h_profiles():
+    async def _h_profiles() -> list:
         if not h_profile_ids:
             return []
         async with pool.acquire() as c:
@@ -534,7 +762,7 @@ async def resolve_dashboard_search_context(
                 c, list(h_profile_ids), redis, bypass_cache=bypass_cache
             )
 
-    async def _h_personas():
+    async def _h_personas() -> list:
         if not h_persona_ids:
             return []
         async with pool.acquire() as c:
@@ -542,7 +770,7 @@ async def resolve_dashboard_search_context(
                 c, list(h_persona_ids), redis, bypass_cache=bypass_cache
             )
 
-    async def _h_scenarios():
+    async def _h_scenarios() -> list:
         if not h_scenario_ids:
             return []
         async with pool.acquire() as c:

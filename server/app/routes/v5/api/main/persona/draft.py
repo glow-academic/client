@@ -1,158 +1,24 @@
-"""Persona draft endpoint - handles autosave for all persona resources."""
+"""Persona draft endpoint — composable infra architecture.
 
-import json
-from typing import Annotated, cast
-from uuid import UUID
+Thin route handler. Core logic lives in app.infra.persona_draft.
+"""
 
-import asyncpg  # type: ignore
+from __future__ import annotations
+
+from typing import Annotated
+
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import UPLOAD_FOLDER, get_db, get_pool
-from app.infra.tools.entries.create_tool_call import create_tool_call
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.main.persona.permissions import (
-    PERSONA_RESOURCES,
-    compute_can_draft,
-)
+from app.infra.globals import get_db, get_redis_client
+from app.infra.persona_draft import patch_persona_draft_client
 from app.routes.v5.api.main.persona.types import (
     PatchPersonaDraftApiRequest,
     PatchPersonaDraftApiResponse,
-    PatchPersonaDraftSqlParams,
-    PatchPersonaDraftSqlRow,
 )
-from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.tools.entries.persona_drafts.refresh import (
-    refresh_persona_drafts_internal,
-)
-from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
-
-logger = get_logger(__name__)
-
-# SQL paths
-SQL_PATH = "app/sql/queries/personas/patch_persona_draft_complete.sql"
-
-# Request field → resource key mapping (for single-select)
-SINGLE_REQUEST_FIELDS: dict[str, str] = {
-    "name_id": "names",
-    "description_id": "descriptions",
-    "color_id": "colors",
-    "icon_id": "icons",
-    "instructions_id": "instructions",
-    "active_flag_id": "flags",
-}
-
-# Request field → resource key mapping (for multi-select)
-MULTI_REQUEST_FIELDS: dict[str, str] = {
-    "department_ids": "departments",
-    "parameter_field_ids": "parameter_fields",
-    "example_ids": "examples",
-    "voice_ids": "voices",
-}
 
 router = APIRouter()
-
-
-async def patch_persona_draft_internal(
-    conn: asyncpg.Connection,
-    profile_id: UUID,
-    request: PatchPersonaDraftApiRequest,
-    group_id: UUID | None = None,
-    soft: bool = False,
-) -> PatchPersonaDraftSqlRow:
-    """Core draft patch logic — no transaction management or cache invalidation.
-
-    Args:
-        conn: Database connection (caller owns transaction).
-        profile_id: The profile performing the action.
-        request: The draft patch request with resource IDs.
-        group_id: Optional group_id for tool tracking.
-        soft: If True, creates dormant draft (active=false).
-
-    Returns:
-        PatchPersonaDraftSqlRow with draft_id, new_version, draft_exists.
-    """
-    active_value = not soft
-    params = PatchPersonaDraftSqlParams.from_request(
-        request, profile_id=profile_id, group_id=group_id, active_value=active_value
-    )
-
-    result = cast(
-        PatchPersonaDraftSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    if not result:
-        raise ValueError("Failed to patch persona draft")
-
-    return result
-
-
-async def _noop_tool(conn: asyncpg.Connection, **kwargs: str) -> str:
-    """No-op tool function for link tracking (backward compat)."""
-    return json.dumps({"success": True, "message": "Linked resource"})
-
-
-async def _link_draft_resources(
-    conn: asyncpg.Connection,
-    request: PatchPersonaDraftApiRequest,
-    group_id: UUID,
-    session_id: UUID,
-    profile_id: UUID,
-    link_tool_ids: dict[str, UUID | None],
-) -> None:
-    """Record tool calls for each resource that changed in the draft request.
-
-    Uses create_tool_call with a no-op tool_fn for backward-compatible tracking.
-    Errors are logged but do not fail the draft save.
-    """
-    # Single-select resources
-    for field, resource_key in SINGLE_REQUEST_FIELDS.items():
-        resource_id = getattr(request, field, None)
-        if resource_id is None:
-            continue
-        tool_id = link_tool_ids.get(resource_key)
-        if tool_id is None:
-            continue
-        try:
-            await create_tool_call(
-                conn,
-                group_id=group_id,
-                session_id=session_id,
-                profile_id=profile_id,
-                upload_folder=UPLOAD_FOLDER,
-                tool_fn=_noop_tool,
-                arguments={"resource_id": str(resource_id)},
-                tool_id=tool_id,
-            )
-        except Exception as e:
-            logger.warning(f"link_{resource_key} failed (non-fatal): {e}")
-
-    # Multi-select resources
-    for field, resource_key in MULTI_REQUEST_FIELDS.items():
-        resource_ids = getattr(request, field, None)
-        if not resource_ids:
-            continue
-        tool_id = link_tool_ids.get(resource_key)
-        if tool_id is None:
-            continue
-        for rid in resource_ids:
-            try:
-                await create_tool_call(
-                    conn,
-                    group_id=group_id,
-                    session_id=session_id,
-                    profile_id=profile_id,
-                    upload_folder=UPLOAD_FOLDER,
-                    tool_fn=_noop_tool,
-                    arguments={"resource_id": str(rid)},
-                    tool_id=tool_id,
-                )
-            except Exception as e:
-                logger.warning(f"link_{resource_key} failed for {rid} (non-fatal): {e}")
 
 
 @router.patch(
@@ -165,7 +31,7 @@ async def patch_persona_draft(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PatchPersonaDraftApiResponse:
-    """Patch persona draft - accepts resource IDs and creates/updates draft."""
+    """Patch persona draft — composable infra architecture."""
     tags = ["personas", "drafts"]
 
     try:
@@ -176,88 +42,26 @@ async def patch_persona_draft(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Fetch user context for permissions
-        pool = get_pool()
-        if pool:
-            async with pool.acquire() as context_conn:
-                profile_ctx = await get_auth_profile_internal(
-                    conn=context_conn,
-                    profile_id=profile_id,
-                    bypass_cache=False,
-                )
-                user_role = profile_ctx.access.role
-        else:
-            user_role = None
-
-        # Permission check using centralized permissions logic
-        can_draft_result = compute_can_draft(user_role=user_role)
-
-        if not can_draft_result:
+        session_id = http_request.state.session_id
+        if not session_id:
             raise HTTPException(
-                status_code=403,
-                detail="You don't have permission to create or edit persona drafts.",
+                status_code=401,
+                detail="Session ID is required.",
             )
 
-        # Resolve link tool IDs from settings (for tool tracking)
-        link_tool_ids: dict[str, UUID | None] | None = None
-        if request.group_id and pool:
-            async with pool.acquire() as settings_conn:
-                settings_data = await get_auth_settings_internal(
-                    settings_conn, profile_id, bypass_cache=False
-                )
-            _, _, link_tool_ids = resolve_agents_for_artifact(
-                settings_data.agent_tool_entries, PERSONA_RESOURCES
-            )
-
-        async with conn.transaction():
-            result = await patch_persona_draft_internal(
-                conn,
-                profile_id=profile_id,
-                request=request,
-                group_id=request.group_id,
-            )
-
-        # Link resources for tool tracking (after successful draft save)
-        if request.group_id and link_tool_ids:
-            # Resolve session_id from group
-            session_row = await conn.fetchrow(
-                "SELECT session_id FROM groups_entry WHERE id = $1",
-                request.group_id,
-            )
-            if session_row:
-                await _link_draft_resources(
-                    conn,
-                    request,
-                    group_id=request.group_id,
-                    session_id=session_row["session_id"],
-                    profile_id=profile_id,
-                    link_tool_ids=link_tool_ids,
-                )
-
-        # Build response with success and message
-        is_update = request.input_draft_id is not None
-        api_response = PatchPersonaDraftApiResponse.model_validate(
-            {
-                "success": True,
-                "draft_id": str(result.draft_id),
-                "new_version": result.new_version,
-                "message": "Draft updated successfully"
-                if is_update
-                else "Draft created successfully",
-            }
+        redis = get_redis_client()
+        result = await patch_persona_draft_client(
+            conn,
+            redis,
+            profile_id=profile_id,
+            session_id=session_id,
+            request=request,
         )
 
-        # Refresh MV so /auth/drafts can see the new draft immediately
-        await refresh_persona_drafts_internal(conn)
-
-        await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
-
-        return api_response
+        return result
     except HTTPException:
         raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
     except Exception as e:
         handle_route_error(
             error=e,
