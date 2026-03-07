@@ -1,5 +1,6 @@
 """Home CREATE — reusable data-access layer."""
 
+from datetime import datetime
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -20,18 +21,22 @@ async def create_home(
     position: int = 0,
     mcp: bool = False,
     soft: bool = False,
+    start_time: datetime | None = None,
+    end_time: datetime | None = None,
 ) -> CreateHomeResponse:
     """Create a home entry with all connection tables."""
     home_id = await conn.fetchval(
         """
-        INSERT INTO home_entry (session_id, "position", active, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO home_entry (session_id, "position", active, mcp, generated, start_time, end_time)
+        VALUES ($1, $2, $3, $4, true, $5, $6)
         RETURNING id
         """,
         session_id,
         position,
         not soft,
         mcp,
+        start_time,
+        end_time,
     )
 
     if home_id is None:

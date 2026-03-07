@@ -7,6 +7,7 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from pydantic import BaseModel, Field
 
+from app.infra.docs.resolve_mv_source import resolve_mv_source
 from app.sql.types import (
     SearchRunsEntriesSqlParams,
     SearchRunsEntriesSqlRow,
@@ -19,6 +20,8 @@ from app.utils.sql_helper import execute_sql_typed
 SEARCH_SQL_PATH = "app/sql/queries/entries/runs/search_runs_entries_complete.sql"
 
 LIST_SQL_PATH = "app/sql/queries/views/run/list/get_run_list_view_complete.sql"
+
+MV_NAME = "runs_mv"
 
 
 class RunPricingItem(BaseModel):
@@ -230,3 +233,58 @@ async def get_run_list_entries_internal(
     )
 
     return response
+
+
+async def search_runs(
+    conn: asyncpg.Connection,
+    group_ids: list[UUID] | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    sort_order: str = "desc",
+    limit: int = 20,
+    offset: int = 0,
+    bypass_mv: bool = False,
+) -> list[RunViewItem]:
+    """Search runs from runs_mv with declarative filters."""
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
+
+    order = "ASC" if sort_order.lower() == "asc" else "DESC"
+
+    rows = await conn.fetch(
+        f"""
+        SELECT run_id, group_id,
+               input_tokens, output_tokens, cached_input_tokens,
+               run_created_at,
+               agent_ids, model_ids, provider_ids,
+               input_pricing_count, input_pricing_pricing_id,
+               output_pricing_count, output_pricing_pricing_id,
+               cached_pricing_count, cached_pricing_pricing_id
+        FROM {source}
+        WHERE ($1::uuid[] IS NULL OR group_id = ANY($1))
+          AND ($2::timestamptz IS NULL OR run_created_at >= $2)
+          AND ($3::timestamptz IS NULL OR run_created_at <= $3)
+        ORDER BY run_created_at {order}
+        LIMIT $4 OFFSET $5
+        """,
+        group_ids,
+        date_from,
+        date_to,
+        limit,
+        offset,
+    )
+
+    return [
+        RunViewItem(
+            run_id=r["run_id"],
+            group_id=r["group_id"],
+            input_tokens=r["input_tokens"] or 0,
+            output_tokens=r["output_tokens"] or 0,
+            cached_input_tokens=r["cached_input_tokens"] or 0,
+            run_created_at=r["run_created_at"],
+            agent_ids=list(r["agent_ids"]) if r["agent_ids"] else None,
+            model_ids=list(r["model_ids"]) if r["model_ids"] else None,
+            provider_ids=list(r["provider_ids"]) if r["provider_ids"] else None,
+            pricing=_build_pricing_list(r),
+        )
+        for r in rows
+    ]

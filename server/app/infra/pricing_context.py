@@ -1,0 +1,210 @@
+"""Resolve pricing context — raw MV reads + hydrated resources.
+
+Pricing is a dashboard endpoint with no artifact table and no drafts.
+Two context resolvers:
+  - resolve_pricing_context: top chart (daily cost aggregation + filter options)
+  - resolve_pricing_search_context: bottom table (group list, paginated)
+
+Both pull from runs_mv + groups_mv. Cost computation uses pricing_resource.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from datetime import datetime
+from uuid import UUID
+
+import asyncpg
+from redis.asyncio import Redis
+
+from app.infra.types import ArtifactContext, ResourcePair
+
+# Entry fetchers (raw MV reads)
+from app.routes.v5.tools.entries.groups.search import search_groups
+from app.routes.v5.tools.entries.runs.search import search_runs
+
+# Resource get fetchers
+from app.routes.v5.tools.resources.agents.get import get_agents
+from app.routes.v5.tools.resources.models.get import get_models
+from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.pricing.get import get_pricing
+
+
+async def resolve_pricing_context(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    bypass_cache: bool = False,
+) -> ArtifactContext:
+    """Resolve pricing context for top chart (daily cost aggregation).
+
+    Entries (raw MVs):
+      - runs: runs_mv rows (all for date range, with inline pricing)
+
+    Resources (hydrated from IDs derived from runs):
+      - agents, models, pricing (for cost computation + filter options)
+    """
+    # Step 1: Fetch all runs for date range
+    all_runs = await search_runs(
+        conn,
+        date_from=date_from,
+        date_to=date_to,
+        limit=100000,
+    )
+
+    # Step 2: Collect resource IDs
+    agent_ids_set: set[UUID] = set()
+    model_ids_set: set[UUID] = set()
+    pricing_ids_set: set[UUID] = set()
+
+    for run in all_runs:
+        if run.agent_ids:
+            agent_ids_set.update(run.agent_ids)
+        if run.model_ids:
+            model_ids_set.update(run.model_ids)
+        for p in run.pricing:
+            if p.pricing_id:
+                pricing_ids_set.add(p.pricing_id)
+
+    # Step 3: Parallel hydrate resources
+    agents_selected, models_selected, pricing_selected = await asyncio.gather(
+        get_agents(conn, list(agent_ids_set), redis, bypass_cache)
+        if agent_ids_set
+        else _empty_list(),
+        get_models(conn, list(model_ids_set), redis, bypass_cache)
+        if model_ids_set
+        else _empty_list(),
+        get_pricing(conn, list(pricing_ids_set), redis, bypass_cache)
+        if pricing_ids_set
+        else _empty_list(),
+    )
+
+    return ArtifactContext(
+        artifact_id=None,
+        active=True,
+        group_id=None,  # type: ignore[arg-type]
+        draft_version=None,
+        resources={
+            "agents": ResourcePair(selected=agents_selected, suggestions=[]),
+            "models": ResourcePair(selected=models_selected, suggestions=[]),
+            "pricing": ResourcePair(selected=pricing_selected, suggestions=[]),
+        },
+        entries={
+            "runs": all_runs,
+        },
+    )
+
+
+async def resolve_pricing_search_context(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
+    session_ids: list[UUID] | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    sort_order: str = "desc",
+    page: int = 0,
+    page_size: int = 50,
+    bypass_cache: bool = False,
+) -> ArtifactContext:
+    """Resolve pricing search context for bottom table (group list).
+
+    Entries (raw MVs):
+      - groups: groups_mv rows (paginated)
+      - total_groups: groups_mv rows (all matching, for total_count)
+      - runs: runs_mv rows (for groups on current page)
+
+    Resources (hydrated from IDs derived from runs):
+      - agents, models, names, pricing (for cost computation + display)
+    """
+    page_offset = page * page_size
+
+    # Step 1: Paginated groups + total count
+    all_groups, total_groups = await asyncio.gather(
+        search_groups(
+            conn,
+            session_ids=session_ids,
+            date_from=date_from,
+            date_to=date_to,
+            limit=page_size,
+            offset=page_offset,
+        ),
+        search_groups(
+            conn,
+            session_ids=session_ids,
+            date_from=date_from,
+            date_to=date_to,
+            limit=100000,
+            offset=0,
+        ),
+    )
+
+    # Step 2: Fetch runs for groups on current page
+    group_ids = [g.id for g in all_groups]
+    all_runs = (
+        await search_runs(conn, group_ids=group_ids, limit=100000)
+        if group_ids
+        else []
+    )
+
+    # Step 3: Collect resource IDs
+    agent_ids_set: set[UUID] = set()
+    model_ids_set: set[UUID] = set()
+    pricing_ids_set: set[UUID] = set()
+
+    for run in all_runs:
+        if run.agent_ids:
+            agent_ids_set.update(run.agent_ids)
+        if run.model_ids:
+            model_ids_set.update(run.model_ids)
+        for p in run.pricing:
+            if p.pricing_id:
+                pricing_ids_set.add(p.pricing_id)
+
+    # Names for display (agents + models)
+    all_name_ids = list(agent_ids_set | model_ids_set)
+
+    # Step 4: Parallel hydrate resources
+    (
+        agents_selected,
+        models_selected,
+        pricing_selected,
+        names_selected,
+    ) = await asyncio.gather(
+        get_agents(conn, list(agent_ids_set), redis, bypass_cache)
+        if agent_ids_set
+        else _empty_list(),
+        get_models(conn, list(model_ids_set), redis, bypass_cache)
+        if model_ids_set
+        else _empty_list(),
+        get_pricing(conn, list(pricing_ids_set), redis, bypass_cache)
+        if pricing_ids_set
+        else _empty_list(),
+        get_names(conn, all_name_ids, redis, bypass_cache=bypass_cache)
+        if all_name_ids
+        else _empty_list(),
+    )
+
+    return ArtifactContext(
+        artifact_id=None,
+        active=True,
+        group_id=None,  # type: ignore[arg-type]
+        draft_version=None,
+        resources={
+            "agents": ResourcePair(selected=agents_selected, suggestions=[]),
+            "models": ResourcePair(selected=models_selected, suggestions=[]),
+            "pricing": ResourcePair(selected=pricing_selected, suggestions=[]),
+            "names": ResourcePair(selected=names_selected, suggestions=[]),
+        },
+        entries={
+            "groups": all_groups,
+            "total_groups": total_groups,
+            "runs": all_runs,
+        },
+    )
+
+
+async def _empty_list() -> list:
+    return []

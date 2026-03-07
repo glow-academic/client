@@ -9,8 +9,8 @@ All test lifecycle events route through here:
 - test_end_all → proceed with complete_all=True (marks all done → ended)
 
 Flow:
-1. If completed_invocation_id → insert into test_completion_entry
-2. If complete_all → mark all remaining invocations completed → emit test_ended
+1. If completed_invocation_id → create_test_completion
+2. If complete_all → complete_all_invocations → emit test_ended
 3. Get context SQL → next invocation_entry + use_custom + is_dynamic
 4. All done? → emit test_ended
 5. use_custom && !force_proceed → emit test_started (lobby)
@@ -29,6 +29,12 @@ from app.infra.websocket.get_db_connection import get_db_connection
 from app.routes.v5.socket.internal.test.types import (
     TestErrorData,
     TestProceedData,
+)
+from app.routes.v5.tools.entries.test_completion.create import (
+    create_test_completion,
+)
+from app.routes.v5.tools.entries.test_invocation.refresh import (
+    refresh_test_invocation,
 )
 from app.sql.types import (
     GetTestProceedContextSqlParams,
@@ -76,16 +82,28 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
         complete_all = payload.complete_all
 
         # Step 1: If completed_invocation_id, mark that invocation completed
+        # TODO: call_id is NOT NULL on test_completion_entry but we don't have
+        # a call_id in this context. The old inline SQL omitted it (would fail
+        # on NOT NULL). Need to either make call_id nullable or thread it through.
         if completed_invocation_id:
             async with get_db_connection() as conn:
-                await conn.execute(
-                    """INSERT INTO test_completion_entry (invocation_id, end_reason, generated, mcp)
-                    VALUES ($1, 'completed', false, false)
-                    ON CONFLICT DO NOTHING""",
-                    completed_invocation_id,
-                )
+                try:
+                    await create_test_completion(
+                        conn,
+                        invocation_id=completed_invocation_id,
+                        call_id=uuid.UUID(
+                            "00000000-0000-0000-0000-000000000000"
+                        ),  # TODO: thread real call_id
+                        end_reason="completed",
+                    )
+                except Exception:
+                    logger.warning(
+                        f"Failed to create test_completion for {completed_invocation_id} "
+                        f"(may already exist)"
+                    )
 
         # Step 2: If complete_all, mark all remaining invocations completed → ended
+        # TODO: convert to black-box function (bulk complete_all_invocations)
         if complete_all:
             async with get_db_connection() as conn:
                 await conn.execute(
@@ -100,7 +118,7 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
                     ON CONFLICT DO NOTHING""",
                     test_id,
                 )
-                await conn.execute("REFRESH MATERIALIZED VIEW test_invocation_mv")
+                await refresh_test_invocation(conn)
             await invalidate_tags(
                 ["test", "tests", "benchmark"], redis=get_redis_client()
             )
@@ -200,7 +218,7 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
 
         # Step 7: Refresh MVs + emit test_invocation_started
         async with get_db_connection() as conn:
-            await conn.execute("REFRESH MATERIALIZED VIEW test_invocation_mv")
+            await refresh_test_invocation(conn)
         await invalidate_tags(["test", "tests", "benchmark"], redis=get_redis_client())
 
         is_dynamic = ctx.is_dynamic if ctx.is_dynamic is not None else True

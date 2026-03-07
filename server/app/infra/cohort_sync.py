@@ -1,7 +1,7 @@
 """Cohort entry sync — pre-create home/practice + chat entries on cohort save.
 
 Insert-only. No reads from _entry tables. No deactivation of old entries.
-All entries from the same sync share a canonical created_at timestamp (set in SQL).
+Uses black-box entry creation tools instead of raw SQL.
 """
 
 import asyncio
@@ -10,14 +10,10 @@ from typing import Any, cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
-from pydantic import BaseModel
 
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
-
-SQL_PATH = "app/sql/queries/entries/cohort_sync/sync_cohort_entries_complete.sql"
 
 # Flag name → chat_entry column mapping (13 entries)
 FLAG_NAME_TO_COLUMN: dict[str, str] = {
@@ -37,33 +33,6 @@ FLAG_NAME_TO_COLUMN: dict[str, str] = {
 }
 
 
-class SyncCohortEntriesSqlParams(BaseModel):
-    """SQL parameters for syncing cohort entries."""
-
-    cohorts_resource_id: UUID
-    department_ids: list[UUID]
-    profile_ids: list[UUID]
-    profile_persona_ids: list[UUID]
-    simulations: list[tuple[Any, ...]]
-    chats: list[tuple[Any, ...]]
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.cohorts_resource_id,
-            self.department_ids,
-            self.profile_ids,
-            self.profile_persona_ids,
-            self.simulations,
-            self.chats,
-        )
-
-
-class SyncCohortEntriesSqlRow(BaseModel):
-    """SQL row returned from syncing cohort entries."""
-
-    entry_count: int | None = None
-
-
 async def sync_cohort_entries(
     conn: asyncpg.Connection,
     cohorts_resource_id: UUID,
@@ -79,9 +48,17 @@ async def sync_cohort_entries(
     Three-pass approach:
     1. Fetch simulations to get scenario_ids and sub-resource IDs
     2. Parallel fetch all sub-resources
-    3. Build composite tuples and call SQL function
+    3. Build data structures and call entry creation tools
     """
     from app.infra.globals import get_pool, get_redis_client
+    from app.routes.v5.tools.entries.chat.create import create_chat
+    from app.routes.v5.tools.entries.home.create import create_home
+    from app.routes.v5.tools.entries.home_chat.create import create_home_chat
+    from app.routes.v5.tools.entries.practice.create import create_practice
+    from app.routes.v5.tools.entries.practice_chat.create import (
+        create_practice_chat,
+    )
+    from app.routes.v5.tools.entries.sessions.create import create_session
     from app.routes.v5.tools.resources.rubrics.get import get_rubrics
     from app.routes.v5.tools.resources.scenario_flags.get import (
         get_scenario_flags,
@@ -277,25 +254,16 @@ async def sync_cohort_entries(
         if t.id:
             time_limit_map[t.id] = (t.time_limit_seconds, t.negative or False)
 
-    # simulation_position_id → value (int)
-    sim_pos_map: dict[UUID, int] = {}
-    for p in sim_positions:
-        if p.id and p.value is not None:
-            sim_pos_map[p.id] = p.value
+    # ── Build simulation data (grouped with their chats) ──
+    entry_count = 0
 
-    # simulation_availability_id → (time, type)
-    sim_avail_map: dict[UUID, tuple[str | None, str | None]] = {}
-    for a in sim_availability:
-        if a.id:
-            sim_avail_map[a.id] = (a.time, a.type)
-
-    # ── Build simulation tuples ──
-    sim_tuples: list[tuple[Any, ...]] = []
+    # Build per-simulation structures
+    sim_data_list: list[dict[str, Any]] = []
     for sim in simulations:
         if not sim.simulation_id:
             continue
 
-        # Resolve position from simulation_positions (keyed by simulation_id)
+        # Resolve position from simulation_positions
         resolved_position = 0
         for p in sim_positions:
             if p.simulation_id and UUID(str(p.simulation_id)) == sim.simulation_id:
@@ -336,25 +304,7 @@ async def sync_cohort_entries(
             and a.id
         ]
 
-        sim_tuples.append(
-            (
-                sim.simulation_id,
-                sim.practice or False,
-                resolved_position,
-                start_time,
-                end_time,
-                sim_pos_resource_ids,
-                sim_avail_resource_ids,
-            )
-        )
-
-    # ── Build chat tuples ──
-    chat_tuples: list[tuple[Any, ...]] = []
-    for sim_idx, sim in enumerate(simulations):
-        if not sim.simulation_id:
-            continue
-
-        sim_1based = sim_idx + 1
+        # Build chat data for this simulation
         scenario_ids_for_sim = [UUID(s) for s in (sim.scenario_ids or [])]
         scenario_rubric_ids_for_sim = [UUID(s) for s in (sim.scenario_rubric_ids or [])]
         scenario_flag_ids_for_sim = [UUID(s) for s in (sim.scenario_flag_ids or [])]
@@ -365,6 +315,7 @@ async def sync_cohort_entries(
             UUID(s) for s in (sim.scenario_time_limit_ids or [])
         ]
 
+        chat_data_list: list[dict[str, Any]] = []
         for scenario_id in scenario_ids_for_sim:
             scenario = scenario_map.get(scenario_id)
             if not scenario:
@@ -381,7 +332,6 @@ async def sync_cohort_entries(
             chat_position = 0
             for sp_id in scenario_position_ids_for_sim:
                 if sp_id in pos_map:
-                    # Find position for THIS scenario
                     for p in scenario_positions:
                         if p.id == sp_id and p.scenario_id == scenario_id:
                             chat_position = p.value or 0
@@ -402,26 +352,10 @@ async def sync_cohort_entries(
             flag_bools: dict[str, bool] = {}
             for sf_id in scenario_flag_ids_for_sim:
                 if sf_id in flag_map:
-                    # Check if this flag belongs to this scenario
                     for f in scenario_flags:
                         if f.id == sf_id and f.scenario_id == scenario_id:
                             flag_bools.update(flag_map[sf_id])
                             break
-
-            # Extract flag values with defaults
-            audio_enabled = flag_bools.get("audio_enabled", True)
-            text_enabled = flag_bools.get("text_enabled", True)
-            hints_enabled = flag_bools.get("hints_enabled", True)
-            copy_paste_allowed = flag_bools.get("copy_paste_allowed", True)
-            show_images = flag_bools.get("show_images", True)
-            show_objectives = flag_bools.get("show_objectives", True)
-            show_problem_statement = flag_bools.get("show_problem_statement", True)
-            analyses_enabled = flag_bools.get("analyses_enabled", True)
-            improvements_enabled = flag_bools.get("improvements_enabled", True)
-            replacements_enabled = flag_bools.get("replacements_enabled", True)
-            strengths_enabled = flag_bools.get("strengths_enabled", True)
-            use_custom = flag_bools.get("use_custom", False)
-            use_previous = flag_bools.get("use_previous", False)
 
             # Content-enabled flags (from scenario)
             ps_enabled = scenario.problem_statement_enabled or False
@@ -431,20 +365,15 @@ async def sync_cohort_entries(
             q_enabled = scenario.questions_enabled or False
 
             # Generate flags
-            # 5 mirrored: generate_X = X_enabled
             gen_ps = ps_enabled
             gen_obj = obj_enabled
             gen_vid = vid_enabled
             gen_img = img_enabled
             gen_q = q_enabled
-
-            # 4 connection-based: generate_X = len(X_ids) > 0
             gen_personas = len(scenario.persona_ids or []) > 0
             gen_documents = len(scenario.document_ids or []) > 0
             gen_options = len(scenario.option_ids or []) > 0
             gen_param_fields = len(scenario.parameter_field_ids or []) > 0
-
-            # 2 derived: generate_names = generate_descriptions = NOT all_others_true
             all_others = all(
                 [
                     gen_ps,
@@ -487,78 +416,189 @@ async def sync_cohort_entries(
                         if std_id not in chat_standard_ids:
                             chat_standard_ids.append(std_id)
 
-            chat_tuples.append(
-                (
-                    sim_1based,
-                    scenario_id,
-                    resolved_rubric_ids,
-                    scenario.name or "",
-                    scenario.description or "",
-                    chat_position,
-                    chat_time_limit,
-                    chat_negative_time,
+            chat_data_list.append(
+                {
+                    "scenario_id": scenario_id,
+                    "name": scenario.name or "",
+                    "description": scenario.description or "",
+                    "position": chat_position,
+                    "time_limit": chat_time_limit,
+                    "negative_time": chat_negative_time,
                     # 13 flag booleans
-                    audio_enabled,
-                    text_enabled,
-                    hints_enabled,
-                    copy_paste_allowed,
-                    show_images,
-                    show_objectives,
-                    show_problem_statement,
-                    analyses_enabled,
-                    improvements_enabled,
-                    replacements_enabled,
-                    strengths_enabled,
-                    use_custom,
-                    use_previous,
+                    "audio_enabled": flag_bools.get("audio_enabled", True),
+                    "text_enabled": flag_bools.get("text_enabled", True),
+                    "hints_enabled": flag_bools.get("hints_enabled", True),
+                    "copy_paste_allowed": flag_bools.get("copy_paste_allowed", True),
+                    "show_images": flag_bools.get("show_images", True),
+                    "show_objectives": flag_bools.get("show_objectives", True),
+                    "show_problem_statement": flag_bools.get(
+                        "show_problem_statement", True
+                    ),
+                    "analyses_enabled": flag_bools.get("analyses_enabled", True),
+                    "improvements_enabled": flag_bools.get(
+                        "improvements_enabled", True
+                    ),
+                    "replacements_enabled": flag_bools.get(
+                        "replacements_enabled", True
+                    ),
+                    "strengths_enabled": flag_bools.get("strengths_enabled", True),
+                    "use_custom": flag_bools.get("use_custom", False),
+                    "use_previous": flag_bools.get("use_previous", False),
                     # 5 content-enabled
-                    ps_enabled,
-                    obj_enabled,
-                    vid_enabled,
-                    img_enabled,
-                    q_enabled,
+                    "problem_statement_enabled": ps_enabled,
+                    "objectives_enabled": obj_enabled,
+                    "video_enabled": vid_enabled,
+                    "images_enabled": img_enabled,
+                    "questions_enabled": q_enabled,
                     # 11 generate flags
-                    gen_ps,
-                    gen_obj,
-                    gen_vid,
-                    gen_img,
-                    gen_q,
-                    gen_personas,
-                    gen_documents,
-                    gen_options,
-                    gen_param_fields,
-                    gen_names,
-                    gen_descriptions,
+                    "generate_problem_statements": gen_ps,
+                    "generate_objectives": gen_obj,
+                    "generate_videos": gen_vid,
+                    "generate_images": gen_img,
+                    "generate_questions": gen_q,
+                    "generate_personas": gen_personas,
+                    "generate_documents": gen_documents,
+                    "generate_options": gen_options,
+                    "generate_parameter_fields": gen_param_fields,
+                    "generate_names": gen_names,
+                    "generate_descriptions": gen_descriptions,
                     # connection resource IDs
-                    chat_scenario_flag_ids,
-                    chat_scenario_position_ids,
-                    chat_scenario_time_limit_ids,
-                    list(scenario.persona_ids or []),
-                    list(scenario.document_ids or []),
-                    list(scenario.image_ids or []),
-                    list(scenario.video_ids or []),
-                    list(scenario.question_ids or []),
-                    list(scenario.option_ids or []),
-                    list(scenario.problem_statement_ids or []),
-                    list(scenario.objective_ids or []),
-                    list(scenario.parameter_field_ids or []),
-                    chat_standard_group_ids,
-                    chat_standard_ids,
-                )
+                    "rubric_ids": resolved_rubric_ids,
+                    "scenario_flag_ids": chat_scenario_flag_ids,
+                    "scenario_position_ids": chat_scenario_position_ids,
+                    "scenario_time_limit_ids": chat_scenario_time_limit_ids,
+                    "persona_ids": list(scenario.persona_ids or []),
+                    "document_ids": list(scenario.document_ids or []),
+                    "image_ids": list(scenario.image_ids or []),
+                    "video_ids": list(scenario.video_ids or []),
+                    "question_ids": list(scenario.question_ids or []),
+                    "option_ids": list(scenario.option_ids or []),
+                    "problem_statement_ids": list(scenario.problem_statement_ids or []),
+                    "objective_ids": list(scenario.objective_ids or []),
+                    "parameter_field_ids": list(scenario.parameter_field_ids or []),
+                    "standard_group_ids": chat_standard_group_ids,
+                    "standard_ids": chat_standard_ids,
+                }
             )
 
-    # ── Execute SQL ──
-    params = SyncCohortEntriesSqlParams(
-        cohorts_resource_id=cohorts_resource_id,
-        department_ids=department_ids or [],
-        profile_ids=profile_ids or [],
-        profile_persona_ids=profile_persona_ids or [],
-        simulations=sim_tuples,
-        chats=chat_tuples,
-    )
+        sim_data_list.append(
+            {
+                "simulation_id": sim.simulation_id,
+                "is_practice": sim.practice or False,
+                "position": resolved_position,
+                "start_time": start_time,
+                "end_time": end_time,
+                "sim_pos_resource_ids": sim_pos_resource_ids,
+                "sim_avail_resource_ids": sim_avail_resource_ids,
+                "chats": chat_data_list,
+            }
+        )
 
-    result = cast(
-        SyncCohortEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-    return result.entry_count if result and result.entry_count else 0
+    # ── Create entries using black-box tools ──
+    for profile_id in profile_ids:
+        session = await create_session(conn, profile_id)
+
+        for sim_data in sim_data_list:
+            if sim_data["is_practice"]:
+                parent = await create_practice(
+                    conn,
+                    session_id=session.id,
+                    cohorts_ids=[cohorts_resource_id],
+                    departments_ids=department_ids,
+                    simulations_ids=[sim_data["simulation_id"]],
+                    profiles_ids=[profile_id],
+                    profile_personas_ids=profile_persona_ids,
+                    simulation_availability_ids=sim_data["sim_avail_resource_ids"],
+                    simulation_positions_ids=sim_data["sim_pos_resource_ids"],
+                    position=sim_data["position"],
+                    start_time=sim_data["start_time"],
+                    end_time=sim_data["end_time"],
+                )
+            else:
+                parent = await create_home(
+                    conn,
+                    session_id=session.id,
+                    cohorts_ids=[cohorts_resource_id],
+                    departments_ids=department_ids,
+                    simulations_ids=[sim_data["simulation_id"]],
+                    profiles_ids=[profile_id],
+                    profile_personas_ids=profile_persona_ids,
+                    simulation_availability_ids=sim_data["sim_avail_resource_ids"],
+                    simulation_positions_ids=sim_data["sim_pos_resource_ids"],
+                    position=sim_data["position"],
+                    start_time=sim_data["start_time"],
+                    end_time=sim_data["end_time"],
+                )
+
+            entry_count += 1
+
+            for chat_data in sim_data["chats"]:
+                chat = await create_chat(
+                    conn,
+                    session_id=session.id,
+                    scenario_ids=[chat_data["scenario_id"]],
+                    position=chat_data["position"],
+                    name=chat_data["name"],
+                    description=chat_data["description"],
+                    time_limit=chat_data["time_limit"],
+                    negative_time=chat_data["negative_time"],
+                    # 13 flag booleans
+                    audio_enabled=chat_data["audio_enabled"],
+                    text_enabled=chat_data["text_enabled"],
+                    hints_enabled=chat_data["hints_enabled"],
+                    copy_paste_allowed=chat_data["copy_paste_allowed"],
+                    show_images=chat_data["show_images"],
+                    show_objectives=chat_data["show_objectives"],
+                    show_problem_statement=chat_data["show_problem_statement"],
+                    analyses_enabled=chat_data["analyses_enabled"],
+                    improvements_enabled=chat_data["improvements_enabled"],
+                    replacements_enabled=chat_data["replacements_enabled"],
+                    strengths_enabled=chat_data["strengths_enabled"],
+                    use_custom=chat_data["use_custom"],
+                    use_previous=chat_data["use_previous"],
+                    # 5 content-enabled
+                    problem_statement_enabled=chat_data["problem_statement_enabled"],
+                    objectives_enabled=chat_data["objectives_enabled"],
+                    video_enabled=chat_data["video_enabled"],
+                    images_enabled=chat_data["images_enabled"],
+                    questions_enabled=chat_data["questions_enabled"],
+                    # 11 generate flags
+                    generate_problem_statements=chat_data[
+                        "generate_problem_statements"
+                    ],
+                    generate_objectives=chat_data["generate_objectives"],
+                    generate_videos=chat_data["generate_videos"],
+                    generate_images=chat_data["generate_images"],
+                    generate_questions=chat_data["generate_questions"],
+                    generate_personas=chat_data["generate_personas"],
+                    generate_documents=chat_data["generate_documents"],
+                    generate_options=chat_data["generate_options"],
+                    generate_parameter_fields=chat_data["generate_parameter_fields"],
+                    generate_names=chat_data["generate_names"],
+                    generate_descriptions=chat_data["generate_descriptions"],
+                    # connection resource IDs
+                    rubric_ids=chat_data["rubric_ids"],
+                    scenario_flag_ids=chat_data["scenario_flag_ids"],
+                    scenario_position_ids=chat_data["scenario_position_ids"],
+                    scenario_time_limit_ids=chat_data["scenario_time_limit_ids"],
+                    persona_ids=chat_data["persona_ids"],
+                    document_ids=chat_data["document_ids"],
+                    image_ids=chat_data["image_ids"],
+                    video_ids=chat_data["video_ids"],
+                    question_ids=chat_data["question_ids"],
+                    option_ids=chat_data["option_ids"],
+                    problem_statement_ids=chat_data["problem_statement_ids"],
+                    objective_ids=chat_data["objective_ids"],
+                    parameter_field_ids=chat_data["parameter_field_ids"],
+                    standard_group_ids=chat_data["standard_group_ids"],
+                    standard_ids=chat_data["standard_ids"],
+                )
+
+                if sim_data["is_practice"]:
+                    await create_practice_chat(conn, parent.id, chat.id, session.id)
+                else:
+                    await create_home_chat(conn, parent.id, chat.id, session.id)
+
+                entry_count += 1
+
+    return entry_count
