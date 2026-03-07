@@ -38,7 +38,7 @@ def resolve_callable(
 # Naming conventions (actual, confirmed by exploration):
 #   get       → get_{name}_websocket        (exception: benchmark → get_benchmark)
 #   list      → get_{name}_list
-#   save      → save_{name}                 (exception: chat → save_chat_internal)
+#   save      → save_{name}
 #   delete    → delete_{name}
 #   duplicate → duplicate_{name}
 #   draft     → patch_{name}_draft
@@ -101,7 +101,7 @@ ARTIFACT_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     # chat (partial — has get, save, draft)
     ("chat", "get"): (f"{_A}.chat.get", "get_chat_websocket"),
     ("chat", "list"): None,
-    ("chat", "save"): (f"{_A}.chat.save", "save_chat_internal"),
+    ("chat", "save"): None,
     ("chat", "delete"): None,
     ("chat", "duplicate"): None,
     ("chat", "draft"): (f"{_A}.chat.draft", "patch_chat_draft"),
