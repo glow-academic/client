@@ -55,6 +55,5 @@ from . import (
     generation_error,  # noqa: F401 — registers error handler
     generation_media,  # noqa: F401 — registers media generation handler
     generation_progress,  # noqa: F401 — registers generate_call_complete progress handler
-    generation_resolve,  # noqa: F401 — registers test_grade_progress handler for generation
     test,  # noqa: F401 — registers test_* internal events
 )

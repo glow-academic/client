@@ -39,6 +39,10 @@ from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.init_run_trackers import init_run_trackers
 from app.infra.websocket.persist_run_message import persist_run_message
 from app.infra.websocket.run_tracker import WorkUnit
+from app.infra.websocket.setup_generation_test import (
+    AgentTestConfig,
+    setup_generation_test,
+)
 from app.infra.websocket.socket_event import SocketEvent, flush_events, internal_event
 from app.infra.websocket.typed_emit import emit_to_internal
 from app.infra.websocket_context import ARTIFACT_RESOLVERS, resolve_websocket_context
@@ -477,6 +481,34 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
             units=units,
         )
 
+        # --- Step 9b: Setup generation test (if any agent has a rubric) ---
+        generation_test_id: str | None = None
+        generation_invocation_map: dict[uuid.UUID, uuid.UUID] | None = None
+
+        agents_with_rubrics = [
+            AgentTestConfig(
+                agent_id=a.id,
+                rubric_id=a.rubric_id,
+                department_ids=a.department_ids or None,
+                prompt_ids=[a.prompt_id] if getattr(a, "prompt_id", None) else None,
+                instruction_ids=a.instruction_ids or None,
+                tool_ids=a.tool_ids or None,
+            )
+            for a in config_agents
+            if getattr(a, "rubric_id", None)
+        ]
+
+        if agents_with_rubrics:
+            async with get_db_connection() as conn:
+                gen_test = await setup_generation_test(
+                    conn,
+                    agents=agents_with_rubrics,
+                    run_id=run_id,
+                    profile_id=profile_id,
+                )
+            generation_test_id = str(gen_test.test_id)
+            generation_invocation_map = gen_test.invocations
+
         # --- Step 10: Build dispatches + persist messages ---
         events: list[SocketEvent] = []
 
@@ -548,6 +580,15 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                     _fetch_instructions(agent_resource),
                 )
 
+            # Inject generation test metadata before building dispatch
+            enriched_metadata = dict(payload_metadata)
+            if generation_test_id:
+                enriched_metadata["generation_test_id"] = generation_test_id
+                if generation_invocation_map and agent_group_id in generation_invocation_map:
+                    enriched_metadata["test_invocation_id"] = str(
+                        generation_invocation_map[agent_group_id]
+                    )
+
             dispatch = build_agent_dispatch(
                 agent_id=agent_group_id,
                 agent_resource_types=agent_resource_types,
@@ -559,7 +600,7 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                 all_artifact_types=all_artifact_types,
                 system_prompt=system_prompt,
                 developer_instruction_templates=dev_templates,
-                payload_metadata=payload_metadata,
+                payload_metadata=enriched_metadata,
                 resource_agent_ids=resource_agent_ids,
                 save=None,  # save:bool removed — all results are soft-created, promoted later
             )

@@ -1,19 +1,16 @@
-"""Run completion handler (new) — uses run_tracker triage + promotion.
-
-Replaces generate_run_complete.py.
+"""Run completion handler — uses run_tracker triage + promotion.
 
 Flow:
-  1. Save assistant message + token counts (unchanged)
+  1. Save assistant message + token counts
   2. record_agent_done — wait for all agents
   3. Triage: get all units, separate contested vs uncontested
   4. Uncontested targets (1 soft unit) → promote_unit() immediately
-  5. Contested targets (>1 soft units) → emit test_start for grading
+  5. Contested targets (>1 soft units) → emit test_proceed for grading
   6. If no contested → emit generation_complete directly
-  7. If contested → return, wait for generation_resolve / generation_ended callbacks
+  7. If contested → return, wait for generation_ended (test_ended handler)
 
-The old save:bool / save_artifact flow is removed. All results are already
-persisted as dormant records (soft=true) via create_tool_call during generation.
-Promotion activates them (soft=false → active=true).
+All results are persisted as dormant records (soft=true) via create_tool_call
+during generation. Promotion activates them (active=true).
 
 TODOs:
   - TODO: Chat special case (MV refresh + invalidate + attempt_chat_started) stays
@@ -177,73 +174,51 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
                 f"{agent_id}:{target_type}:{target_name}: {e}"
             )
 
-    # Step 5: Handle contested targets — emit test_start for grading
+    # Step 5: Handle contested targets — trigger test grading or auto-promote
     if contested:
-        logger.info(
-            f"Run {run_id} has {len(contested)} contested targets, "
-            f"emitting test_start for grading"
-        )
-        # Store run context in Redis meta so generation_resolve / generation_ended
-        # can link back to this run's identity context.
         metadata = data.get("metadata") or {}
+        generation_test_id = metadata.get("generation_test_id")
 
-        # Store generation resolution context in Redis so generation_ended
-        # can look it up after test grading completes.
-        resolution_ctx = {
-            "sid": sid,
-            "run_id": run_id,
-            "artifact_type": artifact_type,
-            "group_id": group_id_str,
-            "profile_id": profile_id_str,
-            "profiles_id": profiles_id_str,
-            "session_id": session_id_str,
-            "resource_actions": resource_actions,
-            "entry_actions": entry_actions,
-            "metadata": metadata,
-            "contested_targets": [
-                {
-                    "target_type": tt,
-                    "target_name": tn,
-                    "agents": [
-                        {"agent_id": aid, "result_id": us.result_id}
-                        for aid, us in agents
-                    ],
-                }
-                for (tt, tn), agents in contested.items()
-            ],
-        }
-        try:
-            await redis.setex(
-                f"generation_resolution:{run_id}",
-                3600,
-                json.dumps(resolution_ctx),
+        if generation_test_id:
+            logger.info(
+                f"Run {run_id} has {len(contested)} contested targets, "
+                f"emitting test_proceed for grading (test_id={generation_test_id})"
             )
-        except Exception as e:
-            logger.warning(f"Failed to store resolution context: {e}")
 
-        # TODO: benchmark_id should come from agent/artifact configuration.
-        # For now, metadata.get("resolution_benchmark_id") is the integration point.
-        benchmark_id = metadata.get("resolution_benchmark_id")
-        if benchmark_id:
+            # Store minimal resolution context in Redis so generation_ended
+            # can emit generation_complete with the right fields.
+            resolution_ctx = {
+                "sid": sid,
+                "run_id": run_id,
+                "artifact_type": artifact_type,
+                "group_id": group_id_str,
+                "resource_actions": resource_actions,
+                "entry_actions": entry_actions,
+            }
+            try:
+                await redis.setex(
+                    f"generation_resolution:{run_id}",
+                    3600,
+                    json.dumps(resolution_ctx),
+                )
+            except Exception as e:
+                logger.warning(f"Failed to store resolution context: {e}")
+
+            # Test already created in generate_prepare — just trigger grading
             await internal_sio.emit(
-                "test_start",
+                "test_proceed",
                 {
                     "sid": sid,
-                    "profile_id": profile_id_str,
-                    "benchmark_id": benchmark_id,
-                    "infinite_mode": False,
-                    # Pass generation_run_id so test_start stores the
-                    # test_id → generation_run_id link in Redis.
-                    "generation_run_id": run_id,
+                    "test_id": generation_test_id,
+                    "force_proceed": True,
                 },
             )
             # Don't cleanup run — generation_ended will do it after resolution.
-            # Don't emit generation_complete — generation_ended will do it.
             return
         else:
-            # No benchmark configured — fall back to auto-promoting first agent
+            # No generation test — fall back to auto-promoting first agent
             logger.warning(
-                f"Run {run_id} has contested targets but no resolution_benchmark_id. "
+                f"Run {run_id} has contested targets but no generation_test_id. "
                 f"Auto-promoting first agent per target."
             )
             for (target_type, target_name), agents in contested.items():
