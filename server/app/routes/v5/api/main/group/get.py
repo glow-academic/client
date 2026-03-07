@@ -58,7 +58,7 @@ from app.utils.error.handle_route_error import handle_route_error
 router = APIRouter()
 
 # Group entry types for agent resolution
-GROUP_BUNDLE_ENTRIES: set[str] = {"debug_info"}
+GROUP_BUNDLE_ENTRIES: set[str] = {"problems"}
 
 # =============================================================================
 # Internal Layer

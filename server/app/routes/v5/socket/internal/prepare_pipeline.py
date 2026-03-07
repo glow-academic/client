@@ -600,7 +600,7 @@ def build_jinja_from_ws_ctx(
 
         context["artifacts"].setdefault(name, {})[operation] = artifact_data
 
-    # Merge entry_results (debug_info, messages) same as build_namespaced_context
+    # Merge entry_results (problems, messages) same as build_namespaced_context
     if entry_results:
         for name, ops in entry_results.items():
             context["artifacts"].setdefault(name, {}).update(ops)

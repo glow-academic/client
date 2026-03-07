@@ -56,7 +56,7 @@ from app.utils.sql_helper import execute_sql_typed
 router = APIRouter()
 
 # Reports entry types for agent resolution
-REPORTS_BUNDLE_ENTRIES: set[str] = {"debug_info"}
+REPORTS_BUNDLE_ENTRIES: set[str] = {"problems"}
 
 
 @dataclass

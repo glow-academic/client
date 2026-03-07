@@ -37,7 +37,7 @@ async def test_returns_empty_for_no_match(conn, redis_client):
 async def test_respects_limit(conn, redis_client):
     await create_entry(conn, "calls", redis_client)
     await create_entry(conn, "config", redis_client)
-    await create_entry(conn, "debug_info", redis_client)
+    await create_entry(conn, "problems", redis_client)
     await create_entry(conn, "domains", redis_client)
     await create_entry(conn, "drafts", redis_client)
 

@@ -44,7 +44,7 @@ from app.utils.error.handle_route_error import handle_route_error
 router = APIRouter()
 
 # Health entry types for agent resolution
-HEALTH_BUNDLE_ENTRIES: set[str] = {"debug_info"}
+HEALTH_BUNDLE_ENTRIES: set[str] = {"problems"}
 
 
 @router.post("/get", response_model=HealthResponse)

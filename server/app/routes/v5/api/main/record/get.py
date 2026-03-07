@@ -35,7 +35,7 @@ from app.sql.types import (
 )
 
 # Record entry types for agent resolution
-RECORD_BUNDLE_ENTRIES: set[str] = {"debug_info"}
+RECORD_BUNDLE_ENTRIES: set[str] = {"problems"}
 
 
 @dataclass

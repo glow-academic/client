@@ -37,12 +37,6 @@ CREATE MATERIALIZED VIEW public.runs_mv AS
            FROM (public.run_pricing_entry rpe
              JOIN public.run_pricing_pricing_connection rppc ON (((rppc.run_pricing_id = rpe.id) AND (rppc.active = true))))
           WHERE ((rpe.active = true) AND (rpe.pricing_type = 'cached'::public.pricing_type))
-        ), debug_agg AS (
-         SELECT di.run_id,
-            COALESCE(array_agg(di.content ORDER BY di.created_at), ARRAY[]::text[]) AS debug_info
-           FROM public.debug_info_entry di
-          WHERE ((di.active = true) AND (di.run_id IS NOT NULL))
-          GROUP BY di.run_id
         )
  SELECT r.id AS run_id,
     r.group_id,
@@ -58,9 +52,8 @@ CREATE MATERIALIZED VIEW public.runs_mv AS
     po.pricing_count AS output_pricing_count,
     po.pricing_id AS output_pricing_pricing_id,
     pc.pricing_count AS cached_pricing_count,
-    pc.pricing_id AS cached_pricing_pricing_id,
-    COALESCE(da.debug_info, ARRAY[]::text[]) AS debug_info
-   FROM ((((((public.runs_entry r
+    pc.pricing_id AS cached_pricing_pricing_id
+   FROM (((((public.runs_entry r
      LEFT JOIN LATERAL ( SELECT tokens_entry.input_tokens,
             tokens_entry.output_tokens,
             tokens_entry.cached_input_tokens
@@ -72,7 +65,6 @@ CREATE MATERIALIZED VIEW public.runs_mv AS
      LEFT JOIN pricing_input pi ON ((pi.run_id = r.id)))
      LEFT JOIN pricing_output po ON ((po.run_id = r.id)))
      LEFT JOIN pricing_cached pc ON ((pc.run_id = r.id)))
-     LEFT JOIN debug_agg da ON ((da.run_id = r.id)))
   WHERE (r.group_id IS NOT NULL)
   WITH NO DATA;
 

@@ -47,8 +47,7 @@ BEGIN
             'output_pricing_count', m.output_pricing_count,
             'output_pricing_pricing_id', m.output_pricing_pricing_id,
             'cached_pricing_count', m.cached_pricing_count,
-            'cached_pricing_pricing_id', m.cached_pricing_pricing_id,
-            'debug_info', m.debug_info
+            'cached_pricing_pricing_id', m.cached_pricing_pricing_id
         ) AS row_data
         FROM runs_mv m
         WHERE true

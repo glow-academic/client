@@ -1,22 +1,7 @@
 import asyncio
-import uuid
-from dataclasses import dataclass
 from typing import Any
 
 import asyncpg  # type: ignore
-
-from app.sql.types import InfrastructureDebugInsertDebugInfoSqlParams
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = (
-    "app/sql/queries/infrastructure/infrastructure_debug_insert_debug_info_complete.sql"
-)
-
-
-@dataclass
-class DebugContext:
-    conn: asyncpg.Connection
-    run_id: uuid.UUID
 
 
 async def debug_info(ctx: Any, content: str) -> str:
@@ -32,7 +17,7 @@ async def debug_info(ctx: Any, content: str) -> str:
     - what you need to continue,
     - any assumptions you are considering.
 
-    The note is saved to the current model run for human review and troubleshooting.
+    The note is saved as a problem entry for human review and troubleshooting.
     It is safe to call multiple times. Do not include secrets or large payloads.
     This tool does not reply to the user; it only logs context and returns a
     confirmation string.
@@ -53,13 +38,23 @@ async def debug_info(ctx: Any, content: str) -> str:
         return "Error: Missing run_id or conn in context"
 
     try:
-        # Insert debug info asynchronously (fire-and-forget)
-        params = InfrastructureDebugInsertDebugInfoSqlParams(
-            run_id=run_id,
-            content=content,
+        asyncio.create_task(
+            _insert_problem_from_run(conn, run_id, content)
         )
-        asyncio.create_task(execute_sql_typed(conn, SQL_PATH, params=params))
     except Exception as e:
-        print(f"Error saving debug info: {e}")
-        return f"Error saving debug info: {e}"
+        print(f"Error saving problem: {e}")
+        return f"Error saving problem: {e}"
     return "Saved debug info"
+
+
+async def _insert_problem_from_run(
+    conn: asyncpg.Connection, run_id: object, content: str
+) -> None:
+    """Insert a problem entry from a run context (fire-and-forget)."""
+    await conn.execute(
+        """
+        SELECT * FROM infra_insert_problem_from_run_v4($1, $2)
+        """,
+        run_id,
+        content,
+    )

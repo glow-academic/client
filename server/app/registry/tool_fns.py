@@ -779,7 +779,6 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.cohort_drafts.create",
         "create_cohort_draft",
     ),
-    ("create", "debug_info"): (f"{_T}.entries.debug_info.create", "create_debug_info"),
     ("create", "department_drafts"): (
         f"{_T}.entries.department_drafts.create",
         "create_department_draft",
@@ -1055,10 +1054,6 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
     ("refresh", "cohort_drafts"): (
         f"{_T}.entries.cohort_drafts.refresh",
         "refresh_cohort_drafts",
-    ),
-    ("refresh", "debug_info"): (
-        f"{_T}.entries.debug_info.refresh",
-        "refresh_debug_info",
     ),
     ("refresh", "department_drafts"): (
         f"{_T}.entries.department_drafts.refresh",
@@ -1354,7 +1349,6 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.cohort_drafts.search",
         "search_cohort_drafts",
     ),
-    ("search", "debug_info"): (f"{_T}.entries.debug_info.search", "search_debug_info"),
     ("search", "department_drafts"): (
         f"{_T}.entries.department_drafts.search",
         "search_department_drafts",
@@ -1622,7 +1616,6 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.cohort_drafts.docs",
         "get_cohort_drafts_docs",
     ),
-    ("docs", "debug_info"): (f"{_T}.entries.debug_info.docs", "get_debug_info_docs"),
     ("docs", "department_drafts"): (
         f"{_T}.entries.department_drafts.docs",
         "get_department_drafts_docs",

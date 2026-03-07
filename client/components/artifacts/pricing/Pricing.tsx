@@ -295,17 +295,6 @@ export default function Pricing({
             inputTokens: run.input_tokens ?? 0,
             outputTokens: run.output_tokens ?? 0,
             cost: run.cost ?? 0,
-            ...(run.debug_info_entry && run.debug_info_entry.length > 0 ? {
-              debugInfo: run.debug_info_entry
-                .filter((d): d is typeof d & { id: string; created_at: string; content: string } =>
-                  d.id !== null && d.created_at !== null && d.content !== null
-                )
-                .map((d) => ({
-                  id: d.id,
-                  created_at: d.created_at,
-                  content: d.content,
-                }))
-            } : {}),
           })),
       }));
   }, [runsData?.group_runs]);

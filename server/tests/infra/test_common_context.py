@@ -42,7 +42,6 @@ class FakeToolGraph:
 class FakeRunsContext:
     def __init__(self):
         self.runs = type("R", (), {"items": [], "total_count": 0})()
-        self.debug_info = []
 
 
 def _patch(target, return_value):

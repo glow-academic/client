@@ -23,11 +23,6 @@ ENTRY_SCHEMAS: dict[str, dict[str, str]] = {
         "call_id": "uuid",
         "persona_id": "uuid",
     },
-    "debug_info": {
-        "content": "text",
-        "call_id": "uuid",
-        "run_id": "uuid",
-    },
     "feedbacks": {
         "grade_id": "uuid",
         "total": "int",

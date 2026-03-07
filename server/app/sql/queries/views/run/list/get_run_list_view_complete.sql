@@ -66,8 +66,7 @@ CREATE TYPE types.q_get_run_list_view_v4_item AS (
     output_pricing_count int,
     output_pricing_pricing_id uuid,
     cached_pricing_count int,
-    cached_pricing_pricing_id uuid,
-    debug_info text[]
+    cached_pricing_pricing_id uuid
 );
 
 -- ============================================================================
@@ -103,7 +102,7 @@ AS $$
             AND (date_to IS NULL OR mv.run_created_at < date_to)
             AND (profile_id_filter IS NULL OR EXISTS (
                 SELECT 1 FROM profiles_runs_connection prc
-                WHERE prc.run_id = mv.run_id AND prc.profile_id = profile_id_filter
+                WHERE prc.run_id = mv.run_id AND prc.profiles_id = profile_id_filter
             ))
     ),
     counted AS (
@@ -139,8 +138,7 @@ AS $$
                     output_pricing_count,
                     output_pricing_pricing_id,
                     cached_pricing_count,
-                    cached_pricing_pricing_id,
-                    debug_info
+                    cached_pricing_pricing_id
                 )::types.q_get_run_list_view_v4_item
                 ORDER BY run_created_at DESC
             ),

@@ -14,7 +14,6 @@ Differences from ENTRY_SCHEMAS:
 MV name mapping:
   analyses       → attempt_analysis_mv
   contents       → attempt_content_mv
-  debug_info     → debug_info_mv
   feedbacks      → attempt_feedback_mv
   grades         → attempt_grade_mv
   highlights     → attempt_highlight_mv
@@ -41,16 +40,6 @@ ENTRY_VIEW_SCHEMAS: dict[str, dict[str, str]] = {
         "persona_entry_id": "uuid",
         "idx": "int",
         "created_at": "timestamp",
-    },
-    "debug_info": {
-        "created_at": "timestamp",
-        "content": "text",
-        "id": "uuid",
-        "active": "bool",
-        "generated": "bool",
-        "call_id": "uuid",
-        "mcp": "bool",
-        "run_id": "uuid",
     },
     "feedbacks": {
         "feedback_id": "uuid",

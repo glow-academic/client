@@ -3,7 +3,6 @@
 ENTRY_VIEW_NAMES: dict[str, str] = {
     "analyses": "attempt_analysis_mv",
     "contents": "attempt_content_mv",
-    "debug_info": "debug_info_mv",
     "feedbacks": "attempt_feedback_mv",
     "grades": "attempt_grade_mv",
     "highlights": "attempt_highlight_mv",

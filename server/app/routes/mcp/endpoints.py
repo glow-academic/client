@@ -461,7 +461,6 @@ _ALL_ENTRIES = [
     "attempt_conversations",
     "attempt_conversation_completions",
     "dashboard_insights",
-    "debug_info",
     "department_drafts",
     "document_drafts",
     "emulations",

@@ -43,7 +43,7 @@ class DashboardRequest(BaseModel):
     scenario_ids: list[UUID] | None = None
     scenario_search: str | None = None
 
-    # History section (attempt list)
+    # History section (attempt list) — kept for backward compat, use /list endpoint
     history_practice: bool = False
     history_scenario_ids: list[UUID] | None = None
     history_infinite_mode: bool | None = None
@@ -55,6 +55,30 @@ class DashboardRequest(BaseModel):
     history_simulation_search: str | None = None
     history_scenario_search: str | None = None
     history_profile_search: str | None = None
+
+
+class ListDashboardRequest(BaseModel):
+    """Request for dashboard history list endpoint (paginated attempt history)."""
+
+    # Global filters
+    start_date: str | None = None
+    end_date: str | None = None
+    cohort_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    target_profile_id: UUID | None = None
+
+    # History-specific
+    practice: bool = False
+    scenario_ids: list[UUID] | None = None
+    infinite_mode: bool | None = None
+    show_archived: bool = False
+    sort_by: str = "date"
+    sort_order: str = "desc"
+    page: int = 0
+    page_size: int = 20
+    simulation_search: str | None = None
+    scenario_search: str | None = None
+    profile_search: str | None = None
 
 
 # ============================================================================
@@ -534,6 +558,19 @@ class DashboardBundleResponse(BaseModel):
 
     # Attempt history
     history: HistoryResponse | None = None
+
+
+class ListDashboardResponse(BaseModel):
+    """Response for dashboard history list endpoint."""
+
+    data: list = Field(default_factory=list)
+    total_count: int = 0
+    page: int = 0
+    page_size: int = 20
+    total_pages: int = 0
+    simulation_options: list[FilterOption] | None = None
+    scenario_options: list[FilterOption] | None = None
+    profile_options: list[FilterOption] | None = None
 
 
 # Resolve forward reference for DashboardPrimaryMetrics.skill_performance

@@ -567,7 +567,6 @@ ENTRY_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     **_ent("config"),
     **_ent("attempt_conversations", create=True),
     **_ent("attempt_conversation_completions", create=True),
-    **_ent("debug_info", create=True),
     **_ent("department_drafts"),
     **_ent("document_drafts"),
     **_ent("emulations"),
