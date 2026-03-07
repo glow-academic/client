@@ -1,19 +1,19 @@
-"""Parameter save endpoint - v4 API following DHH principles.
-Unified endpoint that handles both create (parameter_id = NULL) and update (parameter_id provided).
+"""Parameter save endpoint — composable infra architecture.
+
+Thin route handler. Core logic lives in app.infra.parameter_save.
+Legacy save_parameter_internal kept for generation complete handler compatibility.
 """
+
+from __future__ import annotations
 
 import uuid
 from typing import Annotated, Any, cast
 
-import asyncpg  # type: ignore
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.v5.api.main.parameter.permissions import (
-    compute_can_create,
-    compute_can_edit,
-)
+from app.infra.globals import get_db, get_redis_client
+from app.infra.parameter_save import save_parameter_client
 from app.routes.v5.api.main.parameter.types import (
     ParameterMultiResourceAction,
     ParameterResourceAction,
@@ -22,11 +22,6 @@ from app.routes.v5.api.main.parameter.types import (
     SaveParameterSqlParams,
     SaveParameterSqlRow,
 )
-from app.sql.types import (
-    CheckParameterSaveAccessSqlParams,
-    CheckParameterSaveAccessSqlRow,
-    load_sql_query,
-)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
@@ -34,10 +29,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-# SQL paths
-ACCESS_CHECK_SQL_PATH = (
-    "app/sql/queries/parameters/check_parameter_save_access_complete.sql"
-)
+# SQL paths (legacy — used by save_parameter_internal only)
 SQL_PATH = "app/sql/queries/parameters/save_parameter_complete.sql"
 
 router = APIRouter()
@@ -110,14 +102,8 @@ async def save_parameter(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SaveParameterApiResponse:
-    """Save parameter - handles both create (parameter_id = NULL) and update (parameter_id provided)."""
-    tags = ["parameters", "agents"]  # Parameters used in scenario generation
-
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
-
+    """Save parameters using composable infra architecture."""
     try:
-        # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -125,117 +111,18 @@ async def save_parameter(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        pool = get_pool()
-        if pool:
-            async with pool.acquire() as context_conn:
-                profile_ctx = await get_auth_profile_internal(
-                    conn=context_conn,
-                    profile_id=profile_id,
-                    bypass_cache=False,
-                )
-                actor_name = profile_ctx.access.actor_name
-                user_role = profile_ctx.access.role
-                user_department_ids = [
-                    d.department_id for d in profile_ctx.departments if d.department_id
-                ]
-        else:
-            actor_name = None
-            user_role = None
-            user_department_ids = []
+        redis = get_redis_client()
 
-        # Permission check: get user role and parameter info using typed SQL
-        access_params = CheckParameterSaveAccessSqlParams(
+        response_data = await save_parameter_client(
+            conn,
+            redis,
             profile_id=profile_id,
-            parameter_id=request.input_parameter_id,
-        )
-        access_result = cast(
-            CheckParameterSaveAccessSqlRow,
-            await execute_sql_typed(
-                conn,
-                ACCESS_CHECK_SQL_PATH,
-                params=access_params,
-            ),
+            items=request.parameters,
+            group_id=request.group_id,
         )
 
-        if not access_result:
-            raise HTTPException(
-                status_code=401,
-                detail="Unable to verify user permissions.",
-            )
-
-        # Permission logic: create vs update mode
-        if not request.input_parameter_id:
-            # Create mode: check role and department permissions
-            can_save_result = compute_can_create(
-                user_role=user_role,
-                department_ids=request.department_ids,
-            )
-        else:
-            # Update mode: full permission check including user department membership
-            can_save_result = compute_can_edit(
-                user_role=user_role,
-                parameter_department_ids=access_result.parameter_department_ids,
-                active_scenario_count=access_result.active_scenario_count or 0,
-                user_department_ids=user_department_ids,
-            )
-
-        if not can_save_result:
-            raise HTTPException(
-                status_code=403,
-                detail="You don't have permission to save this parameter.",
-            )
-
-        # Create group_id in Python (server-resolved like persona)
-        group_id = None
-        if pool:
-            async with pool.acquire() as group_conn:
-                group_id = await group_conn.fetchval(
-                    "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
-                )
-
-        async with conn.transaction():
-            params = SaveParameterSqlParams.from_request(
-                request,
-                profile_id=profile_id,
-                group_id=group_id,
-            )
-            sql_params = params.to_tuple()
-
-            # Execute SQL with typed helper - automatically detects and calls function if present
-            result = cast(
-                SaveParameterSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH,
-                    params=params,
-                ),
-            )
-
-            if not result or not result.parameter_id:
-                if request.input_parameter_id:
-                    raise ValueError(
-                        f"Parameter not found: {request.input_parameter_id}"
-                    )
-                else:
-                    raise ValueError("Failed to create parameter")
-
-        # Convert SQL result to API response
-        is_update = request.input_parameter_id is not None
-        api_response = SaveParameterApiResponse.model_validate(
-            {
-                "success": True,
-                "parameter_id": str(result.parameter_id),
-                "message": "Parameter updated successfully"
-                if is_update
-                else "Parameter created successfully",
-            }
-        )
-
-        # Invalidate cache after mutation
-        await invalidate_tags(tags, redis=get_redis_client())
-        response.headers["X-Invalidate-Tags"] = ",".join(tags)
-
-        return api_response
+        response.headers["X-Invalidate-Tags"] = "parameters"
+        return response_data
     except HTTPException:
         raise
     except ValueError as e:
@@ -245,7 +132,7 @@ async def save_parameter(
             error=e,
             route_path=http_request.url.path,
             operation="save_parameter",
-            sql_query=sql_query,
-            sql_params=sql_params,
+            sql_query=None,
+            sql_params=None,
             request=http_request,
         )

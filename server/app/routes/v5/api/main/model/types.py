@@ -197,29 +197,66 @@ class ModelMultiResourceAction(BaseModel):
 # =============================================================================
 
 
-class SaveModelApiRequest(BaseModel):
-    """Flat-ID save request for model endpoint."""
+class SaveModelFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SaveModelItem(BaseModel):
+    """Single model item for save — provide ID or value per field (not both).
+
+    Junctions from get.py: names, descriptions, departments, flags, modalities,
+    pricing, providers, qualities, reasoning_levels, temperature_levels, values,
+    voices, models.
+    Dual-mode: name (create), description (create), departments (match by name).
+    All others: IDs only.
+    """
 
     input_model_id: UUID | None = None
-    name_id: UUID
+    # Dual-mode: name
+    name_id: UUID | None = None
+    name: str | None = None
+    # Dual-mode: description
     description_id: UUID | None = None
-    value_id: UUID | None = None
-    provider_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
+    description: str | None = None
+    # Dual-mode: departments (match by name)
     department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    flag_ids: list[UUID] | None = None
     modality_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
     pricing_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
+    provider_ids: list[UUID] | None = None
     quality_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    value_ids: list[UUID] | None = None
     voice_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+
+
+class SaveModelApiRequest(BaseModel):
+    """Request model for bulk save model endpoint."""
+
+    models: list[SaveModelItem]
+    group_id: UUID | None = None
+
+
+class SaveModelResult(BaseModel):
+    """Per-item result within a bulk save response."""
+
+    success: bool
+    model_id: UUID | None = None
+    message: str
+    errors: list[SaveModelFieldError] | None = None
 
 
 class SaveModelApiResponse(BaseModel):
-    """Response model for save model endpoint."""
+    """Response model for bulk save model endpoint."""
 
-    model_id: UUID | None = None
-    actor_name: str | None = None
+    results: list[SaveModelResult]
 
 
 class SaveModelSqlParams(BaseModel):

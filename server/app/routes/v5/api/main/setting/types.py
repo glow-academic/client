@@ -155,29 +155,63 @@ class SettingMultiResourceAction(BaseModel):
 # ========== Save Endpoint Types ==========
 
 
-class SaveSettingApiRequest(BaseModel):
-    """Request model for save setting endpoint - flat resource IDs."""
+class SaveSettingFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SaveSettingItem(BaseModel):
+    """Single setting item for save — provide ID or value per field (not both).
+
+    For required fields (name), exactly one of the *_id or value field must be provided.
+    """
 
     input_setting_id: UUID | None = None
-    name_id: UUID
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
     description_id: UUID | None = None
-    flag_id: UUID | None = None
-    color_ids: list[UUID] | None = None
+    description: str | None = None
+    # Optional flag
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
     department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    color_ids: list[UUID] | None = None
     profile_ids: list[UUID] | None = None
     auth_ids: list[UUID] | None = None
     provider_key_ids: list[UUID] | None = None
     auth_item_key_ids: list[UUID] | None = None
-    role_ids: list[UUID] | None = None
+    auth_item_value_ids: list[UUID] | None = None
+    system_ids: list[UUID] | None = None
+    threshold_ids: list[UUID] | None = None
+    setting_resource_ids: list[UUID] | None = None
+
+
+class SaveSettingApiRequest(BaseModel):
+    """Request model for bulk save setting endpoint."""
+
+    settings: list[SaveSettingItem]
+    group_id: UUID | None = None
+
+
+class SaveSettingResult(BaseModel):
+    """Per-item result within a bulk save response."""
+
+    success: bool
+    setting_id: UUID | None = None
+    message: str
+    errors: list[SaveSettingFieldError] | None = None
 
 
 class SaveSettingApiResponse(BaseModel):
-    """Response model for save setting endpoint."""
+    """Response model for bulk save setting endpoint."""
 
-    success: bool = True
-    setting_id: UUID
-    message: str = ""
-    actor_name: str | None = None
+    results: list[SaveSettingResult]
 
 
 class SaveSettingSqlParams(BaseModel):

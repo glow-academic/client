@@ -1,19 +1,19 @@
-"""Field save endpoint - v4 API following DHH principles.
-Unified endpoint that handles both create (field_id = NULL) and update (field_id provided).
+"""Field save endpoint — composable infra architecture.
+
+Thin route handler. Core logic lives in app.infra.field_save.
+Legacy save_field_internal kept for generation complete handler compatibility.
 """
+
+from __future__ import annotations
 
 import uuid
 from typing import Annotated, Any, cast
 
-import asyncpg  # type: ignore
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.v5.api.main.field.permissions import (
-    compute_can_create,
-    compute_can_edit,
-)
+from app.infra.field_save import save_field_client
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.main.field.types import (
     FieldMultiResourceAction,
     FieldResourceAction,
@@ -22,11 +22,6 @@ from app.routes.v5.api.main.field.types import (
     SaveFieldSqlParams,
     SaveFieldSqlRow,
 )
-from app.sql.types import (
-    CheckFieldSaveAccessSqlParams,
-    CheckFieldSaveAccessSqlRow,
-    load_sql_query,
-)
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
@@ -34,8 +29,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-# SQL paths
-ACCESS_CHECK_SQL_PATH = "app/sql/queries/fields/check_field_save_access_complete.sql"
+# SQL paths (legacy — used by save_field_internal only)
 SQL_PATH = "app/sql/queries/fields/save_field_complete.sql"
 
 router = APIRouter()
@@ -108,12 +102,7 @@ async def save_field(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SaveFieldApiResponse:
-    """Save field - handles both create (field_id = NULL) and update (field_id provided)."""
-    tags = ["fields"]
-
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
-
+    """Save fields using composable infra architecture."""
     try:
         profile_id = http_request.state.profile_id
         if not profile_id:
@@ -122,109 +111,18 @@ async def save_field(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        pool = get_pool()
-        if pool:
-            async with pool.acquire() as context_conn:
-                profile_ctx = await get_auth_profile_internal(
-                    conn=context_conn,
-                    profile_id=profile_id,
-                    bypass_cache=False,
-                )
-                actor_name = profile_ctx.access.actor_name
-                user_role = profile_ctx.access.role
-                user_department_ids = [
-                    d.department_id for d in profile_ctx.departments if d.department_id
-                ]
-        else:
-            actor_name = None
-            user_role = None
-            user_department_ids = []
+        redis = get_redis_client()
 
-        # Permission check: get user role and field info using typed SQL
-        access_params = CheckFieldSaveAccessSqlParams(
+        response_data = await save_field_client(
+            conn,
+            redis,
             profile_id=profile_id,
-            field_id=request.input_field_id,
-        )
-        access_result = cast(
-            CheckFieldSaveAccessSqlRow,
-            await execute_sql_typed(
-                conn,
-                ACCESS_CHECK_SQL_PATH,
-                params=access_params,
-            ),
+            items=request.fields,
+            group_id=request.group_id,
         )
 
-        if not access_result:
-            raise HTTPException(
-                status_code=401,
-                detail="Unable to verify user permissions.",
-            )
-
-        # Permission logic: create vs update mode
-        if not request.input_field_id:
-            can_save_result = compute_can_create(
-                user_role=user_role,
-                department_ids=request.department_ids,
-            )
-        else:
-            can_save_result = compute_can_edit(
-                user_role=user_role,
-                field_department_ids=access_result.field_department_ids,
-                user_department_ids=user_department_ids,
-            )
-
-        if not can_save_result:
-            raise HTTPException(
-                status_code=403,
-                detail="You don't have permission to save this field.",
-            )
-
-        # Create group_id in Python (server-resolved like persona)
-        group_id = None
-        if pool:
-            async with pool.acquire() as group_conn:
-                group_id = await group_conn.fetchval(
-                    "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
-                )
-
-        async with conn.transaction():
-            params = SaveFieldSqlParams.from_request(
-                request,
-                profile_id=profile_id,
-                group_id=group_id,
-            )
-            sql_params = params.to_tuple()
-
-            result = cast(
-                SaveFieldSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH,
-                    params=params,
-                ),
-            )
-
-            if not result or not result.field_id:
-                if request.input_field_id:
-                    raise ValueError(f"Field not found: {request.input_field_id}")
-                else:
-                    raise ValueError("Failed to create field")
-
-        is_update = request.input_field_id is not None
-        api_response = SaveFieldApiResponse.model_validate(
-            {
-                "success": True,
-                "field_id": str(result.field_id),
-                "message": "Field updated successfully"
-                if is_update
-                else "Field created successfully",
-            }
-        )
-
-        await invalidate_tags(tags, redis=get_redis_client())
-        response.headers["X-Invalidate-Tags"] = ",".join(tags)
-
-        return api_response
+        response.headers["X-Invalidate-Tags"] = "fields"
+        return response_data
     except HTTPException:
         raise
     except ValueError as e:
@@ -234,7 +132,7 @@ async def save_field(
             error=e,
             route_path=http_request.url.path,
             operation="save_field",
-            sql_query=sql_query,
-            sql_params=sql_params,
+            sql_query=None,
+            sql_params=None,
             request=http_request,
         )

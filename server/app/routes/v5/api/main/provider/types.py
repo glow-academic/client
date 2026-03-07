@@ -115,85 +115,58 @@ class ListProviderApiResponse(BaseModel):
     total_count: int | None = None
 
 
-class SaveProviderApiRequest(BaseModel):
-    """Flat-ID save request for provider endpoint."""
+class SaveProviderFieldError(BaseModel):
+    """Per-field error from value resolution."""
 
-    input_provider_id: UUID | None = None
-    name_id: UUID
-    description_id: UUID | None = None
-    flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
-    key_id: UUID | None = None
-
-
-class SaveProviderApiResponse(BaseModel):
-    success: bool
-    provider_id: UUID
+    field: str
     message: str
 
 
-class SaveProviderSqlParams(BaseModel):
-    """SQL parameters for save provider."""
+class SaveProviderItem(BaseModel):
+    """Single provider item for save — provide ID or value per field (not both).
 
-    profile_id: UUID
-    group_id: UUID | None = None
+    For required fields (name), exactly one of the *_id or value field must be provided.
+    """
+
     input_provider_id: UUID | None = None
-    names: ProviderResourceAction
-    descriptions: ProviderResourceAction
-    flags: ProviderResourceAction
-    departments: ProviderMultiResourceAction
-    values: ProviderResourceAction
-    endpoints: ProviderResourceAction
-    keys: ProviderResourceAction
-
-    @classmethod
-    def from_request(
-        cls,
-        request: SaveProviderApiRequest,
-        profile_id: UUID,
-        group_id: UUID | None = None,
-    ) -> SaveProviderSqlParams:
-        return cls(
-            profile_id=profile_id,
-            group_id=group_id,
-            input_provider_id=request.input_provider_id,
-            names=ProviderResourceAction(resource_id=request.name_id),
-            descriptions=ProviderResourceAction(resource_id=request.description_id),
-            flags=ProviderResourceAction(resource_id=request.flag_id),
-            departments=ProviderMultiResourceAction(
-                resource_ids=request.department_ids
-            ),
-            values=ProviderResourceAction(resource_id=request.value_id),
-            endpoints=ProviderResourceAction(resource_id=request.endpoint_id),
-            keys=ProviderResourceAction(resource_id=request.key_id),
-        )
-
-    def to_tuple(self) -> tuple:
-        def single(a: ProviderResourceAction) -> tuple:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: ProviderMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.group_id,
-            self.input_provider_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.flags),
-            multi(self.departments),
-            single(self.values),
-            single(self.endpoints),
-            single(self.keys),
-        )
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    endpoint_ids: list[UUID] | None = None
+    key_ids: list[UUID] | None = None
+    value_ids: list[UUID] | None = None
+    provider_ids: list[UUID] | None = None
 
 
-class SaveProviderSqlRow(BaseModel):
+class SaveProviderApiRequest(BaseModel):
+    """Request model for bulk save provider endpoint."""
+
+    providers: list[SaveProviderItem]
+    group_id: UUID | None = None
+
+
+class SaveProviderResult(BaseModel):
+    """Per-item result within a bulk save response."""
+
+    success: bool
     provider_id: UUID | None = None
-    actor_name: str | None = None
+    message: str
+    errors: list[SaveProviderFieldError] | None = None
+
+
+class SaveProviderApiResponse(BaseModel):
+    """Response model for bulk save provider endpoint."""
+
+    results: list[SaveProviderResult]
 
 
 class DeleteProviderApiRequest(BaseModel):

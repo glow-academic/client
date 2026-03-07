@@ -214,8 +214,58 @@ class ParameterMultiResourceAction(BaseModel):
     link_tool_id: UUID | None = None
 
 
+class SaveParameterFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SaveParameterItem(BaseModel):
+    """Single parameter item for save — provide ID or value per field (not both).
+
+    For required fields (name), exactly one of the *_id or value field must be provided.
+    """
+
+    input_parameter_id: UUID | None = None
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    flag_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+
+
 class SaveParameterApiRequest(BaseModel):
-    """Request model for save parameter endpoint - flat resource IDs."""
+    """Request model for bulk save parameter endpoint."""
+
+    parameters: list[SaveParameterItem]
+    group_id: UUID | None = None
+
+
+class SaveParameterResult(BaseModel):
+    """Per-item result within a bulk save response."""
+
+    success: bool
+    parameter_id: UUID | None = None
+    message: str
+    errors: list[SaveParameterFieldError] | None = None
+
+
+class SaveParameterApiResponse(BaseModel):
+    """Response model for bulk save parameter endpoint."""
+
+    results: list[SaveParameterResult]
+
+
+class SaveParameterLegacyApiRequest(BaseModel):
+    """Legacy request model for save parameter endpoint - flat resource IDs."""
 
     input_parameter_id: UUID | None = None
     name_id: UUID
@@ -225,7 +275,7 @@ class SaveParameterApiRequest(BaseModel):
     field_ids: list[UUID] | None = None
 
 
-class SaveParameterApiResponse(BaseModel):
+class SaveParameterLegacyApiResponse(BaseModel):
     success: bool
     parameter_id: UUID
     message: str

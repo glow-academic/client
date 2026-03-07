@@ -77,67 +77,53 @@ class DepartmentMultiResourceAction(BaseModel):
     link_tool_id: UUID | None = None
 
 
-class SaveDepartmentApiRequest(BaseModel):
-    input_department_id: UUID | None = None
-    name_id: UUID
-    description_id: UUID | None = None
-    flag_id: UUID | None = None
-    settings_ids: list[UUID] | None = None
+class SaveDepartmentFieldError(BaseModel):
+    """Per-field error from value resolution."""
 
-
-class SaveDepartmentApiResponse(BaseModel):
-    success: bool
-    department_id: UUID
+    field: str
     message: str
 
 
-class SaveDepartmentSqlParams(BaseModel):
-    profile_id: UUID
-    group_id: UUID
+class SaveDepartmentItem(BaseModel):
+    """Single department item for save — provide ID or value per field (not both).
+
+    For required fields (name), exactly one of the *_id or value field must be provided.
+    """
+
     input_department_id: UUID | None = None
-    names: DepartmentResourceAction
-    descriptions: DepartmentResourceAction
-    flags: DepartmentResourceAction
-    settings: DepartmentMultiResourceAction
-
-    @classmethod
-    def from_request(
-        cls,
-        request: SaveDepartmentApiRequest,
-        profile_id: UUID,
-        group_id: UUID | None,
-    ) -> SaveDepartmentSqlParams:
-        return cls(
-            profile_id=profile_id,
-            group_id=group_id,
-            input_department_id=request.input_department_id,
-            names=DepartmentResourceAction(resource_id=request.name_id),
-            descriptions=DepartmentResourceAction(resource_id=request.description_id),
-            flags=DepartmentResourceAction(resource_id=request.flag_id),
-            settings=DepartmentMultiResourceAction(resource_ids=request.settings_ids),
-        )
-
-    def to_tuple(self) -> tuple:
-        def single(a: DepartmentResourceAction) -> tuple:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: DepartmentMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.group_id,
-            self.input_department_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.flags),
-            multi(self.settings),
-        )
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # ID-only fields
+    settings_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
 
 
-class SaveDepartmentSqlRow(BaseModel):
+class SaveDepartmentApiRequest(BaseModel):
+    """Request model for bulk save department endpoint."""
+
+    departments: list[SaveDepartmentItem]
+    group_id: UUID | None = None
+
+
+class SaveDepartmentResult(BaseModel):
+    """Per-item result within a bulk save response."""
+
+    success: bool
     department_id: UUID | None = None
-    actor_name: str | None = None
+    message: str
+    errors: list[SaveDepartmentFieldError] | None = None
+
+
+class SaveDepartmentApiResponse(BaseModel):
+    """Response model for bulk save department endpoint."""
+
+    results: list[SaveDepartmentResult]
 
 
 class DeleteDepartmentApiRequest(BaseModel):

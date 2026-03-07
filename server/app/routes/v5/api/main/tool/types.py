@@ -112,22 +112,62 @@ class ToolMultiResourceAction(BaseModel):
     link_tool_id: UUID | None = None
 
 
-class SaveToolApiRequest(BaseModel):
-    """Flat-ID save request for tool endpoint."""
+class SaveToolFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SaveToolItem(BaseModel):
+    """Single tool item for save — provide ID or value per field (not both).
+
+    Junctions from get.py: names, descriptions, departments, flags, args,
+    args_outputs, arg_positions, artifacts, entries, operations, resources, tools.
+    Dual-mode: name (create), description (create).
+    All others: IDs only.
+    """
 
     input_tool_id: UUID | None = None
-    name_id: UUID
+    # Dual-mode: name
+    name_id: UUID | None = None
+    name: str | None = None
+    # Dual-mode: description
     description_id: UUID | None = None
-    flag_id: UUID | None = None
-    arg_ids: list[UUID] | None = None
-    arg_position_ids: list[UUID] | None = None
-    args_output_ids: list[UUID] | None = None
+    description: str | None = None
+    # ID-only fields
+    department_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = None
+    arg_positions_ids: list[UUID] | None = None
+    args_ids: list[UUID] | None = None
+    args_outputs_ids: list[UUID] | None = None
+    artifact_ids: list[UUID] | None = None
+    entry_ids: list[UUID] | None = None
+    operation_ids: list[UUID] | None = None
+    resource_ids: list[UUID] | None = None
+    tool_ids: list[UUID] | None = None
+
+
+class SaveToolApiRequest(BaseModel):
+    """Request model for bulk save tool endpoint."""
+
+    tools: list[SaveToolItem]
+    group_id: UUID | None = None
+
+
+class SaveToolResult(BaseModel):
+    """Per-item result within a bulk save response."""
+
+    success: bool
+    tool_id: UUID | None = None
+    message: str
+    errors: list[SaveToolFieldError] | None = None
 
 
 class SaveToolApiResponse(BaseModel):
-    success: bool
-    tool_id: UUID
-    message: str
+    """Response model for bulk save tool endpoint."""
+
+    results: list[SaveToolResult]
 
 
 class SaveToolSqlParams(BaseModel):

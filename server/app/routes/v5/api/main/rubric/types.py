@@ -96,79 +96,58 @@ class RubricMultiResourceAction(BaseModel):
     link_tool_id: UUID | None = None
 
 
-class SaveRubricApiRequest(BaseModel):
-    input_rubric_id: UUID | None = None
-    name_id: UUID
-    description_id: UUID | None = None
-    flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    total_points_id: UUID | None = None
-    pass_points_id: UUID | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
+class SaveRubricFieldError(BaseModel):
+    """Per-field error from value resolution."""
 
-
-class SaveRubricApiResponse(BaseModel):
-    success: bool
-    rubric_id: UUID
+    field: str
     message: str
 
 
-class SaveRubricSqlParams(BaseModel):
-    profile_id: UUID
-    group_id: UUID
+class SaveRubricItem(BaseModel):
+    """Single rubric item for save — provide ID or value per field (not both).
+
+    For required fields (name), exactly one of the *_id or value field must be provided.
+    """
+
     input_rubric_id: UUID | None = None
-    names: RubricResourceAction
-    descriptions: RubricResourceAction
-    flags: RubricResourceAction
-    departments: RubricMultiResourceAction
-    points: RubricResourceAction
-    pass_points: RubricResourceAction
-    standard_groups: RubricMultiResourceAction
-    standards: RubricMultiResourceAction
-
-    @classmethod
-    def from_request(
-        cls,
-        request: SaveRubricApiRequest,
-        profile_id: UUID,
-        group_id: UUID | None,
-    ) -> SaveRubricSqlParams:
-        return cls(
-            profile_id=profile_id,
-            group_id=group_id,
-            input_rubric_id=request.input_rubric_id,
-            names=RubricResourceAction(resource_id=request.name_id),
-            descriptions=RubricResourceAction(resource_id=request.description_id),
-            flags=RubricResourceAction(resource_id=request.flag_id),
-            departments=RubricMultiResourceAction(resource_ids=request.department_ids),
-            points=RubricResourceAction(resource_id=request.total_points_id),
-            pass_points=RubricResourceAction(resource_id=request.pass_points_id),
-            standard_groups=RubricMultiResourceAction(
-                resource_ids=request.standard_group_ids
-            ),
-            standards=RubricMultiResourceAction(resource_ids=request.standard_ids),
-        )
-
-    def to_tuple(self) -> tuple:
-        return (
-            self.profile_id,
-            self.group_id,
-            self.input_rubric_id,
-            self.names.model_dump(),
-            self.descriptions.model_dump(),
-            self.flags.model_dump(),
-            self.departments.model_dump(),
-            self.points.model_dump(),
-            self.pass_points.model_dump(),
-            self.standard_groups.model_dump(),
-            self.standards.model_dump(),
-        )
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    point_ids: list[UUID] | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_ids: list[UUID] | None = None
+    rubric_ids: list[UUID] | None = None
 
 
-class SaveRubricSqlRow(BaseModel):
+class SaveRubricApiRequest(BaseModel):
+    """Request model for bulk save rubric endpoint."""
+
+    rubrics: list[SaveRubricItem]
+    group_id: UUID | None = None
+
+
+class SaveRubricResult(BaseModel):
+    """Per-item result within a bulk save response."""
+
+    success: bool
     rubric_id: UUID | None = None
-    actor_name: str | None = None
+    message: str
+    errors: list[SaveRubricFieldError] | None = None
+
+
+class SaveRubricApiResponse(BaseModel):
+    """Response model for bulk save rubric endpoint."""
+
+    results: list[SaveRubricResult]
 
 
 class DeleteRubricApiRequest(BaseModel):

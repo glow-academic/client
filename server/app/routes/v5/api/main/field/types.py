@@ -120,8 +120,59 @@ class FieldMultiResourceAction(BaseModel):
     link_tool_id: UUID | None = None
 
 
+class SaveFieldFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SaveFieldItem(BaseModel):
+    """Single field item for save — provide ID or value per field (not both).
+
+    For required fields (name), exactly one of the *_id or value field must be provided.
+    """
+
+    input_field_id: UUID | None = None
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # Optional single-select — provide ID only
+    flag_id: UUID | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    conditional_parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+
+
 class SaveFieldApiRequest(BaseModel):
-    """Request model for save field endpoint - flat resource IDs."""
+    """Request model for bulk save field endpoint."""
+
+    fields: list[SaveFieldItem]
+    group_id: UUID | None = None
+
+
+class SaveFieldResult(BaseModel):
+    """Per-item result within a bulk save response."""
+
+    success: bool
+    field_id: UUID | None = None
+    message: str
+    errors: list[SaveFieldFieldError] | None = None
+
+
+class SaveFieldApiResponse(BaseModel):
+    """Response model for bulk save field endpoint."""
+
+    results: list[SaveFieldResult]
+
+
+class SaveFieldLegacyApiRequest(BaseModel):
+    """Legacy request model for save field endpoint - flat resource IDs."""
 
     input_field_id: UUID | None = None
     name_id: UUID
@@ -131,7 +182,7 @@ class SaveFieldApiRequest(BaseModel):
     conditional_parameter_ids: list[UUID] | None = None
 
 
-class SaveFieldApiResponse(BaseModel):
+class SaveFieldLegacyApiResponse(BaseModel):
     success: bool
     field_id: UUID
     message: str

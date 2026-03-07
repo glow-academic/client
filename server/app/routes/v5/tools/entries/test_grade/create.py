@@ -10,11 +10,11 @@ from app.routes.v5.tools.entries.test_grade.types import CreateTestGradeResponse
 async def create_test_grade(
     conn: asyncpg.Connection,
     invocation_id: UUID,
-    call_id: UUID,
     run_id: UUID,
     time_taken: int,
     passed: bool,
     score: int,
+    call_id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateTestGradeResponse:

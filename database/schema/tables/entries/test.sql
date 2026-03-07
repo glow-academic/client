@@ -30,7 +30,7 @@ CREATE TABLE public.test_completion_entry (
     active boolean DEFAULT true CONSTRAINT benchmark_completions_entry_active_not_null NOT NULL,
     invocation_id uuid CONSTRAINT benchmark_completions_entry_invocation_id_not_null NOT NULL,
     end_reason text DEFAULT ''::text CONSTRAINT benchmark_completions_entry_end_reason_not_null NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid
 );
 
 
@@ -93,7 +93,7 @@ CREATE TABLE public.test_grade_entry (
     generated boolean DEFAULT false CONSTRAINT benchmark_grades_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT benchmark_grades_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT benchmark_grades_entry_active_not_null NOT NULL,
-    call_id uuid NOT NULL
+    call_id uuid
 );
 
 

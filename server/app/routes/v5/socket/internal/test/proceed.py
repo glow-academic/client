@@ -78,18 +78,12 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
         complete_all = payload.complete_all
 
         # Step 1: If completed_invocation_id, mark that invocation completed
-        # TODO: call_id is NOT NULL on test_completion_entry but we don't have
-        # a call_id in this context. Need to either make call_id nullable or
-        # thread it through the pipeline.
         if completed_invocation_id:
             async with get_db_connection() as conn:
                 try:
                     await create_test_completion(
                         conn,
                         invocation_id=completed_invocation_id,
-                        call_id=uuid.UUID(
-                            "00000000-0000-0000-0000-000000000000"
-                        ),  # TODO: thread real call_id
                         end_reason="completed",
                     )
                 except Exception:
@@ -113,9 +107,6 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
                             await create_test_completion(
                                 conn,
                                 invocation_id=inv.invocation_id,
-                                call_id=uuid.UUID(
-                                    "00000000-0000-0000-0000-000000000000"
-                                ),  # TODO: thread real call_id
                                 end_reason="completed",
                             )
                         except Exception:

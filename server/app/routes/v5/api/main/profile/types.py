@@ -184,8 +184,58 @@ class GetProfileWebsocketResponse(InternalResponseBase):
     resources: ProfileWebsocketResources
 
 
+class SaveProfileFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SaveProfileItem(BaseModel):
+    """Single profile item for save — provide ID or value per field (not both).
+
+    For required fields (name), exactly one of the *_id or value field must be provided.
+    """
+
+    input_profile_id: UUID | None = None
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide IDs only
+    request_limit_id: UUID | None = None
+    flag_id: UUID | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    email_ids: list[UUID] | None = None
+    role_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
+
+
+class SaveProfileApiRequest(BaseModel):
+    """Request model for bulk save profile endpoint."""
+
+    profiles: list[SaveProfileItem]
+    group_id: UUID | None = None
+
+
+class SaveProfileResult(BaseModel):
+    """Per-item result within a bulk save response."""
+
+    success: bool
+    profile_id: UUID | None = None
+    message: str
+    errors: list[SaveProfileFieldError] | None = None
+
+
+class SaveProfileApiResponse(BaseModel):
+    """Response model for bulk save profile endpoint."""
+
+    results: list[SaveProfileResult]
+
+
 class SaveProfileRouteApiRequest(BaseModel):
-    """Save payload with flat resource IDs."""
+    """Save payload with flat resource IDs (legacy — used by save_profile_internal)."""
 
     input_profile_id: UUID | None = None
     role: str | None = None

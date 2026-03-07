@@ -141,28 +141,62 @@ class AgentMultiResourceAction(BaseModel):
     link_tool_id: UUID | None = None
 
 
-class SaveAgentApiRequest(BaseModel):
-    """Flat-ID save request for agent endpoint."""
+class SaveAgentFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SaveAgentItem(BaseModel):
+    """Single agent item for save — provide ID or value per field (not both).
+
+    Junctions from get.py: names, descriptions, departments, flags, models,
+    reasoning_levels, temperature_levels, tools, voices, qualities, rubrics, agents.
+    Dual-mode: name (create), description (create), departments (match by name).
+    All others: IDs only.
+    """
 
     input_agent_id: UUID | None = None
-    name_id: UUID
-    model_id: UUID
+    # Dual-mode: name
+    name_id: UUID | None = None
+    name: str | None = None
+    # Dual-mode: description
     description_id: UUID | None = None
-    prompt_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    temperature_level_id: UUID | None = None
-    reasoning_level_id: UUID | None = None
+    description: str | None = None
+    # Dual-mode: departments (match by name)
     department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    flag_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
     tool_ids: list[UUID] | None = None
     voice_ids: list[UUID] | None = None
+    agent_ids: list[UUID] | None = None
+
+
+class SaveAgentApiRequest(BaseModel):
+    """Request model for bulk save agent endpoint."""
+
+    agents: list[SaveAgentItem]
+    group_id: UUID | None = None
+
+
+class SaveAgentResult(BaseModel):
+    """Per-item result within a bulk save response."""
+
+    success: bool
+    agent_id: UUID | None = None
+    message: str
+    errors: list[SaveAgentFieldError] | None = None
 
 
 class SaveAgentApiResponse(BaseModel):
-    """Response model for save agent endpoint."""
+    """Response model for bulk save agent endpoint."""
 
-    agent_id: UUID
-    actor_name: str | None = None
+    results: list[SaveAgentResult]
 
 
 class SaveAgentSqlParams(BaseModel):

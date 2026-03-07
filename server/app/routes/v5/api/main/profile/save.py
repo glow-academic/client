@@ -1,32 +1,26 @@
-"""Profile save endpoint - v4 API following DHH principles.
-Unified endpoint that handles both create (input_profile_id = NULL) and update (input_profile_id provided).
-Uses two-pass architecture: access check SQL → Python permissions → mutation SQL.
+"""Profile save endpoint — composable infra architecture.
+
+Thin route handler. Core logic lives in app.infra.profile_save.
+Legacy save_profile_internal kept for generation complete handler compatibility.
 """
+
+from __future__ import annotations
 
 import uuid
 from typing import Annotated, Any, cast
 
-import asyncpg  # type: ignore
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.v5.api.main.profile.permissions import (
-    compute_can_create,
-    compute_can_edit,
-)
+from app.infra.globals import get_db, get_redis_client
+from app.infra.profile_save import save_profile_client
 from app.routes.v5.api.main.profile.types import (
     ProfileMultiResourceAction,
     ProfileResourceAction,
-    SaveProfileRouteApiRequest,
-    SaveProfileRouteApiResponse,
+    SaveProfileApiRequest,
+    SaveProfileApiResponse,
     SaveProfileSqlParams,
     SaveProfileSqlRow,
-)
-from app.sql.types import (
-    CheckProfileSaveAccessSqlParams,
-    CheckProfileSaveAccessSqlRow,
-    load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
@@ -35,8 +29,7 @@ from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
-# SQL paths
-ACCESS_CHECK_SQL_PATH = "app/sql/queries/profile/check_profile_save_access_complete.sql"
+# SQL paths (legacy — used by save_profile_internal only)
 SQL_PATH = "app/sql/queries/profile/save_profile_complete.sql"
 
 router = APIRouter()
@@ -103,19 +96,14 @@ async def save_profile_internal(
         return None
 
 
-@router.post("/save", response_model=SaveProfileRouteApiResponse)
+@router.post("/save", response_model=SaveProfileApiResponse)
 async def save_profile(
-    request: SaveProfileRouteApiRequest,
+    request: SaveProfileApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> SaveProfileRouteApiResponse:
-    """Save profile - handles both create and update via resource action composites."""
-    tags = ["profile"]
-
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
-
+) -> SaveProfileApiResponse:
+    """Save profiles using composable infra architecture."""
     try:
         profile_id = http_request.state.profile_id
         if not profile_id:
@@ -124,107 +112,18 @@ async def save_profile(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        pool = get_pool()
-        if pool:
-            async with pool.acquire() as context_conn:
-                profile_ctx = await get_auth_profile_internal(
-                    conn=context_conn,
-                    profile_id=profile_id,
-                    bypass_cache=False,
-                )
-                actor_name = profile_ctx.access.actor_name
-                user_role = profile_ctx.access.role
-                user_department_ids = [
-                    d.department_id for d in profile_ctx.departments if d.department_id
-                ]
-        else:
-            actor_name = None
-            user_role = None
-            user_department_ids = []
+        redis = get_redis_client()
 
-        # Permission check: get user role and department info
-        access_params = CheckProfileSaveAccessSqlParams(
+        response_data = await save_profile_client(
+            conn,
+            redis,
             profile_id=profile_id,
-            input_profile_id=request.input_profile_id,
-        )
-        access_result = cast(
-            CheckProfileSaveAccessSqlRow,
-            await execute_sql_typed(
-                conn,
-                ACCESS_CHECK_SQL_PATH,
-                params=access_params,
-            ),
+            items=request.profiles,
+            group_id=request.group_id,
         )
 
-        if not access_result:
-            raise HTTPException(
-                status_code=401,
-                detail="Unable to verify user permissions.",
-            )
-
-        # Permission logic: create vs update mode
-        if not request.input_profile_id:
-            can_save_result = compute_can_create(
-                user_role=user_role,
-                department_ids=None,
-            )
-        else:
-            can_save_result = compute_can_edit(
-                user_role=user_role,
-                target_is_self=access_result.target_is_self or False,
-                target_department_ids=access_result.target_department_ids,
-                user_department_ids=user_department_ids,
-            )
-
-        if not can_save_result:
-            raise HTTPException(
-                status_code=403,
-                detail="You don't have permission to save this profile.",
-            )
-
-        # Server-resolved group_id: create if not updating an existing profile
-        group_id = None
-        if not request.input_profile_id:
-            group_id = await conn.fetchval(
-                "INSERT INTO groups_entry (created_at, updated_at) VALUES (NOW(), NOW()) RETURNING id"
-            )
-
-        async with conn.transaction():
-            # Convert flat resource IDs to SQL params
-            params = SaveProfileSqlParams.from_request(
-                request, profile_id=profile_id, group_id=group_id
-            )
-            sql_params = params.to_tuple()
-
-            # Execute SQL with typed helper
-            result = cast(
-                SaveProfileSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH,
-                    params=params,
-                ),
-            )
-
-            if not result or not result.out_profile_id:
-                if request.input_profile_id:
-                    raise ValueError(f"Profile not found: {request.input_profile_id}")
-                else:
-                    raise ValueError("Failed to create profile")
-
-        # Convert SQL result to API response
-        api_response = SaveProfileRouteApiResponse.model_validate(
-            {
-                "profile_id": str(result.out_profile_id),
-                "actor_name": actor_name,
-            }
-        )
-
-        # Invalidate cache after mutation
-        await invalidate_tags(tags, redis=get_redis_client())
-        response.headers["X-Invalidate-Tags"] = ",".join(tags)
-
-        return api_response
+        response.headers["X-Invalidate-Tags"] = "profiles"
+        return response_data
     except HTTPException:
         raise
     except ValueError as e:
@@ -234,7 +133,7 @@ async def save_profile(
             error=e,
             route_path=http_request.url.path,
             operation="save_profile",
-            sql_query=sql_query,
-            sql_params=sql_params,
+            sql_query=None,
+            sql_params=None,
             request=http_request,
         )
