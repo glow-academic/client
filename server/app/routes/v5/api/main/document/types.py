@@ -295,26 +295,60 @@ class DocumentMultiResourceAction(BaseModel):
 # ========== Save Endpoint Types ==========
 
 
-class SaveDocumentApiRequest(BaseModel):
-    """Request model for save document endpoint - flat resource IDs."""
+class SaveDocumentFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SaveDocumentItem(BaseModel):
+    """Single document item for save — provide ID or value per field (not both).
+
+    For required fields (name), exactly one of the *_id or value field
+    must be provided.
+    """
 
     input_document_id: UUID | None = None
-    name_id: UUID
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
     description_id: UUID | None = None
+    description: str | None = None
+    # Flag — provide ID or boolean
     flag_id: UUID | None = None
+    is_inactive: bool | None = None
+    # Multi-select — provide IDs or names
     department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # Multi-select — IDs only
     field_ids: list[UUID] | None = None
     upload_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     text_ids: list[UUID] | None = None
 
 
-class SaveDocumentApiResponse(BaseModel):
-    """Response model for save document endpoint."""
+class SaveDocumentApiRequest(BaseModel):
+    """Request model for bulk save document endpoint."""
+
+    documents: list[SaveDocumentItem]
+    group_id: UUID | None = None
+
+
+class SaveDocumentResult(BaseModel):
+    """Per-item result within a bulk save response."""
 
     success: bool
-    document_id: UUID
+    document_id: UUID | None = None
     message: str
+    errors: list[SaveDocumentFieldError] | None = None
+
+
+class SaveDocumentApiResponse(BaseModel):
+    """Response model for bulk save document endpoint."""
+
+    results: list[SaveDocumentResult]
 
 
 class SaveDocumentSqlParams(BaseModel):

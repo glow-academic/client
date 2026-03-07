@@ -10,6 +10,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.infra.pricing_context import resolve_pricing_context
+from app.routes.v5.api.main._shared.pricing import compute_costs_from_runs
+from app.routes.v5.api.main.group.types import (
+    GetGroupListRequest,
+    GetGroupListResponse,
+    GroupListItem,
+)
 from app.routes.v5.api.main.pricing.types import (
     GetPricingWebsocketResponse,
     PricingDailyItem,
@@ -20,6 +26,9 @@ from app.routes.v5.api.main.pricing.types import (
     PricingWebsocketResources,
 )
 from app.routes.v5.api.main.types import FilterOption
+from app.routes.v5.tools.entries.groups.get import get_group_list_view_internal
+from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
+from app.routes.v5.tools.resources.names.get import get_names
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -72,6 +81,157 @@ async def get_pricing_websocket(
         entries=PricingWebsocketEntries(),
         resources=PricingWebsocketResources(),
     )
+
+
+# ---------------------------------------------------------------------------
+# get_group_list_internal (kept for export.py backward compat)
+# ---------------------------------------------------------------------------
+
+
+async def get_group_list_internal(
+    conn: asyncpg.Connection,
+    profile_id: UUID,
+    request: GetGroupListRequest,
+    actor_name: str | None = None,
+    bypass_cache: bool = False,
+    cache_key_path: str = "/api/v5/artifacts/group/list",
+) -> GetGroupListResponse:
+    """Internal function for group list with resource hydration."""
+    body = request.model_dump(mode="json")
+    cache_key_val = cache_key(cache_key_path, body)
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        if cached:
+            return GetGroupListResponse.model_validate(cached["data"])
+
+    view_result = await get_group_list_view_internal(
+        conn=conn,
+        session_id_filter=request.session_id,
+        date_from=request.date_from,
+        date_to=request.date_to,
+        sort_by=request.sort_by,
+        sort_order=request.sort_order,
+        page_limit=request.page_limit,
+        page_offset=request.page_offset,
+        bypass_cache=bypass_cache,
+    )
+
+    group_ids = [item.group_id for item in view_result.items]
+
+    if not group_ids:
+        return GetGroupListResponse(
+            actor_name=actor_name,
+            items=[],
+            total_count=view_result.total_count,
+        )
+
+    runs_result = await get_run_list_entries_internal(
+        conn=conn,
+        group_ids=group_ids,
+        page_limit=10000,
+        bypass_cache=bypass_cache,
+    )
+
+    run_costs = await compute_costs_from_runs(conn, runs_result.items, bypass_cache)
+
+    group_stats: dict[UUID, dict] = {}
+    all_agent_ids: set[UUID] = set()
+    all_model_ids: set[UUID] = set()
+
+    for run in runs_result.items:
+        gid = run.group_id
+        if not gid:
+            continue
+        if gid not in group_stats:
+            group_stats[gid] = {
+                "run_count": 0,
+                "total_input_tokens": 0,
+                "total_output_tokens": 0,
+                "total_tokens": 0,
+                "total_cost": Decimal("0"),
+                "first_run_at": None,
+                "last_run_at": None,
+                "agent_ids": set(),
+                "model_ids": set(),
+            }
+        stats = group_stats[gid]
+        stats["run_count"] += 1
+        stats["total_input_tokens"] += run.input_tokens
+        stats["total_output_tokens"] += run.output_tokens
+        stats["total_tokens"] += (
+            run.input_tokens + run.output_tokens + run.cached_input_tokens
+        )
+        stats["total_cost"] += run_costs.get(run.run_id, Decimal("0"))
+        if run.run_created_at:
+            if stats["first_run_at"] is None or run.run_created_at < stats["first_run_at"]:
+                stats["first_run_at"] = run.run_created_at
+            if stats["last_run_at"] is None or run.run_created_at > stats["last_run_at"]:
+                stats["last_run_at"] = run.run_created_at
+        if run.agent_ids:
+            stats["agent_ids"].update(run.agent_ids)
+            all_agent_ids.update(run.agent_ids)
+        if run.model_ids:
+            stats["model_ids"].update(run.model_ids)
+            all_model_ids.update(run.model_ids)
+
+    all_name_ids = list(all_agent_ids | all_model_ids)
+    name_items = (
+        await get_names(
+            conn, all_name_ids, get_redis_client(), bypass_cache=bypass_cache
+        )
+        if all_name_ids
+        else []
+    )
+    name_map = {item.id: item.name for item in name_items if item.id and item.name}
+
+    items = []
+    for view_item in view_result.items:
+        gid = view_item.group_id
+        stats = group_stats.get(gid, {})
+        agent_id_list = list(stats.get("agent_ids", set()))
+        model_id_list = list(stats.get("model_ids", set()))
+        a_names = [name_map[aid] for aid in agent_id_list if aid in name_map] or None
+        m_names = [name_map[mid] for mid in model_id_list if mid in name_map] or None
+
+        items.append(
+            GroupListItem(
+                group_id=gid,
+                session_id=view_item.session_id,
+                profile_id=None,
+                group_name=view_item.group_name,
+                first_run_at=stats.get("first_run_at"),
+                last_run_at=stats.get("last_run_at"),
+                run_count=stats.get("run_count", 0),
+                unique_agents=len(agent_id_list),
+                unique_models=len(model_id_list),
+                total_input_tokens=stats.get("total_input_tokens", 0),
+                total_output_tokens=stats.get("total_output_tokens", 0),
+                total_tokens=stats.get("total_tokens", 0),
+                total_cost=stats.get("total_cost", Decimal("0")),
+                agent_ids=agent_id_list or None,
+                model_ids=model_id_list or None,
+                profile_name=None,
+                agent_names=a_names,
+                model_names=m_names,
+            )
+        )
+
+    api_response = GetGroupListResponse(
+        actor_name=actor_name,
+        items=items,
+        total_count=view_result.total_count,
+    )
+
+    await set_cached(
+        cache_key_val,
+        {"data": api_response.model_dump(mode="json")},
+        ttl=300,
+        tags=["artifacts", "group", "list"],
+        redis=get_redis_client(),
+    )
+
+    return api_response
 
 
 # ---------------------------------------------------------------------------
