@@ -17,12 +17,11 @@ async def search_test_invocation_entries_internal(
     suite_department_ids: list[UUID] | None = None,
     grade_ids: list[UUID] | None = None,
     rubric_ids: list[UUID] | None = None,
-    model_ids: list[UUID] | None = None,
-    prompt_ids: list[UUID] | None = None,
+    agent_ids: list[UUID] | None = None,
+    quality_ids: list[UUID] | None = None,
     voice_ids: list[UUID] | None = None,
     temperature_level_ids: list[UUID] | None = None,
     reasoning_level_ids: list[UUID] | None = None,
-    key_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -35,20 +34,20 @@ async def search_test_invocation_entries_internal(
         SELECT invocation_id, test_id, group_id, invocation_created_at,
                invocation_title, use_custom, "position", invocation_completed,
                grade_id, grade_score, grade_passed, grade_time_taken,
-               rubric_id, department_ids,
-               run_agent_ids, group_agent_ids, model_id, voice_id,
-               temperature_level_id, reasoning_level_id, key_id
+               rubric_id, agent_ids, quality_id, department_ids,
+               run_agent_ids, group_agent_ids, voice_id,
+               temperature_level_id, reasoning_level_id
         FROM {source}
         WHERE ($1::uuid[] IS NULL OR test_id = ANY($1))
           AND ($2::uuid[] IS NULL OR group_id = ANY($2))
           AND ($3::uuid[] IS NULL OR department_ids && $3)
           AND ($4::uuid[] IS NULL OR grade_id = ANY($4))
           AND ($5::uuid[] IS NULL OR rubric_id = ANY($5))
-          AND ($6::uuid[] IS NULL OR model_id = ANY($6))
-          AND ($7::uuid[] IS NULL OR voice_id = ANY($7))
-          AND ($8::uuid[] IS NULL OR temperature_level_id = ANY($8))
-          AND ($9::uuid[] IS NULL OR reasoning_level_id = ANY($9))
-          AND ($10::uuid[] IS NULL OR key_id = ANY($10))
+          AND ($6::uuid[] IS NULL OR agent_ids && $6)
+          AND ($7::uuid[] IS NULL OR quality_id = ANY($7))
+          AND ($8::uuid[] IS NULL OR voice_id = ANY($8))
+          AND ($9::uuid[] IS NULL OR temperature_level_id = ANY($9))
+          AND ($10::uuid[] IS NULL OR reasoning_level_id = ANY($10))
         ORDER BY invocation_created_at DESC
         LIMIT $11 OFFSET $12
         """,
@@ -57,11 +56,11 @@ async def search_test_invocation_entries_internal(
         suite_department_ids,
         grade_ids,
         rubric_ids,
-        model_ids,
+        agent_ids,
+        quality_ids,
         voice_ids,
         temperature_level_ids,
         reasoning_level_ids,
-        key_ids,
         limit,
         offset,
     )

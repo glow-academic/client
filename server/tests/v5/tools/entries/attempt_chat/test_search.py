@@ -1,4 +1,4 @@
-"""Tests for search_attempt_chat_entries_internal."""
+"""Tests for search_attempt_chats."""
 
 import pytest
 from tests.helpers import nonexistent_id
@@ -7,7 +7,7 @@ from app.routes.v5.tools.entries.attempt.create import create_attempt
 from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
 from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_chat
 from app.routes.v5.tools.entries.attempt_chat.search import (
-    search_attempt_chat_entries_internal,
+    search_attempt_chats,
 )
 from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
     create_attempt_chat_bridge,
@@ -53,7 +53,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, attempt, _ = await _setup(conn, profile_id)
     await refresh_attempt_chat(conn)
 
-    items = await search_attempt_chat_entries_internal(
+    items = await search_attempt_chats(
         conn, attempt_ids=[attempt.id]
     )
 
@@ -65,7 +65,7 @@ async def test_filters_by_attempt_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_chat(conn)
 
-    items = await search_attempt_chat_entries_internal(
+    items = await search_attempt_chats(
         conn, attempt_ids=[nonexistent_id()]
     )
 
@@ -76,7 +76,7 @@ async def test_filters_by_group_id(conn, profile_id):
     result, _, group = await _setup(conn, profile_id)
     await refresh_attempt_chat(conn)
 
-    items = await search_attempt_chat_entries_internal(conn, group_ids=[group.id])
+    items = await search_attempt_chats(conn, group_ids=[group.id])
 
     ids = [item.chat_id for item in items]
     assert result.id in ids
@@ -86,7 +86,7 @@ async def test_pagination_limit(conn, profile_id):
     result, attempt, _ = await _setup(conn, profile_id)
     await refresh_attempt_chat(conn)
 
-    items = await search_attempt_chat_entries_internal(
+    items = await search_attempt_chats(
         conn, attempt_ids=[attempt.id], limit=1
     )
 
@@ -97,7 +97,7 @@ async def test_returns_all_without_filter(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_chat(conn)
 
-    items = await search_attempt_chat_entries_internal(conn)
+    items = await search_attempt_chats(conn)
 
     assert len(items) >= 1
 
@@ -105,7 +105,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, attempt, _ = await _setup(conn, profile_id)
 
-    items = await search_attempt_chat_entries_internal(
+    items = await search_attempt_chats(
         conn, attempt_ids=[attempt.id], bypass_mv=True
     )
 

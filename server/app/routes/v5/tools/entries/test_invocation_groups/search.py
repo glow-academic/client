@@ -20,7 +20,9 @@ async def search_test_invocation_groups(
     """Search test_invocation_groups from test_invocation_groups_mv with declarative filters."""
     rows = await conn.fetch(
         f"""
-        SELECT *
+        SELECT id, test_invocation_id, created_at, updated_at, generated, mcp, active,
+               agent_ids, reasoning_level_ids, temperature_level_ids, voice_ids,
+               prompt_ids, instruction_ids, tool_ids, quality_ids
         FROM {MV_NAME}
         WHERE ($1::uuid[] IS NULL OR test_invocation_id = ANY($1))
         ORDER BY created_at DESC

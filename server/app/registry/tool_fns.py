@@ -590,7 +590,7 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
     ("search", "attempt"): (f"{_T}.entries.attempt.search", "search_attempts"),
     ("search", "attempt_analysis"): (f"{_T}.entries.attempt_analysis.search", "search_attempt_analyses"),
     ("search", "attempt_archive"): (f"{_T}.entries.attempt_archive.search", "search_attempt_archives"),
-    ("search", "attempt_chat"): (f"{_T}.entries.attempt_chat.search", "search_attempt_chat_entries_internal"),
+    ("search", "attempt_chat"): (f"{_T}.entries.attempt_chat.search", "search_attempt_chats"),
     ("search", "attempt_chat_bridge"): (f"{_T}.entries.attempt_chat_bridge.search", "search_attempt_chat_bridges"),
     ("search", "attempt_completion"): (f"{_T}.entries.attempt_completion.search", "search_attempt_completions"),
     ("search", "attempt_content"): (f"{_T}.entries.attempt_content.search", "search_attempt_contents"),

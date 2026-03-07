@@ -10,7 +10,7 @@ from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatRespons
 MV_NAME = "attempt_chat_mv"
 
 
-async def search_attempt_chat_entries_internal(
+async def search_attempt_chats(
     conn: asyncpg.Connection,
     attempt_ids: list[UUID] | None = None,
     group_ids: list[UUID] | None = None,

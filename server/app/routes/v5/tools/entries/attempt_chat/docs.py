@@ -10,7 +10,7 @@ from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
 from app.routes.v5.tools.entries.attempt_chat.get import get_attempt_chats
 from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_chat
 from app.routes.v5.tools.entries.attempt_chat.search import (
-    search_attempt_chat_entries_internal,
+    search_attempt_chats,
 )
 
 
@@ -68,7 +68,7 @@ async def get_attempt_chat_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves chats by IDs from attempt_chat_mv.",
             ),
             get_operation_info(
-                search_attempt_chat_entries_internal,
+                search_attempt_chats,
                 description="Filtered paginated search against attempt_chat_mv.",
             ),
         ],

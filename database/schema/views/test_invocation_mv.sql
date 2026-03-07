@@ -37,17 +37,19 @@ CREATE MATERIALIZED VIEW public.test_invocation_mv AS
           ORDER BY g.invocation_id, g.created_at DESC
         ), bundle_snapshot AS (
          SELECT ir.id AS test_invocation_id,
-            (array_agg(irm.models_id) FILTER (WHERE (irm.models_id IS NOT NULL)))[1] AS model_id,
+            COALESCE(array_agg(DISTINCT ira.agents_id ORDER BY ira.agents_id) FILTER (WHERE (ira.agents_id IS NOT NULL)), ARRAY[]::uuid[]) AS agent_ids,
+            (array_agg(irr.rubrics_id) FILTER (WHERE (irr.rubrics_id IS NOT NULL)))[1] AS rubric_id,
+            (array_agg(irq.qualities_id) FILTER (WHERE (irq.qualities_id IS NOT NULL)))[1] AS quality_id,
             (array_agg(irv.voices_id) FILTER (WHERE (irv.voices_id IS NOT NULL)))[1] AS voice_id,
             (array_agg(irt.temperature_levels_id) FILTER (WHERE (irt.temperature_levels_id IS NOT NULL)))[1] AS temperature_level_id,
-            (array_agg(irrl.reasoning_levels_id) FILTER (WHERE (irrl.reasoning_levels_id IS NOT NULL)))[1] AS reasoning_level_id,
-            (array_agg(irk.keys_id) FILTER (WHERE (irk.keys_id IS NOT NULL)))[1] AS key_id
-           FROM (((((public.test_invocation_entry ir
-             LEFT JOIN public.test_invocation_models_connection irm ON (((irm.test_invocation_id = ir.id) AND (irm.active = true))))
+            (array_agg(irrl.reasoning_levels_id) FILTER (WHERE (irrl.reasoning_levels_id IS NOT NULL)))[1] AS reasoning_level_id
+           FROM ((((((public.test_invocation_entry ir
+             LEFT JOIN public.test_invocation_agents_connection ira ON (((ira.test_invocation_id = ir.id) AND (ira.active = true))))
+             LEFT JOIN public.test_invocation_rubrics_connection irr ON (((irr.test_invocation_id = ir.id) AND (irr.active = true))))
+             LEFT JOIN public.test_invocation_qualities_connection irq ON (((irq.test_invocation_id = ir.id) AND (irq.active = true))))
              LEFT JOIN public.test_invocation_voices_connection irv ON (((irv.test_invocation_id = ir.id) AND (irv.active = true))))
              LEFT JOIN public.test_invocation_temperature_levels_connection irt ON (((irt.test_invocation_id = ir.id) AND (irt.active = true))))
              LEFT JOIN public.test_invocation_reasoning_levels_connection irrl ON (((irrl.test_invocation_id = ir.id) AND (irrl.active = true))))
-             LEFT JOIN public.test_invocation_keys_connection irk ON (((irk.test_invocation_id = ir.id) AND (irk.active = true))))
           WHERE (ir.active = true)
           GROUP BY ir.id
         )
@@ -63,15 +65,15 @@ CREATE MATERIALIZED VIEW public.test_invocation_mv AS
     lg.grade_score,
     lg.grade_passed,
     lg.grade_time_taken,
-    NULL::uuid AS rubric_id,
+    bs.rubric_id,
+    COALESCE(bs.agent_ids, ARRAY[]::uuid[]) AS agent_ids,
+    bs.quality_id,
     COALESCE(dl.department_ids, ARRAY[]::uuid[]) AS department_ids,
     COALESCE(ral.run_agent_ids, ARRAY[]::uuid[]) AS run_agent_ids,
     COALESCE(gal.group_agent_ids, ARRAY[]::uuid[]) AS group_agent_ids,
-    bs.model_id,
     bs.voice_id,
     bs.temperature_level_id,
-    bs.reasoning_level_id,
-    bs.key_id
+    bs.reasoning_level_id
    FROM (((((public.test_invocation_entry i
      LEFT JOIN groups_agents_links gal ON ((gal.test_invocation_id = i.id)))
      LEFT JOIN runs_agents_links ral ON ((ral.test_invocation_id = i.id)))

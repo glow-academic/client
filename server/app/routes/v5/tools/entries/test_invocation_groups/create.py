@@ -14,6 +14,13 @@ async def create_test_invocation_groups(
     test_invocation_id: UUID,
     agent_ids: list[UUID] | None = None,
     group_ids: list[UUID] | None = None,
+    reasoning_level_ids: list[UUID] | None = None,
+    temperature_level_ids: list[UUID] | None = None,
+    voice_ids: list[UUID] | None = None,
+    prompt_ids: list[UUID] | None = None,
+    instruction_ids: list[UUID] | None = None,
+    tool_ids: list[UUID] | None = None,
+    quality_ids: list[UUID] | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateTestInvocationGroupsResponse:
@@ -29,18 +36,6 @@ async def create_test_invocation_groups(
         mcp,
     )
 
-    if agent_ids:
-        for agent_id in agent_ids:
-            await conn.execute(
-                """
-                INSERT INTO test_invocation_groups_agents_connection
-                    (test_invocation_groups_id, agents_id)
-                VALUES ($1, $2)
-                """,
-                entry_id,
-                agent_id,
-            )
-
     if group_ids:
         for group_id in group_ids:
             await conn.execute(
@@ -51,6 +46,24 @@ async def create_test_invocation_groups(
                 """,
                 entry_id,
                 group_id,
+            )
+
+    connections = [
+        ("test_invocation_groups_agents_connection", "agents_id", agent_ids or []),
+        ("test_invocation_groups_reasoning_levels_connection", "reasoning_levels_id", reasoning_level_ids or []),
+        ("test_invocation_groups_temperature_levels_connection", "temperature_levels_id", temperature_level_ids or []),
+        ("test_invocation_groups_voices_connection", "voices_id", voice_ids or []),
+        ("test_invocation_groups_prompts_connection", "prompts_id", prompt_ids or []),
+        ("test_invocation_groups_instructions_connection", "instructions_id", instruction_ids or []),
+        ("test_invocation_groups_tools_connection", "tools_id", tool_ids or []),
+        ("test_invocation_groups_qualities_connection", "qualities_id", quality_ids or []),
+    ]
+    for table, col, ids in connections:
+        for rid in ids:
+            await conn.execute(
+                f"INSERT INTO {table} (test_invocation_groups_id, {col}) VALUES ($1, $2)",
+                entry_id,
+                rid,
             )
 
     return CreateTestInvocationGroupsResponse(id=entry_id)
