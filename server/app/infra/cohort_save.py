@@ -6,7 +6,7 @@ Core save function that composes existing black-box tools:
   3. Resource create/search tools — raw value → ID resolution
   4. Artifact create/update tools — junction writes
   5. Cohort resource create tool — denormalized snapshot
-  6. sync_cohort_entries — pre-create home/practice + chat entries
+  6. sync_home_practice_entries — pre-create home/practice + chat entries
 """
 
 from __future__ import annotations
@@ -258,7 +258,7 @@ async def save_cohort_client(
       3. Per-item value resolution (raw → ID)
       4. Single transaction: artifact create/update + denormalized snapshot
       5. invalidate_tags
-      6. sync_cohort_entries (non-fatal)
+      6. sync_home_practice_entries (non-fatal)
     """
     from app.routes.v5.api.main.cohort.permissions import (
         compute_can_create,
@@ -417,9 +417,9 @@ async def save_cohort_client(
 
     for resource_id, item in sync_items:
         try:
-            from app.infra.cohort_sync import sync_cohort_entries
+            from app.infra.home_practice_sync import sync_home_practice_entries
 
-            await sync_cohort_entries(
+            await sync_home_practice_entries(
                 conn=conn,
                 cohorts_resource_id=resource_id,
                 simulation_ids=item.simulation_ids or [],
@@ -430,6 +430,6 @@ async def save_cohort_client(
                 profile_persona_ids=item.profile_persona_ids or [],
             )
         except Exception as sync_err:
-            logger.warning(f"sync_cohort_entries failed (non-fatal): {sync_err}")
+            logger.warning(f"sync_home_practice_entries failed (non-fatal): {sync_err}")
 
     return SaveCohortApiResponse(results=results)

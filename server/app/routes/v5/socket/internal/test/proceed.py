@@ -10,11 +10,11 @@ All test lifecycle events route through here:
 
 Flow:
 1. If completed_invocation_id → create_test_completion
-2. If complete_all → complete_all_invocations → emit test_ended
-3. Get context SQL → next invocation_entry + use_custom + is_dynamic
+2. If complete_all → create_test_completion per uncompleted invocation → emit test_ended
+3. Search invocations → count completed vs total → find next
 4. All done? → emit test_ended
 5. use_custom && !force_proceed → emit test_started (lobby)
-6. Resolve invocation → refresh → emit test_invocation_started
+6. create_test_invocation + create_test_invocation_bridge → refresh → emit
    - is_dynamic=true (default): client triggers test_run → LLM re-run → grade
    - is_dynamic=false (generation): skip re-run, grade existing output directly
 """
@@ -22,7 +22,7 @@ Flow:
 from __future__ import annotations
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from app.infra.globals import get_internal_sio, get_redis_client
 from app.infra.websocket.get_db_connection import get_db_connection
@@ -33,29 +33,24 @@ from app.routes.v5.socket.internal.test.types import (
 from app.routes.v5.tools.entries.test_completion.create import (
     create_test_completion,
 )
+from app.routes.v5.tools.entries.test_invocation.create import (
+    create_test_invocation,
+)
 from app.routes.v5.tools.entries.test_invocation.refresh import (
     refresh_test_invocation,
 )
-from app.sql.types import (
-    GetTestProceedContextSqlParams,
-    GetTestProceedContextSqlRow,
-    ResolveTestInvocationSqlParams,
-    ResolveTestInvocationSqlRow,
+from app.routes.v5.tools.entries.test_invocation.search import (
+    search_test_invocation_entries_internal,
+)
+from app.routes.v5.tools.entries.test_invocation_bridge.create import (
+    create_test_invocation_bridge,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
-
-SQL_PATH_PROCEED_CONTEXT = (
-    "app/sql/queries/generate/test/get_test_proceed_context_complete.sql"
-)
-SQL_PATH_RESOLVE_INVOCATION = (
-    "app/sql/queries/generate/test/resolve_test_invocation_complete.sql"
-)
 
 
 @internal_sio.on("test_proceed")  # type: ignore
@@ -83,8 +78,8 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
 
         # Step 1: If completed_invocation_id, mark that invocation completed
         # TODO: call_id is NOT NULL on test_completion_entry but we don't have
-        # a call_id in this context. The old inline SQL omitted it (would fail
-        # on NOT NULL). Need to either make call_id nullable or thread it through.
+        # a call_id in this context. Need to either make call_id nullable or
+        # thread it through the pipeline.
         if completed_invocation_id:
             async with get_db_connection() as conn:
                 try:
@@ -103,21 +98,27 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
                     )
 
         # Step 2: If complete_all, mark all remaining invocations completed → ended
-        # TODO: convert to black-box function (bulk complete_all_invocations)
         if complete_all:
             async with get_db_connection() as conn:
-                await conn.execute(
-                    """INSERT INTO test_completion_entry (invocation_id, end_reason, generated, mcp)
-                    SELECT tie.id, 'completed', false, false
-                    FROM test_invocation_entry tie
-                    WHERE tie.test_id = $1 AND tie.active = true
-                      AND tie.id NOT IN (
-                          SELECT tce.invocation_id FROM test_completion_entry tce
-                          WHERE tce.active = true
-                      )
-                    ON CONFLICT DO NOTHING""",
-                    test_id,
+                all_invocations = await search_test_invocation_entries_internal(
+                    conn,
+                    test_ids=[test_id],
+                    limit=1000,
+                    bypass_mv=True,
                 )
+                for inv in all_invocations:
+                    if not inv.invocation_completed:
+                        try:
+                            await create_test_completion(
+                                conn,
+                                invocation_id=inv.invocation_id,
+                                call_id=uuid.UUID(
+                                    "00000000-0000-0000-0000-000000000000"
+                                ),  # TODO: thread real call_id
+                                end_reason="completed",
+                            )
+                        except Exception:
+                            pass
                 await refresh_test_invocation(conn)
             await invalidate_tags(
                 ["test", "tests", "benchmark"], redis=get_redis_client()
@@ -134,20 +135,32 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
             )
             return
 
-        # Step 3: Get context in one SQL call
+        # Step 3: Get context — search invocations, find next uncompleted
         async with get_db_connection() as conn:
-            row = cast(
-                GetTestProceedContextSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH_PROCEED_CONTEXT,
-                    params=GetTestProceedContextSqlParams(
-                        p_test_id=test_id,
-                    ),
-                ),
+            all_invocations = await search_test_invocation_entries_internal(
+                conn,
+                test_ids=[test_id],
+                limit=1000,
+                bypass_mv=True,
             )
 
-        if not row or not row.items:
+            # Get is_dynamic from test_entry
+            # TODO: expose is_dynamic on test_mv / GetTestResponse so we can
+            # use get_tests() instead of this direct query
+            is_dynamic_row = await conn.fetchval(
+                "SELECT is_dynamic FROM test_entry WHERE id = $1",
+                test_id,
+            )
+
+        is_dynamic = is_dynamic_row if is_dynamic_row is not None else True
+        total_invocations = len(all_invocations)
+        completed = [inv for inv in all_invocations if inv.invocation_completed]
+        uncompleted = [
+            inv for inv in all_invocations if not inv.invocation_completed
+        ]
+        completed_count = len(completed)
+
+        if not all_invocations:
             await internal_sio.emit(
                 "test_error",
                 TestErrorData(
@@ -158,14 +171,8 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
             )
             return
 
-        ctx = row.items[0]
-
         # Step 4: Check if all invocations are done
-        if ctx.invocation_entry_id is None or (
-            ctx.completed_count is not None
-            and ctx.total_invocations is not None
-            and ctx.completed_count >= ctx.total_invocations
-        ):
+        if not uncompleted or completed_count >= total_invocations:
             await internal_sio.emit(
                 "test_ended",
                 {
@@ -177,51 +184,38 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
             )
             return
 
+        next_invocation = uncompleted[0]
+
         # Step 5: use_custom lobby
-        if ctx.use_custom and not force_proceed:
+        if next_invocation.use_custom and not force_proceed:
             await internal_sio.emit(
                 "test_started",
                 {
                     "sid": sid,
                     "test_id": str(test_id),
-                    "invocation_entry_id": str(ctx.invocation_entry_id),
+                    "invocation_entry_id": str(next_invocation.invocation_id),
                 },
             )
             return
 
         # Step 6: Resolve invocation — create test_invocation_entry + bridge
         async with get_db_connection() as conn:
-            resolve_row = cast(
-                ResolveTestInvocationSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH_RESOLVE_INVOCATION,
-                    params=ResolveTestInvocationSqlParams(
-                        p_test_id=test_id,
-                        p_invocation_entry_id=ctx.invocation_entry_id,
-                    ),
-                ),
+            inv_result = await create_test_invocation(
+                conn,
+                test_id=test_id,
             )
+            test_invocation_id = inv_result.id
 
-        if not resolve_row or not resolve_row.items:
-            await internal_sio.emit(
-                "test_error",
-                TestErrorData(
-                    sid=sid,
-                    message="Failed to create test invocation entry",
-                    error_type="proceed",
-                ).model_dump(mode="json"),
+            await create_test_invocation_bridge(
+                conn,
+                test_invocation_id=test_invocation_id,
+                invocation_id=next_invocation.invocation_id,
             )
-            return
-
-        test_invocation_id = resolve_row.items[0].test_invocation_id
 
         # Step 7: Refresh MVs + emit test_invocation_started
         async with get_db_connection() as conn:
             await refresh_test_invocation(conn)
         await invalidate_tags(["test", "tests", "benchmark"], redis=get_redis_client())
-
-        is_dynamic = ctx.is_dynamic if ctx.is_dynamic is not None else True
 
         await internal_sio.emit(
             "test_invocation_started",

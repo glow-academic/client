@@ -137,39 +137,57 @@ class ListEvalApiResponse(BaseModel):
 # ========== Save Endpoint Types ==========
 
 
-class EvalResourceAction(BaseModel):
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
+class SaveEvalFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
 
 
-class EvalMultiResourceAction(BaseModel):
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
+class SaveEvalItem(BaseModel):
+    """Single eval item for save — provide ID or value per field (not both).
 
-
-class SaveEvalApiRequest(BaseModel):
-    """Request model for save eval endpoint - flat resource IDs."""
+    For required fields (name), exactly one of the *_id or value field
+    must be provided.
+    """
 
     input_eval_id: UUID | None = None
-    name_id: UUID
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
     description_id: UUID | None = None
+    description: str | None = None
+    # Multi-select — IDs only (matching get.py junctions)
     flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
+    departments: list[str] | None = None
     model_ids: list[UUID] | None = None
     model_flag_ids: list[UUID] | None = None
     model_rubric_ids: list[UUID] | None = None
     model_position_ids: list[UUID] | None = None
 
 
-class SaveEvalApiResponse(BaseModel):
-    """Response model for save eval endpoint."""
+class SaveEvalApiRequest(BaseModel):
+    """Request model for bulk save eval endpoint."""
+
+    evals: list[SaveEvalItem]
+    group_id: UUID | None = None
+
+
+class SaveEvalResult(BaseModel):
+    """Per-item result within a bulk save response."""
 
     success: bool
-    eval_id: UUID
+    eval_id: UUID | None = None
     message: str
+    errors: list[SaveEvalFieldError] | None = None
+
+
+class SaveEvalApiResponse(BaseModel):
+    """Response model for bulk save eval endpoint."""
+
+    results: list[SaveEvalResult]
 
 
 class SaveEvalSqlParams(BaseModel):

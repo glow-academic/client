@@ -1,4 +1,4 @@
-"""Cohort entry sync — pre-create home/practice + chat entries on cohort save.
+"""Home/practice entry sync — pre-create home/practice + chat entries on cohort save.
 
 Insert-only. No reads from _entry tables. No deactivation of old entries.
 Uses black-box entry creation tools instead of raw SQL.
@@ -33,7 +33,7 @@ FLAG_NAME_TO_COLUMN: dict[str, str] = {
 }
 
 
-async def sync_cohort_entries(
+async def sync_home_practice_entries(
     conn: asyncpg.Connection,
     cohorts_resource_id: UUID,
     simulation_ids: list[UUID],
