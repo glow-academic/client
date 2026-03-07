@@ -207,5 +207,3 @@ async def get_record_websocket(
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )
-
-

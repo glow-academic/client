@@ -584,7 +584,10 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
             enriched_metadata = dict(payload_metadata)
             if generation_test_id:
                 enriched_metadata["generation_test_id"] = generation_test_id
-                if generation_invocation_map and agent_group_id in generation_invocation_map:
+                if (
+                    generation_invocation_map
+                    and agent_group_id in generation_invocation_map
+                ):
                     enriched_metadata["test_invocation_id"] = str(
                         generation_invocation_map[agent_group_id]
                     )

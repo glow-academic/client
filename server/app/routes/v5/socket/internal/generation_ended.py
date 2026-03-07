@@ -59,9 +59,7 @@ async def handle_generation_ended(data: dict[str, Any]) -> None:
 
     # Step 1: Resolve the winning agent from DB grades
     async with get_db_connection() as conn:
-        winner = await resolve_generation_winner(
-            conn, test_id=_uuid.UUID(test_id)
-        )
+        winner = await resolve_generation_winner(conn, test_id=_uuid.UUID(test_id))
 
     if not winner:
         logger.warning(f"No winner resolved for test {test_id}")

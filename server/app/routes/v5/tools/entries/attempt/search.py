@@ -26,6 +26,11 @@ async def search_attempts(
     profile_ids: list[UUID] | None = None,
     cohort_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
+    scenario_ids: list[UUID] | None = None,
+    practice: bool | None = None,
+    is_archived: bool | None = None,
+    infinite_mode: bool | None = None,
+    sort_order: str = "desc",
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -33,6 +38,7 @@ async def search_attempts(
     """Search attempt entries from attempt_mv with declarative filters."""
     source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
+    order = "ASC" if sort_order == "asc" else "DESC"
     rows = await conn.fetch(
         f"""
         SELECT attempt_id, simulation_id, profile_id, user_persona_id,
@@ -44,13 +50,21 @@ async def search_attempts(
           AND ($2::uuid[] IS NULL OR profile_id = ANY($2))
           AND ($3::uuid[] IS NULL OR cohort_id = ANY($3))
           AND ($4::uuid[] IS NULL OR department_id = ANY($4))
-        ORDER BY attempt_created_at DESC
-        LIMIT $5 OFFSET $6
+          AND ($5::uuid[] IS NULL OR scenario_ids && $5)
+          AND ($6::boolean IS NULL OR practice = $6)
+          AND ($7::boolean IS NULL OR is_archived = $7)
+          AND ($8::boolean IS NULL OR infinite_mode = $8)
+        ORDER BY attempt_created_at {order}
+        LIMIT $9 OFFSET $10
         """,
         simulation_ids,
         profile_ids,
         cohort_ids,
         department_ids,
+        scenario_ids,
+        practice,
+        is_archived,
+        infinite_mode,
         limit,
         offset,
     )

@@ -70,17 +70,9 @@ class GetHomeWebsocketResponse(InternalResponseBase):
 
 
 class GetHomeRequest(BaseModel):
-    """Request for home get endpoint with optional history."""
+    """Request for home get endpoint — simulation cards only."""
 
-    history_sort_by: str | None = "date"
-    history_sort_order: str | None = "desc"
-    history_page: int = 0
-    history_page_size: int = 20
-    history_simulation_search: str | None = None
-    history_scenario_search: str | None = None
-    history_show_archived: bool = False
-    history_scenario_ids: list[UUID] | None = None
-    history_infinite_mode: bool | None = None
+    pass
 
 
 class GetHomeResponse(BaseModel):
@@ -94,4 +86,27 @@ class GetHomeResponse(BaseModel):
     rubrics: list[RubricMapping] | None = None
     standard_groups: list[StandardGroupMapping] | None = None
     standards: list[StandardMapping] | None = None
-    history: HistoryResponse | None = None
+
+
+# =============================================================================
+# LIST endpoint types (paginated history)
+# =============================================================================
+
+
+class ListHomeRequest(BaseModel):
+    """Request for home list endpoint — paginated attempt history."""
+
+    sort_by: str | None = "date"
+    sort_order: str | None = "desc"
+    page: int = 0
+    page_size: int = 20
+    simulation_search: str | None = None
+    scenario_search: str | None = None
+    scenario_ids: list[UUID] | None = None
+    infinite_mode: bool | None = None
+
+
+class ListHomeResponse(HistoryResponse):
+    """Client-facing API response for home list (paginated history)."""
+
+    pass
