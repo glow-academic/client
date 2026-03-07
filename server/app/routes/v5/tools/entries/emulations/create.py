@@ -11,6 +11,7 @@ async def create_emulation(
     conn: asyncpg.Connection,
     grant_id: UUID,
     session_id: UUID,
+    id: UUID | None = None,
     profile_id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
@@ -18,14 +19,15 @@ async def create_emulation(
     """Create an emulation entry and optionally link to a profile."""
     emulation_id = await conn.fetchval(
         """
-        INSERT INTO emulations_entry (grant_id, session_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO emulations_entry (id, grant_id, session_id, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, true)
         RETURNING id
         """,
         grant_id,
         session_id,
         not soft,
         mcp,
+        id,
     )
 
     if emulation_id is None:

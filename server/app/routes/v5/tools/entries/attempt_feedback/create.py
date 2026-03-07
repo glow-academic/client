@@ -14,6 +14,7 @@ async def create_attempt_feedback(
     grade_id: UUID,
     call_id: UUID,
     total: int,
+    id: UUID | None = None,
     feedback: str = "No feedback provided",
     standard_ids: list[UUID] | None = None,
     mcp: bool = False,
@@ -22,8 +23,8 @@ async def create_attempt_feedback(
     """Create an attempt_feedback entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO attempt_feedback_entry (grade_id, call_id, total, feedback, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, true)
+        INSERT INTO attempt_feedback_entry (id, grade_id, call_id, total, feedback, active, mcp, generated)
+        VALUES (COALESCE($7, uuidv7()), $1, $2, $3, $4, $5, $6, true)
         RETURNING id
         """,
         grade_id,
@@ -32,6 +33,7 @@ async def create_attempt_feedback(
         feedback,
         not soft,
         mcp,
+        id,
     )
 
     if standard_ids:

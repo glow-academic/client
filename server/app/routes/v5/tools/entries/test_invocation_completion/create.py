@@ -13,6 +13,8 @@ async def create_test_invocation_completion(
     conn: asyncpg.Connection,
     invocation_id: UUID,
     call_id: UUID,
+    *,
+    id: UUID | None = None,
     stop: bool = False,
     error: bool = False,
     message: str = "",
@@ -22,8 +24,8 @@ async def create_test_invocation_completion(
     """Create a test_invocation_completion entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO test_invocation_completion_entry (invocation_id, call_id, stop, error, message, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+        INSERT INTO test_invocation_completion_entry (id, invocation_id, call_id, stop, error, message, active, mcp, generated)
+        VALUES (COALESCE($8, uuidv7()), $1, $2, $3, $4, $5, $6, $7, true)
         RETURNING id
         """,
         invocation_id,
@@ -33,5 +35,6 @@ async def create_test_invocation_completion(
         message,
         not soft,
         mcp,
+        id,
     )
     return CreateTestInvocationCompletionResponse(id=entry_id)

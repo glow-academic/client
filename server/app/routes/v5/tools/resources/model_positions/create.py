@@ -15,6 +15,7 @@ async def create_model_position(
     model_id: UUID,
     value: int,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -23,14 +24,15 @@ async def create_model_position(
     """Create a model_position resource (plain INSERT — no unique constraint)."""
     model_position_id = await conn.fetchval(
         """
-        INSERT INTO model_positions_resource (model_id, value, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $4)
+        INSERT INTO model_positions_resource (id, model_id, value, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         RETURNING id
         """,
         model_id,
         value,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "model_positions"], redis=redis)

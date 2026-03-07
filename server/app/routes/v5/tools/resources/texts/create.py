@@ -13,6 +13,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 async def create_text(
     conn: asyncpg.Connection,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -21,12 +22,13 @@ async def create_text(
     """Create a text resource."""
     text_id = await conn.fetchval(
         """
-        INSERT INTO texts_resource (active, mcp, generated)
-        VALUES ($1, $2, $2)
+        INSERT INTO texts_resource (id, active, mcp, generated)
+        VALUES (COALESCE($3, uuidv7()), $1, $2, $2)
         RETURNING id
     """,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "texts"], redis=redis)

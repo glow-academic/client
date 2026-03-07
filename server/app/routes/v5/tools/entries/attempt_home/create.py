@@ -12,20 +12,22 @@ async def create_attempt_home(
     attempt_id: UUID,
     home_id: UUID,
     session_id: UUID,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateAttemptHomeResponse:
     """Create an attempt_home_entry bridge row."""
     await conn.execute(
         """
-        INSERT INTO attempt_home_entry (attempt_id, home_id, session_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO attempt_home_entry (id, attempt_id, home_id, session_id, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, true)
         """,
         attempt_id,
         home_id,
         session_id,
         not soft,
         mcp,
+        id,
     )
 
     return CreateAttemptHomeResponse(attempt_id=attempt_id, home_id=home_id)

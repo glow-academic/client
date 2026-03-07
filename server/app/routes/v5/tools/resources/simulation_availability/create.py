@@ -21,6 +21,7 @@ async def create_simulation_availability(
     time: datetime,
     availability_type: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -30,8 +31,8 @@ async def create_simulation_availability(
     row_id = await conn.fetchval(
         """
         INSERT INTO simulation_availability_resource
-            (simulation_id, time, type, active, mcp, generated)
-        VALUES ($1, $2, $3::availability_type, $4, $5, $5)
+            (id, simulation_id, time, type, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3::availability_type, $4, $5, $5)
         ON CONFLICT (simulation_id, type) DO UPDATE SET time = EXCLUDED.time
         RETURNING id
         """,
@@ -40,6 +41,7 @@ async def create_simulation_availability(
         availability_type,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "simulation_availability"], redis=redis)

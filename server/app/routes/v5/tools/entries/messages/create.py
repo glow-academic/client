@@ -11,6 +11,7 @@ async def create_message(
     conn: asyncpg.Connection,
     run_id: UUID,
     role: str,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     agent_ids: list[UUID] | None = None,
@@ -18,14 +19,15 @@ async def create_message(
     """Create a messages entry with optional agent connections."""
     row = await conn.fetchrow(
         """
-        INSERT INTO messages_entry (run_id, role, active, mcp, generated)
-        VALUES ($1, $2::message_type, $3, $4, true)
+        INSERT INTO messages_entry (id, run_id, role, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2::message_type, $3, $4, true)
         RETURNING id, created_at
     """,
         run_id,
         role,
         not soft,
         mcp,
+        id,
     )
 
     if row is None:

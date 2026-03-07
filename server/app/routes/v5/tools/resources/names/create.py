@@ -14,6 +14,7 @@ async def create_name(
     conn: asyncpg.Connection,
     name: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -22,14 +23,15 @@ async def create_name(
     """Create a name resource (insert or get existing)."""
     name_id = await conn.fetchval(
         """
-        INSERT INTO names_resource (name, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO names_resource (id, name, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
         ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
         RETURNING id
     """,
         name,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "names"], redis=redis)

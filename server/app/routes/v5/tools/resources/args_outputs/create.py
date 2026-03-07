@@ -15,6 +15,7 @@ async def create_args_output(
     args_id: UUID,
     name: str,
     redis: Redis,
+    id: UUID | None = None,
     template: str = "",
     mcp: bool = False,
     soft: bool = False,
@@ -24,8 +25,8 @@ async def create_args_output(
     """Create an args_output resource (ON CONFLICT on (args_id, name) upserts)."""
     args_output_id = await conn.fetchval(
         """
-        INSERT INTO args_outputs_resource (args_id, name, template, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $5)
+        INSERT INTO args_outputs_resource (id, args_id, name, template, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, $5)
         ON CONFLICT (args_id, name) DO UPDATE SET name = EXCLUDED.name
         RETURNING id
         """,
@@ -34,6 +35,7 @@ async def create_args_output(
         template,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "args_outputs"], redis=redis)

@@ -14,6 +14,7 @@ async def create_operation(
     conn: asyncpg.Connection,
     operation: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -22,14 +23,15 @@ async def create_operation(
     """Create an operation resource (insert or get existing)."""
     operation_id = await conn.fetchval(
         """
-        INSERT INTO operations_resource (operation, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO operations_resource (id, operation, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
         ON CONFLICT (operation) DO UPDATE SET operation = EXCLUDED.operation
         RETURNING id
     """,
         operation,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "operations"], redis=redis)

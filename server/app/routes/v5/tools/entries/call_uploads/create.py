@@ -12,14 +12,15 @@ async def create_call_upload(
     call_id: UUID,
     upload_id: UUID,
     session_id: UUID,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateCallUploadResponse:
     """Create a call_uploads entry."""
     row_id = await conn.fetchval(
         """
-        INSERT INTO call_uploads_entry (call_id, upload_id, session_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO call_uploads_entry (id, call_id, upload_id, session_id, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, true)
         RETURNING id
     """,
         call_id,
@@ -27,6 +28,7 @@ async def create_call_upload(
         session_id,
         not soft,
         mcp,
+        id,
     )
 
     if row_id is None:

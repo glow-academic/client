@@ -17,6 +17,7 @@ async def create_scenario_rubric(
     scenario_id: UUID,
     rubric_id: UUID,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -25,14 +26,15 @@ async def create_scenario_rubric(
     """Create a scenario_rubric resource (plain INSERT — no unique constraint)."""
     row_id = await conn.fetchval(
         """
-        INSERT INTO scenario_rubrics_resource (scenario_id, rubric_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $4)
+        INSERT INTO scenario_rubrics_resource (id, scenario_id, rubric_id, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         RETURNING id
         """,
         scenario_id,
         rubric_id,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "scenario_rubrics"], redis=redis)

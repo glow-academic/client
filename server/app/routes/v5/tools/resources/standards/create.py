@@ -17,6 +17,7 @@ async def create_standard(
     points: int,
     standard_group_id: UUID,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -26,8 +27,8 @@ async def create_standard(
     row_id = await conn.fetchval(
         """
         INSERT INTO standards_resource
-            (name, description, points, standard_group_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $6)
+            (id, name, description, points, standard_group_id, active, mcp, generated)
+        VALUES (COALESCE($7, uuidv7()), $1, $2, $3, $4, $5, $6, $6)
         RETURNING id
         """,
         name,
@@ -36,6 +37,7 @@ async def create_standard(
         standard_group_id,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "standards"], redis=redis)

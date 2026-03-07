@@ -15,6 +15,7 @@ async def create_attempt_improvement(
     message_id: UUID,
     call_id: UUID,
     name: str,
+    id: UUID | None = None,
     description: str = "No description provided",
     mcp: bool = False,
     soft: bool = False,
@@ -22,8 +23,8 @@ async def create_attempt_improvement(
     """Create an attempt_improvement entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO attempt_improvement_entry (grade_id, message_id, call_id, name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+        INSERT INTO attempt_improvement_entry (id, grade_id, message_id, call_id, name, description, active, mcp, generated)
+        VALUES (COALESCE($8, uuidv7()), $1, $2, $3, $4, $5, $6, $7, true)
         RETURNING id
         """,
         grade_id,
@@ -33,5 +34,6 @@ async def create_attempt_improvement(
         description,
         not soft,
         mcp,
+        id,
     )
     return CreateAttemptImprovementResponse(id=entry_id)

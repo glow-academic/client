@@ -17,6 +17,7 @@ async def create_scenario_position(
     scenario_id: UUID,
     value: int,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -25,14 +26,15 @@ async def create_scenario_position(
     """Create a scenario_position resource (plain INSERT — no unique constraint)."""
     row_id = await conn.fetchval(
         """
-        INSERT INTO scenario_positions_resource (scenario_id, value, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $4)
+        INSERT INTO scenario_positions_resource (id, scenario_id, value, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         RETURNING id
         """,
         scenario_id,
         value,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "scenario_positions"], redis=redis)

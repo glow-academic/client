@@ -17,6 +17,7 @@ async def create_profile_persona(
     profile_id: UUID,
     persona_id: UUID,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -25,8 +26,8 @@ async def create_profile_persona(
     """Create a profile_persona resource (ON CONFLICT on (persona_id, profile_id))."""
     row_id = await conn.fetchval(
         """
-        INSERT INTO profile_personas_resource (profile_id, persona_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $4)
+        INSERT INTO profile_personas_resource (id, profile_id, persona_id, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         ON CONFLICT (persona_id, profile_id) DO UPDATE SET persona_id = EXCLUDED.persona_id
         RETURNING id
         """,
@@ -34,6 +35,7 @@ async def create_profile_persona(
         persona_id,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "profile_personas"], redis=redis)

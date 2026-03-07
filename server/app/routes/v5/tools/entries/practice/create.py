@@ -18,6 +18,7 @@ async def create_practice(
     profile_personas_ids: list[UUID],
     simulation_availability_ids: list[UUID],
     simulation_positions_ids: list[UUID],
+    id: UUID | None = None,
     position: int = 0,
     mcp: bool = False,
     soft: bool = False,
@@ -27,8 +28,8 @@ async def create_practice(
     """Create a practice entry with all connection tables."""
     practice_id = await conn.fetchval(
         """
-        INSERT INTO practice_entry (session_id, "position", active, mcp, generated, start_time, end_time)
-        VALUES ($1, $2, $3, $4, true, $5, $6)
+        INSERT INTO practice_entry (id, session_id, "position", active, mcp, generated, start_time, end_time)
+        VALUES (COALESCE($7, uuidv7()), $1, $2, $3, $4, true, $5, $6)
         RETURNING id
         """,
         session_id,
@@ -37,6 +38,7 @@ async def create_practice(
         mcp,
         start_time,
         end_time,
+        id,
     )
 
     if practice_id is None:

@@ -13,6 +13,8 @@ async def create_text_completion(
     conn: asyncpg.Connection,
     text_id: UUID,
     session_id: UUID,
+    *,
+    id: UUID | None = None,
     stop: bool = False,
     error: bool = False,
     message: str = "",
@@ -22,8 +24,8 @@ async def create_text_completion(
     """Create a text_completion entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO text_completion_entry (text_id, session_id, stop, error, message, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+        INSERT INTO text_completion_entry (id, text_id, session_id, stop, error, message, active, mcp, generated)
+        VALUES (COALESCE($8, uuidv7()), $1, $2, $3, $4, $5, $6, $7, true)
         RETURNING id
         """,
         text_id,
@@ -33,5 +35,6 @@ async def create_text_completion(
         message,
         not soft,
         mcp,
+        id,
     )
     return CreateTextCompletionResponse(id=entry_id)

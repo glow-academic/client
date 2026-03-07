@@ -9,6 +9,7 @@ from app.routes.v5.tools.entries.benchmark.types import CreateBenchmarkResponse
 
 async def create_benchmark(
     conn: asyncpg.Connection,
+    id: UUID | None = None,
     session_id: UUID | None = None,
     evals_ids: list[UUID] | None = None,
     profiles_ids: list[UUID] | None = None,
@@ -21,8 +22,8 @@ async def create_benchmark(
     """Create a benchmark entry with optional connection tables."""
     benchmark_id = await conn.fetchval(
         """
-        INSERT INTO benchmark_entry (session_id, use_groups, dynamic, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO benchmark_entry (id, session_id, use_groups, dynamic, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         session_id,
@@ -30,6 +31,7 @@ async def create_benchmark(
         dynamic,
         not soft,
         mcp,
+        id,
     )
 
     if benchmark_id is None:

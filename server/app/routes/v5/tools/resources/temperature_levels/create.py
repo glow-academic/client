@@ -16,6 +16,7 @@ async def create_temperature_level(
     conn: asyncpg.Connection,
     temperature: float,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -24,13 +25,14 @@ async def create_temperature_level(
     """Create a temperature_level resource (plain INSERT, no unique constraint)."""
     level_id = await conn.fetchval(
         """
-        INSERT INTO temperature_levels_resource (temperature, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO temperature_levels_resource (id, temperature, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
         RETURNING id
         """,
         temperature,
         not soft,
         mcp,
+        id,
     )
     await invalidate_tags(["resources", "temperature_levels"], redis=redis)
     items = await get_temperature_levels(conn, [level_id], redis, bypass_cache=True)

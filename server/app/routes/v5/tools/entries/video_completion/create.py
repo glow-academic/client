@@ -13,6 +13,8 @@ async def create_video_completion(
     conn: asyncpg.Connection,
     video_id: UUID,
     session_id: UUID,
+    *,
+    id: UUID | None = None,
     stop: bool = False,
     error: bool = False,
     message: str = "",
@@ -22,8 +24,8 @@ async def create_video_completion(
     """Create a video_completion entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO video_completion_entry (video_id, session_id, stop, error, message, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+        INSERT INTO video_completion_entry (id, video_id, session_id, stop, error, message, active, mcp, generated)
+        VALUES (COALESCE($8, uuidv7()), $1, $2, $3, $4, $5, $6, $7, true)
         RETURNING id
         """,
         video_id,
@@ -33,5 +35,6 @@ async def create_video_completion(
         message,
         not soft,
         mcp,
+        id,
     )
     return CreateVideoCompletionResponse(id=entry_id)

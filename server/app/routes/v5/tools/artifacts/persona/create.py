@@ -32,6 +32,7 @@ MULTI_JUNCTIONS: list[tuple[str, str]] = [
 async def create_persona(
     conn: asyncpg.Connection,
     *,
+    id: UUID | None = None,
     name_id: UUID | None = None,
     description_id: UUID | None = None,
     color_id: UUID | None = None,
@@ -50,13 +51,14 @@ async def create_persona(
     """Create a persona artifact with optional junction links."""
     persona_id: UUID = await conn.fetchval(
         """
-        INSERT INTO persona_artifact (active, generated, mcp)
-        VALUES ($1, $2, $3)
+        INSERT INTO persona_artifact (id, active, generated, mcp)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
         not soft,
         generated,
         mcp,
+        id,
     )
 
     # Single-select junctions

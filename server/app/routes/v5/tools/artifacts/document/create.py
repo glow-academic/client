@@ -31,6 +31,7 @@ MULTI_JUNCTIONS: list[tuple[str, str]] = [
 async def create_document(
     conn: asyncpg.Connection,
     *,
+    id: UUID | None = None,
     name_id: UUID | None = None,
     description_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
@@ -47,13 +48,14 @@ async def create_document(
     """Create a document artifact with optional junction links."""
     document_id: UUID = await conn.fetchval(
         """
-        INSERT INTO document_artifact (active, generated, mcp)
-        VALUES ($1, $2, $3)
+        INSERT INTO document_artifact (id, active, generated, mcp)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
         not soft,
         generated,
         mcp,
+        id,
     )
 
     # Single-select junctions

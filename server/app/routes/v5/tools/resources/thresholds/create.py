@@ -14,6 +14,7 @@ async def create_threshold(
     conn: asyncpg.Connection,
     value: int,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -22,13 +23,14 @@ async def create_threshold(
     """Create a threshold resource (plain INSERT — no unique constraint)."""
     threshold_id = await conn.fetchval(
         """
-        INSERT INTO thresholds_resource (value, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO thresholds_resource (id, value, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
         RETURNING id
         """,
         value,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "thresholds"], redis=redis)

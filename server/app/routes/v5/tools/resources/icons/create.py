@@ -16,6 +16,7 @@ async def create_icon(
     description: str,
     value: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -24,8 +25,8 @@ async def create_icon(
     """Create an icon resource."""
     icon_id = await conn.fetchval(
         """
-        INSERT INTO icons_resource (name, description, value, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $5)
+        INSERT INTO icons_resource (id, name, description, value, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, $5)
         RETURNING id
     """,
         name,
@@ -33,6 +34,7 @@ async def create_icon(
         value,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "icons"], redis=redis)

@@ -12,6 +12,8 @@ from app.routes.v5.tools.entries.test_invocation_runs.types import (
 async def create_test_invocation_runs(
     conn: asyncpg.Connection,
     test_invocation_id: UUID,
+    *,
+    id: UUID | None = None,
     agent_ids: list[UUID] | None = None,
     run_ids: list[UUID] | None = None,
     reasoning_level_ids: list[UUID] | None = None,
@@ -28,13 +30,14 @@ async def create_test_invocation_runs(
     """Create a test_invocation_runs entry with optional connections."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO test_invocation_runs_entry (test_invocation_id, active, mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO test_invocation_runs_entry (id, test_invocation_id, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, true)
         RETURNING id
         """,
         test_invocation_id,
         not soft,
         mcp,
+        id,
     )
 
     if run_ids:

@@ -13,6 +13,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 async def create_auth(
     conn: asyncpg.Connection,
     redis: Redis,
+    id: UUID | None = None,
     name: str = "",
     description: str = "",
     mcp: bool = False,
@@ -26,8 +27,8 @@ async def create_auth(
     """Create an auth resource (plain INSERT — no unique constraint)."""
     auth_id = await conn.fetchval(
         """
-        INSERT INTO auths_resource (name, description, department_ids, slug, protocol, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+        INSERT INTO auths_resource (id, name, description, department_ids, slug, protocol, active, mcp, generated)
+        VALUES (COALESCE($8, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $7)
         RETURNING id
         """,
         name,
@@ -37,6 +38,7 @@ async def create_auth(
         protocol,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "auths"], redis=redis)

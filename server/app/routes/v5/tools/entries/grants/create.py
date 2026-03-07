@@ -11,6 +11,7 @@ from app.routes.v5.tools.entries.grants.types import CreateGrantResponse
 async def create_grant(
     conn: asyncpg.Connection,
     session_id: UUID,
+    id: UUID | None = None,
     expires_at: datetime | None = None,
     mcp: bool = False,
     soft: bool = False,
@@ -21,14 +22,15 @@ async def create_grant(
 
     grant_id = await conn.fetchval(
         """
-        INSERT INTO grants_entry (session_id, expires_at, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO grants_entry (id, session_id, expires_at, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, true)
         RETURNING id
         """,
         session_id,
         expires_at,
         not soft,
         mcp,
+        id,
     )
 
     if grant_id is None:

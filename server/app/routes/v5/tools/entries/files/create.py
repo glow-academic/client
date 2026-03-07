@@ -10,6 +10,7 @@ from app.routes.v5.tools.entries.files.types import CreateFileResponse
 async def create_file(
     conn: asyncpg.Connection,
     session_id: UUID,
+    id: UUID | None = None,
     files_id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
@@ -17,13 +18,14 @@ async def create_file(
     """Create a files entry with optional link to files resource."""
     file_id = await conn.fetchval(
         """
-        INSERT INTO files_entry (session_id, active, mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO files_entry (id, session_id, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, true)
         RETURNING id
     """,
         session_id,
         not soft,
         mcp,
+        id,
     )
 
     if file_id is None:

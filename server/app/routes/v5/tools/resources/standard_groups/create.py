@@ -18,6 +18,7 @@ async def create_standard_group(
     points: int,
     pass_points: int,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -27,8 +28,8 @@ async def create_standard_group(
     sg_id = await conn.fetchval(
         """
         INSERT INTO standard_groups_resource
-            (name, short_name, description, points, pass_points, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+            (id, name, short_name, description, points, pass_points, active, mcp, generated)
+        VALUES (COALESCE($8, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $7)
         RETURNING id
         """,
         name,
@@ -38,6 +39,7 @@ async def create_standard_group(
         pass_points,
         not soft,
         mcp,
+        id,
     )
     await invalidate_tags(["resources", "standard_groups"], redis=redis)
     items = await get_standard_groups(conn, [sg_id], redis, bypass_cache=True)

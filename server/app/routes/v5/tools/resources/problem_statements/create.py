@@ -17,6 +17,7 @@ async def create_problem_statement(
     name: str,
     problem_statement: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -25,14 +26,15 @@ async def create_problem_statement(
     """Create a problem statement resource."""
     problem_statement_id = await conn.fetchval(
         """
-        INSERT INTO problem_statements_resource (name, problem_statement, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $4)
+        INSERT INTO problem_statements_resource (id, name, problem_statement, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         RETURNING id
     """,
         name,
         problem_statement,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "problem_statements"], redis=redis)

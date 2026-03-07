@@ -12,6 +12,7 @@ async def create_attempt_chat(
     call_id: UUID,
     group_id: UUID,
     chat_id: UUID,
+    id: UUID | None = None,
     assistant_persona_ids: list[UUID] | None = None,
     title: str = "",
     position: int = 0,
@@ -58,7 +59,7 @@ async def create_attempt_chat(
     attempt_chat_id = await conn.fetchval(
         """
         INSERT INTO attempt_chat_entry (
-            call_id, group_id, chat_id, title, "position", time_limit,
+            id, call_id, group_id, chat_id, title, "position", time_limit,
             negative_time, audio_enabled, text_enabled, hints_enabled,
             copy_paste_allowed, show_images, show_objectives,
             show_problem_statement, analyses_enabled, improvements_enabled,
@@ -68,7 +69,7 @@ async def create_attempt_chat(
             assistant_persona_ids, active, mcp, generated
         )
         VALUES (
-            $1, $2, $3, $4, $5, $6,
+            COALESCE($29, uuidv7()), $1, $2, $3, $4, $5, $6,
             $7, $8, $9, $10,
             $11, $12, $13,
             $14, $15, $16,
@@ -107,6 +108,7 @@ async def create_attempt_chat(
         assistant_persona_ids or [],
         not soft,
         mcp,
+        id,
     )
 
     if attempt_chat_id is None:

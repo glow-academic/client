@@ -11,6 +11,7 @@ async def create_run(
     conn: asyncpg.Connection,
     group_id: UUID,
     session_id: UUID,
+    id: UUID | None = None,
     profiles_id: UUID | None = None,
     agent_ids: list[UUID] | None = None,
     mcp: bool = False,
@@ -23,14 +24,15 @@ async def create_run(
     """
     run_id = await conn.fetchval(
         """
-        INSERT INTO runs_entry (session_id, group_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO runs_entry (id, session_id, group_id, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, true)
         RETURNING id
     """,
         session_id,
         group_id,
         not soft,
         mcp,
+        id,
     )
 
     if run_id is None:

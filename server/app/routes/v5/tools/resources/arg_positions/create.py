@@ -15,6 +15,7 @@ async def create_arg_position(
     args_id: UUID,
     value: int,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -23,14 +24,15 @@ async def create_arg_position(
     """Create an arg_position resource (plain INSERT — no unique constraint)."""
     arg_position_id = await conn.fetchval(
         """
-        INSERT INTO arg_positions_resource (args_id, value, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $4)
+        INSERT INTO arg_positions_resource (id, args_id, value, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         RETURNING id
         """,
         args_id,
         value,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "arg_positions"], redis=redis)

@@ -10,6 +10,7 @@ from app.routes.v5.tools.entries.activity.types import CreateActivityResponse
 async def create_activity(
     conn: asyncpg.Connection,
     session_id: UUID,
+    id: UUID | None = None,
     profile_id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
@@ -17,13 +18,14 @@ async def create_activity(
     """Create an activity entry and optionally link to a profile."""
     activity_id = await conn.fetchval(
         """
-        INSERT INTO activity_entry (session_id, active, mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO activity_entry (id, session_id, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, true)
         RETURNING id
         """,
         session_id,
         not soft,
         mcp,
+        id,
     )
 
     if activity_id is None:

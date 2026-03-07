@@ -14,6 +14,7 @@ async def create_instruction(
     conn: asyncpg.Connection,
     template: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -22,13 +23,14 @@ async def create_instruction(
     """Create an instruction resource."""
     instruction_id = await conn.fetchval(
         """
-        INSERT INTO instructions_resource (template, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO instructions_resource (id, template, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
         RETURNING id
     """,
         template,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "instructions"], redis=redis)

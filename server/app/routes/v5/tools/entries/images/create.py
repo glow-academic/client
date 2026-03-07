@@ -10,6 +10,7 @@ from app.routes.v5.tools.entries.images.types import CreateImageResponse
 async def create_image(
     conn: asyncpg.Connection,
     session_id: UUID,
+    id: UUID | None = None,
     images_id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
@@ -17,13 +18,14 @@ async def create_image(
     """Create an images entry with optional link to images resource."""
     image_id = await conn.fetchval(
         """
-        INSERT INTO images_entry (session_id, active, mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO images_entry (id, session_id, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, true)
         RETURNING id
     """,
         session_id,
         not soft,
         mcp,
+        id,
     )
 
     if image_id is None:

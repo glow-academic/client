@@ -10,6 +10,8 @@ from app.routes.v5.tools.entries.videos.types import CreateVideoResponse
 async def create_video(
     conn: asyncpg.Connection,
     session_id: UUID,
+    *,
+    id: UUID | None = None,
     length_seconds: int = 0,
     videos_id: UUID | None = None,
     mcp: bool = False,
@@ -18,14 +20,15 @@ async def create_video(
     """Create a videos entry with optional link to videos resource."""
     video_id = await conn.fetchval(
         """
-        INSERT INTO videos_entry (session_id, length_seconds, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO videos_entry (id, session_id, length_seconds, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, true)
         RETURNING id
     """,
         session_id,
         length_seconds,
         not soft,
         mcp,
+        id,
     )
 
     if video_id is None:

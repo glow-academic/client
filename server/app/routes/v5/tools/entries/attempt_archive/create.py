@@ -14,14 +14,15 @@ async def create_attempt_archive(
     attempt_id: UUID,
     call_id: UUID,
     archived: bool,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateAttemptArchiveResponse:
     """Create an attempt_archive entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO attempt_archive_entry (attempt_id, call_id, archived, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO attempt_archive_entry (id, attempt_id, call_id, archived, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         attempt_id,
@@ -29,5 +30,6 @@ async def create_attempt_archive(
         archived,
         not soft,
         mcp,
+        id,
     )
     return CreateAttemptArchiveResponse(id=entry_id)

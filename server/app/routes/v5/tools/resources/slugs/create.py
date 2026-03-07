@@ -14,6 +14,7 @@ async def create_slug(
     conn: asyncpg.Connection,
     value: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -22,14 +23,15 @@ async def create_slug(
     """Create a slug resource (insert or get existing)."""
     slug_id = await conn.fetchval(
         """
-        INSERT INTO slugs_resource (value, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO slugs_resource (id, value, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
         ON CONFLICT (value) DO UPDATE SET value = EXCLUDED.value
         RETURNING id
     """,
         value,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "slugs"], redis=redis)

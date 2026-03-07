@@ -17,6 +17,7 @@ async def create_auth_item_key(
     item_id: UUID,
     key_id: UUID,
     redis: Redis,
+    id: UUID | None = None,
     updated_at: datetime | None = None,
     mcp: bool = False,
     soft: bool = False,
@@ -26,8 +27,8 @@ async def create_auth_item_key(
     """Create an auth_item_key resource (ON CONFLICT on (auth_id, item_id, key_id))."""
     row_id = await conn.fetchval(
         """
-        INSERT INTO auth_item_keys_resource (auth_id, item_id, key_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $5)
+        INSERT INTO auth_item_keys_resource (id, auth_id, item_id, key_id, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, $5)
         ON CONFLICT (auth_id, item_id, key_id) DO UPDATE SET auth_id = EXCLUDED.auth_id
         RETURNING id
         """,
@@ -36,6 +37,7 @@ async def create_auth_item_key(
         key_id,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "auth_item_keys"], redis=redis)

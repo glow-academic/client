@@ -10,6 +10,7 @@ from app.routes.v5.tools.entries.invocation.types import CreateInvocationRespons
 async def create_invocation(
     conn: asyncpg.Connection,
     benchmark_id: UUID,
+    id: UUID | None = None,
     session_id: UUID | None = None,
     use_custom: bool = False,
     position: int = 0,
@@ -33,8 +34,8 @@ async def create_invocation(
     """Create an invocation entry with optional connection table links."""
     invocation_id = await conn.fetchval(
         """
-        INSERT INTO invocation_entry (benchmark_id, session_id, use_custom, "position", active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, true)
+        INSERT INTO invocation_entry (id, benchmark_id, session_id, use_custom, "position", active, mcp, generated)
+        VALUES (COALESCE($7, uuidv7()), $1, $2, $3, $4, $5, $6, true)
         RETURNING id
         """,
         benchmark_id,
@@ -43,6 +44,7 @@ async def create_invocation(
         position,
         not soft,
         mcp,
+        id,
     )
 
     if invocation_id is None:

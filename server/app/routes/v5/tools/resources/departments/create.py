@@ -12,6 +12,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 async def create_department(
     conn: asyncpg.Connection,
+    id: UUID | None = None,
     name: str = "",
     description: str = "",
     redis: Redis = None,
@@ -23,14 +24,15 @@ async def create_department(
     """Create a department resource (plain INSERT — no unique constraint)."""
     dept_id = await conn.fetchval(
         """
-        INSERT INTO departments_resource (name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $4)
+        INSERT INTO departments_resource (id, name, description, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         RETURNING id
         """,
         name,
         description,
         not soft,
         mcp,
+        id,
     )
     await invalidate_tags(["resources", "departments"], redis=redis)
     items = await get_departments(conn, [dept_id], redis, bypass_cache=True)

@@ -19,6 +19,7 @@ async def create_scenario_time_limit(
     scenario_id: UUID,
     time_limit_seconds: int,
     redis: Redis,
+    id: UUID | None = None,
     negative: bool = False,
     mcp: bool = False,
     soft: bool = False,
@@ -29,8 +30,8 @@ async def create_scenario_time_limit(
     row_id = await conn.fetchval(
         """
         INSERT INTO scenario_time_limits_resource
-            (scenario_id, time_limit_seconds, negative, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $5)
+            (id, scenario_id, time_limit_seconds, negative, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, $5)
         RETURNING id
         """,
         scenario_id,
@@ -38,6 +39,7 @@ async def create_scenario_time_limit(
         negative,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "scenario_time_limits"], redis=redis)

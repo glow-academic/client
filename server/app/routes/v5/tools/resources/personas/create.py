@@ -14,6 +14,7 @@ async def create_persona(
     conn: asyncpg.Connection,
     redis: Redis,
     *,
+    id: UUID | None = None,
     name: str = "",
     description: str = "",
     icon: str = "",
@@ -31,11 +32,11 @@ async def create_persona(
     persona_id = await conn.fetchval(
         """
         INSERT INTO personas_resource (
-            name, description, icon, color, department_ids,
+            id, name, description, icon, color, department_ids,
             instructions, examples, parameter_field_ids,
             active, mcp, generated
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
+        VALUES (COALESCE($11, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $10)
         RETURNING id
     """,
         name,
@@ -48,6 +49,7 @@ async def create_persona(
         parameter_field_ids or [],
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "personas"], redis=redis)

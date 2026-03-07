@@ -9,6 +9,7 @@ from app.routes.v5.tools.entries.personas.types import CreatePersonasResponse
 
 async def create_personas(
     conn: asyncpg.Connection,
+    id: UUID | None = None,
     session_id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
@@ -17,13 +18,14 @@ async def create_personas(
     """Create a personas entry with optional persona connections."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO personas_entry (session_id, active, mcp, generated)
-        VALUES ($1, $2, $3, true)
+        INSERT INTO personas_entry (id, session_id, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, true)
         RETURNING id
     """,
         session_id,
         not soft,
         mcp,
+        id,
     )
 
     if entry_id is None:

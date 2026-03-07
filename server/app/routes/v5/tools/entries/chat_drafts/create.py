@@ -11,6 +11,7 @@ async def create_chat_draft(
     conn: asyncpg.Connection,
     group_id: UUID,
     session_id: UUID,
+    id: UUID | None = None,
     version: int = 0,
     mcp: bool = False,
     soft: bool = False,
@@ -35,8 +36,8 @@ async def create_chat_draft(
     """Create a chat_drafts entry with optional connection table links."""
     draft_id = await conn.fetchval(
         """
-        INSERT INTO chat_drafts_entry (group_id, session_id, version, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO chat_drafts_entry (id, group_id, session_id, version, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         group_id,
@@ -44,6 +45,7 @@ async def create_chat_draft(
         version,
         not soft,
         mcp,
+        id,
     )
 
     if draft_id is None:

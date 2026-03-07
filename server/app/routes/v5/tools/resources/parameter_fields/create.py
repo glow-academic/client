@@ -16,6 +16,7 @@ async def create_parameter_field(
     conn: asyncpg.Connection,
     field_id: UUID,
     redis: Redis,
+    id: UUID | None = None,
     parameter_id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
@@ -25,14 +26,15 @@ async def create_parameter_field(
     """Create a parameter_field resource (plain INSERT — no unique constraint)."""
     parameter_field_id = await conn.fetchval(
         """
-        INSERT INTO parameter_fields_resource (field_id, parameter_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $4)
+        INSERT INTO parameter_fields_resource (id, field_id, parameter_id, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         RETURNING id
         """,
         field_id,
         parameter_id,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "parameter_fields"], redis=redis)

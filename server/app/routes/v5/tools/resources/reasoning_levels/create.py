@@ -16,6 +16,7 @@ async def create_reasoning_level(
     conn: asyncpg.Connection,
     reasoning_level: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -24,13 +25,14 @@ async def create_reasoning_level(
     """Create a reasoning_level resource (plain INSERT, no unique constraint)."""
     level_id = await conn.fetchval(
         """
-        INSERT INTO reasoning_levels_resource (reasoning_level, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO reasoning_levels_resource (id, reasoning_level, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
         RETURNING id
         """,
         reasoning_level,
         not soft,
         mcp,
+        id,
     )
     await invalidate_tags(["resources", "reasoning_levels"], redis=redis)
     items = await get_reasoning_levels(conn, [level_id], redis, bypass_cache=True)

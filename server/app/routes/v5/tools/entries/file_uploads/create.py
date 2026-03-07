@@ -12,14 +12,15 @@ async def create_file_upload(
     file_id: UUID,
     upload_id: UUID,
     session_id: UUID,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateFileUploadResponse:
     """Create a file_uploads entry."""
     row_id = await conn.fetchval(
         """
-        INSERT INTO file_uploads_entry (file_id, upload_id, session_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO file_uploads_entry (id, file_id, upload_id, session_id, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, true)
         RETURNING id
     """,
         file_id,
@@ -27,6 +28,7 @@ async def create_file_upload(
         session_id,
         not soft,
         mcp,
+        id,
     )
 
     if row_id is None:

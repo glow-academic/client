@@ -14,6 +14,7 @@ async def create_protocol(
     conn: asyncpg.Connection,
     value: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -22,14 +23,15 @@ async def create_protocol(
     """Create a protocol resource (insert or get existing)."""
     protocol_id = await conn.fetchval(
         """
-        INSERT INTO protocols_resource (value, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO protocols_resource (id, value, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
         ON CONFLICT (value) DO UPDATE SET value = EXCLUDED.value
         RETURNING id
     """,
         value,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "protocols"], redis=redis)

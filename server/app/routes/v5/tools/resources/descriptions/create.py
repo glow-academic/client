@@ -14,6 +14,7 @@ async def create_description(
     conn: asyncpg.Connection,
     description: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -22,13 +23,14 @@ async def create_description(
     """Create a description resource."""
     description_id = await conn.fetchval(
         """
-        INSERT INTO descriptions_resource (description, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO descriptions_resource (id, description, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
         RETURNING id
     """,
         description,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "descriptions"], redis=redis)

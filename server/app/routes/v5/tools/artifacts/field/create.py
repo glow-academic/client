@@ -28,6 +28,7 @@ MULTI_JUNCTIONS: list[tuple[str, str]] = [
 async def create_field(
     conn: asyncpg.Connection,
     *,
+    id: UUID | None = None,
     name_id: UUID | None = None,
     description_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
@@ -41,13 +42,14 @@ async def create_field(
     """Create a field artifact with optional junction links."""
     field_id: UUID = await conn.fetchval(
         """
-        INSERT INTO field_artifact (active, generated, mcp)
-        VALUES ($1, $2, $3)
+        INSERT INTO field_artifact (id, active, generated, mcp)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
         not soft,
         generated,
         mcp,
+        id,
     )
 
     # Single-select junctions

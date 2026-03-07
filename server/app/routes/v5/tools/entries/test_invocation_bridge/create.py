@@ -13,6 +13,8 @@ async def create_test_invocation_bridge(
     conn: asyncpg.Connection,
     test_invocation_id: UUID,
     invocation_id: UUID,
+    *,
+    id: UUID | None = None,
     session_id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
@@ -20,14 +22,15 @@ async def create_test_invocation_bridge(
     """Create a test_invocation_bridge_entry bridge row."""
     await conn.execute(
         """
-        INSERT INTO test_invocation_bridge_entry (test_invocation_id, invocation_id, session_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO test_invocation_bridge_entry (id, test_invocation_id, invocation_id, session_id, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, true)
         """,
         test_invocation_id,
         invocation_id,
         session_id,
         not soft,
         mcp,
+        id,
     )
 
     return CreateTestInvocationBridgeResponse(

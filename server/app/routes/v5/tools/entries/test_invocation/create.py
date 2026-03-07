@@ -11,6 +11,8 @@ from app.routes.v5.tools.entries.test_invocation.types import (
 
 async def create_test_invocation(
     conn: asyncpg.Connection,
+    *,
+    id: UUID | None = None,
     test_id: UUID | None = None,
     call_id: UUID | None = None,
     title: str = "",
@@ -33,10 +35,10 @@ async def create_test_invocation(
     entry_id = await conn.fetchval(
         """
         INSERT INTO test_invocation_entry (
-            test_id, call_id, title, group_id,
+            id, test_id, call_id, title, group_id,
             use_custom, "position", config_signature, active, mcp, generated
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)
+        VALUES (COALESCE($10, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $8, $9, true)
         RETURNING id
         """,
         test_id,
@@ -48,6 +50,7 @@ async def create_test_invocation(
         config_signature,
         not soft,
         mcp,
+        id,
     )
 
     if entry_id is None:

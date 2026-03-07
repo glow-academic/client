@@ -14,6 +14,7 @@ async def create_entry(
     conn: asyncpg.Connection,
     entry: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -22,14 +23,15 @@ async def create_entry(
     """Create an entry resource (insert or get existing)."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO entries_resource (entry, active, mcp, generated)
-        VALUES ($1::entry_type, $2, $3, $3)
+        INSERT INTO entries_resource (id, entry, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1::entry_type, $2, $3, $3)
         ON CONFLICT (entry) DO UPDATE SET entry = EXCLUDED.entry
         RETURNING id
     """,
         entry,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "entries"], redis=redis)

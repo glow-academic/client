@@ -15,6 +15,8 @@ async def create_test_grade(
     time_taken: int,
     passed: bool,
     score: int,
+    *,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateTestGradeResponse:
@@ -22,8 +24,8 @@ async def create_test_grade(
     entry_id = await conn.fetchval(
         """
         INSERT INTO test_grade_entry
-            (invocation_id, call_id, run_id, time_taken, passed, score, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+            (id, invocation_id, call_id, run_id, time_taken, passed, score, active, mcp, generated)
+        VALUES (COALESCE($9, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $8, true)
         RETURNING id
         """,
         invocation_id,
@@ -34,6 +36,7 @@ async def create_test_grade(
         score,
         not soft,
         mcp,
+        id,
     )
 
     return CreateTestGradeResponse(id=entry_id)

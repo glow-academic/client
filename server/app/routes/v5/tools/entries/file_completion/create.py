@@ -13,6 +13,7 @@ async def create_file_completion(
     conn: asyncpg.Connection,
     file_id: UUID,
     session_id: UUID,
+    id: UUID | None = None,
     stop: bool = False,
     error: bool = False,
     message: str = "",
@@ -22,8 +23,8 @@ async def create_file_completion(
     """Create a file_completion entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO file_completion_entry (file_id, session_id, stop, error, message, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+        INSERT INTO file_completion_entry (id, file_id, session_id, stop, error, message, active, mcp, generated)
+        VALUES (COALESCE($8, uuidv7()), $1, $2, $3, $4, $5, $6, $7, true)
         RETURNING id
         """,
         file_id,
@@ -33,5 +34,6 @@ async def create_file_completion(
         message,
         not soft,
         mcp,
+        id,
     )
     return CreateFileCompletionResponse(id=entry_id)

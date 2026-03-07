@@ -15,6 +15,7 @@ async def create_model_rubric(
     model_id: UUID,
     rubric_id: UUID,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -23,14 +24,15 @@ async def create_model_rubric(
     """Create a model_rubric resource (plain INSERT — no unique constraint)."""
     model_rubric_id = await conn.fetchval(
         """
-        INSERT INTO model_rubrics_resource (model_id, rubric_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $4)
+        INSERT INTO model_rubrics_resource (id, model_id, rubric_id, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         RETURNING id
         """,
         model_id,
         rubric_id,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "model_rubrics"], redis=redis)

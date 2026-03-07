@@ -13,6 +13,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 async def create_profile(
     conn: asyncpg.Connection,
     redis: Redis,
+    id: UUID | None = None,
     name: str = "",
     description: str = "",
     mcp: bool = False,
@@ -23,14 +24,15 @@ async def create_profile(
     """Create a profile resource (plain INSERT, no unique constraint)."""
     profile_id = await conn.fetchval(
         """
-        INSERT INTO profiles_resource (name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $4)
+        INSERT INTO profiles_resource (id, name, description, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         RETURNING id
         """,
         name,
         description,
         not soft,
         mcp,
+        id,
     )
     await invalidate_tags(["resources", "profiles"], redis=redis)
     items = await get_profiles(conn, [profile_id], redis, bypass_cache=True)

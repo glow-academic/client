@@ -12,6 +12,7 @@ async def create_attempt_hint(
     message_id: UUID,
     call_id: UUID,
     hint: str,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateAttemptHintResponse:
@@ -19,8 +20,8 @@ async def create_attempt_hint(
     entry_id = await conn.fetchval(
         """
         INSERT INTO attempt_hint_entry
-            (message_id, call_id, hint, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+            (id, message_id, call_id, hint, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, true)
         RETURNING id
         """,
         message_id,
@@ -28,6 +29,7 @@ async def create_attempt_hint(
         hint,
         not soft,
         mcp,
+        id,
     )
 
     return CreateAttemptHintResponse(id=entry_id)

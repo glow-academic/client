@@ -15,6 +15,7 @@ async def create_attempt_grade(
     time_taken: int,
     passed: bool,
     score: int,
+    id: UUID | None = None,
     rubric_ids: list[UUID] | None = None,
     mcp: bool = False,
     soft: bool = False,
@@ -23,8 +24,8 @@ async def create_attempt_grade(
     entry_id = await conn.fetchval(
         """
         INSERT INTO attempt_grade_entry
-            (chat_id, call_id, run_id, time_taken, passed, score, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+            (id, chat_id, call_id, run_id, time_taken, passed, score, active, mcp, generated)
+        VALUES (COALESCE($9, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $8, true)
         RETURNING id
         """,
         chat_id,
@@ -35,6 +36,7 @@ async def create_attempt_grade(
         score,
         not soft,
         mcp,
+        id,
     )
 
     if rubric_ids:

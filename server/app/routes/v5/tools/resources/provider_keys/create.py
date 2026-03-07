@@ -15,6 +15,7 @@ async def create_provider_key(
     provider_id: UUID,
     key_id: UUID,
     redis: Redis,
+    id: UUID | None = None,
     key: str = "",
     name: str = "",
     description: str = "",
@@ -26,8 +27,8 @@ async def create_provider_key(
     """Create a provider_key resource (plain INSERT — no unique constraint)."""
     provider_key_id = await conn.fetchval(
         """
-        INSERT INTO provider_keys_resource (provider_id, key_id, key, name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+        INSERT INTO provider_keys_resource (id, provider_id, key_id, key, name, description, active, mcp, generated)
+        VALUES (COALESCE($8, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $7)
         RETURNING id
         """,
         provider_id,
@@ -37,6 +38,7 @@ async def create_provider_key(
         description,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "provider_keys"], redis=redis)

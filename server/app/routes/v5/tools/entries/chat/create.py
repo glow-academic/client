@@ -10,6 +10,7 @@ from app.routes.v5.tools.entries.chat.types import CreateChatResponse
 async def create_chat(
     conn: asyncpg.Connection,
     session_id: UUID,
+    id: UUID | None = None,
     scenario_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
     position: int = 0,
@@ -73,7 +74,7 @@ async def create_chat(
     chat_id = await conn.fetchval(
         """
         INSERT INTO chat_entry (
-            session_id, "position", active, mcp, generated,
+            id, session_id, "position", active, mcp, generated,
             name, description, time_limit, negative_time,
             audio_enabled, text_enabled, hints_enabled,
             copy_paste_allowed, show_images, show_objectives,
@@ -89,7 +90,7 @@ async def create_chat(
             generate_descriptions
         )
         VALUES (
-            $1, $2, $3, $4, true,
+            COALESCE($38, uuidv7()), $1, $2, $3, $4, true,
             $5, $6, $7, $8,
             $9, $10, $11,
             $12, $13, $14,
@@ -143,6 +144,7 @@ async def create_chat(
         generate_parameter_fields,
         generate_names,
         generate_descriptions,
+        id,
     )
 
     if chat_id is None:

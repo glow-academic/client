@@ -15,6 +15,7 @@ async def create_model_flag(
     model_id: UUID,
     flag_id: UUID,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -23,14 +24,15 @@ async def create_model_flag(
     """Create a model_flag resource (plain INSERT — no unique constraint)."""
     model_flag_id = await conn.fetchval(
         """
-        INSERT INTO model_flags_resource (model_id, flag_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $4)
+        INSERT INTO model_flags_resource (id, model_id, flag_id, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         RETURNING id
         """,
         model_id,
         flag_id,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "model_flags"], redis=redis)

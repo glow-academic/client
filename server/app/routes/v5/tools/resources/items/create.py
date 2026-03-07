@@ -15,6 +15,7 @@ async def create_item(
     name: str,
     description: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     encrypted: bool = False,
@@ -25,8 +26,8 @@ async def create_item(
     """Create an item resource (plain INSERT — no unique constraint)."""
     item_id = await conn.fetchval(
         """
-        INSERT INTO items_resource (name, description, encrypted, position, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $6)
+        INSERT INTO items_resource (id, name, description, encrypted, position, active, mcp, generated)
+        VALUES (COALESCE($7, uuidv7()), $1, $2, $3, $4, $5, $6, $6)
         RETURNING id
         """,
         name,
@@ -35,6 +36,7 @@ async def create_item(
         position,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "items"], redis=redis)

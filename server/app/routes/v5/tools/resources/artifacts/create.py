@@ -14,6 +14,7 @@ async def create_artifact(
     conn: asyncpg.Connection,
     artifact: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -22,14 +23,15 @@ async def create_artifact(
     """Create an artifact resource (insert or get existing)."""
     artifact_id = await conn.fetchval(
         """
-        INSERT INTO artifacts_resource (artifact, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO artifacts_resource (id, artifact, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
         ON CONFLICT (artifact) DO UPDATE SET artifact = EXCLUDED.artifact
         RETURNING id
     """,
         artifact,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "artifacts"], redis=redis)

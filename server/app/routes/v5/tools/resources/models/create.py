@@ -16,6 +16,7 @@ async def create_model(
     name: str = "",
     description: str = "",
     redis: Redis = None,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -24,8 +25,8 @@ async def create_model(
     """Create a model resource (plain INSERT — no unique constraint)."""
     model_id = await conn.fetchval(
         """
-        INSERT INTO models_resource (value, name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $5)
+        INSERT INTO models_resource (id, value, name, description, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, $5)
         RETURNING id
         """,
         value,
@@ -33,6 +34,7 @@ async def create_model(
         description,
         not soft,
         mcp,
+        id,
     )
     await invalidate_tags(["resources", "models"], redis=redis)
     items = await get_models(conn, [model_id], redis, bypass_cache=True)

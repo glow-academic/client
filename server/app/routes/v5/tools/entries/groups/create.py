@@ -10,6 +10,7 @@ from app.routes.v5.tools.entries.groups.types import CreateGroupResponse
 async def create_group(
     conn: asyncpg.Connection,
     session_id: UUID,
+    id: UUID | None = None,
     name: str = "",
     mcp: bool = False,
     soft: bool = False,
@@ -17,14 +18,15 @@ async def create_group(
     """Create a groups entry."""
     group_id = await conn.fetchval(
         """
-        INSERT INTO groups_entry (session_id, name, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO groups_entry (id, session_id, name, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, true)
         RETURNING id
     """,
         session_id,
         name,
         not soft,
         mcp,
+        id,
     )
 
     if group_id is None:

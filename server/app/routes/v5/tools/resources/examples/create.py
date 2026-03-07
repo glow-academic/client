@@ -14,6 +14,7 @@ async def create_example(
     conn: asyncpg.Connection,
     example: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -22,13 +23,14 @@ async def create_example(
     """Create an example resource."""
     example_id = await conn.fetchval(
         """
-        INSERT INTO examples_resource (example, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO examples_resource (id, example, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
         RETURNING id
     """,
         example,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "examples"], redis=redis)

@@ -11,6 +11,7 @@ async def create_call(
     conn: asyncpg.Connection,
     run_id: UUID,
     session_id: UUID,
+    id: UUID | None = None,
     external_call_id: str = "",
     tool_id: UUID | None = None,
     mcp: bool = False,
@@ -19,8 +20,8 @@ async def create_call(
     """Create a calls entry with optional tool link."""
     call_id = await conn.fetchval(
         """
-        INSERT INTO calls_entry (run_id, session_id, external_call_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO calls_entry (id, run_id, session_id, external_call_id, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, true)
         RETURNING id
     """,
         run_id,
@@ -28,6 +29,7 @@ async def create_call(
         external_call_id,
         not soft,
         mcp,
+        id,
     )
 
     if call_id is None:

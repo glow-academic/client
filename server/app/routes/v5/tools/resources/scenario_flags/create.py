@@ -15,6 +15,7 @@ async def create_scenario_flag(
     scenario_id: UUID,
     flag_id: UUID,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -23,14 +24,15 @@ async def create_scenario_flag(
     """Create a scenario_flag resource (plain INSERT — no unique constraint)."""
     row_id = await conn.fetchval(
         """
-        INSERT INTO scenario_flags_resource (scenario_id, flag_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $4)
+        INSERT INTO scenario_flags_resource (id, scenario_id, flag_id, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         RETURNING id
         """,
         scenario_id,
         flag_id,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "scenario_flags"], redis=redis)

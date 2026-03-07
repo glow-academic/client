@@ -13,6 +13,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 async def create_key(
     conn: asyncpg.Connection,
     redis: Redis,
+    id: UUID | None = None,
     name: str = "",
     mcp: bool = False,
     soft: bool = False,
@@ -24,8 +25,8 @@ async def create_key(
     """Create a key resource (plain INSERT — no unique constraint)."""
     key_id = await conn.fetchval(
         """
-        INSERT INTO keys_resource (key, name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $5)
+        INSERT INTO keys_resource (id, key, name, description, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, $5)
         RETURNING id
         """,
         key,
@@ -33,6 +34,7 @@ async def create_key(
         description,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "keys"], redis=redis)

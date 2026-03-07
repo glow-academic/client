@@ -14,6 +14,7 @@ async def create_objective(
     conn: asyncpg.Connection,
     objective: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -22,13 +23,14 @@ async def create_objective(
     """Create an objective resource."""
     objective_id = await conn.fetchval(
         """
-        INSERT INTO objectives_resource (objective, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO objectives_resource (id, objective, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
         RETURNING id
     """,
         objective,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "objectives"], redis=redis)

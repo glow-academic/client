@@ -13,6 +13,7 @@ async def create_health(
     service: str,
     ok: bool,
     latency_ms: float,
+    id: UUID | None = None,
     ts: datetime | None = None,
     error: str = "",
     session_id: UUID | None = None,
@@ -24,8 +25,8 @@ async def create_health(
         ts = datetime.now(UTC)
 
     health_id = await conn.fetchval(
-        """INSERT INTO health_entry (ts, service, ok, latency_ms, error, session_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true) RETURNING id""",
+        """INSERT INTO health_entry (id, ts, service, ok, latency_ms, error, session_id, active, mcp, generated)
+        VALUES (COALESCE($9, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $8, true) RETURNING id""",
         ts,
         service,
         ok,
@@ -34,6 +35,7 @@ async def create_health(
         session_id,
         not soft,
         mcp,
+        id,
     )
 
     if health_id is None:

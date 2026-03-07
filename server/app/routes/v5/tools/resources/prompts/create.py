@@ -16,6 +16,7 @@ async def create_prompt(
     name: str,
     description: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -24,8 +25,8 @@ async def create_prompt(
     """Create a prompt resource."""
     prompt_id = await conn.fetchval(
         """
-        INSERT INTO prompts_resource (system_prompt, name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $5)
+        INSERT INTO prompts_resource (id, system_prompt, name, description, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, $5)
         RETURNING id
     """,
         system_prompt,
@@ -33,6 +34,7 @@ async def create_prompt(
         description,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "prompts"], redis=redis)

@@ -30,6 +30,7 @@ MULTI_JUNCTIONS: list[tuple[str, str]] = [
 async def create_auth(
     conn: asyncpg.Connection,
     *,
+    id: UUID | None = None,
     name_id: UUID | None = None,
     description_id: UUID | None = None,
     slug_id: UUID | None = None,
@@ -45,13 +46,14 @@ async def create_auth(
     """Create an auth artifact with optional junction links."""
     auth_id: UUID = await conn.fetchval(
         """
-        INSERT INTO auth_artifact (active, generated, mcp)
-        VALUES ($1, $2, $3)
+        INSERT INTO auth_artifact (id, active, generated, mcp)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
         not soft,
         generated,
         mcp,
+        id,
     )
 
     # Single-select junctions

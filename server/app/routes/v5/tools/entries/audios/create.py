@@ -10,6 +10,7 @@ from app.routes.v5.tools.entries.audios.types import CreateAudioResponse
 async def create_audio(
     conn: asyncpg.Connection,
     session_id: UUID,
+    id: UUID | None = None,
     length_seconds: int = 0,
     mcp: bool = False,
     soft: bool = False,
@@ -17,14 +18,15 @@ async def create_audio(
     """Create an audios entry."""
     audio_id = await conn.fetchval(
         """
-        INSERT INTO audios_entry (session_id, length_seconds, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, true)
+        INSERT INTO audios_entry (id, session_id, length_seconds, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, true)
         RETURNING id
     """,
         session_id,
         length_seconds,
         not soft,
         mcp,
+        id,
     )
 
     if audio_id is None:

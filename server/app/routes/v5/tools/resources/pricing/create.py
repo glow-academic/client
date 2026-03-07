@@ -18,6 +18,7 @@ async def create_pricing(
     unit_category: str,
     unit_value: int,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -27,8 +28,8 @@ async def create_pricing(
     pricing_id = await conn.fetchval(
         """
         INSERT INTO pricing_resource
-            (pricing_type, price, unit_name, unit_category, unit_value, active, mcp, generated)
-        VALUES ($1::pricing_type, $2, $3, $4::unit_type, $5, $6, $7, $7)
+            (id, pricing_type, price, unit_name, unit_category, unit_value, active, mcp, generated)
+        VALUES (COALESCE($8, uuidv7()), $1::pricing_type, $2, $3, $4::unit_type, $5, $6, $7, $7)
         RETURNING id
         """,
         pricing_type,
@@ -38,6 +39,7 @@ async def create_pricing(
         unit_value,
         not soft,
         mcp,
+        id,
     )
     await invalidate_tags(["resources", "pricing"], redis=redis)
     items = await get_pricing(conn, [pricing_id], redis, bypass_cache=True)

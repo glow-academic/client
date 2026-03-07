@@ -32,6 +32,7 @@ MULTI_JUNCTIONS: list[tuple[str, str]] = [
 async def create_eval(
     conn: asyncpg.Connection,
     *,
+    id: UUID | None = None,
     name_id: UUID | None = None,
     description_id: UUID | None = None,
     department_ids: list[UUID] | None = None,
@@ -49,13 +50,14 @@ async def create_eval(
     """Create an eval artifact with optional junction links."""
     eval_id: UUID = await conn.fetchval(
         """
-        INSERT INTO eval_artifact (active, generated, mcp)
-        VALUES ($1, $2, $3)
+        INSERT INTO eval_artifact (id, active, generated, mcp)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3)
         RETURNING id
         """,
         not soft,
         generated,
         mcp,
+        id,
     )
 
     # Single-select junctions

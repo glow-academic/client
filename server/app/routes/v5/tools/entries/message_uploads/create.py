@@ -14,14 +14,15 @@ async def create_message_upload(
     message_id: UUID,
     upload_id: UUID,
     session_id: UUID,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateMessageUploadResponse:
     """Create a message_uploads entry."""
     row_id = await conn.fetchval(
         """
-        INSERT INTO message_uploads_entry (message_id, upload_id, session_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO message_uploads_entry (id, message_id, upload_id, session_id, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, true)
         RETURNING id
     """,
         message_id,
@@ -29,6 +30,7 @@ async def create_message_upload(
         session_id,
         not soft,
         mcp,
+        id,
     )
 
     if row_id is None:

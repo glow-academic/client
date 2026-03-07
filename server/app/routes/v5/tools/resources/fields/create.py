@@ -12,6 +12,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 async def create_field(
     conn: asyncpg.Connection,
+    id: UUID | None = None,
     name: str = "",
     description: str = "",
     redis: Redis = None,
@@ -23,14 +24,15 @@ async def create_field(
     """Create a field resource (plain INSERT — no unique constraint)."""
     field_id = await conn.fetchval(
         """
-        INSERT INTO fields_resource (name, description, value, active, mcp, generated)
-        VALUES ($1, $2, '', $3, $4, $4)
+        INSERT INTO fields_resource (id, name, description, value, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, '', $3, $4, $4)
         RETURNING id
         """,
         name,
         description,
         not soft,
         mcp,
+        id,
     )
     await invalidate_tags(["resources", "fields"], redis=redis)
     items = await get_fields(conn, [field_id], redis, bypass_cache=True)

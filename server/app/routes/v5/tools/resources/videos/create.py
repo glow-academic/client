@@ -15,6 +15,7 @@ async def create_video(
     name: str,
     description: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -23,14 +24,15 @@ async def create_video(
     """Create a video resource."""
     video_id = await conn.fetchval(
         """
-        INSERT INTO videos_resource (name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $4)
+        INSERT INTO videos_resource (id, name, description, active, mcp, generated)
+        VALUES (COALESCE($5, uuidv7()), $1, $2, $3, $4, $4)
         RETURNING id
     """,
         name,
         description,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "videos"], redis=redis)

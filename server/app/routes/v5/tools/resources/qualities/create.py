@@ -14,6 +14,7 @@ async def create_quality(
     conn: asyncpg.Connection,
     quality: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -22,13 +23,14 @@ async def create_quality(
     """Create a quality resource (plain INSERT — no unique constraint)."""
     quality_id = await conn.fetchval(
         """
-        INSERT INTO qualities_resource (quality, active, mcp, generated)
-        VALUES ($1::quality_type, $2, $3, $3)
+        INSERT INTO qualities_resource (id, quality, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1::quality_type, $2, $3, $3)
         RETURNING id
         """,
         quality,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "qualities"], redis=redis)

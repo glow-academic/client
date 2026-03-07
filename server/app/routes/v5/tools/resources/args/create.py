@@ -15,6 +15,7 @@ async def create_arg(
     name: str,
     field_type: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     description: str = "",
@@ -26,8 +27,8 @@ async def create_arg(
     """Create an arg resource (plain INSERT — no unique constraint)."""
     arg_id = await conn.fetchval(
         """
-        INSERT INTO args_resource (name, description, field_type, required, default_value, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $7)
+        INSERT INTO args_resource (id, name, description, field_type, required, default_value, active, mcp, generated)
+        VALUES (COALESCE($8, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $7)
         RETURNING id
         """,
         name,
@@ -37,6 +38,7 @@ async def create_arg(
         default_value,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "args"], redis=redis)

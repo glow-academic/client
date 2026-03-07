@@ -12,6 +12,7 @@ async def create_attempt(
     call_id: UUID,
     user_persona_id: UUID,
     profiles_id: UUID,
+    id: UUID | None = None,
     name: str = "",
     description: str = "",
     infinite_mode: bool = False,
@@ -24,10 +25,10 @@ async def create_attempt(
     attempt_id = await conn.fetchval(
         """
         INSERT INTO attempt_entry (
-            call_id, user_persona_id, name, description,
+            id, call_id, user_persona_id, name, description,
             infinite_mode, num_chats, practice, active, mcp, generated
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, true)
+        VALUES (COALESCE($10, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $8, $9, true)
         RETURNING id
         """,
         call_id,
@@ -39,6 +40,7 @@ async def create_attempt(
         practice,
         not soft,
         mcp,
+        id,
     )
 
     if attempt_id is None:

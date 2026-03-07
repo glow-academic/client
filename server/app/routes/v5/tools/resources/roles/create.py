@@ -14,6 +14,7 @@ async def create_role(
     conn: asyncpg.Connection,
     role: str,
     redis: Redis,
+    id: UUID | None = None,
     name: str = "",
     description: str = "",
     mcp: bool = False,
@@ -24,8 +25,8 @@ async def create_role(
     """Create a role resource (upsert on UNIQUE (role, name) constraint)."""
     role_id = await conn.fetchval(
         """
-        INSERT INTO roles_resource (role, name, description, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $5)
+        INSERT INTO roles_resource (id, role, name, description, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, $5)
         ON CONFLICT (role, name) DO UPDATE SET role = EXCLUDED.role
         RETURNING id
         """,
@@ -34,6 +35,7 @@ async def create_role(
         description,
         not soft,
         mcp,
+        id,
     )
     await invalidate_tags(["resources", "roles"], redis=redis)
     items = await get_roles(conn, [role_id], redis, bypass_cache=True)

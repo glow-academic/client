@@ -14,6 +14,7 @@ async def create_voice(
     conn: asyncpg.Connection,
     voice: str,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
@@ -22,13 +23,14 @@ async def create_voice(
     """Create a voice resource."""
     voice_id = await conn.fetchval(
         """
-        INSERT INTO voices_resource (voice, active, mcp, generated)
-        VALUES ($1, $2, $3, $3)
+        INSERT INTO voices_resource (id, voice, active, mcp, generated)
+        VALUES (COALESCE($4, uuidv7()), $1, $2, $3, $3)
         RETURNING id
     """,
         voice,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "voices"], redis=redis)

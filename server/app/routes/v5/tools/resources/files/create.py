@@ -1,5 +1,7 @@
 """Files CREATE — reusable data-access layer."""
 
+from uuid import UUID
+
 import asyncpg  # type: ignore
 from redis.asyncio import Redis
 
@@ -11,18 +13,20 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 async def create_file(
     conn: asyncpg.Connection,
     redis: Redis,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> GetFileResponse:
     """Create a file resource (plain insert, no unique constraint)."""
     file_id = await conn.fetchval(
         """
-        INSERT INTO files_resource (active, mcp, generated)
-        VALUES ($1, $2, $2)
+        INSERT INTO files_resource (id, active, mcp, generated)
+        VALUES (COALESCE($3, uuidv7()), $1, $2, $2)
         RETURNING id
     """,
         not soft,
         mcp,
+        id,
     )
 
     await invalidate_tags(["resources", "files"], redis=redis)

@@ -12,20 +12,22 @@ async def create_benchmark_test(
     benchmark_id: UUID,
     test_id: UUID,
     session_id: UUID,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateBenchmarkTestResponse:
     """Create a benchmark_test_entry bridge row."""
     await conn.execute(
         """
-        INSERT INTO benchmark_test_entry (benchmark_id, test_id, session_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO benchmark_test_entry (id, benchmark_id, test_id, session_id, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, true)
         """,
         benchmark_id,
         test_id,
         session_id,
         not soft,
         mcp,
+        id,
     )
 
     return CreateBenchmarkTestResponse(benchmark_id=benchmark_id, test_id=test_id)

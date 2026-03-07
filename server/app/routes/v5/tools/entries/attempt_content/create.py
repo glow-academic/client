@@ -15,6 +15,7 @@ async def create_attempt_content(
     call_id: UUID,
     content: str,
     persona_id: UUID,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateAttemptContentResponse:
@@ -22,8 +23,8 @@ async def create_attempt_content(
     entry_id = await conn.fetchval(
         """
         INSERT INTO attempt_content_entry
-            (message_id, call_id, content, persona_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, $6, true)
+            (id, message_id, call_id, content, persona_id, active, mcp, generated)
+        VALUES (COALESCE($7, uuidv7()), $1, $2, $3, $4, $5, $6, true)
         RETURNING id
         """,
         message_id,
@@ -32,6 +33,7 @@ async def create_attempt_content(
         persona_id,
         not soft,
         mcp,
+        id,
     )
 
     return CreateAttemptContentResponse(id=entry_id)

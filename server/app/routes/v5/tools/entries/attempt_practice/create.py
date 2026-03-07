@@ -14,20 +14,22 @@ async def create_attempt_practice(
     attempt_id: UUID,
     practice_id: UUID,
     session_id: UUID,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateAttemptPracticeResponse:
     """Create an attempt_practice_entry bridge row."""
     await conn.execute(
         """
-        INSERT INTO attempt_practice_entry (attempt_id, practice_id, session_id, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO attempt_practice_entry (id, attempt_id, practice_id, session_id, active, mcp, generated)
+        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, true)
         """,
         attempt_id,
         practice_id,
         session_id,
         not soft,
         mcp,
+        id,
     )
 
     return CreateAttemptPracticeResponse(attempt_id=attempt_id, practice_id=practice_id)

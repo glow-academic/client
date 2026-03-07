@@ -1,5 +1,7 @@
 """Tests for create_agent — black-box using resource + artifact tools only."""
 
+from uuid import uuid4
+
 import pytest
 from tests.helpers import unique_tag
 
@@ -74,6 +76,15 @@ async def test_links_flags_with_value(conn, redis_client):
 
     items = await get_agents(conn, [result.id], flags=True)
     assert set(items[0].flag_ids) == {f1.id, f2.id}
+
+
+async def test_explicit_id_is_used(conn, redis_client):
+    explicit_id = uuid4()
+    result = await create_agent(conn, id=explicit_id)
+    assert result.id == explicit_id
+
+    items = await get_agents(conn, [explicit_id])
+    assert len(items) == 1
 
 
 async def test_no_junctions_when_none_provided(conn, redis_client):

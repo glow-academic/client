@@ -9,6 +9,8 @@ from app.routes.v5.tools.entries.test.types import CreateTestResponse
 
 async def create_test(
     conn: asyncpg.Connection,
+    *,
+    id: UUID | None = None,
     call_id: UUID | None = None,
     profiles_id: UUID | None = None,
     name: str = "",
@@ -23,10 +25,10 @@ async def create_test(
     test_id = await conn.fetchval(
         """
         INSERT INTO test_entry (
-            call_id, name, description, num_invocations,
+            id, call_id, name, description, num_invocations,
             infinite_mode, is_dynamic, active, mcp, generated
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
+        VALUES (COALESCE($9, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $8, true)
         RETURNING id
         """,
         call_id,
@@ -37,6 +39,7 @@ async def create_test(
         is_dynamic,
         not soft,
         mcp,
+        id,
     )
 
     if test_id is None:
