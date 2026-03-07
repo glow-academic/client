@@ -12,10 +12,10 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 async def create_agent(
     conn: asyncpg.Connection,
-    id: UUID | None = None,
     name: str = "",
     description: str = "",
     redis: Redis = None,
+    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
     group_id: UUID | None = None,
