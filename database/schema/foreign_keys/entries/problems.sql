@@ -10,12 +10,3 @@ ALTER TABLE ONLY public.problems_entry
 
 
 --
-
--- Name: problems_entry problems_entry_session_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.problems_entry
-    ADD CONSTRAINT problems_entry_session_id_fkey FOREIGN KEY (session_id) REFERENCES public.sessions_entry(id) ON DELETE CASCADE;
-
-
---

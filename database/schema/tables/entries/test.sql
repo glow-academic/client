@@ -30,7 +30,7 @@ CREATE TABLE public.test_completion_entry (
     active boolean DEFAULT true CONSTRAINT benchmark_completions_entry_active_not_null NOT NULL,
     invocation_id uuid CONSTRAINT benchmark_completions_entry_invocation_id_not_null NOT NULL,
     end_reason text DEFAULT ''::text CONSTRAINT benchmark_completions_entry_end_reason_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -47,7 +47,7 @@ CREATE TABLE public.test_entry (
     generated boolean DEFAULT false CONSTRAINT benchmark_attempts_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT benchmark_attempts_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT benchmark_attempts_entry_active_not_null NOT NULL,
-    call_id uuid,
+    call_id uuid NOT NULL,
     name text DEFAULT ''::text NOT NULL,
     description text DEFAULT ''::text NOT NULL,
     num_invocations integer DEFAULT 0 NOT NULL,
@@ -93,7 +93,7 @@ CREATE TABLE public.test_grade_entry (
     generated boolean DEFAULT false CONSTRAINT benchmark_grades_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT benchmark_grades_entry_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT benchmark_grades_entry_active_not_null NOT NULL,
-    call_id uuid
+    call_id uuid NOT NULL
 );
 
 
@@ -109,7 +109,7 @@ CREATE TABLE public.test_invocation_bridge_entry (
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 
@@ -129,7 +129,7 @@ CREATE TABLE public.test_invocation_entry (
     group_id uuid,
     config_signature text,
     test_id uuid,
-    call_id uuid,
+    call_id uuid NOT NULL,
     use_custom boolean DEFAULT false NOT NULL,
     "position" integer DEFAULT 0 NOT NULL
 );

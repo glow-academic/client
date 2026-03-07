@@ -41,11 +41,3 @@ CREATE INDEX idx_problems_entry_call_id ON public.problems_entry USING btree (ca
 
 
 --
-
--- Name: problems_entry_session_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX problems_entry_session_id_idx ON public.problems_entry USING btree (session_id);
-
-
---

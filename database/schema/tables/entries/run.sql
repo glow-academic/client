@@ -14,7 +14,7 @@ CREATE TABLE public.run_pricing_entry (
     mcp boolean DEFAULT false CONSTRAINT run_pricing_usage_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT run_pricing_usage_active_not_null NOT NULL,
     id uuid DEFAULT uuidv7() NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 

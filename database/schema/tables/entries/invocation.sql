@@ -12,7 +12,7 @@ CREATE TABLE public.invocation_entry (
     active boolean DEFAULT true CONSTRAINT benchmark_bundle_entry_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT benchmark_bundle_entry_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT benchmark_bundle_entry_mcp_not_null NOT NULL,
-    session_id uuid,
+    session_id uuid NOT NULL,
     use_custom boolean DEFAULT false NOT NULL,
     "position" integer DEFAULT 0 NOT NULL
 );

@@ -12,7 +12,7 @@ CREATE TABLE public.metrics_entry (
     avg_latency_ms double precision CONSTRAINT app_metrics_avg_latency_ms_not_null NOT NULL,
     cpu_percent double precision CONSTRAINT app_metrics_cpu_percent_not_null NOT NULL,
     memory_bytes bigint CONSTRAINT app_metrics_memory_bytes_not_null NOT NULL,
-    session_id uuid,
+    session_id uuid NOT NULL,
     id uuid DEFAULT uuidv7() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,

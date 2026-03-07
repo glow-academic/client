@@ -28,7 +28,7 @@ CREATE TABLE public.messages_completions_entry (
     mcp boolean DEFAULT false NOT NULL,
     active boolean DEFAULT true NOT NULL,
     message_id uuid NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 

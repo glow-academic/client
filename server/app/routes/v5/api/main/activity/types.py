@@ -1,92 +1,36 @@
 """Types for activity artifact."""
 
-from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from decimal import Decimal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.v5.api.main.session.types import GetSessionListResponse
+from app.routes.v5.api.main.session.types import SessionListItem
 from app.routes.v5.api.main.types import InternalResponseBase
-from app.sql.types import (
-    GetActivityListViewSqlRow,
-    GetGrantListViewSqlRow,
-    GetLoginListViewSqlRow,
-    GetProblemListViewSqlRow,
-    GetProfileSummaryViewSqlRow,
-    GetSessionListViewSqlRow,
-    QGetActivityListViewV4Item,
-    QGetAgentsV4Item,
-    QGetGrantListViewV4Item,
-    QGetLoginListViewV4Item,
-    QGetModelsV4Item,
-    QGetProblemListViewV4Item,
-    QGetProfilesV4Item,
-    QGetProvidersV4Item,
-    QGetSessionListViewV4Item,
-    QGetToolsV4Item,
-)
-
-
-@dataclass
-class ActivityInternalData:
-    """Internal data from core activity fetching (cacheable layer)."""
-
-    # Views
-    activity_result: GetActivityListViewSqlRow
-    sessions_result: GetSessionListViewSqlRow
-    logins_result: GetLoginListViewSqlRow
-    problems_result: GetProblemListViewSqlRow
-    grants_result: GetGrantListViewSqlRow
-    # Config chain
-    config_agents: list[QGetAgentsV4Item] = field(default_factory=list)
-    config_models: list[QGetModelsV4Item] = field(default_factory=list)
-    config_providers: list[QGetProvidersV4Item] = field(default_factory=list)
-    config_tools: list[QGetToolsV4Item] = field(default_factory=list)
-    config_profile: list[QGetProfilesV4Item] = field(default_factory=list)
-    runs_today: Any = None  # GetRunListViewResponse — lazy to avoid circular import
-    resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
-    group_id: UUID | None = None
-    profile_summary_result: GetProfileSummaryViewSqlRow | None = None
 
 
 class ActivityRequest(BaseModel):
-    """Request for getting activity data."""
+    """Request for getting activity data (top cards)."""
 
-    profile_id: UUID | None = Field(default=None)
     date_from: datetime | None = Field(default=None)
     date_to: datetime | None = Field(default=None)
     department_ids: list[str] = Field(default_factory=list)
     roles: list[str] = Field(default_factory=list)
-    page_limit: int = Field(default=50, ge=1, le=100)
-    page_offset: int = Field(default=0, ge=0)
-
-    # Profile summary filter
-    summary_profile_id: UUID | None = Field(default=None)
-
-    # Embedded session history params
-    history_page: int = 0
-    history_page_size: int = 50
-    history_sort_by: str = "date"
-    history_sort_order: str = "desc"
-    history_active: bool | None = None
 
 
-class ActivityViews(BaseModel):
-    """Activity view data."""
+class ListActivityRequest(BaseModel):
+    """Request for activity list endpoint (session history, paginated)."""
 
-    sessions: list[QGetSessionListViewV4Item] = Field(default_factory=list)
-    activity: list[QGetActivityListViewV4Item] = Field(default_factory=list)
-    logins: list[QGetLoginListViewV4Item] = Field(default_factory=list)
-    problems: list[QGetProblemListViewV4Item] = Field(default_factory=list)
-    grants: list[QGetGrantListViewV4Item] = Field(default_factory=list)
+    date_from: datetime | None = Field(default=None)
+    date_to: datetime | None = Field(default=None)
+    department_ids: list[str] = Field(default_factory=list)
+    roles: list[str] = Field(default_factory=list)
 
-
-class ActivityResources(BaseModel):
-    """Activity resource metadata."""
-
-    profiles: dict[str, dict] = Field(default_factory=dict)
+    active: bool | None = Field(default=None)
+    page: int = 0
+    page_size: int = 50
+    sort_order: str = "desc"
 
 
 class ProfileSummaryItem(BaseModel):
@@ -101,25 +45,34 @@ class ProfileSummaryItem(BaseModel):
     activity_count: int = 0
 
 
+class ActivityResources(BaseModel):
+    """Activity resource metadata."""
+
+    profiles: dict[str, dict] = Field(default_factory=dict)
+
+
 class ActivityResponse(BaseModel):
-    """Response with activity data."""
+    """Response with activity data (top cards)."""
 
     # Header metrics (flat)
     sessions_count: int = 0
     active_profiles_count: int = 0
     logins_count: int = 0
     emulations_count: int = 0
-    # Profile summary (replaces chart)
+    # Profile summary
     profile_summary: list[ProfileSummaryItem] = Field(default_factory=list)
-    # Problems
-    problems: list[QGetProblemListViewV4Item] = Field(default_factory=list)
-    # Keep views/resources for any other consumers
-    views: ActivityViews = Field(default_factory=ActivityViews)
+    # Resources
     resources: ActivityResources = Field(default_factory=ActivityResources)
-    total_count: int = Field(default=0)
 
-    # Embedded session history
-    history: GetSessionListResponse | None = None
+
+class ListActivityResponse(BaseModel):
+    """Response for activity list (session history, paginated)."""
+
+    data: list[SessionListItem] = Field(default_factory=list)
+    total_count: int = Field(default=0)
+    page: int = 0
+    page_size: int = 50
+    total_pages: int = 0
 
 
 # =============================================================================
@@ -137,13 +90,7 @@ class GetActivityApiRequest(BaseModel):
 class ActivityWebsocketEntries(BaseModel):
     """Entries data for activity websocket response."""
 
-    runs: Any = None  # GetRunListViewResponse — lazy to avoid circular import
-    # Domain views (from internal layer)
-    sessions: list[QGetSessionListViewV4Item] | None = None
-    activity: list[QGetActivityListViewV4Item] | None = None
-    logins: list[QGetLoginListViewV4Item] | None = None
-    problems: list[QGetProblemListViewV4Item] | None = None
-    grants: list[QGetGrantListViewV4Item] | None = None
+    pass
 
 
 class ActivityWebsocketResources(BaseModel):

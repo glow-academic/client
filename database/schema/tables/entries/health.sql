@@ -14,7 +14,7 @@ CREATE TABLE public.health_entry (
     generated boolean DEFAULT false CONSTRAINT service_health_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT service_health_mcp_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT service_health_active_not_null NOT NULL,
-    session_id uuid,
+    session_id uuid NOT NULL,
     id uuid DEFAULT uuidv7() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL
 );

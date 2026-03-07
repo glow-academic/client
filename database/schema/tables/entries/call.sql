@@ -13,7 +13,7 @@ CREATE TABLE public.call_uploads_entry (
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL,
-    session_id uuid
+    session_id uuid NOT NULL
 );
 
 
