@@ -20,8 +20,10 @@ from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.infra.practice_context import resolve_practice_context
 from app.routes.v5.api.main.chat.permissions import (
+    compute_completion_pct,
     compute_pass_pct,
     compute_status,
+    compute_status_instructional,
     format_cohort_names,
 )
 from app.routes.v5.api.main.chat.types import (
@@ -84,6 +86,58 @@ def _aggregate_personal_stats(
     return stats
 
 
+def _aggregate_instructional_stats(
+    facts_items: list[GetAttemptChatResponse],
+    cohort_member_profiles: dict[UUID, set[UUID]],
+    simulation_cohort_map: dict[UUID, list[UUID]],
+) -> dict[UUID, dict[str, Any]]:
+    """Per-simulation instructional stats: passed/in_progress/not_started counts."""
+    best: dict[tuple[UUID, UUID], dict[str, Any]] = {}
+    for item in facts_items:
+        if not item.simulation_id or not item.profile_id:
+            continue
+        key = (item.simulation_id, item.profile_id)
+        if key not in best:
+            best[key] = {"has_passed": False, "has_attempted": True}
+        if item.grade_passed:
+            best[key]["has_passed"] = True
+
+    result: dict[UUID, dict[str, Any]] = {}
+    for sim_id, cohort_ids in simulation_cohort_map.items():
+        all_members: set[UUID] = set()
+        for cid in cohort_ids:
+            all_members |= cohort_member_profiles.get(cid, set())
+        total_members = len(all_members)
+
+        passed_count = 0
+        in_progress_count = 0
+        for pid in all_members:
+            attempt = best.get((sim_id, pid))
+            if attempt:
+                if attempt["has_passed"]:
+                    passed_count += 1
+                else:
+                    in_progress_count += 1
+
+        not_started_count = total_members - passed_count - in_progress_count
+        completion_pct = compute_completion_pct(
+            passed_count, in_progress_count, total_members
+        )
+        status = compute_status_instructional(
+            passed_count, in_progress_count, total_members
+        )
+
+        result[sim_id] = {
+            "passed_count": passed_count,
+            "in_progress_count": in_progress_count,
+            "not_started_count": not_started_count,
+            "completion_pct": completion_pct,
+            "status": status,
+            "total_members": total_members,
+        }
+    return result
+
+
 # =============================================================================
 # Main internal fetch
 # =============================================================================
@@ -109,6 +163,8 @@ async def get_practice_internal(
     profile = common.profile
     profiles_resource_id = profile.profiles_id
     actor_name = profile.name
+    user_role = profile.role
+    is_instructional = user_role in ("instructional", "admin", "superadmin")
 
     # --- Phase 1: Resolve practice context ---
     async with pool.acquire() as c:
@@ -147,8 +203,29 @@ async def get_practice_internal(
     # Build chat_entry_id → chat lookup from chat_mv entries
     chat_map = {chat.id: chat for chat in chats}
 
+    # Build simulation → cohort mapping from practice entries
+    simulation_cohort_map: dict[UUID, list[UUID]] = {}
+    for p in practices:
+        for sim_id in p.simulation_ids or []:
+            if sim_id not in simulation_cohort_map and p.cohort_ids:
+                simulation_cohort_map[sim_id] = list(p.cohort_ids)
+
+    # --- Phase 2a: Instructional data from cohort resources ---
+    cohort_member_profiles: dict[UUID, set[UUID]] | None = None
+    if is_instructional:
+        cohort_member_profiles = {}
+        for cohort in cohort_list:
+            if cohort.id and cohort.profile_ids:
+                cohort_member_profiles[cohort.id] = set(cohort.profile_ids)
+
     # --- Phase 3: Aggregate stats ---
     personal_stats = _aggregate_personal_stats(attempt_chats, profiles_resource_id)
+
+    instructional_stats: dict[UUID, dict[str, Any]] | None = None
+    if is_instructional and cohort_member_profiles is not None:
+        instructional_stats = _aggregate_instructional_stats(
+            attempt_chats, cohort_member_profiles, simulation_cohort_map
+        )
 
     # --- Phase 4: Stitch + business logic → ChatSimulationOperational ---
     items: list[ChatSimulationOperational] = []
@@ -247,7 +324,21 @@ async def get_practice_internal(
             practice_id = p.id
 
             attempt_count = ps.get("attempt_count", 0)
-            status = compute_status(has_passed, attempt_count)
+            if is_instructional and instructional_stats is not None:
+                ist = instructional_stats.get(sim_id, {})
+                status = ist.get("status", "not-started")
+                completion_pct = ist.get("completion_pct", 0)
+                passed_count = ist.get("passed_count", 0)
+                in_progress_count = ist.get("in_progress_count", 0)
+                not_started_count = ist.get("not_started_count", 0)
+            else:
+                status = compute_status(has_passed, attempt_count)
+                completion_pct = None
+                passed_count = None
+                in_progress_count = None
+                not_started_count = None
+
+            view_mode = "instructional" if is_instructional else "practice"
 
             items.append(
                 ChatSimulationOperational(
@@ -261,7 +352,7 @@ async def get_practice_internal(
                     cohort_ids=list(p.cohort_ids) if p.cohort_ids else None,
                     color=color,
                     icon=icon,
-                    view_mode="practice",
+                    view_mode=view_mode,
                     num_sessions=num_scenarios,
                     highest_score=highest_score,
                     has_passed=has_passed,
@@ -270,10 +361,10 @@ async def get_practice_internal(
                     cohort_names_junction=cohort_names_junction,
                     standard_groups=standard_groups_strs,
                     practice_simulation=True,
-                    completion_pct=None,
-                    passed_count=None,
-                    in_progress_count=None,
-                    not_started_count=None,
+                    completion_pct=completion_pct,
+                    passed_count=passed_count,
+                    in_progress_count=in_progress_count,
+                    not_started_count=not_started_count,
                 )
             )
 

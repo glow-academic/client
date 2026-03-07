@@ -55,7 +55,7 @@ async def resolve_practice_context(
     Entries (raw MVs):
       - practices: practice_mv rows (filtered by cohort overlap)
       - chats: chat_mv rows (rich per-chat config)
-      - attempt_chats: attempt_chat_mv rows (profile-scoped, practice only)
+      - attempt_chats: attempt_chat_mv rows (cohort-scoped superset for personal + instructional)
 
     Resources (hydrated from IDs derived from chat_mv + practice_mv):
       - simulations, cohorts, personas, rubrics, standard_groups, standards
@@ -67,14 +67,16 @@ async def resolve_practice_context(
         limit_count=1000,
     )
 
-    # Step 2: Parallel raw MV reads
+    # Step 2: Parallel raw MV reads (attempt_chats scoped by cohort for superset)
     all_practices, all_attempt_chats = await asyncio.gather(
         search_practices(conn, limit=10000),
         search_attempt_chats(
             conn,
-            profile_ids=[profiles_resource_id],
+            cohort_ids=user_cohort_ids,
             limit=10000,
-        ),
+        )
+        if user_cohort_ids
+        else _empty_list(),
     )
 
     # Step 3: Filter practices by cohort overlap
