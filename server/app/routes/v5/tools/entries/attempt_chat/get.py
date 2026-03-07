@@ -32,7 +32,7 @@ async def get_attempt_chats(
                grade_score, grade_total_points, grade_pass_points,
                grade_passed, grade_time_taken,
                completed, attempt_number, chat_created_at, attempt_date,
-               attempt_type, is_archived, infinite_mode
+               attempt_type, is_archived, infinite_mode, document_ids
         FROM {MV_NAME}
         WHERE chat_id = ANY($1)
         """,
@@ -64,6 +64,7 @@ async def get_attempt_chats(
             attempt_type=r["attempt_type"],
             is_archived=r["is_archived"],
             infinite_mode=r["infinite_mode"],
+            document_ids=r["document_ids"],
         )
         for r in rows
     ]

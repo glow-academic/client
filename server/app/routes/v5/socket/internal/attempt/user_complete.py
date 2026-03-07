@@ -15,8 +15,8 @@ from app.routes.v5.socket.internal.attempt.types import AttemptUserCompleteData
 from app.routes.v5.tools.entries.attempt_content.create import (
     create_attempt_content_entry_internal,
 )
-from app.routes.v5.tools.entries.messages_completions.create import (
-    create_messages_completions_entry_internal,
+from app.routes.v5.tools.entries.attempt_message_completion.create import (
+    create_attempt_message_completion,
 )
 from app.utils.logging.db_logger import get_logger
 
@@ -41,7 +41,6 @@ async def handle_user_received_complete(data: dict[str, Any]) -> None:
     try:
         async with get_db_connection() as conn:
             # Find the open (uncompleted) user message for this chat + run
-            # Cross-table query across messages_entry + attempt_message_entry + messages_completions_entry
             row = await conn.fetchrow(
                 """SELECT me.id, me.created_at
                 FROM messages_entry me
@@ -50,8 +49,9 @@ async def handle_user_received_complete(data: dict[str, Any]) -> None:
                   AND me.run_id = $2
                   AND me.role = 'user'::message_type
                   AND NOT EXISTS (
-                      SELECT 1 FROM messages_completions_entry mce
-                      WHERE mce.message_id = me.id
+                      SELECT 1 FROM attempt_message_completion_entry amce
+                      WHERE amce.attempt_message_id = ame.id
+                        AND amce.active = true
                   )
                 ORDER BY me.created_at DESC
                 LIMIT 1""",
@@ -101,9 +101,11 @@ async def handle_user_received_complete(data: dict[str, Any]) -> None:
                 )
 
             # Mark message as complete
-            await create_messages_completions_entry_internal(
+            # TODO: call_id required but not available in this context
+            await create_attempt_message_completion(
                 conn,
-                message_id=message_id,
+                attempt_message_id=message_id,
+                call_id=uuid.UUID("00000000-0000-0000-0000-000000000000"),  # placeholder
             )
 
         await internal_sio.emit(

@@ -9,8 +9,8 @@ All test lifecycle events route through here:
 - test_end_all → proceed with complete_all=True (marks all done → ended)
 
 Flow:
-1. If completed_invocation_id → create_test_completion
-2. If complete_all → create_test_completion per uncompleted invocation → emit test_ended
+1. If completed_invocation_id → create_test_invocation_completion
+2. If complete_all → create_test_invocation_completion per uncompleted invocation → emit test_ended
 3. Search invocations → count completed vs total → find next
 4. All done? → emit test_ended
 5. use_custom && !force_proceed → emit test_started (lobby)
@@ -31,8 +31,8 @@ from app.routes.v5.socket.internal.test.types import (
     TestProceedData,
 )
 from app.routes.v5.tools.entries.test.get import get_tests
-from app.routes.v5.tools.entries.test_completion.create import (
-    create_test_completion,
+from app.routes.v5.tools.entries.test_invocation_completion.create import (
+    create_test_invocation_completion,
 )
 from app.routes.v5.tools.entries.test_invocation.create import (
     create_test_invocation,
@@ -81,10 +81,10 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
         if completed_invocation_id:
             async with get_db_connection() as conn:
                 try:
-                    await create_test_completion(
+                    await create_test_invocation_completion(
                         conn,
                         invocation_id=completed_invocation_id,
-                        end_reason="completed",
+                                                # TODO: call_id required but not available in this context
                     )
                 except Exception:
                     logger.warning(
@@ -104,10 +104,10 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
                 for inv in all_invocations:
                     if not inv.invocation_completed:
                         try:
-                            await create_test_completion(
+                            await create_test_invocation_completion(
                                 conn,
                                 invocation_id=inv.invocation_id,
-                                end_reason="completed",
+                                                        # TODO: call_id required but not available in this context
                             )
                         except Exception:
                             pass

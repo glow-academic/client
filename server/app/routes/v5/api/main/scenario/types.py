@@ -679,9 +679,9 @@ class DuplicateScenarioApiRequest(BaseModel):
 class DuplicateScenarioApiResponse(BaseModel):
     """Response for duplicating a scenario."""
 
-    scenario_id: UUID | None = None
-    scenario_name: str | None = None
-    actor_name: str | None = None
+    success: bool
+    scenario_id: UUID
+    message: str
 
 
 # =============================================================================

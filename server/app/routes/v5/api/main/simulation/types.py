@@ -725,9 +725,9 @@ class DuplicateSimulationApiRequest(BaseModel):
 class DuplicateSimulationApiResponse(BaseModel):
     """Response for duplicating a simulation."""
 
-    simulation_id: UUID | None = None
-    simulation_name: str | None = None
-    actor_name: str | None = None
+    success: bool
+    simulation_id: UUID
+    message: str
 
 
 # =============================================================================

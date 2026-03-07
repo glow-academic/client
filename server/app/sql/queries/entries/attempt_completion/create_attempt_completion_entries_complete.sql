@@ -17,7 +17,9 @@ END $$;
 CREATE OR REPLACE FUNCTION public.api_create_attempt_completion_entry_v4(
     run_id uuid,
     chat_id uuid,
-    end_reason text DEFAULT '',
+    stop boolean DEFAULT false,
+    error boolean DEFAULT false,
+    message text DEFAULT '',
     tool_id uuid DEFAULT NULL,
     upload_id uuid DEFAULT NULL,
     session_id uuid DEFAULT NULL,
@@ -53,9 +55,9 @@ BEGIN
     END IF;
 
     -- 4. Create entry
-    INSERT INTO attempt_completion_entry (call_id, chat_id, end_reason, mcp)
-    VALUES (v_call_id, api_create_attempt_completion_entry_v4.chat_id, api_create_attempt_completion_entry_v4.end_reason, api_create_attempt_completion_entry_v4.mcp)
-    RETURNING attempt_completion_entry.id INTO v_entry_id;
+    INSERT INTO attempt_chat_completion_entry (call_id, chat_id, stop, error, message, mcp)
+    VALUES (v_call_id, api_create_attempt_completion_entry_v4.chat_id, api_create_attempt_completion_entry_v4.stop, api_create_attempt_completion_entry_v4.error, api_create_attempt_completion_entry_v4.message, api_create_attempt_completion_entry_v4.mcp)
+    RETURNING attempt_chat_completion_entry.id INTO v_entry_id;
 
     -- 5. Create message
     INSERT INTO messages_entry (run_id, role, generated, mcp)

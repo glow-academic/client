@@ -39,6 +39,12 @@ CREATE MATERIALIZED VIEW public.attempt_chat_mv AS
              LEFT JOIN public.personas_personas_connection ppc ON (((ppc.personas_entry_id = pe_id.pe_id) AND (ppc.active = true))))
           WHERE (c_1.active = true)
           GROUP BY c_1.id
+        ), chat_documents AS (
+         SELECT acdc.attempt_chat_id AS chat_id,
+            array_agg(DISTINCT acdc.documents_id) FILTER (WHERE (acdc.documents_id IS NOT NULL)) AS document_ids
+           FROM public.attempt_chat_documents_connection acdc
+          WHERE (acdc.active = true)
+          GROUP BY acdc.attempt_chat_id
         )
  SELECT c.id AS chat_id,
     ac.attempt_id,
@@ -67,8 +73,9 @@ CREATE MATERIALIZED VIEW public.attempt_chat_mv AS
             ELSE 'general'::text
         END AS attempt_type,
     COALESCE(sa_archive.archived, false) AS is_archived,
-    COALESCE(a.infinite_mode, false) AS infinite_mode
-   FROM ((((((((((((((((public.attempt_chat_entry c
+    COALESCE(a.infinite_mode, false) AS infinite_mode,
+    cd.document_ids
+   FROM (((((((((((((((((public.attempt_chat_entry c
      JOIN public.attempt_chat_bridge_entry ac ON ((ac.attempt_chat_id = c.id)))
      JOIN public.attempt_entry a ON ((a.id = ac.attempt_id)))
      JOIN public.attempt_profiles_connection apc ON (((apc.attempt_id = a.id) AND (apc.active = true))))
@@ -84,6 +91,7 @@ CREATE MATERIALIZED VIEW public.attempt_chat_mv AS
      LEFT JOIN chat_personas cp ON ((cp.chat_id = c.id)))
      LEFT JOIN latest_grade lg ON ((lg.chat_id = c.id)))
      LEFT JOIN chat_rubric cr ON ((cr.attempt_chat_id = c.id)))
+     LEFT JOIN chat_documents cd ON ((cd.chat_id = c.id)))
      LEFT JOIN LATERAL ( SELECT attempt_archive_entry.archived
            FROM public.attempt_archive_entry
           WHERE ((attempt_archive_entry.attempt_id = a.id) AND (attempt_archive_entry.active = true))

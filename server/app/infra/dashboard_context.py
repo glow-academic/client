@@ -5,8 +5,8 @@ Two context resolvers:
   - resolve_dashboard_context: metrics bundle (header, primary, secondary, footer)
   - resolve_dashboard_search_context: history table (attempt list, paginated)
 
-Both use attempt_chat_mv as the core data grain. Message stats, rubric scores,
-and training doc IDs are computed via black-box entry tools + Python stitching.
+All data fetched via black-box entry search tools + resource get tools.
+Aggregation and stitching done in Python.
 """
 
 from __future__ import annotations
@@ -35,11 +35,12 @@ from app.routes.v5.tools.entries.attempt_feedback.search import (
 )
 from app.routes.v5.tools.entries.attempt_grade.search import search_attempt_grades
 from app.routes.v5.tools.entries.attempt_message.search import search_attempt_messages
-from app.routes.v5.tools.entries.messages_completions.search import (
-    search_messages_completions,
+from app.routes.v5.tools.entries.attempt_message_completion.search import (
+    search_attempt_message_completions,
 )
 
 # Resource get tools
+from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.documents.get import get_documents
 from app.routes.v5.tools.resources.fields.get import get_fields
 from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
@@ -85,6 +86,7 @@ def _to_chat_item(r: GetAttemptChatResponse) -> ChatItem:
         attempt_type=r.attempt_type,
         is_archived=r.is_archived or False,
         infinite_mode=r.infinite_mode or False,
+        document_ids=r.document_ids or [],
     )
 
 
@@ -97,9 +99,8 @@ async def _compute_message_stats(
     pool: asyncpg.Pool,
     chat_ids: list[UUID],
 ) -> dict[UUID, MessageStats]:
-    """Compute message stats using search_attempt_messages + search_messages_completions.
+    """Compute message stats using search_attempt_messages + search_attempt_message_completions.
 
-    Replaces get_message_stats_internal (compiled SQL).
     - num_messages_total: count of messages per chat
     - avg_response_sec: avg(completion.created_at - message.created_at) for response messages
     """
@@ -129,19 +130,19 @@ async def _compute_message_stats(
     response_times: dict[UUID, list[float]] = defaultdict(list)  # chat_id → [seconds]
     if response_msg_created:
         async with pool.acquire() as c:
-            completions = await search_messages_completions(
+            completions = await search_attempt_message_completions(
                 c,
-                message_ids=list(response_msg_created.keys()),
+                attempt_message_ids=list(response_msg_created.keys()),
                 limit=500000,
             )
 
         # Use the latest completion per message
         latest_completion: dict[UUID, datetime] = {}
         for comp in completions:
-            if comp.message_id and comp.created_at:
-                existing = latest_completion.get(comp.message_id)
+            if comp.attempt_message_id and comp.created_at:
+                existing = latest_completion.get(comp.attempt_message_id)
                 if existing is None or comp.created_at > existing:
-                    latest_completion[comp.message_id] = comp.created_at
+                    latest_completion[comp.attempt_message_id] = comp.created_at
 
         for msg_id, comp_time in latest_completion.items():
             msg_time = response_msg_created.get(msg_id)
@@ -153,8 +154,7 @@ async def _compute_message_stats(
 
     # Step 4: Build stats map
     stats_map: dict[UUID, MessageStats] = {}
-    all_chat_ids = set(msg_count.keys())
-    for cid in all_chat_ids:
+    for cid in msg_count:
         times = response_times.get(cid)
         avg_sec = round(sum(times) / len(times), 2) if times else None
         stats_map[cid] = MessageStats(
@@ -175,14 +175,13 @@ async def _compute_rubric_scores(
 ) -> RubricScoresResponse:
     """Compute rubric scores using black-box entry tools + Python stitching.
 
-    Replaces get_rubric_scores_internal (compiled SQL).
-
     Flow:
       1. search_attempt_grades(chat_ids) → latest grade per chat (Python dedup)
       2. search_attempt_feedback_entries(grade_ids) → feedback scores
       3. get_standards(standard_ids) → standard_group_id per standard
-      4. standard_groups (from resources) → points per standard_group
-      5. Python: score_percent = 100 * SUM(feedback.total) / standard_group.points
+      4. get_standard_groups(sg_ids) → points per standard_group
+      5. get_rubrics(rubric_ids) → which standard_groups belong to each rubric
+      6. Python: score_percent = 100 * SUM(feedback.total) / standard_group.points
          per (chat_id, standard_group_id)
     """
     if not chat_items:
@@ -245,8 +244,7 @@ async def _compute_rubric_scores(
 
     sg_points: dict[UUID, int] = {sg.id: sg.points for sg in sg_list}
 
-    # Also need: which standard_groups belong to which rubric
-    # Collect rubric_ids from chat_to_rubric
+    # Step 5: Fetch rubrics to know which standard_groups belong to each rubric
     rubric_ids_set: set[UUID] = {rid for rid in chat_to_rubric.values() if rid}
     async with pool.acquire() as c:
         rubrics_list = await get_rubrics(
@@ -261,8 +259,7 @@ async def _compute_rubric_scores(
         if rid:
             rubric_sg_map[rid] = {sgid for sgid in sg_ids if sgid}
 
-    # Step 5: Aggregate feedback totals per (chat_id, standard_group_id)
-    # Key: (chat_id, standard_group_id) → sum of feedback.total
+    # Step 6: Aggregate feedback totals per (chat_id, standard_group_id)
     score_agg: dict[tuple[UUID, UUID], float] = defaultdict(float)
 
     for fb in feedbacks:
@@ -280,8 +277,7 @@ async def _compute_rubric_scores(
                 continue
         score_agg[(chat_id, sg_id)] += fb.total
 
-    # Step 6: Build RubricScoreItems
-    # Build a lookup for chat metadata
+    # Step 7: Build RubricScoreItems
     chat_meta: dict[UUID, ChatItem] = {item.chat_id: item for item in chat_items}
 
     items: list[RubricScoreItem] = []
@@ -316,34 +312,6 @@ async def _compute_rubric_scores(
     return RubricScoresResponse(items=items, total_count=len(items))
 
 
-async def _fetch_training_doc_ids(
-    conn: asyncpg.Connection,
-    attempt_chat_ids: list[UUID],
-) -> dict[UUID, list[UUID]]:
-    """Fetch document_ids from attempt_chat_documents_connection.
-
-    No black-box tool exists for this connection table, so uses inline query.
-    Dashboard only needs document_ids per attempt_chat_id.
-    """
-    if not attempt_chat_ids:
-        return {}
-
-    rows = await conn.fetch(
-        """
-        SELECT attempt_chat_id, documents_id
-        FROM attempt_chat_documents_connection
-        WHERE attempt_chat_id = ANY($1::uuid[])
-          AND active = TRUE
-        """,
-        attempt_chat_ids,
-    )
-
-    doc_map: dict[UUID, list[UUID]] = defaultdict(list)
-    for row in rows:
-        doc_map[row["attempt_chat_id"]].append(row["documents_id"])
-    return dict(doc_map)
-
-
 async def resolve_dashboard_context(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -362,15 +330,15 @@ async def resolve_dashboard_context(
     """Resolve dashboard context for metrics bundle.
 
     Entries:
-      - chat_items: ChatItem list (enriched with message stats + document_ids)
+      - chat_items: ChatItem list (enriched with message stats, document_ids from MV)
       - rubric_items: RubricScoreItem list
       - thresholds: [Thresholds] (single-item list)
-      - scenario_counts: list of {simulation_id, scenario_count} records
-      - cohort_names: list of {id, name} records
+      - scenario_counts: list of {simulation_id, scenario_count} dicts (from simulations resource)
+      - cohort_names: list of {id, name} dicts (from cohorts resource)
 
     Resources:
       - simulations, scenarios, personas, profiles, rubrics, standard_groups,
-        documents, parameter_fields, parameters, fields
+        documents, parameter_fields, parameters, fields, cohorts
     """
 
     # ── Phase 1: Fetch chats + thresholds in parallel ────────────────
@@ -424,7 +392,7 @@ async def resolve_dashboard_context(
     persona_ids_set: set[UUID] = set()
     cohort_ids_set: set[UUID] = set()
     scenario_ids_set: set[UUID] = set()
-    attempt_chat_ids_set: set[UUID] = set()
+    document_ids_set: set[UUID] = set()
     chat_ids: list[UUID] = []
 
     for item in chat_items:
@@ -437,11 +405,10 @@ async def resolve_dashboard_context(
             cohort_ids_set.add(item.cohort_id)
         if item.scenario_id:
             scenario_ids_set.add(item.scenario_id)
-        if item.attempt_chat_id:
-            attempt_chat_ids_set.add(item.attempt_chat_id)
+        for doc_id in item.document_ids or []:
+            document_ids_set.add(doc_id)
 
     # ── Phase 3: Parallel — rubric scores, message stats, resources ──
-    # Rubric scores depend on chat_items (for metadata), so run after Phase 1
     async def _fetch_rubric_scores() -> RubricScoresResponse:
         return await _compute_rubric_scores(
             pool, redis, chat_items, bypass_cache=bypass_cache
@@ -489,34 +456,21 @@ async def resolve_dashboard_context(
     async def _get_message_stats() -> dict[UUID, MessageStats]:
         return await _compute_message_stats(pool, chat_ids)
 
-    async def _get_cohort_names() -> list:
+    async def _get_cohorts() -> list:
         if not cohort_ids_set:
             return []
         async with pool.acquire() as c:
-            return await c.fetch(
-                "SELECT id, name FROM cohorts_resource WHERE id = ANY($1::uuid[])",
-                list(cohort_ids_set),
+            return await get_cohorts(
+                c, list(cohort_ids_set), redis, bypass_cache=bypass_cache
             )
 
-    async def _get_scenario_counts() -> list:
-        if not simulation_ids_set:
+    async def _get_documents() -> list:
+        if not document_ids_set:
             return []
         async with pool.acquire() as c:
-            return await c.fetch(
-                """
-                SELECT simulation_id, COUNT(*)::int AS scenario_count
-                FROM simulation_scenarios_junction
-                WHERE simulation_id = ANY($1::uuid[]) AND active = true
-                GROUP BY simulation_id
-                """,
-                list(simulation_ids_set),
+            return await get_documents(
+                c, list(document_ids_set), redis, bypass_cache=bypass_cache
             )
-
-    async def _get_training_doc_ids() -> dict[UUID, list[UUID]]:
-        if not attempt_chat_ids_set:
-            return {}
-        async with pool.acquire() as c:
-            return await _fetch_training_doc_ids(c, list(attempt_chat_ids_set))
 
     async def _get_profiles() -> list:
         if not target_profile_id:
@@ -533,9 +487,8 @@ async def resolve_dashboard_context(
         scenarios_list,
         (rubrics, standard_groups),
         message_stats,
-        cohort_name_rows,
-        scenario_count_rows,
-        doc_map,
+        cohorts,
+        documents,
         target_profiles,
     ) = await asyncio.gather(
         _fetch_rubric_scores(),
@@ -544,43 +497,33 @@ async def resolve_dashboard_context(
         _get_scenarios(),
         _get_rubric_resources(),
         _get_message_stats(),
-        _get_cohort_names(),
-        _get_scenario_counts(),
-        _get_training_doc_ids(),
+        _get_cohorts(),
+        _get_documents(),
         _get_profiles(),
     )
     rubric_items = rubric_scores_result.items
 
-    # Collect rubric/simulation IDs from rubric_items for resources
-    for item in rubric_items:
-        if item.rubric_id:
-            pass  # already in rubric_ids from chat_items
-        if item.simulation_id:
-            simulation_ids_set.add(item.simulation_id)
-
-    # ── Phase 4: Enrich chat items ───────────────────────────────────
+    # ── Phase 4: Enrich chat items with message stats ────────────────
     for item in chat_items:
         stats = message_stats.get(item.chat_id)
         if stats:
             item.num_messages_total = stats.num_messages_total
             item.avg_response_sec = stats.avg_response_sec
-        if item.attempt_chat_id:
-            d_ids = doc_map.get(item.attempt_chat_id)
-            if d_ids:
-                item.document_ids = list(d_ids)
 
-    # ── Phase 5: Sequential resource hydration (depends on Phase 3) ──
-    # Documents from collected document_ids
-    document_ids_set: set[UUID] = set()
-    for item in chat_items:
-        for doc_id in item.document_ids or []:
-            document_ids_set.add(doc_id)
+    # ── Phase 5: Build scenario_counts + cohort_names from resources ──
+    # scenario_counts: derived from simulations resource (len(scenario_ids))
+    scenario_count_rows = [
+        {"simulation_id": s.id, "scenario_count": len(s.scenario_ids or [])}
+        for s in simulations
+        if s.id
+    ]
 
-    async with pool.acquire() as c:
-        documents = await get_documents(
-            c, list(document_ids_set), redis, bypass_cache=bypass_cache
-        )
+    # cohort_names: derived from cohorts resource
+    cohort_name_rows = [
+        {"id": c.id, "name": c.name} for c in cohorts if c.id and c.name
+    ]
 
+    # ── Phase 6: Sequential resource hydration (depends on Phase 3) ──
     # Parameter fields from scenarios + personas + documents
     all_pf_ids: set[UUID] = set()
     for s in scenarios_list:
@@ -624,7 +567,7 @@ async def resolve_dashboard_context(
         _get_fields(),
     )
 
-    # ── Phase 6: Return ArtifactContext ──────────────────────────────
+    # ── Phase 7: Return ArtifactContext ──────────────────────────────
     return ArtifactContext(
         artifact_id=None,
         active=True,
@@ -701,7 +644,6 @@ async def resolve_dashboard_search_context(
     page_offset = page * page_size
 
     # Step 1: Paginated attempts
-    # get_attempt_list_internal expects datetime, not date
     dt_from = (
         datetime(date_from.year, date_from.month, date_from.day, tzinfo=UTC)
         if date_from

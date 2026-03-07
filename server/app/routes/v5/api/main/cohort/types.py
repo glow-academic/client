@@ -522,9 +522,9 @@ class DuplicateCohortApiRequest(BaseModel):
 class DuplicateCohortApiResponse(BaseModel):
     """Response for duplicating a cohort."""
 
-    id: UUID | None = None
-    name: str | None = None
-    actor_name: str | None = None
+    success: bool
+    cohort_id: UUID
+    message: str
 
 
 # =============================================================================

@@ -34,3 +34,4 @@ class GetAttemptChatResponse(BaseModel):
     attempt_type: str | None
     is_archived: bool | None
     infinite_mode: bool | None
+    document_ids: list[UUID] | None

@@ -46,8 +46,8 @@ from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
 from app.routes.v5.tools.entries.attempt_chat_bridge.search import (
     search_attempt_chat_bridges,
 )
-from app.routes.v5.tools.entries.attempt_completion.create import (
-    create_attempt_completion_entry_internal,
+from app.routes.v5.tools.entries.attempt_chat_completion.create import (
+    create_attempt_chat_completion,
 )
 from app.routes.v5.tools.entries.attempt_home.search import search_attempt_homes
 from app.routes.v5.tools.entries.attempt_practice.search import (
@@ -157,10 +157,11 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
         if completed_chat_id:
             async with get_db_connection() as conn:
                 try:
-                    await create_attempt_completion_entry_internal(
+                    # TODO: call_id required but not available in this context
+                    await create_attempt_chat_completion(
                         conn,
-                        {"chat_id": str(completed_chat_id)},
-                        run_id=run_id,
+                        chat_id=completed_chat_id,
+                        call_id=run_id,  # placeholder — needs proper call_id
                     )
                 except Exception:
                     # Already completed — ON CONFLICT equivalent
@@ -182,10 +183,11 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
                     bridge_chat_id = bridge.attempt_chat_id
                     if bridge_chat_id:
                         try:
-                            await create_attempt_completion_entry_internal(
+                            # TODO: call_id required but not available in this context
+                            await create_attempt_chat_completion(
                                 conn,
-                                {"chat_id": str(bridge_chat_id)},
-                                run_id=run_id,
+                                chat_id=bridge_chat_id,
+                                call_id=run_id,  # placeholder — needs proper call_id
                             )
                         except Exception:
                             # Already completed

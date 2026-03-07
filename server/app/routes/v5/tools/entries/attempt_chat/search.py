@@ -45,7 +45,7 @@ async def search_attempt_chats(
                grade_score, grade_total_points, grade_pass_points,
                grade_passed, grade_time_taken,
                completed, attempt_number, chat_created_at, attempt_date,
-               attempt_type, is_archived, infinite_mode
+               attempt_type, is_archived, infinite_mode, document_ids
         FROM {source}
         WHERE ($1::uuid[] IS NULL OR attempt_id = ANY($1))
           AND ($2::uuid[] IS NULL OR group_id = ANY($2))

@@ -683,17 +683,17 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.attempt_chat_bridge.create",
         "create_attempt_chat_bridge",
     ),
-    ("create", "attempt_completion"): (
-        f"{_T}.entries.attempt_completion.create",
-        "create_attempt_completion",
+    ("create", "attempt_chat_completion"): (
+        f"{_T}.entries.attempt_chat_completion.create",
+        "create_attempt_chat_completion",
     ),
     ("create", "attempt_content"): (
         f"{_T}.entries.attempt_content.create",
         "create_attempt_content",
     ),
-    ("create", "attempt_conversation_completions"): (
-        f"{_T}.entries.attempt_conversation_completions.create",
-        "create_attempt_conversation_completions",
+    ("create", "attempt_conversation_completion"): (
+        f"{_T}.entries.attempt_conversation_completion.create",
+        "create_attempt_conversation_completion",
     ),
     ("create", "attempt_conversations"): (
         f"{_T}.entries.attempt_conversations.create",
@@ -826,9 +826,9 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         "create_message_upload",
     ),
     ("create", "messages"): (f"{_T}.entries.messages.create", "create_message"),
-    ("create", "messages_completions"): (
-        f"{_T}.entries.messages_completions.create",
-        "create_messages_completions_entry_internal",
+    ("create", "attempt_message_completion"): (
+        f"{_T}.entries.attempt_message_completion.create",
+        "create_attempt_message_completion",
     ),
     ("create", "metrics"): (
         f"{_T}.entries.metrics.create",
@@ -890,9 +890,9 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.test_archive.create",
         "create_test_archive",
     ),
-    ("create", "test_completion"): (
-        f"{_T}.entries.test_completion.create",
-        "create_test_completion",
+    ("create", "test_invocation_completion"): (
+        f"{_T}.entries.test_invocation_completion.create",
+        "create_test_invocation_completion",
     ),
     ("create", "test_feedback"): (
         f"{_T}.entries.test_feedback.create",
@@ -927,8 +927,8 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         "create_tool_draft",
     ),
     ("create", "uploads"): (f"{_T}.entries.uploads.create", "create_upload"),
-    ("create", "uploads_completions"): (
-        f"{_T}.entries.uploads_completions.create",
+    ("create", "upload_completion"): (
+        f"{_T}.entries.upload_completion.create",
         "create_upload_completion",
     ),
     ("create", "video_uploads"): (
@@ -959,17 +959,17 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.attempt_chat_bridge.refresh",
         "refresh_attempt_chat_bridge",
     ),
-    ("refresh", "attempt_completion"): (
-        f"{_T}.entries.attempt_completion.refresh",
-        "refresh_attempt_completion",
+    ("refresh", "attempt_chat_completion"): (
+        f"{_T}.entries.attempt_chat_completion.refresh",
+        "refresh_attempt_chat_completion",
     ),
     ("refresh", "attempt_content"): (
         f"{_T}.entries.attempt_content.refresh",
         "refresh_attempt_content",
     ),
-    ("refresh", "attempt_conversation_completions"): (
-        f"{_T}.entries.attempt_conversation_completions.refresh",
-        "refresh_attempt_conversation_completions",
+    ("refresh", "attempt_conversation_completion"): (
+        f"{_T}.entries.attempt_conversation_completion.refresh",
+        "refresh_attempt_conversation_completion",
     ),
     ("refresh", "attempt_conversations"): (
         f"{_T}.entries.attempt_conversations.refresh",
@@ -1111,9 +1111,9 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.messages.refresh",
         "refresh_messages_internal",
     ),
-    ("refresh", "messages_completions"): (
-        f"{_T}.entries.messages_completions.refresh",
-        "refresh_messages_completions_internal",
+    ("refresh", "attempt_message_completion"): (
+        f"{_T}.entries.attempt_message_completion.refresh",
+        "refresh_attempt_message_completion",
     ),
     ("refresh", "metrics"): (
         f"{_T}.entries.metrics.refresh",
@@ -1178,9 +1178,9 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.test_archive.refresh",
         "refresh_test_archive",
     ),
-    ("refresh", "test_completion"): (
-        f"{_T}.entries.test_completion.refresh",
-        "refresh_test_completion",
+    ("refresh", "test_invocation_completion"): (
+        f"{_T}.entries.test_invocation_completion.refresh",
+        "refresh_test_invocation_completion",
     ),
     ("refresh", "test_feedback"): (
         f"{_T}.entries.test_feedback.refresh",
@@ -1221,9 +1221,9 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.uploads.refresh",
         "refresh_uploads_internal",
     ),
-    ("refresh", "uploads_completions"): (
-        f"{_T}.entries.uploads_completions.refresh",
-        "refresh_uploads_completions_internal",
+    ("refresh", "upload_completion"): (
+        f"{_T}.entries.upload_completion.refresh",
+        "refresh_upload_completion",
     ),
     ("refresh", "video_uploads"): (
         f"{_T}.entries.video_uploads.refresh",
@@ -1253,16 +1253,16 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.attempt_chat_bridge.search",
         "search_attempt_chat_bridges",
     ),
-    ("search", "attempt_completion"): (
-        f"{_T}.entries.attempt_completion.search",
-        "search_attempt_completions",
+    ("search", "attempt_chat_completion"): (
+        f"{_T}.entries.attempt_chat_completion.search",
+        "search_attempt_chat_completions",
     ),
     ("search", "attempt_content"): (
         f"{_T}.entries.attempt_content.search",
         "search_attempt_contents",
     ),
-    ("search", "attempt_conversation_completions"): (
-        f"{_T}.entries.attempt_conversation_completions.search",
+    ("search", "attempt_conversation_completion"): (
+        f"{_T}.entries.attempt_conversation_completion.search",
         "search_attempt_conversation_completions",
     ),
     ("search", "attempt_conversations"): (
@@ -1396,9 +1396,9 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         "search_message_uploads",
     ),
     ("search", "messages"): (f"{_T}.entries.messages.search", "search_messages"),
-    ("search", "messages_completions"): (
-        f"{_T}.entries.messages_completions.search",
-        "search_messages_completions",
+    ("search", "attempt_message_completion"): (
+        f"{_T}.entries.attempt_message_completion.search",
+        "search_attempt_message_completions",
     ),
     ("search", "metrics"): (f"{_T}.entries.metrics.search", "search_metrics"),
     ("search", "model_drafts"): (
@@ -1457,9 +1457,9 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.test_archive.search",
         "search_test_archives",
     ),
-    ("search", "test_completion"): (
-        f"{_T}.entries.test_completion.search",
-        "search_test_completions",
+    ("search", "test_invocation_completion"): (
+        f"{_T}.entries.test_invocation_completion.search",
+        "search_test_invocation_completions",
     ),
     ("search", "test_feedback"): (
         f"{_T}.entries.test_feedback.search",
@@ -1494,9 +1494,9 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         "search_tool_drafts",
     ),
     ("search", "uploads"): (f"{_T}.entries.uploads.search", "search_uploads"),
-    ("search", "uploads_completions"): (
-        f"{_T}.entries.uploads_completions.search",
-        "search_uploads_completions",
+    ("search", "upload_completion"): (
+        f"{_T}.entries.upload_completion.search",
+        "search_upload_completions",
     ),
     ("search", "video_uploads"): (
         f"{_T}.entries.video_uploads.search",
@@ -1526,17 +1526,17 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.attempt_chat_bridge.docs",
         "get_attempt_chat_bridge_docs",
     ),
-    ("docs", "attempt_completion"): (
-        f"{_T}.entries.attempt_completion.docs",
-        "get_attempt_completion_docs",
+    ("docs", "attempt_chat_completion"): (
+        f"{_T}.entries.attempt_chat_completion.docs",
+        "get_attempt_chat_completion_docs",
     ),
     ("docs", "attempt_content"): (
         f"{_T}.entries.attempt_content.docs",
         "get_attempt_content_docs",
     ),
-    ("docs", "attempt_conversation_completions"): (
-        f"{_T}.entries.attempt_conversation_completions.docs",
-        "get_attempt_conversation_completions_docs",
+    ("docs", "attempt_conversation_completion"): (
+        f"{_T}.entries.attempt_conversation_completion.docs",
+        "get_attempt_conversation_completion_docs",
     ),
     ("docs", "attempt_conversations"): (
         f"{_T}.entries.attempt_conversations.docs",
@@ -1660,10 +1660,7 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         "get_message_uploads_docs",
     ),
     ("docs", "messages"): (f"{_T}.entries.messages.docs", "get_messages_docs"),
-    ("docs", "messages_completions"): (
-        f"{_T}.entries.messages_completions.docs",
-        "get_messages_completions_docs",
-    ),
+    # messages_completions removed — replaced by attempt_message_completion
     ("docs", "metrics"): (f"{_T}.entries.metrics.docs", "get_metrics_docs"),
     ("docs", "model_drafts"): (
         f"{_T}.entries.model_drafts.docs",
@@ -1718,9 +1715,9 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.test_archive.docs",
         "get_test_archive_docs",
     ),
-    ("docs", "test_completion"): (
-        f"{_T}.entries.test_completion.docs",
-        "get_test_completion_docs",
+    ("docs", "test_invocation_completion"): (
+        f"{_T}.entries.test_invocation_completion.docs",
+        "get_test_invocation_completion_docs",
     ),
     ("docs", "test_feedback"): (
         f"{_T}.entries.test_feedback.docs",
@@ -1752,9 +1749,9 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
     ("docs", "tokens"): (f"{_T}.entries.tokens.docs", "get_tokens_docs"),
     ("docs", "tool_drafts"): (f"{_T}.entries.tool_drafts.docs", "get_tool_drafts_docs"),
     ("docs", "uploads"): (f"{_T}.entries.uploads.docs", "get_uploads_docs"),
-    ("docs", "uploads_completions"): (
-        f"{_T}.entries.uploads_completions.docs",
-        "get_uploads_completions_docs",
+    ("docs", "upload_completion"): (
+        f"{_T}.entries.upload_completion.docs",
+        "get_upload_completion_docs",
     ),
     ("docs", "video_uploads"): (
         f"{_T}.entries.video_uploads.docs",
