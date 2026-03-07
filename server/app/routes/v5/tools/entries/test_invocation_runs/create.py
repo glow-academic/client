@@ -21,6 +21,7 @@ async def create_test_invocation_runs(
     instruction_ids: list[UUID] | None = None,
     tool_ids: list[UUID] | None = None,
     quality_ids: list[UUID] | None = None,
+    modality_ids: list[UUID] | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateTestInvocationRunsResponse:
@@ -72,6 +73,11 @@ async def create_test_invocation_runs(
             "test_invocation_runs_qualities_connection",
             "qualities_id",
             quality_ids or [],
+        ),
+        (
+            "test_invocation_runs_modalities_connection",
+            "modalities_id",
+            modality_ids or [],
         ),
     ]
     for table, col, ids in connections:

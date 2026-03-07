@@ -42,14 +42,16 @@ CREATE MATERIALIZED VIEW public.test_invocation_mv AS
             (array_agg(irq.qualities_id) FILTER (WHERE (irq.qualities_id IS NOT NULL)))[1] AS quality_id,
             (array_agg(irv.voices_id) FILTER (WHERE (irv.voices_id IS NOT NULL)))[1] AS voice_id,
             (array_agg(irt.temperature_levels_id) FILTER (WHERE (irt.temperature_levels_id IS NOT NULL)))[1] AS temperature_level_id,
-            (array_agg(irrl.reasoning_levels_id) FILTER (WHERE (irrl.reasoning_levels_id IS NOT NULL)))[1] AS reasoning_level_id
-           FROM ((((((public.test_invocation_entry ir
+            (array_agg(irrl.reasoning_levels_id) FILTER (WHERE (irrl.reasoning_levels_id IS NOT NULL)))[1] AS reasoning_level_id,
+            COALESCE(array_agg(DISTINCT irmod.modalities_id ORDER BY irmod.modalities_id) FILTER (WHERE (irmod.modalities_id IS NOT NULL)), ARRAY[]::uuid[]) AS modality_ids
+           FROM (((((((public.test_invocation_entry ir
              LEFT JOIN public.test_invocation_agents_connection ira ON (((ira.test_invocation_id = ir.id) AND (ira.active = true))))
              LEFT JOIN public.test_invocation_rubrics_connection irr ON (((irr.test_invocation_id = ir.id) AND (irr.active = true))))
              LEFT JOIN public.test_invocation_qualities_connection irq ON (((irq.test_invocation_id = ir.id) AND (irq.active = true))))
              LEFT JOIN public.test_invocation_voices_connection irv ON (((irv.test_invocation_id = ir.id) AND (irv.active = true))))
              LEFT JOIN public.test_invocation_temperature_levels_connection irt ON (((irt.test_invocation_id = ir.id) AND (irt.active = true))))
              LEFT JOIN public.test_invocation_reasoning_levels_connection irrl ON (((irrl.test_invocation_id = ir.id) AND (irrl.active = true))))
+             LEFT JOIN public.test_invocation_modalities_connection irmod ON (((irmod.test_invocation_id = ir.id) AND (irmod.active = true))))
           WHERE (ir.active = true)
           GROUP BY ir.id
         )
@@ -73,7 +75,8 @@ CREATE MATERIALIZED VIEW public.test_invocation_mv AS
     COALESCE(gal.group_agent_ids, ARRAY[]::uuid[]) AS group_agent_ids,
     bs.voice_id,
     bs.temperature_level_id,
-    bs.reasoning_level_id
+    bs.reasoning_level_id,
+    COALESCE(bs.modality_ids, ARRAY[]::uuid[]) AS modality_ids
    FROM (((((public.test_invocation_entry i
      LEFT JOIN groups_agents_links gal ON ((gal.test_invocation_id = i.id)))
      LEFT JOIN runs_agents_links ral ON ((ral.test_invocation_id = i.id)))

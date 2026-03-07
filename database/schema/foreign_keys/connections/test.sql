@@ -200,6 +200,24 @@ ALTER TABLE ONLY public.test_invocation_groups_instructions_connection
 
 --
 
+-- Name: test_invocation_groups_modalities_connection test_invocation_groups_modalities_connection_modalities_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_groups_modalities_connection
+    ADD CONSTRAINT test_invocation_groups_modalities_connection_modalities_id_fkey FOREIGN KEY (modalities_id) REFERENCES public.modalities_resource(id);
+
+
+--
+
+-- Name: test_invocation_groups_modalities_connection test_invocation_groups_modalities_connection_test_invocation_gr; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_groups_modalities_connection
+    ADD CONSTRAINT test_invocation_groups_modalities_connection_test_invocation_gr FOREIGN KEY (test_invocation_groups_id) REFERENCES public.test_invocation_groups_entry(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: test_invocation_groups_prompts_connection test_invocation_groups_prompts_connection_prompts_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -308,6 +326,24 @@ ALTER TABLE ONLY public.test_invocation_groups_voices_connection
 
 --
 
+-- Name: test_invocation_modalities_connection test_invocation_modalities_connection_modalities_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_modalities_connection
+    ADD CONSTRAINT test_invocation_modalities_connection_modalities_id_fkey FOREIGN KEY (modalities_id) REFERENCES public.modalities_resource(id);
+
+
+--
+
+-- Name: test_invocation_modalities_connection test_invocation_modalities_connection_test_invocation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_modalities_connection
+    ADD CONSTRAINT test_invocation_modalities_connection_test_invocation_id_fkey FOREIGN KEY (test_invocation_id) REFERENCES public.test_invocation_entry(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: test_invocation_qualities_connection test_invocation_qualities_connection_qualities_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -376,6 +412,24 @@ ALTER TABLE ONLY public.test_invocation_runs_instructions_connection
 
 ALTER TABLE ONLY public.test_invocation_runs_instructions_connection
     ADD CONSTRAINT test_invocation_runs_instructions_connection_test_invocation_ru FOREIGN KEY (test_invocation_runs_id) REFERENCES public.test_invocation_runs_entry(id) ON DELETE CASCADE;
+
+
+--
+
+-- Name: test_invocation_runs_modalities_connection test_invocation_runs_modalities_connection_modalities_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_runs_modalities_connection
+    ADD CONSTRAINT test_invocation_runs_modalities_connection_modalities_id_fkey FOREIGN KEY (modalities_id) REFERENCES public.modalities_resource(id);
+
+
+--
+
+-- Name: test_invocation_runs_modalities_connection test_invocation_runs_modalities_connection_test_invocation_runs; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_runs_modalities_connection
+    ADD CONSTRAINT test_invocation_runs_modalities_connection_test_invocation_runs FOREIGN KEY (test_invocation_runs_id) REFERENCES public.test_invocation_runs_entry(id) ON DELETE CASCADE;
 
 
 --

@@ -38,7 +38,7 @@ async def get_test_invocations(
             grade_id, grade_score, grade_passed, grade_time_taken,
             rubric_id, agent_ids, quality_id, department_ids,
             run_agent_ids, group_agent_ids, voice_id,
-            temperature_level_id, reasoning_level_id
+            temperature_level_id, reasoning_level_id, modality_ids
         FROM {MV_NAME}
         WHERE invocation_id = ANY($1)
         """,
@@ -68,6 +68,7 @@ async def get_test_invocations(
             voice_id=r["voice_id"],
             temperature_level_id=r["temperature_level_id"],
             reasoning_level_id=r["reasoning_level_id"],
+            modality_ids=r["modality_ids"],
         )
         for r in rows
     ]

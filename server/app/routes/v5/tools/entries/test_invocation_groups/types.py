@@ -26,3 +26,4 @@ class GetTestInvocationGroupsResponse(BaseModel):
     instruction_ids: list[UUID] = []
     tool_ids: list[UUID] = []
     quality_ids: list[UUID] = []
+    modality_ids: list[UUID] = []

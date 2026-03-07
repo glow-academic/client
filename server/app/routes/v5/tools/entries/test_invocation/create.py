@@ -27,6 +27,7 @@ async def create_test_invocation(
     voice_ids: list[UUID] | None = None,
     reasoning_level_ids: list[UUID] | None = None,
     temperature_level_ids: list[UUID] | None = None,
+    modality_ids: list[UUID] | None = None,
 ) -> CreateTestInvocationResponse:
     """Create a test_invocation_entry row."""
     entry_id = await conn.fetchval(
@@ -71,6 +72,11 @@ async def create_test_invocation(
             "test_invocation_temperature_levels_connection",
             "temperature_levels_id",
             temperature_level_ids or [],
+        ),
+        (
+            "test_invocation_modalities_connection",
+            "modalities_id",
+            modality_ids or [],
         ),
     ]
     for table, col, ids in connections:

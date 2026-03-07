@@ -32,3 +32,4 @@ class GetTestInvocationResponse(BaseModel):
     voice_id: UUID | None = None
     temperature_level_id: UUID | None = None
     reasoning_level_id: UUID | None = None
+    modality_ids: list[UUID] = []

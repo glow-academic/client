@@ -22,7 +22,7 @@ async def get_test_invocation_groups(
         f"""
         SELECT id, test_invocation_id, created_at, updated_at, generated, mcp, active,
                agent_ids, reasoning_level_ids, temperature_level_ids, voice_ids,
-               prompt_ids, instruction_ids, tool_ids, quality_ids
+               prompt_ids, instruction_ids, tool_ids, quality_ids, modality_ids
         FROM {MV_NAME}
         WHERE id = ANY($1)
         """,

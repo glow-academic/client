@@ -20,8 +20,9 @@ CREATE MATERIALIZED VIEW public.test_invocation_groups_mv AS
     COALESCE(array_agg(DISTINCT pc.prompts_id) FILTER (WHERE (pc.prompts_id IS NOT NULL)), ARRAY[]::uuid[]) AS prompt_ids,
     COALESCE(array_agg(DISTINCT ic.instructions_id) FILTER (WHERE (ic.instructions_id IS NOT NULL)), ARRAY[]::uuid[]) AS instruction_ids,
     COALESCE(array_agg(DISTINCT tc.tools_id) FILTER (WHERE (tc.tools_id IS NOT NULL)), ARRAY[]::uuid[]) AS tool_ids,
-    COALESCE(array_agg(DISTINCT qc.qualities_id) FILTER (WHERE (qc.qualities_id IS NOT NULL)), ARRAY[]::uuid[]) AS quality_ids
-   FROM ((((((((public.test_invocation_groups_entry e
+    COALESCE(array_agg(DISTINCT qc.qualities_id) FILTER (WHERE (qc.qualities_id IS NOT NULL)), ARRAY[]::uuid[]) AS quality_ids,
+    COALESCE(array_agg(DISTINCT mc.modalities_id) FILTER (WHERE (mc.modalities_id IS NOT NULL)), ARRAY[]::uuid[]) AS modality_ids
+   FROM (((((((((public.test_invocation_groups_entry e
      LEFT JOIN public.test_invocation_groups_agents_connection ac ON (((ac.test_invocation_groups_id = e.id) AND (ac.active = true))))
      LEFT JOIN public.test_invocation_groups_reasoning_levels_connection rlc ON (((rlc.test_invocation_groups_id = e.id) AND (rlc.active = true))))
      LEFT JOIN public.test_invocation_groups_temperature_levels_connection tlc ON (((tlc.test_invocation_groups_id = e.id) AND (tlc.active = true))))
@@ -30,6 +31,7 @@ CREATE MATERIALIZED VIEW public.test_invocation_groups_mv AS
      LEFT JOIN public.test_invocation_groups_instructions_connection ic ON (((ic.test_invocation_groups_id = e.id) AND (ic.active = true))))
      LEFT JOIN public.test_invocation_groups_tools_connection tc ON (((tc.test_invocation_groups_id = e.id) AND (tc.active = true))))
      LEFT JOIN public.test_invocation_groups_qualities_connection qc ON (((qc.test_invocation_groups_id = e.id) AND (qc.active = true))))
+     LEFT JOIN public.test_invocation_groups_modalities_connection mc ON (((mc.test_invocation_groups_id = e.id) AND (mc.active = true))))
   WHERE (e.active = true)
   GROUP BY e.id, e.test_invocation_id, e.created_at, e.updated_at, e.generated, e.mcp, e.active
   WITH NO DATA;

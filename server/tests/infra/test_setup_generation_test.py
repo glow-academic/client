@@ -144,6 +144,7 @@ class TestSetupGenerationTestConfig:
         reasoning_ids = [uuid4()]
         temp_ids = [uuid4()]
         quality_ids = [uuid4()]
+        modality_ids = [uuid4()]
         prompt_ids = [uuid4()]
         instruction_ids = [uuid4()]
         tool_ids = [uuid4()]
@@ -156,6 +157,7 @@ class TestSetupGenerationTestConfig:
             reasoning_level_ids=reasoning_ids,
             temperature_level_ids=temp_ids,
             quality_ids=quality_ids,
+            modality_ids=modality_ids,
             prompt_ids=prompt_ids,
             instruction_ids=instruction_ids,
             tool_ids=tool_ids,
@@ -175,12 +177,18 @@ class TestSetupGenerationTestConfig:
         assert inv_kwargs["reasoning_level_ids"] == reasoning_ids
         assert inv_kwargs["temperature_level_ids"] == temp_ids
         assert inv_kwargs["quality_ids"] == quality_ids
+        assert inv_kwargs["modality_ids"] == modality_ids
 
-        # Runs-level config
+        # Runs-level config (includes execution details + shared config)
         runs_kwargs = mock_runs.call_args[1]
         assert runs_kwargs["prompt_ids"] == prompt_ids
         assert runs_kwargs["instruction_ids"] == instruction_ids
         assert runs_kwargs["tool_ids"] == tool_ids
+        assert runs_kwargs["voice_ids"] == voice_ids
+        assert runs_kwargs["quality_ids"] == quality_ids
+        assert runs_kwargs["reasoning_level_ids"] == reasoning_ids
+        assert runs_kwargs["temperature_level_ids"] == temp_ids
+        assert runs_kwargs["modality_ids"] == modality_ids
 
     async def test_profile_id_passed_to_create_test(self):
         profile_id = uuid4()
@@ -211,8 +219,11 @@ class TestSetupGenerationTestConfig:
         inv_kwargs = mock_inv.call_args[1]
         assert inv_kwargs["department_ids"] is None
         assert inv_kwargs["voice_ids"] is None
+        assert inv_kwargs["modality_ids"] is None
 
         runs_kwargs = mock_runs.call_args[1]
         assert runs_kwargs["prompt_ids"] is None
         assert runs_kwargs["instruction_ids"] is None
         assert runs_kwargs["tool_ids"] is None
+        assert runs_kwargs["voice_ids"] is None
+        assert runs_kwargs["modality_ids"] is None

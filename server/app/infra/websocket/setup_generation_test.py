@@ -37,6 +37,7 @@ class AgentTestConfig:
     reasoning_level_ids: list[UUID] | None = None
     temperature_level_ids: list[UUID] | None = None
     quality_ids: list[UUID] | None = None
+    modality_ids: list[UUID] | None = None
     # Runs-level config (model execution details)
     prompt_ids: list[UUID] | None = None
     instruction_ids: list[UUID] | None = None
@@ -90,6 +91,7 @@ async def setup_generation_test(
             reasoning_level_ids=agent_config.reasoning_level_ids,
             temperature_level_ids=agent_config.temperature_level_ids,
             quality_ids=agent_config.quality_ids,
+            modality_ids=agent_config.modality_ids,
         )
         test_invocation_id = inv_result.id
 
@@ -106,6 +108,7 @@ async def setup_generation_test(
             quality_ids=agent_config.quality_ids,
             reasoning_level_ids=agent_config.reasoning_level_ids,
             temperature_level_ids=agent_config.temperature_level_ids,
+            modality_ids=agent_config.modality_ids,
         )
 
         invocations[agent_config.agent_id] = test_invocation_id

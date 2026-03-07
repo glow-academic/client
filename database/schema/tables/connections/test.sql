@@ -92,6 +92,21 @@ CREATE TABLE public.test_invocation_groups_instructions_connection (
 
 --
 
+-- Name: test_invocation_groups_modalities_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.test_invocation_groups_modalities_connection (
+    test_invocation_groups_id uuid CONSTRAINT test_invocation_groups_modal_test_invocation_groups_id_not_null NOT NULL,
+    modalities_id uuid CONSTRAINT test_invocation_groups_modalities_connec_modalities_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT test_invocation_groups_modalities_connectio_created_at_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+
 -- Name: test_invocation_groups_prompts_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -173,6 +188,21 @@ CREATE TABLE public.test_invocation_groups_tools_connection (
 CREATE TABLE public.test_invocation_groups_voices_connection (
     test_invocation_groups_id uuid CONSTRAINT test_invocation_groups_voice_test_invocation_groups_id_not_null NOT NULL,
     voices_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+
+-- Name: test_invocation_modalities_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.test_invocation_modalities_connection (
+    test_invocation_id uuid CONSTRAINT test_invocation_modalities_connecti_test_invocation_id_not_null NOT NULL,
+    modalities_id uuid NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
@@ -279,6 +309,21 @@ CREATE TABLE public.test_invocation_runs_instructions_connection (
     test_invocation_runs_id uuid CONSTRAINT test_invocation_runs_instructi_test_invocation_runs_id_not_null NOT NULL,
     instructions_id uuid CONSTRAINT test_invocation_runs_instructions_conn_instructions_id_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT test_invocation_runs_instructions_connectio_created_at_not_null NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+
+-- Name: test_invocation_runs_modalities_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.test_invocation_runs_modalities_connection (
+    test_invocation_runs_id uuid CONSTRAINT test_invocation_runs_modalitie_test_invocation_runs_id_not_null NOT NULL,
+    modalities_id uuid CONSTRAINT test_invocation_runs_modalities_connecti_modalities_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
     active boolean DEFAULT true NOT NULL,
     generated boolean DEFAULT false NOT NULL,
     mcp boolean DEFAULT false NOT NULL
@@ -506,6 +551,15 @@ ALTER TABLE ONLY public.test_invocation_groups_instructions_connection
 
 --
 
+-- Name: test_invocation_groups_modalities_connection test_invocation_groups_modalities_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_groups_modalities_connection
+    ADD CONSTRAINT test_invocation_groups_modalities_connection_pkey PRIMARY KEY (test_invocation_groups_id, modalities_id);
+
+
+--
+
 -- Name: test_invocation_groups_prompts_connection test_invocation_groups_prompts_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -560,6 +614,15 @@ ALTER TABLE ONLY public.test_invocation_groups_voices_connection
 
 --
 
+-- Name: test_invocation_modalities_connection test_invocation_modalities_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_modalities_connection
+    ADD CONSTRAINT test_invocation_modalities_connection_pkey PRIMARY KEY (test_invocation_id, modalities_id);
+
+
+--
+
 -- Name: test_invocation_qualities_connection test_invocation_qualities_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -592,6 +655,15 @@ ALTER TABLE ONLY public.test_invocation_runs_agents_connection
 
 ALTER TABLE ONLY public.test_invocation_runs_instructions_connection
     ADD CONSTRAINT test_invocation_runs_instructions_connection_pkey PRIMARY KEY (test_invocation_runs_id, instructions_id);
+
+
+--
+
+-- Name: test_invocation_runs_modalities_connection test_invocation_runs_modalities_connection_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_runs_modalities_connection
+    ADD CONSTRAINT test_invocation_runs_modalities_connection_pkey PRIMARY KEY (test_invocation_runs_id, modalities_id);
 
 
 --
