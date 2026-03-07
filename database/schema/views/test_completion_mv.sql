@@ -7,13 +7,15 @@
 
 CREATE MATERIALIZED VIEW public.test_completion_mv AS
  SELECT id,
+    test_id,
+    stop,
+    error,
+    message,
+    call_id,
     created_at,
-    generated,
-    mcp,
     active,
-    invocation_id,
-    end_reason,
-    call_id
+    generated,
+    mcp
    FROM public.test_completion_entry
   WHERE (active = true)
   WITH NO DATA;

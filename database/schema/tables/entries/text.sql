@@ -19,6 +19,34 @@ CREATE TABLE public.text_uploads_entry (
 
 --
 
+-- Name: text_completion_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.text_completion_entry (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    text_id uuid NOT NULL,
+    stop boolean DEFAULT false NOT NULL,
+    error boolean DEFAULT false NOT NULL,
+    message text DEFAULT ''::text NOT NULL,
+    session_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+
+-- Name: text_completion_entry text_completion_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.text_completion_entry
+    ADD CONSTRAINT text_completion_entry_pkey PRIMARY KEY (id);
+
+
+--
+
 -- Name: text_uploads_entry text_uploads_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 

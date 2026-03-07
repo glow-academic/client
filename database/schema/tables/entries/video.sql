@@ -19,6 +19,34 @@ CREATE TABLE public.video_uploads_entry (
 
 --
 
+-- Name: video_completion_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.video_completion_entry (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    video_id uuid NOT NULL,
+    stop boolean DEFAULT false NOT NULL,
+    error boolean DEFAULT false NOT NULL,
+    message text DEFAULT ''::text NOT NULL,
+    session_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+
+-- Name: video_completion_entry video_completion_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.video_completion_entry
+    ADD CONSTRAINT video_completion_entry_pkey PRIMARY KEY (id);
+
+
+--
+
 -- Name: video_uploads_entry video_uploads_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 

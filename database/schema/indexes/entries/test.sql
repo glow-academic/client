@@ -26,50 +26,10 @@ CREATE INDEX benchmark_archives_entry_test_id_idx ON public.test_archive_entry U
 
 --
 
--- Name: benchmark_completions_entry_created_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX benchmark_completions_entry_created_at_idx ON public.test_completion_entry USING btree (created_at);
-
-
---
-
--- Name: benchmark_completions_entry_invocation_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX benchmark_completions_entry_invocation_id_idx ON public.test_completion_entry USING btree (invocation_id);
-
-
---
-
 -- Name: benchmark_feedbacks_entry_call_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX benchmark_feedbacks_entry_call_id_idx ON public.test_feedback_entry USING btree (call_id);
-
-
---
-
--- Name: benchmark_stops_entry_created_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX benchmark_stops_entry_created_at_idx ON public.test_stop_entry USING btree (created_at);
-
-
---
-
--- Name: benchmark_stops_entry_invocation_id_created_at_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX benchmark_stops_entry_invocation_id_created_at_idx ON public.test_stop_entry USING btree (invocation_id, created_at DESC);
-
-
---
-
--- Name: benchmark_stops_entry_invocation_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX benchmark_stops_entry_invocation_id_idx ON public.test_stop_entry USING btree (invocation_id);
 
 
 --
@@ -146,6 +106,14 @@ CREATE INDEX idx_test_completion_entry_call_id ON public.test_completion_entry U
 
 --
 
+-- Name: idx_test_completion_entry_test_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_test_completion_entry_test_id ON public.test_completion_entry USING btree (test_id);
+
+
+--
+
 -- Name: idx_test_entry_call_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -170,10 +138,50 @@ CREATE INDEX idx_test_invocation_bridge_entry_session_id ON public.test_invocati
 
 --
 
+-- Name: idx_test_invocation_completion_entry_call_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_test_invocation_completion_entry_call_id ON public.test_invocation_completion_entry USING btree (call_id);
+
+
+--
+
+-- Name: idx_test_invocation_completion_entry_created_at; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_test_invocation_completion_entry_created_at ON public.test_invocation_completion_entry USING btree (created_at);
+
+
+--
+
+-- Name: idx_test_invocation_completion_entry_invocation_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_test_invocation_completion_entry_invocation_id ON public.test_invocation_completion_entry USING btree (invocation_id);
+
+
+--
+
 -- Name: idx_test_invocation_entry_call_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_test_invocation_entry_call_id ON public.test_invocation_entry USING btree (call_id);
+
+
+--
+
+-- Name: idx_test_invocation_groups_completion_entry_call_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_test_invocation_groups_completion_entry_call_id ON public.test_invocation_groups_completion_entry USING btree (call_id);
+
+
+--
+
+-- Name: idx_test_invocation_groups_completion_entry_groups_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_test_invocation_groups_completion_entry_groups_id ON public.test_invocation_groups_completion_entry USING btree (test_invocation_groups_id);
 
 
 --
@@ -186,18 +194,26 @@ CREATE INDEX idx_test_invocation_groups_entry_test_invocation_id ON public.test_
 
 --
 
+-- Name: idx_test_invocation_runs_completion_entry_call_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_test_invocation_runs_completion_entry_call_id ON public.test_invocation_runs_completion_entry USING btree (call_id);
+
+
+--
+
+-- Name: idx_test_invocation_runs_completion_entry_runs_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_test_invocation_runs_completion_entry_runs_id ON public.test_invocation_runs_completion_entry USING btree (test_invocation_runs_id);
+
+
+--
+
 -- Name: idx_test_invocation_runs_entry_test_invocation_id; Type: INDEX; Schema: public; Owner: -
 --
 
 CREATE INDEX idx_test_invocation_runs_entry_test_invocation_id ON public.test_invocation_runs_entry USING btree (test_invocation_id);
-
-
---
-
--- Name: idx_test_stop_entry_call_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_test_stop_entry_call_id ON public.test_stop_entry USING btree (call_id);
 
 
 --

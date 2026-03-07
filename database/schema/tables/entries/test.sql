@@ -23,14 +23,16 @@ CREATE TABLE public.test_archive_entry (
 --
 
 CREATE TABLE public.test_completion_entry (
-    id uuid DEFAULT uuidv7() CONSTRAINT benchmark_completions_entry_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT benchmark_completions_entry_created_at_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT benchmark_completions_entry_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT benchmark_completions_entry_mcp_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT benchmark_completions_entry_active_not_null NOT NULL,
-    invocation_id uuid CONSTRAINT benchmark_completions_entry_invocation_id_not_null NOT NULL,
-    end_reason text DEFAULT ''::text CONSTRAINT benchmark_completions_entry_end_reason_not_null NOT NULL,
-    call_id uuid NOT NULL
+    id uuid DEFAULT uuidv7() NOT NULL,
+    test_id uuid NOT NULL,
+    stop boolean DEFAULT false NOT NULL,
+    error boolean DEFAULT false NOT NULL,
+    message text DEFAULT ''::text NOT NULL,
+    call_id uuid CONSTRAINT test_completion_entry_call_id_not_null1 NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -115,6 +117,25 @@ CREATE TABLE public.test_invocation_bridge_entry (
 
 --
 
+-- Name: test_invocation_completion_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.test_invocation_completion_entry (
+    id uuid DEFAULT uuidv7() CONSTRAINT benchmark_completions_entry_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT benchmark_completions_entry_created_at_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT benchmark_completions_entry_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT benchmark_completions_entry_mcp_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT benchmark_completions_entry_active_not_null NOT NULL,
+    invocation_id uuid CONSTRAINT benchmark_completions_entry_invocation_id_not_null NOT NULL,
+    call_id uuid CONSTRAINT test_completion_entry_call_id_not_null NOT NULL,
+    stop boolean DEFAULT false NOT NULL,
+    error boolean DEFAULT false NOT NULL,
+    message text DEFAULT ''::text NOT NULL
+);
+
+
+--
+
 -- Name: test_invocation_entry; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -132,6 +153,25 @@ CREATE TABLE public.test_invocation_entry (
     call_id uuid NOT NULL,
     use_custom boolean DEFAULT false NOT NULL,
     "position" integer DEFAULT 0 NOT NULL
+);
+
+
+--
+
+-- Name: test_invocation_groups_completion_entry; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.test_invocation_groups_completion_entry (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    test_invocation_groups_id uuid CONSTRAINT test_invocation_groups_compl_test_invocation_groups_id_not_null NOT NULL,
+    stop boolean DEFAULT false NOT NULL,
+    error boolean DEFAULT false NOT NULL,
+    message text DEFAULT ''::text NOT NULL,
+    call_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -169,18 +209,20 @@ CREATE TABLE public.test_invocation_runs_entry (
 
 --
 
--- Name: test_stop_entry; Type: TABLE; Schema: public; Owner: -
+-- Name: test_invocation_runs_completion_entry; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.test_stop_entry (
-    id uuid DEFAULT uuidv7() CONSTRAINT benchmark_stops_entry_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT benchmark_stops_entry_created_at_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT benchmark_stops_entry_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT benchmark_stops_entry_mcp_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT benchmark_stops_entry_active_not_null NOT NULL,
-    invocation_id uuid CONSTRAINT benchmark_stops_entry_invocation_id_not_null NOT NULL,
-    stopped boolean CONSTRAINT benchmark_stops_entry_stopped_not_null NOT NULL,
-    call_id uuid NOT NULL
+CREATE TABLE public.test_invocation_runs_completion_entry (
+    id uuid DEFAULT uuidv7() NOT NULL,
+    test_invocation_runs_id uuid CONSTRAINT test_invocation_runs_completio_test_invocation_runs_id_not_null NOT NULL,
+    stop boolean DEFAULT false NOT NULL,
+    error boolean DEFAULT false NOT NULL,
+    message text DEFAULT ''::text NOT NULL,
+    call_id uuid NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    mcp boolean DEFAULT false NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 
@@ -213,10 +255,10 @@ ALTER TABLE ONLY public.test_invocation_entry
 
 --
 
--- Name: test_completion_entry benchmark_completions_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: test_invocation_completion_entry benchmark_completions_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.test_completion_entry
+ALTER TABLE ONLY public.test_invocation_completion_entry
     ADD CONSTRAINT benchmark_completions_entry_pkey PRIMARY KEY (id);
 
 
@@ -240,11 +282,11 @@ ALTER TABLE ONLY public.test_grade_entry
 
 --
 
--- Name: test_stop_entry benchmark_stops_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: test_completion_entry test_completion_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.test_stop_entry
-    ADD CONSTRAINT benchmark_stops_entry_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.test_completion_entry
+    ADD CONSTRAINT test_completion_entry_pkey PRIMARY KEY (id);
 
 
 --
@@ -258,11 +300,29 @@ ALTER TABLE ONLY public.test_invocation_bridge_entry
 
 --
 
+-- Name: test_invocation_groups_completion_entry test_invocation_groups_completion_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_groups_completion_entry
+    ADD CONSTRAINT test_invocation_groups_completion_entry_pkey PRIMARY KEY (id);
+
+
+--
+
 -- Name: test_invocation_groups_entry test_invocation_groups_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.test_invocation_groups_entry
     ADD CONSTRAINT test_invocation_groups_entry_pkey PRIMARY KEY (id);
+
+
+--
+
+-- Name: test_invocation_runs_completion_entry test_invocation_runs_completion_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_runs_completion_entry
+    ADD CONSTRAINT test_invocation_runs_completion_entry_pkey PRIMARY KEY (id);
 
 
 --

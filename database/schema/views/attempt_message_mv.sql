@@ -18,7 +18,7 @@ CREATE MATERIALIZED VIEW public.attempt_message_mv AS
             sm.chat_id,
             ac.attempt_id,
             m.role,
-            (mc.message_id IS NOT NULL) AS completed,
+            (mc.attempt_message_id IS NOT NULL) AS completed,
             m.created_at,
             tue.text_id,
             ue.file_path AS history_file_path,
@@ -32,10 +32,10 @@ CREATE MATERIALIZED VIEW public.attempt_message_mv AS
              LEFT JOIN public.uploads_entry ue ON ((ue.id = mue.upload_id)))
              LEFT JOIN public.text_uploads_entry tue ON (((tue.upload_id = mue.upload_id) AND (tue.active = true))))
              LEFT JOIN audio_agg aa ON ((aa.message_id = sm.id)))
-             LEFT JOIN LATERAL ( SELECT messages_completions_entry.message_id
-                   FROM public.messages_completions_entry
-                  WHERE ((messages_completions_entry.message_id = m.id) AND (messages_completions_entry.active = true))
-                  ORDER BY messages_completions_entry.created_at DESC
+             LEFT JOIN LATERAL ( SELECT attempt_message_completion_entry.attempt_message_id
+                   FROM public.attempt_message_completion_entry
+                  WHERE ((attempt_message_completion_entry.attempt_message_id = sm.id) AND (attempt_message_completion_entry.active = true))
+                  ORDER BY attempt_message_completion_entry.created_at DESC
                  LIMIT 1) mc ON (true))
              LEFT JOIN LATERAL ( SELECT attempt_archive_entry.archived
                    FROM public.attempt_archive_entry

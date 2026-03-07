@@ -57,7 +57,7 @@ CREATE MATERIALIZED VIEW public.attempt_chat_mv AS
     lg.grade_passed,
     lg.grade_time_taken,
     (EXISTS ( SELECT 1
-           FROM public.attempt_completion_entry comp
+           FROM public.attempt_chat_completion_entry comp
           WHERE ((comp.chat_id = c.id) AND (comp.active = true)))) AS completed,
     (dense_rank() OVER (PARTITION BY apc.profiles_id, COALESCE(home_sim.simulations_id, prac_sim.simulations_id) ORDER BY a.created_at, ac.attempt_id))::integer AS attempt_number,
     c.created_at AS chat_created_at,

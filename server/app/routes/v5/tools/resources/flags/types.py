@@ -16,3 +16,4 @@ class GetFlagResponse(BaseModel):
     active: bool
     mcp: bool
     generated: bool
+    value: bool

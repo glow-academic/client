@@ -11,22 +11,26 @@ from app.routes.v5.tools.entries.test_completion.types import (
 
 async def create_test_completion(
     conn: asyncpg.Connection,
-    invocation_id: UUID,
+    test_id: UUID,
     call_id: UUID,
-    end_reason: str = "",
+    stop: bool = False,
+    error: bool = False,
+    message: str = "",
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateTestCompletionResponse:
     """Create a test_completion entry."""
     entry_id = await conn.fetchval(
         """
-        INSERT INTO test_completion_entry (invocation_id, call_id, end_reason, active, mcp, generated)
-        VALUES ($1, $2, $3, $4, $5, true)
+        INSERT INTO test_completion_entry (test_id, call_id, stop, error, message, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, true)
         RETURNING id
         """,
-        invocation_id,
+        test_id,
         call_id,
-        end_reason,
+        stop,
+        error,
+        message,
         not soft,
         mcp,
     )

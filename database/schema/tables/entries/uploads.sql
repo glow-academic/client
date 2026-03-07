@@ -20,31 +20,6 @@ CREATE TABLE public.uploads_entry (
 
 --
 
--- Name: uploads_completions_entry; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.uploads_completions_entry (
-    id uuid DEFAULT uuidv7() NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    upload_id uuid NOT NULL,
-    session_id uuid NOT NULL
-);
-
-
---
-
--- Name: uploads_completions_entry uploads_completions_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.uploads_completions_entry
-    ADD CONSTRAINT uploads_completions_entry_pkey PRIMARY KEY (id);
-
-
---
-
 -- Name: uploads_entry uploads_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 

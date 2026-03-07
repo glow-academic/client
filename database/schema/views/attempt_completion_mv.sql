@@ -7,13 +7,15 @@
 
 CREATE MATERIALIZED VIEW public.attempt_completion_mv AS
  SELECT id,
-    chat_id,
-    end_reason,
+    attempt_id,
+    stop,
+    error,
+    message,
+    call_id,
     created_at,
     active,
     generated,
-    mcp,
-    call_id
+    mcp
    FROM public.attempt_completion_entry
   WHERE (active = true)
   WITH NO DATA;

@@ -34,7 +34,7 @@ async def get_flags(
     rows = await conn.fetch(
         """
         SELECT id, name, description, type, icon,
-               created_at, active, mcp, generated
+               created_at, active, mcp, generated, value
         FROM flags_resource
         WHERE id = ANY($1)
         ORDER BY array_position($1, id)
@@ -53,6 +53,7 @@ async def get_flags(
             active=r["active"],
             mcp=r["mcp"],
             generated=r["generated"],
+            value=r["value"],
         )
         for r in rows
     ]

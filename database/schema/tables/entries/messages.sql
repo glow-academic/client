@@ -18,31 +18,6 @@ CREATE TABLE public.messages_entry (
 
 --
 
--- Name: messages_completions_entry; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.messages_completions_entry (
-    id uuid DEFAULT uuidv7() NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    message_id uuid NOT NULL,
-    session_id uuid NOT NULL
-);
-
-
---
-
--- Name: messages_completions_entry messages_completions_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.messages_completions_entry
-    ADD CONSTRAINT messages_completions_entry_pkey PRIMARY KEY (id);
-
-
---
-
 -- Name: messages_entry messages_entry_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 

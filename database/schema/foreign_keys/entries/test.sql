@@ -20,10 +20,10 @@ ALTER TABLE ONLY public.test_invocation_entry
 
 --
 
--- Name: test_completion_entry benchmark_completions_entry_invocation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: test_invocation_completion_entry benchmark_completions_entry_invocation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.test_completion_entry
+ALTER TABLE ONLY public.test_invocation_completion_entry
     ADD CONSTRAINT benchmark_completions_entry_invocation_id_fkey FOREIGN KEY (invocation_id) REFERENCES public.test_invocation_entry(id) ON DELETE CASCADE;
 
 
@@ -65,15 +65,6 @@ ALTER TABLE ONLY public.test_grade_entry
 
 --
 
--- Name: test_stop_entry benchmark_stops_entry_invocation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.test_stop_entry
-    ADD CONSTRAINT benchmark_stops_entry_invocation_id_fkey FOREIGN KEY (invocation_id) REFERENCES public.test_invocation_entry(id) ON DELETE CASCADE;
-
-
---
-
 -- Name: test_invocation_entry invocation_resolved_entry_test_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -97,6 +88,24 @@ ALTER TABLE ONLY public.test_archive_entry
 
 ALTER TABLE ONLY public.test_completion_entry
     ADD CONSTRAINT test_completion_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
+
+
+--
+
+-- Name: test_invocation_completion_entry test_completion_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_completion_entry
+    ADD CONSTRAINT test_completion_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
+
+
+--
+
+-- Name: test_completion_entry test_completion_entry_test_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_completion_entry
+    ADD CONSTRAINT test_completion_entry_test_id_fkey FOREIGN KEY (test_id) REFERENCES public.test_entry(id) ON DELETE CASCADE;
 
 
 --
@@ -146,6 +155,24 @@ ALTER TABLE ONLY public.test_invocation_entry
 
 --
 
+-- Name: test_invocation_groups_completion_entry test_invocation_groups_completion_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_groups_completion_entry
+    ADD CONSTRAINT test_invocation_groups_completion_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
+
+
+--
+
+-- Name: test_invocation_groups_completion_entry test_invocation_groups_completion_entry_groups_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_groups_completion_entry
+    ADD CONSTRAINT test_invocation_groups_completion_entry_groups_id_fkey FOREIGN KEY (test_invocation_groups_id) REFERENCES public.test_invocation_groups_entry(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: test_invocation_groups_entry test_invocation_groups_entry_test_invocation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -155,20 +182,29 @@ ALTER TABLE ONLY public.test_invocation_groups_entry
 
 --
 
+-- Name: test_invocation_runs_completion_entry test_invocation_runs_completion_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_runs_completion_entry
+    ADD CONSTRAINT test_invocation_runs_completion_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
+
+
+--
+
+-- Name: test_invocation_runs_completion_entry test_invocation_runs_completion_entry_runs_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.test_invocation_runs_completion_entry
+    ADD CONSTRAINT test_invocation_runs_completion_entry_runs_id_fkey FOREIGN KEY (test_invocation_runs_id) REFERENCES public.test_invocation_runs_entry(id) ON DELETE CASCADE;
+
+
+--
+
 -- Name: test_invocation_runs_entry test_invocation_runs_entry_test_invocation_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
 ALTER TABLE ONLY public.test_invocation_runs_entry
     ADD CONSTRAINT test_invocation_runs_entry_test_invocation_id_fkey FOREIGN KEY (test_invocation_id) REFERENCES public.test_invocation_entry(id) ON DELETE CASCADE;
-
-
---
-
--- Name: test_stop_entry test_stop_entry_call_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.test_stop_entry
-    ADD CONSTRAINT test_stop_entry_call_id_fkey FOREIGN KEY (call_id) REFERENCES public.calls_entry(id);
 
 
 --
