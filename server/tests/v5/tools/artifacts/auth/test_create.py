@@ -1,6 +1,7 @@
 """Tests for create_auth — black-box using resource + artifact tools only."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.artifacts.auth.create import create_auth
 from app.routes.v5.tools.artifacts.auth.get import get_auths
@@ -10,7 +11,6 @@ from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.items.create import create_item
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.slugs.create import create_slug
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

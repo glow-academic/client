@@ -1,10 +1,10 @@
 """Tests for get_models."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.models.create import create_model
 from app.routes.v5.tools.resources.models.get import get_models
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

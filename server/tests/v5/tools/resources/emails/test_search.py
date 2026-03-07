@@ -1,10 +1,10 @@
 """Tests for search_emails."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.emails.create import create_email
 from app.routes.v5.tools.resources.emails.search import search_emails
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

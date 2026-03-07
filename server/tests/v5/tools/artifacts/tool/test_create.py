@@ -1,6 +1,7 @@
 """Tests for create_tool — black-box using resource + artifact tools only."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.artifacts.tool.create import (
     create_tool as create_tool_artifact,
@@ -13,7 +14,6 @@ from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.tools.create import (
     create_tool as create_tool_resource,
 )
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

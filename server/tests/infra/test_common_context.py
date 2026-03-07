@@ -12,7 +12,6 @@ import pytest
 
 from app.infra.common_context import CommonContext, resolve_common_context
 
-
 MODULE = "app.infra.common_context"
 
 

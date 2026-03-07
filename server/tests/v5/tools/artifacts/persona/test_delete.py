@@ -1,12 +1,12 @@
 """Tests for delete_personas — black-box using tool functions only."""
 
 import pytest
+from tests.helpers import nonexistent_id, unique_tag
 
 from app.routes.v5.tools.artifacts.persona.create import create_persona
 from app.routes.v5.tools.artifacts.persona.delete import delete_personas
 from app.routes.v5.tools.artifacts.persona.get import get_personas
 from app.routes.v5.tools.resources.names.create import create_name
-from tests.helpers import unique_tag, nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

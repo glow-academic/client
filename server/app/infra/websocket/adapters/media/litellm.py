@@ -5,9 +5,9 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from app.infra.globals import IMAGE_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER
 from app.infra.websocket.adapters.media.base import BaseMediaAdapter, MediaResult
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.infra.globals import IMAGE_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER
 from app.utils.sql_helper import load_sql
 
 try:

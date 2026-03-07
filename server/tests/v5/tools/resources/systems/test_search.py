@@ -1,10 +1,10 @@
 """Tests for search_systems."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.systems.create import create_system
 from app.routes.v5.tools.resources.systems.search import search_systems
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

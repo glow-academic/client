@@ -1,10 +1,10 @@
 """Tests for search_scenarios."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
 from app.routes.v5.tools.resources.scenarios.search import search_scenarios
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

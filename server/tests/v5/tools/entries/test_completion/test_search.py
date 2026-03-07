@@ -1,6 +1,7 @@
 """Tests for search_test_completions."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.groups.create import create_group
@@ -11,7 +12,6 @@ from app.routes.v5.tools.entries.test_completion.create import create_test_compl
 from app.routes.v5.tools.entries.test_completion.refresh import refresh_test_completion
 from app.routes.v5.tools.entries.test_completion.search import search_test_completions
 from app.routes.v5.tools.entries.test_invocation.create import create_test_invocation
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

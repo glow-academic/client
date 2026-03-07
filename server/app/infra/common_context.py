@@ -16,7 +16,10 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.profile_identity_context import ProfileIdentityContext, resolve_profile_identity_context
+from app.infra.profile_identity_context import (
+    ProfileIdentityContext,
+    resolve_profile_identity_context,
+)
 from app.infra.runs_context import RunsContext, resolve_runs_context
 from app.infra.tool_graph import SettingsToolGraph, resolve_tool_graph
 
@@ -52,7 +55,9 @@ async def resolve_common_context(
     """
     # Step 1: profile (skip if pre-resolved)
     if profile is None:
-        profile = await resolve_profile_identity_context(conn, profile_id, redis, bypass_cache)
+        profile = await resolve_profile_identity_context(
+            conn, profile_id, redis, bypass_cache
+        )
     if profile is None:
         return None
 

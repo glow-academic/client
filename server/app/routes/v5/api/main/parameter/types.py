@@ -11,7 +11,6 @@ from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 
-
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)
 # ---------------------------------------------------------------------------

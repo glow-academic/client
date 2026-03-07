@@ -1,6 +1,7 @@
 """Tests for search_benchmark_tests."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.benchmark.create import create_benchmark
 from app.routes.v5.tools.entries.benchmark_test.create import create_benchmark_test
@@ -11,7 +12,6 @@ from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.test.create import create_test
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

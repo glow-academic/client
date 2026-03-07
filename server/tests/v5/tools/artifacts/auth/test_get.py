@@ -1,11 +1,11 @@
 """Tests for get_auths."""
 
 import pytest
+from tests.helpers import nonexistent_id, unique_tag
 
 from app.routes.v5.tools.artifacts.auth.create import create_auth
 from app.routes.v5.tools.artifacts.auth.get import get_auths
 from app.routes.v5.tools.resources.names.create import create_name
-from tests.helpers import nonexistent_id, unique_tag
 
 pytestmark = pytest.mark.asyncio
 

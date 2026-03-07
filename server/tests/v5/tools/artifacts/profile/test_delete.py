@@ -1,12 +1,12 @@
 """Tests for delete_profiles — black-box using tool functions only."""
 
 import pytest
+from tests.helpers import nonexistent_id, unique_tag
 
 from app.routes.v5.tools.artifacts.profile.create import create_profile
 from app.routes.v5.tools.artifacts.profile.delete import delete_profiles
 from app.routes.v5.tools.artifacts.profile.get import get_profiles
 from app.routes.v5.tools.resources.names.create import create_name
-from tests.helpers import unique_tag, nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

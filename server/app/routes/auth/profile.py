@@ -10,6 +10,8 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.sessions.get import get_session_internal
 from app.routes.auth.access import get_access_internal
 from app.routes.auth.callback import resolve_redirect_path
 from app.routes.auth.permissions import convert_role
@@ -21,10 +23,8 @@ from app.routes.auth.types import AuthProfileInternalData, GetAuthProfileApiResp
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.roles.get import get_roles
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.sessions.get import get_session_internal
-from app.infra.globals import get_db, get_pool, get_redis_client
 from app.sql.types import GetProfileContextApiRequest
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 

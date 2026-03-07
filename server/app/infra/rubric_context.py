@@ -26,22 +26,21 @@ from app.routes.v5.tools.entries.rubric_drafts.get import get_rubric_drafts
 
 # Resource get fetchers (by known IDs)
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.points.get import get_points
-from app.routes.v5.tools.resources.standard_groups.get import get_standard_groups
-from app.routes.v5.tools.resources.standards.get import get_standards
 
 # Resource search fetchers (bounded, paginated)
 from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import search_descriptions
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
+from app.routes.v5.tools.resources.points.get import get_points
 from app.routes.v5.tools.resources.points.search import search_points
+from app.routes.v5.tools.resources.standard_groups.get import get_standard_groups
 from app.routes.v5.tools.resources.standard_groups.search import search_standard_groups
+from app.routes.v5.tools.resources.standards.get import get_standards
 from app.routes.v5.tools.resources.standards.search import search_standards
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -195,9 +194,7 @@ async def resolve_rubric_context(
 
     # Filter flags to rubric-specific types
     flags_suggestions_filtered = [
-        f
-        for f in flags_suggestions
-        if getattr(f, "name", None) in RUBRIC_FLAG_NAMES
+        f for f in flags_suggestions if getattr(f, "name", None) in RUBRIC_FLAG_NAMES
     ]
 
     return ArtifactContext(

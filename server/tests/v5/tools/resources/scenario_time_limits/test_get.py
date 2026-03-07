@@ -1,6 +1,7 @@
 """Tests for get_scenario_time_limits."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.scenario_time_limits.create import (
     create_scenario_time_limit,
@@ -9,7 +10,6 @@ from app.routes.v5.tools.resources.scenario_time_limits.get import (
     get_scenario_time_limits,
 )
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

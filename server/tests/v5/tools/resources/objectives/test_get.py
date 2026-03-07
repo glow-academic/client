@@ -1,10 +1,10 @@
 """Tests for get_objectives."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.objectives.create import create_objective
 from app.routes.v5.tools.resources.objectives.get import get_objectives
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

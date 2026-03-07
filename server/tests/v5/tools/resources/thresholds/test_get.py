@@ -1,10 +1,10 @@
 """Tests for get_thresholds."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.thresholds.create import create_threshold
 from app.routes.v5.tools.resources.thresholds.get import get_thresholds
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

@@ -1,10 +1,10 @@
 """Tests for get_flags."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.flags.get import get_flags
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

@@ -3,20 +3,21 @@
 resolve_profile_identity_context is tested with mocked black-box resource fetchers.
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
 
-from app.infra.profile_identity_context import ProfileIdentityContext, resolve_profile_identity_context
+from app.infra.profile_identity_context import (
+    resolve_profile_identity_context,
+)
 from app.routes.v5.tools.artifacts.profile.types import GetProfilesResponse
 from app.routes.v5.tools.resources.departments.types import GetDepartmentResponse
 from app.routes.v5.tools.resources.emails.types import GetEmailResponse
 from app.routes.v5.tools.resources.names.types import GetNameResponse
 from app.routes.v5.tools.resources.profiles.types import GetProfileResponse
 from app.routes.v5.tools.resources.roles.types import GetRoleResponse
-
 
 NOW = datetime.now(UTC)
 MODULE = "app.infra.profile_identity_context"

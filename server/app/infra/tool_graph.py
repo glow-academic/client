@@ -25,7 +25,6 @@ from app.routes.v5.tools.resources.systems.get import get_systems
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.tools.types import GetToolResponse
 
-
 # ---------------------------------------------------------------------------
 # Types
 # ---------------------------------------------------------------------------
@@ -204,7 +203,7 @@ def score_tools(
     if not graph.tools:
         return ArtifactToolScores(
             best=dict.fromkeys(artifact_resources),
-            has_any={r: False for r in artifact_resources},
+            has_any=dict.fromkeys(artifact_resources, False),
             available_modalities=set(),
         )
 

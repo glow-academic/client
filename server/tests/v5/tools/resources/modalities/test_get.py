@@ -1,10 +1,10 @@
 """Tests for get_modalities."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.modalities.create import create_modality
 from app.routes.v5.tools.resources.modalities.get import get_modalities
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

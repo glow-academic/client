@@ -1,10 +1,10 @@
 """Tests for get_emails."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.emails.create import create_email
 from app.routes.v5.tools.resources.emails.get import get_emails
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

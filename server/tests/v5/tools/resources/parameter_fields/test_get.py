@@ -1,10 +1,10 @@
 """Tests for get_parameter_fields."""
 
 import pytest
-
-from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
-from app.routes.v5.tools.resources.fields.create import create_field
 from tests.helpers import nonexistent_id
+
+from app.routes.v5.tools.resources.fields.create import create_field
+from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
 
 pytestmark = pytest.mark.asyncio
 

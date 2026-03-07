@@ -1,10 +1,10 @@
 """Tests for get_cohorts."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.cohorts.create import create_cohort
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

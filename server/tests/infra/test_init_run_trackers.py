@@ -36,9 +36,7 @@ class TestInitRunTrackers:
 
     async def test_none_redis_skips_silently(self):
         """When redis is None, does nothing (no error)."""
-        await init_run_trackers(
-            None, run_id="run-456", num_agents=1, num_resources=2
-        )
+        await init_run_trackers(None, run_id="run-456", num_agents=1, num_resources=2)
 
     async def test_single_agent_single_resource(self, redis_client):
         """Minimal case: 1 agent, 1 resource."""
@@ -73,7 +71,12 @@ class TestInitRunTrackersWithUnits:
     async def test_sets_both_legacy_and_new_keys(self, redis_client):
         """When units are provided, both legacy and new tracker keys are set."""
         units = [
-            WorkUnit(agent_id="a1", target_type="resource", target_name="images", modality="image"),
+            WorkUnit(
+                agent_id="a1",
+                target_type="resource",
+                target_name="images",
+                modality="image",
+            ),
             WorkUnit(agent_id="a2", target_type="entry", target_name="contents"),
         ]
         await init_run_trackers(

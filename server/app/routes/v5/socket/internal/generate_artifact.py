@@ -1076,9 +1076,21 @@ async def _generate_artifact_impl(
                                 }
                             )
                         else:
-                            _group_id = uuid.UUID(data.group_id) if data.group_id else uuid.UUID(int=0)
-                            _session_id = uuid.UUID(data.session_id) if data.session_id else uuid.UUID(int=0)
-                            _profile_id = uuid.UUID(data.profile_id) if data.profile_id else uuid.UUID(int=0)
+                            _group_id = (
+                                uuid.UUID(data.group_id)
+                                if data.group_id
+                                else uuid.UUID(int=0)
+                            )
+                            _session_id = (
+                                uuid.UUID(data.session_id)
+                                if data.session_id
+                                else uuid.UUID(int=0)
+                            )
+                            _profile_id = (
+                                uuid.UUID(data.profile_id)
+                                if data.profile_id
+                                else uuid.UUID(int=0)
+                            )
                             async with get_db_connection() as conn:
                                 tool_result_str = await execute_tool_call(
                                     conn=conn,
@@ -1089,8 +1101,12 @@ async def _generate_artifact_impl(
                                     session_id=_session_id,
                                     profile_id=_profile_id,
                                     upload_folder=UPLOAD_FOLDER,
-                                    run_id=uuid.UUID(data.run_id) if data.run_id else None,
-                                    resource_type=tool_resource_type_by_name.get(tool_name),
+                                    run_id=uuid.UUID(data.run_id)
+                                    if data.run_id
+                                    else None,
+                                    resource_type=tool_resource_type_by_name.get(
+                                        tool_name
+                                    ),
                                     entry_type=tool_entry_type_by_name.get(tool_name),
                                     is_creatable=tool_createable_by_name.get(tool_name),
                                     soft=True,

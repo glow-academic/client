@@ -1,6 +1,7 @@
 """Tests for search_conditional_parameters."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.conditional_parameters.create import (
     create_conditional_parameter,
@@ -9,7 +10,6 @@ from app.routes.v5.tools.resources.conditional_parameters.search import (
     search_conditional_parameters,
 )
 from app.routes.v5.tools.resources.parameters.create import create_parameter
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

@@ -209,5 +209,3 @@ async def get_record_websocket(
     )
 
 
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached

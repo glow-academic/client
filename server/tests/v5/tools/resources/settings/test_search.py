@@ -1,10 +1,10 @@
 """Tests for search_settings."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.settings.create import create_setting
 from app.routes.v5.tools.resources.settings.search import search_settings
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

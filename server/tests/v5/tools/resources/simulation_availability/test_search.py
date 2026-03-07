@@ -1,6 +1,6 @@
 """Tests for search_simulation_availability."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -17,7 +17,7 @@ pytestmark = pytest.mark.asyncio
 
 async def test_finds_created_simulation_availability(conn, redis_client):
     simulation = await create_simulation(conn, redis_client)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     item = await create_simulation_availability(
         conn, simulation.id, now, "start", redis_client
     )
@@ -31,7 +31,7 @@ async def test_finds_created_simulation_availability(conn, redis_client):
 async def test_respects_limit(conn, redis_client):
     for i in range(5):
         simulation = await create_simulation(conn, redis_client)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         await create_simulation_availability(
             conn, simulation.id, now, "start", redis_client
         )
@@ -44,7 +44,7 @@ async def test_respects_limit(conn, redis_client):
 async def test_respects_offset(conn, redis_client):
     for i in range(3):
         simulation = await create_simulation(conn, redis_client)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         await create_simulation_availability(
             conn, simulation.id, now, "start", redis_client
         )
@@ -62,7 +62,7 @@ async def test_respects_offset(conn, redis_client):
 async def test_excludes_ids(conn, redis_client):
     sim_a = await create_simulation(conn, redis_client)
     sim_b = await create_simulation(conn, redis_client)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     a = await create_simulation_availability(conn, sim_a.id, now, "start", redis_client)
     b = await create_simulation_availability(conn, sim_b.id, now, "start", redis_client)
 
@@ -81,7 +81,7 @@ async def test_returns_empty_for_zero_limit(conn, redis_client):
 
 async def test_cache_hit(conn, redis_client):
     simulation = await create_simulation(conn, redis_client)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     await create_simulation_availability(
         conn, simulation.id, now, "start", redis_client
     )
@@ -95,7 +95,7 @@ async def test_cache_hit(conn, redis_client):
 
 async def test_bypass_cache(conn, redis_client):
     simulation = await create_simulation(conn, redis_client)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     await create_simulation_availability(
         conn, simulation.id, now, "start", redis_client
     )

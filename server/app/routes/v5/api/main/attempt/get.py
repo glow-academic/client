@@ -98,11 +98,11 @@ from app.routes.v5.tools.entries.attempt_improvement.get import (
 from app.routes.v5.tools.entries.attempt_replacement.get import (
     get_attempt_replacement_internal,
 )
-from app.routes.v5.tools.entries.attempt_strength.get import (
-    get_attempt_strength_internal,
-)
 from app.routes.v5.tools.entries.attempt_responses.get import (
     get_simulation_responses_internal,
+)
+from app.routes.v5.tools.entries.attempt_strength.get import (
+    get_attempt_strength_internal,
 )
 from app.routes.v5.tools.entries.uploads.get import get_upload_list_view_internal
 from app.routes.v5.tools.resources.agents.get import get_agents

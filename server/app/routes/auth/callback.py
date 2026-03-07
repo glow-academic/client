@@ -14,14 +14,14 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.routes.auth.route_permissions import compute_redirect_path
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
+from app.routes.auth.route_permissions import compute_redirect_path
 from app.sql.types import (
     GetProfileContextApiRequest,
     ResolveCallbackRedirectSqlParams,
     ResolveCallbackRedirectSqlRow,
 )
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_CALLBACK_PATH = "app/sql/queries/auth/resolve_callback_redirect_complete.sql"

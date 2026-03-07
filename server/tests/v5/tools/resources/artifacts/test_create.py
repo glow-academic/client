@@ -1,10 +1,10 @@
 """Tests for create_artifact."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.artifacts.create import create_artifact
 from app.routes.v5.tools.resources.artifacts.get import get_artifacts
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

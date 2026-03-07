@@ -93,7 +93,7 @@ async def setup_generation_test(
         )
         test_invocation_id = inv_result.id
 
-        # Runs-level: link to the shared run + model execution config
+        # Runs-level: link to the shared run + full agent execution config
         await create_test_invocation_runs(
             conn,
             test_invocation_id=test_invocation_id,
@@ -102,6 +102,10 @@ async def setup_generation_test(
             prompt_ids=agent_config.prompt_ids,
             instruction_ids=agent_config.instruction_ids,
             tool_ids=agent_config.tool_ids,
+            voice_ids=agent_config.voice_ids,
+            quality_ids=agent_config.quality_ids,
+            reasoning_level_ids=agent_config.reasoning_level_ids,
+            temperature_level_ids=agent_config.temperature_level_ids,
         )
 
         invocations[agent_config.agent_id] = test_invocation_id

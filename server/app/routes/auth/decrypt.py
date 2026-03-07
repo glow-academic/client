@@ -5,7 +5,6 @@ from typing import Annotated, Any, cast
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
 from app.sql.types import (
     GetKeyForDecryptApiRequest,
@@ -15,6 +14,7 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.auth.decrypt_api_key import decrypt_api_key
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 # Load SQL with types at module level - makes it clear what SQL file is used

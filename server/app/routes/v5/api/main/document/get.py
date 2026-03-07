@@ -74,6 +74,8 @@ from app.routes.v5.tools.resources.descriptions.search import (
     search_descriptions,
 )
 from app.routes.v5.tools.resources.fields.search import search_fields
+from app.routes.v5.tools.resources.files.get import get_files as get_uploads
+from app.routes.v5.tools.resources.files.search import search_files as search_uploads
 from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.images.get import get_images
@@ -89,8 +91,6 @@ from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.texts.get import get_texts
 from app.routes.v5.tools.resources.texts.search import search_texts
 from app.routes.v5.tools.resources.tools.get import get_tools
-from app.routes.v5.tools.resources.files.get import get_files as get_uploads
-from app.routes.v5.tools.resources.files.search import search_files as search_uploads
 from app.sql.types import (
     GetDocumentAccessSqlParams,
     GetDocumentAccessSqlRow,

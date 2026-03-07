@@ -258,7 +258,9 @@ async def get_setting_client(
         "departments": [d.id for d in setting.resources["departments"].suggestions],
         "profiles": [p.id for p in setting.resources["profiles"].suggestions],
         "auths": [a.id for a in setting.resources["auths"].suggestions],
-        "provider_keys": [pk.id for pk in setting.resources["provider_keys"].suggestions],
+        "provider_keys": [
+            pk.id for pk in setting.resources["provider_keys"].suggestions
+        ],
         "auth_item_keys": [
             aik.id for aik in setting.resources["auth_item_keys"].suggestions
         ],
@@ -297,8 +299,7 @@ async def get_setting_client(
         + setting.resources["auth_item_keys"].suggestions
     )
     all_systems = dedupe_by_id(
-        setting.resources["systems"].selected
-        + setting.resources["systems"].suggestions
+        setting.resources["systems"].selected + setting.resources["systems"].suggestions
     )
 
     return GetSettingApiResponse(

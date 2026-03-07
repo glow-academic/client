@@ -10,6 +10,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.access import get_access_internal
 from app.routes.auth.permissions import (
     build_artifact_generation_maps,
@@ -24,14 +25,13 @@ from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.settings.get import get_settings
 from app.routes.v5.tools.resources.systems.get import get_systems
 from app.routes.v5.tools.resources.tools.get import get_tools
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool, get_redis_client
 from app.sql.types import (
     GetProfileContextApiRequest,
     GetSettingsThemeDataSqlParams,
     GetSettingsThemeDataSqlRow,
     QGetProfileContextV4ThemeTokens,
 )
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_SETTINGS_THEME_PATH = (
@@ -87,13 +87,17 @@ async def get_auth_settings_internal(
         if not settings_agent_ids:
             return []
         async with pool.acquire() as c:
-            return await get_agents(c, settings_agent_ids, get_redis_client(), bypass_cache)
+            return await get_agents(
+                c, settings_agent_ids, get_redis_client(), bypass_cache
+            )
 
     async def fetch_systems():
         if not settings_system_ids:
             return []
         async with pool.acquire() as c:
-            return await get_systems(c, settings_system_ids, get_redis_client(), bypass_cache=bypass_cache)
+            return await get_systems(
+                c, settings_system_ids, get_redis_client(), bypass_cache=bypass_cache
+            )
 
     (
         settings_theme,
@@ -131,7 +135,10 @@ async def get_auth_settings_internal(
     if all_tool_ids:
         async with pool.acquire() as c:
             settings_tools = await get_tools(
-                c, list(set(all_tool_ids)), get_redis_client(), bypass_cache=bypass_cache
+                c,
+                list(set(all_tool_ids)),
+                get_redis_client(),
+                bypass_cache=bypass_cache,
             )
 
     # Resolve agent→tool→resource entries in Python using already-fetched data.
@@ -244,5 +251,7 @@ async def get_auth_settings(
             sql_params=sql_params,
             request=http_request,
         )
+
+
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached

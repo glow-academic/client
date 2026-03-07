@@ -1,6 +1,7 @@
 """Tests for get_grant_consumptions."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.grant_consumptions.create import (
     create_grant_consumption,
@@ -11,7 +12,6 @@ from app.routes.v5.tools.entries.grant_consumptions.refresh import (
 )
 from app.routes.v5.tools.entries.grants.create import create_grant
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

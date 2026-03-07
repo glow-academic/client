@@ -194,8 +194,7 @@ async def get_cohort_client(
         + cohort.resources["simulations"].suggestions
     )
     all_profiles = dedupe_by_id(
-        cohort.resources["profiles"].selected
-        + cohort.resources["profiles"].suggestions
+        cohort.resources["profiles"].selected + cohort.resources["profiles"].suggestions
     )
     all_simulation_positions = cohort.resources["simulation_positions"].selected
     all_simulation_availability = cohort.resources["simulation_availability"].selected
@@ -237,9 +236,7 @@ async def get_cohort_client(
         "profile_personas": compute_profile_personas_required(),
     }
 
-    show_ai_generate_map = {
-        r: scores.best.get(r) is not None for r in COHORT_RESOURCES
-    }
+    show_ai_generate_map = {r: scores.best.get(r) is not None for r in COHORT_RESOURCES}
 
     basic_show_ai_generate = any(
         show_ai_generate_map.get(r, False)
@@ -255,20 +252,12 @@ async def get_cohort_client(
 
     suggestions_map: dict[str, list[UUID]] = {
         "names": [n.id for n in cohort.resources["names"].suggestions],
-        "descriptions": [
-            d.id for d in cohort.resources["descriptions"].suggestions
-        ],
-        "departments": [
-            d.id for d in cohort.resources["departments"].suggestions
-        ],
+        "descriptions": [d.id for d in cohort.resources["descriptions"].suggestions],
+        "departments": [d.id for d in cohort.resources["departments"].suggestions],
         "simulations": [
-            s.id
-            for s in cohort.resources["simulations"].suggestions
-            if s.id
+            s.id for s in cohort.resources["simulations"].suggestions if s.id
         ],
-        "profiles": [
-            p.id for p in cohort.resources["profiles"].suggestions if p.id
-        ],
+        "profiles": [p.id for p in cohort.resources["profiles"].suggestions if p.id],
     }
 
     def _section(resource_key: str) -> dict:
@@ -334,8 +323,7 @@ async def get_cohort_client(
 
     # Build flag configs
     all_flags = (
-        cohort.resources["flags"].selected
-        + cohort.resources["flags"].suggestions
+        cohort.resources["flags"].selected + cohort.resources["flags"].suggestions
     )
     flag_configs = [
         CohortFlagConfig(
@@ -354,8 +342,7 @@ async def get_cohort_client(
 
     # Convert resources
     all_names = dedupe_by_id(
-        cohort.resources["names"].selected
-        + cohort.resources["names"].suggestions
+        cohort.resources["names"].selected + cohort.resources["names"].suggestions
     )
     all_descriptions = dedupe_by_id(
         cohort.resources["descriptions"].selected
@@ -364,7 +351,9 @@ async def get_cohort_client(
     all_departments_conv = [_to_department(d) for d in all_departments]
     all_simulations_conv = [_to_simulation(s) for s in all_simulations]
     all_profiles_conv = [_to_profile(p) for p in all_profiles]
-    all_sim_positions_conv = [_to_simulation_position(sp) for sp in all_simulation_positions]
+    all_sim_positions_conv = [
+        _to_simulation_position(sp) for sp in all_simulation_positions
+    ]
     all_sim_availability_conv = [
         _to_simulation_availability(sa) for sa in all_simulation_availability
     ]
@@ -376,9 +365,7 @@ async def get_cohort_client(
     current_simulations = [
         _to_simulation(s) for s in cohort.resources["simulations"].selected
     ]
-    current_profiles = [
-        _to_profile(p) for p in cohort.resources["profiles"].selected
-    ]
+    current_profiles = [_to_profile(p) for p in cohort.resources["profiles"].selected]
 
     return GetCohortApiResponse(
         # Context

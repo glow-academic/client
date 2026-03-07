@@ -425,10 +425,10 @@ async def simulation_bundle(conn, redis_client, profile_id, department_id):
     """Create all resources needed for practice/home simulation tests."""
     from datetime import UTC, datetime
 
+    from app.routes.v5.tools.resources.cohorts.create import create_cohort
     from app.routes.v5.tools.resources.personas.create import (
         create_persona as create_persona_resource,
     )
-    from app.routes.v5.tools.resources.cohorts.create import create_cohort
     from app.routes.v5.tools.resources.profile_personas.create import (
         create_profile_persona,
     )

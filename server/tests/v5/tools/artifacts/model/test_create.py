@@ -1,6 +1,7 @@
 """Tests for create_model — black-box using resource + artifact tools only."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.artifacts.model.create import create_model
 from app.routes.v5.tools.artifacts.model.get import get_models
@@ -10,7 +11,6 @@ from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.qualities.create import create_quality
 from app.routes.v5.tools.resources.voices.create import create_voice
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

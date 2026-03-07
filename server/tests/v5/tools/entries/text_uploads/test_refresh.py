@@ -2,10 +2,10 @@
 
 import pytest
 
+from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.text_uploads.create import create_text_upload
 from app.routes.v5.tools.entries.text_uploads.refresh import refresh_text_uploads
 from app.routes.v5.tools.entries.texts.create import create_text
-from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.uploads.create import create_upload
 
 pytestmark = pytest.mark.asyncio

@@ -1,10 +1,10 @@
 """Tests for get_prompts."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.prompts.create import create_prompt
 from app.routes.v5.tools.resources.prompts.get import get_prompts
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

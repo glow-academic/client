@@ -7,7 +7,6 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
 from app.sql.types import (
     GetUploadFileInfoSqlParams,
@@ -17,6 +16,7 @@ from app.sql.types import (
 from app.utils.document.pdf_first_page_to_image_bytes import (
     pdf_first_page_to_image_bytes,
 )
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.mime.get_content_type import get_content_type
 from app.utils.sql_helper import execute_sql_typed
 

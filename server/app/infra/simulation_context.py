@@ -17,6 +17,7 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.types import ArtifactContext, ResourcePair
+from app.routes.v5.api.main.simulation.types import SimulationScenarioFlag
 
 # Artifact + draft fetchers
 from app.routes.v5.tools.artifacts.simulation.get import (
@@ -26,40 +27,36 @@ from app.routes.v5.tools.entries.simulation_drafts.get import get_simulation_dra
 
 # Resource get fetchers (by known IDs)
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics
-from app.routes.v5.tools.resources.scenario_flags.get import get_scenario_flags
-from app.routes.v5.tools.resources.scenario_positions.get import get_scenario_positions
-from app.routes.v5.tools.resources.scenario_rubrics.get import get_scenario_rubrics
-from app.routes.v5.tools.resources.scenario_time_limits.get import (
-    get_scenario_time_limits,
-)
-from app.routes.v5.tools.resources.scenarios.get import (
-    get_scenarios as get_scenario_resources,
-)
 
 # Resource search fetchers (bounded, paginated)
 from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import search_descriptions
 from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
+from app.routes.v5.tools.resources.rubrics.get import get_rubrics
+from app.routes.v5.tools.resources.scenario_flags.get import get_scenario_flags
+from app.routes.v5.tools.resources.scenario_positions.get import get_scenario_positions
 from app.routes.v5.tools.resources.scenario_positions.search import (
     search_scenario_positions,
 )
+from app.routes.v5.tools.resources.scenario_rubrics.get import get_scenario_rubrics
 from app.routes.v5.tools.resources.scenario_rubrics.search import (
     search_scenario_rubrics,
+)
+from app.routes.v5.tools.resources.scenario_time_limits.get import (
+    get_scenario_time_limits,
 )
 from app.routes.v5.tools.resources.scenario_time_limits.search import (
     search_scenario_time_limits,
 )
+from app.routes.v5.tools.resources.scenarios.get import (
+    get_scenarios as get_scenario_resources,
+)
 from app.routes.v5.tools.resources.scenarios.search import (
     search_scenarios as search_scenario_resources,
 )
-
-from app.routes.v5.api.main.simulation.types import SimulationScenarioFlag
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -223,9 +220,7 @@ async def resolve_simulation_context(
             simulation=True,
         ),
         # Scenario flags (selected)
-        get_scenario_flags(
-            conn, merged.scenario_flag_ids, redis, bypass_cache
-        ),
+        get_scenario_flags(conn, merged.scenario_flag_ids, redis, bypass_cache),
         # Scenario flag types (all flags for cross-product)
         search_flags(
             conn,
@@ -237,9 +232,7 @@ async def resolve_simulation_context(
             bypass_cache=bypass_cache,
         ),
         # Scenario positions
-        get_scenario_positions(
-            conn, merged.scenario_position_ids, redis, bypass_cache
-        ),
+        get_scenario_positions(conn, merged.scenario_position_ids, redis, bypass_cache),
         search_scenario_positions(
             conn,
             redis,
@@ -247,9 +240,7 @@ async def resolve_simulation_context(
             bypass_cache=bypass_cache,
         ),
         # Scenario rubrics
-        get_scenario_rubrics(
-            conn, merged.scenario_rubric_ids, redis, bypass_cache
-        ),
+        get_scenario_rubrics(conn, merged.scenario_rubric_ids, redis, bypass_cache),
         search_scenario_rubrics(
             conn,
             redis,
@@ -287,9 +278,7 @@ async def resolve_simulation_context(
 
     # Build scenario flags cross-product: all scenarios × all flag types
     all_scenario_ids = [
-        s.id
-        for s in scenarios_selected + scenarios_suggestions
-        if s.id
+        s.id for s in scenarios_selected + scenarios_suggestions if s.id
     ]
     sf_existing: set[tuple[UUID, UUID]] = set()
     for sf in scenario_flags_selected:
@@ -325,9 +314,7 @@ async def resolve_simulation_context(
             "descriptions": ResourcePair(
                 selected=descriptions_selected, suggestions=descriptions_suggestions
             ),
-            "flags": ResourcePair(
-                selected=flags_selected, suggestions=flags_ordered
-            ),
+            "flags": ResourcePair(selected=flags_selected, suggestions=flags_ordered),
             "departments": ResourcePair(
                 selected=departments_selected, suggestions=departments_suggestions
             ),

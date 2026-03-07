@@ -1,10 +1,10 @@
 """Tests for search_cohorts."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.cohorts.create import create_cohort
 from app.routes.v5.tools.resources.cohorts.search import search_cohorts
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

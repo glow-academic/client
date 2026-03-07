@@ -1,10 +1,10 @@
 """Tests for search_standard_groups."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.standard_groups.create import create_standard_group
 from app.routes.v5.tools.resources.standard_groups.search import search_standard_groups
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

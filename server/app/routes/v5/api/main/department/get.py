@@ -207,8 +207,7 @@ async def get_department_client(
 
     # Flags — enriched format
     all_flags = dedupe_by_id(
-        dept_ctx.resources["flags"].selected
-        + dept_ctx.resources["flags"].suggestions
+        dept_ctx.resources["flags"].selected + dept_ctx.resources["flags"].suggestions
     )
     department_flags = [
         DepartmentFlagConfig(
@@ -242,8 +241,7 @@ async def get_department_client(
 
     # Names, Descriptions — all = selected + suggestions deduped
     all_names = dedupe_by_id(
-        dept_ctx.resources["names"].selected
-        + dept_ctx.resources["names"].suggestions
+        dept_ctx.resources["names"].selected + dept_ctx.resources["names"].suggestions
     )
     all_descriptions = dedupe_by_id(
         dept_ctx.resources["descriptions"].selected
@@ -253,9 +251,7 @@ async def get_department_client(
     # Suggestions maps (IDs only)
     suggestions_map = {
         "names": [n.id for n in dept_ctx.resources["names"].suggestions],
-        "descriptions": [
-            d.id for d in dept_ctx.resources["descriptions"].suggestions
-        ],
+        "descriptions": [d.id for d in dept_ctx.resources["descriptions"].suggestions],
         "settings": [],
     }
 

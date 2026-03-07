@@ -1,6 +1,7 @@
 """Tests for update_document — black-box using resource + artifact tools only."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.artifacts.document.create import create_document
 from app.routes.v5.tools.artifacts.document.get import get_documents
@@ -8,7 +9,6 @@ from app.routes.v5.tools.artifacts.document.update import update_document
 from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.names.create import create_name
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

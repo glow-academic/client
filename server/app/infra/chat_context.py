@@ -21,38 +21,41 @@ from app.routes.v5.tools.entries.chat_drafts.get import get_chat_drafts
 
 # Resource get fetchers (by known IDs)
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.documents.get import get_documents
-from app.routes.v5.tools.resources.fields.get import get_fields
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.images.get import get_images
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.objectives.get import get_objectives
-from app.routes.v5.tools.resources.options.get import get_options
-from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
-from app.routes.v5.tools.resources.personas.get import get_personas
-from app.routes.v5.tools.resources.problem_statements.get import get_problem_statements
-from app.routes.v5.tools.resources.questions.get import get_questions
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.videos.get import get_videos
 
 # Resource search fetchers (bounded, paginated)
 from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import search_descriptions
+from app.routes.v5.tools.resources.documents.get import get_documents
 from app.routes.v5.tools.resources.documents.search import search_documents
+from app.routes.v5.tools.resources.fields.get import get_fields
 from app.routes.v5.tools.resources.fields.search import search_fields
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.images.get import get_images
 from app.routes.v5.tools.resources.images.search import search_images
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
+from app.routes.v5.tools.resources.objectives.get import get_objectives
 from app.routes.v5.tools.resources.objectives.search import search_objectives
+from app.routes.v5.tools.resources.options.get import get_options
 from app.routes.v5.tools.resources.options.search import search_options
-from app.routes.v5.tools.resources.parameter_fields.search import search_parameter_fields
+from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
+from app.routes.v5.tools.resources.parameter_fields.search import (
+    search_parameter_fields,
+)
+from app.routes.v5.tools.resources.personas.get import get_personas
 from app.routes.v5.tools.resources.personas.search import search_personas
-from app.routes.v5.tools.resources.problem_statements.search import search_problem_statements
+from app.routes.v5.tools.resources.problem_statements.get import get_problem_statements
+from app.routes.v5.tools.resources.problem_statements.search import (
+    search_problem_statements,
+)
+from app.routes.v5.tools.resources.questions.get import get_questions
 from app.routes.v5.tools.resources.questions.search import search_questions
+from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 from app.routes.v5.tools.resources.scenarios.search import search_scenarios
+from app.routes.v5.tools.resources.videos.get import get_videos
 from app.routes.v5.tools.resources.videos.search import search_videos
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -107,19 +110,29 @@ async def resolve_chat_context(
 
     # Step 2: extract IDs directly from draft (draft-only — no merge)
     name_ids = list(draft.name_ids) if draft and draft.name_ids else []
-    description_ids = list(draft.description_ids) if draft and draft.description_ids else []
+    description_ids = (
+        list(draft.description_ids) if draft and draft.description_ids else []
+    )
     flag_ids = list(draft.flag_ids) if draft and draft.flag_ids else []
-    department_ids = list(draft.department_ids) if draft and draft.department_ids else []
+    department_ids = (
+        list(draft.department_ids) if draft and draft.department_ids else []
+    )
     persona_ids = list(draft.persona_ids) if draft and draft.persona_ids else []
     document_ids = list(draft.document_ids) if draft and draft.document_ids else []
     scenario_ids = list(draft.scenario_ids) if draft and draft.scenario_ids else []
     field_ids = list(draft.field_ids) if draft and draft.field_ids else []
-    parameter_field_ids = list(draft.parameter_field_ids) if draft and draft.parameter_field_ids else []
+    parameter_field_ids = (
+        list(draft.parameter_field_ids) if draft and draft.parameter_field_ids else []
+    )
     question_ids = list(draft.question_ids) if draft and draft.question_ids else []
     option_ids = list(draft.option_ids) if draft and draft.option_ids else []
     video_ids = list(draft.video_ids) if draft and draft.video_ids else []
     image_ids = list(draft.image_ids) if draft and draft.image_ids else []
-    problem_statement_ids = list(draft.problem_statement_ids) if draft and draft.problem_statement_ids else []
+    problem_statement_ids = (
+        list(draft.problem_statement_ids)
+        if draft and draft.problem_statement_ids
+        else []
+    )
     objective_ids = list(draft.objective_ids) if draft and draft.objective_ids else []
 
     # Step 3: parallel hydrate — selected + suggestions for each resource
@@ -328,9 +341,7 @@ async def resolve_chat_context(
 
     # Filter flags to chat-specific types
     flags_suggestions_filtered = [
-        f
-        for f in flags_suggestions
-        if getattr(f, "name", None) in CHAT_FLAG_NAMES
+        f for f in flags_suggestions if getattr(f, "name", None) in CHAT_FLAG_NAMES
     ]
 
     return ArtifactContext(
@@ -364,7 +375,8 @@ async def resolve_chat_context(
                 selected=fields_selected, suggestions=fields_suggestions
             ),
             "parameter_fields": ResourcePair(
-                selected=parameter_fields_selected, suggestions=parameter_fields_suggestions
+                selected=parameter_fields_selected,
+                suggestions=parameter_fields_suggestions,
             ),
             "questions": ResourcePair(
                 selected=questions_selected, suggestions=questions_suggestions
@@ -379,7 +391,8 @@ async def resolve_chat_context(
                 selected=images_selected, suggestions=images_suggestions
             ),
             "problem_statements": ResourcePair(
-                selected=problem_statements_selected, suggestions=problem_statements_suggestions
+                selected=problem_statements_selected,
+                suggestions=problem_statements_suggestions,
             ),
             "objectives": ResourcePair(
                 selected=objectives_selected, suggestions=objectives_suggestions

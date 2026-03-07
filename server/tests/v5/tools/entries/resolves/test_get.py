@@ -1,6 +1,7 @@
 """Tests for get_resolves."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.groups.create import create_group
@@ -10,7 +11,6 @@ from app.routes.v5.tools.entries.resolves.get import get_resolves
 from app.routes.v5.tools.entries.resolves.refresh import refresh_resolves
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

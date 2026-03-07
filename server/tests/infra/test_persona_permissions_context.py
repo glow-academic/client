@@ -4,14 +4,13 @@ resolve_persona_permissions_context is tested with mocked black-box fetchers.
 Tests verify: exists detection, department_ids extraction, and active scenario counting.
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
 
 from app.infra.persona_permissions_context import (
-    PersonaPermissionsContext,
     resolve_persona_permissions_context,
 )
 

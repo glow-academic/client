@@ -68,9 +68,7 @@ async def test_activate_multiple(conn):
     p2 = await _make_persona(conn, active=False)
     p3 = await _make_persona(conn, active=True)
 
-    result = await activate_rows(
-        conn, table="persona_artifact", ids=[p1, p2, p3]
-    )
+    result = await activate_rows(conn, table="persona_artifact", ids=[p1, p2, p3])
     assert set(result) == {p1, p2, p3}
 
     for pid in [p1, p2, p3]:
@@ -85,9 +83,7 @@ async def test_activate_nonexistent_id(conn):
     import uuid
 
     fake_id = uuid.uuid4()
-    result = await activate_rows(
-        conn, table="persona_artifact", ids=[fake_id]
-    )
+    result = await activate_rows(conn, table="persona_artifact", ids=[fake_id])
     assert result == []
 
 

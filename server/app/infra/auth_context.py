@@ -26,20 +26,19 @@ from app.routes.v5.tools.entries.auth_drafts.get import get_auth_drafts
 
 # Resource get fetchers (by known IDs)
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.items.get import get_items
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.protocols.get import get_protocols
-from app.routes.v5.tools.resources.slugs.get import get_slugs
 
 # Resource search fetchers (bounded, paginated)
 from app.routes.v5.tools.resources.descriptions.search import search_descriptions
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.items.get import get_items
 from app.routes.v5.tools.resources.items.search import search_items
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
+from app.routes.v5.tools.resources.protocols.get import get_protocols
 from app.routes.v5.tools.resources.protocols.search import search_protocols
+from app.routes.v5.tools.resources.slugs.get import get_slugs
 from app.routes.v5.tools.resources.slugs.search import search_slugs
-
 
 # ---------------------------------------------------------------------------
 # Constants

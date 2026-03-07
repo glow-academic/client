@@ -10,7 +10,6 @@ from fastapi import APIRouter, Depends, Form, Header, HTTPException, Query, Requ
 from fastapi.responses import RedirectResponse
 from jose import jwt
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import get_db
 from app.sql.types import (
     ConsumeEmulationGrantSqlParams,
@@ -19,6 +18,7 @@ from app.sql.types import (
     ResolveDefaultIdpProfileSqlRow,
     load_sql_query,
 )
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 from .jwks import get_key_id, get_private_key

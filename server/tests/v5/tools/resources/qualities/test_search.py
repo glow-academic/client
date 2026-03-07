@@ -1,10 +1,10 @@
 """Tests for search_qualities."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.qualities.create import create_quality
 from app.routes.v5.tools.resources.qualities.search import search_qualities
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

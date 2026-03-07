@@ -1,10 +1,10 @@
 """Tests for get_settings."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.settings.create import create_setting
 from app.routes.v5.tools.resources.settings.get import get_settings
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

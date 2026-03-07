@@ -1,10 +1,10 @@
 """Tests for search_colors."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.colors.create import create_color
 from app.routes.v5.tools.resources.colors.search import search_colors
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

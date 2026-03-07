@@ -26,36 +26,37 @@ from app.routes.v5.tools.entries.agent_drafts.get import get_agent_drafts
 
 # Resource get fetchers (by known IDs)
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.instructions.get import get_instructions
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.prompts.get import get_prompts
-from app.routes.v5.tools.resources.qualities.get import get_qualities
-from app.routes.v5.tools.resources.reasoning_levels.get import get_reasoning_levels
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics
-from app.routes.v5.tools.resources.temperature_levels.get import get_temperature_levels
-from app.routes.v5.tools.resources.tools.get import get_tools
-from app.routes.v5.tools.resources.voices.get import get_voices
 
 # Resource search fetchers (bounded, paginated)
 from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import search_descriptions
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.instructions.search import search_instructions
+from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.models.search import search_models
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
+from app.routes.v5.tools.resources.prompts.get import get_prompts
 from app.routes.v5.tools.resources.prompts.search import search_prompts
+from app.routes.v5.tools.resources.qualities.get import get_qualities
 from app.routes.v5.tools.resources.qualities.search import search_qualities
-from app.routes.v5.tools.resources.reasoning_levels.search import search_reasoning_levels
+from app.routes.v5.tools.resources.reasoning_levels.get import get_reasoning_levels
+from app.routes.v5.tools.resources.reasoning_levels.search import (
+    search_reasoning_levels,
+)
+from app.routes.v5.tools.resources.rubrics.get import get_rubrics
 from app.routes.v5.tools.resources.rubrics.search import search_rubrics
+from app.routes.v5.tools.resources.temperature_levels.get import get_temperature_levels
 from app.routes.v5.tools.resources.temperature_levels.search import (
     search_temperature_levels,
 )
+from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.v5.tools.resources.tools.search import search_tools
+from app.routes.v5.tools.resources.voices.get import get_voices
 from app.routes.v5.tools.resources.voices.search import search_voices
-
 
 # ---------------------------------------------------------------------------
 # Constants

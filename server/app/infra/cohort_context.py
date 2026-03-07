@@ -26,9 +26,15 @@ from app.routes.v5.tools.entries.cohort_drafts.get import get_cohort_drafts
 
 # Resource get fetchers (by known IDs)
 from app.routes.v5.tools.resources.departments.get import get_departments
+
+# Resource search fetchers (bounded, paginated)
+from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
+from app.routes.v5.tools.resources.descriptions.search import search_descriptions
 from app.routes.v5.tools.resources.flags.get import get_flags
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.names.search import search_names
 from app.routes.v5.tools.resources.personas.search import search_personas
 from app.routes.v5.tools.resources.profile_personas.get import get_profile_personas
 from app.routes.v5.tools.resources.profiles.get import get_profiles
@@ -40,14 +46,7 @@ from app.routes.v5.tools.resources.simulation_positions.get import (
     get_simulation_positions,
 )
 from app.routes.v5.tools.resources.simulations.get import get_simulations
-
-# Resource search fetchers (bounded, paginated)
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.search import search_descriptions
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.names.search import search_names
 from app.routes.v5.tools.resources.simulations.search import search_simulations
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -325,9 +324,7 @@ def _merge_junction_ids(artifact, draft) -> _MergedIds:
         list(artifact.simulation_availability_ids or []) if artifact else []
     )
     profile_ids = list(artifact.profiles_ids or []) if artifact else []
-    profile_persona_ids = (
-        list(artifact.profile_persona_ids or []) if artifact else []
-    )
+    profile_persona_ids = list(artifact.profile_persona_ids or []) if artifact else []
 
     if draft:
         if draft.name_ids:

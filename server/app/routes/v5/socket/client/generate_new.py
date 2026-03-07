@@ -17,7 +17,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio, get_redis_client, sio
+from app.infra.globals import get_internal_sio, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
@@ -36,8 +36,10 @@ async def _emit_error(sid: str, message: str, artifact_type: str) -> None:
     await emit_to_internal(
         "generate_call_error",
         GenerateErrorApiRequest(
-            sid=sid, error_message=message,
-            artifact_type=artifact_type, resource_type=artifact_type,
+            sid=sid,
+            error_message=message,
+            artifact_type=artifact_type,
+            resource_type=artifact_type,
         ),
         sid=sid,
     )
@@ -67,23 +69,31 @@ async def generate_new(sid: str, data: dict[str, Any]) -> None:
         # Resolve profile_id from sid (never trust payload)
         profile_id_str = await find_profile_by_socket(sid)
         if not profile_id_str:
-            await _emit_error(sid, "Profile not found. Please reconnect.", artifact_type)
+            await _emit_error(
+                sid, "Profile not found. Please reconnect.", artifact_type
+            )
             return
 
         # Resolve session_id from sid (stored at connect time)
         session_id_str = await find_session_by_socket(sid)
         if not session_id_str:
-            await _emit_error(sid, "Session not found. Please reconnect.", artifact_type)
+            await _emit_error(
+                sid, "Session not found. Please reconnect.", artifact_type
+            )
             return
 
         # Resolve ProfileContext — cached via resource fetchers
         profile_id = uuid.UUID(profile_id_str)
         redis = get_redis_client()
         async with get_db_connection() as conn:
-            profile_ctx = await resolve_profile_identity_context(conn, profile_id, redis)
+            profile_ctx = await resolve_profile_identity_context(
+                conn, profile_id, redis
+            )
 
         if not profile_ctx:
-            await _emit_error(sid, "Profile context not found. Please reconnect.", artifact_type)
+            await _emit_error(
+                sid, "Profile context not found. Please reconnect.", artifact_type
+            )
             return
 
         # group_id must be in payload — no resolution needed

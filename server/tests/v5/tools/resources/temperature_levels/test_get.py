@@ -1,12 +1,12 @@
 """Tests for get_temperature_levels."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.temperature_levels.create import (
     create_temperature_level,
 )
 from app.routes.v5.tools.resources.temperature_levels.get import get_temperature_levels
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

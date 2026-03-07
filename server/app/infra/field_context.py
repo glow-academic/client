@@ -29,18 +29,17 @@ from app.routes.v5.tools.resources.conditional_parameters.get import (
     get_conditional_parameters,
 )
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.parameters.get import get_parameters
-from app.routes.v5.tools.resources.parameters.search import search_parameters
 
 # Resource search fetchers (bounded, paginated)
 from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import search_descriptions
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
-
+from app.routes.v5.tools.resources.parameters.get import get_parameters
+from app.routes.v5.tools.resources.parameters.search import search_parameters
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -110,9 +109,7 @@ async def resolve_field_context(
 
     # Step 3: parallel hydrate — selected + suggestions for each resource
     cp_exclude_ids = (
-        []
-        if (conditional_parameter_show_selected or False)
-        else selected_parameter_ids
+        [] if (conditional_parameter_show_selected or False) else selected_parameter_ids
     )
 
     (
@@ -190,9 +187,7 @@ async def resolve_field_context(
 
     # Filter flags to field-specific types
     flags_suggestions_filtered = [
-        f
-        for f in flags_suggestions
-        if getattr(f, "name", None) in FIELD_FLAG_NAMES
+        f for f in flags_suggestions if getattr(f, "name", None) in FIELD_FLAG_NAMES
     ]
 
     return ArtifactContext(

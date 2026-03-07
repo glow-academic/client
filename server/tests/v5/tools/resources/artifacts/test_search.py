@@ -1,10 +1,10 @@
 """Tests for search_artifacts."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.artifacts.create import create_artifact
 from app.routes.v5.tools.resources.artifacts.search import search_artifacts
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -68,7 +68,7 @@ async def test_excludes_ids(conn, redis_client):
     items = await search_artifacts(
         conn,
         redis_client,
-        search=f"exclude-",
+        search="exclude-",
         exclude_ids=[a.id],
     )
 

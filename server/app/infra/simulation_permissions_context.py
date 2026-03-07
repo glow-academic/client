@@ -14,10 +14,10 @@ from uuid import UUID
 
 import asyncpg
 
+from app.routes.v5.tools.artifacts.cohort.search import search_cohorts
 from app.routes.v5.tools.artifacts.simulation.get import (
     get_simulations as get_simulation_artifacts,
 )
-from app.routes.v5.tools.artifacts.cohort.search import search_cohorts
 
 
 @dataclass(frozen=True)

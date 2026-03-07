@@ -1,10 +1,10 @@
 """Tests for search_departments."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.departments.search import search_departments
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

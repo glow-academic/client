@@ -1,6 +1,7 @@
 """Tests for get_debug_info."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.debug_info.create import create_debug_info
@@ -9,7 +10,6 @@ from app.routes.v5.tools.entries.debug_info.refresh import refresh_debug_info
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

@@ -39,7 +39,9 @@ async def create_run_message(
 
     Chain: create_message → create_text → create_text_upload → create_message_upload.
     """
-    message = await create_message(conn, run_id=run_id, role=role, mcp=mcp, agent_ids=agent_ids)
+    message = await create_message(
+        conn, run_id=run_id, role=role, mcp=mcp, agent_ids=agent_ids
+    )
 
     text = await create_text(conn, session_id=session_id, mcp=mcp)
 

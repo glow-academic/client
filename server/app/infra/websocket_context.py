@@ -33,7 +33,6 @@ from app.infra.types import (
     WebsocketContext,
 )
 
-
 # Scoring resource sets per artifact type (avoids importing route-layer modules)
 PERSONA_SCORING_RESOURCES: set[str] = {
     "names",

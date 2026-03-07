@@ -2,9 +2,9 @@
 
 import pytest
 
+from app.routes.v5.tools.resources.args.create import create_arg
 from app.routes.v5.tools.resources.args_outputs.create import create_args_output
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.args.create import create_arg
 
 pytestmark = pytest.mark.asyncio
 

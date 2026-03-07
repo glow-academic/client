@@ -1,10 +1,10 @@
 """Tests for get_colors."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.colors.create import create_color
 from app.routes.v5.tools.resources.colors.get import get_colors
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

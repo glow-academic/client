@@ -63,8 +63,12 @@ async def test_search_pagination(conn):
     for _ in range(3):
         await create_invocation(conn, benchmark_id=benchmark.id)
 
-    page1 = await search_invocations(conn, benchmark_ids=[benchmark.id], limit=2, offset=0)
-    page2 = await search_invocations(conn, benchmark_ids=[benchmark.id], limit=2, offset=2)
+    page1 = await search_invocations(
+        conn, benchmark_ids=[benchmark.id], limit=2, offset=0
+    )
+    page2 = await search_invocations(
+        conn, benchmark_ids=[benchmark.id], limit=2, offset=2
+    )
 
     assert len(page1) == 2
     assert len(page2) == 1

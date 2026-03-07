@@ -1,11 +1,11 @@
 """Tests for search_texts."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.texts.create import create_text
 from app.routes.v5.tools.entries.texts.search import search_texts
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

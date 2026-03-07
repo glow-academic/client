@@ -1,6 +1,6 @@
 """Tests for create_simulation_availability."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
 
@@ -17,7 +17,7 @@ pytestmark = pytest.mark.asyncio
 
 async def test_creates_new_simulation_availability(conn, redis_client):
     simulation = await create_simulation(conn, redis_client)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     result = await create_simulation_availability(
         conn, simulation.id, now, "start", redis_client
     )
@@ -30,7 +30,7 @@ async def test_creates_new_simulation_availability(conn, redis_client):
 
 async def test_visible_via_get(conn, redis_client):
     simulation = await create_simulation(conn, redis_client)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     result = await create_simulation_availability(
         conn, simulation.id, now, "end", redis_client
     )
@@ -46,7 +46,7 @@ async def test_visible_via_get(conn, redis_client):
 
 async def test_returns_existing_on_conflict(conn, redis_client):
     simulation = await create_simulation(conn, redis_client)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     first = await create_simulation_availability(
         conn, simulation.id, now, "start", redis_client
     )
@@ -59,7 +59,7 @@ async def test_returns_existing_on_conflict(conn, redis_client):
 
 async def test_sets_mcp_flag(conn, redis_client):
     simulation = await create_simulation(conn, redis_client)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     result = await create_simulation_availability(
         conn, simulation.id, now, "start", redis_client, mcp=True
     )

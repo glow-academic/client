@@ -26,28 +26,27 @@ from app.routes.v5.tools.entries.setting_drafts.get import get_setting_drafts
 
 # Resource get fetchers (by known IDs)
 from app.routes.v5.tools.resources.auth_item_keys.get import get_auth_item_keys
-from app.routes.v5.tools.resources.auths.get import get_auths
-from app.routes.v5.tools.resources.colors.get import get_colors
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.provider_keys.get import get_provider_keys
-from app.routes.v5.tools.resources.systems.get import get_systems
 
 # Resource search fetchers (bounded, paginated)
 from app.routes.v5.tools.resources.auth_item_keys.search import search_auth_item_keys
+from app.routes.v5.tools.resources.auths.get import get_auths
 from app.routes.v5.tools.resources.auths.search import search_auths
+from app.routes.v5.tools.resources.colors.get import get_colors
 from app.routes.v5.tools.resources.colors.search import search_colors
+from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import search_descriptions
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
+from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.profiles.search import search_profiles
+from app.routes.v5.tools.resources.provider_keys.get import get_provider_keys
 from app.routes.v5.tools.resources.provider_keys.search import search_provider_keys
+from app.routes.v5.tools.resources.systems.get import get_systems
 from app.routes.v5.tools.resources.systems.search import search_systems
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -259,9 +258,7 @@ async def resolve_setting_context(
 
     # Filter flags to setting-specific types
     flags_suggestions_filtered = [
-        f
-        for f in flags_suggestions
-        if getattr(f, "name", None) in SETTING_FLAG_NAMES
+        f for f in flags_suggestions if getattr(f, "name", None) in SETTING_FLAG_NAMES
     ]
 
     return ArtifactContext(

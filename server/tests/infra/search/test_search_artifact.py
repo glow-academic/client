@@ -5,13 +5,13 @@ themselves are artifact-agnostic.
 """
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.infra.search.search_artifact import (
     add_junction_filter,
     add_text_search,
     execute_artifact_search,
 )
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

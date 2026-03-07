@@ -1,10 +1,10 @@
 """Tests for search_providers."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.providers.create import create_provider
 from app.routes.v5.tools.resources.providers.search import search_providers
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

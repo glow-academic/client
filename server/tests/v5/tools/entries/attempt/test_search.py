@@ -1,6 +1,7 @@
 """Tests for search_attempts."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.attempt.create import create_attempt
 from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt
@@ -10,7 +11,6 @@ from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

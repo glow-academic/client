@@ -1,12 +1,12 @@
 """Tests for get_conditional_parameters."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.conditional_parameters.get import (
     get_conditional_parameters,
 )
 from app.routes.v5.tools.resources.parameters.create import create_parameter
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

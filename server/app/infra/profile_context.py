@@ -26,20 +26,19 @@ from app.routes.v5.tools.entries.profile_drafts.get import get_profile_drafts
 
 # Resource get fetchers (by known IDs)
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.emails.get import get_emails
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.request_limits.get import get_request_limits
-from app.routes.v5.tools.resources.roles.get import get_roles
 
 # Resource search fetchers (bounded, paginated)
 from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.emails.get import get_emails
 from app.routes.v5.tools.resources.emails.search import search_emails
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
+from app.routes.v5.tools.resources.request_limits.get import get_request_limits
 from app.routes.v5.tools.resources.request_limits.search import search_request_limits
+from app.routes.v5.tools.resources.roles.get import get_roles
 from app.routes.v5.tools.resources.roles.search import search_roles
-
 
 # ---------------------------------------------------------------------------
 # Types
@@ -189,9 +188,7 @@ async def resolve_profile_context(
 
     # Filter flags to profile-specific types
     flags_suggestions_filtered = [
-        f
-        for f in flags_suggestions
-        if getattr(f, "type", None) in PROFILE_FLAG_TYPES
+        f for f in flags_suggestions if getattr(f, "type", None) in PROFILE_FLAG_TYPES
     ]
 
     return ArtifactContext(

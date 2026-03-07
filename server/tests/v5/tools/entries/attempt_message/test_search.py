@@ -1,6 +1,7 @@
 """Tests for search_attempt_messages."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.attempt.create import create_attempt
 from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
@@ -17,7 +18,6 @@ from app.routes.v5.tools.entries.messages.create import create_message
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -94,7 +94,9 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, attempt_chat, _ = await _setup(conn, profile_id)
 
-    items = await search_attempt_messages(conn, chat_ids=[attempt_chat.id], bypass_mv=True)
+    items = await search_attempt_messages(
+        conn, chat_ids=[attempt_chat.id], bypass_mv=True
+    )
 
     ids = [item.message_id for item in items]
     assert result.id in ids

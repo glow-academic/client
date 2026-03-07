@@ -1,10 +1,10 @@
 """Tests for get_examples."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.examples.create import create_example
 from app.routes.v5.tools.resources.examples.get import get_examples
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

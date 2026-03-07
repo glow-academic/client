@@ -172,8 +172,7 @@ async def get_tool_client(
     names_has_tools = scores.has_any.get("names", False)
 
     all_args = dedupe_by_id(
-        tool_ctx.resources["args"].selected
-        + tool_ctx.resources["args"].suggestions
+        tool_ctx.resources["args"].selected + tool_ctx.resources["args"].suggestions
     )
     all_arg_positions = dedupe_by_id(
         tool_ctx.resources["arg_positions"].selected
@@ -189,7 +188,9 @@ async def get_tool_client(
         "descriptions": compute_show_description(),
         "flags": compute_show_flag(),
         "args": compute_show_args(len(all_args)),
-        "arg_positions": compute_show_arg_positions(len(all_arg_positions), len(all_args)),
+        "arg_positions": compute_show_arg_positions(
+            len(all_arg_positions), len(all_args)
+        ),
         "args_outputs": compute_show_args_outputs(len(all_args_outputs)),
     }
 
@@ -205,21 +206,17 @@ async def get_tool_client(
     def compute_show_ai_generate(resource: str) -> bool:
         return agent_ids.get(resource) is not None
 
-    show_ai_generate_map = {
-        r: compute_show_ai_generate(r) for r in TOOL_RESOURCES
-    }
+    show_ai_generate_map = {r: compute_show_ai_generate(r) for r in TOOL_RESOURCES}
 
     basic_show_ai_generate = any(
-        show_ai_generate_map.get(r, False)
-        for r in ("names", "descriptions", "flags")
+        show_ai_generate_map.get(r, False) for r in ("names", "descriptions", "flags")
     )
 
     # ── Step 7: Response assembly ────────────────────────────────────────
 
     # Flags — enriched format
     all_flags = dedupe_by_id(
-        tool_ctx.resources["flags"].selected
-        + tool_ctx.resources["flags"].suggestions
+        tool_ctx.resources["flags"].selected + tool_ctx.resources["flags"].suggestions
     )
     tool_flags = [
         ToolFlagConfig(
@@ -253,8 +250,7 @@ async def get_tool_client(
 
     # Names, Descriptions — all = selected + suggestions deduped
     all_names = dedupe_by_id(
-        tool_ctx.resources["names"].selected
-        + tool_ctx.resources["names"].suggestions
+        tool_ctx.resources["names"].selected + tool_ctx.resources["names"].suggestions
     )
     all_descriptions = dedupe_by_id(
         tool_ctx.resources["descriptions"].selected
@@ -263,9 +259,7 @@ async def get_tool_client(
 
     # Sort args by arg_position value
     arg_position_value_by_args_id: dict[Any, int] = {
-        ap.args_id: ap.value
-        for ap in all_arg_positions
-        if ap.args_id is not None
+        ap.args_id: ap.value for ap in all_arg_positions if ap.args_id is not None
     }
 
     def _args_sort_key(arg: Any) -> tuple[int, str]:
@@ -289,8 +283,12 @@ async def get_tool_client(
         "names": [n.id for n in tool_ctx.resources["names"].suggestions],
         "descriptions": [d.id for d in tool_ctx.resources["descriptions"].suggestions],
         "args": [a.id for a in tool_ctx.resources["args"].suggestions],
-        "arg_positions": [ap.id for ap in tool_ctx.resources["arg_positions"].suggestions],
-        "args_outputs": [ao.id for ao in tool_ctx.resources["args_outputs"].suggestions],
+        "arg_positions": [
+            ap.id for ap in tool_ctx.resources["arg_positions"].suggestions
+        ],
+        "args_outputs": [
+            ao.id for ao in tool_ctx.resources["args_outputs"].suggestions
+        ],
     }
 
     def _section(resource_key: str) -> dict:

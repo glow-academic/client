@@ -206,9 +206,7 @@ async def get_parameter_client(
     def compute_show_ai_generate(resource: str) -> bool:
         return agent_ids.get(resource) is not None
 
-    show_ai_generate_map = {
-        r: compute_show_ai_generate(r) for r in PARAMETER_RESOURCES
-    }
+    show_ai_generate_map = {r: compute_show_ai_generate(r) for r in PARAMETER_RESOURCES}
 
     basic_show_ai_generate = any(
         show_ai_generate_map.get(r, False) for r in PARAMETER_BASIC_RESOURCES
@@ -229,8 +227,7 @@ async def get_parameter_client(
 
     # Flags — enriched format
     all_flags = dedupe_by_id(
-        param_ctx.resources["flags"].selected
-        + param_ctx.resources["flags"].suggestions
+        param_ctx.resources["flags"].selected + param_ctx.resources["flags"].suggestions
     )
     parameter_flags = [
         ParameterFlagConfig(
@@ -264,8 +261,7 @@ async def get_parameter_client(
 
     # Names, Descriptions — all = selected + suggestions deduped
     all_names = dedupe_by_id(
-        param_ctx.resources["names"].selected
-        + param_ctx.resources["names"].suggestions
+        param_ctx.resources["names"].selected + param_ctx.resources["names"].suggestions
     )
     all_descriptions = dedupe_by_id(
         param_ctx.resources["descriptions"].selected
@@ -275,12 +271,8 @@ async def get_parameter_client(
     # Suggestions maps (IDs only)
     suggestions_map = {
         "names": [n.id for n in param_ctx.resources["names"].suggestions],
-        "descriptions": [
-            d.id for d in param_ctx.resources["descriptions"].suggestions
-        ],
-        "departments": [
-            d.id for d in param_ctx.resources["departments"].suggestions
-        ],
+        "descriptions": [d.id for d in param_ctx.resources["descriptions"].suggestions],
+        "departments": [d.id for d in param_ctx.resources["departments"].suggestions],
         "fields": [f.id for f in param_ctx.resources["fields"].suggestions],
     }
 

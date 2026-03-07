@@ -1,11 +1,11 @@
 """Tests for get_rubrics."""
 
 import pytest
+from tests.helpers import nonexistent_id, unique_tag
 
 from app.routes.v5.tools.artifacts.rubric.create import create_rubric
 from app.routes.v5.tools.artifacts.rubric.get import get_rubrics
 from app.routes.v5.tools.resources.names.create import create_name
-from tests.helpers import nonexistent_id, unique_tag
 
 pytestmark = pytest.mark.asyncio
 

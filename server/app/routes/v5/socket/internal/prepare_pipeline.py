@@ -20,11 +20,10 @@ import copy
 from typing import Any
 from uuid import UUID
 
-from app.infra.generation import convert_tools_to_dict, render_developer_instructions
+from app.infra.generation import render_developer_instructions
 from app.infra.generation.media_context import (
     has_media_sentinels,
     post_process_media_sentinels,
-    wrap_media_entries,
 )
 from app.registry.modalities import get_tool_output_modalities
 from app.routes.v5.socket.internal.prepare_types import (
@@ -119,9 +118,7 @@ def build_agent_groups(
         for rt in resource_types:
             system_id = resource_system_ids.get(rt) or default_system_id
             system = systems_by_id.get(system_id) if system_id else None
-            candidate_ids = (
-                (getattr(system, "agent_ids", None) or []) if system else []
-            )
+            candidate_ids = (getattr(system, "agent_ids", None) or []) if system else []
             candidates = [aid for aid in candidate_ids if aid in agents_by_id]
             if not candidates:
                 continue
@@ -178,8 +175,15 @@ def dump_fetcher_result(result: object) -> dict[str, Any]:
             dumped[ns] = val.model_dump(mode="json")
 
     for key in (
-        "agents", "systems", "models", "providers", "tools",
-        "args", "args_outputs", "profile", "params",
+        "agents",
+        "systems",
+        "models",
+        "providers",
+        "tools",
+        "args",
+        "args_outputs",
+        "profile",
+        "params",
     ):
         val = getattr(result, key, None)
         if val is None:
@@ -314,10 +318,12 @@ def enrich_tools_with_args_outputs(
             for ao_id in tool_output_ids_by_name[t_name]:
                 ao = ao_by_id.get(ao_id)
                 if ao:
-                    ao_list.append({
-                        "name": getattr(ao, "name", ""),
-                        "template": getattr(ao, "template", ""),
-                    })
+                    ao_list.append(
+                        {
+                            "name": getattr(ao, "name", ""),
+                            "template": getattr(ao, "template", ""),
+                        }
+                    )
             if ao_list:
                 td["_args_outputs"] = ao_list
 
@@ -355,9 +361,7 @@ def resolve_agent_config(
     providers_by_id: dict[UUID, Any],
 ) -> LLMConfig | None:
     """Walk agent → model → provider chain. Returns None if chain is broken."""
-    model = (
-        models_by_id.get(agent.model_id) if agent.model_id else None
-    )
+    model = models_by_id.get(agent.model_id) if agent.model_id else None
     if not model:
         logger.warning(f"Agent '{getattr(agent, 'name', '?')}' has no model — skipping")
         return None
@@ -368,7 +372,9 @@ def resolve_agent_config(
         else None
     )
     if not provider:
-        logger.warning(f"Model '{getattr(model, 'name', '?')}' has no provider — skipping")
+        logger.warning(
+            f"Model '{getattr(model, 'name', '?')}' has no provider — skipping"
+        )
         return None
 
     api_key = getattr(provider, "key", "") or ""
@@ -384,7 +390,9 @@ def resolve_agent_config(
         base_url=getattr(provider, "endpoint", "") or "",
         temperature=getattr(agent, "temperature", 0.0) or 0.0,
         reasoning=getattr(agent, "reasoning", None),
-        provider=getattr(provider, "value", None) or getattr(provider, "name", "") or "",
+        provider=getattr(provider, "value", None)
+        or getattr(provider, "name", "")
+        or "",
         voice=getattr(agent, "voice", None),
         quality=getattr(agent, "quality", None),
     )
@@ -440,10 +448,14 @@ def build_agent_dispatch(
     messages: list[MessageSpec] = []
 
     if system_prompt:
-        messages.append(MessageSpec(
-            role="system", content=system_prompt,
-            raw_text=system_prompt, persist=True,
-        ))
+        messages.append(
+            MessageSpec(
+                role="system",
+                content=system_prompt,
+                raw_text=system_prompt,
+                persist=True,
+            )
+        )
 
     for m in rendered_developer_messages:
         if has_media_sentinels(m):
@@ -451,15 +463,23 @@ def build_agent_dispatch(
             content_blocks = post_process_media_sentinels(
                 m, agent_input_modalities=None
             )
-            messages.append(MessageSpec(
-                role="developer", content=content_blocks,
-                raw_text=m, persist=True,
-            ))
+            messages.append(
+                MessageSpec(
+                    role="developer",
+                    content=content_blocks,
+                    raw_text=m,
+                    persist=True,
+                )
+            )
         else:
-            messages.append(MessageSpec(
-                role="developer", content=m,
-                raw_text=m, persist=True,
-            ))
+            messages.append(
+                MessageSpec(
+                    role="developer",
+                    content=m,
+                    raw_text=m,
+                    persist=True,
+                )
+            )
 
     # extra_messages are NOT persisted (they come pre-persisted, e.g. chat history)
     # TODO: extra_messages should be passed in from payload, not accessed here
@@ -474,8 +494,7 @@ def build_agent_dispatch(
         else set()
     )
     scoped_tools = [
-        td for td in all_tool_dicts
-        if str(td.get("id", "")) in agent_tool_id_set
+        td for td in all_tool_dicts if str(td.get("id", "")) in agent_tool_id_set
     ]
 
     # Metadata

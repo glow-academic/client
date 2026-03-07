@@ -26,34 +26,32 @@ from app.routes.v5.tools.entries.persona_drafts.get import get_persona_drafts
 
 # Resource get fetchers (by known IDs)
 from app.routes.v5.tools.resources.colors.get import get_colors
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.examples.get import get_examples
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.icons.get import get_icons
-from app.routes.v5.tools.resources.instructions.get import get_instructions
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
-from app.routes.v5.tools.resources.parameters.get import get_parameters
-from app.routes.v5.tools.resources.voices.get import get_voices
 
 # Resource search fetchers (bounded, paginated)
 from app.routes.v5.tools.resources.colors.search import search_colors
+from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import search_descriptions
+from app.routes.v5.tools.resources.examples.get import get_examples
 from app.routes.v5.tools.resources.examples.search import search_examples
 from app.routes.v5.tools.resources.fields.search import search_fields
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.icons.get import get_icons
 from app.routes.v5.tools.resources.icons.search import search_icons
+from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.instructions.search import search_instructions
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
+from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
 from app.routes.v5.tools.resources.parameter_fields.search import (
     search_parameter_fields,
 )
+from app.routes.v5.tools.resources.parameters.get import get_parameters
 from app.routes.v5.tools.resources.parameters.search import search_parameters
+from app.routes.v5.tools.resources.voices.get import get_voices
 from app.routes.v5.tools.resources.voices.search import search_voices
-
-
 
 # ---------------------------------------------------------------------------
 # Types

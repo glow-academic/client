@@ -1,13 +1,13 @@
 """Tests for search_rubrics — black-box using resource + artifact tools only."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.artifacts.rubric.create import create_rubric
 from app.routes.v5.tools.artifacts.rubric.search import search_rubrics
 from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.names.create import create_name
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

@@ -1,10 +1,10 @@
 """Tests for search_personas."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.personas.create import create_persona
 from app.routes.v5.tools.resources.personas.search import search_personas
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

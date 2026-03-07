@@ -258,9 +258,7 @@ async def get_simulation_client(
         "descriptions": [
             d.id for d in simulation.resources["descriptions"].suggestions
         ],
-        "departments": [
-            d.id for d in simulation.resources["departments"].suggestions
-        ],
+        "departments": [d.id for d in simulation.resources["departments"].suggestions],
         "scenarios": [s.id for s in simulation.resources["scenarios"].suggestions],
     }
 
@@ -314,9 +312,7 @@ async def get_simulation_client(
         if flag.id
     ]
 
-    flag_ids_set = {
-        f.id for f in simulation.resources["flags"].selected
-    }
+    flag_ids_set = {f.id for f in simulation.resources["flags"].selected}
 
     # Convert resources
     all_names = dedupe_by_id(
@@ -364,9 +360,7 @@ async def get_simulation_client(
         ),
         flags=SimulationFlagSection(
             **_section("flags"),
-            current=[
-                f for f in simulation_flags if f.flag_option_id in flag_ids_set
-            ],
+            current=[f for f in simulation_flags if f.flag_option_id in flag_ids_set],
             resources=simulation_flags,
         ),
         departments=SimulationDepartmentSection(

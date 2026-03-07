@@ -9,6 +9,7 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.globals import get_db, get_pool
 from app.routes.auth.access import get_access_internal
 from app.routes.auth.route_permissions import (
     compute_available_routes,
@@ -21,9 +22,8 @@ from app.routes.auth.route_permissions import (
     get_entity_name_junction,
 )
 from app.routes.auth.types import GetAuthPageApiResponse
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_db, get_pool
 from app.sql.types import GetProfileContextApiRequest
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 

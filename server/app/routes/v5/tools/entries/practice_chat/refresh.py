@@ -2,7 +2,6 @@
 
 import asyncpg
 
-
 MV_NAME = "practice_chat_mv"
 
 

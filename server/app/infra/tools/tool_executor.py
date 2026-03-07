@@ -65,11 +65,13 @@ async def execute_tool_call(
             layer = "resource"
             name = resource_type
         else:
-            return json.dumps({
-                "success": False,
-                "message": f"No resource_type or entry_type for tool: {tool_name}",
-                "error_stage": "tool_resolve",
-            })
+            return json.dumps(
+                {
+                    "success": False,
+                    "message": f"No resource_type or entry_type for tool: {tool_name}",
+                    "error_stage": "tool_resolve",
+                }
+            )
 
         operation = "create" if (is_creatable is None or is_creatable) else "search"
 
@@ -84,20 +86,24 @@ async def execute_tool_call(
         )
 
         if not mapped_values and operation == "create":
-            return json.dumps({
-                "success": False,
-                "message": f"No values to insert for {tool_name}. Check tool configuration.",
-                "error_stage": "tool_execute",
-            })
+            return json.dumps(
+                {
+                    "success": False,
+                    "message": f"No values to insert for {tool_name}. Check tool configuration.",
+                    "error_stage": "tool_execute",
+                }
+            )
 
         # 2. Resolve black-box function from registry
         tool_fn = resolve_tool_fn(layer, name, operation)
         if tool_fn is None:
-            return json.dumps({
-                "success": False,
-                "message": f"No registered tool function for ({layer}, {name}, {operation})",
-                "error_stage": "tool_resolve",
-            })
+            return json.dumps(
+                {
+                    "success": False,
+                    "message": f"No registered tool function for ({layer}, {name}, {operation})",
+                    "error_stage": "tool_resolve",
+                }
+            )
 
         # 3. Inject infrastructure kwargs
         fn_arguments: dict[str, Any] = {**mapped_values, "soft": soft, "mcp": mcp}
@@ -140,8 +146,10 @@ async def execute_tool_call(
 
     except Exception as e:
         logger.exception(f"Error executing tool {tool_name}: {e}")
-        return json.dumps({
-            "success": False,
-            "message": f"Tool execution error: {str(e)}",
-            "error_stage": "tool_execute",
-        })
+        return json.dumps(
+            {
+                "success": False,
+                "message": f"Tool execution error: {str(e)}",
+                "error_stage": "tool_execute",
+            }
+        )

@@ -1,6 +1,7 @@
 """Tests for search_home_chats."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.chat.create import create_chat
 from app.routes.v5.tools.entries.home.create import create_home
@@ -8,7 +9,6 @@ from app.routes.v5.tools.entries.home_chat.create import create_home_chat
 from app.routes.v5.tools.entries.home_chat.refresh import refresh_home_chat
 from app.routes.v5.tools.entries.home_chat.search import search_home_chats
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

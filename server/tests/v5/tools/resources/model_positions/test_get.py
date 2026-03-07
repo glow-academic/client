@@ -1,10 +1,10 @@
 """Tests for get_model_positions."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.model_positions.get import get_model_positions
 from app.routes.v5.tools.resources.models.create import create_model
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

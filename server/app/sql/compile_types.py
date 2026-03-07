@@ -856,7 +856,7 @@ def write_consolidated_types_file(
     lines.append("    ")
     lines.append("    Args:")
     lines.append(
-        f'        sql_path: SQL file path (e.g., "app/sql/queries/agents/get_agent_new_complete.sql")'
+        '        sql_path: SQL file path (e.g., "app/sql/queries/agents/get_agent_new_complete.sql")'
     )
     lines.append("    ")
     lines.append("    Returns:")
@@ -886,7 +886,7 @@ def write_consolidated_types_file(
     lines.append("    ")
     lines.append("    Args:")
     lines.append(
-        f'        sql_path: SQL file path (e.g., "app/sql/queries/agents/get_agent_new_complete.sql")'
+        '        sql_path: SQL file path (e.g., "app/sql/queries/agents/get_agent_new_complete.sql")'
     )
     lines.append("    ")
     lines.append("    Returns:")
@@ -953,7 +953,7 @@ def write_consolidated_types_file(
     lines.append("    Args:")
     if registry_type == "app":
         lines.append(
-            f'        file_path: Relative path from server root (e.g., "app/sql/queries/agents/get_agent_new_complete.sql")'
+            '        file_path: Relative path from server root (e.g., "app/sql/queries/agents/get_agent_new_complete.sql")'
         )
     else:
         lines.append(
@@ -967,7 +967,7 @@ def write_consolidated_types_file(
     lines.append("        ```python")
     if registry_type == "app":
         lines.append(
-            f'        sql_query = load_sql_query("app/sql/queries/agents/get_agent_new_complete.sql")'
+            '        sql_query = load_sql_query("app/sql/queries/agents/get_agent_new_complete.sql")'
         )
     else:
         lines.append(
@@ -1224,7 +1224,7 @@ async def compile_sql_types(
         if not sql_file_paths:
             return (
                 True,
-                f"No SQL files found in app/sql/ or tests/sql/integration/",
+                "No SQL files found in app/sql/ or tests/sql/integration/",
             )
 
         print(f"🔍 Found {len(sql_file_paths)} SQL files to process")
@@ -1324,7 +1324,7 @@ async def compile_sql_types(
                 if not sql_file_paths:
                     return (
                         True,
-                        f"No SQL files found in app/sql/ or tests/sql/integration/",
+                        "No SQL files found in app/sql/ or tests/sql/integration/",
                     )
                 # Re-sort SQL files
                 sorted_sql_files = sorted(

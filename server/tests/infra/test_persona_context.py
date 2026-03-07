@@ -4,21 +4,19 @@ resolve_persona_context is tested with mocked black-box fetchers.
 Tests verify: junction merging, draft overrides, and resource pair assembly.
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
 
 from app.infra.persona_context import (
-    resolve_persona_context,
     _merge_junction_ids,
-    _MergedIds,
+    resolve_persona_context,
 )
-from app.infra.types import ArtifactContext, ResourcePair
+from app.infra.types import ResourcePair
 from app.routes.v5.tools.artifacts.persona.types import GetPersonasResponse
 from app.routes.v5.tools.entries.persona_drafts.types import GetPersonaDraftResponse
-
 
 NOW = datetime.now(UTC)
 MODULE = "app.infra.persona_context"
@@ -465,4 +463,3 @@ class TestResolvePersonaContextResources:
 
         assert len(result.resources["flags"].suggestions) == 1
         assert result.resources["flags"].suggestions[0].type == "persona_active"
-

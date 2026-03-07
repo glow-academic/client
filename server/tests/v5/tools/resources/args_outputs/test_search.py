@@ -1,11 +1,11 @@
 """Tests for search_args_outputs."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.args.create import create_arg
 from app.routes.v5.tools.resources.args_outputs.create import create_args_output
 from app.routes.v5.tools.resources.args_outputs.search import search_args_outputs
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

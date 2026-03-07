@@ -20,8 +20,15 @@ from app.infra.websocket.run_tracker import (
 )
 
 
-def _unit(agent: str = "a1", ttype: str = "resource", name: str = "images", modality: str | None = None) -> WorkUnit:
-    return WorkUnit(agent_id=agent, target_type=ttype, target_name=name, modality=modality)
+def _unit(
+    agent: str = "a1",
+    ttype: str = "resource",
+    name: str = "images",
+    modality: str | None = None,
+) -> WorkUnit:
+    return WorkUnit(
+        agent_id=agent, target_type=ttype, target_name=name, modality=modality
+    )
 
 
 @pytest.mark.asyncio
@@ -85,7 +92,9 @@ class TestInitRun:
 @pytest.mark.asyncio
 class TestRecordUnitSoft:
     async def test_transitions_to_soft(self, redis_client):
-        await init_run(redis_client, run_id="rs1", units=[_unit("a1", "resource", "images")])
+        await init_run(
+            redis_client, run_id="rs1", units=[_unit("a1", "resource", "images")]
+        )
 
         completed, total = await record_unit_soft(
             redis_client,
@@ -143,12 +152,19 @@ class TestPromoteUnit:
         await init_run(redis_client, run_id="rp1", units=[_unit()])
 
         await record_unit_soft(
-            redis_client, run_id="rp1", agent_id="a1",
-            target_type="resource", target_name="images", result_id="r1",
+            redis_client,
+            run_id="rp1",
+            agent_id="a1",
+            target_type="resource",
+            target_name="images",
+            result_id="r1",
         )
         await promote_unit(
-            redis_client, run_id="rp1", agent_id="a1",
-            target_type="resource", target_name="images",
+            redis_client,
+            run_id="rp1",
+            agent_id="a1",
+            target_type="resource",
+            target_name="images",
         )
 
         raw = await redis_client.hget("run:rp1:units", "a1:resource:images")
@@ -158,8 +174,11 @@ class TestPromoteUnit:
         """Promoting a non-existent unit does nothing."""
         await init_run(redis_client, run_id="rp2", units=[_unit()])
         await promote_unit(
-            redis_client, run_id="rp2", agent_id="a1",
-            target_type="resource", target_name="nonexistent",
+            redis_client,
+            run_id="rp2",
+            agent_id="a1",
+            target_type="resource",
+            target_name="nonexistent",
         )
 
 
@@ -169,8 +188,11 @@ class TestFailUnit:
         await init_run(redis_client, run_id="rf1", units=[_unit()])
 
         await fail_unit(
-            redis_client, run_id="rf1", agent_id="a1",
-            target_type="resource", target_name="images",
+            redis_client,
+            run_id="rf1",
+            agent_id="a1",
+            target_type="resource",
+            target_name="images",
         )
 
         raw = await redis_client.hget("run:rf1:units", "a1:resource:images")
@@ -180,12 +202,19 @@ class TestFailUnit:
         """Can fail a unit that was already soft (resolution loser)."""
         await init_run(redis_client, run_id="rf2", units=[_unit()])
         await record_unit_soft(
-            redis_client, run_id="rf2", agent_id="a1",
-            target_type="resource", target_name="images", result_id="r1",
+            redis_client,
+            run_id="rf2",
+            agent_id="a1",
+            target_type="resource",
+            target_name="images",
+            result_id="r1",
         )
         await fail_unit(
-            redis_client, run_id="rf2", agent_id="a1",
-            target_type="resource", target_name="images",
+            redis_client,
+            run_id="rf2",
+            agent_id="a1",
+            target_type="resource",
+            target_name="images",
         )
 
         raw = await redis_client.hget("run:rf2:units", "a1:resource:images")
@@ -206,8 +235,11 @@ class TestMultiAgentCompetition:
         # All complete → soft
         for agent in ["a1", "a2", "a3"]:
             await record_unit_soft(
-                redis_client, run_id="rc1", agent_id=agent,
-                target_type="resource", target_name="images",
+                redis_client,
+                run_id="rc1",
+                agent_id=agent,
+                target_type="resource",
+                target_name="images",
                 result_id=f"res-{agent}",
             )
 
@@ -217,16 +249,25 @@ class TestMultiAgentCompetition:
 
         # Promote a2, fail a1 and a3
         await promote_unit(
-            redis_client, run_id="rc1", agent_id="a2",
-            target_type="resource", target_name="images",
+            redis_client,
+            run_id="rc1",
+            agent_id="a2",
+            target_type="resource",
+            target_name="images",
         )
         await fail_unit(
-            redis_client, run_id="rc1", agent_id="a1",
-            target_type="resource", target_name="images",
+            redis_client,
+            run_id="rc1",
+            agent_id="a1",
+            target_type="resource",
+            target_name="images",
         )
         await fail_unit(
-            redis_client, run_id="rc1", agent_id="a3",
-            target_type="resource", target_name="images",
+            redis_client,
+            run_id="rc1",
+            agent_id="a3",
+            target_type="resource",
+            target_name="images",
         )
 
         status = await get_run_status(redis_client, run_id="rc1")
@@ -239,31 +280,40 @@ class TestMultiAgentCompetition:
 class TestRecordAgentDone:
     async def test_returns_all_done_when_all_agents_finish(self, redis_client):
         await init_run(
-            redis_client, run_id="rad1",
-            units=[_unit("a1"), _unit("a2")], num_agents=2,
+            redis_client,
+            run_id="rad1",
+            units=[_unit("a1"), _unit("a2")],
+            num_agents=2,
         )
 
         done, results = await record_agent_done(
-            redis_client, run_id="rad1", tool_results=[{"resource_type": "images"}],
+            redis_client,
+            run_id="rad1",
+            tool_results=[{"resource_type": "images"}],
         )
         assert done is False
         assert len(results) == 1
 
         done, results = await record_agent_done(
-            redis_client, run_id="rad1", tool_results=[{"resource_type": "texts"}],
+            redis_client,
+            run_id="rad1",
+            tool_results=[{"resource_type": "texts"}],
         )
         assert done is True
         assert len(results) == 2
 
     async def test_accumulates_tool_results(self, redis_client):
         await init_run(
-            redis_client, run_id="rad2",
-            units=[_unit("a1"), _unit("a2"), _unit("a3")], num_agents=3,
+            redis_client,
+            run_id="rad2",
+            units=[_unit("a1"), _unit("a2"), _unit("a3")],
+            num_agents=3,
         )
 
         for i in range(3):
             _, results = await record_agent_done(
-                redis_client, run_id="rad2",
+                redis_client,
+                run_id="rad2",
                 tool_results=[{"id": i}],
             )
 
@@ -282,11 +332,16 @@ class TestGetRunStatus:
         await init_run(redis_client, run_id="rgs1", units=units, num_agents=2)
 
         await record_unit_soft(
-            redis_client, run_id="rgs1", agent_id="a1",
-            target_type="resource", target_name="images",
+            redis_client,
+            run_id="rgs1",
+            agent_id="a1",
+            target_type="resource",
+            target_name="images",
         )
         await record_agent_done(
-            redis_client, run_id="rgs1", tool_results=[{"x": 1}],
+            redis_client,
+            run_id="rgs1",
+            tool_results=[{"x": 1}],
         )
 
         status = await get_run_status(redis_client, run_id="rgs1")
@@ -330,16 +385,23 @@ class TestFallback:
 
         # Unit soft
         completed, total = await record_unit_soft(
-            None, run_id=run_id, agent_id="a1",
-            target_type="resource", target_name="images", result_id="r1",
+            None,
+            run_id=run_id,
+            agent_id="a1",
+            target_type="resource",
+            target_name="images",
+            result_id="r1",
         )
         assert completed == 1
         assert total == 2
 
         # Promote
         await promote_unit(
-            None, run_id=run_id, agent_id="a1",
-            target_type="resource", target_name="images",
+            None,
+            run_id=run_id,
+            agent_id="a1",
+            target_type="resource",
+            target_name="images",
         )
 
         # Agent done
@@ -347,7 +409,9 @@ class TestFallback:
         assert done is False
 
         done, results = await record_agent_done(
-            None, run_id=run_id, tool_results=[{"x": 1}],
+            None,
+            run_id=run_id,
+            tool_results=[{"x": 1}],
         )
         assert done is True
         assert len(results) == 1

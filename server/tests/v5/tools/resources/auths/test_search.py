@@ -1,10 +1,10 @@
 """Tests for search_auths."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.auths.create import create_auth
 from app.routes.v5.tools.resources.auths.search import search_auths
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

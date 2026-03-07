@@ -1,6 +1,7 @@
 """Tests for get_simulation_positions."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.simulation_positions.create import (
     create_simulation_position,
@@ -9,7 +10,6 @@ from app.routes.v5.tools.resources.simulation_positions.get import (
     get_simulation_positions,
 )
 from app.routes.v5.tools.resources.simulations.create import create_simulation
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

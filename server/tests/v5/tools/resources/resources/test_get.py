@@ -1,10 +1,10 @@
 """Tests for get_resources."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.resources.create import create_resource
 from app.routes.v5.tools.resources.resources.get import get_resources
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

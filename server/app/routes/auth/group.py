@@ -8,15 +8,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request
 
+from app.infra.globals import get_pool
 from app.routes.auth.types import ResolveGroupApiRequest, ResolveGroupApiResponse
 from app.routes.v5.tools.entries.attempt.get import (
     get_attempt_chats_internal,
     get_attempt_messages_internal,
 )
 from app.routes.v5.tools.entries.attempt.search import get_attempt_list_internal
-from app.utils.error.handle_route_error import handle_route_error
-from app.infra.globals import get_pool
 from app.sql.types import GetAttemptListViewSqlRow
+from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 

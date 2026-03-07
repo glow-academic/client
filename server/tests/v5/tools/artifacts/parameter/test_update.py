@@ -1,6 +1,7 @@
 """Tests for update_parameter — black-box using resource + artifact tools only."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.artifacts.parameter.create import create_parameter
 from app.routes.v5.tools.artifacts.parameter.get import get_parameters
@@ -8,7 +9,6 @@ from app.routes.v5.tools.artifacts.parameter.update import update_parameter
 from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.names.create import create_name
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

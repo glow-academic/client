@@ -1,12 +1,12 @@
 """Tests for search_scenario_flags."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.scenario_flags.create import create_scenario_flag
 from app.routes.v5.tools.resources.scenario_flags.search import search_scenario_flags
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 
@@ -58,7 +58,7 @@ async def test_excludes_ids(conn, redis_client):
     items = await search_scenario_flags(
         conn,
         redis_client,
-        search=f"exclude-",
+        search="exclude-",
         exclude_ids=[a.id],
     )
 

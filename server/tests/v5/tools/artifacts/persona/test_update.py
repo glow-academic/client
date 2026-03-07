@@ -1,6 +1,7 @@
 """Tests for update_persona — black-box using resource + artifact tools only."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.artifacts.persona.create import create_persona
 from app.routes.v5.tools.artifacts.persona.get import get_personas
@@ -9,7 +10,6 @@ from app.routes.v5.tools.resources.colors.create import create_color
 from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.names.create import create_name
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

@@ -1,19 +1,16 @@
 """Tests for create_department — black-box using resource + artifact tools only."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.artifacts.department.create import (
     create_department as create_dept_artifact,
 )
 from app.routes.v5.tools.artifacts.department.get import get_departments
-from app.routes.v5.tools.resources.departments.create import (
-    create_department as create_department_resource,
-)
 from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.settings.create import create_setting
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

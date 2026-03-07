@@ -1,10 +1,10 @@
 """Tests for get_texts."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.texts.create import create_text
 from app.routes.v5.tools.resources.texts.get import get_texts
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

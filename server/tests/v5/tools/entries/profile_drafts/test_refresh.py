@@ -2,9 +2,9 @@
 
 import pytest
 
+from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.profile_drafts.create import create_profile_draft
 from app.routes.v5.tools.entries.profile_drafts.refresh import refresh_profile_drafts
-from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.sessions.create import create_session
 
 pytestmark = pytest.mark.asyncio

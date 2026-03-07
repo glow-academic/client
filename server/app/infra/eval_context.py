@@ -26,23 +26,22 @@ from app.routes.v5.tools.entries.eval_drafts.get import get_eval_drafts
 
 # Resource get fetchers (by known IDs)
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.model_flags.get import get_model_flags
-from app.routes.v5.tools.resources.model_positions.get import get_model_positions
-from app.routes.v5.tools.resources.model_rubrics.get import get_model_rubrics
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.names.get import get_names
 
 # Resource search fetchers (bounded, paginated)
 from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import search_descriptions
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.model_flags.get import get_model_flags
 from app.routes.v5.tools.resources.model_flags.search import search_model_flags
+from app.routes.v5.tools.resources.model_positions.get import get_model_positions
 from app.routes.v5.tools.resources.model_positions.search import search_model_positions
+from app.routes.v5.tools.resources.model_rubrics.get import get_model_rubrics
 from app.routes.v5.tools.resources.model_rubrics.search import search_model_rubrics
+from app.routes.v5.tools.resources.models.get import get_models
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -200,9 +199,7 @@ async def resolve_eval_context(
 
     # Filter flags to eval-specific types
     flags_suggestions_filtered = [
-        f
-        for f in flags_suggestions
-        if getattr(f, "name", None) in EVAL_FLAG_NAMES
+        f for f in flags_suggestions if getattr(f, "name", None) in EVAL_FLAG_NAMES
     ]
 
     return ArtifactContext(
@@ -223,9 +220,7 @@ async def resolve_eval_context(
             "departments": ResourcePair(
                 selected=departments_selected, suggestions=departments_suggestions
             ),
-            "models": ResourcePair(
-                selected=models_selected, suggestions=[]
-            ),
+            "models": ResourcePair(selected=models_selected, suggestions=[]),
             "model_flags": ResourcePair(
                 selected=model_flags_selected, suggestions=model_flags_suggestions
             ),

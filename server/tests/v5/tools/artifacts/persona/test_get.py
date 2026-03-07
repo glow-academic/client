@@ -1,11 +1,11 @@
 """Tests for get_personas."""
 
 import pytest
+from tests.helpers import nonexistent_id, unique_tag
 
 from app.routes.v5.tools.artifacts.persona.create import create_persona
 from app.routes.v5.tools.artifacts.persona.get import get_personas
 from app.routes.v5.tools.resources.names.create import create_name
-from tests.helpers import nonexistent_id, unique_tag
 
 pytestmark = pytest.mark.asyncio
 

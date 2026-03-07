@@ -26,34 +26,35 @@ from app.routes.v5.tools.entries.model_drafts.get import get_model_drafts
 
 # Resource get fetchers (by known IDs)
 from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.modalities.get import get_modalities
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.pricing.get import get_pricing
-from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.qualities.get import get_qualities
-from app.routes.v5.tools.resources.reasoning_levels.get import get_reasoning_levels
-from app.routes.v5.tools.resources.temperature_levels.get import get_temperature_levels
-from app.routes.v5.tools.resources.values.get import get_values
-from app.routes.v5.tools.resources.voices.get import get_voices
 
 # Resource search fetchers (bounded, paginated)
 from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.descriptions.search import search_descriptions
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.modalities.get import get_modalities
 from app.routes.v5.tools.resources.modalities.search import search_modalities
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
+from app.routes.v5.tools.resources.pricing.get import get_pricing
 from app.routes.v5.tools.resources.pricing.search import search_pricing
+from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.providers.search import search_providers
+from app.routes.v5.tools.resources.qualities.get import get_qualities
 from app.routes.v5.tools.resources.qualities.search import search_qualities
-from app.routes.v5.tools.resources.reasoning_levels.search import search_reasoning_levels
+from app.routes.v5.tools.resources.reasoning_levels.get import get_reasoning_levels
+from app.routes.v5.tools.resources.reasoning_levels.search import (
+    search_reasoning_levels,
+)
+from app.routes.v5.tools.resources.temperature_levels.get import get_temperature_levels
 from app.routes.v5.tools.resources.temperature_levels.search import (
     search_temperature_levels,
 )
+from app.routes.v5.tools.resources.values.get import get_values
 from app.routes.v5.tools.resources.values.search import search_values
+from app.routes.v5.tools.resources.voices.get import get_voices
 from app.routes.v5.tools.resources.voices.search import search_voices
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -233,9 +234,7 @@ async def resolve_model_context(
             bypass_cache=bypass_cache,
         ),
         # Temperature levels
-        get_temperature_levels(
-            conn, merged.temperature_level_ids, redis, bypass_cache
-        ),
+        get_temperature_levels(conn, merged.temperature_level_ids, redis, bypass_cache),
         search_temperature_levels(
             conn,
             redis,
@@ -293,9 +292,7 @@ async def resolve_model_context(
 
     # Filter flags to model-specific types
     flags_suggestions_filtered = [
-        f
-        for f in flags_suggestions
-        if getattr(f, "name", None) in MODEL_FLAG_NAMES
+        f for f in flags_suggestions if getattr(f, "name", None) in MODEL_FLAG_NAMES
     ]
 
     return ArtifactContext(
@@ -383,9 +380,7 @@ def _merge_junction_ids(artifact, draft) -> _MergedIds:
         list(artifact.temperature_level_ids or []) if artifact else []
     )
     pricing_ids = list(artifact.pricing_ids or []) if artifact else []
-    reasoning_level_ids = (
-        list(artifact.reasoning_level_ids or []) if artifact else []
-    )
+    reasoning_level_ids = list(artifact.reasoning_level_ids or []) if artifact else []
     quality_ids = list(artifact.quality_ids or []) if artifact else []
     voice_ids = list(artifact.voice_ids or []) if artifact else []
 

@@ -118,15 +118,20 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
         async with get_db_connection() as conn:
             if assistant_output:
                 await persist_run_message(
-                    conn, run_id=run_uuid,
+                    conn,
+                    run_id=run_uuid,
                     session_id=session_id,
-                    role="assistant", content=assistant_output,
+                    role="assistant",
+                    content=assistant_output,
                 )
 
             if input_tokens or output_tokens:
                 await create_token(
-                    conn, run_id=run_uuid, session_id=session_id,
-                    input_tokens=input_tokens, output_tokens=output_tokens,
+                    conn,
+                    run_id=run_uuid,
+                    session_id=session_id,
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
                 )
     except Exception as e:
         logger.exception(f"Failed to save run_complete for {artifact_type}: {e}")
@@ -135,7 +140,9 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
     redis = get_redis_client()
     tool_results = data.get("tool_results") or []
     is_complete, all_tool_results = await record_agent_done(
-        redis, run_id=run_id, tool_results=tool_results,
+        redis,
+        run_id=run_id,
+        tool_results=tool_results,
     )
 
     if not is_complete:
@@ -270,16 +277,20 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
         if attempt_chat_id_meta:
             resource_actions["_attempt_chat_id"] = attempt_chat_id_meta
 
-    events.append(internal_event(
-        "generation_channel",
-        GenerationCompleteData(
-            sid=sid, artifact_type=artifact_type,
-            group_id=group_id_str, run_id=run_id,
-            success=True,
-            message=f"{artifact_type.capitalize()} generation completed",
-            resource_actions=resource_actions,
-        ).model_dump(mode="json"),
-    ))
+    events.append(
+        internal_event(
+            "generation_channel",
+            GenerationCompleteData(
+                sid=sid,
+                artifact_type=artifact_type,
+                group_id=group_id_str,
+                run_id=run_id,
+                success=True,
+                message=f"{artifact_type.capitalize()} generation completed",
+                resource_actions=resource_actions,
+            ).model_dump(mode="json"),
+        )
+    )
 
     # Chat special case: MV refresh + cache invalidation
     if artifact_type == "chat":
@@ -292,14 +303,16 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
                     await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
                 await invalidate_tags(["attempt", "attempts"], redis=redis)
 
-                events.append(internal_event(
-                    "attempt_chat_started",
-                    AttemptChatStartedData(
-                        sid=sid,
-                        attempt_id=attempt_id_data,
-                        chat_id=attempt_chat_id_data,
-                    ).model_dump(mode="json"),
-                ))
+                events.append(
+                    internal_event(
+                        "attempt_chat_started",
+                        AttemptChatStartedData(
+                            sid=sid,
+                            attempt_id=attempt_id_data,
+                            chat_id=attempt_chat_id_data,
+                        ).model_dump(mode="json"),
+                    )
+                )
             except Exception as e:
                 logger.exception(f"Failed chat post-save: {e}")
 

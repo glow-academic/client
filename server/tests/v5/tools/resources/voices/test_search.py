@@ -1,10 +1,10 @@
 """Tests for search_voices."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.voices.create import create_voice
 from app.routes.v5.tools.resources.voices.search import search_voices
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

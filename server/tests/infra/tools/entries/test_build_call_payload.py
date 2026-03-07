@@ -1,7 +1,8 @@
 """Tests for build_call_payload."""
 
-from app.infra.tools.entries.build_call_payload import build_call_payload
 from tests.helpers import nonexistent_id
+
+from app.infra.tools.entries.build_call_payload import build_call_payload
 
 
 def test_has_correct_keys():

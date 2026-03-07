@@ -11,7 +11,7 @@ Composes existing black-box fetchers — no raw SQL.
 from __future__ import annotations
 
 import asyncio
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from uuid import UUID
 
 import asyncpg
@@ -25,7 +25,6 @@ from app.routes.v5.tools.resources.emails.get import get_emails
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.roles.get import get_roles
-
 
 # ---------------------------------------------------------------------------
 # Types

@@ -17,9 +17,8 @@ TODO: Link test_id to run more intimately so score traces back via test_grade_en
 from __future__ import annotations
 
 import json
-from typing import Any
-
 import uuid as _uuid
+from typing import Any
 
 from app.infra.activate.activate import activate_rows
 from app.infra.globals import get_internal_sio, get_redis_client
@@ -143,8 +142,7 @@ async def handle_generation_ended(data: dict[str, Any]) -> None:
                         target_name=target_name,
                     )
                     logger.info(
-                        f"Failed {agent_id}:{target_type}:{target_name} "
-                        f"(score={score})"
+                        f"Failed {agent_id}:{target_type}:{target_name} (score={score})"
                     )
             except Exception as e:
                 logger.exception(
@@ -153,18 +151,20 @@ async def handle_generation_ended(data: dict[str, Any]) -> None:
 
     # Step 4: Emit generation_complete
     events: list[SocketEvent] = []
-    events.append(internal_event(
-        "generation_channel",
-        GenerationCompleteData(
-            sid=sid,
-            artifact_type=artifact_type,
-            group_id=group_id_str,
-            run_id=run_id,
-            success=True,
-            message=f"{artifact_type.capitalize()} generation resolved",
-            resource_actions=resource_actions,
-        ).model_dump(mode="json"),
-    ))
+    events.append(
+        internal_event(
+            "generation_channel",
+            GenerationCompleteData(
+                sid=sid,
+                artifact_type=artifact_type,
+                group_id=group_id_str,
+                run_id=run_id,
+                success=True,
+                message=f"{artifact_type.capitalize()} generation resolved",
+                resource_actions=resource_actions,
+            ).model_dump(mode="json"),
+        )
+    )
 
     # Step 5: Cleanup
     await cleanup_run(redis, run_id=run_id)

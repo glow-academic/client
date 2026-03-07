@@ -87,6 +87,7 @@ class RunStatus:
 # Keys
 # ---------------------------------------------------------------------------
 
+
 def _meta_key(run_id: str) -> str:
     return f"run:{run_id}:meta"
 
@@ -153,9 +154,7 @@ async def init_run(
             "completed_agents": 0,
             "tool_results": [],
         }
-        _fallback[_units_key(run_id)] = {
-            k: json.loads(v) for k, v in unit_map.items()
-        }
+        _fallback[_units_key(run_id)] = {k: json.loads(v) for k, v in unit_map.items()}
         return
 
     try:
@@ -178,9 +177,7 @@ async def init_run(
             "completed_agents": 0,
             "tool_results": [],
         }
-        _fallback[_units_key(run_id)] = {
-            k: json.loads(v) for k, v in unit_map.items()
-        }
+        _fallback[_units_key(run_id)] = {k: json.loads(v) for k, v in unit_map.items()}
 
 
 async def record_unit_soft(

@@ -47,7 +47,6 @@ from app.routes.v5.socket.client.types import GeneratePayload
 from app.routes.v5.socket.internal.generate_artifact import GenerateArtifactPayload
 from app.routes.v5.socket.internal.generation_types import GenerationStartedData
 from app.routes.v5.socket.internal.prepare_pipeline import (
-    aggregate_tool_results,
     build_agent_dispatch,
     build_agent_groups,
     build_agent_groups_from_scores,
@@ -76,13 +75,19 @@ internal_sio = get_internal_sio()
 
 
 async def _emit_error(
-    sid: str, message: str, artifact_type: str, *, group_id: str | None = None,
+    sid: str,
+    message: str,
+    artifact_type: str,
+    *,
+    group_id: str | None = None,
 ) -> None:
     await emit_to_internal(
         "generate_call_error",
         GenerateErrorApiRequest(
-            sid=sid, error_message=message,
-            artifact_type=artifact_type, group_id=group_id,
+            sid=sid,
+            error_message=message,
+            artifact_type=artifact_type,
+            group_id=group_id,
             resource_type=artifact_type,
         ),
         sid=sid,
@@ -104,10 +109,16 @@ async def _fetch_artifact_types(
             continue
         try:
             fetcher_pool = pool if config.requires_pool else None
-            result = await config.fetcher(profile_id, artifact_id, draft_id, fetcher_pool)
-            results.setdefault(item.name, {})[item.operation] = dump_fetcher_result(result)
+            result = await config.fetcher(
+                profile_id, artifact_id, draft_id, fetcher_pool
+            )
+            results.setdefault(item.name, {})[item.operation] = dump_fetcher_result(
+                result
+            )
         except Exception as e:
-            logger.warning(f"Failed to fetch artifact_type '{item.name}.{item.operation}': {e}")
+            logger.warning(
+                f"Failed to fetch artifact_type '{item.name}.{item.operation}': {e}"
+            )
     return results
 
 
@@ -128,7 +139,9 @@ async def _fetch_entry_types(
         try:
             result = await fn(conn)
             if hasattr(result, "model_dump"):
-                results.setdefault(item.name, {})[item.operation] = result.model_dump(mode="json")
+                results.setdefault(item.name, {})[item.operation] = result.model_dump(
+                    mode="json"
+                )
             elif isinstance(result, list):
                 results.setdefault(item.name, {})[item.operation] = [
                     r.model_dump(mode="json") if hasattr(r, "model_dump") else r
@@ -137,7 +150,9 @@ async def _fetch_entry_types(
             else:
                 results.setdefault(item.name, {})[item.operation] = result
         except Exception as e:
-            logger.warning(f"Failed to fetch entry_type '{item.name}.{item.operation}': {e}")
+            logger.warning(
+                f"Failed to fetch entry_type '{item.name}.{item.operation}': {e}"
+            )
     return results
 
 
@@ -170,7 +185,9 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
         return
 
     if not profiles_id_str:
-        await _emit_error(sid, "Profiles resource not found. Please reconnect.", artifact_type)
+        await _emit_error(
+            sid, "Profiles resource not found. Please reconnect.", artifact_type
+        )
         return
 
     if not session_id_str:
@@ -214,7 +231,11 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
         # --- Step 2: Resolve artifact_id ---
         artifact_id = payload.artifact_id
         payload_metadata = payload.metadata or {}
-        if artifact_type == "profile" and not artifact_id and payload_metadata.get("staff_id"):
+        if (
+            artifact_type == "profile"
+            and not artifact_id
+            and payload_metadata.get("staff_id")
+        ):
             artifact_id = uuid.UUID(payload_metadata["staff_id"])
 
         # --- Steps 3–7: Resolve context, agent groups, Jinja, tools ---
@@ -249,7 +270,9 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                 return
 
             if not ws_ctx.agents:
-                await _emit_error(sid, "No system/agent configuration found.", artifact_type)
+                await _emit_error(
+                    sid, "No system/agent configuration found.", artifact_type
+                )
                 return
 
             # Lookups from ws_ctx (already resolved + deduped)
@@ -271,7 +294,9 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
             entry_results: dict[str, dict[str, Any]] | None = None
             if payload.entry_types:
                 async with get_db_connection() as entry_conn:
-                    entry_results = await _fetch_entry_types(payload.entry_types, entry_conn)
+                    entry_results = await _fetch_entry_types(
+                        payload.entry_types, entry_conn
+                    )
 
             jinja_context_base = build_jinja_from_ws_ctx(ws_ctx, entry_results)
             wrap_media_entries(jinja_context_base)
@@ -279,8 +304,12 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
             # Tools from ws_ctx (already resolved)
             config_tools = ws_ctx.tools
             all_tool_dicts = convert_tools_to_dict(config_tools)
-            all_tool_dicts = enrich_tools_with_args(all_tool_dicts, config_tools, ws_ctx.args)
-            all_tool_dicts = enrich_tools_with_args_outputs(all_tool_dicts, config_tools, ws_ctx.args_outputs)
+            all_tool_dicts = enrich_tools_with_args(
+                all_tool_dicts, config_tools, ws_ctx.args
+            )
+            all_tool_dicts = enrich_tools_with_args_outputs(
+                all_tool_dicts, config_tools, ws_ctx.args_outputs
+            )
             createable_resources = compute_createable_resources(config_tools)
             all_artifact_types = compute_all_artifact_types(all_tool_dicts)
 
@@ -295,10 +324,14 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                 raise RuntimeError("Database pool not initialized")
 
             if not config.fetcher:
-                await _emit_error(sid, f"No fetcher configured for {artifact_type}", artifact_type)
+                await _emit_error(
+                    sid, f"No fetcher configured for {artifact_type}", artifact_type
+                )
                 return
 
-            result: Any = await config.fetcher(profile_id, artifact_id, payload.draft_id, pool)
+            result: Any = await config.fetcher(
+                profile_id, artifact_id, payload.draft_id, pool
+            )
 
             # Resolve systems → agents → models → providers
             config_systems = getattr(result, "systems", None) or []
@@ -306,15 +339,21 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
 
             if config_systems:
                 system_agent_ids = {
-                    aid for s in config_systems
-                    for aid in (getattr(s, "agent_ids", None) or []) if aid
+                    aid
+                    for s in config_systems
+                    for aid in (getattr(s, "agent_ids", None) or [])
+                    if aid
                 }
                 if system_agent_ids:
                     async with pool.acquire() as c:
-                        config_agents = await get_agents(c, list(system_agent_ids), redis, bypass_cache)
+                        config_agents = await get_agents(
+                            c, list(system_agent_ids), redis, bypass_cache
+                        )
 
             if not config_agents:
-                await _emit_error(sid, "No system/agent configuration found.", artifact_type)
+                await _emit_error(
+                    sid, "No system/agent configuration found.", artifact_type
+                )
                 return
 
             agents_by_id = {a.id: a for a in config_agents if a.id}
@@ -328,18 +367,27 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                     config_models = await get_models(c, model_ids, redis, bypass_cache)
             models_by_id = {m.id: m for m in config_models if m.id}
 
-            provider_ids = list({
-                m.provider_id for m in config_models
-                if getattr(m, "provider_id", None) is not None
-            })
+            provider_ids = list(
+                {
+                    m.provider_id
+                    for m in config_models
+                    if getattr(m, "provider_id", None) is not None
+                }
+            )
             config_providers = []
             if provider_ids:
                 async with pool.acquire() as c:
-                    config_providers = await get_providers(c, provider_ids, redis, bypass_cache=bypass_cache)
-            providers_by_id = {p.id: p for p in config_providers if getattr(p, "id", None)}
+                    config_providers = await get_providers(
+                        c, provider_ids, redis, bypass_cache=bypass_cache
+                    )
+            providers_by_id = {
+                p.id: p for p in config_providers if getattr(p, "id", None)
+            }
 
             # Build agent groups
-            resource_system_ids: dict[str, uuid.UUID] = getattr(result, "resource_system_ids", {}) or {}
+            resource_system_ids: dict[str, uuid.UUID] = (
+                getattr(result, "resource_system_ids", {}) or {}
+            )
             resource_agent_ids: dict[str, uuid.UUID] = result.resource_agent_ids or {}
             systems_by_id = {s.id: s for s in config_systems if s.id}
 
@@ -357,7 +405,11 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
 
             # Jinja context
             artifact_results = await _fetch_artifact_types(
-                payload.artifact_types, profile_id, artifact_id, payload.draft_id, pool,
+                payload.artifact_types,
+                profile_id,
+                artifact_id,
+                payload.draft_id,
+                pool,
             )
             if artifact_type not in artifact_results:
                 artifact_results[artifact_type] = {"get": dump_fetcher_result(result)}
@@ -365,9 +417,13 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
             entry_results = None
             if payload.entry_types:
                 async with get_db_connection() as entry_conn:
-                    entry_results = await _fetch_entry_types(payload.entry_types, entry_conn)
+                    entry_results = await _fetch_entry_types(
+                        payload.entry_types, entry_conn
+                    )
 
-            jinja_context_base = build_namespaced_context(artifact_results, entry_results)
+            jinja_context_base = build_namespaced_context(
+                artifact_results, entry_results
+            )
             wrap_media_entries(jinja_context_base)
 
             # Enrich tools
@@ -376,8 +432,12 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
             config_args_outputs = getattr(result, "args_outputs", None) or []
 
             all_tool_dicts = convert_tools_to_dict(config_tools)
-            all_tool_dicts = enrich_tools_with_args(all_tool_dicts, config_tools, config_args)
-            all_tool_dicts = enrich_tools_with_args_outputs(all_tool_dicts, config_tools, config_args_outputs)
+            all_tool_dicts = enrich_tools_with_args(
+                all_tool_dicts, config_tools, config_args
+            )
+            all_tool_dicts = enrich_tools_with_args_outputs(
+                all_tool_dicts, config_tools, config_args_outputs
+            )
             createable_resources = compute_createable_resources(config_tools)
             all_artifact_types = compute_all_artifact_types(all_tool_dicts)
 
@@ -410,27 +470,35 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
             for rt in rts
         ]
         await init_run_trackers(
-            redis, run_id=str(run_id),
-            num_agents=len(agent_groups), num_resources=len(resource_types),
+            redis,
+            run_id=str(run_id),
+            num_agents=len(agent_groups),
+            num_resources=len(resource_types),
             units=units,
         )
 
         # --- Step 10: Build dispatches + persist messages ---
         events: list[SocketEvent] = []
 
-        events.append(internal_event(
-            "generation_started",
-            GenerationStartedData(
-                sid=sid, artifact_type=artifact_type,
-                group_id=group_id_str, run_id=str(run_id),
-                resource_types=resource_types,
-            ).model_dump(mode="json"),
-        ))
+        events.append(
+            internal_event(
+                "generation_started",
+                GenerationStartedData(
+                    sid=sid,
+                    artifact_type=artifact_type,
+                    group_id=group_id_str,
+                    run_id=str(run_id),
+                    resource_types=resource_types,
+                ).model_dump(mode="json"),
+            )
+        )
 
         for agent_group_id, agent_resource_types in agent_groups.items():
             agent_resource = agents_by_id.get(agent_group_id) or config_agents[0]
 
-            llm_config = resolve_agent_config(agent_resource, models_by_id, providers_by_id)
+            llm_config = resolve_agent_config(
+                agent_resource, models_by_id, providers_by_id
+            )
             if not llm_config:
                 continue
 
@@ -440,8 +508,10 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                 pid = getattr(agent_resource, "prompt_id", None)
                 prompt_obj = prompts_by_id.get(pid) if pid else None
                 system_prompt = (
-                    getattr(prompt_obj, "system_prompt", "") or ""
-                ) if prompt_obj else ""
+                    (getattr(prompt_obj, "system_prompt", "") or "")
+                    if prompt_obj
+                    else ""
+                )
 
                 iids = getattr(agent_resource, "instruction_ids", None) or []
                 dev_templates = [
@@ -459,7 +529,11 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                         return ""
                     async with pool.acquire() as c:
                         prompts = await get_prompts(c, [pid], redis)
-                        return prompts[0].system_prompt if prompts and prompts[0].system_prompt else ""
+                        return (
+                            prompts[0].system_prompt
+                            if prompts and prompts[0].system_prompt
+                            else ""
+                        )
 
                 async def _fetch_instructions(ar: Any) -> list[str]:
                     iids = getattr(ar, "instruction_ids", None) or []
@@ -495,8 +569,11 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                 for msg in dispatch.messages:
                     if msg.persist:
                         await persist_run_message(
-                            conn, run_id=run_id, session_id=session_id,
-                            role=msg.role, content=msg.raw_text,
+                            conn,
+                            run_id=run_id,
+                            session_id=session_id,
+                            role=msg.role,
+                            content=msg.raw_text,
                         )
 
                 # Extra messages (not persisted — pre-existing chat history)
@@ -510,49 +587,60 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                     for instruction in payload.user_instructions:
                         all_messages.append({"role": "user", "content": instruction})
                         await persist_run_message(
-                            conn, run_id=run_id, session_id=session_id,
-                            role="user", content=instruction,
+                            conn,
+                            run_id=run_id,
+                            session_id=session_id,
+                            role="user",
+                            content=instruction,
                         )
 
             # Build dispatch event
-            events.append(internal_event(
-                "generate_artifact",
-                GenerateArtifactPayload(
-                    sid=sid,
-                    artifact_type=artifact_type,
-                    resource_type=agent_resource_types[0] if agent_resource_types else artifact_type,
-                    run_id=str(run_id),
-                    group_id=group_id_str,
-                    modality=payload.modality,
-                    message_id=None,
-                    messages=all_messages,
-                    llm_config={
-                        "model": llm_config.model,
-                        "api_key": llm_config.api_key,
-                        "base_url": llm_config.base_url,
-                        "temperature": llm_config.temperature,
-                        "reasoning": llm_config.reasoning,
-                        "provider": llm_config.provider,
-                        "voice": llm_config.voice,
-                        "quality": llm_config.quality,
-                        "length_seconds": None,
-                        "tool_choice": "required",
-                    },
-                    tools=dispatch.scoped_tools,
-                    metadata=dispatch.metadata or None,
-                    profile_id=profile_id_str,
-                    profiles_id=profiles_id_str,
-                    session_id=session_id_str,
-                    artifact_id=str(artifact_id) if artifact_id else None,
-                    draft_id=str(payload.draft_id) if payload.draft_id else None,
-                    developer_instruction_templates=dispatch.developer_instruction_templates,
-                    agent_id=str(agent_group_id),
-                ).model_dump(mode="json"),
-            ))
+            events.append(
+                internal_event(
+                    "generate_artifact",
+                    GenerateArtifactPayload(
+                        sid=sid,
+                        artifact_type=artifact_type,
+                        resource_type=agent_resource_types[0]
+                        if agent_resource_types
+                        else artifact_type,
+                        run_id=str(run_id),
+                        group_id=group_id_str,
+                        modality=payload.modality,
+                        message_id=None,
+                        messages=all_messages,
+                        llm_config={
+                            "model": llm_config.model,
+                            "api_key": llm_config.api_key,
+                            "base_url": llm_config.base_url,
+                            "temperature": llm_config.temperature,
+                            "reasoning": llm_config.reasoning,
+                            "provider": llm_config.provider,
+                            "voice": llm_config.voice,
+                            "quality": llm_config.quality,
+                            "length_seconds": None,
+                            "tool_choice": "required",
+                        },
+                        tools=dispatch.scoped_tools,
+                        metadata=dispatch.metadata or None,
+                        profile_id=profile_id_str,
+                        profiles_id=profiles_id_str,
+                        session_id=session_id_str,
+                        artifact_id=str(artifact_id) if artifact_id else None,
+                        draft_id=str(payload.draft_id) if payload.draft_id else None,
+                        developer_instruction_templates=dispatch.developer_instruction_templates,
+                        agent_id=str(agent_group_id),
+                    ).model_dump(mode="json"),
+                )
+            )
 
         # --- Step 11: Flush all events ---
         await flush_events(events, internal_sio=internal_sio)
 
     except Exception as e:
         logger.exception(f"Failed to generate {artifact_type} resources: {str(e)}")
-        await _emit_error(sid, f"Failed to generate {artifact_type} resources: {str(e)}", artifact_type)
+        await _emit_error(
+            sid,
+            f"Failed to generate {artifact_type} resources: {str(e)}",
+            artifact_type,
+        )

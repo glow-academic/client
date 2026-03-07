@@ -4,6 +4,9 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.routes.v5.tools.entries.test_invocation.types import (
+    GetTestInvocationResponse,
+)
 from app.sql.types import (
     QGetTestInvocationViewV4Item,
 )
@@ -11,10 +14,6 @@ from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-
-from app.routes.v5.tools.entries.test_invocation.types import (
-    GetTestInvocationResponse,
-)
 
 MV_NAME = "test_invocation_mv"
 

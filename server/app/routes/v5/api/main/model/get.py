@@ -227,9 +227,7 @@ async def get_model_client(
     def compute_show_ai_generate(resource: str) -> bool:
         return agent_ids.get(resource) is not None
 
-    show_ai_generate_map = {
-        r: compute_show_ai_generate(r) for r in MODEL_RESOURCES
-    }
+    show_ai_generate_map = {r: compute_show_ai_generate(r) for r in MODEL_RESOURCES}
 
     basic_show_ai_generate = any(
         show_ai_generate_map.get(r, False) for r in MODEL_BASIC_RESOURCES
@@ -253,8 +251,7 @@ async def get_model_client(
 
     # Flags — enriched format
     all_flags = dedupe_by_id(
-        model_ctx.resources["flags"].selected
-        + model_ctx.resources["flags"].suggestions
+        model_ctx.resources["flags"].selected + model_ctx.resources["flags"].suggestions
     )
     model_flags = [
         ModelFlagConfig(
@@ -288,8 +285,7 @@ async def get_model_client(
 
     # Dedupe all resources
     all_names = dedupe_by_id(
-        model_ctx.resources["names"].selected
-        + model_ctx.resources["names"].suggestions
+        model_ctx.resources["names"].selected + model_ctx.resources["names"].suggestions
     )
     all_descriptions = dedupe_by_id(
         model_ctx.resources["descriptions"].selected
@@ -334,30 +330,20 @@ async def get_model_client(
     # Suggestions maps (IDs only)
     suggestions_map = {
         "names": [n.id for n in model_ctx.resources["names"].suggestions],
-        "descriptions": [
-            d.id for d in model_ctx.resources["descriptions"].suggestions
-        ],
+        "descriptions": [d.id for d in model_ctx.resources["descriptions"].suggestions],
         "values": [v.id for v in model_ctx.resources["values"].suggestions],
-        "departments": [
-            d.id for d in model_ctx.resources["departments"].suggestions
-        ],
-        "modalities": [
-            m.id for m in model_ctx.resources["modalities"].suggestions
-        ],
+        "departments": [d.id for d in model_ctx.resources["departments"].suggestions],
+        "modalities": [m.id for m in model_ctx.resources["modalities"].suggestions],
         "temperature_levels": [
             t.temperature_level_id
             for t in model_ctx.resources["temperature_levels"].suggestions
         ],
-        "pricing": [
-            p.pricing_id for p in model_ctx.resources["pricing"].suggestions
-        ],
+        "pricing": [p.pricing_id for p in model_ctx.resources["pricing"].suggestions],
         "reasoning_levels": [
             r.reasoning_level_id
             for r in model_ctx.resources["reasoning_levels"].suggestions
         ],
-        "qualities": [
-            q.id for q in model_ctx.resources["qualities"].suggestions
-        ],
+        "qualities": [q.id for q in model_ctx.resources["qualities"].suggestions],
         "voices": [v.id for v in model_ctx.resources["voices"].suggestions],
     }
 

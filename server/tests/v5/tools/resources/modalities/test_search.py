@@ -1,10 +1,10 @@
 """Tests for search_modalities."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.modalities.create import create_modality
 from app.routes.v5.tools.resources.modalities.search import search_modalities
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

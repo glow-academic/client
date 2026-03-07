@@ -4,14 +4,13 @@ resolve_runs_context is tested with mocked black-box fetchers.
 Tests verify: correct arguments flow to fetchers, date defaults, filtering.
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
 
 from app.infra.runs_context import RunsContext, resolve_runs_context
-
 
 MODULE = "app.infra.runs_context"
 

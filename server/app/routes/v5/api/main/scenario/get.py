@@ -20,7 +20,7 @@ from redis.asyncio import Redis
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_redis_client
 from app.infra.helpers import dedupe_by_id
-from app.infra.scenario_context import SCENARIO_FLAG_TYPES, resolve_scenario_context
+from app.infra.scenario_context import resolve_scenario_context
 from app.infra.scenario_permissions_context import resolve_scenario_permissions_context
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.scenario.permissions import (
@@ -211,9 +211,7 @@ async def get_scenario_client(
 
     # ── Step 5: Permissions ───────────────────────────────────────────────
 
-    scenario_department_ids = [
-        d.id for d in scenario.resources["departments"].selected
-    ]
+    scenario_department_ids = [d.id for d in scenario.resources["departments"].selected]
     active_simulation_count = perms.active_simulation_count if perms else 0
 
     can_edit = compute_can_edit(
@@ -254,12 +252,10 @@ async def get_scenario_client(
     )
     all_objectives = scenario.resources["objectives"].selected
     all_images = dedupe_by_id(
-        scenario.resources["images"].selected
-        + scenario.resources["images"].suggestions
+        scenario.resources["images"].selected + scenario.resources["images"].suggestions
     )
     all_videos = dedupe_by_id(
-        scenario.resources["videos"].selected
-        + scenario.resources["videos"].suggestions
+        scenario.resources["videos"].selected + scenario.resources["videos"].suggestions
     )
     all_questions = dedupe_by_id(
         scenario.resources["questions"].selected
@@ -304,9 +300,7 @@ async def get_scenario_client(
         "options": False,
     }
 
-    show_ai_generate_map = {
-        r: agent_ids.get(r) is not None for r in SCENARIO_RESOURCES
-    }
+    show_ai_generate_map = {r: agent_ids.get(r) is not None for r in SCENARIO_RESOURCES}
 
     basic_show_ai_generate = any(
         show_ai_generate_map.get(r, False) for r in SCENARIO_BASIC_RESOURCES
@@ -347,18 +341,14 @@ async def get_scenario_client(
     # Chain: parameter_field_ids → field.parameter_id → parameter.video_parameter
     video_param_ids = {p.id for p in all_parameters if p.video_parameter}
     field_to_param = {
-        pf.id: pf.parameter_id
-        for pf in all_parameter_fields
-        if pf.parameter_id
+        pf.id: pf.parameter_id for pf in all_parameter_fields if pf.parameter_id
     }
 
     def _video_flags_for_field_ids(
         field_ids: list[UUID] | None,
     ) -> tuple[bool, bool]:
         param_ids = {
-            field_to_param[fid]
-            for fid in (field_ids or [])
-            if fid in field_to_param
+            field_to_param[fid] for fid in (field_ids or []) if fid in field_to_param
         }
         has_video = bool(param_ids & video_param_ids)
         has_non_video = bool(param_ids - video_param_ids) or not param_ids
@@ -395,7 +385,9 @@ async def get_scenario_client(
         )
 
     def _to_persona(p) -> ScenarioPersona:
-        video_persona, non_video_persona = _video_flags_for_field_ids(p.parameter_field_ids)
+        video_persona, non_video_persona = _video_flags_for_field_ids(
+            p.parameter_field_ids
+        )
         return ScenarioPersona(
             persona_id=p.id,
             name=p.name,
@@ -410,7 +402,9 @@ async def get_scenario_client(
         )
 
     def _to_document(d) -> ScenarioDocument:
-        video_document, non_video_document = _video_flags_for_field_ids(d.parameter_field_ids)
+        video_document, non_video_document = _video_flags_for_field_ids(
+            d.parameter_field_ids
+        )
         file_entry = file_map.get(d.file_id) if d.file_id else None
         return ScenarioDocument(
             document_id=d.id,
@@ -449,9 +443,7 @@ async def get_scenario_client(
         )
 
     def _to_objective(o) -> ScenarioObjective:
-        return ScenarioObjective(
-            id=o.id, objective=o.objective, generated=o.generated
-        )
+        return ScenarioObjective(id=o.id, objective=o.objective, generated=o.generated)
 
     def _to_image(i) -> ScenarioImage:
         entry = image_entry_map.get(i.id)
@@ -494,8 +486,7 @@ async def get_scenario_client(
 
     # Build flag configs
     all_flags = dedupe_by_id(
-        scenario.resources["flags"].selected
-        + scenario.resources["flags"].suggestions
+        scenario.resources["flags"].selected + scenario.resources["flags"].suggestions
     )
     scenario_flags = [
         ScenarioFlagConfig(
@@ -515,18 +506,27 @@ async def get_scenario_client(
     current_flag_ids = {f.id for f in scenario.resources["flags"].selected}
 
     # Convert all resources
-    all_names = [_to_name(n) for n in dedupe_by_id(
-        scenario.resources["names"].selected
-        + scenario.resources["names"].suggestions
-    )]
-    all_descriptions_conv = [_to_description(d) for d in dedupe_by_id(
-        scenario.resources["descriptions"].selected
-        + scenario.resources["descriptions"].suggestions
-    )]
-    all_problem_statements = [_to_problem_statement(ps) for ps in dedupe_by_id(
-        scenario.resources["problem_statements"].selected
-        + scenario.resources["problem_statements"].suggestions
-    )]
+    all_names = [
+        _to_name(n)
+        for n in dedupe_by_id(
+            scenario.resources["names"].selected
+            + scenario.resources["names"].suggestions
+        )
+    ]
+    all_descriptions_conv = [
+        _to_description(d)
+        for d in dedupe_by_id(
+            scenario.resources["descriptions"].selected
+            + scenario.resources["descriptions"].suggestions
+        )
+    ]
+    all_problem_statements = [
+        _to_problem_statement(ps)
+        for ps in dedupe_by_id(
+            scenario.resources["problem_statements"].selected
+            + scenario.resources["problem_statements"].suggestions
+        )
+    ]
     all_departments_conv = [_to_department(d) for d in all_departments]
     all_personas_conv = [_to_persona(p) for p in all_personas]
     all_documents_conv = [_to_document(d) for d in all_documents]
@@ -539,15 +539,27 @@ async def get_scenario_client(
     all_options_conv = [_to_option(o) for o in all_options]
 
     # Current (selected) resources
-    current_departments = [_to_department(d) for d in scenario.resources["departments"].selected]
+    current_departments = [
+        _to_department(d) for d in scenario.resources["departments"].selected
+    ]
     current_personas = [_to_persona(p) for p in scenario.resources["personas"].selected]
-    current_documents = [_to_document(d) for d in scenario.resources["documents"].selected]
-    current_parameters = [_to_parameter(p) for p in scenario.resources["parameters"].selected]
-    current_fields = [_to_field(f) for f in scenario.resources["parameter_fields"].selected]
-    current_objectives = [_to_objective(o) for o in scenario.resources["objectives"].selected]
+    current_documents = [
+        _to_document(d) for d in scenario.resources["documents"].selected
+    ]
+    current_parameters = [
+        _to_parameter(p) for p in scenario.resources["parameters"].selected
+    ]
+    current_fields = [
+        _to_field(f) for f in scenario.resources["parameter_fields"].selected
+    ]
+    current_objectives = [
+        _to_objective(o) for o in scenario.resources["objectives"].selected
+    ]
     current_images = [_to_image(i) for i in scenario.resources["images"].selected]
     current_videos = [_to_video(v) for v in scenario.resources["videos"].selected]
-    current_questions = [_to_question(q) for q in scenario.resources["questions"].selected]
+    current_questions = [
+        _to_question(q) for q in scenario.resources["questions"].selected
+    ]
     current_options = [_to_option(o) for o in scenario.resources["options"].selected]
 
     # Resolved parameter IDs from saved parameter_fields

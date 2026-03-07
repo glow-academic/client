@@ -1,10 +1,10 @@
 """Tests for search_rubrics."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.rubrics.create import create_rubric
 from app.routes.v5.tools.resources.rubrics.search import search_rubrics
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

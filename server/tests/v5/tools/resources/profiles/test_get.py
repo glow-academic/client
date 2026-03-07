@@ -1,10 +1,10 @@
 """Tests for get_profiles."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.profiles.create import create_profile
 from app.routes.v5.tools.resources.profiles.get import get_profiles
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

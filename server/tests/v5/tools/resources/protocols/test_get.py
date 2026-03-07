@@ -1,10 +1,10 @@
 """Tests for get_protocols."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.protocols.create import create_protocol
 from app.routes.v5.tools.resources.protocols.get import get_protocols
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

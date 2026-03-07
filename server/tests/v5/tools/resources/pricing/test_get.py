@@ -1,10 +1,10 @@
 """Tests for get_pricing."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.pricing.create import create_pricing
 from app.routes.v5.tools.resources.pricing.get import get_pricing
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

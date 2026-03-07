@@ -4,14 +4,13 @@ score_tools is pure Python (no I/O).
 resolve_tool_graph is tested with mocked black-box resource fetchers.
 """
 
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 import pytest
 
 from app.infra.tool_graph import (
-    ArtifactToolScores,
     ResolvedTool,
     SettingsToolGraph,
     resolve_tool_graph,
@@ -21,7 +20,6 @@ from app.routes.v5.tools.resources.agents.types import GetAgentResponse
 from app.routes.v5.tools.resources.settings.types import GetSettingResponse
 from app.routes.v5.tools.resources.systems.types import GetSystemResponse
 from app.routes.v5.tools.resources.tools.types import GetToolResponse
-
 
 NOW = datetime.now(UTC)
 

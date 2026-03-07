@@ -27,38 +27,40 @@ from app.routes.v5.tools.artifacts.persona.create import (
 )
 from app.routes.v5.tools.artifacts.persona.update import (
     _UNSET,
+)
+from app.routes.v5.tools.artifacts.persona.update import (
     update_persona as update_persona_artifact,
 )
 
+# Resource get tools (for denormalized snapshot hydration)
+from app.routes.v5.tools.resources.colors.get import get_colors
+
+# Resource search tools (match by name → ID)
+from app.routes.v5.tools.resources.colors.search import search_colors
+from app.routes.v5.tools.resources.departments.search import search_departments
+
 # Resource create tools (raw value → ID)
 from app.routes.v5.tools.resources.descriptions.create import create_description
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
 from app.routes.v5.tools.resources.examples.create import create_example
+from app.routes.v5.tools.resources.examples.get import get_examples
+from app.routes.v5.tools.resources.fields.get import get_fields
+from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.icons.get import get_icons
+from app.routes.v5.tools.resources.icons.search import search_icons
 from app.routes.v5.tools.resources.instructions.create import create_instruction
+from app.routes.v5.tools.resources.instructions.get import get_instructions
 from app.routes.v5.tools.resources.names.create import create_name
+from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.parameter_fields.search import (
+    search_parameter_fields,
+)
 
 # Resource create tool (denormalized snapshot)
 from app.routes.v5.tools.resources.personas.create import (
     create_persona as create_persona_resource,
 )
-
-# Resource search tools (match by name → ID)
-from app.routes.v5.tools.resources.colors.search import search_colors
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.icons.search import search_icons
-from app.routes.v5.tools.resources.parameter_fields.search import (
-    search_parameter_fields,
-)
 from app.routes.v5.tools.resources.voices.search import search_voices
-
-# Resource get tools (for denormalized snapshot hydration)
-from app.routes.v5.tools.resources.colors.get import get_colors
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.examples.get import get_examples
-from app.routes.v5.tools.resources.fields.get import get_fields
-from app.routes.v5.tools.resources.icons.get import get_icons
-from app.routes.v5.tools.resources.instructions.get import get_instructions
-from app.routes.v5.tools.resources.names.get import get_names
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 if TYPE_CHECKING:
@@ -119,7 +121,12 @@ async def resolve_persona_values(
 
     if item.color is not None and item.color_id is None:
         results = await search_colors(
-            conn, redis, search=item.color, limit_count=20, persona=True, setting=False,
+            conn,
+            redis,
+            search=item.color,
+            limit_count=20,
+            persona=True,
+            setting=False,
         )
         match = next(
             (r for r in results if r.name and r.name.lower() == item.color.lower()),
@@ -136,7 +143,11 @@ async def resolve_persona_values(
 
     if item.icon is not None and item.icon_id is None:
         results = await search_icons(
-            conn, redis, search=item.icon, limit_count=20, persona=True,
+            conn,
+            redis,
+            search=item.icon,
+            limit_count=20,
+            persona=True,
         )
         match = next(
             (r for r in results if r.name and r.name.lower() == item.icon.lower()),
@@ -153,8 +164,12 @@ async def resolve_persona_values(
 
     if item.active_flag is not None and item.active_flag_id is None:
         results = await search_flags(
-            conn, redis, search=None, flag_type="persona_active",
-            limit_count=100, persona=True,
+            conn,
+            redis,
+            search=None,
+            flag_type="persona_active",
+            limit_count=100,
+            persona=True,
         )
         match = next((r for r in results if r.type == "persona_active"), None)
         if match and match.id:
@@ -169,7 +184,11 @@ async def resolve_persona_values(
 
     if item.departments is not None and item.department_ids is None:
         all_depts = await search_departments(
-            conn, redis, search=None, limit_count=1000, persona=True,
+            conn,
+            redis,
+            search=None,
+            limit_count=1000,
+            persona=True,
         )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []
@@ -189,8 +208,13 @@ async def resolve_persona_values(
 
     if item.voices is not None and item.voice_ids is None:
         all_voices = await search_voices(
-            conn, redis, search=None, limit_count=1000,
-            persona=True, agent=False, model=False,
+            conn,
+            redis,
+            search=None,
+            limit_count=1000,
+            persona=True,
+            agent=False,
+            model=False,
         )
         voice_name_map = {v.voice.lower(): v.id for v in all_voices if v.voice and v.id}
         resolved_ids = []
@@ -283,15 +307,28 @@ async def _create_denormalized_snapshot(
     async def _empty():
         return []
 
-    names, descriptions, colors, icons, instructions, examples_list = (
-        await asyncio.gather(
-            get_names(conn, [name_id], redis, bypass_cache=True) if name_id else _empty(),
-            get_descriptions(conn, [description_id], redis, bypass_cache=True) if description_id else _empty(),
-            get_colors(conn, [color_id], redis, bypass_cache=True) if color_id else _empty(),
-            get_icons(conn, [icon_id], redis, bypass_cache=True) if icon_id else _empty(),
-            get_instructions(conn, [instructions_id], redis, bypass_cache=True) if instructions_id else _empty(),
-            get_examples(conn, example_ids, redis, bypass_cache=True) if example_ids else _empty(),
-        )
+    (
+        names,
+        descriptions,
+        colors,
+        icons,
+        instructions,
+        examples_list,
+    ) = await asyncio.gather(
+        get_names(conn, [name_id], redis, bypass_cache=True) if name_id else _empty(),
+        get_descriptions(conn, [description_id], redis, bypass_cache=True)
+        if description_id
+        else _empty(),
+        get_colors(conn, [color_id], redis, bypass_cache=True)
+        if color_id
+        else _empty(),
+        get_icons(conn, [icon_id], redis, bypass_cache=True) if icon_id else _empty(),
+        get_instructions(conn, [instructions_id], redis, bypass_cache=True)
+        if instructions_id
+        else _empty(),
+        get_examples(conn, example_ids, redis, bypass_cache=True)
+        if example_ids
+        else _empty(),
     )
 
     result = await create_persona_resource(
@@ -386,7 +423,10 @@ async def save_persona_client(
 
     for idx, item in enumerate(items):
         item_errors = await resolve_persona_values(
-            conn, redis, item, is_update=item.input_persona_id is not None,
+            conn,
+            redis,
+            item,
+            is_update=item.input_persona_id is not None,
         )
         if item_errors:
             has_errors = True
@@ -430,10 +470,14 @@ async def save_persona_client(
                     conn,
                     item.input_persona_id,
                     name_id=item.name_id if item.name_id else _UNSET,
-                    description_id=item.description_id if item.description_id else _UNSET,
+                    description_id=item.description_id
+                    if item.description_id
+                    else _UNSET,
                     color_id=item.color_id if item.color_id else _UNSET,
                     icon_id=item.icon_id if item.icon_id else _UNSET,
-                    instruction_id=item.instructions_id if item.instructions_id else _UNSET,
+                    instruction_id=item.instructions_id
+                    if item.instructions_id
+                    else _UNSET,
                     department_ids=item.department_ids,
                     example_ids=item.example_ids,
                     flag_ids=[item.active_flag_id] if item.active_flag_id else None,

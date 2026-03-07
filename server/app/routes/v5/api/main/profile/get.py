@@ -211,9 +211,7 @@ async def get_profile_client(
     def compute_show_ai_generate(resource: str) -> bool:
         return agent_ids.get(resource) is not None
 
-    show_ai_generate_map = {
-        r: compute_show_ai_generate(r) for r in PROFILE_RESOURCES
-    }
+    show_ai_generate_map = {r: compute_show_ai_generate(r) for r in PROFILE_RESOURCES}
 
     basic_show_ai_generate = any(
         [
@@ -299,9 +297,7 @@ async def get_profile_client(
         "request_limits": [
             r.id for r in profile_ctx.resources["request_limits"].suggestions
         ],
-        "departments": [
-            d.id for d in profile_ctx.resources["departments"].suggestions
-        ],
+        "departments": [d.id for d in profile_ctx.resources["departments"].suggestions],
         "roles": [r.id for r in profile_ctx.resources["roles"].suggestions],
     }
 

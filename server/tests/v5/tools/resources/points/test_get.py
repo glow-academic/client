@@ -1,10 +1,10 @@
 """Tests for get_points."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.points.create import create_point
 from app.routes.v5.tools.resources.points.get import get_points
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

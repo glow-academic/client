@@ -1,12 +1,12 @@
 """Tests for search_model_flags."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.model_flags.create import create_model_flag
 from app.routes.v5.tools.resources.model_flags.search import search_model_flags
 from app.routes.v5.tools.resources.models.create import create_model
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

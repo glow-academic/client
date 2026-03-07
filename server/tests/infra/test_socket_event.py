@@ -15,7 +15,6 @@ from app.infra.websocket.socket_event import (
     internal_event,
 )
 
-
 # ═══════════════════════════════════════════════════════════════════════════
 # SocketEvent construction — pure unit tests
 # ═══════════════════════════════════════════════════════════════════════════
@@ -105,9 +104,7 @@ class TestFlushEvents:
 
         mock_client = AsyncMock()
         mock_internal = AsyncMock()
-        await flush_events(
-            events, client_sio=mock_client, internal_sio=mock_internal
-        )
+        await flush_events(events, client_sio=mock_client, internal_sio=mock_internal)
 
         assert mock_client.emit.call_count == 2
         assert mock_internal.emit.call_count == 2
@@ -125,6 +122,4 @@ class TestFlushEvents:
     async def test_unknown_bus_raises(self):
         e = SocketEvent(bus="unknown", event="x", data={})
         with pytest.raises(ValueError, match="Unknown bus: unknown"):
-            await flush_events(
-                [e], client_sio=AsyncMock(), internal_sio=AsyncMock()
-            )
+            await flush_events([e], client_sio=AsyncMock(), internal_sio=AsyncMock())

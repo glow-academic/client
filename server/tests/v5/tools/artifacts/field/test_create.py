@@ -1,6 +1,7 @@
 """Tests for create_field — black-box using resource + artifact tools only."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.artifacts.field.create import create_field
 from app.routes.v5.tools.artifacts.field.get import get_fields
@@ -12,7 +13,6 @@ from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.parameters.create import create_parameter
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

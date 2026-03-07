@@ -1,12 +1,12 @@
 """Tests for get_scenario_rubrics."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.rubrics.create import create_rubric
 from app.routes.v5.tools.resources.scenario_rubrics.create import create_scenario_rubric
 from app.routes.v5.tools.resources.scenario_rubrics.get import get_scenario_rubrics
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

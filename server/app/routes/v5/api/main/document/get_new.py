@@ -217,9 +217,7 @@ async def get_document_client(
     def compute_show_ai_generate(resource: str) -> bool:
         return agent_ids.get(resource) is not None
 
-    show_ai_generate_map = {
-        r: compute_show_ai_generate(r) for r in DOCUMENT_RESOURCES
-    }
+    show_ai_generate_map = {r: compute_show_ai_generate(r) for r in DOCUMENT_RESOURCES}
 
     basic_show_ai_generate = any(
         [
@@ -242,8 +240,7 @@ async def get_document_client(
 
     # Flags — enriched format
     all_flags = dedupe_by_id(
-        document.resources["flags"].selected
-        + document.resources["flags"].suggestions
+        document.resources["flags"].selected + document.resources["flags"].suggestions
     )
     document_flags = [
         DocumentFlagConfig(
@@ -275,24 +272,20 @@ async def get_document_client(
 
     # Names, Descriptions — all = selected + suggestions deduped
     all_names = dedupe_by_id(
-        document.resources["names"].selected
-        + document.resources["names"].suggestions
+        document.resources["names"].selected + document.resources["names"].suggestions
     )
     all_descriptions = dedupe_by_id(
         document.resources["descriptions"].selected
         + document.resources["descriptions"].suggestions
     )
     all_files = dedupe_by_id(
-        document.resources["files"].selected
-        + document.resources["files"].suggestions
+        document.resources["files"].selected + document.resources["files"].suggestions
     )
     all_images = dedupe_by_id(
-        document.resources["images"].selected
-        + document.resources["images"].suggestions
+        document.resources["images"].selected + document.resources["images"].suggestions
     )
     all_texts = dedupe_by_id(
-        document.resources["texts"].selected
-        + document.resources["texts"].suggestions
+        document.resources["texts"].selected + document.resources["texts"].suggestions
     )
 
     # Suggestions maps (IDs only)

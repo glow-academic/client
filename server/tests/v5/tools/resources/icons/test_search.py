@@ -1,10 +1,10 @@
 """Tests for search_icons."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.icons.create import create_icon
 from app.routes.v5.tools.resources.icons.search import search_icons
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

@@ -1,11 +1,11 @@
 """Tests for search_personas."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.personas.create import create_personas
 from app.routes.v5.tools.entries.personas.search import search_personas
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

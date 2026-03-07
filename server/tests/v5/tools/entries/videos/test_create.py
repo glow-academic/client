@@ -5,7 +5,9 @@ import pytest
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.videos.create import create_video
 from app.routes.v5.tools.entries.videos.get import get_video
-from app.routes.v5.tools.resources.videos.create import create_video as create_video_resource
+from app.routes.v5.tools.resources.videos.create import (
+    create_video as create_video_resource,
+)
 
 pytestmark = pytest.mark.asyncio
 

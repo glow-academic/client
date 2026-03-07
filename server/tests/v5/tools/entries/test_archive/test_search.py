@@ -1,6 +1,7 @@
 """Tests for search_test_archives."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.groups.create import create_group
@@ -10,7 +11,6 @@ from app.routes.v5.tools.entries.test.create import create_test
 from app.routes.v5.tools.entries.test_archive.create import create_test_archive
 from app.routes.v5.tools.entries.test_archive.refresh import refresh_test_archive
 from app.routes.v5.tools.entries.test_archive.search import search_test_archives
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

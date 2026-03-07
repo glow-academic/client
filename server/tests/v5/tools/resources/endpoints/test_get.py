@@ -1,10 +1,10 @@
 """Tests for get_endpoints."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.endpoints.create import create_endpoint
 from app.routes.v5.tools.resources.endpoints.get import get_endpoints
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

@@ -1,12 +1,12 @@
 """Tests for delete_departments — black-box using tool functions only."""
 
 import pytest
+from tests.helpers import nonexistent_id, unique_tag
 
 from app.routes.v5.tools.artifacts.department.create import create_department
 from app.routes.v5.tools.artifacts.department.delete import delete_departments
 from app.routes.v5.tools.artifacts.department.get import get_departments
 from app.routes.v5.tools.resources.names.create import create_name
-from tests.helpers import unique_tag, nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

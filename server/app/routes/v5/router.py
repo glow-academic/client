@@ -20,7 +20,6 @@ from fastapi import APIRouter, Depends
 # Docs
 # ============================================================================
 from app.routes.v5.api.docs import router as docs_router
-
 from app.routes.v5.api.main.activity import router as activity_artifact_router
 
 # ============================================================================

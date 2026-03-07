@@ -1,10 +1,10 @@
 """Tests for get_instructions."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.instructions.create import create_instruction
 from app.routes.v5.tools.resources.instructions.get import get_instructions
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

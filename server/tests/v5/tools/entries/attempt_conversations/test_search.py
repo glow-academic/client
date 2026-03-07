@@ -1,6 +1,7 @@
 """Tests for search_attempt_conversations."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.attempt.create import create_attempt
 from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
@@ -19,7 +20,6 @@ from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -74,7 +74,9 @@ async def test_pagination_limit(conn, profile_id):
     result, attempt_chat = await _setup(conn, profile_id)
     await refresh_attempt_conversations(conn)
 
-    items = await search_attempt_conversations(conn, chat_ids=[attempt_chat.id], limit=1)
+    items = await search_attempt_conversations(
+        conn, chat_ids=[attempt_chat.id], limit=1
+    )
 
     assert len(items) <= 1
 

@@ -10,12 +10,12 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import UPLOAD_FOLDER, get_db
 from app.sql.types import (
     GetUploadFileInfoSqlParams,
     GetUploadFileInfoSqlRow,
 )
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 SQL_PATH = "app/sql/queries/uploads/get_upload_file_info_complete.sql"

@@ -14,13 +14,13 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request
 
+from app.infra.globals import get_db, get_pool
 from app.routes.auth.types import (
     AnalyticsFilterField,
     AnalyticsFilterFields,
     AnalyticsFilterOption,
     GetAnalyticsFiltersApiResponse,
 )
-from app.infra.globals import get_db, get_pool
 from app.sql.types import (
     GetProfileContextAccessSqlParams,
     GetProfileContextAccessSqlRow,

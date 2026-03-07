@@ -1,10 +1,10 @@
 """Tests for get_slugs."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.slugs.create import create_slug
 from app.routes.v5.tools.resources.slugs.get import get_slugs
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

@@ -31,13 +31,19 @@ internal_sio = get_internal_sio()
 
 
 async def _emit_error(
-    sid: str, message: str, artifact_type: str, *, group_id: str | None = None,
+    sid: str,
+    message: str,
+    artifact_type: str,
+    *,
+    group_id: str | None = None,
 ) -> None:
     await internal_sio.emit(
         "generate_error",
         GenerateErrorApiRequest(
-            sid=sid, error_message=message,
-            artifact_type=artifact_type, group_id=group_id,
+            sid=sid,
+            error_message=message,
+            artifact_type=artifact_type,
+            group_id=group_id,
         ).model_dump(),
     )
 
@@ -89,11 +95,7 @@ async def generate_handler_new(data: dict[str, Any]) -> None:
             async with get_db_connection() as conn:
                 runs_ctx = await resolve_runs_context(conn, profile_id=profile_id)
 
-            runs_today = (
-                runs_ctx.runs.total_count
-                if runs_ctx and runs_ctx.runs
-                else 0
-            )
+            runs_today = runs_ctx.runs.total_count if runs_ctx and runs_ctx.runs else 0
             if runs_today >= requests_per_day:
                 error_msg = (
                     f"Rate limit exceeded ({runs_today}/"
@@ -111,8 +113,10 @@ async def generate_handler_new(data: dict[str, Any]) -> None:
                         await internal_sio.emit(
                             "attempt_error",
                             {
-                                "sid": sid, "error_type": "rate_limit",
-                                "message": error_msg, "chat_id": session.chat_id,
+                                "sid": sid,
+                                "error_type": "rate_limit",
+                                "message": error_msg,
+                                "chat_id": session.chat_id,
                             },
                         )
                         await internal_sio.emit(
@@ -124,7 +128,8 @@ async def generate_handler_new(data: dict[str, Any]) -> None:
                 await _emit_error(
                     sid,
                     f"Failed to prepare {artifact_type} generation: {error_msg}",
-                    artifact_type, group_id=group_id,
+                    artifact_type,
+                    group_id=group_id,
                 )
                 return
 

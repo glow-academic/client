@@ -161,7 +161,7 @@ def parse_sections(schema_path: str) -> tuple[list[str], list[Section]]:
     current: Section | None = None
     in_preamble = True
 
-    with open(schema_path, "r") as f:
+    with open(schema_path) as f:
         for raw_line in f:
             line = raw_line.rstrip("\n")
 
@@ -456,7 +456,7 @@ def main():
     print(f"Splitting {schema_path} → {output_dir}/")
     counts, file_counts = write_split_files(schema_path, output_dir)
 
-    print(f"\nRouted sections:")
+    print("\nRouted sections:")
     print(f"  extensions.sql              {counts.get('extensions', 0):5d} sections")
     print(f"  enums/                      {counts.get('enums', 0):5d} files")
 

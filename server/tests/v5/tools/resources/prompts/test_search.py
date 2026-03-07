@@ -1,10 +1,10 @@
 """Tests for search_prompts."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.prompts.create import create_prompt
 from app.routes.v5.tools.resources.prompts.search import search_prompts
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

@@ -2,10 +2,10 @@
 
 import pytest
 
+from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.model_flags.create import create_model_flag
 from app.routes.v5.tools.resources.model_flags.get import get_model_flags
 from app.routes.v5.tools.resources.models.create import create_model
-from app.routes.v5.tools.resources.flags.create import create_flag
 
 pytestmark = pytest.mark.asyncio
 

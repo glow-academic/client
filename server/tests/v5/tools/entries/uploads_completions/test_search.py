@@ -1,6 +1,7 @@
 """Tests for search_uploads_completions."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.uploads.create import create_upload
@@ -10,7 +11,6 @@ from app.routes.v5.tools.entries.uploads_completions.create import (
 from app.routes.v5.tools.entries.uploads_completions.search import (
     search_uploads_completions,
 )
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -72,7 +72,9 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     completion, upload = await _setup(conn, profile_id)
 
-    items = await search_uploads_completions(conn, upload_ids=[upload.id], bypass_mv=True)
+    items = await search_uploads_completions(
+        conn, upload_ids=[upload.id], bypass_mv=True
+    )
 
     ids = [item.id for item in items]
     assert completion.id in ids

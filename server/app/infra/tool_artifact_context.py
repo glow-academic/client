@@ -156,7 +156,9 @@ async def resolve_tool_artifact_context(
             tool=True,
         ),
         # Arg Positions
-        get_arg_positions(conn, merged.arg_position_ids, redis, bypass_cache=bypass_cache),
+        get_arg_positions(
+            conn, merged.arg_position_ids, redis, bypass_cache=bypass_cache
+        ),
         search_arg_positions(
             conn,
             redis,
@@ -168,7 +170,9 @@ async def resolve_tool_artifact_context(
             tool=True,
         ),
         # Args Outputs
-        get_args_outputs(conn, merged.args_outputs_ids, redis, bypass_cache=bypass_cache),
+        get_args_outputs(
+            conn, merged.args_outputs_ids, redis, bypass_cache=bypass_cache
+        ),
         search_args_outputs(
             conn,
             redis,
@@ -181,9 +185,7 @@ async def resolve_tool_artifact_context(
 
     # Filter flags to tool-specific types
     flags_suggestions_filtered = [
-        f
-        for f in flags_suggestions
-        if getattr(f, "name", None) in TOOL_FLAG_NAMES
+        f for f in flags_suggestions if getattr(f, "name", None) in TOOL_FLAG_NAMES
     ]
 
     return ArtifactContext(
@@ -201,9 +203,7 @@ async def resolve_tool_artifact_context(
             "flags": ResourcePair(
                 selected=flags_selected, suggestions=flags_suggestions_filtered
             ),
-            "args": ResourcePair(
-                selected=args_selected, suggestions=args_suggestions
-            ),
+            "args": ResourcePair(selected=args_selected, suggestions=args_suggestions),
             "arg_positions": ResourcePair(
                 selected=arg_positions_selected, suggestions=arg_positions_suggestions
             ),

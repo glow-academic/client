@@ -11,7 +11,6 @@ import pytest
 
 from app.infra.system_context import SystemContext, resolve_system_context
 
-
 MODULE = "app.infra.system_context"
 
 

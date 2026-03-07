@@ -1,6 +1,7 @@
 """Tests for search_problem_statements."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.problem_statements.create import (
     create_problem_statement,
@@ -8,7 +9,6 @@ from app.routes.v5.tools.resources.problem_statements.create import (
 from app.routes.v5.tools.resources.problem_statements.search import (
     search_problem_statements,
 )
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

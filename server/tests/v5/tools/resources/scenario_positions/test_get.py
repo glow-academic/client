@@ -1,13 +1,13 @@
 """Tests for get_scenario_positions."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.scenario_positions.create import (
     create_scenario_position,
 )
 from app.routes.v5.tools.resources.scenario_positions.get import get_scenario_positions
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

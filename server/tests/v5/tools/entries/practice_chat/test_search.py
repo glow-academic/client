@@ -1,6 +1,7 @@
 """Tests for search_practice_chats."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.chat.create import create_chat
 from app.routes.v5.tools.entries.practice.create import create_practice
@@ -8,7 +9,6 @@ from app.routes.v5.tools.entries.practice_chat.create import create_practice_cha
 from app.routes.v5.tools.entries.practice_chat.refresh import refresh_practice_chat
 from app.routes.v5.tools.entries.practice_chat.search import search_practice_chats
 from app.routes.v5.tools.entries.sessions.create import create_session
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
@@ -86,7 +86,9 @@ async def test_returns_all_without_filter(conn, profile_id, simulation_bundle):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id, simulation_bundle):
     practice, _, result = await _setup(conn, profile_id, simulation_bundle)
 
-    items = await search_practice_chats(conn, practice_ids=[practice.id], bypass_mv=True)
+    items = await search_practice_chats(
+        conn, practice_ids=[practice.id], bypass_mv=True
+    )
 
     ids = [item.id for item in items]
     assert result.id in ids

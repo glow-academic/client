@@ -30,15 +30,14 @@ from app.routes.v5.tools.entries.department_drafts.get import get_department_dra
 
 # Resource get fetchers (by known IDs)
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.settings.get import get_settings
 
 # Resource search fetchers (bounded, paginated)
 from app.routes.v5.tools.resources.descriptions.search import search_descriptions
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
-
+from app.routes.v5.tools.resources.settings.get import get_settings
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -162,9 +161,7 @@ async def resolve_department_context(
             "flags": ResourcePair(
                 selected=flags_selected, suggestions=flags_suggestions_filtered
             ),
-            "settings": ResourcePair(
-                selected=settings_selected, suggestions=[]
-            ),
+            "settings": ResourcePair(selected=settings_selected, suggestions=[]),
         },
         entries={},
     )

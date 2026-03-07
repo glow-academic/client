@@ -169,9 +169,7 @@ async def get_eval_client(
         eval_ctx.resources["departments"].selected
         + eval_ctx.resources["departments"].suggestions
     )
-    all_models = dedupe_by_id(
-        eval_ctx.resources["models"].selected
-    )
+    all_models = dedupe_by_id(eval_ctx.resources["models"].selected)
     all_model_flags = dedupe_by_id(
         eval_ctx.resources["model_flags"].selected
         + eval_ctx.resources["model_flags"].suggestions
@@ -200,18 +198,14 @@ async def get_eval_client(
         "names": compute_name_required(),
         "descriptions": compute_description_required(),
         "flags": compute_active_flag_required(),
-        "departments": compute_departments_required(
-            show_flags_map["departments"]
-        ),
+        "departments": compute_departments_required(show_flags_map["departments"]),
         "models": compute_models_required(),
         "model_flags": compute_model_flags_required(),
         "model_rubrics": compute_model_rubrics_required(),
         "model_positions": compute_model_positions_required(),
     }
 
-    show_ai_generate_map = {
-        r: scores.best.get(r) is not None for r in EVAL_RESOURCES
-    }
+    show_ai_generate_map = {r: scores.best.get(r) is not None for r in EVAL_RESOURCES}
 
     basic_show_ai_generate = any(
         show_ai_generate_map.get(r, False) for r in EVAL_BASIC_RESOURCES
@@ -232,8 +226,7 @@ async def get_eval_client(
 
     # Flags — enriched format
     all_flags = dedupe_by_id(
-        eval_ctx.resources["flags"].selected
-        + eval_ctx.resources["flags"].suggestions
+        eval_ctx.resources["flags"].selected + eval_ctx.resources["flags"].suggestions
     )
     eval_flags = [
         EvalFlagConfig(
@@ -306,8 +299,7 @@ async def get_eval_client(
 
     # Names, Descriptions — all = selected + suggestions deduped
     all_names = dedupe_by_id(
-        eval_ctx.resources["names"].selected
-        + eval_ctx.resources["names"].suggestions
+        eval_ctx.resources["names"].selected + eval_ctx.resources["names"].suggestions
     )
     all_descriptions = dedupe_by_id(
         eval_ctx.resources["descriptions"].selected
@@ -317,12 +309,8 @@ async def get_eval_client(
     # Suggestions maps (IDs only)
     suggestions_map: dict[str, list[UUID]] = {
         "names": [n.id for n in eval_ctx.resources["names"].suggestions],
-        "descriptions": [
-            d.id for d in eval_ctx.resources["descriptions"].suggestions
-        ],
-        "departments": [
-            d.id for d in eval_ctx.resources["departments"].suggestions
-        ],
+        "descriptions": [d.id for d in eval_ctx.resources["descriptions"].suggestions],
+        "departments": [d.id for d in eval_ctx.resources["departments"].suggestions],
     }
 
     def _section(resource_key: str) -> dict:

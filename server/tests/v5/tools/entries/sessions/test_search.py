@@ -1,13 +1,13 @@
 """Tests for search_sessions."""
 
-from datetime import datetime, timedelta, UTC
+from datetime import UTC, datetime, timedelta
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.sessions.refresh import refresh_sessions
 from app.routes.v5.tools.entries.sessions.search import search_sessions
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

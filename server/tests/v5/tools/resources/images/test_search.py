@@ -1,10 +1,10 @@
 """Tests for search_images."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.images.create import create_image
 from app.routes.v5.tools.resources.images.search import search_images
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

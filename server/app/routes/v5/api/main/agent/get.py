@@ -228,8 +228,7 @@ async def get_agent_client(
         + agent_ctx.resources["departments"].suggestions
     )
     all_tools = dedupe_by_id(
-        agent_ctx.resources["tools"].selected
-        + agent_ctx.resources["tools"].suggestions
+        agent_ctx.resources["tools"].selected + agent_ctx.resources["tools"].suggestions
     )
 
     show_flags_map = {
@@ -271,9 +270,7 @@ async def get_agent_client(
     def compute_show_ai_generate(resource: str) -> bool:
         return agent_ids.get(resource) is not None
 
-    show_ai_generate_map = {
-        r: compute_show_ai_generate(r) for r in AGENT_RESOURCES
-    }
+    show_ai_generate_map = {r: compute_show_ai_generate(r) for r in AGENT_RESOURCES}
 
     basic_show_ai_generate = any(
         show_ai_generate_map.get(r, False) for r in AGENT_BASIC_RESOURCES
@@ -284,8 +281,7 @@ async def get_agent_client(
 
     # Flags — enriched format
     all_flags = dedupe_by_id(
-        agent_ctx.resources["flags"].selected
-        + agent_ctx.resources["flags"].suggestions
+        agent_ctx.resources["flags"].selected + agent_ctx.resources["flags"].suggestions
     )
     agent_flags = [
         AgentFlagConfig(
@@ -319,8 +315,7 @@ async def get_agent_client(
 
     # All resources — deduped selected + suggestions
     all_names = dedupe_by_id(
-        agent_ctx.resources["names"].selected
-        + agent_ctx.resources["names"].suggestions
+        agent_ctx.resources["names"].selected + agent_ctx.resources["names"].suggestions
     )
     all_descriptions = dedupe_by_id(
         agent_ctx.resources["descriptions"].selected
@@ -362,17 +357,11 @@ async def get_agent_client(
     # Suggestions maps (IDs only)
     suggestions_map = {
         "names": [n.id for n in agent_ctx.resources["names"].suggestions],
-        "descriptions": [
-            d.id for d in agent_ctx.resources["descriptions"].suggestions
-        ],
+        "descriptions": [d.id for d in agent_ctx.resources["descriptions"].suggestions],
         "models": [m.id for m in agent_ctx.resources["models"].suggestions],
         "prompts": [p.id for p in agent_ctx.resources["prompts"].suggestions],
-        "instructions": [
-            i.id for i in agent_ctx.resources["instructions"].suggestions
-        ],
-        "departments": [
-            d.id for d in agent_ctx.resources["departments"].suggestions
-        ],
+        "instructions": [i.id for i in agent_ctx.resources["instructions"].suggestions],
+        "departments": [d.id for d in agent_ctx.resources["departments"].suggestions],
         "tools": [t.id for t in agent_ctx.resources["tools"].suggestions],
         "temperature_levels": [
             t.id for t in agent_ctx.resources["temperature_levels"].suggestions

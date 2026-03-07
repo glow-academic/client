@@ -1,10 +1,10 @@
 """Tests for get_qualities."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.qualities.create import create_quality
 from app.routes.v5.tools.resources.qualities.get import get_qualities
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

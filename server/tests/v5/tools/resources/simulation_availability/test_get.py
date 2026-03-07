@@ -1,8 +1,9 @@
 """Tests for get_simulation_availability."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.simulation_availability.create import (
     create_simulation_availability,
@@ -11,14 +12,13 @@ from app.routes.v5.tools.resources.simulation_availability.get import (
     get_simulation_availability,
 )
 from app.routes.v5.tools.resources.simulations.create import create_simulation
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
 
 async def test_gets_created_simulation_availability(conn, redis_client):
     simulation = await create_simulation(conn, redis_client)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     item = await create_simulation_availability(
         conn, simulation.id, now, "start", redis_client
     )
@@ -46,7 +46,7 @@ async def test_returns_empty_for_empty_ids(conn, redis_client):
 
 async def test_cache_hit_skips_db(conn, redis_client):
     simulation = await create_simulation(conn, redis_client)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     item = await create_simulation_availability(
         conn, simulation.id, now, "start", redis_client
     )
@@ -63,7 +63,7 @@ async def test_cache_hit_skips_db(conn, redis_client):
 
 async def test_bypass_cache_skips_read_and_write(conn, redis_client):
     simulation = await create_simulation(conn, redis_client)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     item = await create_simulation_availability(
         conn, simulation.id, now, "start", redis_client
     )

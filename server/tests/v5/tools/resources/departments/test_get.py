@@ -1,10 +1,10 @@
 """Tests for get_departments."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.departments.get import get_departments
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

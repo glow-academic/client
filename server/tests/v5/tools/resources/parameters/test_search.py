@@ -1,10 +1,10 @@
 """Tests for search_parameters."""
 
 import pytest
+from tests.helpers import unique_tag
 
 from app.routes.v5.tools.resources.parameters.create import create_parameter
 from app.routes.v5.tools.resources.parameters.search import search_parameters
-from tests.helpers import unique_tag
 
 pytestmark = pytest.mark.asyncio
 

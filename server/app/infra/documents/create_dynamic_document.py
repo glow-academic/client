@@ -7,7 +7,6 @@ from typing import Any, cast
 import asyncpg  # type: ignore
 from fastapi import Request
 
-from app.utils.templates.jinja_renderer import render_template
 from app.infra.globals import UPLOAD_FOLDER
 from app.sql.types import (
     GetActiveSettingsSqlParams,
@@ -22,6 +21,7 @@ from app.utils.settings.theme import (
     derive_theme_tokens,
 )
 from app.utils.sql_helper import execute_sql_typed, load_sql
+from app.utils.templates.jinja_renderer import render_template
 
 logger = get_logger(__name__)
 

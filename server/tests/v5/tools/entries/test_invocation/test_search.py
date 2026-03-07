@@ -1,6 +1,7 @@
 """Tests for search_test_invocation_entries_internal."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.groups.create import create_group
@@ -12,7 +13,6 @@ from app.routes.v5.tools.entries.test_invocation.refresh import refresh_test_inv
 from app.routes.v5.tools.entries.test_invocation.search import (
     search_test_invocation_entries_internal,
 )
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

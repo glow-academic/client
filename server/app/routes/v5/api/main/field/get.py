@@ -206,9 +206,7 @@ async def get_field_client(
         "conditional_parameters": compute_conditional_parameters_required(),
     }
 
-    show_ai_generate_map = {
-        r: scores.best.get(r) is not None for r in FIELD_RESOURCES
-    }
+    show_ai_generate_map = {r: scores.best.get(r) is not None for r in FIELD_RESOURCES}
 
     basic_show_ai_generate = any(
         show_ai_generate_map.get(r, False) for r in FIELD_BASIC_RESOURCES
@@ -216,15 +214,10 @@ async def get_field_client(
 
     suggestions_map: dict[str, list[UUID]] = {
         "names": [n.id for n in field.resources["names"].suggestions],
-        "descriptions": [
-            d.id for d in field.resources["descriptions"].suggestions
-        ],
-        "departments": [
-            d.id for d in field.resources["departments"].suggestions
-        ],
+        "descriptions": [d.id for d in field.resources["descriptions"].suggestions],
+        "departments": [d.id for d in field.resources["departments"].suggestions],
         "conditional_parameters": [
-            p.id for p in field.resources["conditional_parameters"].suggestions
-            if p.id
+            p.id for p in field.resources["conditional_parameters"].suggestions if p.id
         ],
     }
 
@@ -241,8 +234,7 @@ async def get_field_client(
 
     # Names + Descriptions
     all_names = dedupe_by_id(
-        field.resources["names"].selected
-        + field.resources["names"].suggestions
+        field.resources["names"].selected + field.resources["names"].suggestions
     )
     all_descriptions = dedupe_by_id(
         field.resources["descriptions"].selected
@@ -251,8 +243,7 @@ async def get_field_client(
 
     # Flags — enriched format
     all_flags_raw = dedupe_by_id(
-        field.resources["flags"].selected
-        + field.resources["flags"].suggestions
+        field.resources["flags"].selected + field.resources["flags"].suggestions
     )
     all_flags = [
         FieldFlagConfig(

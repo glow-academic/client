@@ -6,12 +6,12 @@ import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_redis_client
-from app.routes.v5.tools.resources.simulation_availability.search import (
-    search_simulation_availability as search_simulation_availability_fn,
-)
 from app.routes.v5.api.resources.simulation_availability.types import (
     SearchSimulationAvailabilityApiRequest,
     SearchSimulationAvailabilityApiResponse,
+)
+from app.routes.v5.tools.resources.simulation_availability.search import (
+    search_simulation_availability as search_simulation_availability_fn,
 )
 from app.utils.error.handle_route_error import handle_route_error
 

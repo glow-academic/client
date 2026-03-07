@@ -10,21 +10,19 @@ from uuid import uuid4
 
 import pytest
 
+from app.infra.tool_graph import ArtifactToolScores, ResolvedTool, SettingsToolGraph
 from app.infra.types import (
     ArtifactContext,
     ArtifactRequest,
     ArtifactWebsocketContext,
     ResourcePair,
-    WebsocketContext,
 )
 from app.infra.websocket_context import (
     ARTIFACT_RESOLVERS,
-    ArtifactResolverConfig,
     PERSONA_SCORING_RESOURCES,
+    ArtifactResolverConfig,
     resolve_websocket_context,
 )
-from app.infra.tool_graph import ArtifactToolScores, ResolvedTool, SettingsToolGraph
-
 
 MODULE = "app.infra.websocket_context"
 
@@ -106,7 +104,7 @@ def _scores_with_system(system_id, resources):
         )
     return ArtifactToolScores(
         best=best,
-        has_any={r: True for r in resources},
+        has_any=dict.fromkeys(resources, True),
     )
 
 

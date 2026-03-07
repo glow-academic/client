@@ -211,9 +211,7 @@ async def get_rubric_client(
     def compute_show_ai_generate(resource: str) -> bool:
         return agent_ids.get(resource) is not None
 
-    show_ai_generate_map = {
-        r: compute_show_ai_generate(r) for r in RUBRIC_RESOURCES
-    }
+    show_ai_generate_map = {r: compute_show_ai_generate(r) for r in RUBRIC_RESOURCES}
 
     basic_show_ai_generate = any(
         show_ai_generate_map.get(r, False) for r in RUBRIC_BASIC_RESOURCES
@@ -287,16 +285,12 @@ async def get_rubric_client(
         "descriptions": [
             d.id for d in rubric_ctx.resources["descriptions"].suggestions
         ],
-        "departments": [
-            d.id for d in rubric_ctx.resources["departments"].suggestions
-        ],
+        "departments": [d.id for d in rubric_ctx.resources["departments"].suggestions],
         "points": [p.id for p in rubric_ctx.resources["points"].suggestions],
         "standard_groups": [
             sg.id for sg in rubric_ctx.resources["standard_groups"].suggestions
         ],
-        "standards": [
-            s.id for s in rubric_ctx.resources["standards"].suggestions
-        ],
+        "standards": [s.id for s in rubric_ctx.resources["standards"].suggestions],
     }
 
     def _section(resource_key: str) -> dict:

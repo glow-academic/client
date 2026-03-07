@@ -22,49 +22,52 @@ from app.infra.types import ArtifactContext, ResourcePair
 from app.routes.v5.tools.artifacts.scenario.get import (
     get_scenarios as get_scenario_artifacts,
 )
-from app.routes.v5.tools.entries.scenario_drafts.get import get_scenario_drafts
-
-# Resource get fetchers (by known IDs)
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.documents.get import get_documents
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.images.get import get_images
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.objectives.get import get_objectives
-from app.routes.v5.tools.resources.options.get import get_options
-from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
-from app.routes.v5.tools.resources.parameters.get import get_parameters
-from app.routes.v5.tools.resources.personas.get import get_personas
-from app.routes.v5.tools.resources.problem_statements.get import get_problem_statements
-from app.routes.v5.tools.resources.questions.get import get_questions
-from app.routes.v5.tools.resources.videos.get import get_videos
-
-# Resource search fetchers (bounded, paginated)
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.search import search_descriptions
-from app.routes.v5.tools.resources.documents.search import search_documents
-from app.routes.v5.tools.resources.fields.search import search_fields
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.images.search import search_images
-from app.routes.v5.tools.resources.names.search import search_names
-from app.routes.v5.tools.resources.options.search import search_options
-from app.routes.v5.tools.resources.parameter_fields.search import (
-    search_parameter_fields,
-)
-from app.routes.v5.tools.resources.parameters.search import search_parameters
-from app.routes.v5.tools.resources.personas.search import search_personas
-from app.routes.v5.tools.resources.problem_statements.search import (
-    search_problem_statements,
-)
-from app.routes.v5.tools.resources.questions.search import search_questions
-from app.routes.v5.tools.resources.videos.search import search_videos
 
 # Entry MV fetchers (aliased to avoid collision with resource search functions)
 from app.routes.v5.tools.entries.files.search import search_files as search_file_entries
-from app.routes.v5.tools.entries.images.search import search_images as search_image_entries
-from app.routes.v5.tools.entries.videos.search import search_videos as search_video_entries
+from app.routes.v5.tools.entries.images.search import (
+    search_images as search_image_entries,
+)
+from app.routes.v5.tools.entries.scenario_drafts.get import get_scenario_drafts
+from app.routes.v5.tools.entries.videos.search import (
+    search_videos as search_video_entries,
+)
 
+# Resource get fetchers (by known IDs)
+from app.routes.v5.tools.resources.departments.get import get_departments
+
+# Resource search fetchers (bounded, paginated)
+from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
+from app.routes.v5.tools.resources.descriptions.search import search_descriptions
+from app.routes.v5.tools.resources.documents.get import get_documents
+from app.routes.v5.tools.resources.documents.search import search_documents
+from app.routes.v5.tools.resources.fields.search import search_fields
+from app.routes.v5.tools.resources.flags.get import get_flags
+from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.images.get import get_images
+from app.routes.v5.tools.resources.images.search import search_images
+from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.names.search import search_names
+from app.routes.v5.tools.resources.objectives.get import get_objectives
+from app.routes.v5.tools.resources.options.get import get_options
+from app.routes.v5.tools.resources.options.search import search_options
+from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
+from app.routes.v5.tools.resources.parameter_fields.search import (
+    search_parameter_fields,
+)
+from app.routes.v5.tools.resources.parameters.get import get_parameters
+from app.routes.v5.tools.resources.parameters.search import search_parameters
+from app.routes.v5.tools.resources.personas.get import get_personas
+from app.routes.v5.tools.resources.personas.search import search_personas
+from app.routes.v5.tools.resources.problem_statements.get import get_problem_statements
+from app.routes.v5.tools.resources.problem_statements.search import (
+    search_problem_statements,
+)
+from app.routes.v5.tools.resources.questions.get import get_questions
+from app.routes.v5.tools.resources.questions.search import search_questions
+from app.routes.v5.tools.resources.videos.get import get_videos
+from app.routes.v5.tools.resources.videos.search import search_videos
 
 # ---------------------------------------------------------------------------
 # Types
@@ -208,9 +211,7 @@ async def resolve_scenario_context(
             scenario=True,
         ),
         # Problem statements
-        get_problem_statements(
-            conn, merged.problem_statement_ids, redis, bypass_cache
-        ),
+        get_problem_statements(conn, merged.problem_statement_ids, redis, bypass_cache),
         search_problem_statements(
             conn,
             redis,
@@ -293,9 +294,7 @@ async def resolve_scenario_context(
             bypass_cache=bypass_cache,
         ),
         # Parameter fields
-        get_parameter_fields(
-            conn, merged.parameter_field_ids, redis, bypass_cache
-        ),
+        get_parameter_fields(conn, merged.parameter_field_ids, redis, bypass_cache),
         (
             search_parameter_fields(
                 conn,
@@ -370,20 +369,26 @@ async def resolve_scenario_context(
 
     # Filter flags to scenario-specific types
     flags_suggestions_filtered = [
-        f
-        for f in flags_suggestions
-        if getattr(f, "type", None) in SCENARIO_FLAG_TYPES
+        f for f in flags_suggestions if getattr(f, "type", None) in SCENARIO_FLAG_TYPES
     ]
 
     # Step 3: Entry MV fetches (files, images, videos — for file_path/mime_type)
-    all_doc_file_ids = [d.file_id for d in documents_selected + documents_suggestions if d.file_id]
+    all_doc_file_ids = [
+        d.file_id for d in documents_selected + documents_suggestions if d.file_id
+    ]
     all_image_ids = [i.id for i in images_selected + images_suggestions if i.id]
     all_video_ids = [v.id for v in videos_selected + videos_suggestions if v.id]
 
     file_entries, image_entries, video_entries = await asyncio.gather(
-        search_file_entries(conn, files_ids=all_doc_file_ids, limit=200) if all_doc_file_ids else _empty(),
-        search_image_entries(conn, images_ids=all_image_ids, limit=200) if all_image_ids else _empty(),
-        search_video_entries(conn, videos_ids=all_video_ids, limit=200) if all_video_ids else _empty(),
+        search_file_entries(conn, files_ids=all_doc_file_ids, limit=200)
+        if all_doc_file_ids
+        else _empty(),
+        search_image_entries(conn, images_ids=all_image_ids, limit=200)
+        if all_image_ids
+        else _empty(),
+        search_video_entries(conn, videos_ids=all_video_ids, limit=200)
+        if all_video_ids
+        else _empty(),
     )
 
     return ArtifactContext(

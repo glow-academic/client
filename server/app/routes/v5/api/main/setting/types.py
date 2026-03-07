@@ -120,7 +120,6 @@ class GetSettingApiResponse(BaseModel):
     systems: SettingSystemSection | None = None
 
 
-
 # ========== Generation Completion Event ==========
 
 

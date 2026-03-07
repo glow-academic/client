@@ -1,10 +1,10 @@
 """Tests for get_args_outputs."""
 
 import pytest
-
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.args.create import create_arg
 from tests.helpers import nonexistent_id
+
+from app.routes.v5.tools.resources.args.create import create_arg
+from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 
 pytestmark = pytest.mark.asyncio
 

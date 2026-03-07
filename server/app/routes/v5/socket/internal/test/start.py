@@ -86,8 +86,7 @@ async def test_start_handler_new(data: dict[str, Any]) -> None:
             # Step 2: Optional benchmark bridge (black box)
             if benchmark_id:
                 session_id = (
-                    uuid.UUID(session_id_str) if session_id_str
-                    else uuid.UUID(int=0)
+                    uuid.UUID(session_id_str) if session_id_str else uuid.UUID(int=0)
                 )
                 await create_benchmark_test(
                     conn,
@@ -115,9 +114,7 @@ async def test_start_handler_new(data: dict[str, Any]) -> None:
         # Step 4: Refresh MVs so the test is visible immediately
         async with get_db_connection() as conn:
             await conn.execute("REFRESH MATERIALIZED VIEW test_invocation_mv")
-        await invalidate_tags(
-            ["test", "tests", "benchmark"], redis=get_redis_client()
-        )
+        await invalidate_tags(["test", "tests", "benchmark"], redis=get_redis_client())
 
         # Step 5: Delegate to test_proceed
         await internal_sio.emit(

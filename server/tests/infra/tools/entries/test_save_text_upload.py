@@ -1,7 +1,8 @@
 """Tests for save_text_upload."""
 
-from app.infra.tools.entries.save_text_upload import save_text_upload
 from tests.helpers import nonexistent_id
+
+from app.infra.tools.entries.save_text_upload import save_text_upload
 
 
 def test_returns_relative_path(tmp_path):

@@ -1,10 +1,10 @@
 """Tests for get_args."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.args.create import create_arg
 from app.routes.v5.tools.resources.args.get import get_args
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 

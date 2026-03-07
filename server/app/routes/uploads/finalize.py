@@ -9,7 +9,6 @@ from typing import Annotated, Any, cast
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.utils.error.handle_route_error import handle_route_error
 from app.infra.globals import (
     AUDIO_FOLDER,
     TUS_UPLOADS_DIR,
@@ -24,6 +23,7 @@ from app.sql.types import (
     load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.mime.get_content_type import get_content_type
 from app.utils.sql_helper import execute_sql_typed

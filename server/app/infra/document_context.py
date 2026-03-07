@@ -24,31 +24,6 @@ from app.routes.v5.tools.artifacts.document.get import (
 )
 from app.routes.v5.tools.entries.document_drafts.get import get_document_drafts
 
-# Resource get fetchers (by known IDs)
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.files.get import get_files
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.images.get import get_images
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
-from app.routes.v5.tools.resources.parameters.get import get_parameters
-from app.routes.v5.tools.resources.texts.get import get_texts
-
-# Resource search fetchers (bounded, paginated)
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.search import search_descriptions
-from app.routes.v5.tools.resources.fields.search import search_fields
-from app.routes.v5.tools.resources.files.search import search_files
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.images.search import search_images
-from app.routes.v5.tools.resources.names.search import search_names
-from app.routes.v5.tools.resources.parameter_fields.search import (
-    search_parameter_fields,
-)
-from app.routes.v5.tools.resources.parameters.search import search_parameters
-from app.routes.v5.tools.resources.texts.search import search_texts
-
 # Entry MV fetchers (aliased to avoid collision with resource search functions)
 from app.routes.v5.tools.entries.files.search import search_files as search_file_entries
 from app.routes.v5.tools.entries.images.search import (
@@ -56,6 +31,30 @@ from app.routes.v5.tools.entries.images.search import (
 )
 from app.routes.v5.tools.entries.texts.search import search_texts as search_text_entries
 
+# Resource get fetchers (by known IDs)
+from app.routes.v5.tools.resources.departments.get import get_departments
+
+# Resource search fetchers (bounded, paginated)
+from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
+from app.routes.v5.tools.resources.descriptions.search import search_descriptions
+from app.routes.v5.tools.resources.fields.search import search_fields
+from app.routes.v5.tools.resources.files.get import get_files
+from app.routes.v5.tools.resources.files.search import search_files
+from app.routes.v5.tools.resources.flags.get import get_flags
+from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.images.get import get_images
+from app.routes.v5.tools.resources.images.search import search_images
+from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.names.search import search_names
+from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
+from app.routes.v5.tools.resources.parameter_fields.search import (
+    search_parameter_fields,
+)
+from app.routes.v5.tools.resources.parameters.get import get_parameters
+from app.routes.v5.tools.resources.parameters.search import search_parameters
+from app.routes.v5.tools.resources.texts.get import get_texts
+from app.routes.v5.tools.resources.texts.search import search_texts
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -193,9 +192,7 @@ async def resolve_document_context(
             bypass_cache=bypass_cache,
         ),
         # Parameter fields
-        get_parameter_fields(
-            conn, merged.parameter_field_ids, redis, bypass_cache
-        ),
+        get_parameter_fields(conn, merged.parameter_field_ids, redis, bypass_cache),
         (
             search_parameter_fields(
                 conn,
@@ -272,21 +269,13 @@ async def resolve_document_context(
 
     # Filter flags to document-specific types
     flags_suggestions_filtered = [
-        f
-        for f in flags_suggestions
-        if getattr(f, "type", None) in DOCUMENT_FLAG_TYPES
+        f for f in flags_suggestions if getattr(f, "type", None) in DOCUMENT_FLAG_TYPES
     ]
 
     # Step 3: Entry MV fetches (files, images, texts — for file_path/mime_type)
-    all_file_ids = [
-        f.id for f in files_selected + files_suggestions if f.id
-    ]
-    all_image_ids = [
-        i.id for i in images_selected + images_suggestions if i.id
-    ]
-    all_text_ids = [
-        t.id for t in texts_selected + texts_suggestions if t.id
-    ]
+    all_file_ids = [f.id for f in files_selected + files_suggestions if f.id]
+    all_image_ids = [i.id for i in images_selected + images_suggestions if i.id]
+    all_text_ids = [t.id for t in texts_selected + texts_suggestions if t.id]
 
     file_entries, image_entries, text_entries = await asyncio.gather(
         search_file_entries(conn, files_ids=all_file_ids, limit=200)

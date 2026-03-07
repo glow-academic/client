@@ -15,7 +15,6 @@ from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 
-
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)
 # ---------------------------------------------------------------------------
@@ -99,6 +98,7 @@ class DocumentDraftEntry(BaseModel):
     parameter_ids: list[UUID] | None = None
     profile_ids: list[UUID] | None = None
     text_ids: list[UUID] | None = None
+
 
 # ========== GET Endpoint Types ==========
 

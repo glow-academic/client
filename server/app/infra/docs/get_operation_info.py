@@ -1,9 +1,9 @@
 """Introspect a Python function to extract signature and return type schema."""
 
 import inspect
-from typing import Any, Callable, get_type_hints
+from collections.abc import Callable
+from typing import Any, get_type_hints
 
-import asyncpg  # type: ignore
 from pydantic import BaseModel
 
 from app.infra.docs.types import OperationInfo, ParamInfo

@@ -56,10 +56,22 @@ async def create_test_invocation(
         ("test_invocation_agents_connection", "agents_id", agent_ids or []),
         ("test_invocation_rubrics_connection", "rubrics_id", rubric_ids or []),
         ("test_invocation_qualities_connection", "qualities_id", quality_ids or []),
-        ("test_invocation_departments_connection", "departments_id", department_ids or []),
+        (
+            "test_invocation_departments_connection",
+            "departments_id",
+            department_ids or [],
+        ),
         ("test_invocation_voices_connection", "voices_id", voice_ids or []),
-        ("test_invocation_reasoning_levels_connection", "reasoning_levels_id", reasoning_level_ids or []),
-        ("test_invocation_temperature_levels_connection", "temperature_levels_id", temperature_level_ids or []),
+        (
+            "test_invocation_reasoning_levels_connection",
+            "reasoning_levels_id",
+            reasoning_level_ids or [],
+        ),
+        (
+            "test_invocation_temperature_levels_connection",
+            "temperature_levels_id",
+            temperature_level_ids or [],
+        ),
     ]
     for table, col, ids in connections:
         for rid in ids:

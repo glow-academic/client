@@ -1,12 +1,12 @@
 """Tests for get_scenario_flags."""
 
 import pytest
+from tests.helpers import nonexistent_id
 
 from app.routes.v5.tools.resources.flags.create import create_flag
 from app.routes.v5.tools.resources.scenario_flags.create import create_scenario_flag
 from app.routes.v5.tools.resources.scenario_flags.get import get_scenario_flags
 from app.routes.v5.tools.resources.scenarios.create import create_scenario
-from tests.helpers import nonexistent_id
 
 pytestmark = pytest.mark.asyncio
 
