@@ -1,59 +1,37 @@
-"""Get endpoint for reports artifact."""
+"""Websocket config for reports artifact."""
 
 import asyncio
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Annotated, Any
+from typing import Any
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_redis_client
 from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.main.reports.permissions import build_reports_sections_v2
 from app.routes.v5.api.main.reports.types import (
     GetReportsWebsocketResponse,
-    ReportsCohortResource,
-    ReportsProfileResource,
-    ReportsRequest,
-    ReportsResources,
-    ReportsResponse,
-    ReportsScenarioResource,
-    ReportsSections,
-    ReportsSimulationResource,
-    ReportsViews,
     ReportsWebsocketEntries,
     ReportsWebsocketResources,
 )
-from app.routes.v5.api.main.types import FilterOption
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.tools.entries.attempt_chat.get import get_chats_internal
 from app.routes.v5.tools.entries.runs.search import (
     GetRunListViewResponse,
     get_run_list_entries_internal,
 )
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.sql.types import (
-    GetActiveSettingsSqlParams,
-    GetActiveSettingsSqlRow,
     QGetAgentsV4Item,
     QGetModelsV4Item,
     QGetProfilesV4Item,
     QGetProvidersV4Item,
     QGetToolsV4Item,
 )
-from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
-
-router = APIRouter()
 
 # Reports entry types for agent resolution
 REPORTS_BUNDLE_ENTRIES: set[str] = {"problems"}
@@ -227,258 +205,3 @@ async def get_reports_websocket(
         resource_agent_ids=data.resource_agent_ids,
         group_id=data.group_id,
     )
-
-
-ACTIVE_SETTINGS_SQL_PATH = "app/sql/queries/settings/get_active_settings_complete.sql"
-
-
-@router.post("/get", response_model=ReportsResponse)
-async def get_reports(
-    request: ReportsRequest,
-    http_request: Request,
-    response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> ReportsResponse:
-    """Get reports artifact data.
-
-    Pulls mv_profile_facts as sole data source and computes section skeletons.
-    """
-    tags = ["artifacts", "reports", "views", "analytics"]
-    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
-
-    try:
-        pool = get_pool()
-        if not pool:
-            raise RuntimeError("Database pool not initialized")
-
-        parsed_start_date = (
-            datetime.fromisoformat(request.start_date.replace("Z", "+00:00"))
-            if request.start_date
-            else None
-        )
-        parsed_end_date = (
-            datetime.fromisoformat(request.end_date.replace("Z", "+00:00"))
-            if request.end_date
-            else None
-        )
-        parsed_start_day = parsed_start_date.date() if parsed_start_date else None
-        parsed_end_day = parsed_end_date.date() if parsed_end_date else None
-
-        is_archived = bool(
-            request.simulation_filters and "archived" in request.simulation_filters
-        )
-        if request.simulation_filters and "general" in request.simulation_filters:
-            attempt_type = "general"
-        elif request.simulation_filters and "practice" in request.simulation_filters:
-            attempt_type = "practice"
-        else:
-            attempt_type = None
-
-        # Fetch chat facts — single MV call
-        async with pool.acquire() as c:
-            profile_facts_result = await get_chats_internal(
-                conn=c,
-                profile_id=request.target_profile_id,
-                cohort_ids=request.cohort_ids,
-                department_ids=request.department_ids,
-                simulation_ids=request.simulation_ids,
-                attempt_type=attempt_type,
-                is_archived=is_archived,
-                date_from=parsed_start_day,
-                date_to=parsed_end_day,
-                sort_by=request.sort_by,
-                sort_order=request.sort_order,
-                page_limit=request.page_limit,
-                page_offset=request.page_offset,
-                bypass_cache=bypass_cache,
-            )
-
-        profile_facts_items = profile_facts_result.items
-        total_count = profile_facts_result.total_count
-
-        # Fetch thresholds from settings
-        threshold_success = 85
-        threshold_warning = 80
-        threshold_danger = 70
-        actor_profile_for_settings = (
-            request.actor_profile_id or request.target_profile_id
-        )
-        if actor_profile_for_settings:
-            async with pool.acquire() as c:
-                settings_row_raw = await execute_sql_typed(
-                    c,
-                    ACTIVE_SETTINGS_SQL_PATH,
-                    params=GetActiveSettingsSqlParams(
-                        profile_id=str(actor_profile_for_settings),
-                        department_id=(
-                            str(request.department_ids[0])
-                            if request.department_ids
-                            else None
-                        ),
-                    ),
-                )
-                if settings_row_raw:
-                    settings = GetActiveSettingsSqlRow.model_validate(settings_row_raw)
-                    threshold_success = settings.success_threshold or threshold_success
-                    threshold_warning = settings.warning_threshold or threshold_warning
-                    threshold_danger = settings.danger_threshold or threshold_danger
-
-        sections: ReportsSections = build_reports_sections_v2(
-            profile_facts_items=profile_facts_items,
-            total_count=total_count,
-            thresholds={
-                "success": threshold_success,
-                "warning": threshold_warning,
-                "danger": threshold_danger,
-            },
-        )
-
-        views = ReportsViews(
-            attempt_facts=[],
-            chat_facts=[],
-            daily_metrics=[],
-            profile_metrics=[],
-        )
-
-        # Collect resource IDs from profile_facts items
-        simulation_ids: set[str] = set()
-        profile_ids: set[str] = set()
-        scenario_ids: set[str] = set()
-        cohort_ids: set[str] = set()
-
-        for item in profile_facts_items:
-            simulation_ids.add(str(item.simulation_id))
-            profile_ids.add(str(item.profile_id))
-            if item.cohort_id:
-                cohort_ids.add(str(item.cohort_id))
-            if item.scenario_id:
-                scenario_ids.add(str(item.scenario_id))
-
-        resources = ReportsResources(
-            simulations={
-                simulation_id: ReportsSimulationResource(simulation_id=simulation_id)
-                for simulation_id in simulation_ids
-            },
-            profiles={
-                profile_id: ReportsProfileResource(profile_id=profile_id)
-                for profile_id in profile_ids
-            },
-            scenarios={
-                scenario_id: ReportsScenarioResource(scenario_id=scenario_id)
-                for scenario_id in scenario_ids
-            },
-            cohorts={
-                cohort_id: ReportsCohortResource(cohort_id=cohort_id)
-                for cohort_id in cohort_ids
-            },
-            personas={},
-            rubrics={},
-        )
-
-        # Hydrate minimal metadata for normalized resources
-        async with pool.acquire() as c:
-            simulations = await get_simulations(
-                conn=c,
-                ids=[UUID(simulation_id) for simulation_id in simulation_ids],
-                redis=get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-            profiles = await get_profiles(
-                conn=c,
-                ids=[UUID(profile_id) for profile_id in profile_ids],
-                redis=get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-            scenarios = await get_scenarios(
-                conn=c,
-                ids=[UUID(scenario_id) for scenario_id in scenario_ids],
-                redis=get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-            cohorts = await get_cohorts(
-                conn=c,
-                ids=[UUID(cohort_id) for cohort_id in cohort_ids],
-                redis=get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-
-        for item in simulations:
-            if item.simulation_id:
-                key = str(item.simulation_id)
-                resources.simulations[key] = ReportsSimulationResource(
-                    simulation_id=key,
-                    name=item.name,
-                    description=item.description,
-                )
-
-        for item in profiles:
-            if item.profile_id:
-                key = str(item.profile_id)
-                resources.profiles[key] = ReportsProfileResource(
-                    profile_id=key,
-                    name=item.name,
-                    role=None,
-                    emails=item.emails or [],
-                    primary_email=item.primary_email,
-                )
-
-        for item in scenarios:
-            if item.scenario_id:
-                key = str(item.scenario_id)
-                resources.scenarios[key] = ReportsScenarioResource(
-                    scenario_id=key,
-                    name=item.name,
-                    description=item.description,
-                )
-
-        for item in cohorts:
-            if item.cohort_id:
-                key = str(item.cohort_id)
-                resources.cohorts[key] = ReportsCohortResource(
-                    cohort_id=key,
-                    name=item.title,
-                )
-
-        simulation_options = [
-            FilterOption(value=sid, label=resources.simulations[sid].name)
-            for sid in resources.simulations
-            if resources.simulations[sid].name
-        ]
-        profile_options = [
-            FilterOption(value=pid, label=resources.profiles[pid].name)
-            for pid in resources.profiles
-            if resources.profiles[pid].name
-        ]
-        scenario_options = [
-            FilterOption(value=sid, label=resources.scenarios[sid].name)
-            for sid in resources.scenarios
-            if resources.scenarios[sid].name
-        ]
-
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        return ReportsResponse(
-            sections=sections,
-            views=views,
-            resources=resources,
-            total_count=total_count,
-            simulation_options=simulation_options,
-            profile_options=profile_options,
-            scenario_options=scenario_options,
-        )
-
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except Exception as e:
-        handle_route_error(
-            error=e,
-            route_path=http_request.url.path,
-            operation="artifacts_reports_get",
-            request=http_request,
-        )
-
-
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
