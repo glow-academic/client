@@ -235,12 +235,23 @@ class SaveProfileApiResponse(BaseModel):
 
 
 class DeleteProfileApiRequest(BaseModel):
-    target_profile_id: UUID
+    """Request model for bulk delete profile endpoint."""
+
+    profile_ids: list[UUID]
+
+
+class DeleteProfileResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
+    profile_id: UUID
+    message: str
 
 
 class DeleteProfileApiResponse(BaseModel):
-    success: bool
-    message: str
+    """Response model for bulk delete profile endpoint."""
+
+    results: list[DeleteProfileResult]
 
 
 class DuplicateProfileApiRequest(BaseModel):

@@ -202,12 +202,23 @@ class PatchFieldDraftApiResponse(BaseModel):
 
 
 class DeleteFieldApiRequest(BaseModel):
+    """Request model for bulk delete field endpoint."""
+
+    field_ids: list[UUID]
+
+
+class DeleteFieldResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     field_id: UUID
+    message: str
 
 
 class DeleteFieldApiResponse(BaseModel):
-    success: bool
-    message: str
+    """Response model for bulk delete field endpoint."""
+
+    results: list[DeleteFieldResult]
 
 
 # ========== Duplicate Endpoint Types ==========

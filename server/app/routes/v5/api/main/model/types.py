@@ -350,16 +350,23 @@ class SaveModelSqlRow(BaseModel):
 
 
 class DeleteModelApiRequest(BaseModel):
-    """Request model for delete model endpoint."""
+    """Request model for bulk delete model endpoint."""
 
+    model_ids: list[UUID]
+
+
+class DeleteModelResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     model_id: UUID
+    message: str
 
 
 class DeleteModelApiResponse(BaseModel):
-    """Response model for delete model endpoint."""
+    """Response model for bulk delete model endpoint."""
 
-    success: bool
-    message: str
+    results: list[DeleteModelResult]
 
 
 # =============================================================================

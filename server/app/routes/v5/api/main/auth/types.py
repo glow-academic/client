@@ -160,16 +160,23 @@ class SaveAuthApiResponse(BaseModel):
 
 
 class DeleteAuthApiRequest(BaseModel):
-    """Request model for delete auth endpoint."""
+    """Request model for bulk delete auth endpoint."""
 
+    auth_ids: list[UUID]
+
+
+class DeleteAuthResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     auth_id: UUID
+    message: str
 
 
 class DeleteAuthApiResponse(BaseModel):
-    """Response model for delete auth endpoint."""
+    """Response model for bulk delete auth endpoint."""
 
-    success: bool
-    message: str
+    results: list[DeleteAuthResult]
 
 
 class DuplicateAuthApiRequest(BaseModel):

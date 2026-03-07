@@ -139,12 +139,23 @@ class SaveRubricApiResponse(BaseModel):
 
 
 class DeleteRubricApiRequest(BaseModel):
+    """Request model for bulk delete rubric endpoint."""
+
+    rubric_ids: list[UUID]
+
+
+class DeleteRubricResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     rubric_id: UUID
+    message: str
 
 
 class DeleteRubricApiResponse(BaseModel):
-    success: bool
-    message: str
+    """Response model for bulk delete rubric endpoint."""
+
+    results: list[DeleteRubricResult]
 
 
 class DuplicateRubricApiRequest(BaseModel):

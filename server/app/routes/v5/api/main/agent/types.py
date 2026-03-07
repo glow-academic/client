@@ -279,16 +279,23 @@ class SaveAgentSqlRow(BaseModel):
 
 
 class DeleteAgentApiRequest(BaseModel):
-    """Request model for delete agent endpoint."""
+    """Request model for bulk delete agent endpoint."""
 
+    agent_ids: list[UUID]
+
+
+class DeleteAgentResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     agent_id: UUID
+    message: str
 
 
 class DeleteAgentApiResponse(BaseModel):
-    """Response model for delete agent endpoint."""
+    """Response model for bulk delete agent endpoint."""
 
-    success: bool
-    message: str
+    results: list[DeleteAgentResult]
 
 
 class DuplicateAgentApiRequest(BaseModel):

@@ -229,12 +229,23 @@ class SaveToolSqlRow(BaseModel):
 
 
 class DeleteToolApiRequest(BaseModel):
+    """Request model for bulk delete tool endpoint."""
+
+    tool_ids: list[UUID]
+
+
+class DeleteToolResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     tool_id: UUID
+    message: str
 
 
 class DeleteToolApiResponse(BaseModel):
-    success: bool
-    message: str
+    """Response model for bulk delete tool endpoint."""
+
+    results: list[DeleteToolResult]
 
 
 class DuplicateToolApiRequest(BaseModel):

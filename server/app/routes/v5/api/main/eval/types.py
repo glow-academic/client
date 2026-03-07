@@ -255,16 +255,23 @@ class SaveEvalSqlRow(BaseModel):
 
 
 class DeleteEvalApiRequest(BaseModel):
-    """Request model for delete eval endpoint."""
+    """Request model for bulk delete eval endpoint."""
 
+    eval_ids: list[UUID]
+
+
+class DeleteEvalResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     eval_id: UUID
+    message: str
 
 
 class DeleteEvalApiResponse(BaseModel):
-    """Response model for delete eval endpoint."""
+    """Response model for bulk delete eval endpoint."""
 
-    success: bool
-    message: str
+    results: list[DeleteEvalResult]
 
 
 # ========== Duplicate Endpoint Types ==========

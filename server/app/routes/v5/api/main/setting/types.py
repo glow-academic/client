@@ -282,16 +282,23 @@ class ListSettingApiResponse(BaseModel):
 
 
 class DeleteSettingApiRequest(BaseModel):
-    """Request model for delete setting endpoint."""
+    """Request model for bulk delete setting endpoint."""
 
+    setting_ids: list[UUID]
+
+
+class DeleteSettingResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     setting_id: UUID
+    message: str
 
 
 class DeleteSettingApiResponse(BaseModel):
-    """Response model for delete setting endpoint."""
+    """Response model for bulk delete setting endpoint."""
 
-    success: bool
-    message: str
+    results: list[DeleteSettingResult]
 
 
 # ========== Duplicate Endpoint Types ==========

@@ -170,12 +170,23 @@ class SaveProviderApiResponse(BaseModel):
 
 
 class DeleteProviderApiRequest(BaseModel):
+    """Request model for bulk delete provider endpoint."""
+
+    provider_ids: list[UUID]
+
+
+class DeleteProviderResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     provider_id: UUID
+    message: str
 
 
 class DeleteProviderApiResponse(BaseModel):
-    success: bool
-    message: str
+    """Response model for bulk delete provider endpoint."""
+
+    results: list[DeleteProviderResult]
 
 
 class DuplicateProviderApiRequest(BaseModel):

@@ -295,12 +295,23 @@ class PatchParameterDraftApiResponse(BaseModel):
 
 
 class DeleteParameterApiRequest(BaseModel):
+    """Request model for bulk delete parameter endpoint."""
+
+    parameter_ids: list[UUID]
+
+
+class DeleteParameterResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     parameter_id: UUID
+    message: str
 
 
 class DeleteParameterApiResponse(BaseModel):
-    success: bool
-    message: str
+    """Response model for bulk delete parameter endpoint."""
+
+    results: list[DeleteParameterResult]
 
 
 # ========== Duplicate Endpoint Types ==========

@@ -426,16 +426,23 @@ class SaveDocumentSqlRow(BaseModel):
 
 
 class DeleteDocumentApiRequest(BaseModel):
-    """Request model for delete document endpoint."""
+    """Request model for bulk delete document endpoint."""
 
+    document_ids: list[UUID]
+
+
+class DeleteDocumentResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     document_id: UUID
+    message: str
 
 
 class DeleteDocumentApiResponse(BaseModel):
-    """Response model for delete document endpoint."""
+    """Response model for bulk delete document endpoint."""
 
-    success: bool
-    message: str
+    results: list[DeleteDocumentResult]
 
 
 # ========== Duplicate Endpoint Types ==========

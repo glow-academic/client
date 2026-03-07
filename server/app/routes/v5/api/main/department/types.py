@@ -115,12 +115,23 @@ class SaveDepartmentApiResponse(BaseModel):
 
 
 class DeleteDepartmentApiRequest(BaseModel):
+    """Request model for bulk delete department endpoint."""
+
+    department_ids: list[UUID]
+
+
+class DeleteDepartmentResult(BaseModel):
+    """Per-item result within a bulk delete response."""
+
+    success: bool
     department_id: UUID
+    message: str
 
 
 class DeleteDepartmentApiResponse(BaseModel):
-    success: bool
-    message: str
+    """Response model for bulk delete department endpoint."""
+
+    results: list[DeleteDepartmentResult]
 
 
 class DuplicateDepartmentApiRequest(BaseModel):
