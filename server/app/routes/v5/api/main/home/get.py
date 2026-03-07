@@ -1,4 +1,4 @@
-"""Home get endpoint — dashboard-style parallel view fetches.
+"""Home get endpoint — dashboard-style composable context + Python assembly.
 
 Hardcoded home mode (practice=False). Includes instructional mode logic
 for elevated roles (instructional/admin/superadmin).
@@ -13,9 +13,16 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.home_context import resolve_home_context
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.v5.api.main.chat.get import get_chat_internal
-from app.routes.v5.api.main.chat.permissions import (
+from app.routes.v5.api.main.chat.types import (
+    ChatSimulationOperational,
+    RubricMapping,
+    StandardGroupMapping,
+    StandardMapping,
+)
+from app.routes.v5.api.main.home.permissions import (
     compute_completion_pct,
     compute_mode,
     compute_pass_pct,
@@ -25,12 +32,6 @@ from app.routes.v5.api.main.chat.permissions import (
     compute_status,
     compute_status_instructional,
     format_cohort_names,
-)
-from app.routes.v5.api.main.chat.types import (
-    ChatSimulationOperational,
-    RubricMapping,
-    StandardGroupMapping,
-    StandardMapping,
 )
 from app.routes.v5.api.main.home.types import (
     GetHomeRequest,
@@ -49,29 +50,15 @@ from app.routes.v5.tools.entries.attempt.get import (
     get_attempt_chats_internal,
 )
 from app.routes.v5.tools.entries.attempt.search import get_attempt_list_internal
-from app.routes.v5.tools.entries.attempt_chat.get import (
-    ChatItem,
-    GetChatsResponse,
-    get_chats_internal,
-)
-from app.routes.v5.tools.entries.home.get import get_home_context_view_internal
+from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
+from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
 from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.personas.get import get_personas
 from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics
-from app.routes.v5.tools.resources.scenario_time_limits.get import (
-    get_scenario_time_limits,
-)
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 from app.routes.v5.tools.resources.simulations.get import get_simulations
-from app.routes.v5.tools.resources.standard_groups.get import (
-    get_standard_groups,
-)
-from app.routes.v5.tools.resources.standards.search import search_standards
-from app.sql.types import GetHomeContextViewSqlRow
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -106,9 +93,9 @@ async def _fetch_cohort_member_profiles(
 
 
 def _aggregate_personal_stats(
-    items: list[ChatItem],
+    items: list[GetAttemptChatResponse],
 ) -> dict[UUID, dict[str, Any]]:
-    """Aggregate personal profile facts by simulation_id."""
+    """Aggregate personal profile facts by simulation_id from raw attempt_chat_mv rows."""
     stats: dict[UUID, dict[str, Any]] = {}
     seen_attempts: dict[UUID, set[UUID]] = defaultdict(set)
     for item in items:
@@ -125,17 +112,25 @@ def _aggregate_personal_stats(
         if item.attempt_id and item.attempt_id not in seen_attempts[sim_id]:
             seen_attempts[sim_id].add(item.attempt_id)
             s["attempt_count"] += 1
-        if item.grade_percent is not None:
-            score = float(item.grade_percent)
-            if s["highest_score_percent"] is None or score > s["highest_score_percent"]:
-                s["highest_score_percent"] = score
-        if item.passed:
+        # Compute grade_percent from raw fields
+        if (
+            item.grade_score is not None
+            and item.grade_total_points
+            and item.grade_total_points > 0
+        ):
+            grade_percent = float(item.grade_score) / item.grade_total_points * 100
+            if (
+                s["highest_score_percent"] is None
+                or grade_percent > s["highest_score_percent"]
+            ):
+                s["highest_score_percent"] = grade_percent
+        if item.grade_passed:
             s["has_passed"] = True
     return stats
 
 
 def _aggregate_instructional_stats(
-    facts_items: list[ChatItem],
+    facts_items: list[GetAttemptChatResponse],
     cohort_member_profiles: dict[UUID, set[UUID]],
     simulation_cohort_map: dict[UUID, list[UUID]],
 ) -> dict[UUID, dict[str, Any]]:
@@ -147,7 +142,7 @@ def _aggregate_instructional_stats(
         key = (item.simulation_id, item.profile_id)
         if key not in best:
             best[key] = {"has_passed": False, "has_attempted": True}
-        if item.passed:
+        if item.grade_passed:
             best[key]["has_passed"] = True
 
     result: dict[UUID, dict[str, Any]] = {}
@@ -467,23 +462,23 @@ async def _fetch_home_history_data(
         "scenarios": {},
     }
     for s in h_sims:
-        if s.simulation_id:
-            resource_meta["simulations"][s.simulation_id] = {
+        if s.id:
+            resource_meta["simulations"][s.id] = {
                 "name": s.name,
                 "time_limit": None,
             }
     for p in h_profs:
-        if p.profile_id:
-            resource_meta["profiles"][p.profile_id] = {"name": p.name}
+        if p.id:
+            resource_meta["profiles"][p.id] = {"name": p.name}
     for p in h_pers:
-        if p.persona_id:
-            resource_meta["personas"][p.persona_id] = {
+        if p.id:
+            resource_meta["personas"][p.id] = {
                 "name": p.name,
                 "color": p.color,
             }
     for s in h_scens:
-        if s.scenario_id:
-            resource_meta["scenarios"][s.scenario_id] = {"name": s.name}
+        if s.id:
+            resource_meta["scenarios"][s.id] = {"name": s.name}
 
     # Step 6: Transform attempts
     attempts = [
@@ -568,8 +563,7 @@ async def get_home_internal(
     profile_id: UUID,
     bypass_cache: bool = False,
 ) -> GetHomeResponse:
-    """Dashboard-style parallel fetch for home operational data."""
-    attempt_type = "general"
+    """Dashboard-style composable context + Python assembly."""
 
     # --- Phase 0: Resolve profile_id → profiles_resource_id ---
     async with pool.acquire() as c:
@@ -582,24 +576,13 @@ async def get_home_internal(
             profile_id,
         )
 
-    # --- Phase 1: Three parallel fetches ---
-    async def fetch_context() -> GetHomeContextViewSqlRow:
+    # --- Phase 1: Parallel context + profile + history ---
+    async def fetch_context():
         async with pool.acquire() as c:
-            return await get_home_context_view_internal(
-                conn=c,
-                profile_id=profile_id,
-                bypass_cache=bypass_cache,
-            )
-
-    async def fetch_personal_stats() -> GetChatsResponse:
-        async with pool.acquire() as c:
-            return await get_chats_internal(
-                conn=c,
-                profile_id=profiles_resource_id,
-                attempt_type=attempt_type,
-                is_archived=False,
-                page_limit=10000,
-                page_offset=0,
+            return await resolve_home_context(
+                c,
+                get_redis_client(),
+                profiles_resource_id=profiles_resource_id,
                 bypass_cache=bypass_cache,
             )
 
@@ -619,9 +602,8 @@ async def get_home_internal(
             bypass_cache=bypass_cache,
         )
 
-    context, personal_facts, profile_ctx, history_result = await asyncio.gather(
+    ctx, profile_ctx, history_result = await asyncio.gather(
         fetch_context(),
-        fetch_personal_stats(),
         fetch_profile_context(),
         fetch_history(),
     )
@@ -631,178 +613,75 @@ async def get_home_internal(
     view_mode = compute_mode(False, user_role)
     is_instructional = view_mode == "instructional"
 
-    # Collect IDs for batch resource fetching
-    simulation_ids: list[UUID] = []
-    all_scenario_ids: set[UUID] = set()
-    all_cohort_ids: set[UUID] = set()
-    all_rubric_ids: set[UUID] = set()
-    all_time_limit_ids: set[UUID] = set()
-    simulation_cohort_map: dict[UUID, list[UUID]] = {}
+    # --- Phase 2: Extract data from ArtifactContext ---
+    homes = ctx.entries.get("homes", [])
+    attempt_chats = ctx.entries.get("attempt_chats", [])
 
-    if context and context.items:
-        for item in context.items:
-            if item.simulation_id:
-                simulation_ids.append(item.simulation_id)
-            if item.scenario_ids:
-                all_scenario_ids.update(item.scenario_ids)
-            if item.cohort_ids:
-                all_cohort_ids.update(item.cohort_ids)
-                if item.simulation_id:
-                    simulation_cohort_map[item.simulation_id] = list(item.cohort_ids)
-            if item.rubric_ids:
-                all_rubric_ids.update(item.rubric_ids)
-            if item.time_limit_ids:
-                all_time_limit_ids.update(item.time_limit_ids)
+    simulations = ctx.resources.get("simulations")
+    sim_list = simulations.selected if simulations else []
+    scenarios = ctx.resources.get("scenarios")
+    scenario_list = scenarios.selected if scenarios else []
+    cohorts = ctx.resources.get("cohorts")
+    cohort_list = cohorts.selected if cohorts else []
+    rubrics_rp = ctx.resources.get("rubrics")
+    rubric_list = rubrics_rp.selected if rubrics_rp else []
+    time_limits_rp = ctx.resources.get("time_limits")
+    time_limit_list = time_limits_rp.selected if time_limits_rp else []
+    personas_rp = ctx.resources.get("personas")
+    persona_list = personas_rp.selected if personas_rp else []
+    standard_groups_rp = ctx.resources.get("standard_groups")
+    sg_list = standard_groups_rp.selected if standard_groups_rp else []
+    standards_rp = ctx.resources.get("standards")
+    std_list = standards_rp.selected if standards_rp else []
 
-    cohort_ids_list = list(all_cohort_ids)
-    rubric_ids_list = list(all_rubric_ids)
-    scenario_ids_list = list(all_scenario_ids)
-    time_limit_ids_list = list(all_time_limit_ids)
+    # Build lookup maps (resource types use .id)
+    simulation_map = {s.id: s for s in sim_list if s.id}
+    scenario_map = {s.id: s for s in scenario_list if s.id}
+    persona_map = {p.id: p for p in persona_list if p.id}
+    cohort_map = {c.id: c for c in cohort_list if c.id}
+    rubric_map = {r.id: r for r in rubric_list if r.id}
+    standard_groups_map = {sg.id: sg for sg in sg_list if sg.id}
 
-    # --- Phase 2a: Parallel resource hydration + conditional instructional data ---
-    async def fetch_simulations() -> list:
-        async with pool.acquire() as c:
-            return await get_simulations(
-                c, simulation_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-
-    async def fetch_scenarios() -> list:
-        if not scenario_ids_list:
-            return []
-        async with pool.acquire() as c:
-            return await get_scenarios(
-                c, scenario_ids_list, get_redis_client(), bypass_cache=bypass_cache
-            )
-
-    async def fetch_cohorts() -> list:
-        async with pool.acquire() as c:
-            return await get_cohorts(
-                c, cohort_ids_list, get_redis_client(), bypass_cache=bypass_cache
-            )
-
-    async def fetch_rubrics() -> list:
-        async with pool.acquire() as c:
-            return await get_rubrics(
-                c, rubric_ids_list, get_redis_client(), bypass_cache=bypass_cache
-            )
-
-    async def fetch_time_limits() -> list:
-        if not time_limit_ids_list:
-            return []
-        async with pool.acquire() as c:
-            return await get_scenario_time_limits(
-                c, time_limit_ids_list, get_redis_client(), bypass_cache=bypass_cache
-            )
-
-    async def fetch_cohort_attempt_facts() -> list:
-        async with pool.acquire() as c:
-            result = await get_chats_internal(
-                conn=c,
-                profile_id=None,
-                attempt_type=attempt_type,
-                cohort_ids=cohort_ids_list,
-                is_archived=False,
-                page_limit=10000,
-                page_offset=0,
-                bypass_cache=bypass_cache,
-            )
-            return result.items
-
-    async def fetch_cohort_members() -> dict[UUID, set[UUID]]:
-        return await _fetch_cohort_member_profiles(pool, cohort_ids_list)
-
-    tasks_2a: list[Any] = [
-        fetch_simulations(),
-        fetch_scenarios(),
-        fetch_cohorts(),
-        fetch_rubrics(),
-        fetch_time_limits(),
-    ]
-    if is_instructional:
-        tasks_2a.append(fetch_cohort_attempt_facts())
-        tasks_2a.append(fetch_cohort_members())
-
-    results_2a = await asyncio.gather(*tasks_2a)
-
-    sim_list = results_2a[0]
-    scenario_list = results_2a[1]
-    cohort_list = results_2a[2]
-    rubric_list = results_2a[3]
-    time_limit_list = results_2a[4]
-
-    cohort_facts_items: list[ChatItem] | None = None
-    cohort_member_profiles: dict[UUID, set[UUID]] | None = None
-    if is_instructional:
-        cohort_facts_items = results_2a[5]
-        cohort_member_profiles = results_2a[6]
-
-    # Build scenario_id → time_limit_seconds map from time limits resource
+    # Build scenario_id → time_limit_seconds map
     scenario_time_limit_map: dict[UUID, int] = {}
     for tl in time_limit_list:
         if tl.scenario_id and tl.time_limit_seconds:
             scenario_time_limit_map[tl.scenario_id] = tl.time_limit_seconds
 
-    # Derive persona IDs from scenarios (persona_ids on scenarios_resource)
-    scenario_map = {s.scenario_id: s for s in scenario_list if s.scenario_id}
-    all_persona_ids: set[UUID] = set()
-    for s in scenario_list:
-        if s.persona_ids:
-            all_persona_ids.update(s.persona_ids)
+    # Build simulation → cohort mapping from home entries
+    simulation_cohort_map: dict[UUID, list[UUID]] = {}
+    for h in homes:
+        for sim_id in h.simulation_ids or []:
+            if sim_id not in simulation_cohort_map and h.cohort_ids:
+                simulation_cohort_map[sim_id] = list(h.cohort_ids)
 
-    # Fetch personas sequentially (depends on scenario data)
-    persona_list: list = []
-    if all_persona_ids:
-        async with pool.acquire() as c:
-            persona_list = await get_personas(
-                c, list(all_persona_ids), get_redis_client(), bypass_cache=bypass_cache
-            )
+    # Collect all cohort IDs for instructional mode
+    all_cohort_ids = list({cid for h in homes for cid in (h.cohort_ids or [])})
 
-    # --- Phase 2b: Sequential — derive standard_group_ids from rubrics ---
-    rubric_map = {r.id: r for r in rubric_list if r.id}
+    # --- Phase 2a: Conditional instructional data ---
+    cohort_facts_items: list[GetAttemptChatResponse] | None = None
+    cohort_member_profiles: dict[UUID, set[UUID]] | None = None
 
-    all_standard_group_ids: set[UUID] = set()
-    for r in rubric_list:
-        if r.standard_group_ids:
-            all_standard_group_ids.update(r.standard_group_ids)
+    if is_instructional and all_cohort_ids:
 
-    standard_group_ids_list = list(all_standard_group_ids)
+        async def fetch_cohort_attempt_facts() -> list[GetAttemptChatResponse]:
+            async with pool.acquire() as c:
+                return await search_attempt_chats(
+                    c,
+                    cohort_ids=all_cohort_ids,
+                    limit=10000,
+                )
 
-    async def fetch_standard_groups() -> list:
-        if not standard_group_ids_list:
-            return []
-        async with pool.acquire() as c:
-            return await get_standard_groups(
-                c,
-                standard_group_ids_list,
-                get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
+        async def fetch_cohort_members() -> dict[UUID, set[UUID]]:
+            return await _fetch_cohort_member_profiles(pool, all_cohort_ids)
 
-    async def fetch_standards() -> list:
-        if not standard_group_ids_list:
-            return []
-        async with pool.acquire() as c:
-            return await search_standards(
-                c,
-                get_redis_client(),
-                standard_group_ids=standard_group_ids_list,
-                bypass_cache=bypass_cache,
-            )
+        cohort_facts_items, cohort_member_profiles = await asyncio.gather(
+            fetch_cohort_attempt_facts(),
+            fetch_cohort_members(),
+        )
 
-    sg_list, std_list = await asyncio.gather(fetch_standard_groups(), fetch_standards())
-
-    # Build lookup maps
-    simulation_map = {
-        item.simulation_id: item for item in sim_list if item.simulation_id
-    }
-    persona_map = {item.persona_id: item for item in persona_list if item.persona_id}
-    cohort_map = {item.cohort_id: item for item in cohort_list if item.cohort_id}
-    standard_groups_map = {
-        item.standard_group_id: item for item in sg_list if item.standard_group_id
-    }
-
-    # Aggregate stats
-    personal_stats = _aggregate_personal_stats(personal_facts.items)
+    # --- Phase 3: Aggregate stats ---
+    personal_stats = _aggregate_personal_stats(attempt_chats)
 
     instructional_stats: dict[UUID, dict[str, Any]] | None = None
     if (
@@ -814,35 +693,41 @@ async def get_home_internal(
             cohort_facts_items, cohort_member_profiles, simulation_cohort_map
         )
 
-    # --- Phase 3: Stitch + business logic ---
+    # --- Phase 4: Stitch + business logic → ChatSimulationOperational ---
     items: list[ChatSimulationOperational] = []
-    if context and context.items:
-        for item in context.items:
-            simulation = simulation_map.get(item.simulation_id)
-            ps = personal_stats.get(item.simulation_id, {})
+    for h in homes:
+        for sim_id in h.simulation_ids or []:
+            simulation = simulation_map.get(sim_id)
+            if not simulation:
+                continue
+
+            ps = personal_stats.get(sim_id, {})
             highest_score_percent = ps.get("highest_score_percent")
             has_passed = ps.get("has_passed", False)
 
-            num_scenarios = len(item.scenario_ids) if item.scenario_ids else 0
+            # Scenario IDs from simulation resource
+            sim_scenario_ids = simulation.scenario_ids or []
+            num_scenarios = len(sim_scenario_ids)
 
+            # Time limits from scenarios
             time_limit_total_seconds = 0
             has_time_limits = False
-            if item.scenario_ids:
-                for sid in item.scenario_ids:
-                    tl_seconds = scenario_time_limit_map.get(sid)
-                    if tl_seconds is not None:
-                        time_limit_total_seconds += tl_seconds
-                        has_time_limits = True
+            for sid in sim_scenario_ids:
+                tl_seconds = scenario_time_limit_map.get(sid)
+                if tl_seconds is not None:
+                    time_limit_total_seconds += tl_seconds
+                    has_time_limits = True
             time_limit_minutes = (
                 round(time_limit_total_seconds / 60) if has_time_limits else None
             )
 
+            # Persona color/icon from first scenario's persona
             color: str | None = None
             icon: str | None = None
-            if item.scenario_ids:
+            if sim_scenario_ids:
                 unique_colors: set[str | None] = set()
                 first_persona = None
-                for sid in item.scenario_ids:
+                for sid in sim_scenario_ids:
                     scenario = scenario_map.get(sid)
                     if scenario and scenario.persona_ids:
                         persona = persona_map.get(scenario.persona_ids[0])
@@ -854,12 +739,12 @@ async def get_home_internal(
                     color = first_persona.color
                     icon = first_persona.icon
 
+            # Standard groups from rubrics (via simulation.scenario_rubric_ids)
             item_sg_ids: list[UUID] = []
-            if item.rubric_ids:
-                for rid in item.rubric_ids:
-                    rubric = rubric_map.get(rid)
-                    if rubric and rubric.standard_group_ids:
-                        item_sg_ids.extend(rubric.standard_group_ids)
+            for rid in simulation.scenario_rubric_ids or []:
+                rubric = rubric_map.get(rid)
+                if rubric and rubric.standard_group_ids:
+                    item_sg_ids.extend(rubric.standard_group_ids)
 
             rubric_total_points = 0
             rubric_pass_points = 0
@@ -876,11 +761,11 @@ async def get_home_internal(
 
             cohort_titles = (
                 [
-                    cohort_map[cid].title
-                    for cid in item.cohort_ids
-                    if cid in cohort_map and cohort_map[cid].title
+                    cohort_map[cid].name
+                    for cid in (h.cohort_ids or [])
+                    if cid in cohort_map and cohort_map[cid].name
                 ]
-                if item.cohort_ids
+                if h.cohort_ids
                 else None
             )
             cohort_names_junction = format_cohort_names(cohort_titles)
@@ -895,12 +780,12 @@ async def get_home_internal(
                 [str(sg_id) for sg_id in item_sg_ids] if item_sg_ids else None
             )
 
-            chat_entry_id = item.chat_entry_ids[0] if item.chat_entry_ids else None
-            home_id = item.home_ids[0] if item.home_ids else None
+            chat_entry_id = h.chat_ids[0] if h.chat_ids else None
+            home_id = h.id
 
             attempt_count = ps.get("attempt_count", 0)
             if is_instructional and instructional_stats is not None:
-                ist = instructional_stats.get(item.simulation_id, {})
+                ist = instructional_stats.get(sim_id, {})
                 status = ist.get("status", "not-started")
                 completion_pct = ist.get("completion_pct", 0)
                 passed_count = ist.get("passed_count", 0)
@@ -915,16 +800,14 @@ async def get_home_internal(
 
             items.append(
                 ChatSimulationOperational(
-                    simulation_id=item.simulation_id,
-                    simulation_name=simulation.name if simulation else None,
-                    simulation_description=(
-                        simulation.description if simulation else None
-                    ),
+                    simulation_id=sim_id,
+                    simulation_name=simulation.name,
+                    simulation_description=simulation.description,
                     time_limit=time_limit_minutes,
                     chat_entry_id=chat_entry_id,
                     home_id=home_id,
-                    scenario_ids=item.scenario_ids,
-                    cohort_ids=item.cohort_ids,
+                    scenario_ids=sim_scenario_ids or None,
+                    cohort_ids=list(h.cohort_ids) if h.cohort_ids else None,
                     color=color,
                     icon=icon,
                     view_mode=view_mode,
@@ -948,7 +831,7 @@ async def get_home_internal(
     if rubric_list:
         rubrics = [
             RubricMapping(
-                rubric_id=r.id,  # type: ignore[arg-type]
+                rubric_id=r.id,
                 name=r.name,
                 standard_group_ids=(
                     [str(sg_id) for sg_id in r.standard_group_ids]
@@ -961,18 +844,17 @@ async def get_home_internal(
         ]
 
     standard_groups: list[StandardGroupMapping] | None = None
-    if standard_group_ids_list:
+    if sg_list:
         standard_groups = [
             StandardGroupMapping(
-                standard_group_id=sg.standard_group_id,  # type: ignore[arg-type]
+                standard_group_id=sg.id,
                 name=sg.name,
                 description=sg.description,
                 points=sg.points,
                 pass_points=sg.pass_points,
             )
-            for sgid in standard_group_ids_list
-            for sg in [standard_groups_map.get(sgid)]
-            if sg and sg.standard_group_id
+            for sg in sg_list
+            if sg.id
         ]
 
     standards: list[StandardMapping] | None = None
@@ -1000,7 +882,7 @@ async def get_home_internal(
 
 
 # =============================================================================
-# Websocket wrapper
+# Websocket wrapper (stub)
 # =============================================================================
 
 
@@ -1163,7 +1045,6 @@ async def home_get(
     """Get simulations available for home (operational)."""
     tags = ["home", "get"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
 
     cache_key_val = cache_key(
         http_request.url.path,

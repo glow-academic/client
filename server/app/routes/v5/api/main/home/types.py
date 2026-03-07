@@ -1,5 +1,6 @@
 """Types for home artifact endpoint."""
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -12,21 +13,6 @@ from app.routes.v5.api.main.chat.types import (
 )
 from app.routes.v5.api.main.types import HistoryResponse, InternalResponseBase
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetDocumentsV4Item,
-    QGetImagesV4Item,
-    QGetObjectivesV4Item,
-    QGetOptionsV4Item,
-    QGetParameterFieldsV4Item,
-    QGetParametersV4Item,
-    QGetPersonasV4Item,
-    QGetProblemStatementsV4Item,
-    QGetQuestionsV4Item,
-    QGetScenariosV4Item,
-    QGetTrainingDraftsEntriesV4Item,
-    QGetVideosV4Item,
-)
 
 # =============================================================================
 # Export Types
@@ -49,7 +35,7 @@ class ExportHomeApiResponse(BaseModel):
 class HomeWebsocketEntries(BaseModel):
     """Draft entries for home bundle websocket consumers."""
 
-    draft_training: QGetTrainingDraftsEntriesV4Item | None = None
+    draft_training: Any | None = None
     runs: GetRunListViewResponse | None = None
 
 
@@ -57,18 +43,18 @@ class HomeWebsocketResources(BaseModel):
     """Hydrated resources for home bundle websocket — selected only."""
 
     # 12 domain resources
-    departments: list[QGetDepartmentsV4Item] | None = None
-    personas: list[QGetPersonasV4Item] | None = None
-    documents: list[QGetDocumentsV4Item] | None = None
-    parameter_fields: list[QGetParameterFieldsV4Item] | None = None
-    scenarios: list[QGetScenariosV4Item] | None = None
-    parameters: list[QGetParametersV4Item] | None = None
-    questions: list[QGetQuestionsV4Item] | None = None
-    options: list[QGetOptionsV4Item] | None = None
-    videos: list[QGetVideosV4Item] | None = None
-    images: list[QGetImagesV4Item] | None = None
-    problem_statements: list[QGetProblemStatementsV4Item] | None = None
-    objectives: list[QGetObjectivesV4Item] | None = None
+    departments: list[Any] | None = None
+    personas: list[Any] | None = None
+    documents: list[Any] | None = None
+    parameter_fields: list[Any] | None = None
+    scenarios: list[Any] | None = None
+    parameters: list[Any] | None = None
+    questions: list[Any] | None = None
+    options: list[Any] | None = None
+    videos: list[Any] | None = None
+    images: list[Any] | None = None
+    problem_statements: list[Any] | None = None
+    objectives: list[Any] | None = None
 
 
 class GetHomeWebsocketResponse(InternalResponseBase):
