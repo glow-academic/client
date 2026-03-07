@@ -10,6 +10,7 @@ from collections import defaultdict
 from datetime import date, datetime
 from statistics import mean
 from typing import Any
+from uuid import UUID
 
 from app.routes.v5.api.main.leaderboard.types import (
     LeaderboardAccoladeWinner,
@@ -22,6 +23,8 @@ from app.routes.v5.api.main.leaderboard.types import (
     LeaderboardSectionStatus,
 )
 from app.routes.v5.tools.entries.attempt_chat.get import ChatItem
+from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
+from app.routes.v5.tools.entries.attempt_message.types import GetAttemptMessageResponse
 
 # Type aliases for deprecated v1 types (modules deleted in DELETE OLD VIEWS)
 AttemptFactsItem = Any
@@ -878,4 +881,136 @@ def build_leaderboard_sections_v2(
         trends=_section(has_data, "Derived from attempt_chat_mv"),
         filters=_section(has_data, "Filter IDs sourced from attempt_chat_mv"),
         accolade_winners=compute_accolade_winners(row_data),
+    )
+
+
+# ---------------------------------------------------------------------------
+# v3 functions — operate on GetAttemptChatResponse + GetAttemptMessageResponse
+# ---------------------------------------------------------------------------
+
+
+def compute_message_stats(
+    attempt_messages: list[GetAttemptMessageResponse],
+) -> dict[UUID, dict[str, Any]]:
+    """Compute per-chat message stats from attempt_message_mv rows.
+
+    Returns dict keyed by chat_id with:
+      - num_messages_total: int
+      - avg_response_sec: float | None
+    """
+    msgs_by_chat: dict[UUID, list[GetAttemptMessageResponse]] = defaultdict(list)
+    for msg in attempt_messages:
+        if msg.chat_id:
+            msgs_by_chat[msg.chat_id].append(msg)
+
+    stats: dict[UUID, dict[str, Any]] = {}
+    for chat_id, msgs in msgs_by_chat.items():
+        sorted_msgs = sorted(msgs, key=lambda m: m.created_at or datetime.min)
+        num_messages = len(sorted_msgs)
+
+        # Compute response times: time between consecutive query→response pairs
+        response_times: list[float] = []
+        for i in range(1, len(sorted_msgs)):
+            prev = sorted_msgs[i - 1]
+            curr = sorted_msgs[i]
+            if (
+                prev.type == "query"
+                and curr.type == "response"
+                and prev.created_at
+                and curr.created_at
+            ):
+                delta = (curr.created_at - prev.created_at).total_seconds()
+                if delta >= 0:
+                    response_times.append(delta)
+
+        avg_response_sec = round(mean(response_times), 2) if response_times else None
+
+        stats[chat_id] = {
+            "num_messages_total": num_messages,
+            "avg_response_sec": avg_response_sec,
+        }
+
+    return stats
+
+
+def _attempt_chat_to_chat_item(
+    ac: GetAttemptChatResponse,
+    message_stats: dict[UUID, dict[str, Any]],
+) -> ChatItem:
+    """Convert GetAttemptChatResponse to ChatItem with message stats enrichment."""
+    stats = message_stats.get(ac.chat_id, {}) if ac.chat_id else {}
+    return ChatItem(
+        chat_id=ac.chat_id,
+        attempt_id=ac.attempt_id,
+        chat_entry_id=ac.chat_entry_id,
+        group_id=ac.group_id,
+        profile_id=ac.profile_id,
+        cohort_id=ac.cohort_id,
+        department_id=ac.department_id,
+        simulation_id=ac.simulation_id,
+        scenario_id=ac.scenario_id,
+        persona_ids=ac.persona_ids,
+        rubric_id=ac.rubric_id,
+        grade_score=ac.grade_score,
+        grade_total_points=ac.grade_total_points,
+        grade_pass_points=ac.grade_pass_points,
+        grade_passed=ac.grade_passed,
+        grade_time_taken=ac.grade_time_taken,
+        completed=ac.completed or False,
+        attempt_number=ac.attempt_number or 0,
+        chat_created_at=ac.chat_created_at,
+        attempt_date=ac.attempt_date,
+        attempt_type=ac.attempt_type,
+        is_archived=ac.is_archived or False,
+        infinite_mode=ac.infinite_mode or False,
+        num_messages_total=stats.get("num_messages_total", 0),
+        avg_response_sec=stats.get("avg_response_sec"),
+    )
+
+
+def build_leaderboard_sections_v3(
+    attempt_chats: list[GetAttemptChatResponse],
+    attempt_messages: list[GetAttemptMessageResponse],
+    rows: list[LeaderboardDataRow] | None = None,
+) -> LeaderboardSections:
+    """Build leaderboard sections from raw MV entries."""
+    message_stats = compute_message_stats(attempt_messages)
+    chat_items = [_attempt_chat_to_chat_item(ac, message_stats) for ac in attempt_chats]
+    return build_leaderboard_sections_v2(chat_items, rows)
+
+
+def build_leaderboard_rows_v3(
+    attempt_chats: list[GetAttemptChatResponse],
+    attempt_messages: list[GetAttemptMessageResponse],
+    profile_name_by_id: dict[str, str | None] | None = None,
+    sort_by: str = "highest_score",
+    sort_order: str = "desc",
+    rank_offset: int = 0,
+) -> list[LeaderboardDataRow]:
+    """Build leaderboard rows from raw MV entries."""
+    message_stats = compute_message_stats(attempt_messages)
+
+    # Convert to ChatItems with enriched message stats
+    chat_items = [_attempt_chat_to_chat_item(ac, message_stats) for ac in attempt_chats]
+
+    # Build a message_stats_map compatible with v2 (keyed by chat_id)
+    class _Stats:
+        __slots__ = ("num_messages_total", "avg_response_sec")
+
+        def __init__(self, num: int, avg: float | None):
+            self.num_messages_total = num
+            self.avg_response_sec = avg
+
+    compat_map = {
+        chat_id: _Stats(s["num_messages_total"], s["avg_response_sec"])
+        for chat_id, s in message_stats.items()
+    }
+
+    return build_leaderboard_rows_v2(
+        chat_items,
+        profile_name_by_id=profile_name_by_id,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        rank_offset=rank_offset,
+        message_stats_map=compat_map,
     )

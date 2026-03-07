@@ -1,4 +1,4 @@
-"""Get endpoint for leaderboard artifact."""
+"""Get endpoint for leaderboard artifact — top sections (header metrics + accolades)."""
 
 import asyncio
 from dataclasses import dataclass, field
@@ -9,11 +9,12 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.leaderboard_context import resolve_leaderboard_context
 from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.leaderboard.permissions import (
-    build_leaderboard_rows_v2,
-    build_leaderboard_sections_v2,
+    build_leaderboard_sections_v3,
 )
 from app.routes.v5.api.main.leaderboard.types import (
     GetLeaderboardWebsocketResponse,
@@ -21,16 +22,10 @@ from app.routes.v5.api.main.leaderboard.types import (
     LeaderboardRequest,
     LeaderboardResources,
     LeaderboardResponse,
-    LeaderboardScenarioResource,
-    LeaderboardSections,
-    LeaderboardSimulationResource,
-    LeaderboardViews,
     LeaderboardWebsocketEntries,
     LeaderboardWebsocketResources,
 )
-from app.routes.v5.api.main.types import FilterOption
 from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.tools.entries.attempt_chat.get import get_chats_internal
 from app.routes.v5.tools.entries.runs.search import (
     GetRunListViewResponse,
     get_run_list_entries_internal,
@@ -40,11 +35,7 @@ from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.sql.types import (
-    GetActiveSettingsSqlParams,
-    GetActiveSettingsSqlRow,
     QGetAgentsV4Item,
     QGetModelsV4Item,
     QGetProfilesV4Item,
@@ -58,6 +49,94 @@ from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()
+
+# ---------------------------------------------------------------------------
+# Message stats (kept for export.py backward compat)
+# ---------------------------------------------------------------------------
+
+SQL_PATH_MESSAGE_STATS = (
+    "app/sql/queries/views/chat/message_stats/get_message_stats_complete.sql"
+)
+
+
+class MessageStats:
+    """Message statistics for a single chat."""
+
+    __slots__ = ("chat_id", "num_messages_total", "avg_response_sec")
+
+    def __init__(
+        self,
+        chat_id: UUID,
+        num_messages_total: int = 0,
+        avg_response_sec: float | None = None,
+    ) -> None:
+        self.chat_id = chat_id
+        self.num_messages_total = num_messages_total
+        self.avg_response_sec = avg_response_sec
+
+
+async def get_message_stats_internal(
+    conn: asyncpg.Connection,
+    chat_ids: list[UUID],
+    bypass_cache: bool = False,
+) -> dict[UUID, MessageStats]:
+    """Fetch message stats for a batch of chat IDs.
+
+    Returns a dict keyed by chat_id for O(1) lookup.
+    """
+    if not chat_ids:
+        return {}
+
+    from app.sql.types import GetMessageStatsSqlParams
+
+    cache_key_val = cache_key(
+        "entries/chat/message_stats",
+        {"chat_ids": sorted(str(c) for c in chat_ids)},
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        if cached:
+            return {
+                UUID(k): MessageStats(
+                    chat_id=UUID(k),
+                    num_messages_total=v["num_messages_total"],
+                    avg_response_sec=v.get("avg_response_sec"),
+                )
+                for k, v in cached.items()
+            }
+
+    params = GetMessageStatsSqlParams(chat_ids=chat_ids)
+    result = await execute_sql_typed(conn, SQL_PATH_MESSAGE_STATS, params=params)
+
+    stats_map: dict[UUID, MessageStats] = {}
+    if result and result.items:
+        for item in result.items:
+            if item.chat_id:
+                stats_map[item.chat_id] = MessageStats(
+                    chat_id=item.chat_id,
+                    num_messages_total=item.num_messages_total or 0,
+                    avg_response_sec=float(item.avg_response_sec)
+                    if item.avg_response_sec is not None
+                    else None,
+                )
+
+    await set_cached(
+        cache_key_val,
+        {
+            str(k): {
+                "num_messages_total": v.num_messages_total,
+                "avg_response_sec": v.avg_response_sec,
+            }
+            for k, v in stats_map.items()
+        },
+        ttl=60,
+        tags=["entries", "chat", "message_stats"],
+        redis=get_redis_client(),
+    )
+
+    return stats_map
+
 
 # Leaderboard entry types for agent resolution
 LEADERBOARD_BUNDLE_ENTRIES: set[str] = {"debug_info"}
@@ -234,103 +313,52 @@ async def get_leaderboard_websocket(
 
 
 # ---------------------------------------------------------------------------
-# SQL paths
-# ---------------------------------------------------------------------------
-
-SQL_PATH_MESSAGE_STATS = (
-    "app/sql/queries/views/chat/message_stats/get_message_stats_complete.sql"
-)
-
-ACTIVE_SETTINGS_SQL_PATH = "app/sql/queries/settings/get_active_settings_complete.sql"
-
-# ---------------------------------------------------------------------------
-# Message stats types
+# Helpers
 # ---------------------------------------------------------------------------
 
 
-class MessageStats:
-    """Message statistics for a single chat."""
-
-    __slots__ = ("chat_id", "num_messages_total", "avg_response_sec")
-
-    def __init__(
-        self,
-        chat_id: UUID,
-        num_messages_total: int = 0,
-        avg_response_sec: float | None = None,
-    ) -> None:
-        self.chat_id = chat_id
-        self.num_messages_total = num_messages_total
-        self.avg_response_sec = avg_response_sec
-
-
-# ---------------------------------------------------------------------------
-# get_message_stats_internal
-# ---------------------------------------------------------------------------
-
-
-async def get_message_stats_internal(
-    conn: asyncpg.Connection,
-    chat_ids: list[UUID],
-    bypass_cache: bool = False,
-) -> dict[UUID, MessageStats]:
-    """Fetch message stats for a batch of chat IDs.
-
-    Returns a dict keyed by chat_id for O(1) lookup.
-    """
-    if not chat_ids:
-        return {}
-
-    from app.sql.types import GetMessageStatsSqlParams
-
-    cache_key_val = cache_key(
-        "entries/chat/message_stats",
-        {"chat_ids": sorted(str(c) for c in chat_ids)},
+def _parse_filters(request: LeaderboardRequest) -> dict[str, Any]:
+    """Parse common filters from leaderboard request."""
+    parsed_start_date = (
+        datetime.fromisoformat(request.start_date.replace("Z", "+00:00"))
+        if request.start_date
+        else None
+    )
+    parsed_end_date = (
+        datetime.fromisoformat(request.end_date.replace("Z", "+00:00"))
+        if request.end_date
+        else None
     )
 
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return {
-                UUID(k): MessageStats(
-                    chat_id=UUID(k),
-                    num_messages_total=v["num_messages_total"],
-                    avg_response_sec=v.get("avg_response_sec"),
-                )
-                for k, v in cached.items()
-            }
-
-    params = GetMessageStatsSqlParams(chat_ids=chat_ids)
-    result = await execute_sql_typed(conn, SQL_PATH_MESSAGE_STATS, params=params)
-
-    stats_map: dict[UUID, MessageStats] = {}
-    if result and result.items:
-        for item in result.items:
-            if item.chat_id:
-                stats_map[item.chat_id] = MessageStats(
-                    chat_id=item.chat_id,
-                    num_messages_total=item.num_messages_total or 0,
-                    avg_response_sec=float(item.avg_response_sec)
-                    if item.avg_response_sec is not None
-                    else None,
-                )
-
-    # Cache as simple dict
-    await set_cached(
-        cache_key_val,
-        {
-            str(k): {
-                "num_messages_total": v.num_messages_total,
-                "avg_response_sec": v.avg_response_sec,
-            }
-            for k, v in stats_map.items()
-        },
-        ttl=60,
-        tags=["entries", "chat", "message_stats"],
-        redis=get_redis_client(),
+    cohort_ids_filter = (
+        request.cohort_ids
+        if request.cohort_ids
+        else ([request.cohort_id] if request.cohort_id else None)
     )
 
-    return stats_map
+    is_archived = bool(
+        request.simulation_filters and "archived" in request.simulation_filters
+    )
+    if request.simulation_filters and "general" in request.simulation_filters:
+        attempt_type = "general"
+    elif request.simulation_filters and "practice" in request.simulation_filters:
+        attempt_type = "practice"
+    else:
+        attempt_type = "general"
+
+    return {
+        "date_from": parsed_start_date.date() if parsed_start_date else None,
+        "date_to": parsed_end_date.date() if parsed_end_date else None,
+        "cohort_ids": cohort_ids_filter,
+        "department_ids": request.department_ids,
+        "attempt_type": attempt_type,
+        "is_archived": is_archived,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Route handler
+# ---------------------------------------------------------------------------
 
 
 @router.post("/get", response_model=LeaderboardResponse)
@@ -340,245 +368,106 @@ async def get_leaderboard(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> LeaderboardResponse:
-    """Get leaderboard artifact data.
-
-    Fetches chat-grain rows from attempt_chat_mv via get_chats_internal()
-    and aggregates to profile-level leaderboard rows in Python.
-    """
-    tags = ["artifacts", "leaderboard", "views", "analytics"]
+    """Get leaderboard top sections (header metrics + accolades)."""
+    tags = ["artifacts", "leaderboard"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
+
+    cache_key_val = cache_key(
+        http_request.url.path,
+        request.model_dump(mode="json"),
+    )
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return LeaderboardResponse.model_validate(cached["data"])
 
     try:
         pool = get_pool()
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
-        parsed_start_date = (
-            datetime.fromisoformat(request.start_date.replace("Z", "+00:00"))
-            if request.start_date
-            else None
-        )
-        parsed_end_date = (
-            datetime.fromisoformat(request.end_date.replace("Z", "+00:00"))
-            if request.end_date
-            else None
-        )
-        parsed_start_day = parsed_start_date.date() if parsed_start_date else None
-        parsed_end_day = parsed_end_date.date() if parsed_end_date else None
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
 
-        simulation_ids_filter = (
-            request.simulation_ids
-            if request.simulation_ids
-            else ([request.simulation_id] if request.simulation_id else None)
-        )
-        cohort_ids_filter = (
-            request.cohort_ids
-            if request.cohort_ids
-            else ([request.cohort_id] if request.cohort_id else None)
-        )
+        redis = get_redis_client()
 
-        is_archived = bool(
-            request.simulation_filters and "archived" in request.simulation_filters
-        )
-        if request.simulation_filters and "general" in request.simulation_filters:
-            attempt_type = "general"
-        elif request.simulation_filters and "practice" in request.simulation_filters:
-            attempt_type = "practice"
-        else:
-            attempt_type = "general"
-
-        # --- Single MV fetch: attempt_chat_mv ---
+        # --- Phase 0: Resolve common context (profile identity) ---
         async with pool.acquire() as c:
-            chats_result = await get_chats_internal(
-                conn=c,
-                profile_id=request.target_profile_id,
-                cohort_ids=cohort_ids_filter,
-                department_ids=request.department_ids,
-                simulation_ids=simulation_ids_filter,
-                attempt_type=attempt_type,
-                is_archived=is_archived,
-                date_from=parsed_start_day,
-                date_to=parsed_end_day,
-                sort_by="date",
-                sort_order=request.sort_order or "desc",
-                page_limit=request.page_limit * 50,
-                page_offset=0,
+            common = await resolve_common_context(
+                c, redis, profile_id=profile_id, bypass_cache=bypass_cache
+            )
+        if not common:
+            raise HTTPException(status_code=401, detail="Profile not found")
+
+        # --- Phase 1: Parse filters ---
+        filters = _parse_filters(request)
+
+        # --- Phase 2: Resolve leaderboard context ---
+        async with pool.acquire() as c:
+            ctx = await resolve_leaderboard_context(
+                c,
+                redis,
+                target_profile_id=request.target_profile_id,
+                cohort_ids=filters["cohort_ids"],
+                department_ids=filters["department_ids"],
+                attempt_type=filters["attempt_type"],
+                is_archived=filters["is_archived"],
+                date_from=filters["date_from"],
+                date_to=filters["date_to"],
                 bypass_cache=bypass_cache,
             )
 
-        chat_items = chats_result.items
+        # --- Phase 3: Extract data ---
+        attempt_chats = ctx.entries.get("attempt_chats", [])
+        attempt_messages = ctx.entries.get("attempt_messages", [])
 
-        # --- Fetch message stats (num_messages_total, avg_response_sec) ---
-        chat_ids = [item.chat_id for item in chat_items]
-        if chat_ids:
-            async with pool.acquire() as c:
-                message_stats_map = await get_message_stats_internal(
-                    conn=c,
-                    chat_ids=chat_ids,
-                    bypass_cache=bypass_cache,
-                )
-        else:
-            message_stats_map = {}
+        profiles_rp = ctx.resources.get("profiles")
+        profile_list = profiles_rp.selected if profiles_rp else []
 
-        # --- Fetch settings (same as before) ---
-        primary_color = "#171717"
-        accent_color = "#f5f5f5"
-        actor_profile_for_settings = (
-            request.actor_profile_id or request.target_profile_id
-        )
-        if actor_profile_for_settings:
-            async with pool.acquire() as c:
-                settings_row_raw = await execute_sql_typed(
-                    c,
-                    ACTIVE_SETTINGS_SQL_PATH,
-                    params=GetActiveSettingsSqlParams(
-                        profile_id=str(actor_profile_for_settings),
-                        department_id=(
-                            str(request.department_ids[0])
-                            if request.department_ids
-                            else None
-                        ),
-                    ),
-                )
-                if settings_row_raw:
-                    settings = GetActiveSettingsSqlRow.model_validate(settings_row_raw)
-                    primary_color = settings.primary_color or primary_color
-                    accent_color = settings.accent or accent_color
-
-        # --- Collect resource IDs from chat_items ---
-        profile_id_set = {item.profile_id for item in chat_items}
-        simulation_id_set = {item.simulation_id for item in chat_items}
-        scenario_id_set = {
-            item.scenario_id for item in chat_items if item.scenario_id is not None
-        }
-
-        # --- Hydrate resources in parallel ---
-        async def fetch_profiles() -> list:
-            async with pool.acquire() as c:
-                return await get_profiles(
-                    conn=c,
-                    ids=list(profile_id_set),
-                    redis=get_redis_client(),
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_simulations() -> list:
-            async with pool.acquire() as c:
-                return await get_simulations(
-                    conn=c,
-                    ids=list(simulation_id_set),
-                    redis=get_redis_client(),
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_scenarios() -> list:
-            async with pool.acquire() as c:
-                return await get_scenarios(
-                    conn=c,
-                    ids=list(scenario_id_set),
-                    redis=get_redis_client(),
-                    bypass_cache=bypass_cache,
-                )
-
-        profiles, simulations, scenarios = await asyncio.gather(
-            fetch_profiles(),
-            fetch_simulations(),
-            fetch_scenarios(),
+        # --- Phase 4: Build sections ---
+        sections = build_leaderboard_sections_v3(
+            attempt_chats=attempt_chats,
+            attempt_messages=attempt_messages,
         )
 
-        profile_name_by_id = {
-            str(item.profile_id): item.name
-            for item in profiles
-            if item.profile_id is not None
-        }
-
-        # --- Build leaderboard rows and sections from chat items ---
-        data = build_leaderboard_rows_v2(
-            chat_items,
-            profile_name_by_id=profile_name_by_id,
-            sort_by=request.sort_by,
-            sort_order=request.sort_order,
-            rank_offset=request.page_offset,
-            message_stats_map=message_stats_map,
-        )
-
-        # Paginate the profile-level rows
-        page_start = request.page_offset
-        page_end = request.page_offset + request.page_limit
-        total_count = len(data)
-        data_page = data[page_start:page_end]
-
-        sections: LeaderboardSections = build_leaderboard_sections_v2(
-            chat_items=chat_items,
-            rows=data_page,
-        )
-
-        # Views: set to empty lists since we no longer fetch the 4 separate MVs
-        views = LeaderboardViews(
-            attempt_facts=[],
-            chat_facts=[],
-            daily_metrics=[],
-            profile_metrics=[],
-        )
-
+        # Build profile resources
         profile_resources = {
             str(item.profile_id): LeaderboardProfileResource(
                 profile_id=str(item.profile_id),
                 name=item.name,
                 role=None,
             )
-            for item in profiles
+            for item in profile_list
             if item.profile_id is not None
-        }
-        simulation_resources = {
-            str(item.simulation_id): LeaderboardSimulationResource(
-                simulation_id=str(item.simulation_id),
-                name=item.name,
-                description=item.description,
-            )
-            for item in simulations
-            if item.simulation_id is not None
-        }
-        scenario_resources = {
-            str(item.scenario_id): LeaderboardScenarioResource(
-                scenario_id=str(item.scenario_id),
-                name=item.name,
-                description=item.description,
-            )
-            for item in scenarios
-            if item.scenario_id is not None
         }
 
         resources = LeaderboardResources(
             profiles=profile_resources,
-            simulations=simulation_resources,
-            scenarios=scenario_resources,
         )
 
-        simulation_options = [
-            FilterOption(value=sid, label=simulation_resources[sid].name)
-            for sid in simulation_resources
-            if simulation_resources[sid].name
-        ]
-        profile_options = [
-            FilterOption(value=pid, label=profile_resources[pid].name)
-            for pid in profile_resources
-            if profile_resources[pid].name
-        ]
-
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        return LeaderboardResponse(
+        api_response = LeaderboardResponse(
             sections=sections,
-            data=data_page,
-            views=views,
             resources=resources,
-            primary_color=primary_color,
-            accent_color=accent_color,
-            total_count=total_count,
-            simulation_options=simulation_options,
-            profile_options=profile_options,
         )
+
+        await set_cached(
+            cache_key_val,
+            {"data": api_response.model_dump(mode="json")},
+            ttl=300,
+            tags=tags,
+            redis=redis,
+        )
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        response.headers["X-Cache-Hit"] = "0"
+
+        return api_response
 
     except HTTPException:
         raise

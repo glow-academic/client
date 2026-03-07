@@ -1,5 +1,6 @@
 """Attempt chat search — filtered/paginated query against attempt_chat_mv."""
 
+from datetime import date
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -22,12 +23,19 @@ async def search_attempt_chats(
     scenario_ids: list[UUID] | None = None,
     user_persona_ids: list[UUID] | None = None,
     rubric_ids: list[UUID] | None = None,
+    attempt_type: str | None = None,
+    is_archived: bool | None = None,
+    date_from: date | None = None,
+    date_to: date | None = None,
+    sort_order: str = "desc",
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
 ) -> list[GetAttemptChatResponse]:
     """Search attempt_chat entries from attempt_chat_mv with declarative filters."""
     source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
+
+    order = "ASC" if sort_order.lower() == "asc" else "DESC"
 
     rows = await conn.fetch(
         f"""
@@ -49,8 +57,12 @@ async def search_attempt_chats(
           AND ($8::uuid[] IS NULL OR scenario_id = ANY($8))
           AND ($9::uuid[] IS NULL OR persona_ids && $9)
           AND ($10::uuid[] IS NULL OR rubric_id = ANY($10))
-        ORDER BY chat_created_at DESC
-        LIMIT $11 OFFSET $12
+          AND ($11::text IS NULL OR attempt_type = $11)
+          AND ($12::bool IS NULL OR is_archived = $12)
+          AND ($13::date IS NULL OR attempt_date >= $13)
+          AND ($14::date IS NULL OR attempt_date <= $14)
+        ORDER BY chat_created_at {order}
+        LIMIT $15 OFFSET $16
         """,
         attempt_ids,
         group_ids,
@@ -62,6 +74,10 @@ async def search_attempt_chats(
         scenario_ids,
         user_persona_ids,
         rubric_ids,
+        attempt_type,
+        is_archived,
+        date_from,
+        date_to,
         limit,
         offset,
     )
