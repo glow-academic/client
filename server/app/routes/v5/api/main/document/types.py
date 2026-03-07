@@ -459,97 +459,41 @@ class DuplicateDocumentApiResponse(BaseModel):
 
 
 class PatchDocumentDraftApiRequest(BaseModel):
-    """Request model for patch document draft endpoint - flat resource IDs."""
+    """Request model for new-style document draft endpoint.
 
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id
+    ID-only for non-creatable resources:
+      - flag_ids, department_ids, file_ids, image_ids, text_ids,
+        parameter_field_ids, parameter_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
+    expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
     name_id: UUID | None = None
+    description: str | None = None
     description_id: UUID | None = None
-    flag_id: UUID | None = None
+
+    # Non-creatable — ID-only
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    upload_ids: list[UUID] | None = None
+    file_ids: list[UUID] | None = None
     image_ids: list[UUID] | None = None
     text_ids: list[UUID] | None = None
-    expected_version: int | None = 0
+    parameter_field_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
 
 
 class PatchDocumentDraftApiResponse(BaseModel):
-    """Response model for patch document draft endpoint."""
+    """Response model for new-style document draft endpoint."""
 
     success: bool
     draft_id: UUID
     new_version: int
     message: str
-
-
-class PatchDocumentDraftSqlParams(BaseModel):
-    """SQL parameters for patch document draft."""
-
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: DocumentResourceAction | None = None
-    descriptions: DocumentResourceAction | None = None
-    flags: DocumentResourceAction | None = None
-    departments: DocumentMultiResourceAction | None = None
-    fields: DocumentMultiResourceAction | None = None
-    uploads: DocumentMultiResourceAction | None = None
-    images: DocumentMultiResourceAction | None = None
-    texts: DocumentMultiResourceAction | None = None
-    expected_version: int | None = 0
-
-    @classmethod
-    def from_request(
-        cls, request: PatchDocumentDraftApiRequest, profile_id: UUID
-    ) -> PatchDocumentDraftSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            names=DocumentResourceAction(resource_id=request.name_id),
-            descriptions=DocumentResourceAction(resource_id=request.description_id),
-            flags=DocumentResourceAction(resource_id=request.flag_id),
-            departments=DocumentMultiResourceAction(
-                resource_ids=request.department_ids
-            ),
-            fields=DocumentMultiResourceAction(resource_ids=request.field_ids),
-            uploads=DocumentMultiResourceAction(resource_ids=request.upload_ids),
-            images=DocumentMultiResourceAction(resource_ids=request.image_ids),
-            texts=DocumentMultiResourceAction(resource_ids=request.text_ids),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        def single(
-            a: DocumentResourceAction | None,
-        ) -> tuple[UUID | None, UUID | None, UUID | None]:
-            return (
-                (a.resource_id, a.create_tool_id, a.link_tool_id)
-                if a
-                else (None, None, None)
-            )
-
-        def multi(
-            a: DocumentMultiResourceAction | None,
-        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
-            return (
-                (a.resource_ids, a.create_tool_id, a.link_tool_id)
-                if a
-                else (None, None, None)
-            )
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.flags),
-            multi(self.departments),
-            multi(self.fields),
-            multi(self.uploads),
-            multi(self.images),
-            multi(self.texts),
-            self.expected_version,
-        )

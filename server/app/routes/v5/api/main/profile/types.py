@@ -253,93 +253,43 @@ class DuplicateProfileApiResponse(BaseModel):
     message: str
 
 
-class ProfileResourceAction(BaseModel):
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
-class ProfileMultiResourceAction(BaseModel):
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
+# ========== Draft Endpoint Types (composable infra) ==========
 
 
 class PatchProfileDraftApiRequest(BaseModel):
-    """Request model for patch profile draft endpoint - flat resource IDs."""
+    """Request model for new-style profile draft endpoint.
 
+    Dual-mode for creatable resources only:
+      - name/name_id
+    ID-only for non-creatable resources:
+      - flag_id, department_ids, email_ids, role_ids, request_limit_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    role: str | None = None
-    name_id: UUID | None = None
-    flag_id: UUID | None = None
-    request_limit_id: UUID | None = None
-    email_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
     expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
+    name_id: UUID | None = None
+
+    # Non-creatable — ID-only
+    flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
+    email_ids: list[UUID] | None = None
+    role_ids: list[UUID] | None = None
+    request_limit_ids: list[UUID] | None = None
 
 
 class PatchProfileDraftApiResponse(BaseModel):
+    """Response model for new-style profile draft endpoint."""
+
     success: bool
     draft_id: UUID
     new_version: int
     message: str
-
-
-class PatchProfileDraftSqlParams(BaseModel):
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    role: str | None = None
-    names: ProfileResourceAction
-    flags: ProfileResourceAction
-    request_limits: ProfileResourceAction
-    emails: ProfileMultiResourceAction
-    departments: ProfileMultiResourceAction
-    expected_version: int = 0
-
-    @classmethod
-    def from_request(
-        cls, request: PatchProfileDraftApiRequest, profile_id: UUID
-    ) -> PatchProfileDraftSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            role=request.role,
-            names=ProfileResourceAction(resource_id=request.name_id),
-            flags=ProfileResourceAction(resource_id=request.flag_id),
-            request_limits=ProfileResourceAction(resource_id=request.request_limit_id),
-            emails=ProfileMultiResourceAction(resource_ids=request.email_ids),
-            departments=ProfileMultiResourceAction(resource_ids=request.department_ids),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple:
-        def single(a: ProfileResourceAction) -> tuple:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: ProfileMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            single(self.names),
-            single(self.flags),
-            single(self.request_limits),
-            multi(self.departments),
-            multi(self.emails),
-            self.role,
-            self.expected_version,
-        )
-
-
-class PatchProfileDraftSqlRow(BaseModel):
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 # ========== List Endpoint Types ==========

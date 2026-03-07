@@ -188,96 +188,42 @@ class DuplicateProviderApiResponse(BaseModel):
     message: str
 
 
-class PatchProviderDraftApiRequest(BaseModel):
-    """Flat-ID patch draft request for provider endpoint."""
+# ========== Draft Endpoint Types (composable infra) ==========
 
+
+class PatchProviderDraftApiRequest(BaseModel):
+    """Request model for new-style provider draft endpoint.
+
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id
+    ID-only for non-creatable resources:
+      - flag_id, department_ids, endpoint_ids, key_ids, value_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
+    expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
     name_id: UUID | None = None
+    description: str | None = None
     description_id: UUID | None = None
+
+    # Non-creatable — ID-only
     flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
-    value_id: UUID | None = None
-    endpoint_id: UUID | None = None
-    key_id: UUID | None = None
-    expected_version: int = 0
+    endpoint_ids: list[UUID] | None = None
+    key_ids: list[UUID] | None = None
+    value_ids: list[UUID] | None = None
 
 
 class PatchProviderDraftApiResponse(BaseModel):
+    """Response model for new-style provider draft endpoint."""
+
     success: bool
     draft_id: UUID
     new_version: int
     message: str
-
-
-class ProviderResourceAction(BaseModel):
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
-class ProviderMultiResourceAction(BaseModel):
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
-class PatchProviderDraftSqlParams(BaseModel):
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: ProviderResourceAction
-    descriptions: ProviderResourceAction
-    flags: ProviderResourceAction
-    departments: ProviderMultiResourceAction
-    values: ProviderResourceAction
-    endpoints: ProviderResourceAction
-    keys: ProviderResourceAction
-    expected_version: int = 0
-
-    @classmethod
-    def from_request(
-        cls, request: PatchProviderDraftApiRequest, profile_id: UUID
-    ) -> PatchProviderDraftSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            names=ProviderResourceAction(resource_id=request.name_id),
-            descriptions=ProviderResourceAction(resource_id=request.description_id),
-            flags=ProviderResourceAction(resource_id=request.flag_id),
-            departments=ProviderMultiResourceAction(
-                resource_ids=request.department_ids
-            ),
-            values=ProviderResourceAction(resource_id=request.value_id),
-            endpoints=ProviderResourceAction(resource_id=request.endpoint_id),
-            keys=ProviderResourceAction(resource_id=request.key_id),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple:
-        def single(a: ProviderResourceAction) -> tuple:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: ProviderMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.flags),
-            multi(self.departments),
-            single(self.values),
-            single(self.endpoints),
-            single(self.keys),
-            self.expected_version,
-        )
-
-
-class PatchProviderDraftSqlRow(BaseModel):
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None

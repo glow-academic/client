@@ -353,20 +353,6 @@ class ListCohortApiResponse(BaseModel):
 # =============================================================================
 
 
-class CohortResourceAction(BaseModel):
-    """Single resource action payload with tool-call metadata."""
-
-    resource_id: UUID | None = None
-    tool_id: UUID | None = None
-
-
-class CohortMultiResourceAction(BaseModel):
-    """Multi-resource action payload with tool-call metadata."""
-
-    resource_ids: list[UUID] | None = None
-    tool_id: UUID | None = None
-
-
 # =============================================================================
 # SAVE Endpoint Types
 # =============================================================================
@@ -547,105 +533,44 @@ class DuplicateCohortApiResponse(BaseModel):
 
 
 class PatchCohortDraftApiRequest(BaseModel):
-    """Request for patching a cohort draft - flat resource IDs."""
+    """Request model for new-style cohort draft endpoint.
 
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id
+    ID-only for non-creatable resources:
+      - flag_id, department_ids, simulation_ids, profile_ids,
+        profile_persona_ids, simulation_availability_ids, simulation_position_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
+    expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
     name_id: UUID | None = None
+    description: str | None = None
     description_id: UUID | None = None
+
+    # Non-creatable — ID-only
     flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     simulation_ids: list[UUID] | None = None
-    simulation_position_ids: list[UUID] | None = None
-    simulation_availability_ids: list[UUID] | None = None
     profile_ids: list[UUID] | None = None
     profile_persona_ids: list[UUID] | None = None
-    expected_version: int | None = 0
+    simulation_availability_ids: list[UUID] | None = None
+    simulation_position_ids: list[UUID] | None = None
 
 
 class PatchCohortDraftApiResponse(BaseModel):
-    """Response for patching a cohort draft."""
+    """Response model for new-style cohort draft endpoint."""
 
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-class PatchCohortDraftSqlParams(BaseModel):
-    """SQL params for patch cohort draft."""
-
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: "CohortResourceAction | None" = None
-    descriptions: "CohortResourceAction | None" = None
-    flags: "CohortResourceAction | None" = None
-    departments: "CohortMultiResourceAction | None" = None
-    simulations: "CohortMultiResourceAction | None" = None
-    simulation_positions: "CohortMultiResourceAction | None" = None
-    simulation_availability: "CohortMultiResourceAction | None" = None
-    profiles: "CohortMultiResourceAction | None" = None
-    profile_personas: "CohortMultiResourceAction | None" = None
-    expected_version: int | None = 0
-
-    @classmethod
-    def from_request(
-        cls, request: PatchCohortDraftApiRequest, profile_id: UUID
-    ) -> "PatchCohortDraftSqlParams":
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            names=CohortResourceAction(resource_id=request.name_id),
-            descriptions=CohortResourceAction(resource_id=request.description_id),
-            flags=CohortResourceAction(resource_id=request.flag_id),
-            departments=CohortMultiResourceAction(resource_ids=request.department_ids),
-            simulations=CohortMultiResourceAction(resource_ids=request.simulation_ids),
-            simulation_positions=CohortMultiResourceAction(
-                resource_ids=request.simulation_position_ids
-            ),
-            simulation_availability=CohortMultiResourceAction(
-                resource_ids=request.simulation_availability_ids
-            ),
-            profiles=CohortMultiResourceAction(resource_ids=request.profile_ids),
-            profile_personas=CohortMultiResourceAction(
-                resource_ids=request.profile_persona_ids
-            ),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        def single(
-            a: CohortResourceAction | None,
-        ) -> tuple[UUID | None, UUID | None, UUID | None]:
-            return (a.resource_id, a.tool_id, a.tool_id) if a else (None, None, None)
-
-        def multi(
-            a: CohortMultiResourceAction | None,
-        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
-            return (a.resource_ids, a.tool_id, a.tool_id) if a else (None, None, None)
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.flags),
-            multi(self.departments),
-            multi(self.simulations),
-            multi(self.simulation_positions),
-            multi(self.simulation_availability),
-            multi(self.profiles),
-            multi(self.profile_personas),
-            self.expected_version,
-        )
-
-
-class PatchCohortDraftSqlRow(BaseModel):
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
+    success: bool
+    draft_id: UUID
+    new_version: int
+    message: str
 
 
 # =============================================================================

@@ -284,89 +284,41 @@ class DuplicateEvalApiResponse(BaseModel):
     message: str
 
 
-# ========== Draft Endpoint Types ==========
+# ========== Draft Endpoint Types (composable infra) ==========
 
 
 class PatchEvalDraftApiRequest(BaseModel):
+    """Request model for new-style eval draft endpoint.
+
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id
+    ID-only for non-creatable resources:
+      - flag_ids, department_ids, model_ids, rubric_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
+    expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
     name_id: UUID | None = None
+    description: str | None = None
     description_id: UUID | None = None
+
+    # Non-creatable — ID-only
     flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
     model_ids: list[UUID] | None = None
-    model_flag_ids: list[UUID] | None = None
-    model_rubric_ids: list[UUID] | None = None
-    model_position_ids: list[UUID] | None = None
-    expected_version: int = 0
+    rubric_ids: list[UUID] | None = None
 
 
 class PatchEvalDraftApiResponse(BaseModel):
-    """Response model for patch eval draft endpoint."""
+    """Response model for new-style eval draft endpoint."""
 
     success: bool
     draft_id: UUID
     new_version: int
     message: str
-
-
-class PatchEvalDraftSqlParams(BaseModel):
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
-    model_flag_ids: list[UUID] | None = None
-    model_rubric_ids: list[UUID] | None = None
-    model_position_ids: list[UUID] | None = None
-    expected_version: int = 0
-
-    @classmethod
-    def from_request(
-        cls, request: PatchEvalDraftApiRequest, profile_id: UUID
-    ) -> PatchEvalDraftSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            name_id=request.name_id,
-            description_id=request.description_id,
-            flag_ids=request.flag_ids,
-            department_ids=request.department_ids,
-            rubric_ids=request.rubric_ids,
-            model_ids=request.model_ids,
-            model_flag_ids=request.model_flag_ids,
-            model_rubric_ids=request.model_rubric_ids,
-            model_position_ids=request.model_position_ids,
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple:
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            self.name_id,
-            self.description_id,
-            self.flag_ids,
-            self.department_ids,
-            self.rubric_ids,
-            self.model_ids,
-            self.model_flag_ids,
-            self.model_rubric_ids,
-            self.model_position_ids,
-            self.expected_version,
-        )
-
-
-class PatchEvalDraftSqlRow(BaseModel):
-    """SQL row for patch eval draft."""
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None

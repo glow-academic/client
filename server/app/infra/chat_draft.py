@@ -1,0 +1,101 @@
+"""Chat draft logic — composable infra architecture.
+
+Core draft function that composes existing black-box tools:
+  1. resolve_profile_identity_context — profile (role, departments)
+  2. create_chat_draft — entry tool (append-only snapshot)
+  3. refresh_chat_drafts — MV refresh
+  4. invalidate_tags — cache invalidation
+"""
+
+from __future__ import annotations
+
+from uuid import UUID
+
+import asyncpg
+from fastapi import HTTPException
+from redis.asyncio import Redis
+
+from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.routes.v5.api.main.chat.types import (
+    PatchChatDraftApiRequest,
+    PatchChatDraftApiResponse,
+)
+from app.routes.v5.tools.entries.chat_drafts.create import create_chat_draft
+from app.routes.v5.tools.entries.chat_drafts.refresh import refresh_chat_drafts
+from app.utils.cache.invalidate_tags import invalidate_tags
+
+# ---------------------------------------------------------------------------
+# patch_chat_draft_client — composable infra architecture
+# ---------------------------------------------------------------------------
+
+
+async def patch_chat_draft_client(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
+    profile_id: UUID,
+    session_id: UUID,
+    request: PatchChatDraftApiRequest,
+) -> PatchChatDraftApiResponse:
+    """Chat draft using composable infra functions.
+
+    Flow:
+      1. resolve_profile_identity_context → role
+      2. create_chat_draft entry tool (append-only snapshot)
+      3. refresh_chat_drafts MV
+      4. invalidate_tags
+    """
+
+    # ── Step 1: Profile context ────────────────────────────────────────
+
+    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+
+    if profile is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
+        )
+
+    # ── Step 2: Create draft entry (append-only snapshot) ──────────────
+
+    # Compute new version
+    new_version = request.expected_version + 1
+
+    async with conn.transaction():
+        result = await create_chat_draft(
+            conn,
+            group_id=request.group_id,
+            session_id=session_id,
+            version=new_version,
+            name_ids=request.name_ids,
+            description_ids=request.description_ids,
+            document_ids=request.document_ids,
+            field_ids=request.field_ids,
+            flag_ids=request.flag_ids,
+            image_ids=request.image_ids,
+            objective_ids=request.objective_ids,
+            option_ids=request.option_ids,
+            parameter_field_ids=request.parameter_field_ids,
+            parameter_ids=request.parameter_ids,
+            persona_ids=request.persona_ids,
+            problem_statement_ids=request.problem_statement_ids,
+            question_ids=request.question_ids,
+            scenario_ids=request.scenario_ids,
+            video_ids=request.video_ids,
+            department_ids=request.department_ids,
+        )
+
+    # ── Step 3: Refresh MV ─────────────────────────────────────────────
+
+    await refresh_chat_drafts(conn)
+
+    # ── Step 4: Invalidate cache ───────────────────────────────────────
+
+    await invalidate_tags(["training", "drafts"], redis=redis)
+
+    return PatchChatDraftApiResponse(
+        success=True,
+        draft_id=result.id,
+        new_version=new_version,
+        message="Draft created successfully",
+    )

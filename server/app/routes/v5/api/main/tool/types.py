@@ -248,73 +248,41 @@ class DuplicateToolApiResponse(BaseModel):
 
 
 class PatchToolDraftApiRequest(BaseModel):
-    """Flat-ID patch draft request for tool endpoint."""
+    """Request model for new-style tool draft endpoint.
 
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id
+    ID-only for non-creatable resources:
+      - flag_ids, department_ids, arg_ids, arg_position_ids, args_output_ids,
+        entry_ids, resource_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
     expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
     name_id: UUID | None = None
+    description: str | None = None
     description_id: UUID | None = None
-    flag_id: UUID | None = None
+
+    # Non-creatable — ID-only
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
     arg_ids: list[UUID] | None = None
     arg_position_ids: list[UUID] | None = None
     args_output_ids: list[UUID] | None = None
+    entry_ids: list[UUID] | None = None
+    resource_ids: list[UUID] | None = None
 
 
 class PatchToolDraftApiResponse(BaseModel):
+    """Response model for new-style tool draft endpoint."""
+
     success: bool
     draft_id: UUID
     new_version: int
     message: str
-
-
-class PatchToolDraftSqlParams(BaseModel):
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: ToolResourceAction
-    descriptions: ToolResourceAction
-    flags: ToolResourceAction
-    args: ToolMultiResourceAction
-    arg_positions: ToolMultiResourceAction
-    args_outputs: ToolMultiResourceAction
-    expected_version: int = 0
-
-    @classmethod
-    def from_request(
-        cls, request: PatchToolDraftApiRequest, profile_id: UUID
-    ) -> PatchToolDraftSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            names=ToolResourceAction(resource_id=request.name_id),
-            descriptions=ToolResourceAction(resource_id=request.description_id),
-            flags=ToolResourceAction(resource_id=request.flag_id),
-            args=ToolMultiResourceAction(resource_ids=request.arg_ids),
-            arg_positions=ToolMultiResourceAction(
-                resource_ids=request.arg_position_ids
-            ),
-            args_outputs=ToolMultiResourceAction(resource_ids=request.args_output_ids),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple:
-        def single(a: ToolResourceAction) -> tuple:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: ToolMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.flags),
-            multi(self.args),
-            multi(self.arg_positions),
-            multi(self.args_outputs),
-            self.expected_version,
-        )

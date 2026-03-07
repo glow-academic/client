@@ -535,20 +535,6 @@ class ListSimulationApiResponse(BaseModel):
 # =============================================================================
 
 
-class SimulationResourceAction(BaseModel):
-    """Single-select resource action with tool call tracking."""
-
-    resource_id: UUID | None = None
-    tool_id: UUID | None = None
-
-
-class SimulationMultiResourceAction(BaseModel):
-    """Multi-select resource action with tool call tracking."""
-
-    resource_ids: list[UUID] | None = None
-    tool_id: UUID | None = None
-
-
 # =============================================================================
 # SAVE Endpoint Types
 # =============================================================================
@@ -750,12 +736,28 @@ class DuplicateSimulationApiResponse(BaseModel):
 
 
 class PatchSimulationDraftApiRequest(BaseModel):
-    """Request for patching a simulation draft - flat resource IDs."""
+    """Request model for new-style simulation draft endpoint.
 
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id
+    ID-only for non-creatable resources:
+      - flag_ids, department_ids, scenario_ids, scenario_flag_ids,
+        scenario_position_ids, scenario_rubric_ids, scenario_time_limit_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
+    expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
     name_id: UUID | None = None
+    description: str | None = None
     description_id: UUID | None = None
+
+    # Non-creatable — ID-only
     flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
@@ -763,90 +765,15 @@ class PatchSimulationDraftApiRequest(BaseModel):
     scenario_position_ids: list[UUID] | None = None
     scenario_rubric_ids: list[UUID] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
-    expected_version: int | None = 0
 
 
 class PatchSimulationDraftApiResponse(BaseModel):
-    """Response for patching a simulation draft."""
+    """Response model for new-style simulation draft endpoint."""
 
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-class PatchSimulationDraftSqlParams(BaseModel):
-    """SQL parameters for patch simulation draft."""
-
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: SimulationResourceAction | None = None
-    descriptions: SimulationResourceAction | None = None
-    flags: SimulationMultiResourceAction | None = None
-    departments: SimulationMultiResourceAction | None = None
-    scenarios: SimulationMultiResourceAction | None = None
-    scenario_flags: SimulationMultiResourceAction | None = None
-    scenario_positions: SimulationMultiResourceAction | None = None
-    scenario_rubrics: SimulationMultiResourceAction | None = None
-    scenario_time_limits: SimulationMultiResourceAction | None = None
-    expected_version: int | None = 0
-
-    @classmethod
-    def from_request(
-        cls, request: PatchSimulationDraftApiRequest, profile_id: UUID
-    ) -> "PatchSimulationDraftSqlParams":
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            names=SimulationResourceAction(resource_id=request.name_id),
-            descriptions=SimulationResourceAction(resource_id=request.description_id),
-            flags=SimulationMultiResourceAction(resource_ids=request.flag_ids),
-            departments=SimulationMultiResourceAction(
-                resource_ids=request.department_ids
-            ),
-            scenarios=SimulationMultiResourceAction(resource_ids=request.scenario_ids),
-            scenario_flags=SimulationMultiResourceAction(
-                resource_ids=request.scenario_flag_ids
-            ),
-            scenario_positions=SimulationMultiResourceAction(
-                resource_ids=request.scenario_position_ids
-            ),
-            scenario_rubrics=SimulationMultiResourceAction(
-                resource_ids=request.scenario_rubric_ids
-            ),
-            scenario_time_limits=SimulationMultiResourceAction(
-                resource_ids=request.scenario_time_limit_ids
-            ),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        def single(
-            a: SimulationResourceAction | None,
-        ) -> tuple[UUID | None, UUID | None, UUID | None]:
-            return (a.resource_id, a.tool_id, a.tool_id) if a else (None, None, None)
-
-        def multi(
-            a: SimulationMultiResourceAction | None,
-        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
-            return (a.resource_ids, a.tool_id, a.tool_id) if a else (None, None, None)
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            multi(self.flags),
-            multi(self.departments),
-            multi(self.scenarios),
-            multi(self.scenario_flags),
-            multi(self.scenario_positions),
-            multi(self.scenario_rubrics),
-            multi(self.scenario_time_limits),
-            self.expected_version,
-        )
+    success: bool
+    draft_id: UUID
+    new_version: int
+    message: str
 
 
 # =============================================================================

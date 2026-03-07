@@ -105,19 +105,7 @@ class ListFieldApiResponse(BaseModel):
     total_count: int | None = None
 
 
-# ========== Save/Draft Resource Action Types ==========
-
-
-class FieldResourceAction(BaseModel):
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
-class FieldMultiResourceAction(BaseModel):
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
+# ========== Save/Draft Types ==========
 
 
 class SaveFieldFieldError(BaseModel):
@@ -171,79 +159,43 @@ class SaveFieldApiResponse(BaseModel):
     results: list[SaveFieldResult]
 
 
-class PatchFieldDraftApiRequest(BaseModel):
-    """Request model for patch field draft endpoint - flat resource IDs."""
+# ========== Draft Endpoint Types (composable infra) ==========
 
+
+class PatchFieldDraftApiRequest(BaseModel):
+    """Request model for new-style field draft endpoint.
+
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id
+    ID-only for non-creatable resources:
+      - flag_id, department_ids, conditional_parameter_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
+    expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
     name_id: UUID | None = None
+    description: str | None = None
     description_id: UUID | None = None
+
+    # Non-creatable — ID-only
     flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
     conditional_parameter_ids: list[UUID] | None = None
-    expected_version: int = 0
 
 
 class PatchFieldDraftApiResponse(BaseModel):
+    """Response model for new-style field draft endpoint."""
+
     success: bool
     draft_id: UUID
     new_version: int
     message: str
-
-
-class PatchFieldDraftSqlParams(BaseModel):
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: FieldResourceAction
-    descriptions: FieldResourceAction
-    flags: FieldResourceAction
-    departments: FieldMultiResourceAction
-    conditional_parameters: FieldMultiResourceAction
-    expected_version: int = 0
-
-    @classmethod
-    def from_request(
-        cls, request: PatchFieldDraftApiRequest, profile_id: UUID
-    ) -> PatchFieldDraftSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            names=FieldResourceAction(resource_id=request.name_id),
-            descriptions=FieldResourceAction(resource_id=request.description_id),
-            flags=FieldResourceAction(resource_id=request.flag_id),
-            departments=FieldMultiResourceAction(resource_ids=request.department_ids),
-            conditional_parameters=FieldMultiResourceAction(
-                resource_ids=request.conditional_parameter_ids
-            ),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple:
-        def single(a: FieldResourceAction) -> tuple:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: FieldMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.flags),
-            multi(self.departments),
-            multi(self.conditional_parameters),
-            self.expected_version,
-        )
-
-
-class PatchFieldDraftSqlRow(BaseModel):
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 # ========== Delete Endpoint Types ==========

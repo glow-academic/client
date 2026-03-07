@@ -6,7 +6,7 @@ Two context resolvers:
   - resolve_dashboard_search_context: history table (attempt list, paginated)
 
 Both use attempt_chat_mv as the core data grain. Message stats, rubric scores,
-and training doc IDs are computed from raw entry/connection tables + Python.
+and training doc IDs are computed via black-box entry tools + Python stitching.
 """
 
 from __future__ import annotations
@@ -26,12 +26,20 @@ from app.routes.v5.api.main.dashboard.shared import (
     RubricScoresResponse,
 )
 
-# Entry fetchers
+# Entry search tools
 from app.routes.v5.tools.entries.attempt_chat.get import ChatItem
 from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
+from app.routes.v5.tools.entries.attempt_feedback.search import (
+    search_attempt_feedback_entries,
+)
+from app.routes.v5.tools.entries.attempt_grade.search import search_attempt_grades
+from app.routes.v5.tools.entries.attempt_message.search import search_attempt_messages
+from app.routes.v5.tools.entries.messages_completions.search import (
+    search_messages_completions,
+)
 
-# Resource get fetchers
+# Resource get tools
 from app.routes.v5.tools.resources.documents.get import get_documents
 from app.routes.v5.tools.resources.fields.get import get_fields
 from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
@@ -42,6 +50,7 @@ from app.routes.v5.tools.resources.rubrics.get import get_rubrics
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.routes.v5.tools.resources.standard_groups.get import get_standard_groups
+from app.routes.v5.tools.resources.standards.get import get_standards
 
 # Settings
 from app.utils.sql_helper import execute_sql_typed
@@ -80,65 +89,240 @@ def _to_chat_item(r: GetAttemptChatResponse) -> ChatItem:
 
 
 # ---------------------------------------------------------------------------
-# Raw entry queries (replacing compiled SQL)
+# Black-box entry tool aggregations (replacing compiled SQL)
 # ---------------------------------------------------------------------------
 
 
-async def _fetch_message_stats_raw(
-    conn: asyncpg.Connection,
+async def _compute_message_stats(
+    pool: asyncpg.Pool,
     chat_ids: list[UUID],
 ) -> dict[UUID, MessageStats]:
-    """Fetch message stats from raw entry tables.
+    """Compute message stats using search_attempt_messages + search_messages_completions.
 
     Replaces get_message_stats_internal (compiled SQL).
-    Queries attempt_message_entry + messages_entry directly.
+    - num_messages_total: count of messages per chat
+    - avg_response_sec: avg(completion.created_at - message.created_at) for response messages
     """
     if not chat_ids:
         return {}
 
-    rows = await conn.fetch(
-        """
-        SELECT
-            sm.chat_id,
-            COUNT(*)::int AS num_messages_total,
-            ROUND(
-                AVG(
-                    EXTRACT(EPOCH FROM (sm.updated_at - sm.created_at))
-                ) FILTER (WHERE m.role = 'assistant'::message_type),
-                2
-            ) AS avg_response_sec
-        FROM attempt_message_entry sm
-        JOIN messages_entry m ON m.id = sm.id
-        WHERE sm.chat_id = ANY($1::uuid[])
-          AND m.active = TRUE
-          AND m.role IN ('user'::message_type, 'assistant'::message_type)
-        GROUP BY sm.chat_id
-        """,
-        chat_ids,
-    )
+    # Step 1: Fetch all messages for these chats
+    async with pool.acquire() as c:
+        messages = await search_attempt_messages(c, chat_ids=chat_ids, limit=500000)
 
+    if not messages:
+        return {}
+
+    # Step 2: Count messages per chat, collect response message_ids + created_at
+    msg_count: dict[UUID, int] = defaultdict(int)
+    response_msg_created: dict[UUID, datetime] = {}  # message_id → created_at
+    response_msg_chat: dict[UUID, UUID] = {}  # message_id → chat_id
+
+    for msg in messages:
+        if msg.chat_id:
+            msg_count[msg.chat_id] += 1
+        if msg.type == "response" and msg.chat_id and msg.created_at:
+            response_msg_created[msg.message_id] = msg.created_at
+            response_msg_chat[msg.message_id] = msg.chat_id
+
+    # Step 3: Fetch completions for response messages to get completion timestamps
+    response_times: dict[UUID, list[float]] = defaultdict(list)  # chat_id → [seconds]
+    if response_msg_created:
+        async with pool.acquire() as c:
+            completions = await search_messages_completions(
+                c,
+                message_ids=list(response_msg_created.keys()),
+                limit=500000,
+            )
+
+        # Use the latest completion per message
+        latest_completion: dict[UUID, datetime] = {}
+        for comp in completions:
+            if comp.message_id and comp.created_at:
+                existing = latest_completion.get(comp.message_id)
+                if existing is None or comp.created_at > existing:
+                    latest_completion[comp.message_id] = comp.created_at
+
+        for msg_id, comp_time in latest_completion.items():
+            msg_time = response_msg_created.get(msg_id)
+            chat_id = response_msg_chat.get(msg_id)
+            if msg_time and chat_id:
+                delta_sec = (comp_time - msg_time).total_seconds()
+                if delta_sec >= 0:
+                    response_times[chat_id].append(delta_sec)
+
+    # Step 4: Build stats map
     stats_map: dict[UUID, MessageStats] = {}
-    for row in rows:
-        cid = row["chat_id"]
+    all_chat_ids = set(msg_count.keys())
+    for cid in all_chat_ids:
+        times = response_times.get(cid)
+        avg_sec = round(sum(times) / len(times), 2) if times else None
         stats_map[cid] = MessageStats(
             chat_id=cid,
-            num_messages_total=row["num_messages_total"] or 0,
-            avg_response_sec=(
-                float(row["avg_response_sec"])
-                if row["avg_response_sec"] is not None
-                else None
-            ),
+            num_messages_total=msg_count[cid],
+            avg_response_sec=avg_sec,
         )
+
     return stats_map
 
 
-async def _fetch_training_doc_ids_raw(
+async def _compute_rubric_scores(
+    pool: asyncpg.Pool,
+    redis: Redis,
+    chat_items: list[ChatItem],
+    *,
+    bypass_cache: bool = False,
+) -> RubricScoresResponse:
+    """Compute rubric scores using black-box entry tools + Python stitching.
+
+    Replaces get_rubric_scores_internal (compiled SQL).
+
+    Flow:
+      1. search_attempt_grades(chat_ids) → latest grade per chat (Python dedup)
+      2. search_attempt_feedback_entries(grade_ids) → feedback scores
+      3. get_standards(standard_ids) → standard_group_id per standard
+      4. standard_groups (from resources) → points per standard_group
+      5. Python: score_percent = 100 * SUM(feedback.total) / standard_group.points
+         per (chat_id, standard_group_id)
+    """
+    if not chat_items:
+        return RubricScoresResponse(items=[], total_count=0)
+
+    chat_ids = [item.chat_id for item in chat_items]
+
+    # Step 1: Fetch all grades for these chats, dedup to latest per chat
+    async with pool.acquire() as c:
+        all_grades = await search_attempt_grades(c, chat_ids=chat_ids, limit=500000)
+
+    if not all_grades:
+        return RubricScoresResponse(items=[], total_count=0)
+
+    # Dedup: latest grade per chat (already ordered by created_at DESC from search)
+    latest_grade: dict[
+        UUID, tuple[UUID, UUID | None]
+    ] = {}  # chat_id → (grade_id, rubric_id)
+    for g in all_grades:
+        if g.chat_id not in latest_grade:
+            latest_grade[g.chat_id] = (g.grade_id, g.rubric_id)
+
+    grade_ids = [gid for gid, _ in latest_grade.values()]
+    grade_to_chat: dict[UUID, UUID] = {
+        gid: cid for cid, (gid, _) in latest_grade.items()
+    }
+    chat_to_rubric: dict[UUID, UUID | None] = {
+        cid: rid for cid, (_, rid) in latest_grade.items()
+    }
+
+    # Step 2: Fetch feedback entries for latest grades
+    async with pool.acquire() as c:
+        feedbacks = await search_attempt_feedback_entries(
+            c, grade_ids=grade_ids, limit=500000
+        )
+
+    if not feedbacks:
+        return RubricScoresResponse(items=[], total_count=0)
+
+    # Step 3: Collect unique standard_ids from feedback, fetch standards for mapping
+    standard_ids_set: set[UUID] = set()
+    for fb in feedbacks:
+        if fb.standard_id:
+            standard_ids_set.add(fb.standard_id)
+
+    async with pool.acquire() as c:
+        standards_list = await get_standards(
+            c, list(standard_ids_set), redis, bypass_cache=bypass_cache
+        )
+
+    # Build standard_id → standard_group_id map
+    std_to_sg: dict[UUID, UUID] = {s.id: s.standard_group_id for s in standards_list}
+
+    # Step 4: Fetch standard_groups for points
+    sg_ids_set: set[UUID] = set(std_to_sg.values())
+    async with pool.acquire() as c:
+        sg_list = await get_standard_groups(
+            c, list(sg_ids_set), redis, bypass_cache=bypass_cache
+        )
+
+    sg_points: dict[UUID, int] = {sg.id: sg.points for sg in sg_list}
+
+    # Also need: which standard_groups belong to which rubric
+    # Collect rubric_ids from chat_to_rubric
+    rubric_ids_set: set[UUID] = {rid for rid in chat_to_rubric.values() if rid}
+    async with pool.acquire() as c:
+        rubrics_list = await get_rubrics(
+            c, list(rubric_ids_set), redis, bypass_cache=bypass_cache
+        )
+
+    # rubric_id → set of standard_group_ids (from rubric resource)
+    rubric_sg_map: dict[UUID, set[UUID]] = {}
+    for rubric in rubrics_list:
+        rid = getattr(rubric, "rubric_id", None)
+        sg_ids = getattr(rubric, "standard_group_ids", None) or []
+        if rid:
+            rubric_sg_map[rid] = {sgid for sgid in sg_ids if sgid}
+
+    # Step 5: Aggregate feedback totals per (chat_id, standard_group_id)
+    # Key: (chat_id, standard_group_id) → sum of feedback.total
+    score_agg: dict[tuple[UUID, UUID], float] = defaultdict(float)
+
+    for fb in feedbacks:
+        chat_id = grade_to_chat.get(fb.grade_id)
+        if not chat_id or not fb.standard_id:
+            continue
+        sg_id = std_to_sg.get(fb.standard_id)
+        if not sg_id:
+            continue
+        # Only include if this standard_group belongs to the chat's rubric
+        rubric_id = chat_to_rubric.get(chat_id)
+        if rubric_id:
+            valid_sgs = rubric_sg_map.get(rubric_id, set())
+            if sg_id not in valid_sgs:
+                continue
+        score_agg[(chat_id, sg_id)] += fb.total
+
+    # Step 6: Build RubricScoreItems
+    # Build a lookup for chat metadata
+    chat_meta: dict[UUID, ChatItem] = {item.chat_id: item for item in chat_items}
+
+    items: list[RubricScoreItem] = []
+    for (chat_id, sg_id), total in score_agg.items():
+        points = sg_points.get(sg_id, 0)
+        score_percent = round(100.0 * total / points, 2) if points > 0 else None
+        meta = chat_meta.get(chat_id)
+        rubric_id = chat_to_rubric.get(chat_id)
+
+        items.append(
+            RubricScoreItem(
+                chat_id=chat_id,
+                standard_group_id=sg_id,
+                rubric_id=rubric_id,
+                score_percent=score_percent,
+                simulation_id=meta.simulation_id if meta else None,
+                profile_id=meta.profile_id if meta else None,
+                cohort_id=meta.cohort_id if meta else None,
+                department_id=meta.department_id if meta else None,
+                attempt_date=meta.attempt_date if meta else None,
+                attempt_type=meta.attempt_type if meta else None,
+                is_archived=meta.is_archived if meta else False,
+            )
+        )
+
+    # Sort by attempt_date DESC, chat_id DESC (matching original SQL)
+    items.sort(
+        key=lambda x: (x.attempt_date or date.min, x.chat_id),
+        reverse=True,
+    )
+
+    return RubricScoresResponse(items=items, total_count=len(items))
+
+
+async def _fetch_training_doc_ids(
     conn: asyncpg.Connection,
     attempt_chat_ids: list[UUID],
 ) -> dict[UUID, list[UUID]]:
     """Fetch document_ids from attempt_chat_documents_connection.
 
-    Replaces fetch_training_doc_ids (compiled SQL with 15-join training config).
+    No black-box tool exists for this connection table, so uses inline query.
     Dashboard only needs document_ids per attempt_chat_id.
     """
     if not attempt_chat_ids:
@@ -158,159 +342,6 @@ async def _fetch_training_doc_ids_raw(
     for row in rows:
         doc_map[row["attempt_chat_id"]].append(row["documents_id"])
     return dict(doc_map)
-
-
-async def _fetch_rubric_scores_raw(
-    conn: asyncpg.Connection,
-    *,
-    profile_id: UUID | None = None,
-    cohort_ids: list[UUID] | None = None,
-    department_ids: list[UUID] | None = None,
-    simulation_ids: list[UUID] | None = None,
-    attempt_type: str | None = None,
-    is_archived: bool = False,
-    date_from: date | None = None,
-    date_to: date | None = None,
-) -> RubricScoresResponse:
-    """Fetch rubric scores from raw entry/junction/resource tables + Python stitching.
-
-    Replaces get_rubric_scores_internal (compiled SQL).
-
-    Join chain:
-      attempt_chat_mv → attempt_grade_entry (latest grade per chat)
-                       → attempt_chat_entry
-                       → attempt_chat_rubrics_connection (rubric per chat)
-                       → attempt_feedback_entry (feedback scores)
-                       → feedbacks_standards_connection (feedback→standard links)
-                       → standards_resource (standard→standard_group mapping)
-                       → rubric_standard_groups_junction (rubric→standard_group)
-                       → standard_groups_resource (points per standard_group)
-
-    Computes: score_percent = 100 * SUM(feedback.total) / standard_group.points
-    per (chat_id, standard_group_id).
-    """
-    # Build filter conditions dynamically
-    conditions = ["ch.is_archived = $1"]
-    params: list[object] = [is_archived]
-    idx = 2
-
-    if profile_id is not None:
-        conditions.append(f"ch.profile_id = ${idx}")
-        params.append(profile_id)
-        idx += 1
-
-    if cohort_ids:
-        conditions.append(f"ch.cohort_id = ANY(${idx}::uuid[])")
-        params.append(cohort_ids)
-        idx += 1
-
-    if department_ids:
-        conditions.append(f"ch.department_id = ANY(${idx}::uuid[])")
-        params.append(department_ids)
-        idx += 1
-
-    if simulation_ids:
-        conditions.append(f"ch.simulation_id = ANY(${idx}::uuid[])")
-        params.append(simulation_ids)
-        idx += 1
-
-    if attempt_type is not None:
-        conditions.append(f"ch.attempt_type = ${idx}")
-        params.append(attempt_type)
-        idx += 1
-
-    if date_from is not None:
-        conditions.append(f"ch.attempt_date >= ${idx}")
-        params.append(date_from)
-        idx += 1
-
-    if date_to is not None:
-        conditions.append(f"ch.attempt_date <= ${idx}")
-        params.append(date_to)
-        idx += 1
-
-    where_clause = " AND ".join(conditions)
-
-    rows = await conn.fetch(
-        f"""
-        WITH latest_grade AS (
-            SELECT DISTINCT ON (g.chat_id)
-                g.id AS grade_id,
-                g.chat_id
-            FROM attempt_grade_entry g
-            WHERE g.active = TRUE
-            ORDER BY g.chat_id, g.created_at DESC
-        ),
-        chat_rubric AS (
-            SELECT DISTINCT ON (acrc.attempt_chat_id)
-                acrc.attempt_chat_id,
-                acrc.rubric_id
-            FROM attempt_chat_rubrics_connection acrc
-            WHERE acrc.active = TRUE
-            ORDER BY acrc.attempt_chat_id, acrc.created_at DESC
-        )
-        SELECT
-            ch.chat_id,
-            sg.id AS standard_group_id,
-            gr.rubric_id,
-            CASE WHEN sg.points > 0
-                 THEN TRUNC((100.0 * SUM(fe.total)::numeric / sg.points::numeric), 2)
-                 ELSE NULL
-            END AS score_percent,
-            ch.simulation_id,
-            ch.profile_id,
-            ch.cohort_id,
-            ch.department_id,
-            ch.attempt_date,
-            ch.attempt_type,
-            ch.is_archived
-        FROM attempt_chat_mv ch
-        JOIN latest_grade lg ON lg.chat_id = ch.chat_id
-        JOIN attempt_chat_entry ace ON ace.id = lg.chat_id AND ace.active = TRUE
-        JOIN chat_rubric gr ON gr.attempt_chat_id = ace.id
-        JOIN attempt_feedback_entry fe ON fe.grade_id = lg.grade_id AND fe.active = TRUE
-        JOIN feedbacks_standards_connection fsc ON fsc.feedbacks_id = fe.id
-        JOIN standards_resource s ON s.id = fsc.standard_id
-        JOIN rubric_rubrics_junction rrj
-            ON rrj.rubric_id = gr.rubric_id AND rrj.active = TRUE
-        JOIN rubric_standard_groups_junction rsg
-            ON rsg.rubric_id = rrj.rubric_id AND rsg.active = TRUE
-        JOIN standard_groups_resource sg
-            ON sg.id = rsg.standard_groups_id AND sg.id = s.standard_groups_id
-        WHERE {where_clause}
-        GROUP BY
-            ch.chat_id, sg.id, gr.rubric_id, sg.points,
-            ch.simulation_id, ch.profile_id, ch.cohort_id, ch.department_id,
-            ch.attempt_date, ch.attempt_type, ch.is_archived
-        ORDER BY ch.attempt_date DESC NULLS LAST, ch.chat_id DESC
-        """,
-        *params,
-    )
-
-    items: list[RubricScoreItem] = []
-    for row in rows:
-        score = row["score_percent"]
-        items.append(
-            RubricScoreItem(
-                chat_id=row["chat_id"],
-                standard_group_id=row["standard_group_id"],
-                rubric_id=row["rubric_id"],
-                score_percent=(
-                    float(score)
-                    if score is not None and not isinstance(score, float)
-                    else score
-                ),
-                simulation_id=row["simulation_id"],
-                profile_id=row["profile_id"],
-                cohort_id=row["cohort_id"],
-                department_id=row["department_id"],
-                attempt_date=row["attempt_date"],
-                attempt_type=row["attempt_type"],
-                is_archived=row["is_archived"] or False,
-            )
-        )
-
-    return RubricScoresResponse(items=items, total_count=len(items))
 
 
 async def resolve_dashboard_context(
@@ -342,7 +373,7 @@ async def resolve_dashboard_context(
         documents, parameter_fields, parameters, fields
     """
 
-    # ── Phase 1: Parallel fetch core data ────────────────────────────
+    # ── Phase 1: Fetch chats + thresholds in parallel ────────────────
     async def _fetch_chats() -> list[ChatItem]:
         async with pool.acquire() as c:
             raw = await search_attempt_chats(
@@ -358,20 +389,6 @@ async def resolve_dashboard_context(
                 limit=100000,
             )
         return [_to_chat_item(r) for r in raw]
-
-    async def _fetch_rubric_scores() -> RubricScoresResponse:
-        async with pool.acquire() as c:
-            return await _fetch_rubric_scores_raw(
-                c,
-                profile_id=target_profile_id,
-                cohort_ids=cohort_ids,
-                department_ids=list(department_ids) if department_ids else None,
-                simulation_ids=simulation_ids,
-                attempt_type=attempt_type,
-                is_archived=is_archived,
-                date_from=date_from,
-                date_to=date_to,
-            )
 
     async def _fetch_thresholds() -> dict[str, int | float]:
         from app.sql.types import GetActiveSettingsSqlParams, GetActiveSettingsSqlRow
@@ -397,14 +414,12 @@ async def resolve_dashboard_context(
                     danger = settings.danger_threshold or danger
         return {"success": success, "warning": warning, "danger": danger}
 
-    chat_items, rubric_scores_result, thresholds = await asyncio.gather(
+    chat_items, thresholds = await asyncio.gather(
         _fetch_chats(),
-        _fetch_rubric_scores(),
         _fetch_thresholds(),
     )
-    rubric_items = rubric_scores_result.items
 
-    # ── Phase 2: Collect resource IDs from data ──────────────────────
+    # ── Phase 2: Collect IDs from chat_items ─────────────────────────
     simulation_ids_set: set[UUID] = set()
     persona_ids_set: set[UUID] = set()
     cohort_ids_set: set[UUID] = set()
@@ -425,14 +440,13 @@ async def resolve_dashboard_context(
         if item.attempt_chat_id:
             attempt_chat_ids_set.add(item.attempt_chat_id)
 
-    rubric_ids_set: set[UUID] = set()
-    for item in rubric_items:
-        if item.rubric_id:
-            rubric_ids_set.add(item.rubric_id)
-        if item.simulation_id:
-            simulation_ids_set.add(item.simulation_id)
+    # ── Phase 3: Parallel — rubric scores, message stats, resources ──
+    # Rubric scores depend on chat_items (for metadata), so run after Phase 1
+    async def _fetch_rubric_scores() -> RubricScoresResponse:
+        return await _compute_rubric_scores(
+            pool, redis, chat_items, bypass_cache=bypass_cache
+        )
 
-    # ── Phase 3: Parallel resource hydration + enrichment data ───────
     async def _get_simulations() -> list:
         async with pool.acquire() as c:
             return await get_simulations(
@@ -454,7 +468,10 @@ async def resolve_dashboard_context(
     async def _get_rubric_resources() -> tuple:
         async with pool.acquire() as c:
             rubrics = await get_rubrics(
-                c, list(rubric_ids_set), redis, bypass_cache=bypass_cache
+                c,
+                list({item.rubric_id for item in chat_items if item.rubric_id}),
+                redis,
+                bypass_cache=bypass_cache,
             )
         all_sg_ids: list[UUID] = []
         for rubric in rubrics:
@@ -470,10 +487,7 @@ async def resolve_dashboard_context(
         return rubrics, standard_groups
 
     async def _get_message_stats() -> dict[UUID, MessageStats]:
-        if not chat_ids:
-            return {}
-        async with pool.acquire() as c:
-            return await _fetch_message_stats_raw(c, chat_ids)
+        return await _compute_message_stats(pool, chat_ids)
 
     async def _get_cohort_names() -> list:
         if not cohort_ids_set:
@@ -502,7 +516,7 @@ async def resolve_dashboard_context(
         if not attempt_chat_ids_set:
             return {}
         async with pool.acquire() as c:
-            return await _fetch_training_doc_ids_raw(c, list(attempt_chat_ids_set))
+            return await _fetch_training_doc_ids(c, list(attempt_chat_ids_set))
 
     async def _get_profiles() -> list:
         if not target_profile_id:
@@ -513,6 +527,7 @@ async def resolve_dashboard_context(
             )
 
     (
+        rubric_scores_result,
         simulations,
         personas,
         scenarios_list,
@@ -523,6 +538,7 @@ async def resolve_dashboard_context(
         doc_map,
         target_profiles,
     ) = await asyncio.gather(
+        _fetch_rubric_scores(),
         _get_simulations(),
         _get_personas(),
         _get_scenarios(),
@@ -533,6 +549,14 @@ async def resolve_dashboard_context(
         _get_training_doc_ids(),
         _get_profiles(),
     )
+    rubric_items = rubric_scores_result.items
+
+    # Collect rubric/simulation IDs from rubric_items for resources
+    for item in rubric_items:
+        if item.rubric_id:
+            pass  # already in rubric_ids from chat_items
+        if item.simulation_id:
+            simulation_ids_set.add(item.simulation_id)
 
     # ── Phase 4: Enrich chat items ───────────────────────────────────
     for item in chat_items:

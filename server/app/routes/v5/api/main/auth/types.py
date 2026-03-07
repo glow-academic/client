@@ -94,18 +94,6 @@ class GetAuthApiResponse(BaseModel):
     items: AuthItemSection | None = None
 
 
-class AuthResourceAction(BaseModel):
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
-class AuthMultiResourceAction(BaseModel):
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
 class SaveAuthItemInput(BaseModel):
     """Auth item input for save/draft endpoints."""
 
@@ -115,12 +103,6 @@ class SaveAuthItemInput(BaseModel):
     position: int | None = None
     active: bool = True
     key_id: UUID | None = None
-
-
-class AuthItemAction(BaseModel):
-    items: list[SaveAuthItemInput] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
 
 
 class SaveAuthFieldError(BaseModel):
@@ -204,101 +186,45 @@ class DuplicateAuthApiResponse(BaseModel):
     message: str
 
 
-class PatchAuthDraftApiRequest(BaseModel):
-    """Request model for patch auth draft endpoint - flat resource IDs."""
+# ========== Draft Endpoint Types (composable infra) ==========
 
+
+class PatchAuthDraftApiRequest(BaseModel):
+    """Request model for new-style auth draft endpoint.
+
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id
+    ID-only for non-creatable resources:
+      - flag_id, department_ids, protocol_ids, slug_ids, item_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
+    expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
     name_id: UUID | None = None
+    description: str | None = None
     description_id: UUID | None = None
+
+    # Non-creatable — ID-only
     flag_id: UUID | None = None
+    department_ids: list[UUID] | None = None
     protocol_ids: list[UUID] | None = None
     slug_ids: list[UUID] | None = None
-    items: list[SaveAuthItemInput] | None = None
-    expected_version: int = 0
+    item_ids: list[UUID] | None = None
 
 
 class PatchAuthDraftApiResponse(BaseModel):
-    """Response model for patch auth draft endpoint."""
+    """Response model for new-style auth draft endpoint."""
 
     success: bool
     draft_id: UUID
     new_version: int
     message: str
-
-
-class PatchAuthDraftSqlParams(BaseModel):
-    """SQL parameters for patch auth draft."""
-
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: AuthResourceAction
-    descriptions: AuthResourceAction
-    flags: AuthResourceAction
-    protocols: AuthMultiResourceAction
-    slugs: AuthMultiResourceAction
-    items: AuthItemAction
-    expected_version: int = 0
-
-    @classmethod
-    def from_request(
-        cls, request: PatchAuthDraftApiRequest, profile_id: UUID
-    ) -> PatchAuthDraftSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            names=AuthResourceAction(resource_id=request.name_id),
-            descriptions=AuthResourceAction(resource_id=request.description_id),
-            flags=AuthResourceAction(resource_id=request.flag_id),
-            protocols=AuthMultiResourceAction(resource_ids=request.protocol_ids),
-            slugs=AuthMultiResourceAction(resource_ids=request.slug_ids),
-            items=AuthItemAction(items=request.items or []),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple:
-        def single(a: AuthResourceAction) -> tuple:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: AuthMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        def item_input(i: SaveAuthItemInput) -> tuple:
-            return (
-                i.name,
-                i.description,
-                i.encrypted,
-                i.position,
-                i.active,
-                i.key_id,
-            )
-
-        def items_action(a: AuthItemAction) -> tuple:
-            item_rows = [item_input(i) for i in (a.items or [])]
-            return (item_rows, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.flags),
-            multi(self.protocols),
-            multi(self.slugs),
-            items_action(self.items),
-            self.expected_version,
-        )
-
-
-class PatchAuthDraftSqlRow(BaseModel):
-    """SQL row for patch auth draft."""
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 class ListAuthApiAuth(BaseModel):

@@ -442,125 +442,48 @@ class GetChatWebsocketResponse(InternalResponseBase):
 
 
 # =============================================================================
-# Bundle Draft action types
+# Bundle Draft endpoint types (composable infra)
 # =============================================================================
 
 
-class ChatMultiResourceAction(BaseModel):
-    """Multi-resource action for chat bundle draft patch."""
-
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
 class PatchChatDraftApiRequest(BaseModel):
-    """Request for patching a chat bundle draft - flat resource IDs."""
+    """Request model for new-style chat draft endpoint.
 
+    All resources are ID-only (no creatable resources).
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
     expected_version: int = 0
-    # 12 customizable resources (scenarios excluded — not user-customizable)
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
+
+    # All ID-only
+    name_ids: list[UUID] | None = None
+    description_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
     parameter_field_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    option_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
     problem_statement_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
 
 
 class PatchChatDraftApiResponse(BaseModel):
-    """Response for patching a chat bundle draft."""
+    """Response model for new-style chat draft endpoint."""
 
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-class PatchChatDraftSqlParams(BaseModel):
-    """SQL parameters for patch chat bundle draft."""
-
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    departments: ChatMultiResourceAction
-    personas: ChatMultiResourceAction
-    documents: ChatMultiResourceAction
-    parameter_fields: ChatMultiResourceAction
-    parameters: ChatMultiResourceAction
-    fields: ChatMultiResourceAction
-    questions: ChatMultiResourceAction
-    options: ChatMultiResourceAction
-    videos: ChatMultiResourceAction
-    images: ChatMultiResourceAction
-    problem_statements: ChatMultiResourceAction
-    objectives: ChatMultiResourceAction
-    expected_version: int = 0
-
-    @classmethod
-    def from_request(
-        cls,
-        request: PatchChatDraftApiRequest,
-        profile_id: UUID,
-    ) -> "PatchChatDraftSqlParams":
-        def wrap(ids: list[UUID] | None) -> ChatMultiResourceAction:
-            return ChatMultiResourceAction(resource_ids=ids)
-
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            departments=wrap(request.department_ids),
-            personas=wrap(request.persona_ids),
-            documents=wrap(request.document_ids),
-            parameter_fields=wrap(request.parameter_field_ids),
-            parameters=wrap(request.parameter_ids),
-            fields=wrap(request.field_ids),
-            questions=wrap(request.question_ids),
-            options=wrap(request.option_ids),
-            videos=wrap(request.video_ids),
-            images=wrap(request.image_ids),
-            problem_statements=wrap(request.problem_statement_ids),
-            objectives=wrap(request.objective_ids),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        def multi(a: ChatMultiResourceAction) -> tuple[Any, Any, Any]:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            multi(self.departments),
-            multi(self.personas),
-            multi(self.documents),
-            multi(self.parameter_fields),
-            multi(self.parameters),
-            multi(self.fields),
-            multi(self.questions),
-            multi(self.options),
-            multi(self.videos),
-            multi(self.images),
-            multi(self.problem_statements),
-            multi(self.objectives),
-            self.expected_version,
-        )
-
-
-class PatchChatDraftSqlRow(BaseModel):
-    """SQL row for patch chat bundle draft."""
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
+    success: bool
+    draft_id: UUID
+    new_version: int
+    message: str
 
 
 # =============================================================================

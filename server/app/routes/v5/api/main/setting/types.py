@@ -133,25 +133,6 @@ class SettingGenerationCompleteEvent(BaseModel):
     success: bool = False
 
 
-# ========== Resource Action Types (for tool call tracking) ==========
-
-
-class SettingResourceAction(BaseModel):
-    """Single-select resource with tool call tracking."""
-
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
-class SettingMultiResourceAction(BaseModel):
-    """Multi-select resource with tool call tracking."""
-
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
 # ========== Save Endpoint Types ==========
 
 
@@ -214,114 +195,49 @@ class SaveSettingApiResponse(BaseModel):
     results: list[SaveSettingResult]
 
 
-# ========== Draft Endpoint Types ==========
+# ========== Draft Endpoint Types (composable infra) ==========
 
 
 class PatchSettingDraftApiRequest(BaseModel):
-    """Request model for patch setting draft endpoint - flat resource IDs."""
+    """Request model for new-style setting draft endpoint.
 
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id
+    ID-only for non-creatable resources:
+      - flag_id, department_ids, color_ids, profile_ids, auth_ids,
+        provider_key_ids, auth_item_key_ids, threshold_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
+    expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
     name_id: UUID | None = None
+    description: str | None = None
     description_id: UUID | None = None
+
+    # Non-creatable — ID-only
     flag_id: UUID | None = None
-    color_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
+    color_ids: list[UUID] | None = None
     profile_ids: list[UUID] | None = None
     auth_ids: list[UUID] | None = None
     provider_key_ids: list[UUID] | None = None
     auth_item_key_ids: list[UUID] | None = None
-    role_ids: list[UUID] | None = None
-    expected_version: int = 0
+    threshold_ids: list[UUID] | None = None
 
 
 class PatchSettingDraftApiResponse(BaseModel):
-    """Response model for patch setting draft endpoint."""
+    """Response model for new-style setting draft endpoint."""
 
     success: bool
     draft_id: UUID
     new_version: int
     message: str
-
-
-class PatchSettingDraftSqlParams(BaseModel):
-    """SQL parameters for patch setting draft - nested resource actions."""
-
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: SettingResourceAction
-    descriptions: SettingResourceAction
-    flags: SettingResourceAction
-    colors: SettingMultiResourceAction
-    departments: SettingMultiResourceAction
-    profiles: SettingMultiResourceAction
-    auths: SettingMultiResourceAction
-    provider_keys: SettingMultiResourceAction
-    auth_item_keys: SettingMultiResourceAction
-    roles: SettingMultiResourceAction
-    expected_version: int = 0
-
-    @classmethod
-    def from_request(
-        cls,
-        request: PatchSettingDraftApiRequest,
-        profile_id: UUID,
-    ) -> PatchSettingDraftSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            names=SettingResourceAction(resource_id=request.name_id),
-            descriptions=SettingResourceAction(resource_id=request.description_id),
-            flags=SettingResourceAction(resource_id=request.flag_id),
-            colors=SettingMultiResourceAction(resource_ids=request.color_ids),
-            departments=SettingMultiResourceAction(resource_ids=request.department_ids),
-            profiles=SettingMultiResourceAction(resource_ids=request.profile_ids),
-            auths=SettingMultiResourceAction(resource_ids=request.auth_ids),
-            provider_keys=SettingMultiResourceAction(
-                resource_ids=request.provider_key_ids
-            ),
-            auth_item_keys=SettingMultiResourceAction(
-                resource_ids=request.auth_item_key_ids
-            ),
-            roles=SettingMultiResourceAction(resource_ids=request.role_ids),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple:
-        """Convert to tuple for SQL execution."""
-
-        def single(a: SettingResourceAction) -> tuple:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: SettingMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.flags),
-            multi(self.colors),
-            multi(self.departments),
-            multi(self.profiles),
-            multi(self.auths),
-            multi(self.provider_keys),
-            multi(self.auth_item_keys),
-            multi(self.roles),
-            self.expected_version,
-        )
-
-
-class PatchSettingDraftSqlRow(BaseModel):
-    """SQL row for patch setting draft."""
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 # ========== List Endpoint Types ==========

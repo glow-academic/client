@@ -617,22 +617,6 @@ class SaveScenarioApiResponse(BaseModel):
     results: list[SaveScenarioResult]
 
 
-class ScenarioResourceAction(BaseModel):
-    """Internal type for SQL composite serialization (used by draft endpoint)."""
-
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
-class ScenarioMultiResourceAction(BaseModel):
-    """Internal type for SQL composite serialization (used by draft endpoint)."""
-
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
 # =============================================================================
 # EXPORT Endpoint Types
 # =============================================================================
@@ -706,39 +690,49 @@ class DuplicateScenarioApiResponse(BaseModel):
 
 
 class PatchScenarioDraftApiRequest(BaseModel):
-    """Request for patching a scenario draft - flat resource IDs."""
+    """Request model for new-style scenario draft endpoint.
 
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id, problem_statement/problem_statement_id
+    ID-only for non-creatable resources:
+      - flag_ids, department_ids, persona_ids, document_ids, parameter_field_ids,
+        objective_ids, image_ids, video_ids, question_ids, option_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
     expected_version: int = 0
-    group_id: UUID | None = None  # Tool tracking context from GET response
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
     name_id: UUID | None = None
+    description: str | None = None
     description_id: UUID | None = None
+    problem_statement: str | None = None
     problem_statement_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    images_enabled_flag_id: UUID | None = None
-    video_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
+
+    # Non-creatable — ID-only
+    flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
     parameter_field_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
     objective_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
     video_ids: list[UUID] | None = None
     question_ids: list[UUID] | None = None
     option_ids: list[UUID] | None = None
 
 
 class PatchScenarioDraftApiResponse(BaseModel):
-    """Response for patching a scenario draft."""
+    """Response model for new-style scenario draft endpoint."""
 
-    success: bool = False
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    message: str | None = None
+    success: bool
+    draft_id: UUID
+    new_version: int
+    message: str
 
 
 # =============================================================================
@@ -1113,178 +1107,3 @@ class DuplicateScenarioSqlRow(BaseModel):
     actor_name: str | None = None
 
 
-class PatchScenarioDraftSqlParams(BaseModel):
-    """SQL parameters for patch scenario draft - nested resource actions."""
-
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: ScenarioResourceAction
-    descriptions: ScenarioResourceAction
-    problem_statements: ScenarioResourceAction
-    flags: ScenarioMultiResourceAction
-    departments: ScenarioMultiResourceAction
-    personas: ScenarioMultiResourceAction
-    documents: ScenarioMultiResourceAction
-    parameters: ScenarioMultiResourceAction
-    parameter_fields: ScenarioMultiResourceAction
-    images: ScenarioMultiResourceAction
-    objectives: ScenarioMultiResourceAction
-    videos: ScenarioMultiResourceAction
-    questions: ScenarioMultiResourceAction
-    options: ScenarioMultiResourceAction
-    expected_version: int = 0
-
-    @classmethod
-    def from_request(
-        cls,
-        request: PatchScenarioDraftApiRequest,
-        profile_id: UUID,
-        group_id: UUID | None,
-    ) -> "PatchScenarioDraftSqlParams":
-        empty_single = ScenarioResourceAction()
-        empty_multi = ScenarioMultiResourceAction()
-
-        # Build names/descriptions/problem_statements from flat fields
-        names = (
-            ScenarioResourceAction(resource_id=request.name_id)
-            if request.name_id is not None
-            else empty_single
-        )
-        descriptions = (
-            ScenarioResourceAction(resource_id=request.description_id)
-            if request.description_id is not None
-            else empty_single
-        )
-        problem_statements = (
-            ScenarioResourceAction(resource_id=request.problem_statement_id)
-            if request.problem_statement_id is not None
-            else empty_single
-        )
-
-        # Build flags from individual flag fields
-        flag_ids = [
-            fid
-            for fid in [
-                request.active_flag_id,
-                request.objectives_enabled_flag_id,
-                request.images_enabled_flag_id,
-                request.video_enabled_flag_id,
-                request.questions_enabled_flag_id,
-                request.problem_statement_enabled_flag_id,
-            ]
-            if fid is not None
-        ]
-        has_any_flag_field = any(
-            getattr(request, f) is not None
-            for f in [
-                "active_flag_id",
-                "objectives_enabled_flag_id",
-                "images_enabled_flag_id",
-                "video_enabled_flag_id",
-                "questions_enabled_flag_id",
-                "problem_statement_enabled_flag_id",
-            ]
-        )
-        flags = (
-            ScenarioMultiResourceAction(resource_ids=flag_ids or None)
-            if has_any_flag_field
-            else empty_multi
-        )
-
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=group_id,
-            names=names,
-            descriptions=descriptions,
-            problem_statements=problem_statements,
-            flags=flags,
-            departments=(
-                ScenarioMultiResourceAction(resource_ids=request.department_ids)
-                if request.department_ids is not None
-                else empty_multi
-            ),
-            personas=(
-                ScenarioMultiResourceAction(resource_ids=request.persona_ids)
-                if request.persona_ids is not None
-                else empty_multi
-            ),
-            documents=(
-                ScenarioMultiResourceAction(resource_ids=request.document_ids)
-                if request.document_ids is not None
-                else empty_multi
-            ),
-            parameters=(
-                ScenarioMultiResourceAction(resource_ids=request.parameter_ids)
-                if request.parameter_ids is not None
-                else empty_multi
-            ),
-            parameter_fields=(
-                ScenarioMultiResourceAction(resource_ids=request.parameter_field_ids)
-                if request.parameter_field_ids is not None
-                else empty_multi
-            ),
-            images=(
-                ScenarioMultiResourceAction(resource_ids=request.image_ids)
-                if request.image_ids is not None
-                else empty_multi
-            ),
-            objectives=(
-                ScenarioMultiResourceAction(resource_ids=request.objective_ids)
-                if request.objective_ids is not None
-                else empty_multi
-            ),
-            videos=(
-                ScenarioMultiResourceAction(resource_ids=request.video_ids)
-                if request.video_ids is not None
-                else empty_multi
-            ),
-            questions=(
-                ScenarioMultiResourceAction(resource_ids=request.question_ids)
-                if request.question_ids is not None
-                else empty_multi
-            ),
-            options=(
-                ScenarioMultiResourceAction(resource_ids=request.option_ids)
-                if request.option_ids is not None
-                else empty_multi
-            ),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        def single(a: ScenarioResourceAction) -> tuple[Any, Any, Any]:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: ScenarioMultiResourceAction) -> tuple[Any, Any, Any]:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.problem_statements),
-            multi(self.flags),
-            multi(self.departments),
-            multi(self.personas),
-            multi(self.documents),
-            multi(self.parameters),
-            multi(self.parameter_fields),
-            multi(self.images),
-            multi(self.objectives),
-            multi(self.videos),
-            multi(self.questions),
-            multi(self.options),
-            self.expected_version,
-        )
-
-
-class PatchScenarioDraftSqlRow(BaseModel):
-    """SQL row for patch scenario draft."""
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None

@@ -382,120 +382,49 @@ class DuplicateModelApiResponse(BaseModel):
 
 
 # =============================================================================
-# DRAFT Endpoint Types
+# DRAFT Endpoint Types (composable infra)
 # =============================================================================
 
 
 class PatchModelDraftApiRequest(BaseModel):
-    """Flat-ID patch draft request for model endpoint."""
+    """Request model for new-style model draft endpoint.
 
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id
+    ID-only for non-creatable resources:
+      - flag_ids, department_ids, modality_ids, pricing_ids, provider_ids,
+        quality_ids, reasoning_level_ids, temperature_level_ids, value_ids, voice_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
+    expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
     name_id: UUID | None = None
+    description: str | None = None
     description_id: UUID | None = None
-    value_id: UUID | None = None
-    provider_id: UUID | None = None
+
+    # Non-creatable — ID-only
     flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     modality_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
     pricing_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
+    provider_ids: list[UUID] | None = None
     quality_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    value_ids: list[UUID] | None = None
     voice_ids: list[UUID] | None = None
-    expected_version: int | None = 0
 
 
 class PatchModelDraftApiResponse(BaseModel):
-    """Response model for patch model draft endpoint."""
+    """Response model for new-style model draft endpoint."""
 
     success: bool
     draft_id: UUID
     new_version: int
     message: str
-
-
-class PatchModelDraftSqlParams(BaseModel):
-    """SQL parameters for patch model draft."""
-
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: ModelResourceAction | None = None
-    descriptions: ModelResourceAction | None = None
-    values: ModelResourceAction | None = None
-    providers: ModelResourceAction | None = None
-    flags: ModelMultiResourceAction | None = None
-    departments: ModelMultiResourceAction | None = None
-    modalities: ModelMultiResourceAction | None = None
-    temperature_levels: ModelMultiResourceAction | None = None
-    pricing: ModelMultiResourceAction | None = None
-    reasoning_levels: ModelMultiResourceAction | None = None
-    qualities: ModelMultiResourceAction | None = None
-    voices: ModelMultiResourceAction | None = None
-    expected_version: int | None = 0
-
-    @classmethod
-    def from_request(
-        cls, request: PatchModelDraftApiRequest, profile_id: UUID
-    ) -> PatchModelDraftSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            names=ModelResourceAction(resource_id=request.name_id),
-            descriptions=ModelResourceAction(resource_id=request.description_id),
-            values=ModelResourceAction(resource_id=request.value_id),
-            providers=ModelResourceAction(resource_id=request.provider_id),
-            flags=ModelMultiResourceAction(resource_ids=request.flag_ids),
-            departments=ModelMultiResourceAction(resource_ids=request.department_ids),
-            modalities=ModelMultiResourceAction(resource_ids=request.modality_ids),
-            temperature_levels=ModelMultiResourceAction(
-                resource_ids=request.temperature_level_ids
-            ),
-            pricing=ModelMultiResourceAction(resource_ids=request.pricing_ids),
-            reasoning_levels=ModelMultiResourceAction(
-                resource_ids=request.reasoning_level_ids
-            ),
-            qualities=ModelMultiResourceAction(resource_ids=request.quality_ids),
-            voices=ModelMultiResourceAction(resource_ids=request.voice_ids),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        def single(
-            a: ModelResourceAction | None,
-        ) -> tuple[UUID | None, UUID | None, UUID | None]:
-            return (
-                (a.resource_id, a.create_tool_id, a.link_tool_id)
-                if a
-                else (None, None, None)
-            )
-
-        def multi(
-            a: ModelMultiResourceAction | None,
-        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
-            return (
-                (a.resource_ids, a.create_tool_id, a.link_tool_id)
-                if a
-                else (None, None, None)
-            )
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.values),
-            single(self.providers),
-            multi(self.flags),
-            multi(self.departments),
-            multi(self.modalities),
-            multi(self.temperature_levels),
-            multi(self.pricing),
-            multi(self.reasoning_levels),
-            multi(self.qualities),
-            multi(self.voices),
-            self.expected_version,
-        )

@@ -306,26 +306,40 @@ class DuplicateAgentApiResponse(BaseModel):
 
 
 class PatchAgentDraftApiRequest(BaseModel):
-    """Flat-ID patch draft request for agent endpoint."""
+    """Request model for new-style agent draft endpoint.
 
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id
+    ID-only for non-creatable resources:
+      - flag_ids, department_ids, model_ids, tool_ids, reasoning_level_ids,
+        temperature_level_ids, voice_ids, rubric_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    model_id: UUID | None = None
-    description_id: UUID | None = None
-    prompt_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    temperature_level_id: UUID | None = None
-    reasoning_level_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    tool_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
     expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
+    name_id: UUID | None = None
+    description: str | None = None
+    description_id: UUID | None = None
+
+    # Non-creatable — ID-only
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+    tool_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    rubric_ids: list[UUID] | None = None
 
 
 class PatchAgentDraftApiResponse(BaseModel):
-    """Response model for patch agent draft endpoint."""
+    """Response model for new-style agent draft endpoint."""
 
     success: bool
     draft_id: UUID

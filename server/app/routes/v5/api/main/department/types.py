@@ -65,18 +65,6 @@ class GetDepartmentApiResponse(BaseModel):
     settings: DepartmentSettingSection | None = None
 
 
-class DepartmentResourceAction(BaseModel):
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
-class DepartmentMultiResourceAction(BaseModel):
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
 class SaveDepartmentFieldError(BaseModel):
     """Per-field error from value resolution."""
 
@@ -145,71 +133,42 @@ class DuplicateDepartmentApiResponse(BaseModel):
     message: str
 
 
+# ========== Draft Endpoint Types (composable infra) ==========
+
+
 class PatchDepartmentDraftApiRequest(BaseModel):
+    """Request model for new-style department draft endpoint.
+
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id
+    ID-only for non-creatable resources:
+      - flag_id, setting_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    flag_id: UUID | None = None
-    settings_ids: list[UUID] | None = None
     expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
+    name_id: UUID | None = None
+    description: str | None = None
+    description_id: UUID | None = None
+
+    # Non-creatable — ID-only
+    flag_id: UUID | None = None
+    setting_ids: list[UUID] | None = None
 
 
 class PatchDepartmentDraftApiResponse(BaseModel):
+    """Response model for new-style department draft endpoint."""
+
     success: bool
     draft_id: UUID
     new_version: int
     message: str
-
-
-class PatchDepartmentDraftSqlParams(BaseModel):
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: DepartmentResourceAction
-    descriptions: DepartmentResourceAction
-    flags: DepartmentResourceAction
-    settings: DepartmentMultiResourceAction
-    expected_version: int = 0
-
-    @classmethod
-    def from_request(
-        cls, request: PatchDepartmentDraftApiRequest, profile_id: UUID
-    ) -> PatchDepartmentDraftSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            names=DepartmentResourceAction(resource_id=request.name_id),
-            descriptions=DepartmentResourceAction(resource_id=request.description_id),
-            flags=DepartmentResourceAction(resource_id=request.flag_id),
-            settings=DepartmentMultiResourceAction(resource_ids=request.settings_ids),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple:
-        def single(a: DepartmentResourceAction) -> tuple:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: DepartmentMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.flags),
-            multi(self.settings),
-            self.expected_version,
-        )
-
-
-class PatchDepartmentDraftSqlRow(BaseModel):
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 class ListDepartmentApiDepartment(BaseModel):

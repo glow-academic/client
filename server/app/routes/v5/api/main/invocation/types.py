@@ -55,14 +55,6 @@ class GetInvocationWebsocketResponse(InternalResponseBase):
 # =============================================================================
 
 
-class SuiteMultiResourceAction(BaseModel):
-    """Multi-resource action for benchmark suite draft patch."""
-
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
 class GetSuiteRequest(BaseModel):
     """Client API request for one benchmark bundle customization payload."""
 
@@ -212,103 +204,40 @@ class GetSuiteWebsocketResponse(InternalResponseBase):
 
 
 # =============================================================================
-# DRAFT endpoint types (autosave flow)
+# DRAFT endpoint types (composable infra)
 # =============================================================================
 
 
-class PatchSuiteDraftApiRequest(BaseModel):
-    """Request for patching a benchmark bundle draft - flat resource IDs."""
+class PatchInvocationDraftApiRequest(BaseModel):
+    """Request model for new-style invocation draft endpoint.
 
+    All resources are ID-only (no creatable resources).
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
     expected_version: int = 0
-    department_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
-    prompt_ids: list[UUID] | None = None
-    instruction_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    tool_ids: list[UUID] | None = None
+
+    # All ID-only
+    name_ids: list[UUID] | None = None
+    description_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = None
     key_ids: list[UUID] | None = None
+    model_flag_ids: list[UUID] | None = None
+    model_position_ids: list[UUID] | None = None
+    model_rubric_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
 
 
-class PatchSuiteDraftApiResponse(BaseModel):
-    """Response for patching a benchmark bundle draft."""
+class PatchInvocationDraftApiResponse(BaseModel):
+    """Response model for new-style invocation draft endpoint."""
 
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
-
-
-class PatchSuiteDraftSqlParams(BaseModel):
-    """SQL parameters for patch benchmark bundle draft."""
-
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    departments: SuiteMultiResourceAction
-    models: SuiteMultiResourceAction
-    prompts: SuiteMultiResourceAction
-    instructions: SuiteMultiResourceAction
-    voices: SuiteMultiResourceAction
-    temperature_levels: SuiteMultiResourceAction
-    reasoning_levels: SuiteMultiResourceAction
-    tools: SuiteMultiResourceAction
-    keys: SuiteMultiResourceAction
-    expected_version: int = 0
-
-    @classmethod
-    def from_request(
-        cls,
-        request: PatchSuiteDraftApiRequest,
-        profile_id: UUID,
-    ) -> PatchSuiteDraftSqlParams:
-        def wrap(ids: list[UUID] | None) -> SuiteMultiResourceAction:
-            return SuiteMultiResourceAction(
-                resource_ids=ids, create_tool_id=None, link_tool_id=None
-            )
-
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            departments=wrap(request.department_ids),
-            models=wrap(request.model_ids),
-            prompts=wrap(request.prompt_ids),
-            instructions=wrap(request.instruction_ids),
-            voices=wrap(request.voice_ids),
-            temperature_levels=wrap(request.temperature_level_ids),
-            reasoning_levels=wrap(request.reasoning_level_ids),
-            tools=wrap(request.tool_ids),
-            keys=wrap(request.key_ids),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        def multi(a: SuiteMultiResourceAction) -> tuple[Any, Any, Any]:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            multi(self.departments),
-            multi(self.models),
-            multi(self.prompts),
-            multi(self.instructions),
-            multi(self.voices),
-            multi(self.temperature_levels),
-            multi(self.reasoning_levels),
-            multi(self.tools),
-            multi(self.keys),
-            self.expected_version,
-        )
-
-
-class PatchSuiteDraftSqlRow(BaseModel):
-    """SQL row for patch benchmark bundle draft."""
-
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
+    success: bool
+    draft_id: UUID
+    new_version: int
+    message: str

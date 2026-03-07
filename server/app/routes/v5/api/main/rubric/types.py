@@ -84,18 +84,6 @@ class GetRubricApiResponse(BaseModel):
     standards: RubricStandardsSection | None = None
 
 
-class RubricResourceAction(BaseModel):
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
-class RubricMultiResourceAction(BaseModel):
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
 class SaveRubricFieldError(BaseModel):
     """Per-field error from value resolution."""
 
@@ -169,83 +157,45 @@ class DuplicateRubricApiResponse(BaseModel):
     message: str
 
 
+# ========== Draft Endpoint Types (composable infra) ==========
+
+
 class PatchRubricDraftApiRequest(BaseModel):
+    """Request model for new-style rubric draft endpoint.
+
+    Dual-mode for creatable resources only:
+      - name/name_id, description/description_id
+    ID-only for non-creatable resources:
+      - flag_id, department_ids, point_ids, standard_group_ids, standard_ids
+
+    Client always sends full state (append-only — each write is a new version snapshot).
+    """
+
+    group_id: UUID
     input_draft_id: UUID | None = None
-    group_id: UUID | None = None
+    expected_version: int = 0
+
+    # Creatable single-select — provide value or ID
+    name: str | None = None
     name_id: UUID | None = None
+    description: str | None = None
     description_id: UUID | None = None
+
+    # Non-creatable — ID-only
     flag_id: UUID | None = None
     department_ids: list[UUID] | None = None
-    total_points_id: UUID | None = None
-    pass_points_id: UUID | None = None
+    point_ids: list[UUID] | None = None
     standard_group_ids: list[UUID] | None = None
     standard_ids: list[UUID] | None = None
-    expected_version: int = 0
 
 
 class PatchRubricDraftApiResponse(BaseModel):
+    """Response model for new-style rubric draft endpoint."""
+
     success: bool
     draft_id: UUID
     new_version: int
     message: str
-
-
-class PatchRubricDraftSqlParams(BaseModel):
-    profile_id: UUID
-    input_draft_id: UUID | None = None
-    group_id: UUID | None = None
-    names: RubricResourceAction
-    descriptions: RubricResourceAction
-    flags: RubricResourceAction
-    departments: RubricMultiResourceAction
-    points: RubricResourceAction
-    pass_points: RubricResourceAction
-    standard_groups: RubricMultiResourceAction
-    standards: RubricMultiResourceAction
-    expected_version: int = 0
-
-    @classmethod
-    def from_request(
-        cls, request: PatchRubricDraftApiRequest, profile_id: UUID
-    ) -> PatchRubricDraftSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_draft_id=request.input_draft_id,
-            group_id=request.group_id,
-            names=RubricResourceAction(resource_id=request.name_id),
-            descriptions=RubricResourceAction(resource_id=request.description_id),
-            flags=RubricResourceAction(resource_id=request.flag_id),
-            departments=RubricMultiResourceAction(resource_ids=request.department_ids),
-            points=RubricResourceAction(resource_id=request.total_points_id),
-            pass_points=RubricResourceAction(resource_id=request.pass_points_id),
-            standard_groups=RubricMultiResourceAction(
-                resource_ids=request.standard_group_ids
-            ),
-            standards=RubricMultiResourceAction(resource_ids=request.standard_ids),
-            expected_version=request.expected_version,
-        )
-
-    def to_tuple(self) -> tuple:
-        return (
-            self.profile_id,
-            self.input_draft_id,
-            self.group_id,
-            self.names.model_dump(),
-            self.descriptions.model_dump(),
-            self.flags.model_dump(),
-            self.departments.model_dump(),
-            self.points.model_dump(),
-            self.pass_points.model_dump(),
-            self.standard_groups.model_dump(),
-            self.standards.model_dump(),
-            self.expected_version,
-        )
-
-
-class PatchRubricDraftSqlRow(BaseModel):
-    draft_id: UUID | None = None
-    new_version: int | None = None
-    draft_exists: bool | None = None
 
 
 # ========== List Endpoint Types ==========
