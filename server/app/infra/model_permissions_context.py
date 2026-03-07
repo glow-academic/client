@@ -57,7 +57,7 @@ async def resolve_model_permissions_context(
     department_ids = list(artifact.department_ids or [])
     model_resource_ids = list(artifact.model_ids or [])
 
-    active_agent_ids = (
+    active_agent_ids, _total = (
         await search_agents(
             conn,
             model_ids=model_resource_ids,
@@ -65,7 +65,7 @@ async def resolve_model_permissions_context(
             limit_count=1,
         )
         if model_resource_ids
-        else []
+        else ([], 0)
     )
 
     return ModelPermissionsContext(

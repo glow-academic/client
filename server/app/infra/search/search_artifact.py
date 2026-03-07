@@ -69,15 +69,15 @@ async def execute_artifact_search(
     order_expr: str = "a.created_at DESC",
     limit_count: int = 20,
     offset_count: int = 0,
-) -> list[UUID]:
-    """Execute the final search query and return matching artifact IDs."""
+) -> tuple[list[UUID], int]:
+    """Execute the final search query and return (matching artifact IDs, total_count)."""
     if limit_count <= 0:
-        return []
+        return ([], 0)
 
     where = " AND ".join(conditions) if conditions else "true"
 
     query = f"""
-        SELECT a.id
+        SELECT a.id, COUNT(*) OVER() AS total_count
         FROM {table} a
         {order_join or ""}
         WHERE {where}
@@ -88,4 +88,6 @@ async def execute_artifact_search(
     params.extend([limit_count, offset_count])
 
     rows = await conn.fetch(query, *params)
-    return [row["id"] for row in rows]
+    ids = [row["id"] for row in rows]
+    total_count = rows[0]["total_count"] if rows else 0
+    return (ids, total_count)

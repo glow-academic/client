@@ -61,7 +61,7 @@ async def resolve_practice_context(
       - simulations, cohorts, personas, rubrics, standard_groups, standards
     """
     # Step 1: Resolve user's cohort IDs
-    user_cohort_ids = await search_cohorts(
+    user_cohort_ids, _total = await search_cohorts(
         conn,
         profile_ids=[profiles_resource_id],
         limit_count=1000,

@@ -19,7 +19,7 @@ def _u() -> str:
 async def test_bare_search_returns_results(conn, redis_client):
     name = await create_name(conn, f"bare-{_u()}", redis_client)
     t = await create_tool(conn, name_id=name.id)
-    ids = await search_tools(conn)
+    ids, _total = await search_tools(conn)
     assert t.id in ids
 
 
@@ -29,7 +29,7 @@ async def test_text_search_filters_by_name(conn, redis_client):
     name_other = await create_name(conn, f"other-{_u()}", redis_client)
     t1 = await create_tool(conn, name_id=name_match.id)
     t2 = await create_tool(conn, name_id=name_other.id)
-    ids = await search_tools(conn, search=f"match-{tag}")
+    ids, _total = await search_tools(conn, search=f"match-{tag}")
     assert t1.id in ids
     assert t2.id not in ids
 
@@ -39,7 +39,7 @@ async def test_text_search_filters_by_description(conn, redis_client):
     desc = await create_description(conn, f"desc-{tag}", redis_client)
     t1 = await create_tool(conn, description_id=desc.id)
     t2 = await create_tool(conn)
-    ids = await search_tools(conn, search=f"desc-{tag}")
+    ids, _total = await search_tools(conn, search=f"desc-{tag}")
     assert t1.id in ids
     assert t2.id not in ids
 
@@ -49,7 +49,7 @@ async def test_department_filter(conn, redis_client):
     d2 = await create_department(conn, redis=redis_client)
     t1 = await create_tool(conn, department_ids=[d1.id])
     t2 = await create_tool(conn, department_ids=[d2.id])
-    ids = await search_tools(conn, department_ids=[d1.id])
+    ids, _total = await search_tools(conn, department_ids=[d1.id])
     assert t1.id in ids
     assert t2.id not in ids
 
@@ -60,7 +60,7 @@ async def test_exclude_ids(conn, redis_client):
     n2 = await create_name(conn, f"excl-{tag}-b", redis_client)
     t1 = await create_tool(conn, name_id=n1.id)
     t2 = await create_tool(conn, name_id=n2.id)
-    ids = await search_tools(conn, search=f"excl-{tag}", exclude_ids=[t1.id])
+    ids, _total = await search_tools(conn, search=f"excl-{tag}", exclude_ids=[t1.id])
     assert t1.id not in ids
     assert t2.id in ids
 
@@ -72,13 +72,13 @@ async def test_pagination(conn, redis_client):
         name = await create_name(conn, f"page-{tag}-{i:02d}", redis_client)
         t = await create_tool(conn, name_id=name.id)
         created.append(t.id)
-    page1 = await search_tools(
+    page1, _total = await search_tools(
         conn, search=f"page-{tag}", limit_count=2, offset_count=0
     )
-    page2 = await search_tools(
+    page2, _total = await search_tools(
         conn, search=f"page-{tag}", limit_count=2, offset_count=2
     )
-    page3 = await search_tools(
+    page3, _total = await search_tools(
         conn, search=f"page-{tag}", limit_count=2, offset_count=4
     )
     assert len(page1) == 2
@@ -90,12 +90,12 @@ async def test_pagination(conn, redis_client):
 
 async def test_active_only_default(conn, redis_client):
     t = await create_tool(conn, active=False)
-    ids = await search_tools(conn)
+    ids, _total = await search_tools(conn)
     assert t.id not in ids
 
 
 async def test_active_only_false_includes_inactive(conn, redis_client):
     name = await create_name(conn, f"inactive-{_u()}", redis_client)
     t = await create_tool(conn, active=False, name_id=name.id)
-    ids = await search_tools(conn, search=name.name, active_only=False)
+    ids, _total = await search_tools(conn, search=name.name, active_only=False)
     assert t.id in ids

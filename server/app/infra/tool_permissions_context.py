@@ -46,7 +46,7 @@ async def resolve_tool_permissions_context(
             active_agent_count=0,
         )
 
-    active_agent_ids = await search_agents(
+    active_agent_ids, _total = await search_agents(
         conn,
         tool_ids=[tool_id],
         active_only=True,

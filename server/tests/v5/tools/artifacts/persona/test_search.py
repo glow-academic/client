@@ -28,7 +28,7 @@ async def test_bare_search_returns_results(conn, redis_client):
     name = await create_name(conn, f"bare-{_u()}", redis_client)
     p = await create_persona(conn, name_id=name.id)
 
-    ids = await search_personas(conn)
+    ids, _total = await search_personas(conn)
     assert p.id in ids
 
 
@@ -41,7 +41,7 @@ async def test_text_search_filters_by_name(conn, redis_client):
     p1 = await create_persona(conn, name_id=name_match.id)
     p2 = await create_persona(conn, name_id=name_other.id)
 
-    ids = await search_personas(conn, search=f"match-{tag}")
+    ids, _total = await search_personas(conn, search=f"match-{tag}")
     assert p1.id in ids
     assert p2.id not in ids
 
@@ -54,7 +54,7 @@ async def test_text_search_filters_by_description(conn, redis_client):
     p1 = await create_persona(conn, description_id=desc.id)
     p2 = await create_persona(conn)
 
-    ids = await search_personas(conn, search=f"desc-{tag}")
+    ids, _total = await search_personas(conn, search=f"desc-{tag}")
     assert p1.id in ids
     assert p2.id not in ids
 
@@ -67,7 +67,7 @@ async def test_department_filter(conn, redis_client):
     p1 = await create_persona(conn, department_ids=[d1.id])
     p2 = await create_persona(conn, department_ids=[d2.id])
 
-    ids = await search_personas(conn, department_ids=[d1.id])
+    ids, _total = await search_personas(conn, department_ids=[d1.id])
     assert p1.id in ids
     assert p2.id not in ids
 
@@ -79,7 +79,7 @@ async def test_flag_filter(conn, redis_client):
     p1 = await create_persona(conn, flag_ids=[f1.id])
     p2 = await create_persona(conn)
 
-    ids = await search_personas(conn, flag_ids=[f1.id])
+    ids, _total = await search_personas(conn, flag_ids=[f1.id])
     assert p1.id in ids
     assert p2.id not in ids
 
@@ -91,7 +91,7 @@ async def test_voice_filter(conn, redis_client):
     p1 = await create_persona(conn, voice_ids=[v1.id])
     p2 = await create_persona(conn)
 
-    ids = await search_personas(conn, voice_ids=[v1.id])
+    ids, _total = await search_personas(conn, voice_ids=[v1.id])
     assert p1.id in ids
     assert p2.id not in ids
 
@@ -102,7 +102,7 @@ async def test_exclude_ids(conn, redis_client):
     p1 = await create_persona(conn, name_id=name.id)
     p2 = await create_persona(conn, name_id=name.id)
 
-    ids = await search_personas(conn, exclude_ids=[p1.id])
+    ids, _total = await search_personas(conn, exclude_ids=[p1.id])
     assert p1.id not in ids
     assert p2.id in ids
 
@@ -116,13 +116,13 @@ async def test_pagination(conn, redis_client):
         p = await create_persona(conn, name_id=name.id)
         created.append(p.id)
 
-    page1 = await search_personas(
+    page1, _total = await search_personas(
         conn, search=f"page-{tag}", limit_count=2, offset_count=0
     )
-    page2 = await search_personas(
+    page2, _total = await search_personas(
         conn, search=f"page-{tag}", limit_count=2, offset_count=2
     )
-    page3 = await search_personas(
+    page3, _total = await search_personas(
         conn, search=f"page-{tag}", limit_count=2, offset_count=4
     )
 
@@ -138,7 +138,7 @@ async def test_active_only_default(conn, redis_client):
     """Inactive personas excluded by default."""
     p = await create_persona(conn, active=False)
 
-    ids = await search_personas(conn)
+    ids, _total = await search_personas(conn)
     assert p.id not in ids
 
 
@@ -147,5 +147,5 @@ async def test_active_only_false_includes_inactive(conn, redis_client):
     name = await create_name(conn, f"inactive-{_u()}", redis_client)
     p = await create_persona(conn, active=False, name_id=name.id)
 
-    ids = await search_personas(conn, search=name.name, active_only=False)
+    ids, _total = await search_personas(conn, search=name.name, active_only=False)
     assert p.id in ids

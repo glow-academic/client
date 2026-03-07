@@ -55,7 +55,7 @@ async def resolve_provider_permissions_context(
     artifact = artifacts[0]
     department_ids = list(artifact.department_ids or [])
 
-    active_model_ids = await search_models(
+    active_model_ids, _total = await search_models(
         conn,
         provider_ids=[provider_id],
         active_only=True,

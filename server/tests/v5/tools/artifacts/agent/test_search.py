@@ -19,7 +19,7 @@ def _u() -> str:
 async def test_bare_search_returns_results(conn, redis_client):
     name = await create_name(conn, f"bare-{_u()}", redis_client)
     a = await create_agent(conn, name_id=name.id)
-    ids = await search_agents(conn)
+    ids, _total = await search_agents(conn)
     assert a.id in ids
 
 
@@ -29,7 +29,7 @@ async def test_text_search_filters_by_name(conn, redis_client):
     name_other = await create_name(conn, f"other-{_u()}", redis_client)
     a1 = await create_agent(conn, name_id=name_match.id)
     a2 = await create_agent(conn, name_id=name_other.id)
-    ids = await search_agents(conn, search=f"match-{tag}")
+    ids, _total = await search_agents(conn, search=f"match-{tag}")
     assert a1.id in ids
     assert a2.id not in ids
 
@@ -39,7 +39,7 @@ async def test_text_search_filters_by_description(conn, redis_client):
     desc = await create_description(conn, f"desc-{tag}", redis_client)
     a1 = await create_agent(conn, description_id=desc.id)
     a2 = await create_agent(conn)
-    ids = await search_agents(conn, search=f"desc-{tag}")
+    ids, _total = await search_agents(conn, search=f"desc-{tag}")
     assert a1.id in ids
     assert a2.id not in ids
 
@@ -49,7 +49,7 @@ async def test_department_filter(conn, redis_client):
     d2 = await create_department(conn, redis=redis_client)
     a1 = await create_agent(conn, department_ids=[d1.id])
     a2 = await create_agent(conn, department_ids=[d2.id])
-    ids = await search_agents(conn, department_ids=[d1.id])
+    ids, _total = await search_agents(conn, department_ids=[d1.id])
     assert a1.id in ids
     assert a2.id not in ids
 
@@ -65,7 +65,7 @@ async def test_model_ids_filter(conn, redis_client):
     )
     a1 = await create_agent(conn, model_ids=[m1])
     a2 = await create_agent(conn, model_ids=[m2])
-    ids = await search_agents(conn, model_ids=[m1])
+    ids, _total = await search_agents(conn, model_ids=[m1])
     assert a1.id in ids
     assert a2.id not in ids
 
@@ -79,7 +79,7 @@ async def test_tool_ids_filter(conn, redis_client):
     )
     a1 = await create_agent(conn, tool_ids=[t1])
     a2 = await create_agent(conn, tool_ids=[t2])
-    ids = await search_agents(conn, tool_ids=[t1])
+    ids, _total = await search_agents(conn, tool_ids=[t1])
     assert a1.id in ids
     assert a2.id not in ids
 
@@ -88,7 +88,7 @@ async def test_exclude_ids(conn, redis_client):
     name = await create_name(conn, f"excl-{_u()}", redis_client)
     a1 = await create_agent(conn, name_id=name.id)
     a2 = await create_agent(conn, name_id=name.id)
-    ids = await search_agents(conn, exclude_ids=[a1.id])
+    ids, _total = await search_agents(conn, exclude_ids=[a1.id])
     assert a1.id not in ids
     assert a2.id in ids
 
@@ -100,13 +100,13 @@ async def test_pagination(conn, redis_client):
         name = await create_name(conn, f"page-{tag}-{i:02d}", redis_client)
         a = await create_agent(conn, name_id=name.id)
         created.append(a.id)
-    page1 = await search_agents(
+    page1, _total = await search_agents(
         conn, search=f"page-{tag}", limit_count=2, offset_count=0
     )
-    page2 = await search_agents(
+    page2, _total = await search_agents(
         conn, search=f"page-{tag}", limit_count=2, offset_count=2
     )
-    page3 = await search_agents(
+    page3, _total = await search_agents(
         conn, search=f"page-{tag}", limit_count=2, offset_count=4
     )
     assert len(page1) == 2
@@ -118,12 +118,12 @@ async def test_pagination(conn, redis_client):
 
 async def test_active_only_default(conn, redis_client):
     a = await create_agent(conn, active=False)
-    ids = await search_agents(conn)
+    ids, _total = await search_agents(conn)
     assert a.id not in ids
 
 
 async def test_active_only_false_includes_inactive(conn, redis_client):
     name = await create_name(conn, f"inactive-{_u()}", redis_client)
     a = await create_agent(conn, active=False, name_id=name.id)
-    ids = await search_agents(conn, search=name.name, active_only=False)
+    ids, _total = await search_agents(conn, search=name.name, active_only=False)
     assert a.id in ids

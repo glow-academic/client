@@ -57,7 +57,7 @@ async def resolve_simulation_permissions_context(
     department_ids = list(artifact.department_ids or [])
     simulation_resource_ids = list(artifact.simulation_ids or [])
 
-    active_cohort_ids = (
+    active_cohort_ids, _total = (
         await search_cohorts(
             conn,
             simulation_ids=simulation_resource_ids,
@@ -65,7 +65,7 @@ async def resolve_simulation_permissions_context(
             limit_count=1,
         )
         if simulation_resource_ids
-        else []
+        else ([], 0)
     )
 
     return SimulationPermissionsContext(

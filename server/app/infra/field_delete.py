@@ -73,7 +73,7 @@ async def delete_field_client(
 
         # Field permissions context doesn't include active_parameter_count,
         # so we use search_parameters inline to check usage.
-        active_parameter_ids = await search_parameters(
+        active_parameter_ids, _total = await search_parameters(
             conn, field_ids=[field_id], active_only=True, limit_count=1
         )
         active_parameter_count = len(active_parameter_ids)

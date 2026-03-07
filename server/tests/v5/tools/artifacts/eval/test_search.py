@@ -26,7 +26,7 @@ async def test_bare_search_returns_results(conn, redis_client):
     name = await create_name(conn, f"bare-{_u()}", redis_client)
     e = await create_eval(conn, name_id=name.id)
 
-    ids = await search_evals(conn)
+    ids, _total = await search_evals(conn)
     assert e.id in ids
 
 
@@ -39,7 +39,7 @@ async def test_text_search_filters_by_name(conn, redis_client):
     e1 = await create_eval(conn, name_id=name_match.id)
     e2 = await create_eval(conn, name_id=name_other.id)
 
-    ids = await search_evals(conn, search=f"match-{tag}")
+    ids, _total = await search_evals(conn, search=f"match-{tag}")
     assert e1.id in ids
     assert e2.id not in ids
 
@@ -52,7 +52,7 @@ async def test_text_search_filters_by_description(conn, redis_client):
     e1 = await create_eval(conn, description_id=desc.id)
     e2 = await create_eval(conn)
 
-    ids = await search_evals(conn, search=f"desc-{tag}")
+    ids, _total = await search_evals(conn, search=f"desc-{tag}")
     assert e1.id in ids
     assert e2.id not in ids
 
@@ -65,7 +65,7 @@ async def test_department_filter(conn, redis_client):
     e1 = await create_eval(conn, department_ids=[d1.id])
     e2 = await create_eval(conn, department_ids=[d2.id])
 
-    ids = await search_evals(conn, department_ids=[d1.id])
+    ids, _total = await search_evals(conn, department_ids=[d1.id])
     assert e1.id in ids
     assert e2.id not in ids
 
@@ -76,7 +76,7 @@ async def test_exclude_ids(conn, redis_client):
     e1 = await create_eval(conn, name_id=name.id)
     e2 = await create_eval(conn, name_id=name.id)
 
-    ids = await search_evals(conn, exclude_ids=[e1.id])
+    ids, _total = await search_evals(conn, exclude_ids=[e1.id])
     assert e1.id not in ids
     assert e2.id in ids
 
@@ -90,13 +90,13 @@ async def test_pagination(conn, redis_client):
         e = await create_eval(conn, name_id=name.id)
         created.append(e.id)
 
-    page1 = await search_evals(
+    page1, _total = await search_evals(
         conn, search=f"page-{tag}", limit_count=2, offset_count=0
     )
-    page2 = await search_evals(
+    page2, _total = await search_evals(
         conn, search=f"page-{tag}", limit_count=2, offset_count=2
     )
-    page3 = await search_evals(
+    page3, _total = await search_evals(
         conn, search=f"page-{tag}", limit_count=2, offset_count=4
     )
 
@@ -112,7 +112,7 @@ async def test_active_only_default(conn, redis_client):
     """Inactive evals excluded by default."""
     e = await create_eval(conn, active=False)
 
-    ids = await search_evals(conn)
+    ids, _total = await search_evals(conn)
     assert e.id not in ids
 
 
@@ -121,5 +121,5 @@ async def test_active_only_false_includes_inactive(conn, redis_client):
     name = await create_name(conn, f"inactive-{_u()}", redis_client)
     e = await create_eval(conn, active=False, name_id=name.id)
 
-    ids = await search_evals(conn, search=name.name, active_only=False)
+    ids, _total = await search_evals(conn, search=name.name, active_only=False)
     assert e.id in ids

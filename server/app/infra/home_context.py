@@ -69,7 +69,7 @@ async def resolve_home_context(
       7. Return ArtifactContext
     """
     # Step 1: Resolve user's cohort IDs
-    user_cohort_ids = await search_cohorts(
+    user_cohort_ids, _total = await search_cohorts(
         conn,
         profile_ids=[profiles_resource_id],
         limit_count=1000,

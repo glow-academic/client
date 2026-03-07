@@ -60,7 +60,7 @@ async def resolve_profile_permissions_context(
     # TODO: Refine — currently checks if any active cohort references this
     # profile. Eventually should check if this is the *last* profile in
     # the cohort before blocking removal.
-    active_cohort_ids = (
+    active_cohort_ids, _total = (
         await search_cohorts(
             conn,
             profile_ids=profile_resource_ids,
@@ -68,7 +68,7 @@ async def resolve_profile_permissions_context(
             limit_count=1,
         )
         if profile_resource_ids
-        else []
+        else ([], 0)
     )
 
     return ProfilePermissionsContext(

@@ -20,8 +20,8 @@ async def search_departments(
     active_only: bool = True,
     limit_count: int = 20,
     offset_count: int = 0,
-) -> list[UUID]:
-    """Search department artifacts by filters. Returns IDs only."""
+) -> tuple[list[UUID], int]:
+    """Search department artifacts by filters. Returns (IDs, total_count)."""
     conditions: list[str] = []
     params: list[object] = []
     idx = 1

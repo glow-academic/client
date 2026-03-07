@@ -26,7 +26,7 @@ async def test_bare_search_returns_results(conn, redis_client):
     name = await create_name(conn, f"bare-{_u()}", redis_client)
     r = await create_rubric(conn, name_id=name.id)
 
-    ids = await search_rubrics(conn)
+    ids, _total = await search_rubrics(conn)
     assert r.id in ids
 
 
@@ -39,7 +39,7 @@ async def test_text_search_filters_by_name(conn, redis_client):
     r1 = await create_rubric(conn, name_id=name_match.id)
     r2 = await create_rubric(conn, name_id=name_other.id)
 
-    ids = await search_rubrics(conn, search=f"match-{tag}")
+    ids, _total = await search_rubrics(conn, search=f"match-{tag}")
     assert r1.id in ids
     assert r2.id not in ids
 
@@ -52,7 +52,7 @@ async def test_text_search_filters_by_description(conn, redis_client):
     r1 = await create_rubric(conn, description_id=desc.id)
     r2 = await create_rubric(conn)
 
-    ids = await search_rubrics(conn, search=f"desc-{tag}")
+    ids, _total = await search_rubrics(conn, search=f"desc-{tag}")
     assert r1.id in ids
     assert r2.id not in ids
 
@@ -65,7 +65,7 @@ async def test_department_filter(conn, redis_client):
     r1 = await create_rubric(conn, department_ids=[d1.id])
     r2 = await create_rubric(conn, department_ids=[d2.id])
 
-    ids = await search_rubrics(conn, department_ids=[d1.id])
+    ids, _total = await search_rubrics(conn, department_ids=[d1.id])
     assert r1.id in ids
     assert r2.id not in ids
 
@@ -76,7 +76,7 @@ async def test_exclude_ids(conn, redis_client):
     r1 = await create_rubric(conn, name_id=name.id)
     r2 = await create_rubric(conn, name_id=name.id)
 
-    ids = await search_rubrics(conn, exclude_ids=[r1.id])
+    ids, _total = await search_rubrics(conn, exclude_ids=[r1.id])
     assert r1.id not in ids
     assert r2.id in ids
 
@@ -90,13 +90,13 @@ async def test_pagination(conn, redis_client):
         r = await create_rubric(conn, name_id=name.id)
         created.append(r.id)
 
-    page1 = await search_rubrics(
+    page1, _total = await search_rubrics(
         conn, search=f"page-{tag}", limit_count=2, offset_count=0
     )
-    page2 = await search_rubrics(
+    page2, _total = await search_rubrics(
         conn, search=f"page-{tag}", limit_count=2, offset_count=2
     )
-    page3 = await search_rubrics(
+    page3, _total = await search_rubrics(
         conn, search=f"page-{tag}", limit_count=2, offset_count=4
     )
 
@@ -112,7 +112,7 @@ async def test_active_only_default(conn, redis_client):
     """Inactive rubrics excluded by default."""
     r = await create_rubric(conn, active=False)
 
-    ids = await search_rubrics(conn)
+    ids, _total = await search_rubrics(conn)
     assert r.id not in ids
 
 
@@ -121,5 +121,5 @@ async def test_active_only_false_includes_inactive(conn, redis_client):
     name = await create_name(conn, f"inactive-{_u()}", redis_client)
     r = await create_rubric(conn, active=False, name_id=name.id)
 
-    ids = await search_rubrics(conn, search=name.name, active_only=False)
+    ids, _total = await search_rubrics(conn, search=name.name, active_only=False)
     assert r.id in ids

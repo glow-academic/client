@@ -26,7 +26,7 @@ async def test_bare_search_returns_results(conn, redis_client):
     name = await create_name(conn, f"bare-{_u()}", redis_client)
     d = await create_document(conn, name_id=name.id)
 
-    ids = await search_documents(conn)
+    ids, _total = await search_documents(conn)
     assert d.id in ids
 
 
@@ -39,7 +39,7 @@ async def test_text_search_filters_by_name(conn, redis_client):
     d1 = await create_document(conn, name_id=name_match.id)
     d2 = await create_document(conn, name_id=name_other.id)
 
-    ids = await search_documents(conn, search=f"match-{tag}")
+    ids, _total = await search_documents(conn, search=f"match-{tag}")
     assert d1.id in ids
     assert d2.id not in ids
 
@@ -52,7 +52,7 @@ async def test_text_search_filters_by_description(conn, redis_client):
     d1 = await create_document(conn, description_id=desc.id)
     d2 = await create_document(conn)
 
-    ids = await search_documents(conn, search=f"desc-{tag}")
+    ids, _total = await search_documents(conn, search=f"desc-{tag}")
     assert d1.id in ids
     assert d2.id not in ids
 
@@ -65,7 +65,7 @@ async def test_department_filter(conn, redis_client):
     d1 = await create_document(conn, department_ids=[dep1.id])
     d2 = await create_document(conn, department_ids=[dep2.id])
 
-    ids = await search_documents(conn, department_ids=[dep1.id])
+    ids, _total = await search_documents(conn, department_ids=[dep1.id])
     assert d1.id in ids
     assert d2.id not in ids
 
@@ -76,7 +76,7 @@ async def test_exclude_ids(conn, redis_client):
     d1 = await create_document(conn, name_id=name.id)
     d2 = await create_document(conn, name_id=name.id)
 
-    ids = await search_documents(conn, exclude_ids=[d1.id])
+    ids, _total = await search_documents(conn, exclude_ids=[d1.id])
     assert d1.id not in ids
     assert d2.id in ids
 
@@ -90,13 +90,13 @@ async def test_pagination(conn, redis_client):
         d = await create_document(conn, name_id=name.id)
         created.append(d.id)
 
-    page1 = await search_documents(
+    page1, _total = await search_documents(
         conn, search=f"page-{tag}", limit_count=2, offset_count=0
     )
-    page2 = await search_documents(
+    page2, _total = await search_documents(
         conn, search=f"page-{tag}", limit_count=2, offset_count=2
     )
-    page3 = await search_documents(
+    page3, _total = await search_documents(
         conn, search=f"page-{tag}", limit_count=2, offset_count=4
     )
 
@@ -112,7 +112,7 @@ async def test_active_only_default(conn, redis_client):
     """Inactive documents excluded by default."""
     d = await create_document(conn, active=False)
 
-    ids = await search_documents(conn)
+    ids, _total = await search_documents(conn)
     assert d.id not in ids
 
 
@@ -121,5 +121,5 @@ async def test_active_only_false_includes_inactive(conn, redis_client):
     name = await create_name(conn, f"inactive-{_u()}", redis_client)
     d = await create_document(conn, active=False, name_id=name.id)
 
-    ids = await search_documents(conn, search=name.name, active_only=False)
+    ids, _total = await search_documents(conn, search=name.name, active_only=False)
     assert d.id in ids

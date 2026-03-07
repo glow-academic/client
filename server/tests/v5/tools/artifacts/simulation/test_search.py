@@ -26,7 +26,7 @@ async def test_bare_search_returns_results(conn, redis_client):
     name = await create_name(conn, f"bare-{_u()}", redis_client)
     s = await create_simulation(conn, name_id=name.id)
 
-    ids = await search_simulations(conn)
+    ids, _total = await search_simulations(conn)
     assert s.id in ids
 
 
@@ -39,7 +39,7 @@ async def test_text_search_filters_by_name(conn, redis_client):
     s1 = await create_simulation(conn, name_id=name_match.id)
     s2 = await create_simulation(conn, name_id=name_other.id)
 
-    ids = await search_simulations(conn, search=f"match-{tag}")
+    ids, _total = await search_simulations(conn, search=f"match-{tag}")
     assert s1.id in ids
     assert s2.id not in ids
 
@@ -52,7 +52,7 @@ async def test_text_search_filters_by_description(conn, redis_client):
     s1 = await create_simulation(conn, description_id=desc.id)
     s2 = await create_simulation(conn)
 
-    ids = await search_simulations(conn, search=f"desc-{tag}")
+    ids, _total = await search_simulations(conn, search=f"desc-{tag}")
     assert s1.id in ids
     assert s2.id not in ids
 
@@ -65,7 +65,7 @@ async def test_department_filter(conn, redis_client):
     s1 = await create_simulation(conn, department_ids=[d1.id])
     s2 = await create_simulation(conn, department_ids=[d2.id])
 
-    ids = await search_simulations(conn, department_ids=[d1.id])
+    ids, _total = await search_simulations(conn, department_ids=[d1.id])
     assert s1.id in ids
     assert s2.id not in ids
 
@@ -79,7 +79,7 @@ async def test_scenario_filter(conn, redis_client):
     s1 = await create_simulation(conn, scenario_ids=[sc_id])
     s2 = await create_simulation(conn)
 
-    ids = await search_simulations(conn, scenario_ids=[sc_id])
+    ids, _total = await search_simulations(conn, scenario_ids=[sc_id])
     assert s1.id in ids
     assert s2.id not in ids
 
@@ -90,7 +90,7 @@ async def test_exclude_ids(conn, redis_client):
     s1 = await create_simulation(conn, name_id=name.id)
     s2 = await create_simulation(conn, name_id=name.id)
 
-    ids = await search_simulations(conn, exclude_ids=[s1.id])
+    ids, _total = await search_simulations(conn, exclude_ids=[s1.id])
     assert s1.id not in ids
     assert s2.id in ids
 
@@ -104,13 +104,13 @@ async def test_pagination(conn, redis_client):
         s = await create_simulation(conn, name_id=name.id)
         created.append(s.id)
 
-    page1 = await search_simulations(
+    page1, _total = await search_simulations(
         conn, search=f"page-{tag}", limit_count=2, offset_count=0
     )
-    page2 = await search_simulations(
+    page2, _total = await search_simulations(
         conn, search=f"page-{tag}", limit_count=2, offset_count=2
     )
-    page3 = await search_simulations(
+    page3, _total = await search_simulations(
         conn, search=f"page-{tag}", limit_count=2, offset_count=4
     )
 
@@ -126,7 +126,7 @@ async def test_active_only_default(conn, redis_client):
     """Inactive simulations excluded by default."""
     s = await create_simulation(conn, active=False)
 
-    ids = await search_simulations(conn)
+    ids, _total = await search_simulations(conn)
     assert s.id not in ids
 
 
@@ -135,5 +135,5 @@ async def test_active_only_false_includes_inactive(conn, redis_client):
     name = await create_name(conn, f"inactive-{_u()}", redis_client)
     s = await create_simulation(conn, active=False, name_id=name.id)
 
-    ids = await search_simulations(conn, search=name.name, active_only=False)
+    ids, _total = await search_simulations(conn, search=name.name, active_only=False)
     assert s.id in ids

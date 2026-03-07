@@ -55,7 +55,7 @@ async def resolve_parameter_permissions_context(
     artifact = artifacts[0]
     department_ids = list(artifact.department_ids or [])
 
-    active_scenario_ids = await search_scenarios(
+    active_scenario_ids, _total = await search_scenarios(
         conn,
         parameter_ids=[parameter_id],
         active_only=True,

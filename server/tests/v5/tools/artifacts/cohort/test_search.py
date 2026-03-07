@@ -26,7 +26,7 @@ async def test_bare_search_returns_results(conn, redis_client):
     name = await create_name(conn, f"bare-{_u()}", redis_client)
     c = await create_cohort(conn, name_id=name.id)
 
-    ids = await search_cohorts(conn)
+    ids, _total = await search_cohorts(conn)
     assert c.id in ids
 
 
@@ -39,7 +39,7 @@ async def test_text_search_filters_by_name(conn, redis_client):
     c1 = await create_cohort(conn, name_id=name_match.id)
     c2 = await create_cohort(conn, name_id=name_other.id)
 
-    ids = await search_cohorts(conn, search=f"match-{tag}")
+    ids, _total = await search_cohorts(conn, search=f"match-{tag}")
     assert c1.id in ids
     assert c2.id not in ids
 
@@ -52,7 +52,7 @@ async def test_text_search_filters_by_description(conn, redis_client):
     c1 = await create_cohort(conn, description_id=desc.id)
     c2 = await create_cohort(conn)
 
-    ids = await search_cohorts(conn, search=f"desc-{tag}")
+    ids, _total = await search_cohorts(conn, search=f"desc-{tag}")
     assert c1.id in ids
     assert c2.id not in ids
 
@@ -65,7 +65,7 @@ async def test_department_filter(conn, redis_client):
     c1 = await create_cohort(conn, department_ids=[d1.id])
     c2 = await create_cohort(conn, department_ids=[d2.id])
 
-    ids = await search_cohorts(conn, department_ids=[d1.id])
+    ids, _total = await search_cohorts(conn, department_ids=[d1.id])
     assert c1.id in ids
     assert c2.id not in ids
 
@@ -82,7 +82,7 @@ async def test_simulation_filter(conn, redis_client):
     c1 = await create_cohort(conn, simulation_ids=[s1])
     c2 = await create_cohort(conn, simulation_ids=[s2])
 
-    ids = await search_cohorts(conn, simulation_ids=[s1])
+    ids, _total = await search_cohorts(conn, simulation_ids=[s1])
     assert c1.id in ids
     assert c2.id not in ids
 
@@ -99,7 +99,7 @@ async def test_profile_filter(conn, redis_client):
     c1 = await create_cohort(conn, profile_ids=[pr1])
     c2 = await create_cohort(conn, profile_ids=[pr2])
 
-    ids = await search_cohorts(conn, profile_ids=[pr1])
+    ids, _total = await search_cohorts(conn, profile_ids=[pr1])
     assert c1.id in ids
     assert c2.id not in ids
 
@@ -110,7 +110,7 @@ async def test_exclude_ids(conn, redis_client):
     c1 = await create_cohort(conn, name_id=name.id)
     c2 = await create_cohort(conn, name_id=name.id)
 
-    ids = await search_cohorts(conn, exclude_ids=[c1.id])
+    ids, _total = await search_cohorts(conn, exclude_ids=[c1.id])
     assert c1.id not in ids
     assert c2.id in ids
 
@@ -124,13 +124,13 @@ async def test_pagination(conn, redis_client):
         c = await create_cohort(conn, name_id=name.id)
         created.append(c.id)
 
-    page1 = await search_cohorts(
+    page1, _total = await search_cohorts(
         conn, search=f"page-{tag}", limit_count=2, offset_count=0
     )
-    page2 = await search_cohorts(
+    page2, _total = await search_cohorts(
         conn, search=f"page-{tag}", limit_count=2, offset_count=2
     )
-    page3 = await search_cohorts(
+    page3, _total = await search_cohorts(
         conn, search=f"page-{tag}", limit_count=2, offset_count=4
     )
 
@@ -146,7 +146,7 @@ async def test_active_only_default(conn, redis_client):
     """Inactive cohorts excluded by default."""
     c = await create_cohort(conn, active=False)
 
-    ids = await search_cohorts(conn)
+    ids, _total = await search_cohorts(conn)
     assert c.id not in ids
 
 
@@ -155,5 +155,5 @@ async def test_active_only_false_includes_inactive(conn, redis_client):
     name = await create_name(conn, f"inactive-{_u()}", redis_client)
     c = await create_cohort(conn, active=False, name_id=name.id)
 
-    ids = await search_cohorts(conn, search=name.name, active_only=False)
+    ids, _total = await search_cohorts(conn, search=name.name, active_only=False)
     assert c.id in ids

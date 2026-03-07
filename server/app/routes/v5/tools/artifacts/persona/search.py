@@ -26,8 +26,8 @@ async def search_personas(
     active_only: bool = True,
     limit_count: int = 20,
     offset_count: int = 0,
-) -> list[UUID]:
-    """Search persona artifacts by filters. Returns IDs only."""
+) -> tuple[list[UUID], int]:
+    """Search persona artifacts by filters. Returns (IDs, total_count)."""
     conditions: list[str] = []
     params: list[object] = []
     idx = 1

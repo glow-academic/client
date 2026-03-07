@@ -26,7 +26,7 @@ async def test_bare_search_returns_results(conn, redis_client):
     name = await create_name(conn, f"bare-{_u()}", redis_client)
     f = await create_field(conn, name_id=name.id)
 
-    ids = await search_fields(conn)
+    ids, _total = await search_fields(conn)
     assert f.id in ids
 
 
@@ -39,7 +39,7 @@ async def test_text_search_filters_by_name(conn, redis_client):
     f1 = await create_field(conn, name_id=name_match.id)
     f2 = await create_field(conn, name_id=name_other.id)
 
-    ids = await search_fields(conn, search=f"match-{tag}")
+    ids, _total = await search_fields(conn, search=f"match-{tag}")
     assert f1.id in ids
     assert f2.id not in ids
 
@@ -52,7 +52,7 @@ async def test_text_search_filters_by_description(conn, redis_client):
     f1 = await create_field(conn, description_id=desc.id)
     f2 = await create_field(conn)
 
-    ids = await search_fields(conn, search=f"desc-{tag}")
+    ids, _total = await search_fields(conn, search=f"desc-{tag}")
     assert f1.id in ids
     assert f2.id not in ids
 
@@ -65,7 +65,7 @@ async def test_department_filter(conn, redis_client):
     f1 = await create_field(conn, department_ids=[d1.id])
     f2 = await create_field(conn, department_ids=[d2.id])
 
-    ids = await search_fields(conn, department_ids=[d1.id])
+    ids, _total = await search_fields(conn, department_ids=[d1.id])
     assert f1.id in ids
     assert f2.id not in ids
 
@@ -78,7 +78,7 @@ async def test_exclude_ids(conn, redis_client):
     f1 = await create_field(conn, name_id=n1.id)
     f2 = await create_field(conn, name_id=n2.id)
 
-    ids = await search_fields(conn, search=f"excl-{tag}", exclude_ids=[f1.id])
+    ids, _total = await search_fields(conn, search=f"excl-{tag}", exclude_ids=[f1.id])
     assert f1.id not in ids
     assert f2.id in ids
 
@@ -92,13 +92,13 @@ async def test_pagination(conn, redis_client):
         f = await create_field(conn, name_id=name.id)
         created.append(f.id)
 
-    page1 = await search_fields(
+    page1, _total = await search_fields(
         conn, search=f"page-{tag}", limit_count=2, offset_count=0
     )
-    page2 = await search_fields(
+    page2, _total = await search_fields(
         conn, search=f"page-{tag}", limit_count=2, offset_count=2
     )
-    page3 = await search_fields(
+    page3, _total = await search_fields(
         conn, search=f"page-{tag}", limit_count=2, offset_count=4
     )
 
@@ -114,7 +114,7 @@ async def test_active_only_default(conn, redis_client):
     """Inactive fields excluded by default."""
     f = await create_field(conn, active=False)
 
-    ids = await search_fields(conn)
+    ids, _total = await search_fields(conn)
     assert f.id not in ids
 
 
@@ -123,5 +123,5 @@ async def test_active_only_false_includes_inactive(conn, redis_client):
     name = await create_name(conn, f"inactive-{_u()}", redis_client)
     f = await create_field(conn, active=False, name_id=name.id)
 
-    ids = await search_fields(conn, search=name.name, active_only=False)
+    ids, _total = await search_fields(conn, search=name.name, active_only=False)
     assert f.id in ids
