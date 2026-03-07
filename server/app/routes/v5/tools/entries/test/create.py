@@ -15,6 +15,7 @@ async def create_test(
     description: str = "",
     num_invocations: int = 0,
     infinite_mode: bool = False,
+    is_dynamic: bool = True,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateTestResponse:
@@ -23,9 +24,9 @@ async def create_test(
         """
         INSERT INTO test_entry (
             call_id, name, description, num_invocations,
-            infinite_mode, active, mcp, generated
+            infinite_mode, is_dynamic, active, mcp, generated
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, true)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, true)
         RETURNING id
         """,
         call_id,
@@ -33,6 +34,7 @@ async def create_test(
         description,
         num_invocations,
         infinite_mode,
+        is_dynamic,
         not soft,
         mcp,
     )

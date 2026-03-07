@@ -11,10 +11,12 @@ All test lifecycle events route through here:
 Flow:
 1. If completed_invocation_id → insert into test_completion_entry
 2. If complete_all → mark all remaining invocations completed → emit test_ended
-3. Get context SQL → next invocation_entry + use_custom
+3. Get context SQL → next invocation_entry + use_custom + is_dynamic
 4. All done? → emit test_ended
 5. use_custom && !force_proceed → emit test_started (lobby)
 6. Resolve invocation → refresh → emit test_invocation_started
+   - is_dynamic=true (default): client triggers test_run → LLM re-run → grade
+   - is_dynamic=false (generation): skip re-run, grade existing output directly
 """
 
 from __future__ import annotations
@@ -22,7 +24,7 @@ from __future__ import annotations
 import uuid
 from typing import Any, cast
 
-from app.infra.globals import get_internal_sio
+from app.infra.globals import get_internal_sio, get_redis_client
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.routes.v5.socket.internal.test.types import (
     TestErrorData,
@@ -201,12 +203,15 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
             await conn.execute("REFRESH MATERIALIZED VIEW test_invocation_mv")
         await invalidate_tags(["test", "tests", "benchmark"], redis=get_redis_client())
 
+        is_dynamic = ctx.is_dynamic if ctx.is_dynamic is not None else True
+
         await internal_sio.emit(
             "test_invocation_started",
             {
                 "sid": sid,
                 "test_id": str(test_id),
                 "test_invocation_id": str(test_invocation_id),
+                "is_dynamic": is_dynamic,
             },
         )
 

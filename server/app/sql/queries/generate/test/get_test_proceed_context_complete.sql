@@ -42,7 +42,8 @@ CREATE TYPE types.q_get_test_proceed_context_v4_result AS (
     completed_count int,
     invocation_entry_id uuid,
     -- TODO: add use_custom column to invocation_entry
-    use_custom boolean
+    use_custom boolean,
+    is_dynamic boolean
 );
 
 CREATE OR REPLACE FUNCTION socket_get_test_proceed_context_v4(
@@ -60,7 +61,13 @@ DECLARE
     v_completed_count int;
     v_next_invocation_entry_id uuid;
     v_use_custom boolean;
+    v_is_dynamic boolean;
 BEGIN
+    -- 0. Get is_dynamic from test_entry
+    SELECT te.is_dynamic INTO v_is_dynamic
+    FROM test_entry te
+    WHERE te.id = p_test_id;
+
     -- 1. Resolve benchmark_id from test_benchmark_entry
     SELECT tbe.benchmark_id INTO v_benchmark_id
     FROM test_benchmark_entry tbe
@@ -100,7 +107,7 @@ BEGIN
     IF v_next_invocation_entry_id IS NULL THEN
         RETURN QUERY
         SELECT ARRAY[
-            ROW(v_total_invocations, v_completed_count, NULL::uuid, false)
+            ROW(v_total_invocations, v_completed_count, NULL::uuid, false, v_is_dynamic)
                 ::types.q_get_test_proceed_context_v4_result
         ];
         RETURN;
@@ -114,7 +121,7 @@ BEGIN
 
     RETURN QUERY
     SELECT ARRAY[
-        ROW(v_total_invocations, v_completed_count, v_next_invocation_entry_id, v_use_custom)
+        ROW(v_total_invocations, v_completed_count, v_next_invocation_entry_id, v_use_custom, v_is_dynamic)
             ::types.q_get_test_proceed_context_v4_result
     ];
 END;

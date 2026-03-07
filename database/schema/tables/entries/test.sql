@@ -50,7 +50,8 @@ CREATE TABLE public.test_entry (
     call_id uuid,
     name text DEFAULT ''::text NOT NULL,
     description text DEFAULT ''::text NOT NULL,
-    num_invocations integer DEFAULT 0 NOT NULL
+    num_invocations integer DEFAULT 0 NOT NULL,
+    is_dynamic boolean DEFAULT true NOT NULL
 );
 
 

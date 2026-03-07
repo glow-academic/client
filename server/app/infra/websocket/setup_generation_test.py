@@ -67,12 +67,14 @@ async def setup_generation_test(
         raise ValueError("setup_generation_test requires at least one agent")
 
     # 1. Create the test entry (finite mode — one invocation per agent)
+    # is_dynamic=False: skip LLM re-run, grade existing agent output directly
     test_result = await create_test(
         conn,
         profiles_id=profile_id,
         name="generation_resolution",
         num_invocations=len(agents),
         infinite_mode=False,
+        is_dynamic=False,
     )
     test_id = test_result.id
 
