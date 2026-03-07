@@ -33,6 +33,7 @@ CREATE MATERIALIZED VIEW public.test_mv AS
     t.description AS test_description,
     t.num_invocations,
     t.infinite_mode,
+    t.is_dynamic,
     COALESCE(ba_archive.archived, false) AS archived,
     t.created_at AS test_created_at
    FROM ((((public.test_entry t

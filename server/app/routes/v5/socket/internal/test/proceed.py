@@ -30,6 +30,7 @@ from app.routes.v5.socket.internal.test.types import (
     TestErrorData,
     TestProceedData,
 )
+from app.routes.v5.tools.entries.test.get import get_tests
 from app.routes.v5.tools.entries.test_completion.create import (
     create_test_completion,
 )
@@ -144,15 +145,9 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
                 bypass_mv=True,
             )
 
-            # Get is_dynamic from test_entry
-            # TODO: expose is_dynamic on test_mv / GetTestResponse so we can
-            # use get_tests() instead of this direct query
-            is_dynamic_row = await conn.fetchval(
-                "SELECT is_dynamic FROM test_entry WHERE id = $1",
-                test_id,
-            )
+            tests = await get_tests(conn, ids=[test_id])
 
-        is_dynamic = is_dynamic_row if is_dynamic_row is not None else True
+        is_dynamic = tests[0].is_dynamic if tests else True
         total_invocations = len(all_invocations)
         completed = [inv for inv in all_invocations if inv.invocation_completed]
         uncompleted = [

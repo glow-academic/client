@@ -19,5 +19,6 @@ class GetTestResponse(BaseModel):
     test_description: str
     num_invocations: int
     infinite_mode: bool
+    is_dynamic: bool
     archived: bool
     test_created_at: datetime

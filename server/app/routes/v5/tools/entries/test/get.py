@@ -22,7 +22,7 @@ async def get_tests(
         SELECT
             test_id, eval_id, profile_id, department_ids,
             test_name, test_description,
-            num_invocations, infinite_mode, archived, test_created_at
+            num_invocations, infinite_mode, is_dynamic, archived, test_created_at
         FROM {MV_NAME}
         WHERE test_id = ANY($1)
         """,
@@ -39,6 +39,7 @@ async def get_tests(
             test_description=r["test_description"],
             num_invocations=r["num_invocations"],
             infinite_mode=r["infinite_mode"],
+            is_dynamic=r["is_dynamic"],
             archived=r["archived"],
             test_created_at=r["test_created_at"],
         )
