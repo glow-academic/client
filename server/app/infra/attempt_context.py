@@ -2,6 +2,7 @@
 
 Attempt detail is a single-attempt view with chats, messages, and nested entries.
 Uses attempt_mv, attempt_chat_mv, attempt_message_mv, and 10 child entry MVs.
+Also fetches entry MVs for files/images/videos and previous attempts for continuation.
 """
 
 from __future__ import annotations
@@ -37,6 +38,9 @@ from app.routes.v5.tools.entries.attempt_responses.search import (
     search_attempt_responses,
 )
 from app.routes.v5.tools.entries.attempt_strength.search import search_attempt_strengths
+from app.routes.v5.tools.entries.files.search import search_files
+from app.routes.v5.tools.entries.images.search import search_images
+from app.routes.v5.tools.entries.videos.search import search_videos
 from app.routes.v5.tools.resources.documents.get import get_documents
 from app.routes.v5.tools.resources.images.get import get_images
 from app.routes.v5.tools.resources.objectives.get import get_objectives
@@ -66,6 +70,8 @@ async def resolve_attempt_context(
       - attempts, chats, messages (Phase 1)
       - contents, strengths, improvements, hints, grades, responses (Phase 2)
       - highlights, replacements, feedbacks, analyses (Phase 3)
+      - files, images, videos (Phase 5 — entry MVs for upload enrichment)
+      - previous_attempts, previous_chats (Phase 1B — for continuation options)
 
     Resources:
       - scenarios, personas, images, videos, documents, objectives,
@@ -98,6 +104,38 @@ async def resolve_attempt_context(
 
     if not attempts:
         return _empty_context()
+
+    attempt = attempts[0]
+
+    # ── Phase 1B: Previous attempts + chats (for continuation) ───
+    async def _fetch_previous_attempts() -> list:
+        if not attempt.profile_id or attempt.practice:
+            return []
+        async with pool.acquire() as c:
+            return await search_attempts(
+                c,
+                profile_ids=[attempt.profile_id],
+                simulation_ids=(
+                    [attempt.simulation_id] if attempt.simulation_id else None
+                ),
+                practice=False,
+                limit=100000,
+            )
+
+    previous_attempts = await _fetch_previous_attempts()
+    other_attempt_ids = [
+        a.attempt_id for a in previous_attempts if a.attempt_id != attempt_id
+    ]
+
+    async def _fetch_previous_chats() -> list:
+        if not other_attempt_ids:
+            return []
+        async with pool.acquire() as c:
+            return await search_attempt_chats(
+                c, attempt_ids=other_attempt_ids, sort_order="asc", limit=100000
+            )
+
+    previous_chats = await _fetch_previous_chats()
 
     # ── Phase 2: Child entries by message_ids/chat_ids ──────────────
     message_ids = [m.message_id for m in messages]
@@ -220,7 +258,6 @@ async def resolve_attempt_context(
     profile_ids_set: set[UUID] = set()
 
     # From attempt
-    attempt = attempts[0]
     if attempt.simulation_id:
         simulation_ids_set.add(attempt.simulation_id)
     if attempt.profile_id:
@@ -253,12 +290,30 @@ async def resolve_attempt_context(
         for sid in ch.standard_ids or []:
             standard_ids_set.add(sid)
 
-    # ── Phase 5: Parallel resource hydration ────────────────────────
+    # ── Phase 5: Parallel resource hydration + entry MV fetches ───
     async def _get(getter: Callable, ids_set: set[UUID]) -> list:
         if not ids_set:
             return []
         async with pool.acquire() as c:
             return await getter(c, list(ids_set), redis, bypass_cache=bypass_cache)
+
+    # Entry MV fetches for file enrichment (like scenario pattern)
+    async def _fetch_file_entries() -> list:
+        # Documents have file_id — collect from document resources after hydration
+        # We need document resources first, so we'll fetch file entries after
+        return []
+
+    async def _fetch_image_entries() -> list:
+        if not image_ids_set:
+            return []
+        async with pool.acquire() as c:
+            return await search_images(c, images_ids=list(image_ids_set), limit=200)
+
+    async def _fetch_video_entries() -> list:
+        if not video_ids_set:
+            return []
+        async with pool.acquire() as c:
+            return await search_videos(c, videos_ids=list(video_ids_set), limit=200)
 
     (
         scenarios_res,
@@ -275,6 +330,8 @@ async def resolve_attempt_context(
         standards_res,
         simulations_res,
         profiles_res,
+        image_entries,
+        video_entries,
     ) = await asyncio.gather(
         _get(get_scenarios, scenario_ids_set),
         _get(get_personas, persona_ids_set),
@@ -290,7 +347,20 @@ async def resolve_attempt_context(
         _get(get_standards, standard_ids_set),
         _get(get_simulations, simulation_ids_set),
         _get(get_profiles, profile_ids_set),
+        _fetch_image_entries(),
+        _fetch_video_entries(),
     )
+
+    # Phase 5B: File entries need document file_ids (from hydrated documents)
+    all_doc_file_ids = [d.file_id for d in documents_res if d.file_id]
+
+    async def _fetch_file_entries_real() -> list:
+        if not all_doc_file_ids:
+            return []
+        async with pool.acquire() as c:
+            return await search_files(c, files_ids=all_doc_file_ids, limit=200)
+
+    file_entries = await _fetch_file_entries_real()
 
     # ── Phase 6: Return ArtifactContext ─────────────────────────────
     return ArtifactContext(
@@ -312,6 +382,11 @@ async def resolve_attempt_context(
             "replacements": replacements,
             "feedbacks": feedbacks,
             "analyses": analyses,
+            "files": file_entries,
+            "images": image_entries,
+            "videos": video_entries,
+            "previous_attempts": previous_attempts,
+            "previous_chats": previous_chats,
         },
         resources={
             "scenarios": ResourcePair(selected=scenarios_res, suggestions=[]),

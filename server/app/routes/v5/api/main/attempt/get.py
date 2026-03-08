@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.attempt_context import resolve_attempt_context
 from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.attempt.permissions import (
     check_attempt_access,
     compute_achieved_standards,
@@ -68,8 +69,6 @@ from app.routes.v5.api.main.attempt.types import (
     TimerData,
     VideoEntry,
 )
-from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
-from app.routes.v5.tools.entries.uploads.get import get_upload_list_view_internal
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -130,28 +129,23 @@ async def get_attempt_internal(
     and returns AttemptInternalData. No caching.
     """
     try:
-        # Resolve profile_id (artifact) to profiles_id (resource) + role
-        requester_row = await conn.fetchrow(
-            """
-            SELECT ppj.profiles_id, pr.role
-            FROM profile_profiles_junction ppj
-            JOIN profiles_resource pr ON pr.id = ppj.profiles_id
-            WHERE ppj.profile_id = $1 AND ppj.active = true
-            LIMIT 1
-            """,
-            profile_id,
-        )
-        profiles_id = requester_row["profiles_id"] if requester_row else None
-        requester_role: str | None = requester_row["role"] if requester_row else None
-
         pool = get_pool()
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
+        redis = get_redis_client()
+
+        # Resolve profile identity (canonical pattern — no inline SQL)
+        requester = await resolve_profile_identity_context(
+            conn, profile_id, redis, bypass_cache
+        )
+        profiles_id = requester.profiles_id if requester else None
+        requester_role: str | None = requester.role if requester else None
+
         # === RESOLVE CONTEXT ===
         ctx = await resolve_attempt_context(
             pool,
-            get_redis_client(),
+            redis,
             attempt_id=attempt_id,
             bypass_cache=bypass_cache,
         )
@@ -196,8 +190,8 @@ async def get_attempt_internal(
         profiles_list = _res("profiles")
 
         # Build resource lookup maps
-        simulation_map = {s.simulation_id: s for s in simulations_list}
-        profile_map = {p.profile_id: p for p in profiles_list}
+        simulation_map = {s.id: s for s in simulations_list}
+        profile_map = {p.id: p for p in profiles_list}
 
         # === BUILD LOOKUP DICTS ===
         contents_by_message: dict[UUID, list] = _defaultdict(list)
@@ -313,64 +307,48 @@ async def get_attempt_internal(
             "standards": {},
         }
 
+        # Build entry MV lookup maps (like scenario pattern — no upload resolution)
+        image_entry_map = {
+            i.images_id: i for i in ctx.entries.get("images", [])
+        }
+        video_entry_map = {
+            v.videos_id: v for v in ctx.entries.get("videos", [])
+        }
+        file_entry_map = {
+            f.files_id: f for f in ctx.entries.get("files", [])
+        }
+
         for item in _res("images"):
-            if item.image_id:
-                entry_upload_id = item.upload_id
-                if item.upload_id:
-                    async with pool.acquire() as c:
-                        upload_view = await get_upload_list_view_internal(
-                            conn=c,
-                            files_id_filter=item.upload_id,
-                            bypass_cache=bypass_cache,
-                        )
-                        if upload_view.items:
-                            entry_upload_id = upload_view.items[0].upload_id
-                resource_meta["images"][item.image_id] = {
+            if item.id:
+                entry = image_entry_map.get(item.id)
+                resource_meta["images"][item.id] = {
                     "name": item.name,
                     "description": item.description,
-                    "upload_id": entry_upload_id,
+                    "upload_id": entry.upload_id if entry else None,
                 }
 
         for item in _res("videos"):
-            if item.video_id:
-                entry_upload_id = item.upload_id
-                if item.upload_id:
-                    async with pool.acquire() as c:
-                        upload_view = await get_upload_list_view_internal(
-                            conn=c,
-                            files_id_filter=item.upload_id,
-                            bypass_cache=bypass_cache,
-                        )
-                        if upload_view.items:
-                            entry_upload_id = upload_view.items[0].upload_id
-                resource_meta["videos"][item.video_id] = {
+            if item.id:
+                entry = video_entry_map.get(item.id)
+                resource_meta["videos"][item.id] = {
                     "name": item.name,
                     "description": item.description,
-                    "upload_id": entry_upload_id,
+                    "upload_id": entry.upload_id if entry else None,
                 }
 
         for item in _res("documents"):
-            if item.document_id:
-                entry_upload_id = item.upload_id
-                if item.upload_id:
-                    async with pool.acquire() as c:
-                        upload_view = await get_upload_list_view_internal(
-                            conn=c,
-                            files_id_filter=item.upload_id,
-                            bypass_cache=bypass_cache,
-                        )
-                        if upload_view.items:
-                            entry_upload_id = upload_view.items[0].upload_id
-                resource_meta["documents"][item.document_id] = {
+            if item.id:
+                file_entry = file_entry_map.get(item.file_id) if item.file_id else None
+                resource_meta["documents"][item.id] = {
                     "name": item.name,
                     "description": item.description,
-                    "upload_id": entry_upload_id,
+                    "upload_id": file_entry.upload_id if file_entry else None,
                     "template": item.template,
                 }
 
         for item in _res("personas"):
-            if item.persona_id:
-                resource_meta["personas"][item.persona_id] = {
+            if item.id:
+                resource_meta["personas"][item.id] = {
                     "name": item.name,
                     "icon": item.icon,
                     "color": item.color,
@@ -379,36 +357,36 @@ async def get_attempt_internal(
                 }
 
         for item in _res("objectives"):
-            if item.objective_id:
-                resource_meta["objectives"][item.objective_id] = {
+            if item.id:
+                resource_meta["objectives"][item.id] = {
                     "objective": item.objective,
                 }
 
         for item in _res("questions"):
-            if item.question_id:
-                resource_meta["questions"][item.question_id] = {
+            if item.id:
+                resource_meta["questions"][item.id] = {
                     "question_text": item.question_text,
                     "allow_multiple": item.allow_multiple,
                     "time": item.time,
                 }
 
         for item in _res("options"):
-            if item.option_id:
-                resource_meta["options"][item.option_id] = {
+            if item.id:
+                resource_meta["options"][item.id] = {
                     "option_text": item.option_text,
                     "is_correct": item.is_correct,
                     "question_id": item.question_id,
                 }
 
         for item in _res("problem_statements"):
-            if item.problem_statement_id:
-                resource_meta["problem_statements"][item.problem_statement_id] = {
+            if item.id:
+                resource_meta["problem_statements"][item.id] = {
                     "problem_statement": item.problem_statement,
                 }
 
         for item in _res("scenarios"):
-            if item.scenario_id:
-                resource_meta["scenarios"][item.scenario_id] = {
+            if item.id:
+                resource_meta["scenarios"][item.id] = {
                     "name": item.name,
                     "description": item.description,
                 }
@@ -423,8 +401,8 @@ async def get_attempt_internal(
                 }
 
         for item in _res("standard_groups"):
-            if item.standard_group_id:
-                resource_meta["standard_groups"][item.standard_group_id] = {
+            if item.id:
+                resource_meta["standard_groups"][item.id] = {
                     "name": item.name,
                     "description": item.description,
                     "points": item.points,
@@ -432,8 +410,8 @@ async def get_attempt_internal(
                 }
 
         for item in _res("standards"):
-            if item.standard_id:
-                resource_meta["standards"][item.standard_id] = {
+            if item.id:
+                resource_meta["standards"][item.id] = {
                     "name": item.name,
                     "description": item.description,
                     "points": item.points,
@@ -941,41 +919,21 @@ async def get_attempt_internal(
             and bool(chat_entry_id)
         )
 
+        # === COMPUTE CONTINUATION OPTIONS (from context entries) ===
         continuation_options = None
-        if is_lobby and not practice and attempt_item.profile_id:
+        previous_chats = ctx.entries.get("previous_chats", [])
+        if is_lobby and not practice and previous_chats:
             try:
-                from app.routes.v5.tools.entries.attempt.search import search_attempts
-
-                async with pool.acquire() as c:
-                    prev_attempts = await search_attempts(
-                        c,
-                        profile_ids=[attempt_item.profile_id],
-                        simulation_ids=(
-                            [attempt_item.simulation_id]
-                            if attempt_item.simulation_id
-                            else None
-                        ),
-                        practice=False,
-                        limit=100000,
-                    )
-                other_ids = [
-                    a.attempt_id for a in prev_attempts if a.attempt_id != attempt_id
-                ]
-                if other_ids:
-                    async with pool.acquire() as c:
-                        prev_chats = await search_attempt_chats(
-                            c, attempt_ids=other_ids, sort_order="asc", limit=100000
-                        )
-                    scenario_names: dict[str, str] = {}
-                    for sid, meta in resource_meta.get("scenarios", {}).items():
-                        name = meta.get("name") if isinstance(meta, dict) else None
-                        if name:
-                            scenario_names[str(sid)] = name
-                    continuation_options = compute_continuation_options(
-                        current_chats=chats_result,
-                        previous_chats=prev_chats,
-                        scenario_names=scenario_names,
-                    )
+                scenario_names: dict[str, str] = {}
+                for sid, meta in resource_meta.get("scenarios", {}).items():
+                    name = meta.get("name") if isinstance(meta, dict) else None
+                    if name:
+                        scenario_names[str(sid)] = name
+                continuation_options = compute_continuation_options(
+                    current_chats=chats_result,
+                    previous_chats=previous_chats,
+                    scenario_names=scenario_names,
+                )
             except Exception:
                 continuation_options = None
 
