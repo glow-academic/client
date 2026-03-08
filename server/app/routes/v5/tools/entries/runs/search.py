@@ -1,6 +1,5 @@
-"""runs/search internal — reusable data-access layer."""
+"""runs/search — filtered/paginated query against runs_mv."""
 
-import json
 from datetime import datetime
 from uuid import UUID
 
@@ -8,13 +7,6 @@ import asyncpg  # type: ignore
 from pydantic import BaseModel, Field
 
 from app.infra.docs.resolve_mv_source import resolve_mv_source
-from app.infra.globals import get_redis_client
-from app.utils.cache.cache_key import cache_key
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-LIST_SQL_PATH = "app/sql/queries/views/run/list/get_run_list_view_complete.sql"
 
 MV_NAME = "runs_mv"
 
@@ -41,107 +33,6 @@ class RunViewItem(BaseModel):
     model_ids: list[UUID] | None = None
     provider_ids: list[UUID] | None = None
     pricing: list[RunPricingItem] = Field(default_factory=list)
-
-
-class GetRunListViewResponse(BaseModel):
-    """Response containing run list data."""
-
-    items: list[RunViewItem] = Field(default_factory=list, description="Run data items")
-    total_count: int = Field(default=0, description="Total count before pagination")
-
-
-async def search_runs_entries_internal(
-    conn: asyncpg.Connection,
-    search: str | None = None,
-    limit_count: int | None = 20,
-    offset_count: int | None = 0,
-    group_id: UUID | None = None,
-    input_pricing_pricing_id: UUID | None = None,
-    output_pricing_pricing_id: UUID | None = None,
-    cached_pricing_pricing_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> list[dict]:
-    """Internal function to search runs entries."""
-    if limit_count is not None and limit_count <= 0:
-        return []
-
-    tags = ["entries", "runs"]
-    cache_key_val = cache_key(
-        "/api/v5/entries/runs/search",
-        {
-            "search": search,
-            "limit_count": limit_count,
-            "offset_count": offset_count,
-            "group_id": str(group_id) if group_id else None,
-            "input_pricing_pricing_id": str(input_pricing_pricing_id)
-            if input_pricing_pricing_id
-            else None,
-            "output_pricing_pricing_id": str(output_pricing_pricing_id)
-            if output_pricing_pricing_id
-            else None,
-            "cached_pricing_pricing_id": str(cached_pricing_pricing_id)
-            if cached_pricing_pricing_id
-            else None,
-        },
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return list(cached.get("items", []))
-
-    result = await conn.fetchval(
-        """
-        SELECT COALESCE(jsonb_agg(row_data), '[]'::jsonb)
-        FROM (
-            SELECT jsonb_build_object(
-                'run_id', m.run_id,
-                'group_id', m.group_id,
-                'input_tokens', m.input_tokens,
-                'output_tokens', m.output_tokens,
-                'cached_input_tokens', m.cached_input_tokens,
-                'run_created_at', m.run_created_at,
-                'agent_ids', m.agent_ids,
-                'model_ids', m.model_ids,
-                'provider_ids', m.provider_ids,
-                'input_pricing_count', m.input_pricing_count,
-                'input_pricing_pricing_id', m.input_pricing_pricing_id,
-                'output_pricing_count', m.output_pricing_count,
-                'output_pricing_pricing_id', m.output_pricing_pricing_id,
-                'cached_pricing_count', m.cached_pricing_count,
-                'cached_pricing_pricing_id', m.cached_pricing_pricing_id
-            ) AS row_data
-            FROM runs_mv m
-            WHERE ($1::uuid IS NULL OR m.group_id = $1)
-              AND ($2::uuid IS NULL OR m.input_pricing_pricing_id = $2)
-              AND ($3::uuid IS NULL OR m.output_pricing_pricing_id = $3)
-              AND ($4::uuid IS NULL OR m.cached_pricing_pricing_id = $4)
-            ORDER BY m.run_created_at DESC
-            LIMIT $5
-            OFFSET $6
-        ) sub
-        """,
-        group_id,
-        input_pricing_pricing_id,
-        output_pricing_pricing_id,
-        cached_pricing_pricing_id,
-        limit_count,
-        offset_count,
-    )
-
-    items: list[dict] = (
-        json.loads(result) if isinstance(result, str) else (result or [])
-    )
-
-    await set_cached(
-        cache_key_val,
-        {"items": items if isinstance(items, list) else []},
-        ttl=60,
-        tags=tags,
-        redis=get_redis_client(),
-    )
-
-    return items
 
 
 def _build_pricing_list(item: object) -> list[RunPricingItem]:
@@ -172,90 +63,6 @@ def _build_pricing_list(item: object) -> list[RunPricingItem]:
             )
         )
     return pricing
-
-
-async def get_run_list_entries_internal(
-    conn: asyncpg.Connection,
-    group_id_filter: UUID | None = None,
-    group_ids: list[UUID] | None = None,
-    date_from: datetime | None = None,
-    date_to: datetime | None = None,
-    sort_by: str = "date",
-    sort_order: str = "desc",
-    page_limit: int = 50,
-    page_offset: int = 0,
-    bypass_cache: bool = False,
-    profile_id_filter: UUID | None = None,
-) -> GetRunListViewResponse:
-    """Internal function for fetching run data from runs_mv."""
-    from app.sql.types import GetRunListViewSqlParams
-
-    cache_key_val = cache_key(
-        "entries/run/list/get",
-        {
-            "group_id_filter": str(group_id_filter) if group_id_filter else None,
-            "group_ids": [str(g) for g in group_ids] if group_ids else None,
-            "date_from": date_from.isoformat() if date_from else None,
-            "date_to": date_to.isoformat() if date_to else None,
-            "sort_by": sort_by,
-            "sort_order": sort_order,
-            "page_limit": page_limit,
-            "page_offset": page_offset,
-            "profile_id_filter": str(profile_id_filter) if profile_id_filter else None,
-        },
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return GetRunListViewResponse.model_validate(cached)
-
-    params = GetRunListViewSqlParams(
-        group_id_filter=group_id_filter,
-        group_ids=group_ids,
-        date_from=date_from or datetime.min,
-        date_to=date_to or datetime.max,
-        sort_by_field=sort_by,
-        sort_order_field=sort_order,
-        page_limit_val=page_limit,
-        page_offset_val=page_offset,
-        profile_id_filter=profile_id_filter,
-    )
-
-    result = await execute_sql_typed(conn, LIST_SQL_PATH, params=params)
-
-    items: list[RunViewItem] = []
-    if result and result.items:
-        for item in result.items:
-            items.append(
-                RunViewItem(
-                    run_id=item.run_id,
-                    group_id=item.group_id,
-                    input_tokens=item.input_tokens or 0,
-                    output_tokens=item.output_tokens or 0,
-                    cached_input_tokens=item.cached_input_tokens or 0,
-                    run_created_at=item.run_created_at,
-                    agent_ids=list(item.agent_ids) if item.agent_ids else None,
-                    model_ids=list(item.model_ids) if item.model_ids else None,
-                    provider_ids=list(item.provider_ids) if item.provider_ids else None,
-                    pricing=_build_pricing_list(item),
-                )
-            )
-
-    response = GetRunListViewResponse(
-        items=items,
-        total_count=result.total_count or 0 if result else 0,
-    )
-
-    await set_cached(
-        cache_key_val,
-        response.model_dump(mode="json"),
-        ttl=60,
-        tags=["entries", "run", "list"],
-        redis=get_redis_client(),
-    )
-
-    return response
 
 
 async def search_runs(
