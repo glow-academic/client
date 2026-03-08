@@ -33,10 +33,10 @@ from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_cha
 from app.routes.v5.tools.entries.attempt_home.create import create_attempt_home
 from app.routes.v5.tools.entries.attempt_practice.create import create_attempt_practice
 from app.routes.v5.tools.entries.calls.create import create_call
-from app.routes.v5.tools.entries.home.get import get_home_entries_internal
+from app.routes.v5.tools.entries.home.get import get_homes
 from app.routes.v5.tools.entries.home_chat.search import search_home_chats
 from app.routes.v5.tools.entries.persona.create import create_persona
-from app.routes.v5.tools.entries.practice.get import get_practice_entries_internal
+from app.routes.v5.tools.entries.practice.get import get_practices
 from app.routes.v5.tools.entries.practice_chat.search import search_practice_chats
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.resources.profile_personas.get import (
@@ -95,26 +95,22 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                     raise ValueError("Either practice_id or home_id is required")
 
                 if is_practice:
-                    entries = await get_practice_entries_internal(
-                        conn, [parent_id], bypass_cache=True
-                    )
+                    entries = await get_practices(conn, [parent_id])
                 else:
-                    entries = await get_home_entries_internal(
-                        conn, [parent_id], bypass_cache=True
-                    )
+                    entries = await get_homes(conn, [parent_id])
 
                 if not entries:
                     raise ValueError(f"Parent entry not found: {parent_id}")
                 parent_entry = entries[0]
 
                 # 3. Resolve persona_id from parent's profile_personas
-                persona_ids = parent_entry.get("persona_ids") or []
+                persona_ids = parent_entry.profile_ids or []
                 if not persona_ids:
                     raise ValueError("No profile personas found in parent")
 
                 profile_personas = await get_profile_personas(
                     conn,
-                    [uuid.UUID(pid) for pid in persona_ids],
+                    persona_ids,
                     redis=get_redis_client(),
                     bypass_cache=True,
                 )
@@ -147,13 +143,13 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 num_chats = max(len(chat_entries), 1)
 
                 # 5. Resolve simulation name/description
-                simulation_ids = parent_entry.get("simulation_ids") or []
+                simulation_ids = parent_entry.simulation_ids or []
                 sim_name = None
                 sim_desc = None
                 if simulation_ids:
                     simulations = await get_simulations(
                         conn,
-                        [uuid.UUID(sid_str) for sid_str in simulation_ids[:1]],
+                        simulation_ids[:1],
                         get_redis_client(),
                         bypass_cache=True,
                     )
