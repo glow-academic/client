@@ -280,3 +280,11 @@ class ReportsResponse(BaseModel):
     simulation_options: list[FilterOption] = Field(default_factory=list)
     profile_options: list[FilterOption] = Field(default_factory=list)
     scenario_options: list[FilterOption] = Field(default_factory=list)
+
+
+class ExportReportsApiResponse(BaseModel):
+    """Response model for reports export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
