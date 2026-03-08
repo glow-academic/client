@@ -7,10 +7,7 @@ from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.test_invocation.create import create_test_invocation
-from app.routes.v5.tools.entries.test_invocation.get import (
-    get_test_invocation_internal,
-    get_test_invocations,
-)
+from app.routes.v5.tools.entries.test_invocation.get import get_test_invocations
 from app.routes.v5.tools.entries.test_invocation.refresh import refresh_test_invocation
 from app.routes.v5.tools.entries.test_invocation.search import (
     search_test_invocation_entries_internal,
@@ -52,13 +49,6 @@ async def get_test_invocation_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description=(
                     "Batch retrieves test_invocation entries by IDs from test_invocation_mv, "
                     "including related grade, run, group, and model/voice/temperature data."
-                ),
-            ),
-            get_operation_info(
-                get_test_invocation_internal,
-                description=(
-                    "Internal view function for reading lean benchmark invocation rows. "
-                    "Supports filtering by test_id and invocation_ids with caching."
                 ),
             ),
             get_operation_info(

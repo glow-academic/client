@@ -9,10 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.test.create import create_test
 from app.routes.v5.tools.entries.test.get import get_tests
 from app.routes.v5.tools.entries.test.refresh import refresh_test
-from app.routes.v5.tools.entries.test.search import (
-    get_test_list_internal,
-    search_tests,
-)
+from app.routes.v5.tools.entries.test.search import search_tests
 
 
 async def get_test_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -55,13 +52,6 @@ async def get_test_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description=(
                     "Filtered paginated search against test entries "
                     "by eval_id and profile_id from test_mv."
-                ),
-            ),
-            get_operation_info(
-                get_test_list_internal,
-                description=(
-                    "Advanced list view with filtering by test IDs, departments, evals, "
-                    "archive status, date range, and search text. Supports sorting and pagination."
                 ),
             ),
         ],
