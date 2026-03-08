@@ -123,5 +123,40 @@ async def resolve_settings_theme(
     )
 
 
+async def resolve_thresholds(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    profile_id: UUID | None,
+    bypass_cache: bool = False,
+) -> dict[str, int | float]:
+    """Resolve threshold values for a profile.
+
+    Resolves profile → identity → settings_id → thresholds.
+    Returns defaults if profile or settings not found.
+    """
+    from app.infra.profile_identity_context import resolve_profile_identity_context
+
+    success, warning, danger = 85, 80, 70
+
+    if not profile_id:
+        return {"success": success, "warning": warning, "danger": danger}
+
+    identity = await resolve_profile_identity_context(
+        conn, profile_id, redis, bypass_cache=bypass_cache
+    )
+    if not identity or not identity.settings_id:
+        return {"success": success, "warning": warning, "danger": danger}
+
+    theme = await resolve_settings_theme(
+        conn, redis, identity.settings_id, bypass_cache=bypass_cache
+    )
+    if theme:
+        success = theme.success_threshold or success
+        warning = theme.warning_threshold or warning
+        danger = theme.danger_threshold or danger
+
+    return {"success": success, "warning": warning, "danger": danger}
+
+
 async def _empty() -> list:
     return []

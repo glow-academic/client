@@ -23,9 +23,7 @@ from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 from app.routes.v5.tools.resources.simulations.get import get_simulations
-from app.utils.sql_helper import execute_sql_typed
-
-ACTIVE_SETTINGS_SQL_PATH = "app/sql/queries/settings/get_active_settings_complete.sql"
+from app.infra.auth.settings import resolve_thresholds
 
 
 def _to_chat_item(r: GetAttemptChatResponse) -> ChatItem:
@@ -102,28 +100,11 @@ async def resolve_reports_context(
         return [_to_chat_item(r) for r in raw]
 
     async def _fetch_thresholds() -> dict[str, int | float]:
-        from app.sql.types import GetActiveSettingsSqlParams, GetActiveSettingsSqlRow
-
         profile_for_settings = actor_profile_id or target_profile_id
-        success, warning, danger = 85, 80, 70
-        if profile_for_settings:
-            async with pool.acquire() as c:
-                row = await execute_sql_typed(
-                    c,
-                    ACTIVE_SETTINGS_SQL_PATH,
-                    params=GetActiveSettingsSqlParams(
-                        profile_id=str(profile_for_settings),
-                        department_id=(
-                            str(department_ids[0]) if department_ids else None
-                        ),
-                    ),
-                )
-                if row:
-                    settings = GetActiveSettingsSqlRow.model_validate(row)
-                    success = settings.success_threshold or success
-                    warning = settings.warning_threshold or warning
-                    danger = settings.danger_threshold or danger
-        return {"success": success, "warning": warning, "danger": danger}
+        async with pool.acquire() as c:
+            return await resolve_thresholds(
+                c, redis, profile_for_settings, bypass_cache=bypass_cache
+            )
 
     chat_items, thresholds = await asyncio.gather(
         _fetch_chats(),

@@ -71,6 +71,8 @@ export interface OptionsProps {
   createOptionsAction?:
     | ((input: CreateDraftOptionsIn) => Promise<CreateDraftOptionsOut>)
     | undefined;
+  /** Report value changes upward (unified draft pattern — parent owns creation) */
+  onOptionsChange?: (options: Array<{ option_text: string; is_correct: boolean; question_id: string }>) => void;
   isAutosaveEnabled?: boolean;
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
   showAiGenerate?: boolean;
@@ -94,6 +96,7 @@ export function Options({
   group_id,
   create_tool_id,
   createOptionsAction,
+  onOptionsChange,
   isAutosaveEnabled = true,
   registerFlush,
   showAiGenerate = false,
@@ -160,6 +163,8 @@ export function Options({
   const optionIdMapRef = useRef<Map<string, string>>(new Map());
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const onOptionsChangeRef = useRef(onOptionsChange);
+  onOptionsChangeRef.current = onOptionsChange;
   const lastReportedIdsRef = useRef<string[]>(ids);
   const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
 
@@ -218,6 +223,19 @@ export function Options({
       return changed ? next : prev;
     });
   }, [internalQuestions]);
+
+  // Report value changes upward (unified draft pattern)
+  useEffect(() => {
+    onOptionsChangeRef.current?.(
+      internalOptions
+        .filter((o) => o.option_text.trim())
+        .map((o) => ({
+          option_text: o.option_text,
+          is_correct: o.is_correct,
+          question_id: o.question_id,
+        }))
+    );
+  }, [internalOptions]);
 
   // Debounced resource creation
   useEffect(() => {

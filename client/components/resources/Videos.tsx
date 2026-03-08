@@ -80,6 +80,10 @@ export interface VideosProps {
     message?: string;
   }>;
   aiVideoResources?: Pick<VideoResourceItem, "video_id" | "name">[] | null;
+  /** Report uploaded video values upward (unified draft pattern — parent owns creation)
+   *  Called after TUS upload + finalize with the creation parameters.
+   *  TODO: Server-side DraftVideoValue needs upload_id field for file-backed videos. */
+  onVideoUploadValue?: (video: { name: string; description: string; upload_id: string; length_seconds: number }) => void;
   // Link tool call tracking (reserved for future use)
   link_tool_id?: string | null;
   linkVideosAction?: (input: LinkVideosIn) => Promise<LinkVideosOut>;
@@ -111,6 +115,7 @@ export function Videos({
   registerFlush,
   finalizeUploadAction,
   aiVideoResources: _aiVideoResources,
+  onVideoUploadValue,
   link_tool_id: _link_tool_id,
   linkVideosAction: _linkVideosAction,
 }: VideosProps) {
@@ -393,6 +398,9 @@ export function Videos({
 
               const databaseUploadId = finalizeResult.upload_id;
 
+              // Report upload value upward for unified draft pattern
+              onVideoUploadValue?.({ name: file.name, description: "", upload_id: databaseUploadId, length_seconds: 0 });
+
               // Create video resource entry
               const createResult = await createVideosAction({
                 body: {
@@ -485,6 +493,7 @@ export function Videos({
       group_id,
       create_tool_id,
       onChange,
+      onVideoUploadValue,
     ]
   );
 

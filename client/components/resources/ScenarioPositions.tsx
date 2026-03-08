@@ -108,6 +108,8 @@ export interface ScenarioPositionsProps {
   aiScenarioPositionResources?:
     | Pick<ScenarioPositionResourceItem, "id" | "scenario_id" | "value">[]
     | null;
+  /** Value callback for unified draft — reports all scenario+position pairs */
+  onScenarioPositionValues?: (positions: Array<{ scenario_id: string; value: number }>) => void;
 }
 
 export function ScenarioPositions({
@@ -134,6 +136,7 @@ export function ScenarioPositions({
   isAutosaveEnabled = true,
   registerFlush,
   aiScenarioPositionResources,
+  onScenarioPositionValues,
 }: ScenarioPositionsProps) {
   const show = show_scenario_positions ?? false;
   const currentPositions = useMemo(
@@ -307,6 +310,18 @@ export function ScenarioPositions({
       return prev; // No change, return same reference
     });
   }, [scenario_ids, positionMap]);
+
+  // Emit value callback for unified draft pattern
+  const onScenarioPositionValuesRef = useRef(onScenarioPositionValues);
+  onScenarioPositionValuesRef.current = onScenarioPositionValues;
+  useEffect(() => {
+    if (!onScenarioPositionValuesRef.current) return;
+    const values: Array<{ scenario_id: string; value: number }> = [];
+    localPositions.forEach((value, scenarioId) => {
+      values.push({ scenario_id: scenarioId, value });
+    });
+    onScenarioPositionValuesRef.current(values);
+  }, [localPositions]);
 
   // Auto-creation of positions is now handled only on explicit user action (handlePositionChange)
   // to prevent infinite loops and unwanted API calls on component mount

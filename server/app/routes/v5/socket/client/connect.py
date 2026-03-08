@@ -5,13 +5,13 @@ Handles profile-based socket management, guest connections, and cleanup.
 
 import time
 import uuid
-from typing import cast
 
 from app.infra.globals import get_internal_sio, sio
 from app.infra.websocket.add_guest_socket import add_guest_socket
 from app.infra.websocket.decrement_guest_count import decrement_guest_count
 from app.infra.websocket.find_chats_by_socket import find_chats_by_socket
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.get_socket_owner import get_socket_owner
 from app.infra.websocket.increment_guest_count import increment_guest_count
@@ -20,48 +20,40 @@ from app.infra.websocket.remove_active_connection import remove_active_connectio
 from app.infra.websocket.remove_guest_socket import remove_guest_socket
 from app.infra.websocket.remove_socket_owner import remove_socket_owner
 from app.infra.websocket.set_socket_owner import set_socket_owner
-from app.sql.types import (
-    UpdateProfileToActiveSqlParams,
-    UpdateProfileToActiveSqlRow,
-    UpdateProfileToInactiveSqlParams,
-    UpdateProfileToInactiveSqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
+from app.routes.v5.tools.entries.activity.create import create_activity
 
 internal_sio = get_internal_sio()
 
-SQL_MARK_INACTIVE = "app/sql/queries/profile/update_profile_to_inactive_complete.sql"
-SQL_MARK_ACTIVE = "app/sql/queries/profile/update_profile_to_active_complete.sql"
 
-
-async def _mark_profile_inactive(profile_id: str) -> None:
-    """Mark a profile as inactive in the database."""
+async def _mark_profile_inactive(profile_id: str, sid: str) -> None:
+    """Mark a profile as inactive by creating an activity entry."""
     try:
+        session_id_str = await find_session_by_socket(sid)
+        if not session_id_str:
+            return
         async with get_db_connection() as conn:
-            async with conn.transaction():
-                params = UpdateProfileToInactiveSqlParams(
-                    profile_id=uuid.UUID(profile_id),
-                )
-                await cast(
-                    UpdateProfileToInactiveSqlRow,
-                    execute_sql_typed(conn, SQL_MARK_INACTIVE, params=params),
-                )
+            await create_activity(
+                conn,
+                session_id=uuid.UUID(session_id_str),
+                profile_id=uuid.UUID(profile_id),
+            )
     except Exception:
         pass
 
 
-async def _mark_profile_active(profile_id: str) -> None:
-    """Mark a profile as active in the database."""
+async def _mark_profile_active(
+    profile_id: str, session_id: str | None
+) -> None:
+    """Mark a profile as active by creating an activity entry."""
+    if not session_id:
+        return
     try:
         async with get_db_connection() as conn:
-            async with conn.transaction():
-                params = UpdateProfileToActiveSqlParams(
-                    profile_id=uuid.UUID(profile_id),
-                )
-                await cast(
-                    UpdateProfileToActiveSqlRow,
-                    execute_sql_typed(conn, SQL_MARK_ACTIVE, params=params),
-                )
+            await create_activity(
+                conn,
+                session_id=uuid.UUID(session_id),
+                profile_id=uuid.UUID(profile_id),
+            )
     except Exception:
         pass
 
@@ -122,7 +114,7 @@ async def connect(
         old_sid = await get_socket_owner(profile_id)
         if old_sid and old_sid != sid:
             await remove_socket_owner(profile_id)
-            await _mark_profile_inactive(profile_id)
+            await _mark_profile_inactive(profile_id, old_sid)
             await sio.disconnect(old_sid)
 
         # Register new socket
@@ -132,7 +124,7 @@ async def connect(
         if session_id:
             await _store_session_id(sid, session_id)
 
-        await _mark_profile_active(profile_id)
+        await _mark_profile_active(profile_id, session_id)
     else:
         # Guest connection
         if guest_id:
@@ -181,7 +173,7 @@ async def disconnect(sid: str) -> None:
     profile_to_cleanup = await find_profile_by_socket(sid)
     if profile_to_cleanup:
         await remove_socket_owner(profile_to_cleanup)
-        await _mark_profile_inactive(profile_to_cleanup)
+        await _mark_profile_inactive(profile_to_cleanup, sid)
 
     # Guest cleanup
     if await is_guest_socket(sid):

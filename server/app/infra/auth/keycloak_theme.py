@@ -7,9 +7,14 @@ This enables dynamic IdP visibility filtering based on department selection via 
 from datetime import datetime
 from typing import Any
 
-from app.infra.globals import UPLOAD_FOLDER
+from app.infra.auth.keycloak_resolvers import (
+    resolve_auths_for_department,
+    resolve_auths_for_realm,
+    resolve_departments_for_sync,
+    resolve_setting_profiles_for_idp,
+)
+from app.infra.globals import UPLOAD_FOLDER, get_redis_client
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import _detect_function_in_sql, load_sql
 
 logger = get_logger(__name__)
 
@@ -30,118 +35,71 @@ async def generate_keycloak_theme_providers(pool: Any) -> None:
     allowed_providers_by_dept: dict[str, list[str]] = {}
     platform_providers: list[str] = []
     all_idp_aliases: set[str] = set()
-    default_idp_aliases: set[str] = set()  # Track default-idp aliases separately
+    default_idp_aliases: set[str] = set()
     profile_aliases_by_dept: dict[str, list[str]] = {}
     platform_profile_aliases: list[str] = []
 
+    redis = get_redis_client()
+
     async with pool.acquire() as conn:
         # Step 1: Get ALL realm-level IdP aliases (for platform fallback)
-        realm_level_sql = load_sql(
-            "app/sql/queries/keycloak/get_auths_for_realm_level_complete.sql"
-        )
-        is_function, function_name, schema = _detect_function_in_sql(realm_level_sql)
-
-        if is_function and function_name:
-            function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
-            realm_level_providers = await conn.fetch(function_call_sql)
-            platform_providers = [str(p["slug"]) for p in realm_level_providers]
-            all_idp_aliases.update(platform_providers)
+        realm_level_auths = await resolve_auths_for_realm(conn, redis)
+        platform_providers = [a.slug or "" for a in realm_level_auths]
+        all_idp_aliases.update(platform_providers)
 
         # Step 2: Get all default-idp profile aliases (per settings)
-        profiles_sql = load_sql(
-            "app/sql/queries/keycloak/get_setting_profiles_for_idp_complete.sql"
-        )
-        profiles_is_function, profiles_function_name, profiles_schema = (
-            _detect_function_in_sql(profiles_sql)
-        )
-        if profiles_is_function and profiles_function_name:
-            profiles_call_sql = (
-                f'SELECT * FROM "{profiles_schema}"."{profiles_function_name}"()'
-            )
-            profile_rows = await conn.fetch(profiles_call_sql)
+        setting_profiles = await resolve_setting_profiles_for_idp(conn, redis)
 
-            for profile_row in profile_rows:
-                profile = dict(profile_row)
-                profile_id = str(profile["profile_id"])
-                department_id = profile.get("department_id")
-                alias = f"default-idp-profile-{profile_id}"
+        for sp in setting_profiles:
+            profile_id = str(sp.profile_id)
+            alias = f"default-idp-profile-{profile_id}"
 
-                default_idp_aliases.add(alias)
-                all_idp_aliases.add(alias)
+            default_idp_aliases.add(alias)
+            all_idp_aliases.add(alias)
 
-                if department_id:
-                    dept_key = str(department_id)
-                    dept_aliases = profile_aliases_by_dept.setdefault(dept_key, [])
-                    if alias not in dept_aliases:
-                        dept_aliases.append(alias)
-                else:
-                    if alias not in platform_profile_aliases:
-                        platform_profile_aliases.append(alias)
+            if sp.department_id:
+                dept_key = str(sp.department_id)
+                dept_aliases_list = profile_aliases_by_dept.setdefault(dept_key, [])
+                if alias not in dept_aliases_list:
+                    dept_aliases_list.append(alias)
+            else:
+                if alias not in platform_profile_aliases:
+                    platform_profile_aliases.append(alias)
 
         # Step 3: Get ALL departments with titles
-        dept_sql = load_sql(
-            "app/sql/queries/keycloak/get_departments_for_org_sync_complete.sql"
-        )
-        is_function, function_name, schema = _detect_function_in_sql(dept_sql)
+        departments = await resolve_departments_for_sync(conn, redis)
+        has_departments = len(departments) > 0
 
-        has_departments = False
-        if is_function and function_name:
-            function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
-            departments = await conn.fetch(function_call_sql)
-            has_departments = len(departments) > 0
+        # Step 4: For each department, get its allowed IdPs and profile-default IdPs
+        for dept in departments:
+            dept_id = str(dept.department_id)
+            dept_name = dept.department_name or dept_id
 
-            # Step 4: For each department, get its allowed IdPs and profile-default IdPs
-            for dept_row in departments:
-                dept = dict(dept_row)
-                dept_id = str(dept["department_id"])
-                dept_name = dept.get("department_name") or dept_id
+            departments_list.append({"id": dept_id, "title": dept_name})
 
-                # Store department info for picker
-                departments_list.append(
-                    {
-                        "id": dept_id,
-                        "title": dept_name,
-                    }
-                )
+            # Get auths for this department
+            dept_auths = await resolve_auths_for_department(
+                conn, redis, dept.department_id
+            )
 
-                # Get auths for this department
-                auths_sql = load_sql(
-                    "app/sql/queries/keycloak/get_auths_for_org_complete.sql"
-                )
-                auths_is_function, auths_function_name, auths_schema = (
-                    _detect_function_in_sql(auths_sql)
-                )
+            dept_aliases: list[str] = []
+            dept_aliases_set: set[str] = set()
+            for a in dept_auths:
+                alias = f"auth_{a.slug}_{a.id}"
+                if alias not in dept_aliases_set:
+                    dept_aliases.append(alias)
+                    dept_aliases_set.add(alias)
+            all_idp_aliases.update(dept_aliases)
 
-                dept_aliases: list[str] = []
-                dept_aliases_set: set[str] = set()
-                if auths_is_function and auths_function_name:
-                    import uuid
+            # Add default-idp profile aliases for this department
+            for alias in profile_aliases_by_dept.get(dept_id, []):
+                if alias not in dept_aliases_set:
+                    dept_aliases.append(alias)
+                    dept_aliases_set.add(alias)
 
-                    auths_function_call_sql = (
-                        f'SELECT * FROM "{auths_schema}"."{auths_function_name}"($1)'
-                    )
-                    org_providers = await conn.fetch(
-                        auths_function_call_sql, uuid.UUID(dept_id)
-                    )
-
-                    # Build department-scoped IdP aliases (auth_{slug}_{auth_id})
-                    for provider in org_providers:
-                        alias = f"auth_{provider['slug']}_{provider['id']}"
-                        if alias not in dept_aliases_set:
-                            dept_aliases.append(alias)
-                            dept_aliases_set.add(alias)
-                    all_idp_aliases.update(dept_aliases)
-
-                # Add default-idp profile aliases for this department
-                for alias in profile_aliases_by_dept.get(dept_id, []):
-                    if alias not in dept_aliases_set:
-                        dept_aliases.append(alias)
-                        dept_aliases_set.add(alias)
-
-                allowed_providers_by_dept[dept_id] = dept_aliases
+            allowed_providers_by_dept[dept_id] = dept_aliases
 
         # Step 5: Add platform-level default-idp profile aliases ONLY if there are no departments
-        # If departments exist, we don't use platform-level instances
         if not has_departments:
             for alias in platform_profile_aliases:
                 if alias not in platform_providers:

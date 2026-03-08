@@ -28,6 +28,8 @@ from app.infra.websocket.test_events_impl import (
 )
 from app.infra.websocket.attempt_events_impl import (
     attempt_next_impl,
+    attempt_proceed_impl as _attempt_proceed_impl,
+    attempt_start_impl as _attempt_start_impl,
     audio_delta_impl,
     audio_error_impl,
     audio_response_cancelled_impl,
@@ -35,6 +37,9 @@ from app.infra.websocket.attempt_events_impl import (
     audio_speech_delta_impl,
     audio_speech_start_impl,
     audio_stop_impl,
+    emit_chat_generate_impl as _emit_chat_generate_impl,
+    speech_complete_impl as _speech_complete_impl,
+    user_complete_impl as _user_complete_impl,
     user_progress_impl,
     user_start_impl,
 )
@@ -1198,3 +1203,554 @@ class TestProceedImpl:
         assert len(events) == 1
         assert events[0].event == "test_error"
         assert events[0].data["error_type"] == "proceed"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# test_run_impl
+# ═══════════════════════════════════════════════════════════════════════════
+
+_RUN_CREATE = "app.routes.v5.tools.entries.runs.create"
+_MSG_CREATE = "app.routes.v5.tools.entries.messages.create"
+_MSG_SEARCH = "app.routes.v5.tools.entries.messages.search"
+_INV_GET = "app.routes.v5.tools.entries.test_invocation.get"
+
+
+@pytest.mark.asyncio
+class TestRunImpl:
+    async def test_no_sid_emits_nothing(self):
+        emit, events = recording_emit()
+        await _test_run_impl({"sid": ""}, emit=emit, conn=AsyncMock())
+        assert events == []
+
+    async def test_no_profile_id_emits_nothing(self):
+        emit, events = recording_emit()
+        await _test_run_impl(
+            {"sid": "s1", "profile_id": ""},
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert events == []
+
+    async def test_invalid_payload_emits_nothing(self):
+        emit, events = recording_emit()
+        await _test_run_impl(
+            {"sid": "s1", "profile_id": "p1"},  # missing test_id etc
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert events == []
+
+    @patch(f"{_INV_GET}.get_test_invocations", new_callable=AsyncMock)
+    async def test_no_invocation_emits_error(self, mock_get_inv):
+        mock_get_inv.return_value = []
+
+        emit, events = recording_emit()
+        await _test_run_impl(
+            {
+                "sid": "s1",
+                "profile_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "test_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917942",
+                "run_id": "019b3be4-36f0-788c-9df2-481eb5917943",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "test_error"
+        assert events[0].data["error_type"] == "run"
+
+    @patch(f"{_MSG_CREATE}.create_message", new_callable=AsyncMock)
+    @patch(f"{_MSG_SEARCH}.search_messages", new_callable=AsyncMock)
+    @patch(f"{_RUN_CREATE}.create_run", new_callable=AsyncMock)
+    @patch(f"{_INV_GET}.get_test_invocations", new_callable=AsyncMock)
+    async def test_no_messages_emits_error(
+        self, mock_get_inv, mock_create_run, mock_search_msg, mock_create_msg
+    ):
+        from uuid import UUID
+
+        mock_get_inv.return_value = [
+            SimpleNamespace(group_id=UUID("019b3be4-36f0-788c-9df2-481eb5917950"))
+        ]
+        mock_create_run.return_value = SimpleNamespace(
+            id=UUID("019b3be4-36f0-788c-9df2-481eb5917951")
+        )
+        mock_search_msg.return_value = ([], 0)
+
+        emit, events = recording_emit()
+        await _test_run_impl(
+            {
+                "sid": "s1",
+                "profile_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "test_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917942",
+                "run_id": "019b3be4-36f0-788c-9df2-481eb5917943",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "test_error"
+        assert "No messages" in events[0].data["message"]
+
+    @patch(f"{_MSG_CREATE}.create_message", new_callable=AsyncMock)
+    @patch(f"{_MSG_SEARCH}.search_messages", new_callable=AsyncMock)
+    @patch(f"{_RUN_CREATE}.create_run", new_callable=AsyncMock)
+    @patch(f"{_INV_GET}.get_test_invocations", new_callable=AsyncMock)
+    async def test_happy_path_emits_run_started_and_generate(
+        self, mock_get_inv, mock_create_run, mock_search_msg, mock_create_msg
+    ):
+        from datetime import datetime
+        from uuid import UUID
+
+        mock_get_inv.return_value = [
+            SimpleNamespace(group_id=UUID("019b3be4-36f0-788c-9df2-481eb5917950"))
+        ]
+        new_run_id = UUID("019b3be4-36f0-788c-9df2-481eb5917951")
+        assistant_msg_id = UUID("019b3be4-36f0-788c-9df2-481eb5917960")
+        mock_create_run.return_value = SimpleNamespace(id=new_run_id)
+
+        # Original messages: user, assistant (last assistant gets removed)
+        mock_search_msg.return_value = (
+            [
+                SimpleNamespace(role="user", message_id=UUID(int=1)),
+                SimpleNamespace(role="assistant", message_id=UUID(int=2)),
+            ],
+            2,
+        )
+
+        call_count = 0
+
+        async def fake_create_message(conn, *, run_id, role, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            return SimpleNamespace(
+                id=assistant_msg_id if role == "assistant" else UUID(int=10 + call_count),
+                created_at=datetime.now(),
+            )
+
+        mock_create_msg.side_effect = fake_create_message
+
+        emit, events = recording_emit()
+        await _test_run_impl(
+            {
+                "sid": "s1",
+                "profile_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "test_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917942",
+                "run_id": "019b3be4-36f0-788c-9df2-481eb5917943",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+
+        # 1 user msg copied + 1 assistant placeholder = 2 calls
+        assert call_count == 2
+        assert len(events) == 2
+        assert events[0].event == "test_run_started"
+        assert events[0].data["run_id"] == str(new_run_id)
+        assert events[0].data["message_id"] == str(assistant_msg_id)
+        assert events[1].event == "generate_artifact"
+        assert events[1].data["artifact_type"] == "test"
+
+    @patch(f"{_RUN_CREATE}.create_run", new_callable=AsyncMock)
+    @patch(f"{_INV_GET}.get_test_invocations", new_callable=AsyncMock)
+    async def test_error_emits_test_error(self, mock_get_inv, mock_create_run):
+        from uuid import UUID
+
+        mock_get_inv.return_value = [
+            SimpleNamespace(group_id=UUID("019b3be4-36f0-788c-9df2-481eb5917950"))
+        ]
+        mock_create_run.side_effect = RuntimeError("db down")
+
+        emit, events = recording_emit()
+        await _test_run_impl(
+            {
+                "sid": "s1",
+                "profile_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "test_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917942",
+                "run_id": "019b3be4-36f0-788c-9df2-481eb5917943",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "test_error"
+        assert events[0].data["error_type"] == "run"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# user_complete_impl
+# ═══════════════════════════════════════════════════════════════════════════
+
+_ATTEMPT_MSG_SEARCH = "app.routes.v5.tools.entries.attempt_message.search"
+_ATTEMPT_CONTENT = "app.routes.v5.tools.entries.attempt_content.create"
+_ATTEMPT_MSG_COMPLETION = "app.routes.v5.tools.entries.attempt_message_completion.create"
+
+
+@pytest.mark.asyncio
+class TestUserCompleteImpl:
+    async def test_no_sid_emits_nothing(self):
+        emit, events = recording_emit()
+        await _user_complete_impl(
+            {"sid": "", "chat_id": "c1", "run_id": "r1", "content": "hi"},
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert events == []
+
+    async def test_no_content_emits_nothing(self):
+        emit, events = recording_emit()
+        await _user_complete_impl(
+            {"sid": "s1", "chat_id": "c1", "run_id": "r1", "content": ""},
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert events == []
+
+    @patch(f"{_ATTEMPT_MSG_SEARCH}.search_attempt_messages", new_callable=AsyncMock)
+    async def test_no_open_message_emits_nothing(self, mock_search):
+        mock_search.return_value = ([], 0)
+        emit, events = recording_emit()
+        await _user_complete_impl(
+            {
+                "sid": "s1",
+                "chat_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "run_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "content": "hello",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert events == []
+
+    @patch(f"{_ATTEMPT_MSG_COMPLETION}.create_attempt_message_completion", new_callable=AsyncMock)
+    @patch(f"{_ATTEMPT_CONTENT}.create_attempt_content", new_callable=AsyncMock)
+    @patch(f"{_ATTEMPT_MSG_SEARCH}.search_attempt_messages", new_callable=AsyncMock)
+    async def test_happy_path_emits_user_complete(
+        self, mock_search, mock_content, mock_completion
+    ):
+        from datetime import datetime
+        from uuid import UUID
+
+        msg_id = UUID("019b3be4-36f0-788c-9df2-481eb5917950")
+        mock_search.return_value = (
+            [
+                SimpleNamespace(
+                    message_id=msg_id,
+                    type="user",
+                    completed=False,
+                    created_at=datetime(2026, 1, 1),
+                ),
+            ],
+            1,
+        )
+
+        emit, events = recording_emit()
+        await _user_complete_impl(
+            {
+                "sid": "s1",
+                "chat_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "run_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "content": "hello world",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+
+        assert mock_content.called
+        assert mock_completion.called
+        assert len(events) == 1
+        assert events[0].event == "attempt_user_complete"
+        assert events[0].data["message_id"] == str(msg_id)
+        assert events[0].data["content"] == "hello world"
+
+    @patch(f"{_ATTEMPT_MSG_SEARCH}.search_attempt_messages", new_callable=AsyncMock)
+    async def test_filters_completed_messages(self, mock_search):
+        from datetime import datetime
+        from uuid import UUID
+
+        mock_search.return_value = (
+            [
+                SimpleNamespace(
+                    message_id=UUID(int=1),
+                    type="user",
+                    completed=True,
+                    created_at=datetime(2026, 1, 1),
+                ),
+                SimpleNamespace(
+                    message_id=UUID(int=2),
+                    type="assistant",
+                    completed=False,
+                    created_at=datetime(2026, 1, 1),
+                ),
+            ],
+            2,
+        )
+
+        emit, events = recording_emit()
+        await _user_complete_impl(
+            {
+                "sid": "s1",
+                "chat_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "run_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "content": "hello",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert events == []
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# speech_complete_impl
+# ═══════════════════════════════════════════════════════════════════════════
+
+_UPLOAD_CREATE = "app.routes.v5.tools.entries.uploads.create"
+
+
+@pytest.mark.asyncio
+class TestSpeechCompleteImpl:
+    async def test_no_group_id_emits_nothing(self):
+        emit, events = recording_emit()
+        await _speech_complete_impl(
+            {"group_id": ""}, emit=emit, conn=AsyncMock()
+        )
+        assert events == []
+
+    @patch(f"{_P}.get_session_by_group_id", return_value=None)
+    async def test_no_session_emits_nothing(self, _mock):
+        emit, events = recording_emit()
+        await _speech_complete_impl(
+            {"group_id": "g1"}, emit=emit, conn=AsyncMock()
+        )
+        assert events == []
+
+    @patch(f"{_P}.get_session_by_group_id")
+    async def test_empty_transcript_emits_nothing(self, mock_session):
+        mock_session.return_value = SimpleNamespace(
+            sid="s1", chat_id="c1", run_id="r1"
+        )
+        emit, events = recording_emit()
+        await _speech_complete_impl(
+            {"group_id": "g1", "transcript": ""},
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert events == []
+
+    @patch(f"{_P}.get_session_by_group_id")
+    async def test_transcript_only_emits_received_complete(self, mock_session):
+        mock_session.return_value = SimpleNamespace(
+            sid="s1", chat_id="c1", run_id="r1"
+        )
+        emit, events = recording_emit()
+        await _speech_complete_impl(
+            {"group_id": "g1", "transcript": "hello world"},
+            emit=emit,
+            conn=AsyncMock(),
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "attempt_user_received_complete"
+        assert events[0].data["content"] == "hello world"
+        assert events[0].data["audio_upload_id"] is None
+
+    @patch(f"{_UPLOAD_CREATE}.create_upload", new_callable=AsyncMock)
+    @patch(f"{_P}.get_session_by_group_id")
+    async def test_with_audio_creates_upload(self, mock_session, mock_upload, tmp_path):
+        from uuid import UUID
+
+        mock_session.return_value = SimpleNamespace(
+            sid="s1", chat_id="c1", run_id="r1"
+        )
+        mock_upload.return_value = SimpleNamespace(
+            id=UUID("019b3be4-36f0-788c-9df2-481eb5917960")
+        )
+
+        emit, events = recording_emit()
+        with patch("app.infra.globals.AUDIO_FOLDER", tmp_path):
+            await _speech_complete_impl(
+                {
+                    "group_id": "g1",
+                    "transcript": "hello",
+                    "audio": b"fake-audio-bytes",
+                },
+                emit=emit,
+                conn=AsyncMock(),
+            )
+
+        assert len(events) == 1
+        assert events[0].data["audio_upload_id"] == "019b3be4-36f0-788c-9df2-481eb5917960"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# attempt_start_impl
+# ═══════════════════════════════════════════════════════════════════════════
+
+_PROFILE_CTX = "app.infra.profile_identity_context"
+_ATTEMPT_CREATE = "app.routes.v5.tools.entries.attempt.create"
+_ATTEMPT_REFRESH = "app.routes.v5.tools.entries.attempt.refresh"
+_ATTEMPT_CHAT_REFRESH = "app.routes.v5.tools.entries.attempt_chat.refresh"
+_ATTEMPT_PRACTICE = "app.routes.v5.tools.entries.attempt_practice.create"
+_ATTEMPT_HOME = "app.routes.v5.tools.entries.attempt_home.create"
+_CALLS_CREATE = "app.routes.v5.tools.entries.calls.create"
+_PERSONA_CREATE = "app.routes.v5.tools.entries.persona.create"
+_PRACTICE_GET = "app.routes.v5.tools.entries.practice.get"
+_PRACTICE_CHAT_SEARCH = "app.routes.v5.tools.entries.practice_chat.search"
+_PROFILE_PERSONAS_GET = "app.routes.v5.tools.resources.profile_personas.get"
+_SIMULATIONS_GET = "app.routes.v5.tools.resources.simulations.get"
+
+
+@pytest.mark.asyncio
+class TestAttemptStartImpl:
+    async def test_no_sid_emits_nothing(self):
+        emit, events = recording_emit()
+        await _attempt_start_impl(
+            {"sid": ""},
+            emit=emit,
+            conn=AsyncMock(),
+            profile_id="p1",
+            session_id="s1",
+        )
+        assert events == []
+
+    async def test_invalid_payload_emits_nothing(self):
+        emit, events = recording_emit()
+        await _attempt_start_impl(
+            {"sid": "s1"},  # missing practice_id/home_id
+            emit=emit,
+            conn=AsyncMock(),
+            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
+            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+        )
+        assert events == []
+
+    @patch(f"{_PROFILE_CTX}.resolve_profile_identity_context", new_callable=AsyncMock)
+    async def test_no_profile_resource_emits_error(self, mock_ctx):
+        mock_ctx.return_value = None
+
+        emit, events = recording_emit()
+        await _attempt_start_impl(
+            {
+                "sid": "s1",
+                "practice_id": "019b3be4-36f0-788c-9df2-481eb5917950",
+                "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
+            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "attempt_error"
+        assert events[0].data["error_type"] == "start"
+
+    @patch(f"{_ATTEMPT_CHAT_REFRESH}.refresh_attempt_chat", new_callable=AsyncMock)
+    @patch(f"{_ATTEMPT_REFRESH}.refresh_attempt", new_callable=AsyncMock)
+    @patch(f"{_ATTEMPT_PRACTICE}.create_attempt_practice", new_callable=AsyncMock)
+    @patch(f"{_ATTEMPT_CREATE}.create_attempt", new_callable=AsyncMock)
+    @patch(f"{_CALLS_CREATE}.create_call", new_callable=AsyncMock)
+    @patch(f"{_PERSONA_CREATE}.create_persona", new_callable=AsyncMock)
+    @patch(f"{_RUN_CREATE}.create_run", new_callable=AsyncMock)
+    @patch(f"{_SIMULATIONS_GET}.get_simulations", new_callable=AsyncMock)
+    @patch(f"{_PRACTICE_CHAT_SEARCH}.search_practice_chats", new_callable=AsyncMock)
+    @patch(f"{_PROFILE_PERSONAS_GET}.get_profile_personas", new_callable=AsyncMock)
+    @patch(f"{_PRACTICE_GET}.get_practices", new_callable=AsyncMock)
+    @patch(f"{_PROFILE_CTX}.resolve_profile_identity_context", new_callable=AsyncMock)
+    async def test_happy_path_practice_emits_proceed(
+        self,
+        mock_ctx,
+        mock_practices,
+        mock_profile_personas,
+        mock_practice_chats,
+        mock_simulations,
+        mock_create_run,
+        mock_create_persona,
+        mock_create_call,
+        mock_create_attempt,
+        mock_create_practice,
+        mock_refresh_attempt,
+        mock_refresh_chat,
+    ):
+        from uuid import UUID
+
+        profiles_id = UUID("019b3be4-36f0-788c-9df2-481eb5917960")
+        persona_id = UUID("019b3be4-36f0-788c-9df2-481eb5917961")
+        attempt_id = UUID("019b3be4-36f0-788c-9df2-481eb5917970")
+
+        mock_ctx.return_value = SimpleNamespace(profiles_id=profiles_id)
+        mock_practices.return_value = [
+            SimpleNamespace(
+                profile_ids=[UUID(int=1)],
+                simulation_ids=[UUID(int=2)],
+            )
+        ]
+        mock_profile_personas.return_value = [
+            SimpleNamespace(profile_id=profiles_id, persona_id=persona_id)
+        ]
+        mock_practice_chats.return_value = [SimpleNamespace(), SimpleNamespace()]
+        mock_simulations.return_value = [
+            SimpleNamespace(name="Sim1", description="Desc1")
+        ]
+        mock_create_run.return_value = SimpleNamespace(id=UUID(int=10))
+        mock_create_persona.return_value = SimpleNamespace(id=UUID(int=11))
+        mock_create_call.return_value = SimpleNamespace(id=UUID(int=12))
+        mock_create_attempt.return_value = SimpleNamespace(id=attempt_id)
+
+        from unittest.mock import MagicMock
+        from contextlib import asynccontextmanager
+
+        @asynccontextmanager
+        async def fake_txn():
+            yield
+
+        emit, events = recording_emit()
+        mock_conn = AsyncMock()
+        mock_conn.transaction = MagicMock(side_effect=lambda: fake_txn())
+        await _attempt_start_impl(
+            {
+                "sid": "s1",
+                "practice_id": "019b3be4-36f0-788c-9df2-481eb5917950",
+                "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
+            },
+            emit=emit,
+            conn=mock_conn,
+            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
+            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+        )
+
+        assert mock_create_run.called
+        assert mock_create_persona.called
+        assert mock_create_attempt.called
+        assert mock_create_practice.called
+        assert mock_refresh_attempt.called
+        assert len(events) == 1
+        assert events[0].event == "attempt_proceed"
+        assert events[0].data["attempt_id"] == str(attempt_id)
+
+    @patch(f"{_PROFILE_CTX}.resolve_profile_identity_context", new_callable=AsyncMock)
+    async def test_error_emits_attempt_error(self, mock_ctx):
+        mock_ctx.side_effect = RuntimeError("db down")
+
+        emit, events = recording_emit()
+        await _attempt_start_impl(
+            {
+                "sid": "s1",
+                "practice_id": "019b3be4-36f0-788c-9df2-481eb5917950",
+                "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
+            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "attempt_error"
+        assert events[0].data["error_type"] == "start"

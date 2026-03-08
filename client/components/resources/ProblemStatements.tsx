@@ -179,6 +179,8 @@ export interface ProblemStatementsProps {
     | undefined;
   searchTerm?: string;
   onSearchChange?: (term: string) => void;
+  /** Report value changes upward (unified draft pattern — parent owns creation) */
+  onProblemStatementChange?: (problemStatement: string) => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created ID */
@@ -210,6 +212,7 @@ export function ProblemStatements({
   createProblemStatementsAction,
   searchTerm,
   onSearchChange,
+  onProblemStatementChange,
   isAutosaveEnabled = true,
   registerFlush,
   link_tool_id: _link_tool_id,
@@ -378,7 +381,8 @@ export function ProblemStatements({
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
     isDirtyRef.current = newValue !== lastSavedValueRef.current;
-  }, []);
+    onProblemStatementChange?.(newValue);
+  }, [onProblemStatementChange]);
 
   // Use problem_statements array if available, otherwise create placeholder mapping
   const suggestionsMapping = useMemo(() => {

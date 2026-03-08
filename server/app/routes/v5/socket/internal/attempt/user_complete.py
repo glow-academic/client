@@ -1,127 +1,16 @@
-"""Internal handler: attempt_user_received_complete → DB write → attempt_user_complete.
+"""Internal handler: attempt_user_received_complete — thin wrapper."""
 
-Finds the open (uncompleted) user message for the chat+run,
-writes the content, marks it complete, and emits attempt_user_complete.
-
-Shared by both text and audio paths.
-"""
-
-import uuid
 from typing import Any
 
 from app.infra.globals import get_internal_sio
+from app.infra.websocket.attempt_events_impl import user_complete_impl
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.routes.v5.socket.internal.attempt.types import AttemptUserCompleteData
-from app.routes.v5.tools.entries.attempt_content.create import (
-    create_attempt_content as create_attempt_content_entry_internal,
-)
-from app.routes.v5.tools.entries.attempt_message_completion.create import (
-    create_attempt_message_completion,
-)
-from app.utils.logging.db_logger import get_logger
-
-logger = get_logger(__name__)
+from app.infra.websocket.socket_event import make_emit
 
 internal_sio = get_internal_sio()
-
-# Hardcoded Student persona for user messages
-STUDENT_PERSONA_ID = uuid.UUID("019bb25e-e60c-7352-9b81-f411f56092a9")
 
 
 @internal_sio.on("attempt_user_received_complete")  # type: ignore
 async def handle_user_received_complete(data: dict[str, Any]) -> None:
-    """Write content to open user message and emit attempt_user_complete."""
-    sid = data.get("sid", "")
-    chat_id = data.get("chat_id", "")
-    run_id = data.get("run_id", "")
-    content = data.get("content", "")
-    if not sid or not chat_id or not run_id or not content:
-        return
-
-    try:
-        async with get_db_connection() as conn:
-            # Find the open (uncompleted) user message for this chat + run
-            row = await conn.fetchrow(
-                """SELECT me.id, me.created_at
-                FROM messages_entry me
-                JOIN attempt_message_entry ame ON ame.id = me.id
-                WHERE ame.chat_id = $1
-                  AND me.run_id = $2
-                  AND me.role = 'user'::message_type
-                  AND NOT EXISTS (
-                      SELECT 1 FROM attempt_message_completion_entry amce
-                      WHERE amce.attempt_message_id = ame.id
-                        AND amce.active = true
-                  )
-                ORDER BY me.created_at DESC
-                LIMIT 1""",
-                uuid.UUID(chat_id),
-                uuid.UUID(run_id),
-            )
-
-            if not row:
-                logger.warning(
-                    f"No open user message found for chat={chat_id} run={run_id}"
-                )
-                return
-
-            message_id = row["id"]
-            created_at = row["created_at"]
-
-            # Write content
-            await create_attempt_content_entry_internal(
-                conn,
-                {
-                    "message_id": message_id,
-                    "content": content,
-                    "persona_id": STUDENT_PERSONA_ID,
-                },
-                run_id=uuid.UUID(run_id),
-            )
-
-            # Link audio upload if present (audios → audio_uploads → message_audios)
-            audio_upload_id = data.get("audio_upload_id")
-            if audio_upload_id:
-                audio_id = await conn.fetchval(
-                    """INSERT INTO audios (created_at, updated_at, active, generated, call_id)
-                    VALUES (NOW(), NOW(), true, false, NULL)
-                    RETURNING id""",
-                )
-                await conn.execute(
-                    """INSERT INTO audio_uploads (audio_id, upload_id, active, created_at, updated_at)
-                    VALUES ($1, $2, true, NOW(), NOW())""",
-                    audio_id,
-                    uuid.UUID(audio_upload_id),
-                )
-                await conn.execute(
-                    """INSERT INTO message_audios (message_id, audio_id, created_at, updated_at)
-                    VALUES ($1, $2, NOW(), NOW())""",
-                    message_id,
-                    audio_id,
-                )
-
-            # Mark message as complete
-            # TODO: call_id required but not available in this context
-            await create_attempt_message_completion(
-                conn,
-                attempt_message_id=message_id,
-                call_id=uuid.UUID(
-                    "00000000-0000-0000-0000-000000000000"
-                ),  # placeholder
-            )
-
-        await internal_sio.emit(
-            "attempt_user_complete",
-            AttemptUserCompleteData(
-                sid=sid,
-                chat_id=chat_id,
-                message_id=str(message_id),
-                content=content,
-                created_at=created_at.isoformat() if created_at else "",
-                item_id=data.get("item_id"),
-                rooms=data.get("rooms"),
-            ).model_dump(mode="json"),
-        )
-
-    except Exception as e:
-        logger.exception(f"Error in user_received_complete: {e}")
+    async with get_db_connection() as conn:
+        await user_complete_impl(data, emit=make_emit(), conn=conn)

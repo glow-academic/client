@@ -427,6 +427,8 @@ class AttemptStopPayload(BaseModel):
     """Client-to-server: stop message generation."""
 
     chat_id: UUID
+    session_id: UUID
+    group_id: UUID
 
 
 class AttemptStoppedEvent(BaseModel):

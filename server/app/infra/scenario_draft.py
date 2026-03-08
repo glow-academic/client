@@ -90,6 +90,8 @@ async def _resolve_creatable_values(
         created_ids = []
         for img in request.images:
             result = await create_image(conn, img.name, img.description, redis)
+            # TODO: if img.upload_id, call create_image_upload(conn, result.id, img.upload_id, ...)
+            #       to link the TUS-uploaded file to the image resource
             created_ids.append(result.id)
         request.image_ids = (request.image_ids or []) + created_ids
 
@@ -97,6 +99,8 @@ async def _resolve_creatable_values(
         created_ids = []
         for vid in request.videos:
             result = await create_video(conn, vid.name, vid.description, redis)
+            # TODO: if vid.upload_id, call create_video_upload(conn, result.id, vid.upload_id, ...)
+            #       to link the TUS-uploaded file to the video resource
             created_ids.append(result.id)
         request.video_ids = (request.video_ids or []) + created_ids
 

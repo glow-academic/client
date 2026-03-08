@@ -100,10 +100,16 @@ type ScenarioFormState = {
   video_ids: string[];
   question_ids: string[];
   option_ids: string[];
-  // Value fields for creatables (sent to draft endpoint when set)
+  // Value fields for single-select creatables
   name: string | null;
   description: string | null;
   problem_statement: string | null;
+  // Value fields for multi-select creatables (merged with IDs by draft endpoint)
+  objectives: string[] | null;
+  images: Array<{ name: string; description: string; upload_id: string }> | null;
+  videos: Array<{ name: string; description: string; upload_id: string; length_seconds: number }> | null;
+  questions: Array<{ question_text: string; time: number; allow_multiple: boolean }> | null;
+  options: Array<{ option_text: string; is_correct: boolean; question_id: string }> | null;
 };
 
 export interface ScenarioProps {
@@ -265,6 +271,11 @@ function ScenarioComponent({
         name: null,
         description: null,
         problem_statement: null,
+        objectives: null,
+        images: null,
+        videos: null,
+        questions: null,
+        options: null,
       };
     }
 
@@ -333,6 +344,11 @@ function ScenarioComponent({
       name: null,
       description: null,
       problem_statement: null,
+      objectives: null,
+      images: null,
+      videos: null,
+      questions: null,
+      options: null,
     };
   }, [scenarioData]);
 
@@ -569,6 +585,12 @@ function ScenarioComponent({
             name: fs["name_id"] ? null : prev.name,
             description: fs["description_id"] ? null : prev.description,
             problem_statement: fs["problem_statement_id"] ? null : prev.problem_statement,
+            // Clear multi-select values — server merged them into IDs
+            objectives: null,
+            images: null,
+            videos: null,
+            questions: null,
+            options: null,
           }));
         }
 
@@ -606,6 +628,11 @@ function ScenarioComponent({
         name: formState.name,
         description: formState.description,
         problem_statement: formState.problem_statement,
+        objectives: formState.objectives,
+        images: formState.images,
+        videos: formState.videos,
+        questions: formState.questions,
+        options: formState.options,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -630,13 +657,23 @@ function ScenarioComponent({
       formState.name,
       formState.description,
       formState.problem_statement,
+      formState.objectives,
+      formState.images,
+      formState.videos,
+      formState.questions,
+      formState.options,
     ],
   );
 
   const hasResourceIds = checkHasResourceIds(
     SCENARIO_RESOURCES,
     formState as unknown as Record<string, unknown>,
-  ) || !!formState.name || !!formState.description || !!formState.problem_statement;
+  ) || !!formState.name || !!formState.description || !!formState.problem_statement
+    || (formState.objectives?.length ?? 0) > 0
+    || (formState.images?.length ?? 0) > 0
+    || (formState.videos?.length ?? 0) > 0
+    || (formState.questions?.length ?? 0) > 0
+    || (formState.options?.length ?? 0) > 0;
 
   const buildPatchPayload = useCallback(
     (
@@ -671,6 +708,23 @@ function ScenarioComponent({
           idPayload["problem_statement"] = current.problem_statement;
           delete idPayload["problem_statement_id"];
         }
+      }
+
+      // Multi-select creatable value fields (merged with IDs on server)
+      if (current.objectives && current.objectives.length > 0) {
+        idPayload["objectives"] = current.objectives;
+      }
+      if (current.images && current.images.length > 0) {
+        idPayload["images"] = current.images;
+      }
+      if (current.videos && current.videos.length > 0) {
+        idPayload["videos"] = current.videos;
+      }
+      if (current.questions && current.questions.length > 0) {
+        idPayload["questions"] = current.questions;
+      }
+      if (current.options && current.options.length > 0) {
+        idPayload["options"] = current.options;
       }
 
       // Build flag fields separately (individual flag fields)
@@ -1122,14 +1176,19 @@ function ScenarioComponent({
             problem_statement_id: null,
             problem_statement: null,
             objective_ids: [],
+            objectives: null,
             image_ids: [],
+            images: null,
           };
         case "video":
           return {
             ...prev,
             video_ids: [],
+            videos: null,
             question_ids: [],
+            questions: null,
             option_ids: [],
+            options: null,
           };
         default:
           return prev;
@@ -1607,6 +1666,12 @@ function ScenarioComponent({
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, image_ids: ids }))
                     }
+                    onImageUploadValue={(img) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        images: [...(prev.images ?? []), img],
+                      }))
+                    }
                     onGenerate={generateHandlers["images"]}
                     showAiGenerate={s?.images?.show_ai_generate ?? false}
                     multiSelect={true}
@@ -1634,6 +1699,13 @@ function ScenarioComponent({
                         problem_statement: null,
                       }))
                     }
+                    onProblemStatementChange={(ps) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        problem_statement: ps || null,
+                        problem_statement_id: null,
+                      }))
+                    }
                     onGenerate={generateHandlers["problem_statements"]}
                     label="Problem Statement"
                     placeholder="Define the core problem"
@@ -1656,6 +1728,12 @@ function ScenarioComponent({
                     disabled={disabled}
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, objective_ids: ids }))
+                    }
+                    onObjectivesChange={(objectives) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        objectives: objectives.length > 0 ? objectives : null,
+                      }))
                     }
                     showAiGenerate={s?.objectives?.show_ai_generate ?? false}
                     onGenerate={generateHandlers["objectives"]}
@@ -1896,6 +1974,12 @@ function ScenarioComponent({
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, video_ids: ids }))
                     }
+                    onVideoUploadValue={(vid) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        videos: [...(prev.videos ?? []), vid],
+                      }))
+                    }
                     onGenerate={generateHandlers["videos"]}
                     showAiGenerate={s?.videos?.show_ai_generate ?? false}
                   />
@@ -1915,6 +1999,12 @@ function ScenarioComponent({
                         question_ids: ids,
                       }))
                     }
+                    onQuestionsChange={(qs) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        questions: qs.length > 0 ? qs : null,
+                      }))
+                    }
                     onGenerate={generateHandlers["questions"]}
                     showAiGenerate={s?.questions?.show_ai_generate ?? false}
                     onInternalQuestionsChange={setInternalQuestions}
@@ -1932,6 +2022,12 @@ function ScenarioComponent({
                     disabled={disabled}
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, option_ids: ids }))
+                    }
+                    onOptionsChange={(opts) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        options: opts.length > 0 ? opts : null,
+                      }))
                     }
                     showAiGenerate={s?.options?.show_ai_generate ?? false}
                   />

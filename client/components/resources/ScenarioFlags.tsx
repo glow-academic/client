@@ -93,6 +93,8 @@ export interface ScenarioFlagsProps {
   /** Register a flush callback with parent for manual save - returns created IDs */
   registerFlush?: (flush: () => Promise<{ scenario_flag_ids: string[] } | void>) => void;
   aiFlagResources?: Pick<ScenarioFlagsResourceItem, "id">[] | null;
+  /** Value callback for unified draft — reports all selected scenario+flag pairs */
+  onScenarioFlagValues?: (flags: Array<{ scenario_id: string; flag_id: string }>) => void;
 }
 
 type ScenarioFlagOption = {
@@ -126,6 +128,7 @@ export function ScenarioFlags({
   isAutosaveEnabled = true,
   registerFlush,
   aiFlagResources,
+  onScenarioFlagValues,
 }: ScenarioFlagsProps) {
   const show = show_scenario_flags ?? false;
   const allFlags = useMemo(() => scenario_flags ?? [], [scenario_flags]);
@@ -267,6 +270,20 @@ export function ScenarioFlags({
       onChangeRef.current(ids);
     }
   }, [scenarioFlagResourceIds]);
+
+  // Emit value callback for unified draft pattern
+  const onScenarioFlagValuesRef = useRef(onScenarioFlagValues);
+  onScenarioFlagValuesRef.current = onScenarioFlagValues;
+  useEffect(() => {
+    if (!onScenarioFlagValuesRef.current) return;
+    const values: Array<{ scenario_id: string; flag_id: string }> = [];
+    selectedFlagsByScenario.forEach((flagIds, scenarioId) => {
+      flagIds.forEach((flagId) => {
+        values.push({ scenario_id: scenarioId, flag_id: flagId });
+      });
+    });
+    onScenarioFlagValuesRef.current(values);
+  }, [selectedFlagsByScenario]);
 
   // Update flush function - returns current IDs from local state
   flushRef.current = async (): Promise<{ scenario_flag_ids: string[] } | void> => {

@@ -16,8 +16,8 @@ import { resolveGroupId } from "@/app/(main)/layout-server";
 /** ---- Strong types from OpenAPI ---- */
 type GetSimulationIn = InputOf<"/api/v5/artifacts/simulations/get", "post">;
 type GetSimulationOut = OutputOf<"/api/v5/artifacts/simulations/get", "post">;
-type SaveSimulationIn = InputOf<"/api/v5/artifacts/simulations/save", "post">;
-type SaveSimulationOut = OutputOf<"/api/v5/artifacts/simulations/save", "post">;
+type CreateSimulationIn = InputOf<"/api/v5/artifacts/simulations/create", "post">;
+type CreateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/create", "post">;
 type PatchSimulationDraftIn = InputOf<"/api/v5/artifacts/simulations/draft", "patch">;
 type PatchSimulationDraftOut = OutputOf<"/api/v5/artifacts/simulations/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -92,13 +92,11 @@ const getSimulationDefault = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveSimulation(
-  input: SaveSimulationIn
-): Promise<SaveSimulationOut> {
+async function createSimulation(
+  input: CreateSimulationIn
+): Promise<CreateSimulationOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/simulations/save", input);
+  return api.post("/artifacts/simulations/create", input);
 }
 
 async function patchSimulationDraft(
@@ -242,7 +240,7 @@ export default async function NewSimulationPage({
       <Simulation
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         simulationData={simulationDataDefault}
-        saveSimulationAction={saveSimulation}
+        createSimulationAction={createSimulation}
         patchSimulationDraftAction={patchSimulationDraft}
         createNamesAction={createDraftNames}
         createDescriptionsAction={createDraftDescriptions}

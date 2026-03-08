@@ -17,8 +17,8 @@ import { resolveGroupId } from "@/app/(main)/layout-server";
 /** ---- Strong types from OpenAPI ---- */
 type GetSimulationIn = InputOf<"/api/v5/artifacts/simulations/get", "post">;
 type GetSimulationOut = OutputOf<"/api/v5/artifacts/simulations/get", "post">;
-type SaveSimulationIn = InputOf<"/api/v5/artifacts/simulations/save", "post">;
-type SaveSimulationOut = OutputOf<"/api/v5/artifacts/simulations/save", "post">;
+type UpdateSimulationIn = InputOf<"/api/v5/artifacts/simulations/update", "post">;
+type UpdateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/update", "post">;
 type PatchSimulationDraftIn = InputOf<"/api/v5/artifacts/simulations/draft", "patch">;
 type PatchSimulationDraftOut = OutputOf<"/api/v5/artifacts/simulations/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -63,8 +63,8 @@ type CreateDraftScenarioTimeLimitsOut = OutputOf<
 export type {
   PatchSimulationDraftIn,
   PatchSimulationDraftOut,
-  SaveSimulationIn,
-  SaveSimulationOut,
+  UpdateSimulationIn,
+  UpdateSimulationOut,
   GetSimulationOut as SimulationDataOut,
 };
 
@@ -115,12 +115,11 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveSimulation(
-  input: SaveSimulationIn
-): Promise<SaveSimulationOut> {
+async function updateSimulation(
+  input: UpdateSimulationIn
+): Promise<UpdateSimulationOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/simulations/save", input);
+  return api.post("/artifacts/simulations/update", input);
 }
 
 async function patchSimulationDraft(
@@ -246,7 +245,7 @@ export default async function EditSimulationPage({
         <Simulation
           simulationId={simulationId}
           simulationData={simulationData}
-          saveSimulationAction={saveSimulation}
+          updateSimulationAction={updateSimulation}
           patchSimulationDraftAction={patchSimulationDraft}
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}

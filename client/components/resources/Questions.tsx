@@ -73,6 +73,8 @@ export interface QuestionsProps {
   questionMapping?: Record<string, string>;
   // Optional: video length for time slider (when questions are associated with videos)
   videoLength?: number | null;
+  /** Report value changes upward (unified draft pattern — parent owns creation) */
+  onQuestionsChange?: (questions: Array<{ question_text: string; time: number; allow_multiple: boolean }>) => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
@@ -115,6 +117,7 @@ export function Questions({
   showAiGenerate = false,
   questionMapping = {},
   videoLength = null,
+  onQuestionsChange,
   isAutosaveEnabled = true,
   registerFlush,
   aiQuestionResources: _aiQuestionResources,
@@ -186,6 +189,8 @@ export function Questions({
   onChangeRef.current = onChange;
   const onInternalQuestionsChangeRef = useRef(onInternalQuestionsChange);
   onInternalQuestionsChangeRef.current = onInternalQuestionsChange;
+  const onQuestionsChangeRef = useRef(onQuestionsChange);
+  onQuestionsChangeRef.current = onQuestionsChange;
   const flushRef = useRef<(() => Promise<{ question_ids: string[] } | void>) | undefined>(undefined);
   const [draggedQuestionIndex, setDraggedQuestionIndex] = useState<
     number | null
@@ -230,6 +235,16 @@ export function Questions({
         question_text: q.question_text,
       }));
     onInternalQuestionsChangeRef.current?.(questionsWithText);
+    // Report value changes upward (unified draft pattern)
+    onQuestionsChangeRef.current?.(
+      internalQuestions
+        .filter((q) => q.question_text.trim())
+        .map((q) => ({
+          question_text: q.question_text,
+          time: q.times?.[0] ?? 0,
+          allow_multiple: q.allow_multiple,
+        }))
+    );
   }, [internalQuestions]);
 
   // Debounced resource creation for each question text - only when autosave is enabled

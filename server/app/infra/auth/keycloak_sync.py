@@ -6,11 +6,17 @@ import socket
 from dataclasses import dataclass
 from typing import Any
 
-from app.infra.globals import get_pool
+from app.infra.auth.keycloak_resolvers import (
+    resolve_auth_items,
+    resolve_auths_for_department,
+    resolve_auths_for_realm,
+    resolve_departments_for_sync,
+    resolve_setting_profiles_for_idp,
+)
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.mcp.oauth import MCP_RESOURCE, is_mcp_enabled
 from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import _detect_function_in_sql, load_sql
 
 logger = get_logger(__name__)
 
@@ -1076,48 +1082,26 @@ async def sync_identity_provider_for_realm_level(
         # Get auth items (config) - use None for department_id (default settings)
         import uuid
 
+        redis = get_redis_client()
         async with pool.acquire() as conn:
-            items_sql_text = load_sql(
-                "app/sql/queries/keycloak/get_auth_items_complete.sql"
+            auth_items = await resolve_auth_items(
+                conn, redis, uuid.UUID(auth_id), department_id=None
             )
-            items_is_function, items_function_name, items_schema = (
-                _detect_function_in_sql(items_sql_text)
-            )
-
-            if items_is_function and items_function_name:
-                auth_id_uuid = uuid.UUID(auth_id)
-                # Pass NULL directly to PostgreSQL (function accepts NULL even though signature shows uuid)
-                # SQL function checks IS NOT NULL internally
-                items_sql_params = (auth_id_uuid, None)
-                items_param_placeholders = ", ".join(
-                    [f"${i + 1}" for i in range(len(items_sql_params))]
-                )
-                items_function_call_sql = f'SELECT * FROM "{items_schema}"."{items_function_name}"({items_param_placeholders})'
-                item_rows = await conn.fetch(items_function_call_sql, *items_sql_params)
-                items = [dict(row) for row in item_rows]
-            else:
-                raise ValueError(
-                    "Expected function definition in get_auth_items_complete.sql"
-                )
 
         # Build config map from items
         config_map: dict[str, str] = {}
-        for item in items:
-            item_name = item["name"]
-            raw_value = item["value"]
-            is_encrypted = item.get("encrypted", True)
-
-            if is_encrypted:
+        for item in auth_items:
+            if item.encrypted:
                 try:
-                    decrypted_value = decrypt_api_key(raw_value)
-                    config_map[item_name] = decrypted_value
+                    decrypted_value = decrypt_api_key(item.value)
+                    config_map[item.name] = decrypted_value
                 except Exception as e:
                     logger.warning(
-                        f"Failed to decrypt auth_item '{item_name}' for provider '{slug}': {e}. Using as plain text."
+                        f"Failed to decrypt auth_item '{item.name}' for provider '{slug}': {e}. Using as plain text."
                     )
-                    config_map[item_name] = raw_value
+                    config_map[item.name] = item.value
             else:
-                config_map[item_name] = raw_value
+                config_map[item.name] = item.value
 
         # Build IdP payload
         # Set hideOnLogin=False - theme controls visibility via filtering
@@ -1206,52 +1190,26 @@ async def sync_identity_provider_for_org(
         # Get auth items (config) - use department_id for department-specific settings
         import uuid
 
-        from app.sql.types import GetAuthItemsSqlParams
-
+        redis = get_redis_client()
         async with pool.acquire() as conn:
-            items_sql_text = load_sql(
-                "app/sql/queries/keycloak/get_auth_items_complete.sql"
+            auth_items = await resolve_auth_items(
+                conn, redis, uuid.UUID(auth_id), department_id=uuid.UUID(department_id)
             )
-            items_is_function, items_function_name, items_schema = (
-                _detect_function_in_sql(items_sql_text)
-            )
-
-            if items_is_function and items_function_name:
-                auth_id_uuid = uuid.UUID(auth_id)
-                dept_id_uuid = uuid.UUID(department_id)
-                items_params = GetAuthItemsSqlParams(
-                    auth_id=auth_id_uuid, department_id=dept_id_uuid
-                )
-                items_sql_params = items_params.to_tuple()
-                items_param_placeholders = ", ".join(
-                    [f"${i + 1}" for i in range(len(items_sql_params))]
-                )
-                items_function_call_sql = f'SELECT * FROM "{items_schema}"."{items_function_name}"({items_param_placeholders})'
-                item_rows = await conn.fetch(items_function_call_sql, *items_sql_params)
-                items = [dict(row) for row in item_rows]
-            else:
-                raise ValueError(
-                    "Expected function definition in get_auth_items_complete.sql"
-                )
 
         # Build config map from items
         config_map: dict[str, str] = {}
-        for item in items:
-            item_name = item["name"]
-            raw_value = item["value"]
-            is_encrypted = item.get("encrypted", True)
-
-            if is_encrypted:
+        for item in auth_items:
+            if item.encrypted:
                 try:
-                    decrypted_value = decrypt_api_key(raw_value)
-                    config_map[item_name] = decrypted_value
+                    decrypted_value = decrypt_api_key(item.value)
+                    config_map[item.name] = decrypted_value
                 except Exception as e:
                     logger.warning(
-                        f"Failed to decrypt auth_item '{item_name}' for provider '{unique_alias}': {e}. Using as plain text."
+                        f"Failed to decrypt auth_item '{item.name}' for provider '{unique_alias}': {e}. Using as plain text."
                     )
-                    config_map[item_name] = raw_value
+                    config_map[item.name] = item.value
             else:
-                config_map[item_name] = raw_value
+                config_map[item.name] = item.value
 
         # Build IdP payload (no organizationId - shared IdP across departments)
         # Set hideOnLogin=False - theme controls visibility via filtering
@@ -1797,309 +1755,164 @@ async def sync_identity_providers(
         # Step 0b: Sync default-idp instances (custom OIDC IdP per profile)
         logger.info("Syncing default-idp Identity Provider instances (per profile)...")
 
+        redis = get_redis_client()
         async with pool.acquire() as conn:
-            profiles_sql = load_sql(
-                "app/sql/queries/keycloak/get_setting_profiles_for_idp_complete.sql"
+            setting_profiles = await resolve_setting_profiles_for_idp(conn, redis)
+
+        seen_profiles: set[str] = set()
+        for sp in setting_profiles:
+            profile_id = str(sp.profile_id)
+            if profile_id in seen_profiles:
+                continue
+            seen_profiles.add(profile_id)
+            await sync_default_idp_for_profile(
+                profile_id, sp.profile_name, kc_admin
             )
-            profiles_is_function, profiles_function_name, profiles_schema = (
-                _detect_function_in_sql(profiles_sql)
-            )
-
-            if profiles_is_function and profiles_function_name:
-                profiles_call_sql = (
-                    f'SELECT * FROM "{profiles_schema}"."{profiles_function_name}"()'
-                )
-                profile_rows = await conn.fetch(profiles_call_sql)
-
-                seen_profiles: set[str] = set()
-                for profile_row in profile_rows:
-                    profile = dict(profile_row)
-                    profile_id = str(profile["profile_id"])
-                    profile_name = profile.get("profile_name")
-
-                    if profile_id in seen_profiles:
-                        continue
-                    seen_profiles.add(profile_id)
-
-                    await sync_default_idp_for_profile(
-                        profile_id, profile_name, kc_admin
-                    )
-            else:
-                raise ValueError(
-                    "Expected function definition in get_setting_profiles_for_idp_complete.sql"
-                )
 
         # Step 1: Check if departments exist - if they do, skip realm-level IdPs that are also department-scoped
         async with pool.acquire() as conn:
-            dept_sql = load_sql(
-                "app/sql/queries/keycloak/get_departments_for_org_sync_complete.sql"
-            )
-            dept_is_function, dept_function_name, dept_schema = _detect_function_in_sql(
-                dept_sql
-            )
+            departments = await resolve_departments_for_sync(conn, redis)
 
-            has_departments = False
-            department_auth_ids: set[str] = set()
+        has_departments = len(departments) > 0
+        department_auth_ids: set[str] = set()
 
-            if dept_is_function and dept_function_name:
-                dept_function_call_sql = (
-                    f'SELECT * FROM "{dept_schema}"."{dept_function_name}"()'
-                )
-                departments = await conn.fetch(dept_function_call_sql)
-                has_departments = len(departments) > 0
-
-                # Collect all auth_ids that are linked to department settings
-                if has_departments:
-                    auths_sql_text = load_sql(
-                        "app/sql/queries/keycloak/get_auths_for_org_complete.sql"
+        if has_departments:
+            async with pool.acquire() as conn:
+                for dept in departments:
+                    dept_auths = await resolve_auths_for_department(
+                        conn, redis, dept.department_id
                     )
-                    auths_is_function, auths_function_name, auths_schema = (
-                        _detect_function_in_sql(auths_sql_text)
-                    )
-
-                    if auths_is_function and auths_function_name:
-                        import uuid
-
-                        auths_function_call_sql = f'SELECT * FROM "{auths_schema}"."{auths_function_name}"($1)'
-                        for dept_row in departments:
-                            dept = dict(dept_row)
-                            dept_id = str(dept["department_id"])
-                            org_providers = await conn.fetch(
-                                auths_function_call_sql, uuid.UUID(dept_id)
-                            )
-                            for provider_row in org_providers:
-                                provider = dict(provider_row)
-                                department_auth_ids.add(str(provider["id"]))
+                    for a in dept_auths:
+                        department_auth_ids.add(str(a.id))
 
         # Step 2: Sync realm-level IdPs (from default settings)
         # BUT: Skip any that are also linked to department settings (to avoid duplicates)
         logger.info("Syncing realm-level IdPs (platform login)...")
         async with pool.acquire() as conn:
-            sql_text = load_sql(
-                "app/sql/queries/keycloak/get_auths_for_realm_level_complete.sql"
-            )
-            is_function, function_name, schema = _detect_function_in_sql(sql_text)
+            realm_level_providers = await resolve_auths_for_realm(conn, redis)
 
-            if is_function and function_name:
-                function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
-                realm_level_providers = await conn.fetch(function_call_sql)
+        # Track which realm-level IdPs should exist
+        realm_level_aliases_to_keep: set[str] = set()
 
-                # Track which realm-level IdPs should exist
-                realm_level_aliases_to_keep: set[str] = set()
+        for provider in realm_level_providers:
+            auth_id = str(provider.id)
 
-                for provider_row in realm_level_providers:
-                    provider = dict(provider_row)
-                    auth_id = str(provider["id"])
-
-                    # Skip realm-level IdPs that are also department-scoped (when departments exist)
-                    # This prevents duplicate IdPs: realm-level "google" vs department-scoped "auth_google_..."
-                    if has_departments and auth_id in department_auth_ids:
-                        logger.info(
-                            f"Skipping realm-level IdP '{provider['slug']}' (auth_id: {auth_id}) - also linked to department settings"
-                        )
-                        continue
-
-                    realm_level_aliases_to_keep.add(provider["slug"])
-                    await sync_identity_provider_for_realm_level(
-                        auth_id=auth_id,
-                        slug=provider["slug"],
-                        provider_id=provider["provider_id"],
-                        display_name=provider["name"],
-                        kc_admin=kc_admin,
-                        pool=pool,
-                    )
-
-                # Delete realm-level IdPs that shouldn't exist (when departments exist and auth is department-scoped)
-                if has_departments and department_auth_ids:
-                    try:
-                        all_idps = kc_admin.get_idps()
-                        for idp in all_idps:
-                            alias = idp.get("alias", "")
-                            # Only delete realm-level IdPs (not department-scoped auth_* or any default-idp*)
-                            if (
-                                alias
-                                and not alias.startswith("auth_")
-                                and not alias.startswith("default-idp")
-                            ):
-                                if alias not in realm_level_aliases_to_keep:
-                                    try:
-                                        kc_admin.delete_idp(idp_alias=alias)
-                                        logger.info(
-                                            f"🗑️  Deleted realm-level IdP '{alias}' - also linked to department settings"
-                                        )
-                                    except Exception as e:
-                                        logger.warning(
-                                            f"Failed to delete realm-level IdP '{alias}': {e}"
-                                        )
-                    except Exception as e:
-                        logger.warning(f"Failed to list/cleanup realm-level IdPs: {e}")
-            else:
-                raise ValueError(
-                    "Expected function definition in get_auths_for_realm_level_complete.sql"
+            # Skip realm-level IdPs that are also department-scoped (when departments exist)
+            if has_departments and auth_id in department_auth_ids:
+                logger.info(
+                    f"Skipping realm-level IdP '{provider.slug}' (auth_id: {auth_id}) - also linked to department settings"
                 )
+                continue
+
+            if provider.slug:
+                realm_level_aliases_to_keep.add(provider.slug)
+            await sync_identity_provider_for_realm_level(
+                auth_id=auth_id,
+                slug=provider.slug or "",
+                provider_id=provider.provider_id or "",
+                display_name=provider.name or "",
+                kc_admin=kc_admin,
+                pool=pool,
+            )
+
+        # Delete realm-level IdPs that shouldn't exist (when departments exist and auth is department-scoped)
+        if has_departments and department_auth_ids:
+            try:
+                all_idps = kc_admin.get_idps()
+                for idp in all_idps:
+                    alias = idp.get("alias", "")
+                    if (
+                        alias
+                        and not alias.startswith("auth_")
+                        and not alias.startswith("default-idp")
+                    ):
+                        if alias not in realm_level_aliases_to_keep:
+                            try:
+                                kc_admin.delete_idp(idp_alias=alias)
+                                logger.info(
+                                    f"Deleted realm-level IdP '{alias}' - also linked to department settings"
+                                )
+                            except Exception as e:
+                                logger.warning(
+                                    f"Failed to delete realm-level IdP '{alias}': {e}"
+                                )
+            except Exception as e:
+                logger.warning(f"Failed to list/cleanup realm-level IdPs: {e}")
 
         # Step 3: Collect all unique department-scoped auths (deduplicate by auth_id)
         logger.info("Syncing department-scoped IdPs...")
+
+        # Collect all unique auths (deduplicate by auth_id)
+        all_department_auths: dict[str, dict[str, Any]] = {}
+
         async with pool.acquire() as conn:
-            sql_text = load_sql(
-                "app/sql/queries/keycloak/get_departments_for_org_sync_complete.sql"
-            )
-            is_function, function_name, schema = _detect_function_in_sql(sql_text)
+            for dept in departments:
+                dept_id = str(dept.department_id)
+                dept_name = dept.department_name or dept_id
 
-            if is_function and function_name:
-                function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
-                departments = await conn.fetch(function_call_sql)
-
-                # Collect all unique auths (deduplicate by auth_id)
-                all_department_auths: dict[
-                    str, dict[str, Any]
-                ] = {}  # key: auth_id, value: auth data
-
-                for dept_row in departments:
-                    dept = dict(dept_row)
-                    dept_id = str(dept["department_id"])
-                    dept_name = dept["department_name"] or dept_id
-
-                    # Ensure department-specific client exists (for client-scoped routing)
-                    dept_client_id = await ensure_department_client(
-                        department_id=dept_id,
-                        department_name=dept_name,
-                        kc_admin=kc_admin,
-                    )
-
-                    if not dept_client_id:
-                        logger.warning(
-                            f"Failed to create department client for {dept_id}, continuing with IdP sync"
-                        )
-
-                    # Get auths for this department
-                    auths_sql_text = load_sql(
-                        "app/sql/queries/keycloak/get_auths_for_org_complete.sql"
-                    )
-                    auths_is_function, auths_function_name, auths_schema = (
-                        _detect_function_in_sql(auths_sql_text)
-                    )
-
-                    if auths_is_function and auths_function_name:
-                        import uuid
-
-                        auths_function_call_sql = f'SELECT * FROM "{auths_schema}"."{auths_function_name}"($1)'
-                        org_providers = await conn.fetch(
-                            auths_function_call_sql, uuid.UUID(dept_id)
-                        )
-
-                        for provider_row in org_providers:
-                            provider = dict(provider_row)
-                            auth_id = str(provider["id"])
-
-                            # Store auth once (first department wins for config lookup)
-                            if auth_id not in all_department_auths:
-                                all_department_auths[auth_id] = {
-                                    "auth_id": auth_id,
-                                    "slug": provider["slug"],
-                                    "provider_id": provider["provider_id"],
-                                    "display_name": provider["name"],
-                                    "department_id": dept_id,  # For config lookup
-                                }
-                    else:
-                        raise ValueError(
-                            "Expected function definition in get_auths_for_org_complete.sql"
-                        )
-
-                # Sync each unique auth once (prevents duplicates)
-                for auth_data in all_department_auths.values():
-                    await sync_identity_provider_for_org(
-                        auth_id=auth_data["auth_id"],
-                        slug=auth_data["slug"],
-                        provider_id=auth_data["provider_id"],
-                        display_name=auth_data["display_name"],
-                        department_id=auth_data["department_id"],
-                        kc_admin=kc_admin,
-                        pool=pool,
-                    )
-            else:
-                raise ValueError(
-                    "Expected function definition in get_departments_for_org_sync_complete.sql"
+                # Ensure department-specific client exists (for client-scoped routing)
+                dept_client_id = await ensure_department_client(
+                    department_id=dept_id,
+                    department_name=dept_name,
+                    kc_admin=kc_admin,
                 )
 
-        # Step 3: Clean up IdPs that shouldn't exist
-        # Delete realm-level IdPs that are no longer in default settings
+                if not dept_client_id:
+                    logger.warning(
+                        f"Failed to create department client for {dept_id}, continuing with IdP sync"
+                    )
+
+                # Get auths for this department
+                dept_auths = await resolve_auths_for_department(
+                    conn, redis, dept.department_id
+                )
+
+                for a in dept_auths:
+                    auth_id = str(a.id)
+                    if auth_id not in all_department_auths:
+                        all_department_auths[auth_id] = {
+                            "auth_id": auth_id,
+                            "slug": a.slug or "",
+                            "provider_id": a.provider_id or "",
+                            "display_name": a.name or "",
+                            "department_id": dept_id,
+                        }
+
+        # Sync each unique auth once (prevents duplicates)
+        for auth_data in all_department_auths.values():
+            await sync_identity_provider_for_org(
+                auth_id=auth_data["auth_id"],
+                slug=auth_data["slug"],
+                provider_id=auth_data["provider_id"],
+                display_name=auth_data["display_name"],
+                department_id=auth_data["department_id"],
+                kc_admin=kc_admin,
+                pool=pool,
+            )
+
+        # Step 4: Clean up IdPs that shouldn't exist
         logger.info("Cleaning up obsolete IdPs...")
         try:
             existing_idps = kc_admin.get_idps()
 
             # Collect expected default-idp aliases (from Step 0 sync)
             expected_default_idp_aliases: set[str] = set()
-            async with pool.acquire() as conn:
-                profiles_sql = load_sql(
-                    "app/sql/queries/keycloak/get_setting_profiles_for_idp_complete.sql"
+            for sp in setting_profiles:
+                expected_default_idp_aliases.add(
+                    f"default-idp-profile-{sp.profile_id}"
                 )
-                profiles_is_function, profiles_function_name, profiles_schema = (
-                    _detect_function_in_sql(profiles_sql)
-                )
-                if profiles_is_function and profiles_function_name:
-                    profiles_call_sql = f'SELECT * FROM "{profiles_schema}"."{profiles_function_name}"()'
-                    profile_rows = await conn.fetch(profiles_call_sql)
-                    for profile_row in profile_rows:
-                        profile = dict(profile_row)
-                        profile_id = str(profile["profile_id"])
-                        expected_default_idp_aliases.add(
-                            f"default-idp-profile-{profile_id}"
-                        )
 
             # Get expected realm-level slugs
-            async with pool.acquire() as conn:
-                sql_text = load_sql(
-                    "app/sql/queries/keycloak/get_auths_for_realm_level_complete.sql"
-                )
-                is_function, function_name, schema = _detect_function_in_sql(sql_text)
-                if is_function and function_name:
-                    function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
-                    realm_level_providers = await conn.fetch(function_call_sql)
-                    expected_realm_slugs = {p["slug"] for p in realm_level_providers}
-                    # Add default-idp aliases to expected realm-level slugs (they're realm-level IdPs)
-                    expected_realm_slugs.update(expected_default_idp_aliases)
-                else:
-                    expected_realm_slugs = expected_default_idp_aliases.copy()
+            expected_realm_slugs = {
+                p.slug for p in realm_level_providers if p.slug
+            }
+            expected_realm_slugs.update(expected_default_idp_aliases)
 
             # Get expected department-scoped aliases (auth_{slug}_{auth_id} pattern)
-            async with pool.acquire() as conn:
-                sql_text = load_sql(
-                    "app/sql/queries/keycloak/get_departments_for_org_sync_complete.sql"
-                )
-                is_function, function_name, schema = _detect_function_in_sql(sql_text)
-                if is_function and function_name:
-                    function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"()'
-                    departments = await conn.fetch(function_call_sql)
-
-                    expected_dept_aliases = set()
-                    # Collect unique auths (deduplicate)
-                    seen_auths: set[str] = set()
-                    for dept_row in departments:
-                        dept = dict(dept_row)
-                        dept_id = str(dept["department_id"])
-
-                        auths_sql_text = load_sql(
-                            "app/sql/queries/keycloak/get_auths_for_org_complete.sql"
-                        )
-                        auths_is_function, auths_function_name, auths_schema = (
-                            _detect_function_in_sql(auths_sql_text)
-                        )
-                        if auths_is_function and auths_function_name:
-                            import uuid
-
-                            auths_function_call_sql = f'SELECT * FROM "{auths_schema}"."{auths_function_name}"($1)'
-                            org_providers = await conn.fetch(
-                                auths_function_call_sql, uuid.UUID(dept_id)
-                            )
-                            for provider_row in org_providers:
-                                provider = dict(provider_row)
-                                auth_id = str(provider["id"])
-                                # Use auth_id-based alias (1:1 mapping)
-                                alias = f"auth_{provider['slug']}_{auth_id}"
-                                expected_dept_aliases.add(alias)
-                else:
-                    expected_dept_aliases = set()
+            expected_dept_aliases: set[str] = set()
+            for auth_data in all_department_auths.values():
+                alias = f"auth_{auth_data['slug']}_{auth_data['auth_id']}"
+                expected_dept_aliases.add(alias)
 
             # Delete IdPs that shouldn't exist
             for idp in existing_idps:
@@ -2218,20 +2031,10 @@ async def sync_keycloak(department_id: str | None = None) -> None:
             try:
                 # First, update database
                 async with pool.acquire() as conn:
-                    from typing import cast
-
-                    from app.sql.types import UpdateMasterRealmSslSqlRow
-                    from app.utils.sql_helper import execute_sql_typed
-
-                    result = cast(
-                        UpdateMasterRealmSslSqlRow,
-                        await execute_sql_typed(
-                            conn,
-                            "app/sql/queries/keycloak/update_master_realm_ssl_complete.sql",
-                            params=None,
-                        ),
+                    await conn.execute(
+                        "UPDATE keycloak.realm SET ssl_required = 'NONE' WHERE name = 'master'"
                     )
-                    logger.info(f"✅ {result.message}")
+                    logger.info("Master realm SSL requirement set to NONE")
 
                 # Note: Keycloak caches realm settings in memory, so database updates take time to take effect
                 # The Admin API also requires HTTPS when realm requires HTTPS, so we can't use it to force a reload

@@ -168,6 +168,8 @@ export interface ObjectivesProps {
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   // Optional: mapping of objective_id -> objective text (for initial display)
   objectiveMapping?: Record<string, string>;
+  /** Report value changes upward (unified draft pattern — parent owns creation) */
+  onObjectivesChange?: (objectives: string[]) => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
@@ -199,6 +201,7 @@ export function Objectives({
   onGenerate,
   showAiGenerate = false,
   objectiveMapping = {},
+  onObjectivesChange,
   isAutosaveEnabled = true,
   registerFlush,
   aiObjectiveResources: _aiObjectiveResources,
@@ -427,14 +430,20 @@ export function Objectives({
     setInternalTexts((prev) => {
       const next = [...prev];
       next.splice(index, 1);
+      onObjectivesChangeRef.current?.(next.filter((t) => t.trim()));
       return next;
     });
   }, []);
+
+  const onObjectivesChangeRef = useRef(onObjectivesChange);
+  onObjectivesChangeRef.current = onObjectivesChange;
 
   const updateObjective = useCallback((index: number, value: string) => {
     setInternalTexts((prev) => {
       const next = [...prev];
       next[index] = value;
+      // Report value changes upward
+      onObjectivesChangeRef.current?.(next.filter((t) => t.trim()));
       return next;
     });
   }, []);

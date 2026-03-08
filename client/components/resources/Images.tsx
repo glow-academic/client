@@ -83,6 +83,10 @@ export interface ImagesProps {
     message?: string;
   }>;
   aiImageResources?: Pick<ImageResourceItem, "image_id" | "name">[] | null;
+  /** Report uploaded image values upward (unified draft pattern — parent owns creation)
+   *  Called after TUS upload + finalize with the creation parameters.
+   *  TODO: Server-side DraftImageValue needs upload_id field for file-backed images. */
+  onImageUploadValue?: (image: { name: string; description: string; upload_id: string }) => void;
   // Link tool call tracking (reserved for future use)
   link_tool_id?: string | null;
   linkImagesAction?: (input: LinkImagesIn) => Promise<LinkImagesOut>;
@@ -116,6 +120,7 @@ export function Images({
   registerFlush,
   finalizeUploadAction,
   aiImageResources: _aiImageResources,
+  onImageUploadValue,
   link_tool_id: _link_tool_id,
   linkImagesAction: _linkImagesAction,
 }: ImagesProps) {
@@ -415,6 +420,9 @@ export function Images({
 
               const databaseUploadId = finalizeResult.upload_id;
 
+              // Report upload value upward for unified draft pattern
+              onImageUploadValue?.({ name: file.name, description: "", upload_id: databaseUploadId });
+
               // Create image resource entry
               const createResult = await createImagesAction({
                 body: {
@@ -509,6 +517,7 @@ export function Images({
       create_tool_id,
       ids,
       onChange,
+      onImageUploadValue,
     ]
   );
 

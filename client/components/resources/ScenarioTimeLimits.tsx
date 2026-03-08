@@ -93,6 +93,8 @@ export interface ScenarioTimeLimitsProps {
         "id" | "scenario_id" | "time_limit_seconds"
       >[]
     | null;
+  /** Value callback for unified draft — reports all scenario+time_limit pairs */
+  onScenarioTimeLimitValues?: (timeLimits: Array<{ scenario_id: string; time_limit_seconds: number; negative: boolean }>) => void;
 }
 
 export function ScenarioTimeLimits({
@@ -117,6 +119,7 @@ export function ScenarioTimeLimits({
   isAutosaveEnabled = true,
   registerFlush,
   aiScenarioTimeLimitResources,
+  onScenarioTimeLimitValues,
 }: ScenarioTimeLimitsProps) {
   const show = show_scenario_time_limits ?? false;
   const timeLimitResources = useMemo(
@@ -268,6 +271,24 @@ export function ScenarioTimeLimits({
       onTimeLimitIdsChangeRef.current(ids);
     }
   }, [timeLimitIdsByScenario, scenario_ids]);
+
+  // Emit value callback for unified draft pattern
+  const onScenarioTimeLimitValuesRef = useRef(onScenarioTimeLimitValues);
+  onScenarioTimeLimitValuesRef.current = onScenarioTimeLimitValues;
+  useEffect(() => {
+    if (!onScenarioTimeLimitValuesRef.current) return;
+    const values: Array<{ scenario_id: string; time_limit_seconds: number; negative: boolean }> = [];
+    timeLimitByScenario.forEach((seconds, scenarioId) => {
+      if (seconds !== null) {
+        values.push({
+          scenario_id: scenarioId,
+          time_limit_seconds: seconds,
+          negative: negativeByScenario.get(scenarioId) ?? false,
+        });
+      }
+    });
+    onScenarioTimeLimitValuesRef.current(values);
+  }, [timeLimitByScenario, negativeByScenario]);
 
   // Update flush function - returns current IDs from local state
   flushRef.current = async (): Promise<{

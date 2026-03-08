@@ -2,11 +2,11 @@
 
 Handles: attempt_stop_message — stop active message generation.
 
-Dual cancel (in-process + Redis) → SQL mutation → emit stopped.
+Dual cancel (in-process + Redis) → entry mutation → emit stopped.
 """
 
 import uuid
-from typing import Any, cast
+from typing import Any
 
 from app.infra.globals import get_internal_sio, sio
 from app.infra.websocket.cancel_active_result import cancel_active_result
@@ -17,15 +17,17 @@ from app.routes.v5.socket.internal.attempt.types import (
     AttemptErrorData,
     AttemptStoppedData,
 )
-from app.sql.types import SimulationTextStopRunSqlParams, SimulationTextStopRunSqlRow
+from app.routes.v5.tools.entries.attempt_message.search import search_attempt_messages
+from app.routes.v5.tools.entries.attempt_message_completion.create import (
+    create_attempt_message_completion,
+)
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
 
 internal_sio = get_internal_sio()
-
-SQL_PATH_STOP = "app/sql/queries/simulations/simulation_text_stop_run_complete.sql"
 
 
 async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
@@ -39,48 +41,60 @@ async def _attempt_stop_impl(sid: str, data: AttemptStopPayload) -> None:
         # Step 2: Redis cooperative cancel
         await cancel_active_run(chat_id)
 
-        # Step 3: SQL mutation — mark message complete
+        # Step 3: Find latest message and mark complete
+        # TODO: Add leaf-node filter (exclude messages with children in attempt_message_tree_entry)
         async with get_db_connection() as conn:
-            row = cast(
-                SimulationTextStopRunSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH_STOP,
-                    params=SimulationTextStopRunSqlParams(chat_id=uuid.UUID(chat_id)),
-                ),
+            messages, _ = await search_attempt_messages(
+                conn,
+                chat_ids=[uuid.UUID(chat_id)],
+                limit=1,
+                bypass_mv=True,
             )
 
-        success = row.success if row else False
-        cancelled_message_id = row.cancelled_message_id if row else None
+            if not messages:
+                await internal_sio.emit(
+                    "attempt_stopped",
+                    AttemptStoppedData(
+                        sid=sid,
+                        chat_id=chat_id,
+                        success=False,
+                        message="No active message found for this chat",
+                    ).model_dump(mode="json"),
+                )
+                return
 
-        if success and cancelled_message_id:
-            # Emit to sid + attempt room via server layer
-            await internal_sio.emit(
-                "attempt_stopped",
-                AttemptStoppedData(
-                    sid=sid,
-                    rooms=[sid, f"attempt_{chat_id}"],
-                    chat_id=chat_id,
-                    success=True,
-                    message=None,
-                ).model_dump(mode="json"),
+            latest_message = messages[0]
+
+            # Create run + call for traceability
+            run = await create_run(
+                conn,
+                group_id=data.group_id,
+                session_id=data.session_id,
+            )
+            call = await create_call(
+                conn,
+                run_id=run.id,
+                session_id=data.session_id,
             )
 
-            # Log activity
-            try:
-                pass
-            except Exception:
-                pass
-        else:
-            await internal_sio.emit(
-                "attempt_stopped",
-                AttemptStoppedData(
-                    sid=sid,
-                    chat_id=chat_id,
-                    success=False,
-                    message="No active message found for this chat",
-                ).model_dump(mode="json"),
+            await create_attempt_message_completion(
+                conn,
+                attempt_message_id=latest_message.message_id,
+                call_id=call.id,
+                stop=True,
             )
+
+        # Emit to sid + attempt room via server layer
+        await internal_sio.emit(
+            "attempt_stopped",
+            AttemptStoppedData(
+                sid=sid,
+                rooms=[sid, f"attempt_{chat_id}"],
+                chat_id=chat_id,
+                success=True,
+                message=None,
+            ).model_dump(mode="json"),
+        )
 
     except Exception as e:
         logger.exception(f"Error in attempt_stop_message: {e}")

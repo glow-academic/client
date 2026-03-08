@@ -503,22 +503,14 @@ async def test_start_impl(
     infinite_mode = data.get("infinite_mode", False)
 
     profiles_id_str = data.get("profiles_id")
+    if not profiles_id_str:
+        logger.error("profiles_id missing from test_start payload")
+        return
+
     session_id_str = data.get("session_id")
 
     try:
-        # Resolve profiles_id if not provided
-        if profiles_id_str:
-            profiles_id = uuid.UUID(profiles_id_str)
-        else:
-            profiles_id = await conn.fetchval(
-                """SELECT profile_id FROM profile_profiles_junction
-                WHERE profile_id = $1 AND active = true LIMIT 1""",
-                profile_id,
-            )
-            if profiles_id is None:
-                raise ValueError(
-                    f"profiles_resource not found for profile_id {profile_id}"
-                )
+        profiles_id = uuid.UUID(profiles_id_str)
 
         # Step 1: Create test entry (black box)
         result = await create_test(

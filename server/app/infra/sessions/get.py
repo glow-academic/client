@@ -1,31 +1,18 @@
-"""Sessions GET internal function - NOT exposed as HTTP endpoint.
+"""Sessions GET internal function — delegates to search_sessions black box.
 
-Used internally by profile context 2-pass architecture.
+Used internally by profile context to resolve the most recent session.
 """
 
-from typing import Any, cast
+from __future__ import annotations
+
 from uuid import UUID
 
-import asyncpg  # type: ignore
-from pydantic import BaseModel
+import asyncpg
 
+from app.routes.v5.tools.entries.sessions.search import search_sessions
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/infra/sessions/get_session_complete.sql"
-
-
-class GetSessionSqlParams(BaseModel):
-    p_profile_id: UUID | None = None
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (self.p_profile_id,)
-
-
-class GetSessionSqlRow(BaseModel):
-    session_id: UUID | None = None
 
 
 async def get_session_internal(
@@ -33,16 +20,11 @@ async def get_session_internal(
     profile_id: UUID,
     bypass_cache: bool = False,
 ) -> UUID | None:
-    """Internal function to fetch the most recent session for a profile.
+    """Fetch the most recent active session for a profile.
 
-    Args:
-        conn: Database connection
-        profile_id: Profile ID to look up session for
-        bypass_cache: Whether to bypass cache
-
-    Returns:
-        Session UUID or None if no session found
+    Composes search_sessions black box — no inline SQL.
     """
+    redis = _get_redis()
     tags = ["infra", "sessions"]
     cache_key_val = cache_key(
         "infra/sessions/get",
@@ -50,25 +32,32 @@ async def get_session_internal(
     )
 
     if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        cached = await get_cached(cache_key_val, redis=redis)
         if cached is not None:
             sid = cached.get("session_id")
             return UUID(sid) if sid else None
 
-    params = GetSessionSqlParams(p_profile_id=profile_id)
-    result = cast(
-        GetSessionSqlRow | None,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+    results = await search_sessions(
+        conn,
+        profile_ids=[profile_id],
+        active=True,
+        limit=1,
     )
 
-    session_id = result.session_id if result else None
+    session_id = results[0].id if results else None
 
     await set_cached(
         cache_key_val,
         {"session_id": str(session_id) if session_id else None},
         ttl=60,
         tags=tags,
-        redis=get_redis_client(),
+        redis=redis,
     )
 
     return session_id
+
+
+def _get_redis():
+    from app.infra.globals import get_redis_client
+
+    return get_redis_client()

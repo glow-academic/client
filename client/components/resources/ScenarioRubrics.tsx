@@ -96,6 +96,8 @@ export interface ScenarioRubricsProps {
   aiScenarioRubricResources?:
     | Pick<ScenarioRubricResourceItem, "id" | "scenario_id" | "rubric_id">[]
     | null;
+  /** Value callback for unified draft — reports all scenario+rubric pairs */
+  onScenarioRubricValues?: (rubrics: Array<{ scenario_id: string; rubric_id: string }>) => void;
 }
 
 const NONE_OPTION = "__none__";
@@ -133,6 +135,7 @@ export function ScenarioRubrics({
   isAutosaveEnabled = true,
   registerFlush,
   aiScenarioRubricResources,
+  onScenarioRubricValues,
 }: ScenarioRubricsProps) {
   const show = show_scenario_rubrics ?? false;
   const currentResources = useMemo(
@@ -265,6 +268,20 @@ export function ScenarioRubrics({
       onChangeRef.current(ids);
     }
   }, [scenarioRubricIdsByScenario, scenario_ids]);
+
+  // Emit value callback for unified draft pattern
+  const onScenarioRubricValuesRef = useRef(onScenarioRubricValues);
+  onScenarioRubricValuesRef.current = onScenarioRubricValues;
+  useEffect(() => {
+    if (!onScenarioRubricValuesRef.current) return;
+    const values: Array<{ scenario_id: string; rubric_id: string }> = [];
+    rubricIdByScenario.forEach((rubricId, scenarioId) => {
+      if (rubricId) {
+        values.push({ scenario_id: scenarioId, rubric_id: rubricId });
+      }
+    });
+    onScenarioRubricValuesRef.current(values);
+  }, [rubricIdByScenario]);
 
   // Update flush function - returns current IDs from local state
   flushRef.current = async (): Promise<{
