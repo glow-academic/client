@@ -41,20 +41,20 @@ import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
-import { useFlushRegistry } from "@/hooks/use-flush-registry";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   buildDraftPayload,
   checkHasResourceIds,
-  computeEffectiveFormState,
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
 type GetScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/get", "post">;
-type SaveScenarioIn = InputOf<"/api/v5/artifacts/scenarios/save", "post">;
-type SaveScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/save", "post">;
+type CreateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/create", "post">;
+type CreateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/create", "post">;
+type UpdateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/update", "post">;
+type UpdateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/update", "post">;
 type PatchScenarioDraftIn = InputOf<
   "/api/v5/artifacts/scenarios/draft",
   "patch"
@@ -63,46 +63,6 @@ type PatchScenarioDraftOut = OutputOf<
   "/api/v5/artifacts/scenarios/draft",
   "patch"
 >;
-
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftProblemStatementsIn = InputOf<
-  "/api/v5/resources/problem_statements",
-  "post"
->;
-type CreateDraftProblemStatementsOut = OutputOf<
-  "/api/v5/resources/problem_statements",
-  "post"
->;
-type CreateDraftObjectivesIn = InputOf<"/api/v5/resources/objectives", "post">;
-type CreateDraftObjectivesOut = OutputOf<
-  "/api/v5/resources/objectives",
-  "post"
->;
-type CreateDraftParameterFieldsIn = InputOf<
-  "/api/v5/resources/parameter_fields",
-  "post"
->;
-type CreateDraftParameterFieldsOut = OutputOf<
-  "/api/v5/resources/parameter_fields",
-  "post"
->;
-type CreateDraftImagesIn = InputOf<"/api/v5/resources/images", "post">;
-type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
-type CreateDraftVideosIn = InputOf<"/api/v5/resources/videos", "post">;
-type CreateDraftVideosOut = OutputOf<"/api/v5/resources/videos", "post">;
-type CreateDraftQuestionsIn = InputOf<"/api/v5/resources/questions", "post">;
-type CreateDraftQuestionsOut = OutputOf<"/api/v5/resources/questions", "post">;
-type CreateDraftOptionsIn = InputOf<"/api/v5/resources/options", "post">;
-type CreateDraftOptionsOut = OutputOf<"/api/v5/resources/options", "post">;
 
 type ScenarioResourceType =
   | "names"
@@ -121,6 +81,7 @@ type ScenarioResourceType =
   | "options";
 
 type ScenarioFormState = {
+  // ID fields
   name_id: string | null;
   description_id: string | null;
   problem_statement_id: string | null;
@@ -139,19 +100,10 @@ type ScenarioFormState = {
   video_ids: string[];
   question_ids: string[];
   option_ids: string[];
-};
-
-// Type for flush results - each resource returns its created ID(s)
-type FlushResult = {
-  name_id?: string | null;
-  description_id?: string | null;
-  problem_statement_id?: string | null;
-  objective_ids?: string[];
-  image_ids?: string[];
-  video_ids?: string[];
-  question_ids?: string[];
-  option_ids?: string[];
-  parameter_field_ids?: string[];
+  // Value fields for creatables (sent to draft endpoint when set)
+  name: string | null;
+  description: string | null;
+  problem_statement: string | null;
 };
 
 export interface ScenarioProps {
@@ -159,52 +111,13 @@ export interface ScenarioProps {
   // Server-provided data (for server-side rendering)
   scenarioDetailDefault?: GetScenarioOut; // For new mode
   scenarioDetail?: GetScenarioOut; // For edit mode
-  // Server actions (unified save action like Persona)
-  saveScenarioAction?: (input: SaveScenarioIn) => Promise<SaveScenarioOut>;
+  // Server actions
+  createScenarioAction?: (input: CreateScenarioIn) => Promise<CreateScenarioOut>;
+  updateScenarioAction?: (input: UpdateScenarioIn) => Promise<UpdateScenarioOut>;
   patchScenarioDraftAction?: (
     input: PatchScenarioDraftIn,
   ) => Promise<PatchScenarioDraftOut>;
-  // Resource creation actions
-  createNamesAction?: (
-    input: CreateDraftNamesIn,
-  ) => Promise<CreateDraftNamesOut>;
-  createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn,
-  ) => Promise<CreateDraftDescriptionsOut>;
-  createProblemStatementsAction?: (
-    input: CreateDraftProblemStatementsIn,
-  ) => Promise<CreateDraftProblemStatementsOut>;
-  createObjectivesAction?: (
-    input: CreateDraftObjectivesIn,
-  ) => Promise<CreateDraftObjectivesOut>;
-  createParameterFieldsAction?: (
-    input: CreateDraftParameterFieldsIn,
-  ) => Promise<CreateDraftParameterFieldsOut>;
-  createImagesAction?: (
-    input: CreateDraftImagesIn,
-  ) => Promise<CreateDraftImagesOut>;
-  createVideosAction?: (
-    input: CreateDraftVideosIn,
-  ) => Promise<CreateDraftVideosOut>;
-  createQuestionsAction?: (
-    input: CreateDraftQuestionsIn,
-  ) => Promise<CreateDraftQuestionsOut>;
-  createOptionsAction?: (
-    input: CreateDraftOptionsIn,
-  ) => Promise<CreateDraftOptionsOut>;
 }
-
-const FLUSH_KEYS = [
-  "names",
-  "descriptions",
-  "problem_statements",
-  "objectives",
-  "images",
-  "videos",
-  "questions",
-  "options",
-  "parameter_fields",
-];
 
 const VALID_RESOURCE_TYPES: ScenarioResourceType[] = [
   "names",
@@ -224,17 +137,17 @@ const VALID_RESOURCE_TYPES: ScenarioResourceType[] = [
 ];
 
 const SCENARIO_RESOURCES: ResourceConfig[] = [
-  { key: "names", formKey: "name_id", flushKey: "name_id", type: "single" },
+  { key: "names", formKey: "name_id", flushKey: null, type: "single" },
   {
     key: "descriptions",
     formKey: "description_id",
-    flushKey: "description_id",
+    flushKey: null,
     type: "single",
   },
   {
     key: "problem_statements",
     formKey: "problem_statement_id",
-    flushKey: "problem_statement_id",
+    flushKey: null,
     type: "single",
   },
   {
@@ -253,27 +166,27 @@ const SCENARIO_RESOURCES: ResourceConfig[] = [
   {
     key: "parameter_fields",
     formKey: "parameter_field_ids",
-    flushKey: "parameter_field_ids",
+    flushKey: null,
     type: "multi",
   },
-  { key: "images", formKey: "image_ids", flushKey: "image_ids", type: "multi" },
+  { key: "images", formKey: "image_ids", flushKey: null, type: "multi" },
   {
     key: "objectives",
     formKey: "objective_ids",
-    flushKey: "objective_ids",
+    flushKey: null,
     type: "multi",
   },
-  { key: "videos", formKey: "video_ids", flushKey: "video_ids", type: "multi" },
+  { key: "videos", formKey: "video_ids", flushKey: null, type: "multi" },
   {
     key: "questions",
     formKey: "question_ids",
-    flushKey: "question_ids",
+    flushKey: null,
     type: "multi",
   },
   {
     key: "options",
     formKey: "option_ids",
-    flushKey: "option_ids",
+    flushKey: null,
     type: "multi",
   },
 ];
@@ -282,17 +195,9 @@ function ScenarioComponent({
   scenarioId,
   scenarioDetailDefault: serverScenarioDetailDefault,
   scenarioDetail: serverScenarioDetail,
-  saveScenarioAction,
+  createScenarioAction,
+  updateScenarioAction,
   patchScenarioDraftAction,
-  createNamesAction,
-  createDescriptionsAction,
-  createProblemStatementsAction,
-  createObjectivesAction,
-  createParameterFieldsAction,
-  createImagesAction,
-  createVideosAction,
-  createQuestionsAction,
-  createOptionsAction,
 }: ScenarioProps) {
   const router = useRouter();
   const isEditMode = !!scenarioId;
@@ -303,10 +208,6 @@ function ScenarioComponent({
   const scenarioData = isEditMode
     ? serverScenarioDetail
     : serverScenarioDetailDefault;
-
-  // --- Flush Registry ---
-  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
-    useFlushRegistry<FlushResult>(FLUSH_KEYS);
 
   // --- AI Generation State ---
   const { isGenerating, makeOnGenerationComplete, generate } =
@@ -361,6 +262,9 @@ function ScenarioComponent({
         video_ids: [],
         question_ids: [],
         option_ids: [],
+        name: null,
+        description: null,
+        problem_statement: null,
       };
     }
 
@@ -426,6 +330,9 @@ function ScenarioComponent({
         .map((item: { option_id?: string | null }) => item.option_id)
         .filter(Boolean)
         .map(String),
+      name: null,
+      description: null,
+      problem_statement: null,
     };
   }, [scenarioData]);
 
@@ -635,9 +542,37 @@ function ScenarioComponent({
   useEffect(() => {
     if (patchScenarioDraftAction) {
       patchActionRef.current = async (payload: Record<string, unknown>) => {
-        return await patchScenarioDraftAction({
+        const result = await patchScenarioDraftAction({
           body: payload,
         } as PatchScenarioDraftIn);
+
+        // Sync form_state from server response (server is source of truth)
+        const fs = (result as Record<string, unknown>)?.["form_state"] as Record<string, unknown> | undefined;
+        if (fs) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name_id: (fs["name_id"] as string) ?? prev.name_id,
+            description_id: (fs["description_id"] as string) ?? prev.description_id,
+            problem_statement_id: (fs["problem_statement_id"] as string) ?? prev.problem_statement_id,
+            flag_ids: (fs["flag_ids"] as string[]) ?? prev.active_flag_id,
+            department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
+            persona_ids: (fs["persona_ids"] as string[]) ?? prev.persona_ids,
+            document_ids: (fs["document_ids"] as string[]) ?? prev.document_ids,
+            parameter_field_ids: (fs["parameter_field_ids"] as string[]) ?? prev.parameter_field_ids,
+            objective_ids: (fs["objective_ids"] as string[]) ?? prev.objective_ids,
+            image_ids: (fs["image_ids"] as string[]) ?? prev.image_ids,
+            video_ids: (fs["video_ids"] as string[]) ?? prev.video_ids,
+            question_ids: (fs["question_ids"] as string[]) ?? prev.question_ids,
+            option_ids: (fs["option_ids"] as string[]) ?? prev.option_ids,
+            // Clear value fields after server resolves them to IDs
+            name: fs["name_id"] ? null : prev.name,
+            description: fs["description_id"] ? null : prev.description,
+            problem_statement: fs["problem_statement_id"] ? null : prev.problem_statement,
+          }));
+        }
+
+        return result;
       };
     } else {
       patchActionRef.current = undefined;
@@ -667,6 +602,10 @@ function ScenarioComponent({
         video_ids: formState.video_ids,
         question_ids: formState.question_ids,
         option_ids: formState.option_ids,
+        // Value fields trigger autosave too
+        name: formState.name,
+        description: formState.description,
+        problem_statement: formState.problem_statement,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -688,36 +627,50 @@ function ScenarioComponent({
       videoIdsStr,
       questionIdsStr,
       optionIdsStr,
+      formState.name,
+      formState.description,
+      formState.problem_statement,
     ],
   );
 
   const hasResourceIds = checkHasResourceIds(
     SCENARIO_RESOURCES,
     formState as unknown as Record<string, unknown>,
-  );
+  ) || !!formState.name || !!formState.description || !!formState.problem_statement;
 
   const buildPatchPayload = useCallback(
     (
       draftId: string | null,
       expectedVersion: number,
-      flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
-      const effectiveState = computeEffectiveFormState(
-        SCENARIO_RESOURCES,
-        formStateRef.current as Record<string, unknown>,
-        (flushResults ?? {}) as Record<string, unknown>,
-      ) as unknown as ScenarioFormState;
-      const referenceState = lastPatchedFormStateRef.current;
+      const current = formStateRef.current as unknown as ScenarioFormState;
+      const ref = lastPatchedFormStateRef.current;
 
-      // Build flat draft payload for standard resources
-      const resourcePayload = buildDraftPayload(SCENARIO_RESOURCES, {
+      // Build flat draft payload for ID-based resources
+      const idPayload = buildDraftPayload(SCENARIO_RESOURCES, {
         formState: formStateRef.current,
-        referenceState: referenceState as unknown as Record<
-          string,
-          unknown
-        > | null,
-        flushResults: (flushResults ?? {}) as Record<string, unknown>,
+        referenceState: ref as unknown as Record<string, unknown> | null,
       });
+
+      // Value fields for creatables (value takes precedence over ID)
+      if (current.name != null) {
+        if (!ref || current.name !== ref.name) {
+          idPayload["name"] = current.name;
+          delete idPayload["name_id"];
+        }
+      }
+      if (current.description != null) {
+        if (!ref || current.description !== ref.description) {
+          idPayload["description"] = current.description;
+          delete idPayload["description_id"];
+        }
+      }
+      if (current.problem_statement != null) {
+        if (!ref || current.problem_statement !== ref.problem_statement) {
+          idPayload["problem_statement"] = current.problem_statement;
+          delete idPayload["problem_statement_id"];
+        }
+      }
 
       // Build flag fields separately (individual flag fields)
       const FLAG_FIELDS = [
@@ -730,8 +683,8 @@ function ScenarioComponent({
       ] as const;
       const flagPayload: Record<string, string | null> = {};
       for (const field of FLAG_FIELDS) {
-        const effectiveVal = effectiveState[field] ?? null;
-        const refVal = referenceState?.[field] ?? null;
+        const effectiveVal = current[field] ?? null;
+        const refVal = ref?.[field] ?? null;
         if (effectiveVal !== refVal) {
           flagPayload[field] = effectiveVal;
         }
@@ -739,7 +692,7 @@ function ScenarioComponent({
 
       return {
         input_draft_id: draftId || null,
-        ...resourcePayload,
+        ...idPayload,
         ...flagPayload,
         expected_version: expectedVersion,
       };
@@ -758,6 +711,9 @@ function ScenarioComponent({
     };
   }, []);
 
+  // Empty flush registry ref (no more client-side resource creation)
+  const emptyFlushRef = useRef({});
+
   const {
     setUrlFormDataRef,
     onFormDataChange,
@@ -772,7 +728,7 @@ function ScenarioComponent({
     setSelectedDraftId,
     serverDraftVersion: draftVersion ?? null,
     hasResourceIds,
-    flushRegistryRef,
+    flushRegistryRef: emptyFlushRef,
     formStateRef,
     onPatchSuccess,
   });
@@ -1133,7 +1089,9 @@ function ScenarioComponent({
           return {
             ...prev,
             name_id: null,
+            name: null,
             description_id: null,
+            description: null,
             active_flag_id: null,
             department_ids: [],
             objectives_enabled_flag_id: null,
@@ -1161,6 +1119,7 @@ function ScenarioComponent({
           return {
             ...prev,
             problem_statement_id: null,
+            problem_statement: null,
             objective_ids: [],
             image_ids: [],
           };
@@ -1180,22 +1139,26 @@ function ScenarioComponent({
   // --- Submit ---
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      if (stableScenarioDataFields?.names?.required && !formState.name_id) {
+      // Check for name (either ID or value)
+      const hasName = !!formState.name_id || !!formState.name;
+      if (stableScenarioDataFields?.names?.required && !hasName) {
         toast.error("Scenario name is required");
         throw new Error("Scenario name is required");
       }
 
+      const hasDescription = !!formState.description_id || !!formState.description;
       if (
         stableScenarioDataFields?.descriptions?.required &&
-        !formState.description_id
+        !hasDescription
       ) {
         toast.error("Scenario description is required");
         throw new Error("Scenario description is required");
       }
 
+      const hasProblemStatement = !!formState.problem_statement_id || !!formState.problem_statement;
       if (
         stableScenarioDataFields?.problem_statements?.required &&
-        !formState.problem_statement_id
+        !hasProblemStatement
       ) {
         toast.error("Problem statement is required");
         throw new Error("Problem statement is required");
@@ -1262,78 +1225,78 @@ function ScenarioComponent({
         throw new Error("Profile not loaded");
       }
 
-      if (!saveScenarioAction) {
-        toast.error("Save action not available");
-        throw new Error("Save action not available");
-      }
-
-      if (!formState.name_id) {
+      if (!hasName) {
         toast.error("Scenario name is required");
         throw new Error("Scenario name is required");
       }
 
-      // When autosave is disabled, flush all resources first to create them
-      // This gets the IDs directly without saving to draft
-      let flushResults: FlushResult = {};
-      if (!isAutosaveEnabled) {
-        flushResults = await flushAllResources();
-      }
-
-      const effectiveFormState = computeEffectiveFormState(
-        SCENARIO_RESOURCES,
-        formStateRef.current as Record<string, unknown>,
-        flushResults as Record<string, unknown>,
-      ) as unknown as ScenarioFormState;
+      // Build common fields for create/update (dual-mode: ID or value)
+      const commonFields = {
+        name_id: formState.name_id ?? undefined,
+        name: formState.name ?? undefined,
+        description_id: formState.description_id ?? undefined,
+        description: formState.description ?? undefined,
+        problem_statement_id: formState.problem_statement_id ?? undefined,
+        problem_statement: formState.problem_statement ?? undefined,
+        active_flag_id: formState.active_flag_id ?? undefined,
+        objectives_enabled_flag_id:
+          formState.objectives_enabled_flag_id ?? undefined,
+        images_enabled_flag_id:
+          formState.images_enabled_flag_id ?? undefined,
+        video_enabled_flag_id:
+          formState.video_enabled_flag_id ?? undefined,
+        questions_enabled_flag_id:
+          formState.questions_enabled_flag_id ?? undefined,
+        problem_statement_enabled_flag_id:
+          formState.problem_statement_enabled_flag_id ?? undefined,
+        department_ids: formState.department_ids?.length
+          ? formState.department_ids
+          : undefined,
+        persona_ids: formState.persona_ids?.length
+          ? formState.persona_ids
+          : undefined,
+        document_ids: formState.document_ids?.length
+          ? formState.document_ids
+          : undefined,
+        parameter_field_ids: formState.parameter_field_ids?.length
+          ? formState.parameter_field_ids
+          : undefined,
+        image_ids: formState.image_ids?.length
+          ? formState.image_ids
+          : undefined,
+        objective_ids: formState.objective_ids?.length
+          ? formState.objective_ids
+          : undefined,
+        video_ids: formState.video_ids?.length
+          ? formState.video_ids
+          : undefined,
+        question_ids: formState.question_ids?.length
+          ? formState.question_ids
+          : undefined,
+        option_ids: formState.option_ids?.length
+          ? formState.option_ids
+          : undefined,
+      };
 
       try {
-        await saveScenarioAction({
-          body: {
-            input_scenario_id: isEditMode && scenarioId ? scenarioId : null,
-            name_id: effectiveFormState.name_id!,
-            description_id: effectiveFormState.description_id ?? null,
-            problem_statement_id:
-              effectiveFormState.problem_statement_id ?? null,
-            active_flag_id: effectiveFormState.active_flag_id ?? null,
-            objectives_enabled_flag_id:
-              effectiveFormState.objectives_enabled_flag_id ?? null,
-            images_enabled_flag_id:
-              effectiveFormState.images_enabled_flag_id ?? null,
-            video_enabled_flag_id:
-              effectiveFormState.video_enabled_flag_id ?? null,
-            questions_enabled_flag_id:
-              effectiveFormState.questions_enabled_flag_id ?? null,
-            problem_statement_enabled_flag_id:
-              effectiveFormState.problem_statement_enabled_flag_id ?? null,
-            department_ids: effectiveFormState.department_ids?.length
-              ? effectiveFormState.department_ids
-              : null,
-            persona_ids: effectiveFormState.persona_ids?.length
-              ? effectiveFormState.persona_ids
-              : null,
-            document_ids: effectiveFormState.document_ids?.length
-              ? effectiveFormState.document_ids
-              : null,
-            parameter_ids: null,
-            parameter_field_ids: effectiveFormState.parameter_field_ids?.length
-              ? effectiveFormState.parameter_field_ids
-              : null,
-            image_ids: effectiveFormState.image_ids?.length
-              ? effectiveFormState.image_ids
-              : null,
-            objective_ids: effectiveFormState.objective_ids?.length
-              ? effectiveFormState.objective_ids
-              : null,
-            video_ids: effectiveFormState.video_ids?.length
-              ? effectiveFormState.video_ids
-              : null,
-            question_ids: effectiveFormState.question_ids?.length
-              ? effectiveFormState.question_ids
-              : null,
-            option_ids: effectiveFormState.option_ids?.length
-              ? effectiveFormState.option_ids
-              : null,
-          } as unknown as SaveScenarioIn["body"],
-        });
+        if (isEditMode && scenarioId && updateScenarioAction) {
+          await updateScenarioAction({
+            body: {
+              scenarios: [{ scenario_id: scenarioId, ...commonFields }],
+              group_id: scenarioData?.group_id ?? undefined,
+            },
+          } as UpdateScenarioIn);
+        } else if (createScenarioAction) {
+          await createScenarioAction({
+            body: {
+              scenarios: [commonFields],
+              group_id: scenarioData?.group_id ?? undefined,
+            },
+          } as CreateScenarioIn);
+        } else {
+          toast.error("Save action not available");
+          throw new Error("Save action not available");
+        }
 
         toast.success(
           `Scenario ${isEditMode ? "updated" : "created"} successfully!`,
@@ -1359,22 +1322,22 @@ function ScenarioComponent({
       stableScenarioDataFields?.videos?.required,
       stableScenarioDataFields?.questions?.required,
       profile?.id,
-      saveScenarioAction,
+      createScenarioAction,
+      updateScenarioAction,
       isEditMode,
       scenarioId,
+      scenarioData?.group_id,
       router,
-      isAutosaveEnabled,
-      flushAllResources,
     ],
   );
 
   // --- Step Status ---
   const getStepStatus = useCallback(
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      const hasName = !!formState.name_id;
-      const hasDescription = !!formState.description_id;
+      const hasName = !!formState.name_id || !!formState.name;
+      const hasDescription = !!formState.description_id || !!formState.description;
       const hasDepartments = formState.department_ids.length > 0;
-      const hasProblemStatement = !!formState.problem_statement_id;
+      const hasProblemStatement = !!formState.problem_statement_id || !!formState.problem_statement;
       const hasObjectives = formState.objective_ids.length > 0;
       switch (stepId) {
         case "basic":
@@ -1481,7 +1444,10 @@ function ScenarioComponent({
                   names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId }))
+                    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
+                  }
+                  onNameChange={(name) =>
+                    setFormState((prev) => ({ ...prev, name: name || null, name_id: null }))
                   }
                   onGenerate={generateHandlers["names"]}
                   placeholder="e.g., Customer Support Escalation"
@@ -1489,17 +1455,6 @@ function ScenarioComponent({
                   required={s?.names?.required ?? false}
                   hideDescription={true}
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
-                  create_tool_id={s?.names?.tool_id ?? null}
-                  createNamesAction={
-                    createNamesAction as
-                      | ((
-                          input: CreateDraftNamesIn,
-                        ) => Promise<CreateDraftNamesOut>)
-                      | undefined
-                  }
-                  registerFlush={registerFlushCallbacks["names"]}
-                  isAutosaveEnabled={isAutosaveEnabled}
-
                 />
               }
               resetFields={["name", "description", "departments"]}
@@ -1534,6 +1489,14 @@ function ScenarioComponent({
                     setFormState((prev) => ({
                       ...prev,
                       description_id: descriptionId,
+                      description: null,
+                    }))
+                  }
+                  onDescriptionChange={(desc) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      description: desc || null,
+                      description_id: null,
                     }))
                   }
                   onGenerate={generateHandlers["descriptions"]}
@@ -1541,17 +1504,6 @@ function ScenarioComponent({
                   placeholder="Describe the scenario"
                   required={s?.descriptions?.required ?? false}
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
-                  create_tool_id={s?.descriptions?.tool_id ?? null}
-                  createDescriptionsAction={
-                    createDescriptionsAction as
-                      | ((
-                          input: CreateDraftDescriptionsIn,
-                        ) => Promise<CreateDraftDescriptionsOut>)
-                      | undefined
-                  }
-                  registerFlush={registerFlushCallbacks["descriptions"]}
-                  isAutosaveEnabled={isAutosaveEnabled}
-
                 />
 
                 <Departments
@@ -1568,7 +1520,6 @@ function ScenarioComponent({
                   required={s?.departments?.required ?? false}
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
                   onGenerate={generateHandlers["departments"]}
-
                 />
 
                 {/* Server-driven Flags - single component for all flags */}
@@ -1655,21 +1606,10 @@ function ScenarioComponent({
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, image_ids: ids }))
                     }
-                    createImagesAction={
-                      createImagesAction as
-                        | ((
-                            input: CreateDraftImagesIn,
-                          ) => Promise<CreateDraftImagesOut>)
-                        | undefined
-                    }
                     onGenerate={generateHandlers["images"]}
                     showAiGenerate={s?.images?.show_ai_generate ?? false}
-                    create_tool_id={s?.images?.tool_id ?? null}
                     multiSelect={true}
                     maxImages={3}
-                    isAutosaveEnabled={isAutosaveEnabled}
-                    registerFlush={registerFlushCallbacks["images"]}
-
                   />
                 )}
                 {showProblemStatementSection && (
@@ -1690,6 +1630,14 @@ function ScenarioComponent({
                       setFormState((prev) => ({
                         ...prev,
                         problem_statement_id: problemStatementId,
+                        problem_statement: null,
+                      }))
+                    }
+                    onProblemStatementChange={(ps) =>
+                      setFormState((prev) => ({
+                        ...prev,
+                        problem_statement: ps || null,
+                        problem_statement_id: null,
                       }))
                     }
                     onGenerate={generateHandlers["problem_statements"]}
@@ -1701,19 +1649,6 @@ function ScenarioComponent({
                       setFormData({ problemStatementSearch: term || null })
                     }
                     showAiGenerate={s?.problem_statements?.show_ai_generate ?? false}
-                    create_tool_id={
-                      s?.problem_statements?.tool_id ?? null
-                    }
-                    createProblemStatementsAction={
-                      createProblemStatementsAction as
-                        | ((
-                            input: CreateDraftProblemStatementsIn,
-                          ) => Promise<CreateDraftProblemStatementsOut>)
-                        | undefined
-                    }
-                    registerFlush={registerFlushCallbacks["problem_statements"]}
-                    isAutosaveEnabled={isAutosaveEnabled}
-
                   />
                 )}
                 {showObjectivesSection && (
@@ -1729,18 +1664,7 @@ function ScenarioComponent({
                       setFormState((prev) => ({ ...prev, objective_ids: ids }))
                     }
                     showAiGenerate={s?.objectives?.show_ai_generate ?? false}
-                    create_tool_id={s?.objectives?.tool_id ?? null}
-                    createObjectivesAction={
-                      createObjectivesAction as
-                        | ((
-                            input: CreateDraftObjectivesIn,
-                          ) => Promise<CreateDraftObjectivesOut>)
-                        | undefined
-                    }
                     onGenerate={generateHandlers["objectives"]}
-                    isAutosaveEnabled={isAutosaveEnabled}
-                    registerFlush={registerFlushCallbacks["objectives"]}
-
                   />
                 )}
               </div>
@@ -1934,11 +1858,6 @@ function ScenarioComponent({
                   disabled={disabled}
                   showAiGenerate={s?.parameter_fields?.show_ai_generate ?? false}
                   required={s?.parameter_fields?.required ?? false}
-                  createParameterFieldsAction={createParameterFieldsAction}
-                  isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["parameter_fields"]}
-                  create_tool_id={s?.parameter_fields?.tool_id ?? null}
-
                 />
               </div>
             </StepCard>
@@ -1983,19 +1902,8 @@ function ScenarioComponent({
                     onChange={(ids) =>
                       setFormState((prev) => ({ ...prev, video_ids: ids }))
                     }
-                    createVideosAction={
-                      createVideosAction as
-                        | ((
-                            input: CreateDraftVideosIn,
-                          ) => Promise<CreateDraftVideosOut>)
-                        | undefined
-                    }
                     onGenerate={generateHandlers["videos"]}
                     showAiGenerate={s?.videos?.show_ai_generate ?? false}
-                    create_tool_id={s?.videos?.tool_id ?? null}
-                    isAutosaveEnabled={isAutosaveEnabled}
-                    registerFlush={registerFlushCallbacks["videos"]}
-
                   />
                 )}
                 {showQuestionsSection && (
@@ -2013,20 +1921,9 @@ function ScenarioComponent({
                         question_ids: ids,
                       }))
                     }
-                    createQuestionsAction={
-                      createQuestionsAction as
-                        | ((
-                            input: CreateDraftQuestionsIn,
-                          ) => Promise<CreateDraftQuestionsOut>)
-                        | undefined
-                    }
                     onGenerate={generateHandlers["questions"]}
                     showAiGenerate={s?.questions?.show_ai_generate ?? false}
-                    create_tool_id={s?.questions?.tool_id ?? null}
-                    isAutosaveEnabled={isAutosaveEnabled}
-                    registerFlush={registerFlushCallbacks["questions"]}
                     onInternalQuestionsChange={setInternalQuestions}
-
                   />
                 )}
                 {showQuestionsSection && internalQuestions.length > 0 && (
@@ -2043,17 +1940,6 @@ function ScenarioComponent({
                       setFormState((prev) => ({ ...prev, option_ids: ids }))
                     }
                     showAiGenerate={s?.options?.show_ai_generate ?? false}
-                    create_tool_id={s?.options?.tool_id ?? null}
-                    createOptionsAction={
-                      createOptionsAction as
-                        | ((
-                            input: CreateDraftOptionsIn,
-                          ) => Promise<CreateDraftOptionsOut>)
-                        | undefined
-                    }
-                    isAutosaveEnabled={isAutosaveEnabled}
-                    registerFlush={registerFlushCallbacks["options"]}
-
                   />
                 )}
               </div>
@@ -2071,20 +1957,9 @@ function ScenarioComponent({
       isGenerating,
       isGeneratingStepResource,
       formState,
-      createNamesAction,
-      createDescriptionsAction,
-      createProblemStatementsAction,
-      createObjectivesAction,
-      createParameterFieldsAction,
-      createImagesAction,
-      createVideosAction,
-      createQuestionsAction,
-      createOptionsAction,
       handleDirectStepGenerate,
       canRegenerate,
       stepResources,
-      isAutosaveEnabled,
-      registerFlushCallbacks,
       showImagesSection,
       showVideosSection,
       showQuestionsSection,
@@ -2153,7 +2028,8 @@ export default React.memo(ScenarioComponent, (prevProps, nextProps) => {
   }
 
   if (
-    prevProps.saveScenarioAction !== nextProps.saveScenarioAction ||
+    prevProps.createScenarioAction !== nextProps.createScenarioAction ||
+    prevProps.updateScenarioAction !== nextProps.updateScenarioAction ||
     prevProps.patchScenarioDraftAction !== nextProps.patchScenarioDraftAction
   ) {
     return false;

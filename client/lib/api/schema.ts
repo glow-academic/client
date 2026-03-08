@@ -44,26 +44,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/personas/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Persona
-         * @description Search personas — composable infra architecture.
-         */
-        post: operations["search_persona_api_v5_artifacts_personas_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/personas/create": {
         parameters: {
             query?: never;
@@ -278,26 +258,6 @@ export interface paths {
          * @description Search scenarios — composable infra architecture.
          */
         post: operations["search_scenario_api_v5_artifacts_scenarios_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/scenarios/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Scenario
-         * @description Search scenarios — composable infra architecture.
-         */
-        post: operations["search_scenario_api_v5_artifacts_scenarios_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -524,26 +484,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/simulations/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Simulation
-         * @description Search simulations — composable infra architecture.
-         */
-        post: operations["search_simulation_api_v5_artifacts_simulations_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/simulations/create": {
         parameters: {
             query?: never;
@@ -738,26 +678,6 @@ export interface paths {
          * @description Search documents — composable infra architecture.
          */
         post: operations["search_document_api_v5_artifacts_documents_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/documents/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Document
-         * @description Search documents — composable infra architecture.
-         */
-        post: operations["search_document_api_v5_artifacts_documents_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1004,26 +924,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/departments/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Department
-         * @description Search departments — composable infra architecture.
-         */
-        post: operations["search_department_api_v5_artifacts_departments_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/departments/create": {
         parameters: {
             query?: never;
@@ -1218,26 +1118,6 @@ export interface paths {
          * @description Search cohorts — composable infra architecture.
          */
         post: operations["search_cohort_api_v5_artifacts_cohorts_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/cohorts/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Cohort
-         * @description Search cohorts — composable infra architecture.
-         */
-        post: operations["search_cohort_api_v5_artifacts_cohorts_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1458,26 +1338,6 @@ export interface paths {
          * @description Search evals — composable infra architecture.
          */
         post: operations["search_eval_api_v5_artifacts_evals_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/evals/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Eval
-         * @description Search evals — composable infra architecture.
-         */
-        post: operations["search_eval_api_v5_artifacts_evals_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1724,26 +1584,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/rubrics/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Rubric
-         * @description Search rubrics — composable infra architecture.
-         */
-        post: operations["search_rubric_api_v5_artifacts_rubrics_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/rubrics/create": {
         parameters: {
             query?: never;
@@ -1938,26 +1778,6 @@ export interface paths {
          * @description Search settings — composable infra architecture.
          */
         post: operations["search_setting_api_v5_artifacts_settings_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/settings/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Setting
-         * @description Search settings — composable infra architecture.
-         */
-        post: operations["search_setting_api_v5_artifacts_settings_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2204,26 +2024,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/agents/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Agent
-         * @description Search agents — composable infra architecture.
-         */
-        post: operations["search_agent_api_v5_artifacts_agents_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/agents/create": {
         parameters: {
             query?: never;
@@ -2444,26 +2244,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/models/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Model
-         * @description Search models — composable infra architecture.
-         */
-        post: operations["search_model_api_v5_artifacts_models_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/models/create": {
         parameters: {
             query?: never;
@@ -2658,26 +2438,6 @@ export interface paths {
          * @description Search providers — composable infra architecture.
          */
         post: operations["search_provider_api_v5_artifacts_providers_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/providers/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Provider
-         * @description Search providers — composable infra architecture.
-         */
-        post: operations["search_provider_api_v5_artifacts_providers_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2924,26 +2684,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/parameters/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Parameter
-         * @description Search parameters — composable infra architecture.
-         */
-        post: operations["search_parameter_api_v5_artifacts_parameters_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/parameters/create": {
         parameters: {
             query?: never;
@@ -3158,26 +2898,6 @@ export interface paths {
          * @description Search fields — composable infra architecture.
          */
         post: operations["search_field_api_v5_artifacts_fields_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/fields/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Field
-         * @description Search fields — composable infra architecture.
-         */
-        post: operations["search_field_api_v5_artifacts_fields_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3404,26 +3124,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/profiles/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Profile
-         * @description Search profiles — composable infra architecture.
-         */
-        post: operations["search_profile_api_v5_artifacts_profiles_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/profiles/create": {
         parameters: {
             query?: never;
@@ -3644,26 +3344,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/auths/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Auth
-         * @description Search auths — composable infra architecture.
-         */
-        post: operations["search_auth_api_v5_artifacts_auths_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/auths/create": {
         parameters: {
             query?: never;
@@ -3858,26 +3538,6 @@ export interface paths {
          * @description Search tools — composable infra architecture.
          */
         post: operations["search_tool_api_v5_artifacts_tools_search_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/tools/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Tool
-         * @description Search tools — composable infra architecture.
-         */
-        post: operations["search_tool_api_v5_artifacts_tools_list_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4364,7 +4024,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/home/list": {
+    "/api/v5/artifacts/home/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4374,10 +4034,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Home List
+         * Search Home
          * @description Get paginated attempt history for home.
          */
-        post: operations["home_list_api_v5_artifacts_home_list_post"];
+        post: operations["search_home_api_v5_artifacts_home_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4464,7 +4124,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/practice/list": {
+    "/api/v5/artifacts/practice/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4474,10 +4134,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Practice List
+         * Search Practice
          * @description Get paginated attempt history for practice.
          */
-        post: operations["practice_list_api_v5_artifacts_practice_list_post"];
+        post: operations["search_practice_api_v5_artifacts_practice_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4664,7 +4324,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/record/list": {
+    "/api/v5/artifacts/record/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4674,10 +4334,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * List Record
+         * Search Record
          * @description Get record attempt history for a single profile (paginated).
          */
-        post: operations["list_record_api_v5_artifacts_record_list_post"];
+        post: operations["search_record_api_v5_artifacts_record_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4764,7 +4424,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/dashboard/list": {
+    "/api/v5/artifacts/dashboard/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4774,10 +4434,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * List Dashboard
+         * Search Dashboard
          * @description Get dashboard attempt history (paginated).
          */
-        post: operations["list_dashboard_api_v5_artifacts_dashboard_list_post"];
+        post: operations["search_dashboard_api_v5_artifacts_dashboard_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4864,7 +4524,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/reports/get": {
+    "/api/v5/artifacts/reports/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4877,7 +4537,7 @@ export interface paths {
          * Get Reports
          * @description Get reports artifact data via composable context resolver.
          */
-        post: operations["get_reports_api_v5_artifacts_reports_get_post"];
+        post: operations["get_reports_api_v5_artifacts_reports_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4944,7 +4604,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/leaderboard/list": {
+    "/api/v5/artifacts/leaderboard/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -4954,10 +4614,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * List Leaderboard
+         * Search Leaderboard
          * @description Get leaderboard profile rows (bottom table, paginated).
          */
-        post: operations["list_leaderboard_api_v5_artifacts_leaderboard_list_post"];
+        post: operations["search_leaderboard_api_v5_artifacts_leaderboard_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5044,7 +4704,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/pricing/list": {
+    "/api/v5/artifacts/pricing/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5054,10 +4714,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * List Pricing
+         * Search Pricing
          * @description Get pricing group history (bottom table, paginated).
          */
-        post: operations["list_pricing_api_v5_artifacts_pricing_list_post"];
+        post: operations["search_pricing_api_v5_artifacts_pricing_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5144,7 +4804,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/activity/list": {
+    "/api/v5/artifacts/activity/search": {
         parameters: {
             query?: never;
             header?: never;
@@ -5154,10 +4814,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * List Activity
+         * Search Activity
          * @description Get activity session history (bottom table, paginated).
          */
-        post: operations["list_activity_api_v5_artifacts_activity_list_post"];
+        post: operations["search_activity_api_v5_artifacts_activity_search_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -27662,6 +27322,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state: components["schemas"]["ScenarioDraftFormState"];
         };
         /**
          * PatchSettingDraftApiRequest
@@ -32910,6 +32571,70 @@ export interface components {
             resources?: components["schemas"]["ScenarioDocument"][] | null;
         };
         /**
+         * ScenarioDraftFormState
+         * @description Full form state after draft patch — server is source of truth.
+         *
+         *     Client replaces its local form state with this after every successful patch.
+         */
+        ScenarioDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Problem Statement Id */
+            problem_statement_id?: string | null;
+            /**
+             * Flag Ids
+             * @default []
+             */
+            flag_ids: string[];
+            /**
+             * Department Ids
+             * @default []
+             */
+            department_ids: string[];
+            /**
+             * Persona Ids
+             * @default []
+             */
+            persona_ids: string[];
+            /**
+             * Document Ids
+             * @default []
+             */
+            document_ids: string[];
+            /**
+             * Parameter Field Ids
+             * @default []
+             */
+            parameter_field_ids: string[];
+            /**
+             * Objective Ids
+             * @default []
+             */
+            objective_ids: string[];
+            /**
+             * Image Ids
+             * @default []
+             */
+            image_ids: string[];
+            /**
+             * Video Ids
+             * @default []
+             */
+            video_ids: string[];
+            /**
+             * Question Ids
+             * @default []
+             */
+            question_ids: string[];
+            /**
+             * Option Ids
+             * @default []
+             */
+            option_ids: string[];
+        };
+        /**
          * ScenarioEntry
          * @description Scenario entry with resource metadata.
          */
@@ -37776,43 +37501,6 @@ export interface operations {
             };
         };
     };
-    search_persona_api_v5_artifacts_personas_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchPersonaApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListPersonaApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_persona_api_v5_artifacts_personas_create_post: {
         parameters: {
             query?: never;
@@ -38180,43 +37868,6 @@ export interface operations {
         };
     };
     search_scenario_api_v5_artifacts_scenarios_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchScenarioApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListScenarioApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_scenario_api_v5_artifacts_scenarios_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -38656,43 +38307,6 @@ export interface operations {
             };
         };
     };
-    search_simulation_api_v5_artifacts_simulations_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchSimulationApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListSimulationApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_simulation_api_v5_artifacts_simulations_create_post: {
         parameters: {
             query?: never;
@@ -39023,43 +38637,6 @@ export interface operations {
         };
     };
     search_document_api_v5_artifacts_documents_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchDocumentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListDocumentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_document_api_v5_artifacts_documents_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -39536,43 +39113,6 @@ export interface operations {
             };
         };
     };
-    search_department_api_v5_artifacts_departments_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchDepartmentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListDepartmentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_department_api_v5_artifacts_departments_create_post: {
         parameters: {
             query?: never;
@@ -39903,43 +39443,6 @@ export interface operations {
         };
     };
     search_cohort_api_v5_artifacts_cohorts_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchCohortApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListCohortApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_cohort_api_v5_artifacts_cohorts_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -40343,43 +39846,6 @@ export interface operations {
         };
     };
     search_eval_api_v5_artifacts_evals_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchEvalApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListEvalApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_eval_api_v5_artifacts_evals_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -40856,43 +40322,6 @@ export interface operations {
             };
         };
     };
-    search_rubric_api_v5_artifacts_rubrics_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchRubricApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListRubricApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_rubric_api_v5_artifacts_rubrics_create_post: {
         parameters: {
             query?: never;
@@ -41223,43 +40652,6 @@ export interface operations {
         };
     };
     search_setting_api_v5_artifacts_settings_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchSettingApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListSettingApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_setting_api_v5_artifacts_settings_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -41736,43 +41128,6 @@ export interface operations {
             };
         };
     };
-    search_agent_api_v5_artifacts_agents_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchAgentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListAgentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_agent_api_v5_artifacts_agents_create_post: {
         parameters: {
             query?: never;
@@ -42176,43 +41531,6 @@ export interface operations {
             };
         };
     };
-    search_model_api_v5_artifacts_models_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchModelApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListModelApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_model_api_v5_artifacts_models_create_post: {
         parameters: {
             query?: never;
@@ -42543,43 +41861,6 @@ export interface operations {
         };
     };
     search_provider_api_v5_artifacts_providers_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchProviderApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListProviderApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_provider_api_v5_artifacts_providers_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -43056,43 +42337,6 @@ export interface operations {
             };
         };
     };
-    search_parameter_api_v5_artifacts_parameters_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchParameterApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListParameterApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_parameter_api_v5_artifacts_parameters_create_post: {
         parameters: {
             query?: never;
@@ -43460,43 +42704,6 @@ export interface operations {
         };
     };
     search_field_api_v5_artifacts_fields_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchFieldApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListFieldApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_field_api_v5_artifacts_fields_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -43936,43 +43143,6 @@ export interface operations {
             };
         };
     };
-    search_profile_api_v5_artifacts_profiles_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchProfileApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListProfilesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_profile_api_v5_artifacts_profiles_create_post: {
         parameters: {
             query?: never;
@@ -44376,43 +43546,6 @@ export interface operations {
             };
         };
     };
-    search_auth_api_v5_artifacts_auths_list_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchAuthApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListAuthApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_auth_api_v5_artifacts_auths_create_post: {
         parameters: {
             query?: never;
@@ -44743,43 +43876,6 @@ export interface operations {
         };
     };
     search_tool_api_v5_artifacts_tools_search_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchToolApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ListToolApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_tool_api_v5_artifacts_tools_list_post: {
         parameters: {
             query?: never;
             header?: {
@@ -45688,7 +44784,7 @@ export interface operations {
             };
         };
     };
-    home_list_api_v5_artifacts_home_list_post: {
+    search_home_api_v5_artifacts_home_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -45865,7 +44961,7 @@ export interface operations {
             };
         };
     };
-    practice_list_api_v5_artifacts_practice_list_post: {
+    search_practice_api_v5_artifacts_practice_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46223,7 +45319,7 @@ export interface operations {
             };
         };
     };
-    list_record_api_v5_artifacts_record_list_post: {
+    search_record_api_v5_artifacts_record_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46404,7 +45500,7 @@ export interface operations {
             };
         };
     };
-    list_dashboard_api_v5_artifacts_dashboard_list_post: {
+    search_dashboard_api_v5_artifacts_dashboard_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46577,7 +45673,7 @@ export interface operations {
             };
         };
     };
-    get_reports_api_v5_artifacts_reports_get_post: {
+    get_reports_api_v5_artifacts_reports_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46721,7 +45817,7 @@ export interface operations {
             };
         };
     };
-    list_leaderboard_api_v5_artifacts_leaderboard_list_post: {
+    search_leaderboard_api_v5_artifacts_leaderboard_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -46898,7 +45994,7 @@ export interface operations {
             };
         };
     };
-    list_pricing_api_v5_artifacts_pricing_list_post: {
+    search_pricing_api_v5_artifacts_pricing_search_post: {
         parameters: {
             query?: never;
             header?: {
@@ -47075,7 +46171,7 @@ export interface operations {
             };
         };
     };
-    list_activity_api_v5_artifacts_activity_list_post: {
+    search_activity_api_v5_artifacts_activity_search_post: {
         parameters: {
             query?: never;
             header?: {

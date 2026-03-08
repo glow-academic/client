@@ -194,100 +194,6 @@
         }
       }
     },
-    "/api/v5/artifacts/personas/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "personas"
-        ],
-        "summary": "Search Persona",
-        "description": "Search personas \u2014 composable infra architecture.",
-        "operationId": "search_persona_api_v5_artifacts_personas_list_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchPersonaApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListPersonaApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v5/artifacts/personas/create": {
       "post": {
         "tags": [
@@ -1228,100 +1134,6 @@
         "summary": "Search Scenario",
         "description": "Search scenarios \u2014 composable infra architecture.",
         "operationId": "search_scenario_api_v5_artifacts_scenarios_search_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchScenarioApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListScenarioApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v5/artifacts/scenarios/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "scenarios"
-        ],
-        "summary": "Search Scenario",
-        "description": "Search scenarios \u2014 composable infra architecture.",
-        "operationId": "search_scenario_api_v5_artifacts_scenarios_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -2430,100 +2242,6 @@
         }
       }
     },
-    "/api/v5/artifacts/simulations/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "simulations"
-        ],
-        "summary": "Search Simulation",
-        "description": "Search simulations \u2014 composable infra architecture.",
-        "operationId": "search_simulation_api_v5_artifacts_simulations_list_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchSimulationApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListSimulationApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v5/artifacts/simulations/create": {
       "post": {
         "tags": [
@@ -3370,100 +3088,6 @@
         "summary": "Search Document",
         "description": "Search documents \u2014 composable infra architecture.",
         "operationId": "search_document_api_v5_artifacts_documents_search_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchDocumentApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListDocumentApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v5/artifacts/documents/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "documents"
-        ],
-        "summary": "Search Document",
-        "description": "Search documents \u2014 composable infra architecture.",
-        "operationId": "search_document_api_v5_artifacts_documents_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -4666,100 +4290,6 @@
         }
       }
     },
-    "/api/v5/artifacts/departments/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "departments"
-        ],
-        "summary": "Search Department",
-        "description": "Search departments \u2014 composable infra architecture.",
-        "operationId": "search_department_api_v5_artifacts_departments_list_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchDepartmentApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListDepartmentApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v5/artifacts/departments/create": {
       "post": {
         "tags": [
@@ -5606,100 +5136,6 @@
         "summary": "Search Cohort",
         "description": "Search cohorts \u2014 composable infra architecture.",
         "operationId": "search_cohort_api_v5_artifacts_cohorts_search_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchCohortApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListCohortApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v5/artifacts/cohorts/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "cohorts"
-        ],
-        "summary": "Search Cohort",
-        "description": "Search cohorts \u2014 composable infra architecture.",
-        "operationId": "search_cohort_api_v5_artifacts_cohorts_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -6724,100 +6160,6 @@
         "summary": "Search Eval",
         "description": "Search evals \u2014 composable infra architecture.",
         "operationId": "search_eval_api_v5_artifacts_evals_search_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchEvalApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListEvalApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v5/artifacts/evals/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "evals"
-        ],
-        "summary": "Search Eval",
-        "description": "Search evals \u2014 composable infra architecture.",
-        "operationId": "search_eval_api_v5_artifacts_evals_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -8020,100 +7362,6 @@
         }
       }
     },
-    "/api/v5/artifacts/rubrics/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "rubrics"
-        ],
-        "summary": "Search Rubric",
-        "description": "Search rubrics \u2014 composable infra architecture.",
-        "operationId": "search_rubric_api_v5_artifacts_rubrics_list_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchRubricApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListRubricApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v5/artifacts/rubrics/create": {
       "post": {
         "tags": [
@@ -8960,100 +8208,6 @@
         "summary": "Search Setting",
         "description": "Search settings \u2014 composable infra architecture.",
         "operationId": "search_setting_api_v5_artifacts_settings_search_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchSettingApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListSettingApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v5/artifacts/settings/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "settings"
-        ],
-        "summary": "Search Setting",
-        "description": "Search settings \u2014 composable infra architecture.",
-        "operationId": "search_setting_api_v5_artifacts_settings_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -10256,100 +9410,6 @@
         }
       }
     },
-    "/api/v5/artifacts/agents/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "agents"
-        ],
-        "summary": "Search Agent",
-        "description": "Search agents \u2014 composable infra architecture.",
-        "operationId": "search_agent_api_v5_artifacts_agents_list_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchAgentApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListAgentApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v5/artifacts/agents/create": {
       "post": {
         "tags": [
@@ -11374,100 +10434,6 @@
         }
       }
     },
-    "/api/v5/artifacts/models/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "models"
-        ],
-        "summary": "Search Model",
-        "description": "Search models \u2014 composable infra architecture.",
-        "operationId": "search_model_api_v5_artifacts_models_list_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchModelApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListModelApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v5/artifacts/models/create": {
       "post": {
         "tags": [
@@ -12314,100 +11280,6 @@
         "summary": "Search Provider",
         "description": "Search providers \u2014 composable infra architecture.",
         "operationId": "search_provider_api_v5_artifacts_providers_search_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchProviderApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListProviderApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v5/artifacts/providers/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "providers"
-        ],
-        "summary": "Search Provider",
-        "description": "Search providers \u2014 composable infra architecture.",
-        "operationId": "search_provider_api_v5_artifacts_providers_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -13610,100 +12482,6 @@
         }
       }
     },
-    "/api/v5/artifacts/parameters/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "parameters"
-        ],
-        "summary": "Search Parameter",
-        "description": "Search parameters \u2014 composable infra architecture.",
-        "operationId": "search_parameter_api_v5_artifacts_parameters_list_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchParameterApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListParameterApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v5/artifacts/parameters/create": {
       "post": {
         "tags": [
@@ -14644,100 +13422,6 @@
         "summary": "Search Field",
         "description": "Search fields \u2014 composable infra architecture.",
         "operationId": "search_field_api_v5_artifacts_fields_search_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchFieldApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListFieldApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v5/artifacts/fields/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "fields"
-        ],
-        "summary": "Search Field",
-        "description": "Search fields \u2014 composable infra architecture.",
-        "operationId": "search_field_api_v5_artifacts_fields_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -15846,100 +14530,6 @@
         }
       }
     },
-    "/api/v5/artifacts/profiles/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "profiles"
-        ],
-        "summary": "Search Profile",
-        "description": "Search profiles \u2014 composable infra architecture.",
-        "operationId": "search_profile_api_v5_artifacts_profiles_list_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchProfileApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListProfilesApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v5/artifacts/profiles/create": {
       "post": {
         "tags": [
@@ -16964,100 +15554,6 @@
         }
       }
     },
-    "/api/v5/artifacts/auths/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "auths"
-        ],
-        "summary": "Search Auth",
-        "description": "Search auths \u2014 composable infra architecture.",
-        "operationId": "search_auth_api_v5_artifacts_auths_list_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchAuthApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListAuthApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v5/artifacts/auths/create": {
       "post": {
         "tags": [
@@ -17904,100 +16400,6 @@
         "summary": "Search Tool",
         "description": "Search tools \u2014 composable infra architecture.",
         "operationId": "search_tool_api_v5_artifacts_tools_search_post",
-        "parameters": [
-          {
-            "name": "X-Profile-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Profile-Id"
-            }
-          },
-          {
-            "name": "X-Session-Id",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Session-Id"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SearchToolApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ListToolApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v5/artifacts/tools/list": {
-      "post": {
-        "tags": [
-          "v5",
-          "artifacts",
-          "tools"
-        ],
-        "summary": "Search Tool",
-        "description": "Search tools \u2014 composable infra architecture.",
-        "operationId": "search_tool_api_v5_artifacts_tools_list_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20312,7 +18714,7 @@
         }
       }
     },
-    "/api/v5/artifacts/home/list": {
+    "/api/v5/artifacts/home/search": {
       "post": {
         "tags": [
           "v5",
@@ -20320,9 +18722,9 @@
           "artifacts",
           "home"
         ],
-        "summary": "Home List",
+        "summary": "Search Home",
         "description": "Get paginated attempt history for home.",
-        "operationId": "home_list_api_v5_artifacts_home_list_post",
+        "operationId": "search_home_api_v5_artifacts_home_search_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -20767,7 +19169,7 @@
         }
       }
     },
-    "/api/v5/artifacts/practice/list": {
+    "/api/v5/artifacts/practice/search": {
       "post": {
         "tags": [
           "v5",
@@ -20775,9 +19177,9 @@
           "artifacts",
           "practice"
         ],
-        "summary": "Practice List",
+        "summary": "Search Practice",
         "description": "Get paginated attempt history for practice.",
-        "operationId": "practice_list_api_v5_artifacts_practice_list_post",
+        "operationId": "search_practice_api_v5_artifacts_practice_search_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -21686,16 +20088,16 @@
         }
       }
     },
-    "/api/v5/artifacts/record/list": {
+    "/api/v5/artifacts/record/search": {
       "post": {
         "tags": [
           "v5",
           "artifacts",
           "record"
         ],
-        "summary": "List Record",
+        "summary": "Search Record",
         "description": "Get record attempt history for a single profile (paginated).",
-        "operationId": "list_record_api_v5_artifacts_record_list_post",
+        "operationId": "search_record_api_v5_artifacts_record_search_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -22146,16 +20548,16 @@
         }
       }
     },
-    "/api/v5/artifacts/dashboard/list": {
+    "/api/v5/artifacts/dashboard/search": {
       "post": {
         "tags": [
           "v5",
           "artifacts",
           "dashboard"
         ],
-        "summary": "List Dashboard",
+        "summary": "Search Dashboard",
         "description": "Get dashboard attempt history (paginated).",
-        "operationId": "list_dashboard_api_v5_artifacts_dashboard_list_post",
+        "operationId": "search_dashboard_api_v5_artifacts_dashboard_search_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -22587,7 +20989,7 @@
         }
       }
     },
-    "/api/v5/artifacts/reports/get": {
+    "/api/v5/artifacts/reports/search": {
       "post": {
         "tags": [
           "v5",
@@ -22596,7 +20998,7 @@
         ],
         "summary": "Get Reports",
         "description": "Get reports artifact data via composable context resolver.",
-        "operationId": "get_reports_api_v5_artifacts_reports_get_post",
+        "operationId": "get_reports_api_v5_artifacts_reports_search_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -22953,16 +21355,16 @@
         }
       }
     },
-    "/api/v5/artifacts/leaderboard/list": {
+    "/api/v5/artifacts/leaderboard/search": {
       "post": {
         "tags": [
           "v5",
           "artifacts",
           "leaderboard"
         ],
-        "summary": "List Leaderboard",
+        "summary": "Search Leaderboard",
         "description": "Get leaderboard profile rows (bottom table, paginated).",
-        "operationId": "list_leaderboard_api_v5_artifacts_leaderboard_list_post",
+        "operationId": "search_leaderboard_api_v5_artifacts_leaderboard_search_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -23403,16 +21805,16 @@
         }
       }
     },
-    "/api/v5/artifacts/pricing/list": {
+    "/api/v5/artifacts/pricing/search": {
       "post": {
         "tags": [
           "v5",
           "artifacts",
           "pricing"
         ],
-        "summary": "List Pricing",
+        "summary": "Search Pricing",
         "description": "Get pricing group history (bottom table, paginated).",
-        "operationId": "list_pricing_api_v5_artifacts_pricing_list_post",
+        "operationId": "search_pricing_api_v5_artifacts_pricing_search_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -23853,16 +22255,16 @@
         }
       }
     },
-    "/api/v5/artifacts/activity/list": {
+    "/api/v5/artifacts/activity/search": {
       "post": {
         "tags": [
           "v5",
           "artifacts",
           "activity"
         ],
-        "summary": "List Activity",
+        "summary": "Search Activity",
         "description": "Get activity session history (bottom table, paginated).",
-        "operationId": "list_activity_api_v5_artifacts_activity_list_post",
+        "operationId": "search_activity_api_v5_artifacts_activity_search_post",
         "parameters": [
           {
             "name": "X-Profile-Id",
@@ -95158,6 +93560,9 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "form_state": {
+            "$ref": "#/components/schemas/ScenarioDraftFormState"
           }
         },
         "type": "object",
@@ -95165,7 +93570,8 @@
           "success",
           "draft_id",
           "new_version",
-          "message"
+          "message",
+          "form_state"
         ],
         "title": "PatchScenarioDraftApiResponse",
         "description": "Response model for new-style scenario draft endpoint."
@@ -113635,6 +112041,139 @@
         },
         "type": "object",
         "title": "ScenarioDocumentSection"
+      },
+      "ScenarioDraftFormState": {
+        "properties": {
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "problem_statement_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Problem Statement Id"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids",
+            "default": []
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids",
+            "default": []
+          },
+          "persona_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Persona Ids",
+            "default": []
+          },
+          "document_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Document Ids",
+            "default": []
+          },
+          "parameter_field_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Parameter Field Ids",
+            "default": []
+          },
+          "objective_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Objective Ids",
+            "default": []
+          },
+          "image_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Image Ids",
+            "default": []
+          },
+          "video_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Video Ids",
+            "default": []
+          },
+          "question_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Question Ids",
+            "default": []
+          },
+          "option_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Option Ids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "ScenarioDraftFormState",
+        "description": "Full form state after draft patch \u2014 server is source of truth.\n\nClient replaces its local form state with this after every successful patch."
       },
       "ScenarioEntry": {
         "properties": {

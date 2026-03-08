@@ -1,124 +1,156 @@
 """Attempts bulk archive endpoint."""
 
-from typing import Annotated, Any, cast
+from datetime import datetime
+from typing import Annotated
+from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel, Field
 
-from app.infra.globals import get_db, get_pool
-from app.routes.auth.profile import get_auth_profile_internal
-from app.sql.types import (
-    BulkArchiveAttemptsApiRequest,
-    BulkArchiveAttemptsApiResponse,
-    BulkArchiveAttemptsSqlParams,
-    BulkArchiveAttemptsSqlRow,
-)
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.entries.attempt.search import search_attempts
+from app.routes.v5.tools.entries.attempt_archive.create import create_attempt_archive
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
-from app.utils.sql_helper import execute_sql_typed
 
 logger = get_logger(__name__)
-
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/queries/attempts/bulk_archive_attempts_complete.sql"
 
 router = APIRouter()
 
 
-@router.post("/archive", response_model=BulkArchiveAttemptsApiResponse)
+class ArchiveAttemptsRequest(BaseModel):
+    archived: bool
+    group_id: UUID
+    attempt_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    start_date: str | None = None
+    end_date: str | None = None
+    cohort_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    department_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    simulation_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    scenario_ids: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    profile_ids_filter: list[UUID] | None = Field(default_factory=list)  # type: ignore[arg-type]
+    infinite_mode: bool | None = None
+
+
+class ArchiveAttemptsResponse(BaseModel):
+    updated_count: int = 0
+    profile_ids_to_invalidate: list[str] | None = None
+
+
+@router.post("/archive", response_model=ArchiveAttemptsResponse)
 async def archive_attempts(
-    request: BulkArchiveAttemptsApiRequest,
+    request: ArchiveAttemptsRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> BulkArchiveAttemptsApiResponse:
+) -> ArchiveAttemptsResponse:
     """Bulk archive or unarchive attempts (simulation or benchmark)."""
     tags = ["attempts"]
 
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
-
     try:
-        # Get profile_id from header (set by router-level dependency)
-        current_profile_id = http_request.state.profile_id
-        if not current_profile_id:
+        profile_id = http_request.state.profile_id
+        if not profile_id:
             raise HTTPException(
                 status_code=401,
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        pool = get_pool()
-        if pool:
-            async with pool.acquire() as context_conn:
-                profile_ctx = await get_auth_profile_internal(
-                    conn=context_conn,
-                    profile_id=current_profile_id,
-                    bypass_cache=False,
-                )
-                actor_name = profile_ctx.access.actor_name
-        else:
-            actor_name = None
+        session_id = http_request.state.session_id
+        if not session_id:
+            raise HTTPException(
+                status_code=400,
+                detail="Session ID is required.",
+            )
 
-        # Validate request - function determines mode based on attempt_ids
-        # If attempt_ids is provided and non-empty, use attempt_ids mode
-        # Otherwise, use filter mode (requires start_date and end_date)
-        use_attempt_ids_mode = request.attempt_ids and len(request.attempt_ids) > 0
+        has_attempt_ids = request.attempt_ids and len(request.attempt_ids) > 0
+        if not has_attempt_ids and (not request.start_date or not request.end_date):
+            raise HTTPException(
+                status_code=400,
+                detail="start_date and end_date are required when using filter-based archive",
+            )
 
-        if not use_attempt_ids_mode:
-            # Filter mode requires start_date and end_date
-            if not request.start_date or not request.end_date:
-                raise HTTPException(
-                    status_code=400,
-                    detail="start_date and end_date are required when using filter-based archive",
-                )
-
-        # Convert API request to SQL params (add profile_id from header)
-        # Use double star pattern - function handles defaults via NULL checks
-        params = BulkArchiveAttemptsSqlParams(
-            **request.model_dump(), profile_id=current_profile_id
+        # 1. Resolve attempt IDs via search
+        date_from = (
+            datetime.fromisoformat(request.start_date)
+            if request.start_date
+            else None
         )
-        sql_params = params.to_tuple()
+        date_to = (
+            datetime.fromisoformat(request.end_date)
+            if request.end_date
+            else None
+        )
 
-        # Execute SQL with typed helper
-        result = cast(
-            BulkArchiveAttemptsSqlRow,
-            await execute_sql_typed(
+        attempts, _ = await search_attempts(
+            conn,
+            attempt_ids=request.attempt_ids or None,
+            simulation_ids=request.simulation_ids or None,
+            profile_ids=request.profile_ids_filter or None,
+            cohort_ids=request.cohort_ids or None,
+            department_ids=request.department_ids or None,
+            scenario_ids=request.scenario_ids or None,
+            infinite_mode=request.infinite_mode,
+            date_from=date_from,
+            date_to=date_to,
+            limit=10000,
+            offset=0,
+        )
+
+        if not attempts:
+            return ArchiveAttemptsResponse(
+                updated_count=0, profile_ids_to_invalidate=[]
+            )
+
+        # 2. Create run + call for traceability
+        run = await create_run(
+            conn,
+            group_id=request.group_id,
+            session_id=session_id,
+            profiles_id=profile_id,
+        )
+        call = await create_call(
+            conn,
+            run_id=run.id,
+            session_id=session_id,
+        )
+
+        # 3. Create archive entries
+        for attempt in attempts:
+            await create_attempt_archive(
                 conn,
-                SQL_PATH,
-                params=params,
-            ),
+                attempt_id=attempt.attempt_id,
+                call_id=call.id,
+                archived=request.archived,
+            )
+
+        # 4. Collect profile IDs to invalidate (from search results)
+        profile_ids_to_invalidate = list(
+            {str(a.profile_id) for a in attempts if a.profile_id}
         )
 
-        updated_count = result.updated_count or 0
-        count = int(updated_count)
-
-        # Invalidate cache after mutation
+        # 5. Invalidate cache
         invalidation_tags = tags + ["dashboard"]
-
-        # Use profile_ids_to_invalidate from function result
-        profile_ids_to_invalidate = result.profile_ids_to_invalidate or []
-
-        # Add profile-specific tags for each affected profileId
-        for profile_id in profile_ids_to_invalidate:
+        for pid in profile_ids_to_invalidate:
             invalidation_tags.extend(
                 [
-                    f"home:profile:{profile_id}",
-                    f"reports:profile:{profile_id}",
-                    f"practice:profile:{profile_id}",
-                    f"history:profile:{profile_id}",
+                    f"home:profile:{pid}",
+                    f"reports:profile:{pid}",
+                    f"practice:profile:{pid}",
+                    f"history:profile:{pid}",
                 ]
             )
 
         await invalidate_tags(invalidation_tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(invalidation_tags)
 
-        # Convert SQL result to API response
-        api_response = BulkArchiveAttemptsApiResponse.model_validate(
-            result.model_dump()
+        return ArchiveAttemptsResponse(
+            updated_count=len(attempts),
+            profile_ids_to_invalidate=profile_ids_to_invalidate,
         )
-
-        return api_response
     except HTTPException:
         raise
     except Exception as e:
@@ -126,7 +158,7 @@ async def archive_attempts(
             error=e,
             route_path=http_request.url.path,
             operation="archive_attempts",
-            sql_query=sql_query,
-            sql_params=sql_params,
+            sql_query=None,
+            sql_params=None,
             request=http_request,
         )

@@ -722,14 +722,53 @@ class DuplicateScenarioApiResponse(BaseModel):
 # =============================================================================
 
 
+class DraftObjectiveValue(BaseModel):
+    """Value for creating an objective via the draft endpoint."""
+
+    objective: str
+
+
+class DraftImageValue(BaseModel):
+    """Value for creating an image via the draft endpoint."""
+
+    name: str
+    description: str
+
+
+class DraftVideoValue(BaseModel):
+    """Value for creating a video via the draft endpoint."""
+
+    name: str
+    description: str
+
+
+class DraftQuestionValue(BaseModel):
+    """Value for creating a question via the draft endpoint."""
+
+    question_text: str
+    time: int = 30
+    allow_multiple: bool = False
+
+
+class DraftOptionValue(BaseModel):
+    """Value for creating an option via the draft endpoint."""
+
+    option_text: str
+    question_id: UUID | None = None
+
+
 class PatchScenarioDraftApiRequest(BaseModel):
     """Request model for new-style scenario draft endpoint.
 
-    Dual-mode for creatable resources only:
-      - name/name_id, description/description_id, problem_statement/problem_statement_id
+    Dual-mode for creatable resources:
+      - Single-select: name/name_id, description/description_id,
+        problem_statement/problem_statement_id
+      - Multi-select (merged): objectives/objective_ids, images/image_ids,
+        videos/video_ids, questions/question_ids, options/option_ids
+        (values are created as resources, then IDs are merged with existing IDs)
+
     ID-only for non-creatable resources:
-      - flag_ids, department_ids, persona_ids, document_ids, parameter_field_ids,
-        objective_ids, image_ids, video_ids, question_ids, option_ids
+      - flag_ids, department_ids, persona_ids, document_ids, parameter_field_ids
 
     Client always sends full state (append-only — each write is a new version snapshot).
     """
@@ -746,17 +785,45 @@ class PatchScenarioDraftApiRequest(BaseModel):
     problem_statement: str | None = None
     problem_statement_id: UUID | None = None
 
+    # Creatable multi-select — values merged with IDs
+    objectives: list[str] | None = None
+    objective_ids: list[UUID] | None = None
+    images: list[DraftImageValue] | None = None
+    image_ids: list[UUID] | None = None
+    videos: list[DraftVideoValue] | None = None
+    video_ids: list[UUID] | None = None
+    questions: list[DraftQuestionValue] | None = None
+    question_ids: list[UUID] | None = None
+    options: list[DraftOptionValue] | None = None
+    option_ids: list[UUID] | None = None
+
     # Non-creatable — ID-only
     flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     persona_ids: list[UUID] | None = None
     document_ids: list[UUID] | None = None
     parameter_field_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    option_ids: list[UUID] | None = None
+
+
+class ScenarioDraftFormState(BaseModel):
+    """Full form state after draft patch — server is source of truth.
+
+    Client replaces its local form state with this after every successful patch.
+    """
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    problem_statement_id: UUID | None = None
+    flag_ids: list[UUID] = []
+    department_ids: list[UUID] = []
+    persona_ids: list[UUID] = []
+    document_ids: list[UUID] = []
+    parameter_field_ids: list[UUID] = []
+    objective_ids: list[UUID] = []
+    image_ids: list[UUID] = []
+    video_ids: list[UUID] = []
+    question_ids: list[UUID] = []
+    option_ids: list[UUID] = []
 
 
 class PatchScenarioDraftApiResponse(BaseModel):
@@ -766,6 +833,7 @@ class PatchScenarioDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+    form_state: ScenarioDraftFormState
 
 
 # =============================================================================

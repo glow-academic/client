@@ -1,5 +1,6 @@
 """attempt/search — filtered/paginated query against attempt_mv."""
 
+from datetime import datetime
 from uuid import UUID
 
 import asyncpg  # type: ignore
@@ -21,6 +22,8 @@ async def search_attempts(
     practice: bool | None = None,
     is_archived: bool | None = None,
     infinite_mode: bool | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     sort_order: str = "desc",
     limit: int = 20,
     offset: int = 0,
@@ -50,8 +53,10 @@ async def search_attempts(
           AND ($7::boolean IS NULL OR practice = $7)
           AND ($8::boolean IS NULL OR is_archived = $8)
           AND ($9::boolean IS NULL OR infinite_mode = $9)
+          AND ($10::timestamptz IS NULL OR attempt_created_at >= $10)
+          AND ($11::timestamptz IS NULL OR attempt_created_at <= $11)
         ORDER BY attempt_created_at {order}
-        LIMIT $10 OFFSET $11
+        LIMIT $12 OFFSET $13
         """,
         attempt_ids,
         simulation_ids,
@@ -62,6 +67,8 @@ async def search_attempts(
         practice,
         is_archived,
         infinite_mode,
+        date_from,
+        date_to,
         limit,
         offset,
     )

@@ -1774,14 +1774,9 @@ def register_endpoints(server: FastMCP) -> None:
         import uuid as uuid_mod
 
         from app.infra.globals import AUDIO_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER, get_db
-        from app.sql.types import FinalizeUploadSqlParams, FinalizeUploadSqlRow
+        from app.routes.v5.tools.entries.uploads.create import create_upload
         from app.utils.cache.invalidate_tags import invalidate_tags
-        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
         from app.utils.mime.get_content_type import get_content_type
-        from app.utils.sql_helper import execute_sql_typed
-
-        profile_id = get_mcp_profile_id()
-        finalize_sql = "app/sql/queries/uploads/finalize_upload_complete.sql"
 
         try:
             file_bytes = b64.b64decode(base64_data)
@@ -1812,29 +1807,20 @@ def register_endpoints(server: FastMCP) -> None:
         file_size = len(file_bytes)
 
         try:
-            params = FinalizeUploadSqlParams(
-                upload_file_path=final_file_path,
-                content_type=content_type,
-                file_size=file_size,
-                profile_id=uuid_mod.UUID(profile_id),
-            )
-
             async for conn in get_db():
-                result = cast(
-                    FinalizeUploadSqlRow,
-                    await execute_sql_typed(conn, finalize_sql, params=params),
+                result = await create_upload(
+                    conn,
+                    session_id=upload_uuid,
+                    file_path=final_file_path,
+                    mime_type=content_type,
+                    size=file_size,
+                    mcp=True,
                 )
-
-                if not result or not result.upload_id:
-                    return {
-                        "error": "Failed to create upload record",
-                        "status": "error",
-                    }
 
                 await invalidate_tags(["entries", "uploads"], redis=get_redis_client())
 
                 return {
-                    "id": str(result.upload_id),
+                    "id": str(result.id),
                     "status": "success",
                 }
 
@@ -1856,27 +1842,14 @@ def register_endpoints(server: FastMCP) -> None:
         import uuid as uuid_mod
 
         from app.infra.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
-        from app.sql.types import GetUploadFileInfoSqlParams, GetUploadFileInfoSqlRow
-        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+        from app.routes.v5.tools.entries.uploads.get import get_upload
         from app.utils.mime.get_content_type import get_content_type
-        from app.utils.sql_helper import execute_sql_typed
-
-        profile_id = get_mcp_profile_id()
-        download_sql = "app/sql/queries/uploads/get_upload_file_info_complete.sql"
 
         try:
-            params = GetUploadFileInfoSqlParams(
-                upload_id=uuid_mod.UUID(upload_id),
-                profile_id=uuid_mod.UUID(profile_id),
-            )
-
             async for conn in get_db():
-                result = cast(
-                    GetUploadFileInfoSqlRow,
-                    await execute_sql_typed(conn, download_sql, params=params),
-                )
+                result = await get_upload(conn, upload_id=uuid_mod.UUID(upload_id))
 
-                if not result or not result.upload_exists:
+                if not result:
                     return {"error": "Upload not found", "status": "error"}
 
                 stored_path = result.file_path or ""
@@ -1902,7 +1875,7 @@ def register_endpoints(server: FastMCP) -> None:
                 )
 
                 return {
-                    "upload_id": str(result.upload_id),
+                    "upload_id": str(result.id),
                     "filename": os.path.basename(result.file_path or ""),
                     "mime_type": content_type,
                     "size": result.size,

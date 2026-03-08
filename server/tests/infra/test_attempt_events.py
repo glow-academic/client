@@ -11,11 +11,19 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from app.infra.websocket.test_events_impl import test_error_impl as _test_error_impl
-from app.infra.websocket.test_events_impl import test_next_impl as _test_next_impl
 from app.infra.websocket.test_events_impl import (
+    _extract_grade_feedback,
+    _extract_grade_passed,
+    _extract_grade_score,
+    _find_next_run_id,
+    test_error_impl as _test_error_impl,
+    test_grade_complete_impl as _test_grade_complete_impl,
+    test_group_impl as _test_group_impl,
+    test_next_impl as _test_next_impl,
+    test_proceed_impl as _test_proceed_impl,
     test_progress_impl as _test_progress_impl,
     test_run_done_impl as _test_run_done_impl,
+    test_start_impl as _test_start_impl,
 )
 from app.infra.websocket.attempt_events_impl import (
     attempt_next_impl,
@@ -676,3 +684,310 @@ class TestNextImpl:
         assert events[0].data["invocation_id"] == "inv-2"
         assert events[0].data["total_runs"] == 2
         assert events[0].data["success"] is True
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Grade extraction helpers
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestExtractGradeHelpers:
+    def test_extract_score(self):
+        assert _extract_grade_score([{"result": {"score": 85}}]) == 85
+
+    def test_extract_score_from_total(self):
+        assert _extract_grade_score([{"result": {"total": 90}}]) == 90
+
+    def test_extract_score_none(self):
+        assert _extract_grade_score([{"result": {"other": 1}}]) is None
+
+    def test_extract_score_empty(self):
+        assert _extract_grade_score([]) is None
+
+    def test_extract_passed(self):
+        assert _extract_grade_passed([{"result": {"passed": True}}]) is True
+
+    def test_extract_passed_false(self):
+        assert _extract_grade_passed([{"result": {"passed": False}}]) is False
+
+    def test_extract_passed_none(self):
+        assert _extract_grade_passed([{"result": {}}]) is None
+
+    def test_extract_feedback(self):
+        assert _extract_grade_feedback([{"result": {"feedback": "good"}}]) == "good"
+
+    def test_extract_feedback_empty_string(self):
+        assert _extract_grade_feedback([{"result": {"feedback": ""}}]) is None
+
+    def test_extract_feedback_none(self):
+        assert _extract_grade_feedback([{"result": {}}]) is None
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# test_grade_complete_impl
+# ═══════════════════════════════════════════════════════════════════════════
+
+_TOKEN_CREATE = "app.routes.v5.tools.entries.tokens.create"
+
+
+@pytest.mark.asyncio
+class TestGradeCompleteImpl:
+    async def test_emits_test_grade_progress(self):
+        emit, events = recording_emit()
+        await _test_grade_complete_impl(
+            {
+                "sid": "s1",
+                "grade_id": "g1",
+                "invocation_id": "inv-1",
+                "tool_results": [{"result": {"score": 85, "passed": True, "feedback": "good"}}],
+            },
+            emit=emit,
+            conn=AsyncMock(),
+            profile_id="prof-1",
+        )
+        assert len(events) == 1
+        assert events[0].event == "test_grade_progress"
+        assert events[0].data["score"] == 85
+        assert events[0].data["passed"] is True
+        assert events[0].data["feedback"] == "good"
+        assert events[0].data["grade_id"] == "g1"
+        assert events[0].data["invocation_id"] == "inv-1"
+
+    @patch(f"{_TOKEN_CREATE}.create_token", new_callable=AsyncMock)
+    async def test_creates_token_when_run_and_session(self, mock_create):
+        mock_create.return_value = SimpleNamespace(id="tok-1")
+        emit, events = recording_emit()
+        await _test_grade_complete_impl(
+            {
+                "sid": "s1",
+                "grade_id": "g1",
+                "invocation_id": "inv-1",
+                "run_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "session_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "input_tokens": 100,
+                "output_tokens": 50,
+                "tool_results": [],
+            },
+            emit=emit,
+            conn=AsyncMock(),
+            profile_id="prof-1",
+        )
+        mock_create.assert_called_once()
+        assert len(events) == 1
+
+    async def test_skips_token_without_session(self):
+        emit, events = recording_emit()
+        await _test_grade_complete_impl(
+            {
+                "sid": "s1",
+                "grade_id": "g1",
+                "invocation_id": "inv-1",
+                "run_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "tool_results": [],
+            },
+            emit=emit,
+            conn=AsyncMock(),
+            profile_id="prof-1",
+        )
+        # Should still emit grade progress, just no token created
+        assert len(events) == 1
+        assert events[0].event == "test_grade_progress"
+
+    async def test_rooms_include_test_prefix(self):
+        emit, events = recording_emit()
+        await _test_grade_complete_impl(
+            {
+                "sid": "s1",
+                "invocation_id": "inv-1",
+                "tool_results": [],
+            },
+            emit=emit,
+            conn=AsyncMock(),
+            profile_id="prof-1",
+        )
+        assert "test_inv-1" in events[0].data["rooms"]
+        assert "s1" in events[0].data["rooms"]
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# _find_next_run_id helper
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class TestFindNextRunId:
+    def test_empty_runs(self):
+        assert _find_next_run_id([], None) is None
+
+    def test_first_run_no_prev(self):
+        runs = [SimpleNamespace(run_id="r1"), SimpleNamespace(run_id="r2")]
+        assert _find_next_run_id(runs, None) == "r1"
+
+    def test_next_after_prev(self):
+        runs = [SimpleNamespace(run_id="r1"), SimpleNamespace(run_id="r2"), SimpleNamespace(run_id="r3")]
+        assert _find_next_run_id(runs, "r1") == "r2"
+        assert _find_next_run_id(runs, "r2") == "r3"
+
+    def test_last_run_returns_none(self):
+        runs = [SimpleNamespace(run_id="r1"), SimpleNamespace(run_id="r2")]
+        assert _find_next_run_id(runs, "r2") is None
+
+    def test_unknown_prev_returns_none(self):
+        runs = [SimpleNamespace(run_id="r1")]
+        assert _find_next_run_id(runs, "unknown") is None
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# test_group_impl
+# ═══════════════════════════════════════════════════════════════════════════
+
+_RUNS_SEARCH = "app.routes.v5.tools.entries.runs.search"
+
+
+@pytest.mark.asyncio
+class TestGroupImpl:
+    async def test_no_sid_emits_nothing(self):
+        emit, events = recording_emit()
+        await _test_group_impl({}, emit=emit, conn=AsyncMock())
+        assert events == []
+
+    async def test_no_profile_emits_nothing(self):
+        emit, events = recording_emit()
+        await _test_group_impl({"sid": "s1"}, emit=emit, conn=AsyncMock())
+        assert events == []
+
+    @patch(f"{_RUNS_SEARCH}.search_runs", new_callable=AsyncMock)
+    async def test_no_runs_emits_group_complete(self, mock_search):
+        mock_search.return_value = ([], 0)
+        emit, events = recording_emit()
+        await _test_group_impl(
+            {
+                "sid": "s1",
+                "profile_id": "prof-1",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "test_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "group_id": "019b3be4-36f0-788c-9df2-481eb5917942",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert len(events) == 1
+        assert events[0].event == "test_group_complete"
+
+    @patch(f"{_RUNS_SEARCH}.search_runs", new_callable=AsyncMock)
+    async def test_first_run_emits_test_run(self, mock_search):
+        mock_search.return_value = (
+            [SimpleNamespace(run_id="r1"), SimpleNamespace(run_id="r2")],
+            2,
+        )
+        emit, events = recording_emit()
+        await _test_group_impl(
+            {
+                "sid": "s1",
+                "profile_id": "prof-1",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "test_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "group_id": "019b3be4-36f0-788c-9df2-481eb5917942",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert len(events) == 1
+        assert events[0].event == "test_run"
+        assert events[0].data["run_id"] == "r1"
+
+    @patch(f"{_RUNS_SEARCH}.search_runs", new_callable=AsyncMock)
+    async def test_error_emits_test_error(self, mock_search):
+        mock_search.side_effect = RuntimeError("db down")
+        emit, events = recording_emit()
+        await _test_group_impl(
+            {
+                "sid": "s1",
+                "profile_id": "prof-1",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "test_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "group_id": "019b3be4-36f0-788c-9df2-481eb5917942",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert len(events) == 1
+        assert events[0].event == "test_error"
+        assert events[0].data["error_type"] == "group"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# test_start_impl
+# ═══════════════════════════════════════════════════════════════════════════
+
+_TEST_CREATE = "app.routes.v5.tools.entries.test.create"
+_BENCHMARK_CREATE = "app.routes.v5.tools.entries.benchmark_test.create"
+_REFRESH = "app.routes.v5.tools.entries.test_invocation.refresh"
+_CACHE = "app.utils.cache.invalidate_tags"
+
+
+@pytest.mark.asyncio
+class TestStartImpl:
+    async def test_no_sid_emits_nothing(self):
+        emit, events = recording_emit()
+        await _test_start_impl({}, emit=emit, conn=AsyncMock())
+        assert events == []
+
+    async def test_no_profile_emits_nothing(self):
+        emit, events = recording_emit()
+        await _test_start_impl({"sid": "s1"}, emit=emit, conn=AsyncMock())
+        assert events == []
+
+    async def test_invalid_profile_id_returns(self):
+        emit, events = recording_emit()
+        await _test_start_impl(
+            {"sid": "s1", "profile_id": "not-a-uuid"},
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert events == []
+
+    @patch(f"{_CACHE}.invalidate_tags", new_callable=AsyncMock)
+    @patch(f"{_REFRESH}.refresh_test_invocation", new_callable=AsyncMock)
+    @patch(f"{_TEST_CREATE}.create_test", new_callable=AsyncMock)
+    async def test_creates_test_and_emits_proceed(
+        self, mock_create, mock_refresh, mock_invalidate
+    ):
+        mock_create.return_value = SimpleNamespace(
+            id="019b3be4-36f0-788c-9df2-481eb5917940"
+        )
+        emit, events = recording_emit()
+        await _test_start_impl(
+            {
+                "sid": "s1",
+                "profile_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "profiles_id": "019b3be4-36f0-788c-9df2-481eb5917942",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        mock_create.assert_called_once()
+        mock_refresh.assert_called_once()
+        assert len(events) == 1
+        assert events[0].event == "test_proceed"
+        assert events[0].data["test_id"] == "019b3be4-36f0-788c-9df2-481eb5917940"
+
+    @patch(f"{_CACHE}.invalidate_tags", new_callable=AsyncMock)
+    @patch(f"{_REFRESH}.refresh_test_invocation", new_callable=AsyncMock)
+    @patch(f"{_TEST_CREATE}.create_test", new_callable=AsyncMock)
+    async def test_error_emits_test_error(
+        self, mock_create, mock_refresh, mock_invalidate
+    ):
+        mock_create.side_effect = RuntimeError("db down")
+        emit, events = recording_emit()
+        await _test_start_impl(
+            {
+                "sid": "s1",
+                "profile_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "profiles_id": "019b3be4-36f0-788c-9df2-481eb5917942",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert len(events) == 1
+        assert events[0].event == "test_error"
+        assert events[0].data["error_type"] == "start"

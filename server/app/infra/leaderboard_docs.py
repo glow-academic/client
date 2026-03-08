@@ -67,8 +67,8 @@ async def docs_leaderboard_client(
     )
     from app.routes.v5.api.main.leaderboard.export import export_leaderboard
     from app.routes.v5.api.main.leaderboard.get import get_leaderboard
-    from app.routes.v5.api.main.leaderboard.search import search_leaderboard
     from app.routes.v5.api.main.leaderboard.refresh import leaderboard_refresh
+    from app.routes.v5.api.main.leaderboard.search import search_leaderboard
 
     return ComposedDocsResponse(
         name="leaderboard",

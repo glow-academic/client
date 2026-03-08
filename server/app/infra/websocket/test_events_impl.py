@@ -8,6 +8,7 @@ from __future__ import annotations
 from typing import Any
 
 import asyncpg
+from redis.asyncio import Redis
 
 from app.infra.websocket.socket_event import EmitFn, client_event, internal_event
 
@@ -231,3 +232,570 @@ async def test_next_impl(
         )
     ])
     logger.info(f"All test runs complete - test_id={test_id}")
+
+
+# ---------------------------------------------------------------------------
+# generate_call_complete (test grade) → test_grade_progress
+# ---------------------------------------------------------------------------
+
+
+def _extract_grade_score(tool_results: list[dict[str, Any]]) -> int | None:
+    for item in tool_results:
+        result = item.get("result") or {}
+        if not isinstance(result, dict):
+            continue
+        if isinstance(result.get("score"), int):
+            return result["score"]
+        if isinstance(result.get("total"), int):
+            return result["total"]
+    return None
+
+
+def _extract_grade_passed(tool_results: list[dict[str, Any]]) -> bool | None:
+    for item in tool_results:
+        result = item.get("result") or {}
+        if not isinstance(result, dict):
+            continue
+        if isinstance(result.get("passed"), bool):
+            return result["passed"]
+    return None
+
+
+def _extract_grade_feedback(tool_results: list[dict[str, Any]]) -> str | None:
+    for item in tool_results:
+        result = item.get("result") or {}
+        if not isinstance(result, dict):
+            continue
+        feedback = result.get("feedback")
+        if isinstance(feedback, str) and feedback:
+            return feedback
+    return None
+
+
+async def test_grade_complete_impl(
+    data: dict[str, Any],
+    *,
+    emit: EmitFn,
+    conn: asyncpg.Connection,
+    profile_id: str,
+) -> None:
+    """Handle test grade completion — record tokens, emit test_grade_progress."""
+    import uuid
+
+    from app.infra.websocket.test_types import TestGradedData
+    from app.routes.v5.tools.entries.tokens.create import create_token
+    from app.utils.logging.db_logger import get_logger
+
+    logger = get_logger(__name__)
+
+    grade_id = data.get("grade_id")
+    invocation_id = data.get("invocation_id") or data.get("chat_id")
+    run_id = data.get("run_id")
+    session_id = data.get("session_id")
+
+    tool_results = data.get("tool_results") or []
+    score = _extract_grade_score(tool_results)
+    passed = _extract_grade_passed(tool_results)
+    feedback = _extract_grade_feedback(tool_results)
+
+    try:
+        input_tokens = data.get("input_text_tokens", data.get("input_tokens", 0))
+        output_tokens = data.get("output_text_tokens", data.get("output_tokens", 0))
+
+        # Record token usage
+        if run_id and session_id:
+            await create_token(
+                conn,
+                run_id=uuid.UUID(run_id),
+                session_id=uuid.UUID(session_id),
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+            )
+
+        # TODO: need update_test_grade black-box function to update
+        # score/passed on existing test_grade_entry by grade_id.
+        # Currently skipped — grade was created by create_test_grade
+        # in the prepare step; score/passed need to be set after grading.
+
+        invocation_id_str = str(invocation_id) if invocation_id else ""
+        rooms = [data.get("sid"), f"test_{invocation_id_str}"] if invocation_id_str else [data.get("sid")]
+
+        await emit([
+            internal_event(
+                "test_grade_progress",
+                TestGradedData(
+                    sid=data.get("sid"),
+                    rooms=[r for r in rooms if r],
+                    invocation_id=invocation_id_str,
+                    grade_id=str(grade_id) if grade_id else None,
+                    score=score,
+                    passed=passed,
+                    feedback=feedback,
+                ).model_dump(mode="json"),
+            )
+        ])
+
+        logger.info(
+            f"Test grading complete - invocation_id={invocation_id}, "
+            f"grade_id={grade_id}, score={score}, passed={passed}"
+        )
+
+    except Exception as e:
+        logger.exception(f"Failed to handle test grade completion: {e}")
+
+
+# ---------------------------------------------------------------------------
+# test_group → find next run in group, emit test_run or test_group_complete
+# ---------------------------------------------------------------------------
+
+
+def _find_next_run_id(
+    runs: list[Any],
+    prev_run_id: Any,
+) -> Any:
+    """Find the next run after prev_run_id in a sorted list of runs."""
+    if not runs:
+        return None
+    if prev_run_id is None:
+        return runs[0].run_id
+    found = False
+    for run in runs:
+        if found:
+            return run.run_id
+        if run.run_id == prev_run_id:
+            found = True
+    return None
+
+
+async def test_group_impl(
+    data: dict[str, Any],
+    *,
+    emit: EmitFn,
+    conn: asyncpg.Connection,
+) -> None:
+    """Orchestrate sequential runs within a group."""
+    from app.infra.websocket.test_types import TestErrorData
+    from app.routes.v5.socket.client.types import TestGroupPayload
+    from app.routes.v5.tools.entries.runs.search import search_runs
+    from app.utils.logging.db_logger import get_logger
+
+    logger = get_logger(__name__)
+
+    sid = data.get("sid", "")
+    if not sid:
+        return
+
+    profile_id_str = data.get("profile_id")
+    if not profile_id_str:
+        return
+
+    try:
+        payload = TestGroupPayload(**data)
+    except Exception as e:
+        logger.exception(f"Invalid test_group payload: {e}")
+        return
+
+    try:
+        test_id = payload.test_id
+        test_invocation_id = payload.test_invocation_id
+        group_id = payload.group_id
+        prev_run_id = payload.prev_run_id
+
+        runs, _ = await search_runs(
+            conn,
+            group_ids=[group_id],
+            sort_order="asc",
+            bypass_mv=True,
+            limit=1000,
+        )
+
+        next_run_id = _find_next_run_id(runs, prev_run_id)
+
+        if not next_run_id:
+            await emit([
+                internal_event(
+                    "test_group_complete",
+                    {
+                        "sid": sid,
+                        "test_id": str(test_id),
+                        "test_invocation_id": str(test_invocation_id),
+                        "group_id": str(group_id),
+                    },
+                )
+            ])
+            return
+
+        await emit([
+            internal_event(
+                "test_run",
+                {
+                    "sid": sid,
+                    "profile_id": profile_id_str,
+                    "test_id": str(test_id),
+                    "test_invocation_id": str(test_invocation_id),
+                    "run_id": str(next_run_id),
+                    "group_id": str(group_id),
+                },
+            )
+        ])
+
+        logger.info(
+            f"Test group run - group_id={group_id}, "
+            f"next_run_id={next_run_id}, prev_run_id={prev_run_id}"
+        )
+
+    except Exception as e:
+        logger.exception(f"Error in test_group: {e}")
+        await emit([
+            internal_event(
+                "test_error",
+                TestErrorData(
+                    sid=sid,
+                    message=f"Failed to run group: {e}",
+                    error_type="group",
+                ).model_dump(mode="json"),
+            )
+        ])
+
+
+# ---------------------------------------------------------------------------
+# test_start → create test, optional benchmark bridge, emit test_proceed
+# ---------------------------------------------------------------------------
+
+
+async def test_start_impl(
+    data: dict[str, Any],
+    *,
+    emit: EmitFn,
+    conn: asyncpg.Connection,
+    redis: Redis | None = None,
+) -> None:
+    """Create test via black boxes, optional benchmark bridge, delegate to test_proceed."""
+    import uuid
+
+    from app.infra.websocket.test_types import TestErrorData, TestProceedData
+    from app.routes.v5.tools.entries.benchmark_test.create import create_benchmark_test
+    from app.routes.v5.tools.entries.test.create import create_test
+    from app.routes.v5.tools.entries.test_invocation.refresh import (
+        refresh_test_invocation,
+    )
+    from app.utils.cache.invalidate_tags import invalidate_tags
+    from app.utils.logging.db_logger import get_logger
+
+    logger = get_logger(__name__)
+
+    sid = data.get("sid", "")
+    if not sid:
+        return
+
+    profile_id_str = data.get("profile_id")
+    if not profile_id_str:
+        return
+
+    try:
+        profile_id = uuid.UUID(profile_id_str)
+    except Exception as e:
+        logger.exception(f"Invalid profile_id in test_start: {e}")
+        return
+
+    benchmark_id_raw = data.get("benchmark_id")
+    benchmark_id = uuid.UUID(str(benchmark_id_raw)) if benchmark_id_raw else None
+    infinite_mode = data.get("infinite_mode", False)
+
+    profiles_id_str = data.get("profiles_id")
+    session_id_str = data.get("session_id")
+
+    try:
+        # Resolve profiles_id if not provided
+        if profiles_id_str:
+            profiles_id = uuid.UUID(profiles_id_str)
+        else:
+            profiles_id = await conn.fetchval(
+                """SELECT profile_id FROM profile_profiles_junction
+                WHERE profile_id = $1 AND active = true LIMIT 1""",
+                profile_id,
+            )
+            if profiles_id is None:
+                raise ValueError(
+                    f"profiles_resource not found for profile_id {profile_id}"
+                )
+
+        # Step 1: Create test entry (black box)
+        result = await create_test(
+            conn,
+            profiles_id=profiles_id,
+            infinite_mode=infinite_mode,
+        )
+        test_id = result.id
+
+        # Step 2: Optional benchmark bridge (black box)
+        if benchmark_id:
+            session_id = (
+                uuid.UUID(session_id_str) if session_id_str else uuid.UUID(int=0)
+            )
+            await create_benchmark_test(
+                conn,
+                benchmark_id=benchmark_id,
+                test_id=test_id,
+                session_id=session_id,
+            )
+
+        # Step 3: Link test_id → generation_run_id for generation resolution
+        generation_run_id = data.get("generation_run_id")
+        if generation_run_id:
+            try:
+                if redis:
+                    await redis.setex(
+                        f"generation_test_link:{test_id}",
+                        3600,
+                        generation_run_id,
+                    )
+            except Exception:
+                logger.warning(
+                    f"Failed to store generation_test_link for test {test_id}"
+                )
+
+        # Step 4: Refresh MVs so the test is visible immediately
+        await refresh_test_invocation(conn)
+        if redis:
+            await invalidate_tags(["test", "tests", "benchmark"], redis=redis)
+
+        # Step 5: Delegate to test_proceed
+        await emit([
+            internal_event(
+                "test_proceed",
+                TestProceedData(
+                    sid=sid,
+                    test_id=str(test_id),
+                ).model_dump(mode="json"),
+            )
+        ])
+
+    except Exception as e:
+        logger.exception(f"Error in test_start: {e}")
+        await emit([
+            internal_event(
+                "test_error",
+                TestErrorData(
+                    sid=sid,
+                    message=f"Failed to start test: {e}",
+                    error_type="start",
+                ).model_dump(mode="json"),
+            )
+        ])
+
+
+# ---------------------------------------------------------------------------
+# test_proceed → resolve next invocation, emit test_invocation_started / test_ended
+# ---------------------------------------------------------------------------
+
+
+async def test_proceed_impl(
+    data: dict[str, Any],
+    *,
+    emit: EmitFn,
+    conn: asyncpg.Connection,
+    redis: Redis | None = None,
+) -> None:
+    """Shared core: resolve context → check done → resolve invocation → emit."""
+    import uuid
+
+    from app.infra.websocket.test_types import TestErrorData, TestProceedData
+    from app.routes.v5.tools.entries.test.get import get_tests
+    from app.routes.v5.tools.entries.test_invocation.create import (
+        create_test_invocation,
+    )
+    from app.routes.v5.tools.entries.test_invocation.refresh import (
+        refresh_test_invocation,
+    )
+    from app.routes.v5.tools.entries.test_invocation.search import (
+        search_test_invocation_entries_internal,
+    )
+    from app.routes.v5.tools.entries.test_invocation_bridge.create import (
+        create_test_invocation_bridge,
+    )
+    from app.routes.v5.tools.entries.test_invocation_completion.create import (
+        create_test_invocation_completion,
+    )
+    from app.utils.cache.invalidate_tags import invalidate_tags
+    from app.utils.logging.db_logger import get_logger
+
+    logger = get_logger(__name__)
+
+    sid = data.get("sid", "")
+    if not sid:
+        return
+
+    try:
+        payload = TestProceedData(**data)
+    except Exception as e:
+        logger.exception(f"Invalid test_proceed payload: {e}")
+        return
+
+    try:
+        test_id = uuid.UUID(payload.test_id)
+        force_proceed = payload.force_proceed
+        completed_invocation_id = (
+            uuid.UUID(payload.completed_invocation_id)
+            if payload.completed_invocation_id
+            else None
+        )
+        complete_all = payload.complete_all
+
+        # Step 1: If completed_invocation_id, mark that invocation completed
+        if completed_invocation_id:
+            try:
+                await create_test_invocation_completion(
+                    conn,
+                    invocation_id=completed_invocation_id,
+                )
+            except Exception:
+                logger.warning(
+                    f"Failed to create test_completion for {completed_invocation_id} "
+                    f"(may already exist)"
+                )
+
+        # Step 2: If complete_all, mark all remaining invocations completed → ended
+        if complete_all:
+            (
+                all_invocations,
+                _total_count,
+            ) = await search_test_invocation_entries_internal(
+                conn,
+                test_ids=[test_id],
+                limit=1000,
+                bypass_mv=True,
+            )
+            for inv in all_invocations:
+                if not inv.invocation_completed:
+                    try:
+                        await create_test_invocation_completion(
+                            conn,
+                            invocation_id=inv.invocation_id,
+                        )
+                    except Exception:
+                        pass
+            await refresh_test_invocation(conn)
+            if redis:
+                await invalidate_tags(
+                    ["test", "tests", "benchmark"], redis=redis
+                )
+
+            await emit([
+                internal_event(
+                    "test_ended",
+                    {
+                        "sid": sid,
+                        "test_id": str(test_id),
+                        "success": True,
+                        "message": "All invocations completed",
+                    },
+                )
+            ])
+            return
+
+        # Step 3: Get context — search invocations, find next uncompleted
+        (
+            all_invocations,
+            _total_count,
+        ) = await search_test_invocation_entries_internal(
+            conn,
+            test_ids=[test_id],
+            limit=1000,
+            bypass_mv=True,
+        )
+
+        tests = await get_tests(conn, ids=[test_id])
+
+        is_dynamic = tests[0].is_dynamic if tests else True
+        total_invocations = len(all_invocations)
+        completed = [inv for inv in all_invocations if inv.invocation_completed]
+        uncompleted = [inv for inv in all_invocations if not inv.invocation_completed]
+        completed_count = len(completed)
+
+        if not all_invocations:
+            await emit([
+                internal_event(
+                    "test_error",
+                    TestErrorData(
+                        sid=sid,
+                        message="Failed to resolve test context",
+                        error_type="proceed",
+                    ).model_dump(mode="json"),
+                )
+            ])
+            return
+
+        # Step 4: Check if all invocations are done
+        if not uncompleted or completed_count >= total_invocations:
+            await emit([
+                internal_event(
+                    "test_ended",
+                    {
+                        "sid": sid,
+                        "test_id": str(test_id),
+                        "success": True,
+                        "message": "All invocations completed",
+                    },
+                )
+            ])
+            return
+
+        next_invocation = uncompleted[0]
+
+        # Step 5: use_custom lobby
+        if next_invocation.use_custom and not force_proceed:
+            await emit([
+                internal_event(
+                    "test_started",
+                    {
+                        "sid": sid,
+                        "test_id": str(test_id),
+                        "invocation_entry_id": str(next_invocation.invocation_id),
+                    },
+                )
+            ])
+            return
+
+        # Step 6: Resolve invocation — create test_invocation_entry + bridge
+        inv_result = await create_test_invocation(
+            conn,
+            test_id=test_id,
+        )
+        test_invocation_id = inv_result.id
+
+        await create_test_invocation_bridge(
+            conn,
+            test_invocation_id=test_invocation_id,
+            invocation_id=next_invocation.invocation_id,
+        )
+
+        # Step 7: Refresh MVs + emit test_invocation_started
+        await refresh_test_invocation(conn)
+        if redis:
+            await invalidate_tags(["test", "tests", "benchmark"], redis=redis)
+
+        await emit([
+            internal_event(
+                "test_invocation_started",
+                {
+                    "sid": sid,
+                    "test_id": str(test_id),
+                    "test_invocation_id": str(test_invocation_id),
+                    "is_dynamic": is_dynamic,
+                },
+            )
+        ])
+
+    except Exception as e:
+        logger.exception(f"Error in test_proceed: {e}")
+        await emit([
+            internal_event(
+                "test_error",
+                TestErrorData(
+                    sid=sid,
+                    message=f"Failed to proceed: {e}",
+                    error_type="proceed",
+                ).model_dump(mode="json"),
+            )
+        ])

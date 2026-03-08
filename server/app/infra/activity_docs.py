@@ -72,10 +72,10 @@ async def docs_activity_client(
     # Lazy imports to avoid circular dependencies
     from app.routes.v5.api.main.activity.export import export_activity
     from app.routes.v5.api.main.activity.get import get_activity
-    from app.routes.v5.api.main.activity.search import search_activity
     from app.routes.v5.api.main.activity.problem import create_problem
     from app.routes.v5.api.main.activity.refresh import activity_refresh
     from app.routes.v5.api.main.activity.resolve import resolve_problem
+    from app.routes.v5.api.main.activity.search import search_activity
 
     return ComposedDocsResponse(
         name="activity",
