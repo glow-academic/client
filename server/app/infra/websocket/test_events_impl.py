@@ -799,3 +799,193 @@ async def test_proceed_impl(
                 ).model_dump(mode="json"),
             )
         ])
+
+
+# ---------------------------------------------------------------------------
+# test_run → replay a run against an original conversation
+# ---------------------------------------------------------------------------
+
+
+async def test_run_impl(
+    data: dict[str, Any],
+    *,
+    emit: EmitFn,
+    conn: asyncpg.Connection,
+) -> None:
+    """Copy conversation from original run, create new run, emit generate_artifact."""
+    import uuid
+
+    from app.infra.websocket.test_types import TestErrorData
+    from app.routes.v5.socket.client.types import TestRunPayload
+    from app.routes.v5.tools.entries.messages.create import create_message
+    from app.routes.v5.tools.entries.messages.search import search_messages
+    from app.routes.v5.tools.entries.runs.create import create_run
+    from app.routes.v5.tools.entries.test_invocation.get import get_test_invocations
+    from app.utils.logging.db_logger import get_logger
+
+    logger = get_logger(__name__)
+
+    sid = data.get("sid", "")
+    if not sid:
+        return
+
+    profile_id_str = data.get("profile_id")
+    if not profile_id_str:
+        return
+
+    try:
+        payload = TestRunPayload(**data)
+    except Exception as e:
+        logger.exception(f"Invalid test_run payload: {e}")
+        return
+
+    try:
+        test_id = payload.test_id
+        test_invocation_id = payload.test_invocation_id
+        original_run_id = payload.run_id
+
+        # Step 1: Resolve group_id from test_invocation_entry
+        invocations = await get_test_invocations(
+            conn, ids=[test_invocation_id], bypass_mv=True
+        )
+
+        if not invocations:
+            await emit([
+                internal_event(
+                    "test_error",
+                    TestErrorData(
+                        sid=sid,
+                        invocation_id=str(test_invocation_id),
+                        message="No group found for test invocation",
+                        error_type="run",
+                    ).model_dump(mode="json"),
+                )
+            ])
+            return
+
+        group_id = invocations[0].group_id
+
+        # Step 2: Get session_id from payload
+        session_id_str = data.get("session_id")
+        session_id = uuid.UUID(session_id_str) if session_id_str else uuid.UUID(int=0)
+
+        # Step 3: Create new run + profile link
+        profiles_id_str = data.get("profiles_id")
+        profiles_id = uuid.UUID(profiles_id_str) if profiles_id_str else None
+
+        run_result = await create_run(
+            conn,
+            group_id=group_id,
+            session_id=session_id,
+            profiles_id=profiles_id,
+        )
+        new_run_id = run_result.id
+
+        # Step 4: Fetch original messages
+        original_messages, _ = await search_messages(
+            conn,
+            run_ids=[original_run_id],
+            sort_order="asc",
+            bypass_mv=True,
+            limit=1000,
+        )
+
+        if not original_messages:
+            await emit([
+                internal_event(
+                    "test_error",
+                    TestErrorData(
+                        sid=sid,
+                        invocation_id=str(test_invocation_id),
+                        message="No messages found in original run",
+                        error_type="run",
+                    ).model_dump(mode="json"),
+                )
+            ])
+            return
+
+        # Remove the last assistant message
+        messages_to_copy = list(original_messages)
+        for i in range(len(messages_to_copy) - 1, -1, -1):
+            if messages_to_copy[i].role == "assistant":
+                messages_to_copy.pop(i)
+                break
+
+        # Step 5: Copy messages into the new run
+        # TODO: copy uploads (text_upload_ids, audio_upload_ids, etc.)
+        # and link them to the new messages via message_uploads_entry.
+        # Currently only creates the message shell.
+        for msg in messages_to_copy:
+            await create_message(
+                conn,
+                run_id=new_run_id,
+                role=msg.role,
+            )
+
+        # Step 6: Create assistant placeholder
+        assistant_msg = await create_message(
+            conn,
+            run_id=new_run_id,
+            role="assistant",
+        )
+
+        # Step 7: Emit test_run_started
+        await emit([
+            internal_event(
+                "test_run_started",
+                {
+                    "sid": sid,
+                    "test_id": str(test_id),
+                    "test_invocation_id": str(test_invocation_id),
+                    "run_id": str(new_run_id),
+                    "original_run_id": str(original_run_id),
+                    "message_id": str(assistant_msg.id),
+                },
+            )
+        ])
+
+        # Step 8: Emit generate_artifact
+        # TODO: resolve message content from uploads for conversation_messages
+        # TODO: resolve LLM config (model, provider, prompt, instructions, tools)
+        # from the test invocation's connections
+        await emit([
+            internal_event(
+                "generate_artifact",
+                {
+                    "sid": sid,
+                    "artifact_type": "test",
+                    "resource_type": "test",
+                    "modality": "text",
+                    "run_id": str(new_run_id),
+                    "group_id": str(group_id),
+                    "chat_id": str(test_invocation_id),
+                    "messages": [],  # TODO: populate from copied message content
+                    "llm_config": {},  # TODO: resolve from invocation config
+                    "tools": [],  # TODO: resolve from invocation config
+                    "metadata": {
+                        "test_id": str(test_id),
+                        "test_invocation_id": str(test_invocation_id),
+                        "original_run_id": str(original_run_id),
+                    },
+                },
+            )
+        ])
+
+        logger.info(
+            f"Test run started - test_id={test_id}, "
+            f"invocation_id={test_invocation_id}, "
+            f"new_run_id={new_run_id}, original_run_id={original_run_id}"
+        )
+
+    except Exception as e:
+        logger.exception(f"Error in test_run: {e}")
+        await emit([
+            internal_event(
+                "test_error",
+                TestErrorData(
+                    sid=sid,
+                    message=f"Failed to run test: {e}",
+                    error_type="run",
+                ).model_dump(mode="json"),
+            )
+        ])

@@ -22,6 +22,7 @@ from app.infra.websocket.test_events_impl import (
     test_next_impl as _test_next_impl,
     test_proceed_impl as _test_proceed_impl,
     test_progress_impl as _test_progress_impl,
+    test_run_impl as _test_run_impl,
     test_run_done_impl as _test_run_done_impl,
     test_start_impl as _test_start_impl,
 )
@@ -991,3 +992,209 @@ class TestStartImpl:
         assert len(events) == 1
         assert events[0].event == "test_error"
         assert events[0].data["error_type"] == "start"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# test_proceed_impl
+# ═══════════════════════════════════════════════════════════════════════════
+
+_INV_SEARCH = "app.routes.v5.tools.entries.test_invocation.search"
+_INV_CREATE = "app.routes.v5.tools.entries.test_invocation.create"
+_INV_BRIDGE = "app.routes.v5.tools.entries.test_invocation_bridge.create"
+_INV_COMPLETION = "app.routes.v5.tools.entries.test_invocation_completion.create"
+_TEST_GET = "app.routes.v5.tools.entries.test.get"
+
+
+@pytest.mark.asyncio
+class TestProceedImpl:
+    async def test_no_sid_emits_nothing(self):
+        emit, events = recording_emit()
+        await _test_proceed_impl({"sid": ""}, emit=emit, conn=AsyncMock())
+        assert events == []
+
+    async def test_invalid_payload_emits_nothing(self):
+        emit, events = recording_emit()
+        await _test_proceed_impl(
+            {"sid": "s1"},  # missing test_id
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert events == []
+
+    @patch(f"{_CACHE}.invalidate_tags", new_callable=AsyncMock)
+    @patch(f"{_REFRESH}.refresh_test_invocation", new_callable=AsyncMock)
+    @patch(f"{_INV_COMPLETION}.create_test_invocation_completion", new_callable=AsyncMock)
+    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
+    async def test_complete_all_marks_all_and_emits_ended(
+        self, mock_search, mock_complete, mock_refresh, mock_invalidate
+    ):
+        inv1 = SimpleNamespace(invocation_id="inv-1", invocation_completed=False)
+        inv2 = SimpleNamespace(invocation_id="inv-2", invocation_completed=True)
+        mock_search.return_value = ([inv1, inv2], 2)
+
+        emit, events = recording_emit()
+        await _test_proceed_impl(
+            {
+                "sid": "s1",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "complete_all": True,
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+
+        # Only inv1 (uncompleted) should have completion created
+        assert mock_complete.call_count == 1
+        assert mock_refresh.called
+        assert len(events) == 1
+        assert events[0].event == "test_ended"
+        assert events[0].data["success"] is True
+
+    @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
+    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
+    async def test_all_completed_emits_ended(self, mock_search, mock_get_tests):
+        inv1 = SimpleNamespace(invocation_id="inv-1", invocation_completed=True)
+        inv2 = SimpleNamespace(invocation_id="inv-2", invocation_completed=True)
+        mock_search.return_value = ([inv1, inv2], 2)
+        mock_get_tests.return_value = [SimpleNamespace(is_dynamic=True)]
+
+        emit, events = recording_emit()
+        await _test_proceed_impl(
+            {
+                "sid": "s1",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "test_ended"
+
+    @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
+    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
+    async def test_no_invocations_emits_error(self, mock_search, mock_get_tests):
+        mock_search.return_value = ([], 0)
+        mock_get_tests.return_value = []
+
+        emit, events = recording_emit()
+        await _test_proceed_impl(
+            {
+                "sid": "s1",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "test_error"
+        assert events[0].data["error_type"] == "proceed"
+
+    @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
+    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
+    async def test_use_custom_without_force_emits_started(self, mock_search, mock_get_tests):
+        inv1 = SimpleNamespace(
+            invocation_id="inv-1", invocation_completed=False, use_custom=True
+        )
+        mock_search.return_value = ([inv1], 1)
+        mock_get_tests.return_value = [SimpleNamespace(is_dynamic=True)]
+
+        emit, events = recording_emit()
+        await _test_proceed_impl(
+            {
+                "sid": "s1",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "test_started"
+        assert events[0].data["invocation_entry_id"] == "inv-1"
+
+    @patch(f"{_CACHE}.invalidate_tags", new_callable=AsyncMock)
+    @patch(f"{_REFRESH}.refresh_test_invocation", new_callable=AsyncMock)
+    @patch(f"{_INV_BRIDGE}.create_test_invocation_bridge", new_callable=AsyncMock)
+    @patch(f"{_INV_CREATE}.create_test_invocation", new_callable=AsyncMock)
+    @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
+    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
+    async def test_next_invocation_creates_and_emits_started(
+        self,
+        mock_search,
+        mock_get_tests,
+        mock_create_inv,
+        mock_bridge,
+        mock_refresh,
+        mock_invalidate,
+    ):
+        inv1 = SimpleNamespace(
+            invocation_id="inv-1", invocation_completed=False, use_custom=False
+        )
+        mock_search.return_value = ([inv1], 1)
+        mock_get_tests.return_value = [SimpleNamespace(is_dynamic=False)]
+        mock_create_inv.return_value = SimpleNamespace(id="new-inv-id")
+
+        emit, events = recording_emit()
+        await _test_proceed_impl(
+            {
+                "sid": "s1",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+
+        assert mock_create_inv.called
+        assert mock_bridge.called
+        assert mock_refresh.called
+        assert len(events) == 1
+        assert events[0].event == "test_invocation_started"
+        assert events[0].data["is_dynamic"] is False
+        assert events[0].data["test_invocation_id"] == "new-inv-id"
+
+    @patch(f"{_INV_COMPLETION}.create_test_invocation_completion", new_callable=AsyncMock)
+    @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
+    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
+    async def test_completed_invocation_id_creates_completion(
+        self, mock_search, mock_get_tests, mock_complete
+    ):
+        inv1 = SimpleNamespace(invocation_id="inv-1", invocation_completed=True)
+        mock_search.return_value = ([inv1], 1)
+        mock_get_tests.return_value = [SimpleNamespace(is_dynamic=True)]
+
+        emit, events = recording_emit()
+        await _test_proceed_impl(
+            {
+                "sid": "s1",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+                "completed_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917943",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+
+        assert mock_complete.called
+        # All completed → test_ended
+        assert len(events) == 1
+        assert events[0].event == "test_ended"
+
+    @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
+    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
+    async def test_error_emits_test_error(self, mock_search, mock_get_tests):
+        mock_search.side_effect = RuntimeError("db down")
+
+        emit, events = recording_emit()
+        await _test_proceed_impl(
+            {
+                "sid": "s1",
+                "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
+            },
+            emit=emit,
+            conn=AsyncMock(),
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "test_error"
+        assert events[0].data["error_type"] == "proceed"

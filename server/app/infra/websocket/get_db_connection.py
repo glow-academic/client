@@ -22,10 +22,10 @@ async def get_db_connection() -> AsyncGenerator[asyncpg.Connection, None]:
     Usage:
         try:
             async with get_db_connection() as conn:
-                result = await execute_sql_typed(conn, SQL_PATH, params=params)
+                result = await some_query(conn, ...)
         except RuntimeError:
             # Pool not initialized - emit error event
-            await rubric_generation_error(...)
+            await handle_error(...)
 
     Raises:
         RuntimeError: If database connection pool is not initialized

@@ -650,6 +650,7 @@ function ScenarioComponent({
       const idPayload = buildDraftPayload(SCENARIO_RESOURCES, {
         formState: formStateRef.current,
         referenceState: ref as unknown as Record<string, unknown> | null,
+        flushResults: {},
       });
 
       // Value fields for creatables (value takes precedence over ID)
@@ -712,7 +713,7 @@ function ScenarioComponent({
   }, []);
 
   // Empty flush registry ref (no more client-side resource creation)
-  const emptyFlushRef = useRef({});
+  const emptyFlushRef = useRef(new Map<string, () => Promise<void | Record<string, unknown>>>());
 
   const {
     setUrlFormDataRef,
@@ -1631,13 +1632,6 @@ function ScenarioComponent({
                         ...prev,
                         problem_statement_id: problemStatementId,
                         problem_statement: null,
-                      }))
-                    }
-                    onProblemStatementChange={(ps) =>
-                      setFormState((prev) => ({
-                        ...prev,
-                        problem_statement: ps || null,
-                        problem_statement_id: null,
                       }))
                     }
                     onGenerate={generateHandlers["problem_statements"]}

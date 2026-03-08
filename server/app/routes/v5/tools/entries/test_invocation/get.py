@@ -4,6 +4,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.infra.docs.resolve_mv_source import resolve_mv_source
 from app.routes.v5.tools.entries.test_invocation.types import (
     GetTestInvocationResponse,
 )
@@ -14,10 +15,13 @@ MV_NAME = "test_invocation_mv"
 async def get_test_invocations(
     conn: asyncpg.Connection,
     ids: list[UUID],
+    bypass_mv: bool = False,
 ) -> list[GetTestInvocationResponse]:
     """Fetch test_invocation entries by IDs from the MV."""
     if not ids:
         return []
+
+    source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
     rows = await conn.fetch(
         f"""
@@ -28,7 +32,7 @@ async def get_test_invocations(
             rubric_id, agent_ids, quality_id, department_ids,
             run_agent_ids, group_agent_ids, voice_id,
             temperature_level_id, reasoning_level_id, modality_ids
-        FROM {MV_NAME}
+        FROM {source}
         WHERE invocation_id = ANY($1)
         """,
         ids,

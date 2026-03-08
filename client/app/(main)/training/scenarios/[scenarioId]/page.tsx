@@ -21,69 +21,10 @@ import { resolveGroupId } from "@/app/(main)/layout-server";
 /** ---- Strong types from OpenAPI ---- */
 type GetScenarioIn = InputOf<"/api/v5/artifacts/scenarios/get", "post">;
 type GetScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/get", "post">;
-type SaveScenarioIn = InputOf<"/api/v5/artifacts/scenarios/save", "post">;
-type SaveScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/save", "post">;
+type UpdateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/update", "post">;
+type UpdateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/update", "post">;
 type PatchScenarioDraftIn = InputOf<"/api/v5/artifacts/scenarios/draft", "patch">;
 type PatchScenarioDraftOut = OutputOf<"/api/v5/artifacts/scenarios/draft", "patch">;
-// Resource creation types
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftProblemStatementsIn = InputOf<
-  "/api/v5/resources/problem_statements",
-  "post"
->;
-type CreateDraftProblemStatementsOut = OutputOf<
-  "/api/v5/resources/problem_statements",
-  "post"
->;
-type CreateDraftObjectivesIn = InputOf<"/api/v5/resources/objectives", "post">;
-type CreateDraftObjectivesOut = OutputOf<
-  "/api/v5/resources/objectives",
-  "post"
->;
-type CreateDraftQuestionsIn = InputOf<"/api/v5/resources/questions", "post">;
-type CreateDraftQuestionsOut = OutputOf<"/api/v5/resources/questions", "post">;
-type CreateDraftImagesIn = InputOf<"/api/v5/resources/images", "post">;
-type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
-type CreateDraftVideosIn = InputOf<"/api/v5/resources/videos", "post">;
-type CreateDraftVideosOut = OutputOf<"/api/v5/resources/videos", "post">;
-type CreateDraftParameterFieldsIn = InputOf<"/api/v5/resources/parameter_fields", "post">;
-type CreateDraftParameterFieldsOut = OutputOf<"/api/v5/resources/parameter_fields", "post">;
-type CreateDraftOptionsIn = InputOf<"/api/v5/resources/options", "post">;
-type CreateDraftOptionsOut = OutputOf<"/api/v5/resources/options", "post">;
-// GenerateAIScenario types - using WebSocket event types
-type GenerateAIScenarioIn = {
-  departmentId: string;
-  personaIds: string[] | null;
-  documentIds: string[] | null;
-  fieldIds: string[] | null;
-  profileId: string | null;
-  userInstructions: string | null;
-  imagesEnabled: boolean;
-  videoEnabled: boolean;
-  objectivesEnabled: boolean;
-  questionsEnabled: boolean;
-};
-type GenerateAIScenarioOut = {
-  success: boolean;
-  message: string;
-  title: string;
-  description: string;
-  objectives: string[];
-  dynamic_document_mapping: Record<string, string> | null;
-  problem_statement_id: string | null;
-  objective_ids: string[];
-  document_ids: string[];
-  image_ids: string[];
-};
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -92,7 +33,7 @@ type GenerateAIScenarioOut = {
 const getScenario = async (
   scenarioId: string,
   filterParams?: {
-    draftId?: string;
+    draftId?: string | null;
     groupId?: string;
     departmentIds?: string[];
     personaIds?: string[];
@@ -102,11 +43,15 @@ const getScenario = async (
     personaSearch?: string;
     documentSearch?: string;
     parameterSearch?: string;
+    descriptionSearch?: string;
+    problemStatementSearch?: string;
+    imageSearch?: string;
+    videoSearch?: string;
     documentShowSelected?: boolean;
     personaShowSelected?: boolean;
     parameterShowSelected?: boolean;
-    fieldShowSelectedByParam?: Record<string, boolean>; // Per-parameter field filters: {paramId: bool}
-    urlParameterIds?: string[]; // URL render filter: which parameters are expanded
+    fieldShowSelectedByParam?: Record<string, boolean>;
+    urlParameterIds?: string[];
     personaMin?: number;
     personaMax?: number;
     documentMin?: number;
@@ -119,8 +64,6 @@ const getScenario = async (
     problemStatementIds?: string[];
   }
 ): Promise<GetScenarioOut> => {
-  // Convert camelCase filter params to snake_case for API
-  // Use proper type from InputOf to ensure type safety
   const body: GetScenarioIn["body"] = {
     scenario_id: scenarioId,
     mcp: null,
@@ -154,13 +97,10 @@ const getScenario = async (
     if (filterParams.videoSearch) body.video_search = filterParams.videoSearch;
     if (filterParams.documentShowSelected !== undefined)
       body.document_show_selected = filterParams.documentShowSelected;
-    // Note: persona_min, persona_max, document_min, document_max,
-    // parameter_selection_min, parameter_selection_max, field_ranges are not part of the API request
     if (filterParams.personaShowSelected !== undefined)
       body.persona_show_selected = filterParams.personaShowSelected;
     if (filterParams.parameterShowSelected !== undefined)
       body.parameter_show_selected = filterParams.parameterShowSelected;
-    // Convert Record<string, boolean> to array format expected by API
     if (filterParams.fieldShowSelectedByParam) {
       body.field_show_selected_by_param = Object.entries(
         filterParams.fieldShowSelectedByParam
@@ -174,7 +114,6 @@ const getScenario = async (
       body.objective_ids = filterParams.objectiveIds;
     if (filterParams.problemStatementIds)
       body.problem_statement_ids = filterParams.problemStatementIds;
-    // URL render filter: which parameters are expanded (separate from filter_parameter_ids)
     if (filterParams.urlParameterIds)
       body.parameter_ids = filterParams.urlParameterIds;
   }
@@ -212,86 +151,16 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveScenario(input: SaveScenarioIn): Promise<SaveScenarioOut> {
+async function updateScenario(input: UpdateScenarioIn): Promise<UpdateScenarioOut> {
   "use server";
-  // Use unified save endpoint (works for both create and edit)
-  return api.post("/artifacts/scenarios/save", input);
+  return api.post("/artifacts/scenarios/update", input);
 }
 
 async function patchScenarioDraft(
   input: PatchScenarioDraftIn
 ): Promise<PatchScenarioDraftOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.patch("/artifacts/scenarios/draft", input);
-}
-
-async function createDraftImages(
-  input: CreateDraftImagesIn
-): Promise<CreateDraftImagesOut> {
-  "use server";
-  return api.post("/resources/images", input);
-}
-
-async function createDraftVideos(
-  input: CreateDraftVideosIn
-): Promise<CreateDraftVideosOut> {
-  "use server";
-  return api.post("/resources/videos", input);
-}
-
-async function createDraftParameterFields(
-  input: CreateDraftParameterFieldsIn
-): Promise<CreateDraftParameterFieldsOut> {
-  "use server";
-  return api.post("/resources/parameter_fields", input);
-}
-
-async function createDraftNames(
-  input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/names", input);
-}
-
-async function createDraftDescriptions(
-  input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/descriptions", input);
-}
-
-async function createDraftProblemStatements(
-  input: CreateDraftProblemStatementsIn
-): Promise<CreateDraftProblemStatementsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/problem_statements", input);
-}
-
-async function createDraftObjectives(
-  input: CreateDraftObjectivesIn
-): Promise<CreateDraftObjectivesOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/objectives", input);
-}
-
-async function createDraftQuestions(
-  input: CreateDraftQuestionsIn
-): Promise<CreateDraftQuestionsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/questions", input);
-}
-
-async function createDraftOptions(
-  input: CreateDraftOptionsIn
-): Promise<CreateDraftOptionsOut> {
-  "use server";
-  return api.post("/resources/options", input);
 }
 
 /** ---- Server renders client with typed data and actions ---- */
@@ -345,7 +214,7 @@ export default async function EditScenarioPage({
       documentShowSelected?: boolean;
       personaShowSelected?: boolean;
       parameterShowSelected?: boolean;
-      fieldShowSelectedByParam?: Record<string, boolean>; // Per-parameter field filters
+      fieldShowSelectedByParam?: Record<string, boolean>;
       personaMin?: number;
       personaMax?: number;
       documentMin?: number;
@@ -356,7 +225,7 @@ export default async function EditScenarioPage({
       imageIds?: string[];
       objectiveIds?: string[];
       problemStatementIds?: string[];
-      urlParameterIds?: string[]; // URL render filter: which parameters are expanded
+      urlParameterIds?: string[];
       groupId?: string;
     };
     const filterParams: FilterParams = {};
@@ -371,7 +240,6 @@ export default async function EditScenarioPage({
     if (personaIds) filterParams.personaIds = personaIds;
     if (documentIds) filterParams.documentIds = documentIds;
     if (parameterIds) filterParams.parameterIds = parameterIds;
-    // Edit mode uses parameterItemIds, but nuqs uses fieldIds
     if (fieldIds) filterParams.parameterItemIds = fieldIds;
     if (q.personaSearch) filterParams.personaSearch = q.personaSearch;
     if (q.documentSearch) filterParams.documentSearch = q.documentSearch;
@@ -447,17 +315,8 @@ export default async function EditScenarioPage({
         <Scenario
           scenarioId={scenarioId}
           scenarioDetail={scenarioDetail}
-          saveScenarioAction={saveScenario}
+          updateScenarioAction={updateScenario}
           patchScenarioDraftAction={patchScenarioDraft}
-          createNamesAction={createDraftNames}
-          createDescriptionsAction={createDraftDescriptions}
-          createProblemStatementsAction={createDraftProblemStatements}
-          createObjectivesAction={createDraftObjectives}
-          createQuestionsAction={createDraftQuestions}
-          createImagesAction={createDraftImages}
-          createVideosAction={createDraftVideos}
-          createParameterFieldsAction={createDraftParameterFields}
-          createOptionsAction={createDraftOptions}
         />
       </div>
     );
@@ -482,20 +341,12 @@ export default async function EditScenarioPage({
   }
 }
 
-/** ---- Type aliases for backward compatibility ---- */
-type ScenarioDetailOut = GetScenarioOut;
-type ScenarioNewOut = GetScenarioOut;
-
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  GenerateAIScenarioIn,
-  GenerateAIScenarioOut,
   GetScenarioIn,
   GetScenarioOut,
   PatchScenarioDraftIn,
   PatchScenarioDraftOut,
-  SaveScenarioIn,
-  SaveScenarioOut,
-  ScenarioDetailOut,
-  ScenarioNewOut,
+  UpdateScenarioIn,
+  UpdateScenarioOut,
 };
