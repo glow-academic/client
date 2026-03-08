@@ -10,104 +10,16 @@ from uuid import UUID
 
 from pydantic import BaseModel, model_validator
 
-# ---------------------------------------------------------------------------
-# Operation literals per layer
-# ---------------------------------------------------------------------------
-
-ArtifactOperation = Literal[
-    "get", "list", "duplicate", "delete", "draft", "save", "docs", "export", "refresh"
-]
-ResourceOperation = Literal["get", "create", "link", "search", "docs"]
-EntryOperation = Literal["get", "search", "docs", "create", "refresh"]
-
-
-class ArtifactTypeItem(BaseModel):
-    """Typed artifact operation reference."""
-
-    name: str
-    operation: ArtifactOperation
-
-
-class ResourceTypeItem(BaseModel):
-    """Typed resource operation reference."""
-
-    name: str
-    operation: ResourceOperation
-
-
-class EntryTypeItem(BaseModel):
-    """Typed entry operation reference."""
-
-    name: str
-    operation: EntryOperation
-
-
-# ---------------------------------------------------------------------------
-# Generate payload
-# ---------------------------------------------------------------------------
-
-
-class GeneratePayload(BaseModel):
-    """Unified client-to-server payload for the `generate` WebSocket event.
-
-    Fields:
-        artifact_types: Typed artifact operations — at least one required.
-                        The first item is the primary artifact; its ``name``
-                        is used as the registry key for downstream events.
-        artifact_id:   Generic artifact ID — maps to agent_id, chat_entry_id, etc.
-        draft_id:      Optional draft ID (required for most artifacts).
-        resource_types: Which resources to generate (plain strings).
-        entry_types:   Typed entry operations (name + operation).
-        user_instructions: Optional user instructions forwarded to LLM.
-        save:          Whether to auto-save on completion.
-        run_id:        Pre-created run ID (required — created by caller).
-        group_id:      Pre-created group ID (required — created by caller).
-        extra_messages: Pre-built messages (e.g. chat history) — not persisted.
-        metadata:      Pass-through metadata forwarded to generate_artifact and
-                       downstream handlers (e.g. attempt_id, chat_id, grade_id).
-    """
-
-    artifact_types: list[ArtifactTypeItem]
-    artifact_id: UUID | None = None
-    draft_id: UUID | None = None
-    resource_types: list[ResourceTypeItem]
-    entry_types: list[EntryTypeItem] | None = None
-
-    @model_validator(mode="before")
-    @classmethod
-    def _coerce_resource_types(cls, data: Any) -> Any:
-        """Auto-coerce plain strings to ResourceTypeItem for backward compatibility."""
-        if isinstance(data, dict):
-            raw = data.get("resource_types")
-            if isinstance(raw, list):
-                data["resource_types"] = [
-                    {"name": item, "operation": "create"}
-                    if isinstance(item, str)
-                    else item
-                    for item in raw
-                ]
-        return data
-
-    @property
-    def artifact_type(self) -> str:
-        """Derived primary artifact type — the name of the first artifact_types entry."""
-        return self.artifact_types[0].name if self.artifact_types else "unknown"
-
-    user_instructions: list[str] | None = None
-    save: bool = False
-
-    # Pre-created IDs (required — created by caller)
-    run_id: str | None = None
-    group_id: str | None = None
-
-    # Modality: "call" (tool calls, default) or "audio" (realtime voice)
-    modality: str = "call"
-
-    # Extra messages (chat history, appended after developer msgs)
-    extra_messages: list[dict[str, str]] | None = None
-
-    # Pass-through metadata for downstream handlers
-    metadata: dict[str, Any] | None = None
+# Re-exported from infra — canonical location is app.infra.websocket.generation_types
+from app.infra.websocket.generation_types import (
+    ArtifactOperation as ArtifactOperation,
+    ArtifactTypeItem as ArtifactTypeItem,
+    EntryOperation as EntryOperation,
+    EntryTypeItem as EntryTypeItem,
+    GeneratePayload as GeneratePayload,
+    ResourceOperation as ResourceOperation,
+    ResourceTypeItem as ResourceTypeItem,
+)
 
 
 # ---------------------------------------------------------------------------

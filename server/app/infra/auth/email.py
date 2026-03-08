@@ -3,8 +3,9 @@
 Given an email address and optional actor profile_id:
   1. search_emails → find email resource matching the address
   2. search_profiles → find profile artifact owning that email
-  3. resolve_profile_identity_context → hydrate full profile identity
-  4. get_profile_artifacts → get created_at/updated_at timestamps
+  3. get_profile_artifacts → bridge artifact ID → resource ID + timestamps
+  4. get_profiles (resource) → hydrate full profile data
+  5. resolve_profile_identity_context → actor name (logged-in user only)
 
 No inline SQL.
 """
@@ -24,6 +25,9 @@ from app.routes.v5.tools.artifacts.profile.get import (
 )
 from app.routes.v5.tools.artifacts.profile.search import search_profiles
 from app.routes.v5.tools.resources.emails.search import search_emails
+from app.routes.v5.tools.resources.profiles.get import (
+    get_profiles as get_profile_resources,
+)
 
 
 @dataclass(frozen=True)
@@ -31,7 +35,7 @@ class ProfileByEmailResult:
     """Result of a profile-by-email lookup."""
 
     profile_id: UUID
-    name: str
+    name: str | None
     emails: list[str]
     primary_email: str | None
     role: str
@@ -68,27 +72,34 @@ async def resolve_profile_by_email(
         return None
 
     # Step 2: Find profile artifact owning that email
-    profile_ids, _total = await search_profiles(
+    artifact_ids, _total = await search_profiles(
         conn, email_ids=matching_email_ids, active_only=False, limit_count=1
     )
-    if not profile_ids:
+    if not artifact_ids:
         return None
 
-    target_profile_id = profile_ids[0]
+    target_artifact_id = artifact_ids[0]
 
-    # Step 3: Hydrate profile identity + get timestamps
-    identity = await resolve_profile_identity_context(
-        conn, target_profile_id, redis, bypass_cache=bypass_cache
+    # Step 3: Bridge artifact → resource ID + get timestamps
+    artifacts = await get_profile_artifacts(
+        conn, [target_artifact_id], profiles=True
     )
-    if not identity:
+    if not artifacts or not artifacts[0].profile_ids:
         return None
 
-    # Step 4: Get artifact timestamps
-    artifacts = await get_profile_artifacts(conn, [target_profile_id])
-    created_at = artifacts[0].created_at if artifacts else None
-    updated_at = artifacts[0].updated_at if artifacts else None
+    artifact = artifacts[0]
+    resource_id = artifact.profile_ids[0]
 
-    # Step 5: Resolve actor name if actor_profile_id provided
+    # Step 4: Hydrate profile via resource get_profiles
+    profiles = await get_profile_resources(
+        conn, [resource_id], redis, bypass_cache=bypass_cache
+    )
+    if not profiles:
+        return None
+
+    profile = profiles[0]
+
+    # Step 5: Resolve actor name if actor_profile_id provided (logged-in user only)
     actor_name: str | None = None
     if actor_profile_id:
         actor_identity = await resolve_profile_identity_context(
@@ -97,16 +108,21 @@ async def resolve_profile_by_email(
         if actor_identity:
             actor_name = actor_identity.name
 
+    # primary_department_id: first department from resource if available
+    primary_department_id = (
+        profile.department_ids[0] if profile.department_ids else None
+    )
+
     return ProfileByEmailResult(
-        profile_id=target_profile_id,
-        name=identity.name,
-        emails=identity.emails,
-        primary_email=identity.primary_email,
-        role=identity.role,
-        active=identity.is_active,
-        req_per_day=identity.requests_per_day,
-        created_at=created_at,
-        updated_at=updated_at,
-        primary_department_id=identity.primary_department_id,
+        profile_id=target_artifact_id,
+        name=profile.name,
+        emails=profile.emails,
+        primary_email=profile.primary_email,
+        role=profile.role,
+        active=profile.active,
+        req_per_day=profile.requests_per_day,
+        created_at=artifact.created_at,
+        updated_at=artifact.updated_at,
+        primary_department_id=primary_department_id,
         actor_name=actor_name,
     )

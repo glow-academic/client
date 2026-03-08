@@ -17,19 +17,10 @@ from pydantic import BaseModel
 # =============================================================================
 
 
-class GenerateErrorApiRequest(BaseModel):
-    """Payload for generate_*_error events (internal server-to-server).
-
-    Used for internal error propagation with socket ID for routing.
-    """
-
-    sid: str
-    error_message: str
-    artifact_type: str | None = None
-    group_id: str | None = None
-    resource_type: str | None = None
-    resource_types: list[str] | None = None
-    resource_id: str | None = None
+# Re-exported from infra — canonical location is app.infra.websocket.generation_types
+from app.infra.websocket.generation_types import (
+    GenerateErrorApiRequest as GenerateErrorApiRequest,
+)
 
 
 # =============================================================================

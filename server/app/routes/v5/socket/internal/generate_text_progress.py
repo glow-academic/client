@@ -1,36 +1,14 @@
-"""Handle generate_text_progress — text generation streaming delta.
-
-Attempt-specific: emits attempt_assistant_progress for chat/attempt artifacts
-(filtered out for grade generations).
-"""
+"""Text progress — thin socket handler."""
 
 from typing import Any
 
 from app.infra.globals import get_internal_sio
-from app.routes.v5.socket.internal.attempt.types import AttemptAssistantProgressData
-from app.utils.logging.db_logger import get_logger
-
-logger = get_logger(__name__)
+from app.infra.websocket.generation_events_impl import text_progress_impl
+from app.infra.websocket.socket_event import make_emit
 
 internal_sio = get_internal_sio()
 
 
 @internal_sio.on("generate_text_progress")  # type: ignore
 async def handle_text_progress(data: dict[str, Any]) -> None:
-    """Handle text delta — emit attempt_assistant_progress for attempt artifacts."""
-    artifact_type = data.get("artifact_type")
-    if artifact_type not in ("chat", "attempt"):
-        return
-    metadata = data.get("metadata") or {}
-    if metadata.get("grade_id"):
-        return
-    chat_id = metadata.get("chat_id", "")
-    await internal_sio.emit(
-        "attempt_assistant_progress",
-        AttemptAssistantProgressData(
-            sid=data.get("sid", ""),
-            chat_id=chat_id,
-            content_type="delta",
-            content=data.get("delta", ""),
-        ).model_dump(mode="json"),
-    )
+    await text_progress_impl(data, emit=make_emit())

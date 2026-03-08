@@ -10,7 +10,6 @@ Composes existing black-box tools:
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from uuid import UUID
 from pydantic import BaseModel
 
@@ -27,8 +26,6 @@ from app.routes.v5.tools.artifacts.scenario.create import (
     create_scenario as create_scenario_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
-
-if TYPE_CHECKING:
 
 
 class CreateScenarioItem(BaseModel):

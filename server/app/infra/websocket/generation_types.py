@@ -73,3 +73,93 @@ class GenerationStartedEvent(BaseModel):
     group_id: str
     run_id: str
     resource_types: list[str]
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Generate gate types — moved from routes/v5/socket/ to avoid import chain
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+class GenerateErrorApiRequest(BaseModel):
+    """Payload for generate_*_error events (internal server-to-server).
+
+    Used for internal error propagation with socket ID for routing.
+    """
+
+    sid: str
+    error_message: str
+    artifact_type: str | None = None
+    group_id: str | None = None
+    resource_type: str | None = None
+    resource_types: list[str] | None = None
+    resource_id: str | None = None
+
+
+from typing import Literal
+
+from pydantic import model_validator
+
+ArtifactOperation = Literal[
+    "get", "list", "duplicate", "delete", "draft", "save", "docs", "export", "refresh"
+]
+ResourceOperation = Literal["get", "create", "link", "search", "docs"]
+EntryOperation = Literal["get", "search", "docs", "create", "refresh"]
+
+
+class ArtifactTypeItem(BaseModel):
+    """Typed artifact operation reference."""
+
+    name: str
+    operation: ArtifactOperation
+
+
+class ResourceTypeItem(BaseModel):
+    """Typed resource operation reference."""
+
+    name: str
+    operation: ResourceOperation
+
+
+class EntryTypeItem(BaseModel):
+    """Typed entry operation reference."""
+
+    name: str
+    operation: EntryOperation
+
+
+class GeneratePayload(BaseModel):
+    """Unified client-to-server payload for the `generate` WebSocket event."""
+
+    artifact_types: list[ArtifactTypeItem]
+    artifact_id: Any | None = None
+    draft_id: Any | None = None
+    resource_types: list[ResourceTypeItem]
+    entry_types: list[EntryTypeItem] | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def _coerce_resource_types(cls, data: Any) -> Any:
+        """Auto-coerce plain strings to ResourceTypeItem for backward compatibility."""
+        if isinstance(data, dict):
+            raw = data.get("resource_types")
+            if isinstance(raw, list):
+                data["resource_types"] = [
+                    {"name": item, "operation": "create"}
+                    if isinstance(item, str)
+                    else item
+                    for item in raw
+                ]
+        return data
+
+    @property
+    def artifact_type(self) -> str:
+        """Derived primary artifact type — the name of the first artifact_types entry."""
+        return self.artifact_types[0].name if self.artifact_types else "unknown"
+
+    user_instructions: list[str] | None = None
+    save: bool = False
+    run_id: str | None = None
+    group_id: str | None = None
+    modality: str = "call"
+    extra_messages: list[dict[str, str]] | None = None
+    metadata: dict[str, Any] | None = None
