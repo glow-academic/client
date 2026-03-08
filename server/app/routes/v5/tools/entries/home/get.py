@@ -7,13 +7,9 @@ import asyncpg  # type: ignore
 
 from app.infra.globals import get_redis_client
 from app.routes.v5.tools.entries.home.types import GetHomeResponse
-from app.sql.types import (
-    GetHomeContextViewSqlRow,
-)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
 MV_NAME = "home_mv"
 
@@ -51,47 +47,6 @@ async def get_homes(
         )
         for r in rows
     ]
-
-
-VIEW_SQL_PATH = "app/sql/queries/views/home/context/get_home_context_view_complete.sql"
-
-
-async def get_home_context_view_internal(
-    conn: asyncpg.Connection,
-    profile_id: UUID,
-    bypass_cache: bool = False,
-) -> GetHomeContextViewSqlRow:
-    """Internal function for IDs-first home context data."""
-    from app.sql.types import GetHomeContextViewSqlParams
-
-    cache_key_val = cache_key(
-        "views/home/context/get",
-        {"profile_id": str(profile_id)},
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return GetHomeContextViewSqlRow.model_validate(cached)
-
-    params = GetHomeContextViewSqlParams(
-        profile_id_filter=profile_id,
-    )
-    result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
-
-    response = GetHomeContextViewSqlRow(
-        items=list(result.items) if result and result.items else [],
-    )
-
-    await set_cached(
-        cache_key_val,
-        response.model_dump(mode="json"),
-        ttl=60,
-        tags=["views", "home", "context"],
-        redis=get_redis_client(),
-    )
-
-    return response
 
 
 async def get_home_entries_internal(

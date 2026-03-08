@@ -504,10 +504,7 @@ RESOURCE_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
 #
 # Notable exceptions (non-standard get function names):
 #   chat           → get_chat_entries_internal
-#   home           → get_home_context_view_internal
 #   logins         → get_login_list_view_internal
-#   metrics        → get_metric_list_view_internal
-#   practice       → get_practice_context_view_internal
 #   problems       → get_problem_list_view_internal
 #   attempt_responses → get_simulation_responses_internal
 # ---------------------------------------------------------------------------
@@ -575,18 +572,18 @@ ENTRY_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     **_ent("grants"),
     **_ent("groups"),
     **_ent("health"),
-    **_ent("home", get_fn="get_home_context_view_internal"),
+    **_ent("home"),
     **_ent("images"),
     **_ent("logins", get_fn="get_login_list_view_internal"),
     **_ent("messages"),
     **_ent("messages_completions"),
-    **_ent("metrics", get_fn="get_metric_list_view_internal"),
+    **_ent("metrics"),
     **_ent("model_drafts"),
     **_ent("attempt_mutes", create=True),
     **_ent("parameter_drafts"),
     **_ent("persona"),
     **_ent("persona_drafts"),
-    **_ent("practice", get_fn="get_practice_context_view_internal"),
+    **_ent("practice"),
     **_ent("problems", get_fn="get_problem_list_view_internal", create=True),
     **_ent("profile_drafts"),
     **_ent("provider_drafts"),

@@ -7,13 +7,9 @@ import asyncpg  # type: ignore
 
 from app.infra.globals import get_redis_client
 from app.routes.v5.tools.entries.practice.types import GetPracticeResponse
-from app.sql.types import (
-    GetPracticeContextViewSqlRow,
-)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
 MV_NAME = "practice_mv"
 
@@ -52,49 +48,6 @@ async def get_practices(
         )
         for r in rows
     ]
-
-
-VIEW_SQL_PATH = (
-    "app/sql/queries/views/practice/context/get_practice_context_view_complete.sql"
-)
-
-
-async def get_practice_context_view_internal(
-    conn: asyncpg.Connection,
-    profile_id: UUID,
-    bypass_cache: bool = False,
-) -> GetPracticeContextViewSqlRow:
-    """Internal function for IDs-first practice context data."""
-    from app.sql.types import GetPracticeContextViewSqlParams
-
-    cache_key_val = cache_key(
-        "views/practice/context/get",
-        {"profile_id": str(profile_id)},
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return GetPracticeContextViewSqlRow.model_validate(cached)
-
-    params = GetPracticeContextViewSqlParams(
-        profile_id_filter=profile_id,
-    )
-    result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
-
-    response = GetPracticeContextViewSqlRow(
-        items=list(result.items) if result and result.items else [],
-    )
-
-    await set_cached(
-        cache_key_val,
-        response.model_dump(mode="json"),
-        ttl=60,
-        tags=["views", "practice", "context"],
-        redis=get_redis_client(),
-    )
-
-    return response
 
 
 async def get_practice_entries_internal(

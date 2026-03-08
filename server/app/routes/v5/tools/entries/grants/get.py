@@ -6,15 +6,9 @@ from uuid import UUID
 import asyncpg  # type: ignore
 
 from app.infra.globals import get_redis_client
-from app.sql.types import (
-    GetGrantListViewSqlRow,
-)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-VIEW_SQL_PATH = "app/sql/queries/views/grant/list/get_grant_list_view_complete.sql"
 
 
 async def get_grants_entries_internal(
@@ -71,56 +65,3 @@ async def get_grants_entries_internal(
     )
 
     return items
-
-
-async def get_grant_list_view_internal(
-    conn: asyncpg.Connection,
-    grantor_id_filter: UUID | None = None,
-    emulated_id_filter: UUID | None = None,
-    page_limit: int = 10000,
-    page_offset: int = 0,
-    bypass_cache: bool = False,
-) -> GetGrantListViewSqlRow:
-    """Internal function for fetching grants data from MV."""
-    from app.sql.types import GetGrantListViewSqlParams
-
-    cache_key_val = cache_key(
-        "views/grant/list/get",
-        {
-            "grantor_id_filter": str(grantor_id_filter) if grantor_id_filter else None,
-            "emulated_id_filter": str(emulated_id_filter)
-            if emulated_id_filter
-            else None,
-            "page_limit": page_limit,
-            "page_offset": page_offset,
-        },
-    )
-
-    if not bypass_cache:
-        cached = await get_cached(cache_key_val, redis=get_redis_client())
-        if cached:
-            return GetGrantListViewSqlRow.model_validate(cached)
-
-    params = GetGrantListViewSqlParams(
-        grantor_id_filter=grantor_id_filter,
-        emulated_id_filter=emulated_id_filter,
-        page_limit_val=page_limit,
-        page_offset_val=page_offset,
-    )
-
-    result = await execute_sql_typed(conn, VIEW_SQL_PATH, params=params)
-
-    response = GetGrantListViewSqlRow(
-        items=list(result.items) if result and result.items else [],
-        total_count=result.total_count or 0 if result else 0,
-    )
-
-    await set_cached(
-        cache_key_val,
-        response.model_dump(mode="json"),
-        ttl=60,
-        tags=["views", "grant", "list"],
-        redis=get_redis_client(),
-    )
-
-    return response
