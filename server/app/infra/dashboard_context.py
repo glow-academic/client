@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import asyncio
 from collections import defaultdict
-from datetime import UTC, date, datetime
+from datetime import date, datetime
 from uuid import UUID
 
 import asyncpg
@@ -27,6 +27,7 @@ from app.routes.v5.api.main.dashboard.shared import (
 )
 
 # Entry search tools
+from app.routes.v5.tools.entries.attempt.search import search_attempts
 from app.routes.v5.tools.entries.attempt_chat.get import ChatItem
 from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
@@ -618,72 +619,51 @@ async def resolve_dashboard_search_context(
     """Resolve dashboard search context for history table.
 
     Entries:
-      - attempts: paginated attempt_mv rows (via compiled SQL for filter options)
-      - attempt_chats: ChatViewItem list for paginated attempts
+      - attempts: paginated GetAttemptResponse list (via search_attempts)
+      - attempt_chats: GetAttemptChatResponse list for paginated attempts
+      - total_count: total number of matching attempts
 
     Resources:
       - simulations, scenarios, personas, profiles
     """
-    from app.routes.v5.tools.entries.attempt.get import (
-        ChatViewItem,
-        get_attempt_chats_internal,
-    )
-    from app.routes.v5.tools.entries.attempt.search import get_attempt_list_internal
-
     if not profile_resource_id:
         return ArtifactContext(
             artifact_id=None,
             active=True,
             group_id=None,  # type: ignore[arg-type]
             draft_version=None,
-            entries={"attempts": [], "attempt_chats": [], "attempt_list_result": []},
+            entries={"attempts": [], "attempt_chats": [], "total_count": 0},
             resources={},
         )
 
     query_profile_id = target_profile_id or profile_resource_id
     page_offset = page * page_size
 
-    # Step 1: Paginated attempts
-    dt_from = (
-        datetime(date_from.year, date_from.month, date_from.day, tzinfo=UTC)
-        if date_from
-        else None
-    )
-    dt_to = (
-        datetime(date_to.year, date_to.month, date_to.day, 23, 59, 59, tzinfo=UTC)
-        if date_to
-        else None
-    )
-
+    # Step 1: Paginated attempts via search_attempts
+    # TODO: search_attempts does not support date_from/date_to filters yet
     async with pool.acquire() as c:
-        list_result = await get_attempt_list_internal(
+        items, total_count = await search_attempts(
             conn=c,
-            profile_id_filter=query_profile_id,
-            practice_filter=practice,
-            is_archived_filter=(show_archived if practice else False),
-            simulation_id_filter=None,
+            profile_ids=[query_profile_id],
+            practice=practice,
+            is_archived=(show_archived if practice else False),
             cohort_ids=cohort_ids,
             department_ids=department_ids,
-            scenario_ids_filter=scenario_ids,
-            infinite_mode_filter=infinite_mode,
-            date_from=dt_from,
-            date_to=dt_to,
-            sort_by=sort_by,
+            scenario_ids=scenario_ids,
+            infinite_mode=infinite_mode,
             sort_order=sort_order,
-            page_limit=page_size,
-            page_offset=page_offset,
-            bypass_cache=bypass_cache,
+            limit=page_size,
+            offset=page_offset,
         )
 
     # Step 2: Batch-fetch chats for paginated attempt_ids
-    items = list_result.items or []
     paginated_ids = [item.attempt_id for item in items]
 
-    chats: list[ChatViewItem] = []
+    chats: list[GetAttemptChatResponse] = []
     if paginated_ids:
         async with pool.acquire() as c:
-            chats = await get_attempt_chats_internal(
-                c, attempt_ids=paginated_ids, bypass_cache=bypass_cache
+            chats, _chat_count = await search_attempt_chats(
+                c, attempt_ids=paginated_ids, limit=10000
             )
 
     # Step 3: Collect resource IDs
@@ -692,7 +672,7 @@ async def resolve_dashboard_search_context(
     h_persona_ids: set[UUID] = set()
     h_scenario_ids: set[UUID] = set()
 
-    chats_by_attempt: dict[UUID, list[ChatViewItem]] = {}
+    chats_by_attempt: dict[UUID, list[GetAttemptChatResponse]] = {}
     for chat in chats:
         if chat.attempt_id:
             chats_by_attempt.setdefault(chat.attempt_id, []).append(chat)
@@ -756,7 +736,7 @@ async def resolve_dashboard_search_context(
         entries={
             "attempts": items,
             "attempt_chats": chats,
-            "attempt_list_result": [list_result],
+            "total_count": total_count,
         },
         resources={
             "simulations": ResourcePair(selected=h_sims, suggestions=[]),

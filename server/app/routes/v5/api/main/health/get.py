@@ -173,7 +173,7 @@ async def get_health_internal(
                     c, [common.profile.profiles_id], redis, bypass_cache
                 )
 
-        runs_today = common.runs.runs if common.runs else None
+        runs_today = common.runs if common.runs else None
 
     return HealthInternalData(
         health=health,

@@ -9,7 +9,7 @@ from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.runs.get import get_run
 from app.routes.v5.tools.entries.runs.refresh import refresh_runs_internal
-from app.routes.v5.tools.entries.runs.search import search_runs_entries_internal
+from app.routes.v5.tools.entries.runs.search import search_runs
 
 
 async def get_runs_docs(conn: asyncpg.Connection) -> DocsResponse:
@@ -49,7 +49,7 @@ async def get_runs_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Batch retrieves runs entries by IDs from runs_mv.",
             ),
             get_operation_info(
-                search_runs_entries_internal,
+                search_runs,
                 description="Filtered paginated search against runs_mv.",
             ),
         ],

@@ -13,14 +13,15 @@ from uuid import UUID
 
 import asyncpg
 
-from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
+from app.routes.v5.tools.entries.runs.search import RunViewItem, search_runs
 
 
 @dataclass(frozen=True)
 class RunsContext:
     """Today's runs for a profile."""
 
-    runs: object  # GetRunListViewResponse
+    items: list[RunViewItem]
+    total_count: int
 
 
 async def resolve_runs_context(
@@ -39,14 +40,15 @@ async def resolve_runs_context(
     start = date_from or now.replace(hour=0, minute=0, second=0, microsecond=0)
     end = date_to or now
 
-    runs = await get_run_list_entries_internal(
+    items, total_count = await search_runs(
         conn,
-        group_id_filter=group_id,
+        group_ids=[group_id] if group_id else None,
+        profiles_ids=[profile_id],
         date_from=start,
         date_to=end,
-        profile_id_filter=profile_id,
     )
 
     return RunsContext(
-        runs=runs,
+        items=items,
+        total_count=total_count,
     )

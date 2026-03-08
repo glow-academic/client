@@ -95,7 +95,7 @@ async def generate_handler_new(data: dict[str, Any]) -> None:
             async with get_db_connection() as conn:
                 runs_ctx = await resolve_runs_context(conn, profile_id=profile_id)
 
-            runs_today = runs_ctx.runs.total_count if runs_ctx and runs_ctx.runs else 0
+            runs_today = runs_ctx.total_count if runs_ctx else 0
             if runs_today >= requests_per_day:
                 error_msg = (
                     f"Rate limit exceeded ({runs_today}/"

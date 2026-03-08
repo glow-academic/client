@@ -121,7 +121,7 @@ async def test_junction_filter_matches(conn):
     assert len(conditions) == 1
     assert len(params) == 1
 
-    ids = await execute_artifact_search(
+    ids, _total = await execute_artifact_search(
         conn,
         table="persona_artifact",
         conditions=conditions,
@@ -149,7 +149,7 @@ async def test_junction_filter_excludes_non_matching(conn):
         ids=[did],
     )
 
-    ids = await execute_artifact_search(
+    ids, _total = await execute_artifact_search(
         conn,
         table="persona_artifact",
         conditions=conditions,
@@ -184,7 +184,7 @@ async def test_junction_filter_ignores_inactive_links(conn):
         ids=[did],
     )
 
-    ids = await execute_artifact_search(
+    ids, _total = await execute_artifact_search(
         conn,
         table="persona_artifact",
         conditions=conditions,
@@ -222,7 +222,7 @@ async def test_text_search_matches_substring(conn):
 
     assert idx == 2
 
-    ids = await execute_artifact_search(
+    ids, _total = await execute_artifact_search(
         conn,
         table="persona_artifact",
         conditions=conditions,
@@ -253,7 +253,7 @@ async def test_text_search_case_insensitive(conn):
         search=f"upper-{tag}",
     )
 
-    ids = await execute_artifact_search(
+    ids, _total = await execute_artifact_search(
         conn,
         table="persona_artifact",
         conditions=conditions,
@@ -283,7 +283,7 @@ async def test_text_search_no_match(conn):
         search="zzz-nomatch-zzz",
     )
 
-    ids = await execute_artifact_search(
+    ids, _total = await execute_artifact_search(
         conn,
         table="persona_artifact",
         conditions=conditions,
@@ -314,7 +314,7 @@ async def test_text_search_on_description(conn):
         search=tag,
     )
 
-    ids = await execute_artifact_search(
+    ids, _total = await execute_artifact_search(
         conn,
         table="persona_artifact",
         conditions=conditions,
@@ -333,7 +333,7 @@ async def test_execute_empty_conditions(conn):
     """No conditions returns all artifacts (up to limit)."""
     pid = await _make_persona(conn)
 
-    ids = await execute_artifact_search(
+    ids, _total = await execute_artifact_search(
         conn,
         table="persona_artifact",
         conditions=[],
@@ -347,7 +347,7 @@ async def test_execute_limit_zero_returns_empty(conn):
     """limit_count=0 short-circuits to empty list."""
     await _make_persona(conn)
 
-    ids = await execute_artifact_search(
+    result = await execute_artifact_search(
         conn,
         table="persona_artifact",
         conditions=[],
@@ -355,7 +355,7 @@ async def test_execute_limit_zero_returns_empty(conn):
         idx=1,
         limit_count=0,
     )
-    assert ids == []
+    assert result == ([], 0)
 
 
 async def test_execute_pagination(conn):
@@ -388,7 +388,7 @@ async def test_execute_pagination(conn):
         "LEFT JOIN names_resource nr_sort ON nr_sort.id = pnj.names_id"
     )
 
-    p1 = await execute_artifact_search(
+    p1, _tc1 = await execute_artifact_search(
         conn,
         table="persona_artifact",
         conditions=list(conditions),
@@ -399,7 +399,7 @@ async def test_execute_pagination(conn):
         limit_count=2,
         offset_count=0,
     )
-    p2 = await execute_artifact_search(
+    p2, _tc2 = await execute_artifact_search(
         conn,
         table="persona_artifact",
         conditions=list(conditions),
@@ -464,7 +464,7 @@ async def test_execute_combined_filters(conn):
         ids=[did],
     )
 
-    ids = await execute_artifact_search(
+    ids, _total = await execute_artifact_search(
         conn,
         table="persona_artifact",
         conditions=conditions,

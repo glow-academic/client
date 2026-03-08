@@ -9,7 +9,8 @@ import asyncpg
 
 from app.infra.globals import get_redis_client
 from app.routes.v5.api.main.dashboard.types import DashboardRequest
-from app.routes.v5.tools.entries.attempt_chat.get import FilterOption, GetChatsResponse
+from app.routes.v5.tools.entries.attempt_chat.get import FilterOption
+from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
 from app.routes.v5.tools.resources.rubrics.get import get_rubrics
 from app.routes.v5.tools.resources.standard_groups.get import (
     get_standard_groups,
@@ -368,15 +369,16 @@ async def fetch_chats_data(
     pool: asyncpg.Pool,
     request: DashboardRequest,
     filters: ParsedFilters,
-    bypass_cache: bool = False,
-) -> "GetChatsResponse":
+) -> tuple[list[GetAttemptChatResponse], int]:
     """Fetch chat data from attempt_chat_mv — unified replacement for all 4 facts fetchers."""
-    from app.routes.v5.tools.entries.attempt_chat.get import get_chats_internal
+    from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 
     async with pool.acquire() as c:
-        return await get_chats_internal(
+        return await search_attempt_chats(
             conn=c,
-            profile_id=request.target_profile_id,
+            profile_ids=[request.target_profile_id]
+            if request.target_profile_id
+            else None,
             cohort_ids=filters.cohort_ids,
             department_ids=request.department_ids,
             simulation_ids=filters.simulation_ids,
@@ -386,7 +388,8 @@ async def fetch_chats_data(
             if filters.parsed_start_date
             else None,
             date_to=filters.parsed_end_date.date() if filters.parsed_end_date else None,
-            bypass_cache=bypass_cache,
+            limit=50000,
+            offset=0,
         )
 
 

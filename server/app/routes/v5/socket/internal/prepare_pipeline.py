@@ -608,37 +608,5 @@ def build_jinja_from_ws_ctx(
     return context
 
 
-def aggregate_tool_results(
-    all_tool_results: list[dict[str, Any]],
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Build resource_actions and entry_actions from accumulated tool results.
-
-    Returns: (resource_actions, entry_actions)
-
-    resource_actions: {resource_type: {"resource_id": id}}
-    entry_actions:    {entry_type: [{"entry_id": id}]}  (list, since multiple entries per type)
-
-    TODO: Currently entry_actions uses last-write-wins per type. Should accumulate
-          all entries and support resolution phase.
-    """
-    resource_actions: dict[str, Any] = {}
-    entry_actions: dict[str, Any] = {}
-
-    for tr in all_tool_results:
-        if not isinstance(tr, dict):
-            continue
-        result = tr.get("result") if isinstance(tr.get("result"), dict) else tr
-
-        # Resources
-        rt = tr.get("resource_type") or result.get("resource_type")
-        rid = tr.get("resource_id") or result.get("resource_id")
-        if rt and rid:
-            resource_actions[rt] = {"resource_id": rid}
-
-        # Entries
-        et = tr.get("entry_type") or result.get("entry_type")
-        eid = tr.get("entry_id") or result.get("entry_id")
-        if et and eid:
-            entry_actions.setdefault(et, []).append({"entry_id": eid})
-
-    return resource_actions, entry_actions
+# Re-export from canonical location
+from app.infra.websocket.pipeline_helpers import aggregate_tool_results as aggregate_tool_results  # noqa: F401

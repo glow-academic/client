@@ -17,12 +17,6 @@ MODULE = "app.infra.runs_context"
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
 
-class FakeRunListView:
-    def __init__(self, items=None, total_count=0):
-        self.items = items or []
-        self.total_count = total_count
-
-
 def _patch(target, return_value):
     return patch(
         f"{MODULE}.{target}", new_callable=AsyncMock, return_value=return_value
@@ -38,11 +32,10 @@ def _patch(target, return_value):
 class TestResolveRunsContextEmpty:
     async def test_no_runs_returns_empty(self):
         profile_id = uuid4()
-        empty_runs = FakeRunListView()
 
-        with _patch("get_run_list_entries_internal", empty_runs):
+        with _patch("search_runs", ([], 0)):
             result = await resolve_runs_context(None, profile_id=profile_id)
 
         assert isinstance(result, RunsContext)
-        assert result.runs.items == []
-        assert result.runs.total_count == 0
+        assert result.items == []
+        assert result.total_count == 0

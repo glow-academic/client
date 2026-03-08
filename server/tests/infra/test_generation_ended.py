@@ -1,7 +1,7 @@
 """Tests for generation_ended_impl — EmitFn pattern.
 
-Uses recording_emit() to capture events. Mocks I/O boundaries
-(DB, Redis, run_tracker) so tests run without infrastructure.
+Uses recording_emit() to capture events. All I/O dependencies (conn, redis)
+are injected directly — no patching of globals needed.
 """
 
 from __future__ import annotations
@@ -13,19 +13,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from app.infra.websocket.generation_ended_impl import generation_ended_impl
 from app.infra.websocket.run_tracker import UnitState
 from app.infra.websocket.socket_event import recording_emit
-
-
-def _import_impl():
-    """Import generation_ended_impl without triggering full socket tree."""
-    import importlib
-
-    mod = importlib.import_module(
-        "app.routes.v5.socket.internal.generation_ended"
-    )
-    return mod.generation_ended_impl
-
 
 # ═══════════════════════════════════════════════════════════════════════════
 # Fixtures
@@ -36,6 +26,9 @@ LOSER_AGENT = str(uuid.uuid4())
 TEST_ID = str(uuid.uuid4())
 RUN_ID = str(uuid.uuid4())
 INVOCATION_ID = uuid.uuid4()
+
+# Patch target prefix for the impl module
+_P = "app.infra.websocket.generation_ended_impl"
 
 
 @dataclass(frozen=True)
@@ -81,34 +74,21 @@ class TestGenerationEndedImpl:
     async def test_no_test_id_emits_nothing(self):
         """Missing test_id → early return, no events."""
         emit, events = recording_emit()
-        await generation_ended_impl({}, emit=emit)
+        await generation_ended_impl(
+            {}, emit=emit, conn=AsyncMock(), redis=AsyncMock()
+        )
         assert events == []
 
     async def test_no_winner_emits_nothing(self):
         """resolve_generation_winner returns None → no events."""
         emit, events = recording_emit()
-        redis = _make_redis()
 
-        with (
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.get_redis_client",
-                return_value=redis,
-            ),
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.get_db_connection",
-            ) as mock_db,
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.resolve_generation_winner",
-                return_value=None,
-            ),
-        ):
-            mock_conn = AsyncMock()
-            mock_db.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
-            mock_db.return_value.__aexit__ = AsyncMock(return_value=False)
-
+        with patch(f"{_P}.resolve_generation_winner", return_value=None):
             await generation_ended_impl(
                 {"test_id": TEST_ID, "run_id": RUN_ID},
                 emit=emit,
+                conn=AsyncMock(),
+                redis=_make_redis(),
             )
 
         assert events == []
@@ -125,7 +105,6 @@ class TestGenerationEndedImpl:
             winning_score=95,
         )
 
-        # Two units: winner and loser, both targeting "names" resource
         units = {
             f"{WINNER_AGENT}:resource:names": UnitState(
                 state="soft", result_id=str(uuid.uuid4())
@@ -136,41 +115,18 @@ class TestGenerationEndedImpl:
         }
 
         with (
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.get_redis_client",
-                return_value=redis,
-            ),
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.get_db_connection",
-            ) as mock_db,
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.resolve_generation_winner",
-                return_value=winner,
-            ),
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.get_all_units",
-                return_value=units,
-            ),
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.promote_unit",
-            ) as mock_promote,
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.fail_unit",
-            ) as mock_fail,
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.activate_rows",
-            ),
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.cleanup_run",
-            ),
+            patch(f"{_P}.resolve_generation_winner", return_value=winner),
+            patch(f"{_P}.get_all_units", return_value=units),
+            patch(f"{_P}.promote_unit") as mock_promote,
+            patch(f"{_P}.fail_unit") as mock_fail,
+            patch(f"{_P}.activate_rows"),
+            patch(f"{_P}.cleanup_run"),
         ):
-            mock_conn = AsyncMock()
-            mock_db.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
-            mock_db.return_value.__aexit__ = AsyncMock(return_value=False)
-
             await generation_ended_impl(
                 {"test_id": TEST_ID, "run_id": RUN_ID},
                 emit=emit,
+                conn=AsyncMock(),
+                redis=redis,
             )
 
         # Verify events
@@ -193,7 +149,6 @@ class TestGenerationEndedImpl:
     async def test_no_run_id_emits_nothing(self):
         """No run_id in data and no fallback → early return."""
         emit, events = recording_emit()
-        redis = _make_redis()
 
         winner = FakeWinner(
             winning_agent_id=uuid.UUID(WINNER_AGENT),
@@ -202,26 +157,12 @@ class TestGenerationEndedImpl:
             all_results=[],  # empty → no fallback lookup
         )
 
-        with (
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.get_redis_client",
-                return_value=redis,
-            ),
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.get_db_connection",
-            ) as mock_db,
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.resolve_generation_winner",
-                return_value=winner,
-            ),
-        ):
-            mock_conn = AsyncMock()
-            mock_db.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
-            mock_db.return_value.__aexit__ = AsyncMock(return_value=False)
-
+        with patch(f"{_P}.resolve_generation_winner", return_value=winner):
             await generation_ended_impl(
                 {"test_id": TEST_ID},  # no run_id
                 emit=emit,
+                conn=AsyncMock(),
+                redis=_make_redis(),
             )
 
         assert events == []
@@ -245,39 +186,19 @@ class TestGenerationEndedImpl:
         }
 
         with (
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.get_redis_client",
-                return_value=redis,
-            ),
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.get_db_connection",
-            ) as mock_db,
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.resolve_generation_winner",
-                return_value=winner,
-            ),
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.get_all_units",
-                return_value=units,
-            ),
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.promote_unit",
-            ) as mock_promote,
-            patch(
-                "app.routes.v5.socket.internal.generation_ended.cleanup_run",
-            ),
+            patch(f"{_P}.resolve_generation_winner", return_value=winner),
+            patch(f"{_P}.get_all_units", return_value=units),
+            patch(f"{_P}.promote_unit") as mock_promote,
+            patch(f"{_P}.cleanup_run"),
         ):
-            mock_conn = AsyncMock()
-            mock_db.return_value.__aenter__ = AsyncMock(return_value=mock_conn)
-            mock_db.return_value.__aexit__ = AsyncMock(return_value=False)
-
             await generation_ended_impl(
                 {"test_id": TEST_ID, "run_id": RUN_ID},
                 emit=emit,
+                conn=AsyncMock(),
+                redis=redis,
             )
 
         # Still emits complete (skips malformed, processes valid)
         assert len(events) == 1
         assert events[0].data["type"] == "complete"
-        # Only the valid unit was promoted
         mock_promote.assert_called_once()

@@ -25,7 +25,7 @@ from app.routes.v5.api.main.dashboard.types import (
     ListDashboardRequest,
 )
 from app.routes.v5.api.main.types import FilterOption, HistoryItem, HistoryResponse
-from app.routes.v5.tools.entries.attempt.get import ChatViewItem
+from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -39,7 +39,7 @@ router = APIRouter()
 # ---------------------------------------------------------------------------
 
 
-def _compute_history_aggregates(chats: list[ChatViewItem]) -> dict[str, Any]:
+def _compute_history_aggregates(chats: list[GetAttemptChatResponse]) -> dict[str, Any]:
     """Compute attempt-level aggregates from chat view items."""
     num_chats = len(chats)
     num_chats_completed = sum(1 for c in chats if c.completed)
@@ -63,20 +63,19 @@ def _compute_history_aggregates(chats: list[ChatViewItem]) -> dict[str, Any]:
         if chat.persona_ids:
             persona_ids_set.update(chat.persona_ids)
 
-        if chat.grade:
-            if chat.grade.score is not None and chat.grade.total_points:
-                total_score += chat.grade.score
-                total_possible += chat.grade.total_points
-            if chat.grade.passed:
-                has_passed = True
-            if chat.grade.time_taken is not None:
-                total_time_seconds += chat.grade.time_taken
-            if chat.grade.total_points is not None:
-                rubric_total_points = (
-                    rubric_total_points or 0
-                ) + chat.grade.total_points
-            if chat.grade.pass_points is not None:
-                rubric_pass_points = (rubric_pass_points or 0) + chat.grade.pass_points
+        if chat.grade_score is not None and chat.grade_total_points:
+            total_score += chat.grade_score
+            total_possible += chat.grade_total_points
+        if chat.grade_passed:
+            has_passed = True
+        if chat.grade_time_taken is not None:
+            total_time_seconds += chat.grade_time_taken
+        if chat.grade_total_points is not None:
+            rubric_total_points = (
+                rubric_total_points or 0
+            ) + chat.grade_total_points
+        if chat.grade_pass_points is not None:
+            rubric_pass_points = (rubric_pass_points or 0) + chat.grade_pass_points
 
     score_percent: float | None = None
     if total_possible > 0:
@@ -206,8 +205,7 @@ def _build_history_response(
     """Build HistoryResponse from search context — pure Python assembly."""
     attempts = ctx.entries.get("attempts", [])
     chats = ctx.entries.get("attempt_chats", [])
-    list_result_list = ctx.entries.get("attempt_list_result", [])
-    list_result = list_result_list[0] if list_result_list else None
+    total_count = ctx.entries.get("total_count", 0)
 
     simulations_rp = ctx.resources.get("simulations")
     h_sims = simulations_rp.selected if simulations_rp else []
@@ -221,7 +219,7 @@ def _build_history_response(
     pass_threshold = 70.0
 
     # Group chats by attempt
-    chats_by_attempt: dict[UUID, list[ChatViewItem]] = defaultdict(list)
+    chats_by_attempt: dict[UUID, list[GetAttemptChatResponse]] = defaultdict(list)
     for chat in chats:
         if chat.attempt_id:
             chats_by_attempt[chat.attempt_id].append(chat)
@@ -272,75 +270,13 @@ def _build_history_response(
         for item in attempts
     ]
 
-    # Build filter options with name resolution
+    # TODO: Filter options (simulation_options, scenario_options, profile_options)
+    # were previously provided by get_attempt_list_internal but are not available
+    # from search_attempts. These need to be rebuilt as a separate query or
+    # computed from the hydrated resources.
     simulation_options: list[FilterOption] | None = None
-    if list_result and list_result.simulation_options:
-        simulation_options = []
-        for opt in list_result.simulation_options:
-            if not opt.value:
-                continue
-            try:
-                sim_id = UUID(opt.value)
-                label = (
-                    resource_meta["simulations"].get(sim_id, {}).get("name")
-                    or opt.value
-                )
-            except ValueError:
-                label = opt.value
-            simulation_options.append(
-                FilterOption(value=opt.value, label=label, count=opt.count or 0)
-            )
-        if simulation_search:
-            q = simulation_search.lower()
-            simulation_options = [
-                o for o in simulation_options if q in (o.label or "").lower()
-            ]
-
     scenario_options: list[FilterOption] | None = None
-    if list_result and list_result.scenario_options:
-        scenario_options = []
-        for opt in list_result.scenario_options:
-            if not opt.value:
-                continue
-            try:
-                scn_id = UUID(opt.value)
-                label = (
-                    resource_meta["scenarios"].get(scn_id, {}).get("name") or opt.value
-                )
-            except ValueError:
-                label = opt.value
-            scenario_options.append(
-                FilterOption(value=opt.value, label=label, count=opt.count or 0)
-            )
-        if scenario_search:
-            q = scenario_search.lower()
-            scenario_options = [
-                o for o in scenario_options if q in (o.label or "").lower()
-            ]
-
     profile_options: list[FilterOption] | None = None
-    if practice and list_result and list_result.profile_options:
-        profile_options = []
-        for opt in list_result.profile_options:
-            if not opt.value:
-                continue
-            try:
-                prof_id = UUID(opt.value)
-                label = (
-                    resource_meta["profiles"].get(prof_id, {}).get("name") or opt.value
-                )
-            except ValueError:
-                label = opt.value
-            profile_options.append(
-                FilterOption(value=opt.value, label=label, count=opt.count or 0)
-            )
-        if profile_search:
-            q = profile_search.lower()
-            profile_options = [
-                o for o in profile_options if q in (o.label or "").lower()
-            ]
-
-    total_count = list_result.total_count if list_result else 0
     total_pages = (total_count + page_size - 1) // page_size if page_size > 0 else 0
 
     return HistoryResponse(

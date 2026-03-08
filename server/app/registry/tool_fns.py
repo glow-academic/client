@@ -1438,7 +1438,7 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.run_pricing.search",
         "search_run_pricing_entries_internal",
     ),
-    ("search", "runs"): (f"{_T}.entries.runs.search", "search_runs_entries_internal"),
+    ("search", "runs"): (f"{_T}.entries.runs.search", "search_runs"),
     ("search", "scenario_drafts"): (
         f"{_T}.entries.scenario_drafts.search",
         "search_scenario_drafts",

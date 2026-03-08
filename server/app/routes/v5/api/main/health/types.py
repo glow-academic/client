@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from app.routes.v5.tools.entries.health.types import GetHealthResponse
 from app.routes.v5.tools.entries.metrics.types import GetMetricsSearchResponse
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
+from app.infra.runs_context import RunsContext
 
 
 class HealthRequest(BaseModel):
@@ -49,7 +49,7 @@ class HealthInternalData:
     config_tools: list = field(default_factory=list)
     config_systems: list = field(default_factory=list)
     config_profile: list = field(default_factory=list)
-    runs_today: GetRunListViewResponse | None = None
+    runs_today: RunsContext | None = None
     resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
     resource_system_ids: dict[str, UUID | None] = field(default_factory=dict)
     group_id: UUID | None = None

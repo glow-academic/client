@@ -282,33 +282,19 @@ async def fetch_pricing_filters(
             ]
 
     if fields.date_range.visible:
-        from app.routes.v5.tools.entries.runs.search import (
-            get_run_list_entries_internal,
-        )
+        from app.routes.v5.tools.entries.runs.search import search_runs
 
         async with pool.acquire() as c_earliest, pool.acquire() as c_latest:
-            earliest_result, latest_result = await asyncio.gather(
-                get_run_list_entries_internal(
-                    conn=c_earliest,
-                    sort_by="date",
-                    sort_order="asc",
-                    page_limit=1,
-                    page_offset=0,
-                ),
-                get_run_list_entries_internal(
-                    conn=c_latest,
-                    sort_by="date",
-                    sort_order="desc",
-                    page_limit=1,
-                    page_offset=0,
-                ),
+            (earliest_items, _), (latest_items, _) = await asyncio.gather(
+                search_runs(conn=c_earliest, sort_order="asc", limit=1),
+                search_runs(conn=c_latest, sort_order="desc", limit=1),
             )
-            if earliest_result.items:
-                earliest_dt = earliest_result.items[0].run_created_at
+            if earliest_items:
+                earliest_dt = earliest_items[0].run_created_at
                 if earliest_dt:
                     earliest = earliest_dt.date().isoformat()
-            if latest_result.items:
-                latest_dt = latest_result.items[0].run_created_at
+            if latest_items:
+                latest_dt = latest_items[0].run_created_at
                 if latest_dt:
                     latest = latest_dt.date().isoformat()
 

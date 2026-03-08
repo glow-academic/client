@@ -265,6 +265,8 @@ async def search_runs(
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     sort_order: str = "desc",
+    soft: bool = False,
+    mcp: bool | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
