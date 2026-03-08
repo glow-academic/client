@@ -666,18 +666,6 @@ async def get_scenario_client(
 
 
 # ---------------------------------------------------------------------------
-# get_scenario_websocket — stub (to be rewritten with infra functions)
-# ---------------------------------------------------------------------------
-
-
-async def get_scenario_websocket(*args, **kwargs):
-    """Stub — will be rewritten to use composable infra functions."""
-    raise NotImplementedError(
-        "get_scenario_websocket needs to be rewritten with infra functions"
-    )
-
-
-# ---------------------------------------------------------------------------
 # Route handler
 # ---------------------------------------------------------------------------
 

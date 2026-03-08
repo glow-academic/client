@@ -398,18 +398,6 @@ async def get_simulation_client(
 
 
 # ---------------------------------------------------------------------------
-# get_simulation_websocket — stub (to be rewritten with infra functions)
-# ---------------------------------------------------------------------------
-
-
-async def get_simulation_websocket(*args, **kwargs):
-    """Stub — will be rewritten to use composable infra functions."""
-    raise NotImplementedError(
-        "get_simulation_websocket needs to be rewritten with infra functions"
-    )
-
-
-# ---------------------------------------------------------------------------
 # Route handler
 # ---------------------------------------------------------------------------
 

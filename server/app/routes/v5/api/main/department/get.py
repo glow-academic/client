@@ -307,18 +307,6 @@ async def get_department_client(
 
 
 # ---------------------------------------------------------------------------
-# get_department_websocket — stub (to be rewritten with infra functions)
-# ---------------------------------------------------------------------------
-
-
-async def get_department_websocket(*args, **kwargs):
-    """Stub — will be rewritten to use composable infra functions."""
-    raise NotImplementedError(
-        "get_department_websocket needs to be rewritten with infra functions"
-    )
-
-
-# ---------------------------------------------------------------------------
 # Route handler
 # ---------------------------------------------------------------------------
 

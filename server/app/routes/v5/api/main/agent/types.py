@@ -459,6 +459,17 @@ class PatchAgentDraftApiResponse(BaseModel):
 # ========== List Endpoint Types ==========
 
 
+# ========== Export Endpoint Types ==========
+
+
+class ExportAgentApiResponse(BaseModel):
+    """Response model for export agent endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
 class ListAgentApiAgent(BaseModel):
     """Agent type for list endpoint with computed permissions."""
 

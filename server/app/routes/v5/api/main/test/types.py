@@ -3,7 +3,6 @@
 Three-layer BFF pattern types:
 - GetTestArtifactResponse: HTTP client response
 - TestInternalData: Core data container (internal layer)
-- GetTestWebsocketResponse: WebSocket response with config resources
 """
 
 from __future__ import annotations
@@ -13,7 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.tools.entries.messages.types import SearchMessageResponse
 from app.routes.v5.tools.entries.test.types import GetTestResponse
 from app.routes.v5.tools.entries.test_feedback.types import GetTestFeedbackResponse
@@ -145,18 +143,6 @@ class TestInternalData:
     # Full entries + resources
     entries_payload: TestEntries = field(default_factory=TestEntries)
     resources_payload: TestResources = field(default_factory=TestResources)
-
-
-# =============================================================================
-# WebSocket response types (three-layer BFF pattern)
-# =============================================================================
-
-
-class GetTestWebsocketResponse(InternalResponseBase):
-    """Minimal response for WebSocket handlers."""
-
-    entries: TestEntries | None = None
-    resources: TestResources | None = None
 
 
 # =============================================================================

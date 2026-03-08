@@ -10,9 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 
 # =============================================================================
 # Resource Types (handcrafted — no dependency on app.sql.types)
@@ -444,35 +442,6 @@ class GetSimulationApiResponse(BaseModel):
     scenario_rubrics: SimulationScenarioRubricSection | None = None
     scenario_time_limits: SimulationScenarioTimeLimitSection | None = None
     rubrics: list[SimulationRubric] | None = None
-
-
-class SimulationWebsocketEntries(BaseModel):
-    """Optional websocket entries payload."""
-
-    draft_simulation: SimulationDraftEntry | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class SimulationWebsocketResources(BaseModel):
-    """Hydrated websocket resources: selected simulation + config resources."""
-
-    names: list[SimulationNameResource] | None = None
-    descriptions: list[SimulationDescriptionResource] | None = None
-    flags: list[SimulationFlagConfig] | None = None
-    departments: list[SimulationDepartment] | None = None
-    scenarios: list[SimulationScenario] | None = None
-    scenario_flags: list[SimulationScenarioFlag] | None = None
-    scenario_positions: list[SimulationScenarioPosition] | None = None
-    scenario_rubrics: list[SimulationScenarioRubric] | None = None
-    scenario_time_limits: list[SimulationScenarioTimeLimit] | None = None
-    rubrics: list[SimulationRubric] | None = None
-
-
-class GetSimulationWebsocketResponse(InternalResponseBase):
-    """Minimal response for simulation websocket generation handlers."""
-
-    entries: SimulationWebsocketEntries | None = None
-    resources: SimulationWebsocketResources
 
 
 # =============================================================================

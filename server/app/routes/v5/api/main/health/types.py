@@ -2,7 +2,6 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -34,52 +33,6 @@ class HealthResponse(BaseModel):
 
     views: HealthViews = Field(default_factory=HealthViews)
     total_count: int = Field(default=0)
-
-
-# =============================================================================
-# WebSocket Types
-# =============================================================================
-
-
-class GetHealthApiRequest(BaseModel):
-    """Request model for get health endpoint."""
-
-    health_id: UUID | None = None
-    draft_id: UUID | None = None
-
-
-class HealthWebsocketEntries(BaseModel):
-    """Views data for health websocket response."""
-
-    runs: GetRunListViewResponse | None = None
-
-
-class HealthWebsocketResources(BaseModel):
-    """Hydrated resources for health websocket — selected only."""
-
-    pass
-
-
-class GetHealthWebsocketResponse(BaseModel):
-    """Websocket-facing health response with hydrated resources.
-
-    Uses Any for config chain fields to accept resource fetcher types.
-    """
-
-    systems: list[Any] | None = None
-    agents: list[Any] | None = None
-    models: list[Any] | None = None
-    providers: list[Any] | None = None
-    tools: list[Any] | None = None
-    args: list[Any] | None = None
-    args_outputs: list[Any] | None = None
-    profile: list[Any] | None = None
-    params: BaseModel | None = None
-    resource_system_ids: dict[str, UUID | None] | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
-    entries: HealthWebsocketEntries | None = None
-    resources: HealthWebsocketResources
 
 
 @dataclass

@@ -37,25 +37,13 @@ from app.routes.v5.api.main.chat.types import (
     ChatProblemStatementSection,
     ChatQuestionSection,
     ChatScenarioSection,
-    ChatStartWebsocketEntries,
-    ChatStartWebsocketResources,
     ChatVideoSection,
     GetChatRequest,
     GetChatResponse,
-    GetChatStartWebsocketResponse,
-)
-from app.sql.types import (
-    GetTrainingStartContextSqlParams,
-    GetTrainingStartContextSqlRow,
 )
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()
-
-SQL_PATH_START_CONTEXT = (
-    "app/sql/queries/generate/training/get_training_start_context_complete.sql"
-)
 
 # Section class mapping for building typed sections
 _SECTION_CLASSES: dict[str, type] = {
@@ -75,79 +63,6 @@ _SECTION_CLASSES: dict[str, type] = {
     "problem_statements": ChatProblemStatementSection,
     "objectives": ChatObjectiveSection,
 }
-
-
-# =============================================================================
-# Chat Start Context (kept from original)
-# =============================================================================
-
-
-async def get_chat_start_context(
-    conn: asyncpg.Connection,
-    profile_id: UUID,
-    chat_entry_id: UUID,
-    department_id: UUID,
-    draft_id: UUID | None = None,
-) -> GetChatStartWebsocketResponse:
-    """Thin websocket fetch for chat start flow."""
-    params = GetTrainingStartContextSqlParams(
-        p_profile_id=profile_id,
-        p_chat_entry_id=chat_entry_id,
-        p_department_id=department_id,
-        p_draft_id=draft_id,
-    )
-
-    row = cast(
-        GetTrainingStartContextSqlRow,
-        await execute_sql_typed(conn, SQL_PATH_START_CONTEXT, params=params),
-    )
-    if not row:
-        raise HTTPException(status_code=404, detail="Chat start context not found")
-
-    return GetChatStartWebsocketResponse(
-        entries=ChatStartWebsocketEntries(
-            chat_entry_id=chat_entry_id,
-            department_id=department_id,
-        ),
-        resources=ChatStartWebsocketResources(
-            simulation_id=row.simulation_id,
-            scenario_id=row.scenario_id,
-            problem_statement=row.problem_statement,
-            objectives=row.objectives,
-            persona=row.persona,
-            video_ids=list(row.video_ids) if row.video_ids else None,
-            image_ids=list(row.image_ids) if row.image_ids else None,
-            has_problem_statement=row.has_problem_statement or False,
-            has_persona=row.has_persona or False,
-            agent_id=row.agent_id,
-            agent_exists=row.agent_exists or False,
-            agent_name=row.agent_name,
-            agent_is_active=row.agent_is_active or False,
-            model_id=row.model_id,
-            model_name=row.model_name,
-            provider_id=row.provider_id,
-            provider_name=row.provider_name,
-            has_api_key=row.has_api_key or False,
-            requests_per_day=row.requests_per_day,
-            runs_today=int(row.runs_today or 0),
-            simulation_exists=row.simulation_exists or False,
-            simulation_is_active=row.simulation_is_active or False,
-            profile_has_access=row.profile_has_access or False,
-            valid_entry_types=list(row.valid_entry_types or []),
-        ),
-    )
-
-
-# =============================================================================
-# WebSocket Layer (stub — kept as-is for now)
-# =============================================================================
-
-
-async def get_chat_websocket(*args, **kwargs):
-    """Stub — will be rewritten to use composable infra functions."""
-    raise NotImplementedError(
-        "get_chat_websocket needs to be rewritten with infra functions"
-    )
 
 
 # =============================================================================

@@ -1,18 +1,13 @@
-"""Artifact configuration registry for unified generation.
+"""Artifact configuration registry.
 
-Maps artifact_type → ArtifactGenerateConfig, encapsulating all the per-artifact
-differences (fetcher, SQL paths, resource attr names, etc.) so the unified
-generate handler can work for every draft artifact type.
+Maps artifact_type → ArtifactGenerateConfig, encapsulating per-artifact
+metadata (valid resource types, entry types, SQL paths, draft view keys).
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
-from typing import Any
-from uuid import UUID
 
-import asyncpg
 
 # ---------------------------------------------------------------------------
 # Config dataclass
@@ -21,7 +16,7 @@ import asyncpg
 
 @dataclass(frozen=True)
 class ArtifactGenerateConfig:
-    """Everything the unified generate handler needs to know per artifact."""
+    """Per-artifact configuration metadata."""
 
     artifact_type: str
 
@@ -40,165 +35,12 @@ class ArtifactGenerateConfig:
     # Whether this artifact has a canonical artifact_id (draft artifacts only)
     has_artifact_id: bool = True
 
-    # Whether the fetcher requires an explicit pool argument
-    requires_pool: bool = False
-
     # The kwarg name for the artifact's ID in the fetcher call
     # e.g. "agent_id", "chat_entry_id" — empty for non-ID artifacts
     fetcher_id_kwarg: str = ""
 
-    # Whether the fetcher requires an explicit connection (attempt, test)
-    needs_conn: bool = False
-
-    # Module path and function name for the fetcher (for direct import in artifact tools)
-    fetcher_module: str = ""
-    fetcher_func: str = ""
-
     # Async entry types for this artifact
     entry_types: list[str] = field(default_factory=lambda: ["problems", "messages"])
-
-    # Async fetcher adapter — uniform signature:
-    #   (profile_id, artifact_id, draft_id, pool) -> response
-    fetcher: (
-        Callable[
-            [UUID, UUID | None, UUID | None, asyncpg.Pool | None],
-            Coroutine[Any, Any, object],
-        ]
-        | None
-    ) = None
-
-
-# ---------------------------------------------------------------------------
-# Fetcher adapters
-#
-# Each normalises the unique websocket-fetcher signature into:
-#   (profile_id, artifact_id, draft_id, pool) -> response
-# ---------------------------------------------------------------------------
-
-
-async def _fetch_standard(
-    module_path: str,
-    func_name: str,
-    id_kwarg: str,
-    profile_id: UUID,
-    artifact_id: UUID | None,
-    draft_id: UUID | None,
-    pool: asyncpg.Pool | None,  # noqa: ARG001
-) -> object:
-    """Standard fetcher: get_*_websocket(profile_id, <id_kwarg>, draft_id)."""
-    import importlib
-
-    mod = importlib.import_module(module_path)
-    fn = getattr(mod, func_name)
-    kwargs: dict[str, object] = {"profile_id": profile_id, "draft_id": draft_id}
-    if id_kwarg:
-        kwargs[id_kwarg] = artifact_id
-    return await fn(**kwargs)
-
-
-async def _fetch_with_pool(
-    module_path: str,
-    func_name: str,
-    id_kwarg: str,
-    profile_id: UUID,
-    artifact_id: UUID | None,
-    draft_id: UUID | None,
-    pool: asyncpg.Pool | None,
-) -> object:
-    """Pool-based fetcher: get_*_websocket(pool, profile_id, [<id_kwarg>,] draft_id)."""
-    import importlib
-
-    if pool is None:
-        raise RuntimeError("Database pool required but not available")
-    mod = importlib.import_module(module_path)
-    fn = getattr(mod, func_name)
-    kwargs: dict[str, object] = {
-        "pool": pool,
-        "profile_id": profile_id,
-        "draft_id": draft_id,
-    }
-    if id_kwarg:
-        kwargs[id_kwarg] = artifact_id
-    return await fn(**kwargs)
-
-
-async def _fetch_with_conn(
-    module_path: str,
-    func_name: str,
-    id_kwarg: str,
-    profile_id: UUID,
-    artifact_id: UUID | None,
-    draft_id: UUID | None,  # noqa: ARG001
-    pool: asyncpg.Pool | None,  # noqa: ARG001
-) -> object:
-    """Conn-based fetcher: get_*_websocket(conn, profile_id, <id_kwarg>).
-
-    Used by attempt/test which take a raw connection, not pool or kwargs.
-    Acquires a connection via get_db_connection().
-    """
-    import importlib
-
-    from app.infra.websocket.get_db_connection import get_db_connection
-
-    mod = importlib.import_module(module_path)
-    fn = getattr(mod, func_name)
-    async with get_db_connection() as conn:
-        kwargs: dict[str, object] = {"conn": conn, "profile_id": profile_id}
-        if id_kwarg:
-            kwargs[id_kwarg] = artifact_id
-        return await fn(**kwargs)
-
-
-def _make_fetcher(
-    module_path: str,
-    func_name: str,
-    id_kwarg: str,
-    *,
-    needs_pool: bool = False,
-    needs_conn: bool = False,
-) -> Callable[
-    [UUID, UUID | None, UUID | None, asyncpg.Pool | None],
-    Coroutine[Any, Any, object],
-]:
-    """Create a fetcher closure with the right call convention."""
-
-    async def _fetcher(
-        profile_id: UUID,
-        artifact_id: UUID | None,
-        draft_id: UUID | None,
-        pool: asyncpg.Pool | None,
-    ) -> object:
-        if needs_conn:
-            return await _fetch_with_conn(
-                module_path,
-                func_name,
-                id_kwarg,
-                profile_id,
-                artifact_id,
-                draft_id,
-                pool,
-            )
-        if needs_pool:
-            return await _fetch_with_pool(
-                module_path,
-                func_name,
-                id_kwarg,
-                profile_id,
-                artifact_id,
-                draft_id,
-                pool,
-            )
-        return await _fetch_standard(
-            module_path,
-            func_name,
-            id_kwarg,
-            profile_id,
-            artifact_id,
-            draft_id,
-            pool,
-        )
-
-    return _fetcher
 
 
 # ---------------------------------------------------------------------------
@@ -212,7 +54,7 @@ def _register(config: ArtifactGenerateConfig) -> None:
     REGISTRY[config.artifact_type] = config
 
 
-# === Standard artifacts (no pool, resources.agents/models/providers) ===
+# === Standard artifacts ===
 
 _register(
     ArtifactGenerateConfig(
@@ -233,13 +75,6 @@ _register(
         prepare_sql_path="app/sql/queries/generate/agent/prepare_agent_generation_complete.sql",
         draft_view_key="draft_agent",
         fetcher_id_kwarg="agent_id",
-        fetcher_module="app.routes.v5.api.main.agent.get",
-        fetcher_func="get_agent_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.agent.get",
-            "get_agent_websocket",
-            "agent_id",
-        ),
     )
 )
 
@@ -257,13 +92,6 @@ _register(
         prepare_sql_path="app/sql/queries/generate/auth/prepare_auth_generation_complete.sql",
         draft_view_key="draft_auth",
         fetcher_id_kwarg="auth_id",
-        fetcher_module="app.routes.v5.api.main.auth.get",
-        fetcher_func="get_auth_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.auth.get",
-            "get_auth_websocket",
-            "auth_id",
-        ),
     )
 )
 
@@ -286,13 +114,6 @@ _register(
         draft_view_key="draft_persona",
         requires_draft=False,
         fetcher_id_kwarg="persona_id",
-        fetcher_module="app.routes.v5.api.main.persona.get",
-        fetcher_func="get_persona_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.persona.get",
-            "get_persona_websocket",
-            "persona_id",
-        ),
     )
 )
 
@@ -317,13 +138,6 @@ _register(
         draft_view_key="draft_scenario",
         requires_draft=False,
         fetcher_id_kwarg="scenario_id",
-        fetcher_module="app.routes.v5.api.main.scenario.get",
-        fetcher_func="get_scenario_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.scenario.get",
-            "get_scenario_websocket",
-            "scenario_id",
-        ),
     )
 )
 
@@ -345,13 +159,6 @@ _register(
         draft_view_key="draft_simulation",
         requires_draft=False,
         fetcher_id_kwarg="simulation_id",
-        fetcher_module="app.routes.v5.api.main.simulation.get",
-        fetcher_func="get_simulation_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.simulation.get",
-            "get_simulation_websocket",
-            "simulation_id",
-        ),
     )
 )
 
@@ -373,13 +180,6 @@ _register(
         draft_view_key="draft_cohort",
         requires_draft=False,
         fetcher_id_kwarg="cohort_id",
-        fetcher_module="app.routes.v5.api.main.cohort.get",
-        fetcher_func="get_cohort_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.cohort.get",
-            "get_cohort_websocket",
-            "cohort_id",
-        ),
     )
 )
 
@@ -400,13 +200,6 @@ _register(
         draft_view_key="draft_document",
         requires_draft=False,
         fetcher_id_kwarg="document_id",
-        fetcher_module="app.routes.v5.api.main.document.get",
-        fetcher_func="get_document_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.document.get",
-            "get_document_websocket",
-            "document_id",
-        ),
     )
 )
 
@@ -424,13 +217,6 @@ _register(
         prepare_sql_path="app/sql/queries/generate/profile/prepare_profile_generation_complete.sql",
         draft_view_key="draft_profile",
         fetcher_id_kwarg="target_profile_id",
-        fetcher_module="app.routes.v5.api.main.profile.get",
-        fetcher_func="get_profile_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.profile.get",
-            "get_profile_websocket",
-            "target_profile_id",
-        ),
     )
 )
 
@@ -447,13 +233,6 @@ _register(
         prepare_sql_path="app/sql/queries/generate/parameter/prepare_parameter_generation_complete.sql",
         draft_view_key="draft_parameter",
         fetcher_id_kwarg="parameter_id",
-        fetcher_module="app.routes.v5.api.main.parameter.get",
-        fetcher_func="get_parameter_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.parameter.get",
-            "get_parameter_websocket",
-            "parameter_id",
-        ),
     )
 )
 
@@ -470,13 +249,6 @@ _register(
         prepare_sql_path="app/sql/queries/generate/field/prepare_field_generation_complete.sql",
         draft_view_key="draft_field",
         fetcher_id_kwarg="field_id",
-        fetcher_module="app.routes.v5.api.main.field.get",
-        fetcher_func="get_field_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.field.get",
-            "get_field_websocket",
-            "field_id",
-        ),
     )
 )
 
@@ -500,13 +272,6 @@ _register(
         prepare_sql_path="app/sql/queries/generate/model/prepare_model_generation_complete.sql",
         draft_view_key="draft_model",
         fetcher_id_kwarg="model_id",
-        fetcher_module="app.routes.v5.api.main.model.get",
-        fetcher_func="get_model_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.model.get",
-            "get_model_websocket",
-            "model_id",
-        ),
     )
 )
 
@@ -524,13 +289,6 @@ _register(
         prepare_sql_path="app/sql/queries/generate/tool/prepare_tool_generation_complete.sql",
         draft_view_key="draft_tool",
         fetcher_id_kwarg="tool_id",
-        fetcher_module="app.routes.v5.api.main.tool.get",
-        fetcher_func="get_tool_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.tool.get",
-            "get_tool_websocket",
-            "tool_id",
-        ),
     )
 )
 
@@ -546,13 +304,6 @@ _register(
         prepare_sql_path="app/sql/queries/generate/department/prepare_department_generation_complete.sql",
         draft_view_key="draft_department",
         fetcher_id_kwarg="department_id",
-        fetcher_module="app.routes.v5.api.main.department.get",
-        fetcher_func="get_department_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.department.get",
-            "get_department_websocket",
-            "department_id",
-        ),
     )
 )
 
@@ -570,13 +321,6 @@ _register(
         prepare_sql_path="app/sql/queries/generate/provider/prepare_provider_generation_complete.sql",
         draft_view_key="draft_provider",
         fetcher_id_kwarg="provider_id",
-        fetcher_module="app.routes.v5.api.main.provider.get",
-        fetcher_func="get_provider_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.provider.get",
-            "get_provider_websocket",
-            "provider_id",
-        ),
     )
 )
 
@@ -596,13 +340,6 @@ _register(
         prepare_sql_path="app/sql/queries/generate/rubric/prepare_rubric_generation_complete.sql",
         draft_view_key="draft_rubric",
         fetcher_id_kwarg="rubric_id",
-        fetcher_module="app.routes.v5.api.main.rubric.get",
-        fetcher_func="get_rubric_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.rubric.get",
-            "get_rubric_websocket",
-            "rubric_id",
-        ),
     )
 )
 
@@ -624,13 +361,6 @@ _register(
         prepare_sql_path="app/sql/queries/generate/eval/prepare_eval_generation_complete.sql",
         draft_view_key="draft_eval",
         fetcher_id_kwarg="eval_id",
-        fetcher_module="app.routes.v5.api.main.eval.get",
-        fetcher_func="get_eval_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.eval.get",
-            "get_eval_websocket",
-            "eval_id",
-        ),
     )
 )
 
@@ -652,17 +382,10 @@ _register(
         prepare_sql_path="app/sql/queries/generate/setting/prepare_setting_generation_complete.sql",
         draft_view_key="draft_setting",
         fetcher_id_kwarg="setting_id",
-        fetcher_module="app.routes.v5.api.main.setting.get",
-        fetcher_func="get_setting_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.setting.get",
-            "get_setting_websocket",
-            "setting_id",
-        ),
     )
 )
 
-# === Pool-based artifacts (requires_pool=True, config_agents/config_models/config_providers) ===
+# === Pool-based artifacts ===
 
 _register(
     ArtifactGenerateConfig(
@@ -685,16 +408,7 @@ _register(
         ],
         prepare_sql_path="app/sql/queries/generate/training/prepare_training_generation_complete.sql",
         draft_view_key="draft_chat",
-        requires_pool=True,
         fetcher_id_kwarg="chat_entry_id",
-        fetcher_module="app.routes.v5.api.main.chat.get",
-        fetcher_func="get_chat_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.chat.get",
-            "get_chat_websocket",
-            "chat_entry_id",
-            needs_pool=True,
-        ),
     )
 )
 
@@ -715,15 +429,6 @@ _register(
         prepare_sql_path="app/sql/queries/generate/benchmark/prepare_benchmark_generation_complete.sql",
         draft_view_key="draft_invocation",
         has_artifact_id=False,
-        requires_pool=True,
-        fetcher_module="app.routes.v5.api.main.benchmark.get",
-        fetcher_func="get_invocation_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.benchmark.get",
-            "get_invocation_websocket",
-            "",
-            needs_pool=True,
-        ),
     )
 )
 
@@ -745,16 +450,7 @@ _register(
         draft_view_key="draft_invocation",
         entry_types=[],
         requires_draft=False,
-        requires_pool=True,
         fetcher_id_kwarg="benchmark_entry_id",
-        fetcher_module="app.routes.v5.api.main.invocation.get",
-        fetcher_func="get_invocation_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.invocation.get",
-            "get_invocation_websocket",
-            "benchmark_entry_id",
-            needs_pool=True,
-        ),
     )
 )
 
@@ -772,41 +468,6 @@ _register(
         entry_types=["problems", "messages"],
         requires_draft=False,
         has_artifact_id=False,
-        requires_pool=True,
-        fetcher_module="app.routes.v5.api.main.activity.get",
-        fetcher_func="get_activity_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.activity.get",
-            "get_activity_websocket",
-            "",
-            needs_pool=True,
-        ),
-    )
-)
-
-_register(
-    ArtifactGenerateConfig(
-        artifact_type="session",
-        valid_resource_types=[
-            "names",
-            "descriptions",
-            "flags",
-            "departments",
-        ],
-        prepare_sql_path="app/sql/queries/generate/session/prepare_session_generation_complete.sql",
-        draft_view_key="draft_session",
-        entry_types=["problems", "messages"],
-        requires_draft=False,
-        requires_pool=True,
-        fetcher_id_kwarg="session_id",
-        fetcher_module="app.routes.v5.api.main.session.get",
-        fetcher_func="get_session_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.session.get",
-            "get_session_websocket",
-            "session_id",
-            needs_pool=True,
-        ),
     )
 )
 
@@ -824,15 +485,6 @@ _register(
         entry_types=["problems", "messages"],
         requires_draft=False,
         has_artifact_id=False,
-        requires_pool=True,
-        fetcher_module="app.routes.v5.api.main.pricing.get",
-        fetcher_func="get_pricing_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.pricing.get",
-            "get_pricing_websocket",
-            "",
-            needs_pool=True,
-        ),
     )
 )
 
@@ -850,67 +502,6 @@ _register(
         entry_types=["problems", "messages"],
         requires_draft=False,
         has_artifact_id=False,
-        requires_pool=True,
-        fetcher_module="app.routes.v5.api.main.reports.get",
-        fetcher_func="get_reports_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.reports.get",
-            "get_reports_websocket",
-            "",
-            needs_pool=True,
-        ),
-    )
-)
-
-_register(
-    ArtifactGenerateConfig(
-        artifact_type="group",
-        valid_resource_types=[
-            "names",
-            "descriptions",
-            "flags",
-            "departments",
-        ],
-        prepare_sql_path="app/sql/queries/generate/group/prepare_group_generation_complete.sql",
-        draft_view_key="draft_group",
-        entry_types=["problems", "messages"],
-        requires_draft=False,
-        requires_pool=True,
-        fetcher_id_kwarg="group_id",
-        fetcher_module="app.routes.v5.api.main.group.get",
-        fetcher_func="get_group_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.group.get",
-            "get_group_websocket",
-            "group_id",
-            needs_pool=True,
-        ),
-    )
-)
-
-_register(
-    ArtifactGenerateConfig(
-        artifact_type="health",
-        valid_resource_types=[
-            "names",
-            "descriptions",
-            "flags",
-            "departments",
-        ],
-        prepare_sql_path="app/sql/queries/generate/health/prepare_health_generation_complete.sql",
-        draft_view_key="draft_health",
-        entry_types=["problems", "messages"],
-        requires_draft=False,
-        has_artifact_id=False,
-        requires_pool=True,
-        fetcher_module="app.routes.v5.api.main.health.get",
-        fetcher_func="get_health_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.health.get",
-            "get_health_websocket",
-            "",
-            needs_pool=True,
-        ),
     )
 )
 
@@ -928,41 +519,6 @@ _register(
         entry_types=["problems", "messages"],
         requires_draft=False,
         has_artifact_id=False,
-        requires_pool=True,
-        fetcher_module="app.routes.v5.api.main.leaderboard.get",
-        fetcher_func="get_leaderboard_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.leaderboard.get",
-            "get_leaderboard_websocket",
-            "",
-            needs_pool=True,
-        ),
-    )
-)
-
-_register(
-    ArtifactGenerateConfig(
-        artifact_type="record",
-        valid_resource_types=[
-            "names",
-            "descriptions",
-            "flags",
-            "departments",
-        ],
-        prepare_sql_path="app/sql/queries/generate/record/prepare_record_generation_complete.sql",
-        draft_view_key="draft_record",
-        entry_types=["problems", "messages"],
-        requires_draft=False,
-        requires_pool=True,
-        fetcher_id_kwarg="record_id",
-        fetcher_module="app.routes.v5.api.main.record.get",
-        fetcher_func="get_record_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.record.get",
-            "get_record_websocket",
-            "record_id",
-            needs_pool=True,
-        ),
     )
 )
 
@@ -980,19 +536,8 @@ _register(
         entry_types=["problems", "messages"],
         requires_draft=False,
         has_artifact_id=False,
-        requires_pool=True,
-        fetcher_module="app.routes.v5.api.main.dashboard.get",
-        fetcher_func="get_dashboard_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.dashboard.get",
-            "get_dashboard_websocket",
-            "",
-            needs_pool=True,
-        ),
     )
 )
-
-# === No-ID, no resource types (home/practice — fetcher bug to fix) ===
 
 _register(
     ArtifactGenerateConfig(
@@ -1003,15 +548,6 @@ _register(
         entry_types=["problems", "messages"],
         requires_draft=False,
         has_artifact_id=False,
-        requires_pool=True,
-        fetcher_module="app.routes.v5.api.main.home.get",
-        fetcher_func="get_home_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.home.get",
-            "get_home_websocket",
-            "",
-            needs_pool=True,
-        ),
     )
 )
 
@@ -1024,19 +560,10 @@ _register(
         entry_types=["problems", "messages"],
         requires_draft=False,
         has_artifact_id=False,
-        requires_pool=True,
-        fetcher_module="app.routes.v5.api.main.practice.get",
-        fetcher_func="get_practice_websocket",
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.practice.get",
-            "get_practice_websocket",
-            "",
-            needs_pool=True,
-        ),
     )
 )
 
-# === Conn-based artifacts (attempt/test — use get_db_connection, no draft) ===
+# === Conn-based artifacts (attempt/test) ===
 
 _register(
     ArtifactGenerateConfig(
@@ -1071,15 +598,6 @@ _register(
             "messages",
         ],
         fetcher_id_kwarg="attempt_id",
-        fetcher_module="app.routes.v5.api.main.attempt.get",
-        fetcher_func="get_attempt_websocket",
-        needs_conn=True,
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.attempt.get",
-            "get_attempt_websocket",
-            "attempt_id",
-            needs_conn=True,
-        ),
     )
 )
 
@@ -1095,14 +613,5 @@ _register(
         requires_draft=False,
         entry_types=["problems", "messages"],
         fetcher_id_kwarg="test_id",
-        fetcher_module="app.routes.v5.api.main.test.get",
-        fetcher_func="get_test_websocket",
-        needs_conn=True,
-        fetcher=_make_fetcher(
-            "app.routes.v5.api.main.test.get",
-            "get_test_websocket",
-            "test_id",
-            needs_conn=True,
-        ),
     )
 )

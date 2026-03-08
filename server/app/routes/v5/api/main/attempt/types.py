@@ -12,7 +12,6 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.tools.entries.attempt.types import GetAttemptResponse
 from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
 from app.routes.v5.tools.entries.attempt_message.types import GetAttemptMessageResponse
@@ -669,35 +668,6 @@ class AttemptInternalData:
     should_show_controls: bool = False
     rubric_structure: RubricStructureData | None = None
     continuation_options: AvailableContinuationOptions | None = None
-
-
-# =============================================================================
-# WebSocket response types (three-layer BFF pattern)
-# =============================================================================
-
-
-class AttemptWebsocketResources(BaseModel):
-    """Content resources for websocket — lists for Jinja template iteration."""
-
-    scenarios: list[ScenarioEntry] | None = None
-    personas: list[PersonaEntry] | None = None
-    documents: list[DocumentEntry] | None = None
-    images: list[ImageEntry] | None = None
-    videos: list[VideoEntry] | None = None
-    objectives: list[ObjectiveEntry] | None = None
-    questions: list[QuestionEntry] | None = None
-    options: list[OptionEntry] | None = None
-    problem_statements: list[ProblemStatementEntry] | None = None
-    rubrics: list[RubricEntry] | None = None
-    standard_groups: list[StandardGroupEntry] | None = None
-    standards: list[StandardEntry] | None = None
-
-
-class GetAttemptWebsocketResponse(InternalResponseBase):
-    """Minimal response for WebSocket handlers."""
-
-    entries: AttemptEntries | None = None
-    resources: AttemptWebsocketResources | None = None
 
 
 # =============================================================================

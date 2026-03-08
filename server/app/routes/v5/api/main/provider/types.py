@@ -332,3 +332,14 @@ class PatchProviderDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+
+
+# ========== Export Endpoint Types ==========
+
+
+class ExportProviderApiResponse(BaseModel):
+    """Response model for export provider endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

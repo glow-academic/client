@@ -424,3 +424,14 @@ class PatchEvalDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+
+
+# ========== Export Endpoint Types ==========
+
+
+class ExportEvalApiResponse(BaseModel):
+    """Response model for export eval endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

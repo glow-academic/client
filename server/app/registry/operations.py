@@ -169,7 +169,7 @@ ARTIFACT_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     ("field", "export"): None,
     ("field", "refresh"): None,
     # group (view-only)
-    ("group", "get"): (f"{_A}.group.get", "get_group_websocket"),
+    ("group", "get"): None,
     ("group", "list"): None,
     ("group", "save"): None,
     ("group", "delete"): None,
@@ -179,7 +179,7 @@ ARTIFACT_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     ("group", "export"): None,
     ("group", "refresh"): None,
     # health (view-only)
-    ("health", "get"): (f"{_A}.health.get", "get_health_websocket"),
+    ("health", "get"): None,
     ("health", "list"): None,
     ("health", "save"): None,
     ("health", "delete"): None,
@@ -289,7 +289,7 @@ ARTIFACT_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     ("provider", "export"): None,
     ("provider", "refresh"): None,
     # record (view-only)
-    ("record", "get"): (f"{_A}.record.get", "get_record_websocket"),
+    ("record", "get"): None,
     ("record", "list"): None,
     ("record", "save"): None,
     ("record", "delete"): None,
@@ -329,7 +329,7 @@ ARTIFACT_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
     ("scenario", "export"): (f"{_A}.scenario.export", "export_scenarios"),
     ("scenario", "refresh"): None,
     # session (view-only)
-    ("session", "get"): (f"{_A}.session.get", "get_session_websocket"),
+    ("session", "get"): None,
     ("session", "list"): None,
     ("session", "save"): None,
     ("session", "delete"): None,

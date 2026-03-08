@@ -315,18 +315,6 @@ async def get_auth_client(
 
 
 # ---------------------------------------------------------------------------
-# get_auth_websocket — stub (to be rewritten with infra functions)
-# ---------------------------------------------------------------------------
-
-
-async def get_auth_websocket(*args, **kwargs):
-    """Stub — will be rewritten to use composable infra functions."""
-    raise NotImplementedError(
-        "get_auth_websocket needs to be rewritten with infra functions"
-    )
-
-
-# ---------------------------------------------------------------------------
 # Route handler
 # ---------------------------------------------------------------------------
 

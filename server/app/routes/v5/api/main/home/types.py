@@ -1,6 +1,5 @@
 """Types for home artifact endpoint."""
 
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -11,8 +10,7 @@ from app.routes.v5.api.main.chat.types import (
     StandardGroupMapping,
     StandardMapping,
 )
-from app.routes.v5.api.main.types import HistoryResponse, InternalResponseBase
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
+from app.routes.v5.api.main.types import HistoryResponse
 
 # =============================================================================
 # Export Types
@@ -25,43 +23,6 @@ class ExportHomeApiResponse(BaseModel):
     upload_id: UUID
     file_name: str
     row_count: int
-
-
-# =============================================================================
-# Websocket types
-# =============================================================================
-
-
-class HomeWebsocketEntries(BaseModel):
-    """Draft entries for home bundle websocket consumers."""
-
-    draft_training: Any | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class HomeWebsocketResources(BaseModel):
-    """Hydrated resources for home bundle websocket — selected only."""
-
-    # 12 domain resources
-    departments: list[Any] | None = None
-    personas: list[Any] | None = None
-    documents: list[Any] | None = None
-    parameter_fields: list[Any] | None = None
-    scenarios: list[Any] | None = None
-    parameters: list[Any] | None = None
-    questions: list[Any] | None = None
-    options: list[Any] | None = None
-    videos: list[Any] | None = None
-    images: list[Any] | None = None
-    problem_statements: list[Any] | None = None
-    objectives: list[Any] | None = None
-
-
-class GetHomeWebsocketResponse(InternalResponseBase):
-    """Websocket-facing home bundle response with hydrated resources."""
-
-    entries: HomeWebsocketEntries | None = None
-    resources: HomeWebsocketResources
 
 
 # =============================================================================

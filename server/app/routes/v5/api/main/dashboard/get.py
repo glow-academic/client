@@ -30,9 +30,6 @@ from app.routes.v5.api.main.dashboard.shared import (
 from app.routes.v5.api.main.dashboard.types import (
     DashboardBundleResponse,
     DashboardRequest,
-    DashboardWebsocketEntries,
-    DashboardWebsocketResources,
-    GetDashboardWebsocketResponse,
 )
 from app.routes.v5.api.main.types import FilterOption
 from app.utils.cache.cache_key import cache_key
@@ -41,25 +38,6 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
-
-
-# ---------------------------------------------------------------------------
-# WebSocket stub
-# ---------------------------------------------------------------------------
-
-
-async def get_dashboard_websocket(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    dashboard_id: UUID | None = None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> GetDashboardWebsocketResponse:
-    """Stub — websocket consumers will be updated separately."""
-    return GetDashboardWebsocketResponse(
-        entries=DashboardWebsocketEntries(),
-        resources=DashboardWebsocketResources(),
-    )
 
 
 # ---------------------------------------------------------------------------

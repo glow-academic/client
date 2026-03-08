@@ -8,9 +8,7 @@ from pydantic import BaseModel, Field
 from app.routes.v5.api.main.types import (
     FilterOption,
     HistoryResponse,
-    InternalResponseBase,
 )
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 
 # ============================================================================
 # Request
@@ -602,33 +600,3 @@ class ExportDashboardApiResponse(BaseModel):
     file_name: str
     row_count: int
 
-
-# =============================================================================
-# WebSocket Types
-# =============================================================================
-
-
-class GetDashboardApiRequest(BaseModel):
-    """Request model for get dashboard endpoint."""
-
-    dashboard_id: UUID | None = None
-    draft_id: UUID | None = None
-
-
-class DashboardWebsocketEntries(BaseModel):
-    """Entries data for dashboard websocket response."""
-
-    runs: GetRunListViewResponse | None = None
-
-
-class DashboardWebsocketResources(BaseModel):
-    """Hydrated resources for dashboard websocket — selected only."""
-
-    pass
-
-
-class GetDashboardWebsocketResponse(InternalResponseBase):
-    """Websocket-facing dashboard response with hydrated resources."""
-
-    entries: DashboardWebsocketEntries | None = None
-    resources: DashboardWebsocketResources

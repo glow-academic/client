@@ -1,12 +1,11 @@
-"""Document get endpoint - Three-layer architecture.
+"""Document get endpoint - Two-layer architecture.
 
-This implements the three-layer BFF pattern:
+This implements the two-layer BFF pattern:
 1. get_document_internal() - Core data fetching (cacheable, returns dataclass)
-2. get_document_websocket() - Minimal data for WebSocket handlers
-3. get_document_client() - Full BFF response for HTTP endpoint/frontend
+2. get_document_client() - Full BFF response for HTTP endpoint/frontend
 
 The internal layer handles SQL queries and resource fetching.
-The presentation layers transform internal data into consumer-specific formats.
+The presentation layer transforms internal data into the client-specific format.
 """
 
 import asyncio
@@ -50,11 +49,8 @@ from app.routes.v5.api.main.document.types import (
     DocumentResources,
     DocumentTextSection,
     DocumentUploadSection,
-    DocumentWebsocketEntries,
-    DocumentWebsocketResources,
     GetDocumentApiRequest,
     GetDocumentApiResponse,
-    GetDocumentWebsocketResponse,
 )
 from app.routes.v5.api.permissions import (
     has_tools_for_resource,
@@ -63,10 +59,7 @@ from app.routes.v5.api.permissions import (
 from app.routes.v5.tools.entries.document_drafts.get import (
     get_document_drafts_entries_internal,
 )
-from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
 from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.args.get import get_args
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
@@ -86,11 +79,9 @@ from app.routes.v5.tools.resources.names.search import search_names
 from app.routes.v5.tools.resources.parameter_fields.get import (
     get_parameter_fields,
 )
-from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.texts.get import get_texts
 from app.routes.v5.tools.resources.texts.search import search_texts
-from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetDocumentAccessSqlParams,
     GetDocumentAccessSqlRow,
@@ -142,7 +133,7 @@ class DocumentInternalData:
     create_tool_ids_map: dict[str, UUID | None]
     link_tool_ids_map: dict[str, UUID | None]
 
-    # Config resources (for websocket generation)
+    # Config resources (for generation context)
     config_agent_resources: list[Any] | None
     config_model_resources: list[Any] | None
     config_provider_resources: list[Any] | None
@@ -642,7 +633,7 @@ async def get_document_internal(
         "texts": text_suggestions,
     }
 
-    # Fetch config resources for websocket generation context (from settings agents).
+    # Fetch config resources for generation context (from settings agents).
     config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
     config_model_resource_ids = [
         a.model_id for a in settings_data.settings_agents if a.model_id
@@ -704,180 +695,6 @@ async def get_document_internal(
         config_agent_resources=config_agents_result or None,
         config_model_resources=config_models_result or None,
         config_provider_resources=config_providers_result or None,
-    )
-
-
-async def get_document_websocket(
-    profile_id: UUID,
-    document_id: UUID | None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> GetDocumentWebsocketResponse:
-    """Minimal response for WebSocket handlers.
-
-    Returns resource_agent_ids, views, and flat resources for generation.
-    """
-    data = await get_document_internal(
-        profile_id=profile_id,
-        document_id=document_id,
-        draft_id=draft_id,
-        bypass_cache=bypass_cache,
-    )
-
-    # Fetch draft, config_profile, runs_today, and tools in parallel
-    pool = get_pool()
-
-    async def fetch_draft():
-        if not draft_id or not pool:
-            return None
-        async with pool.acquire() as conn:
-            draft_items = await get_document_drafts_entries_internal(
-                conn=conn,
-                ids=[draft_id],
-                bypass_cache=bypass_cache,
-            )
-            return draft_items[0] if draft_items else None
-
-    async def fetch_config_profile():
-        if not pool:
-            return None
-        async with pool.acquire() as conn:
-            return await get_profiles(
-                conn, [profile_id], get_redis_client(), bypass_cache
-            )
-
-    async def fetch_runs_today():
-        if not pool:
-            return None
-        from datetime import UTC, datetime
-
-        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
-        async with pool.acquire() as conn:
-            return await get_run_list_entries_internal(
-                conn=conn,
-                profile_id_filter=profile_id,
-                date_from=today_utc,
-                date_to=tomorrow_utc,
-                page_limit=1,
-                bypass_cache=True,
-            )
-
-    async def fetch_tools():
-        if not data.config_agent_resources or not pool:
-            return []
-        tool_ids: list[UUID] = []
-        for agent in data.config_agent_resources:
-            ids = getattr(agent, "tool_ids", None) or []
-            tool_ids.extend(ids)
-        deduped_tool_ids = list(dict.fromkeys(tool_ids))
-        if not deduped_tool_ids:
-            return []
-        async with pool.acquire() as conn:
-            return await get_tools(
-                conn, deduped_tool_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-
-    (
-        draft_view,
-        config_profile_result,
-        runs_result,
-        tools_result,
-    ) = await asyncio.gather(
-        fetch_draft(),
-        fetch_config_profile(),
-        fetch_runs_today(),
-        fetch_tools(),
-    )
-
-    current = data.resources_payload.current
-
-    # Get enriched flag configs for selected flags
-    selected_flag_ids = {
-        getattr(f, "flag_option_id", None) or getattr(f, "id", None)
-        for f in (current.flags if current and current.flags else [])
-    } - {None}
-    all_enriched_flags = (
-        data.resources_payload.resources.flags
-        if data.resources_payload.resources
-        else []
-    ) or []
-    selected_enriched_flags = [
-        f for f in all_enriched_flags if f.flag_option_id in selected_flag_ids
-    ]
-
-    # Build views (always construct — both fields optional now)
-    entries = DocumentWebsocketEntries(
-        draft_document=draft_view,
-        runs=runs_result,
-    )
-
-    # Pre-fetch args and args_outputs from tool IDs (both cached via *_internal)
-    tools = tools_result or []
-    config_args = None
-    config_args_outputs = None
-    if tools and pool:
-        all_args_ids: list[UUID] = []
-        all_args_output_ids: list[UUID] = []
-        for tool in tools:
-            if tool.args_ids:
-                all_args_ids.extend(tool.args_ids)
-            if tool.args_output_ids:
-                all_args_output_ids.extend(tool.args_output_ids)
-
-        if all_args_ids or all_args_output_ids:
-
-            async def fetch_args():
-                if not all_args_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args(
-                        c,
-                        list(set(all_args_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            async def fetch_args_outputs():
-                if not all_args_output_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args_outputs(
-                        c,
-                        list(set(all_args_output_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            config_args, config_args_outputs = await asyncio.gather(
-                fetch_args(),
-                fetch_args_outputs(),
-            )
-
-    websocket_resources = DocumentWebsocketResources(
-        names=current.names if current else None,
-        descriptions=current.descriptions if current else None,
-        flags=selected_enriched_flags or None,
-        departments=current.departments if current else None,
-        fields=current.fields if current else None,
-        uploads=current.uploads if current else None,
-        images=current.images if current else None,
-        texts=current.texts if current else None,
-    )
-
-    return GetDocumentWebsocketResponse(
-        group_id=data.group_id,
-        entries=entries if draft_view or runs_result else None,
-        resource_agent_ids=data.agent_ids,
-        resources=websocket_resources,
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=tools_result or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        params=GetDocumentApiRequest(document_id=document_id, draft_id=draft_id),
     )
 
 

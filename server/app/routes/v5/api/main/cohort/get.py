@@ -436,18 +436,6 @@ async def get_cohort_client(
 
 
 # ---------------------------------------------------------------------------
-# get_cohort_websocket — stub (to be rewritten with infra functions)
-# ---------------------------------------------------------------------------
-
-
-async def get_cohort_websocket(*args, **kwargs):
-    """Stub — will be rewritten to use composable infra functions."""
-    raise NotImplementedError(
-        "get_cohort_websocket needs to be rewritten with infra functions"
-    )
-
-
-# ---------------------------------------------------------------------------
 # Route handler
 # ---------------------------------------------------------------------------
 

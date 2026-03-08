@@ -24,7 +24,6 @@ from app.routes.v5.api.main.invocation.types import (
     BaseSuiteSection,
     GetSuiteRequest,
     GetSuiteResponse,
-    GetSuiteWebsocketResponse,
     SuiteDepartmentSection,
     SuiteDescriptionSection,
     SuiteEndpointSection,
@@ -173,24 +172,6 @@ async def get_invocation_client(
         reasoning_levels=_section("reasoning_levels"),
         qualities=_section("qualities"),
         voices=_section("voices"),
-    )
-
-
-# =============================================================================
-# WebSocket Layer (stub — to be rewritten with infra functions)
-# =============================================================================
-
-
-async def get_invocation_websocket(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    suite_entry_id: UUID,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> GetSuiteWebsocketResponse:
-    """Stub — will be rewritten to use composable infra functions."""
-    raise NotImplementedError(
-        "get_invocation_websocket needs to be rewritten with infra functions"
     )
 
 

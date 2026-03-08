@@ -1,9 +1,8 @@
 """Health artifact endpoint - POST /artifacts/health/get.
 
-Three-layer BFF pattern:
+Two-layer BFF pattern:
 - get_health_internal(): Core data fetcher via context resolver, returns HealthInternalData
 - get_health (HTTP route): HTTP response layer
-- get_health_websocket(): WebSocket response layer
 
 Uses composable context resolver with black-box MV search tools.
 Zero inline SQL — all data from context resolver + resource fetchers.
@@ -21,18 +20,12 @@ from app.infra.globals import get_pool, get_redis_client
 from app.infra.health_context import resolve_health_context
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.health.types import (
-    GetHealthApiRequest,
-    GetHealthWebsocketResponse,
     HealthInternalData,
     HealthRequest,
     HealthResponse,
     HealthViews,
-    HealthWebsocketEntries,
-    HealthWebsocketResources,
 )
 from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.args.get import get_args
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.providers.get import get_providers
 from app.routes.v5.tools.resources.systems.get import get_systems
@@ -199,92 +192,7 @@ async def get_health_internal(
 
 
 # =============================================================================
-# Layer 2b: WebSocket response
-# =============================================================================
-
-
-async def get_health_websocket(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    health_id: UUID | None = None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> GetHealthWebsocketResponse:
-    """Thin wrapper for websocket consumers — config chain + domain views."""
-    data = await get_health_internal(
-        pool=pool,
-        profile_id=profile_id,
-        health_id=health_id,
-        draft_id=draft_id,
-        bypass_cache=bypass_cache,
-    )
-
-    redis = get_redis_client()
-
-    # Pre-fetch args and args_outputs from tool IDs
-    config_args = None
-    config_args_outputs = None
-    config_tools = data.config_tools
-    if config_tools and pool:
-        all_args_ids: list[UUID] = []
-        all_args_output_ids: list[UUID] = []
-        for tool in config_tools:
-            if tool.args_ids:
-                all_args_ids.extend(tool.args_ids)
-            if tool.args_output_ids:
-                all_args_output_ids.extend(tool.args_output_ids)
-
-        if all_args_ids or all_args_output_ids:
-
-            async def fetch_args():  # noqa: ANN202
-                if not all_args_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args(
-                        c,
-                        list(set(all_args_ids)),
-                        redis,
-                        bypass_cache=bypass_cache,
-                    )
-
-            async def fetch_args_outputs():  # noqa: ANN202
-                if not all_args_output_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args_outputs(
-                        c,
-                        list(set(all_args_output_ids)),
-                        redis,
-                        bypass_cache=bypass_cache,
-                    )
-
-            config_args, config_args_outputs = await asyncio.gather(
-                fetch_args(),
-                fetch_args_outputs(),
-            )
-
-    return GetHealthWebsocketResponse(
-        entries=HealthWebsocketEntries(
-            runs=data.runs_today,
-        ),
-        resources=HealthWebsocketResources(),
-        systems=data.config_systems or None,
-        agents=data.config_agents or None,
-        models=data.config_models or None,
-        providers=data.config_providers or None,
-        tools=config_tools or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=data.config_profile or None,
-        params=GetHealthApiRequest(health_id=health_id, draft_id=draft_id),
-        resource_agent_ids=data.resource_agent_ids,
-        resource_system_ids=data.resource_system_ids,
-        group_id=data.group_id,
-    )
-
-
-# =============================================================================
-# Layer 2a: HTTP Endpoint
+# Layer 2: HTTP Endpoint
 # =============================================================================
 
 

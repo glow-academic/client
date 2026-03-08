@@ -14,9 +14,6 @@ from app.routes.v5.api.main.activity.types import (
     ActivityRequest,
     ActivityResources,
     ActivityResponse,
-    ActivityWebsocketEntries,
-    ActivityWebsocketResources,
-    GetActivityWebsocketResponse,
     ProfileSummaryItem,
 )
 from app.utils.cache.cache_key import cache_key
@@ -25,25 +22,6 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
-
-
-# ---------------------------------------------------------------------------
-# Websocket stub
-# ---------------------------------------------------------------------------
-
-
-async def get_activity_websocket(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    activity_id: UUID | None = None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> GetActivityWebsocketResponse:
-    """Stub — websocket consumers will be updated separately."""
-    return GetActivityWebsocketResponse(
-        entries=ActivityWebsocketEntries(),
-        resources=ActivityWebsocketResources(),
-    )
 
 
 # ---------------------------------------------------------------------------

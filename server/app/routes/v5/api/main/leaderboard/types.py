@@ -5,8 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.v5.api.main.types import FilterOption, InternalResponseBase
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
+from app.routes.v5.api.main.types import FilterOption
 
 
 class LeaderboardRequest(BaseModel):
@@ -225,34 +224,3 @@ class ExportLeaderboardApiResponse(BaseModel):
     upload_id: UUID
     file_name: str
     row_count: int
-
-
-# =============================================================================
-# WebSocket Types
-# =============================================================================
-
-
-class GetLeaderboardApiRequest(BaseModel):
-    """Request model for get leaderboard endpoint."""
-
-    leaderboard_id: UUID | None = None
-    draft_id: UUID | None = None
-
-
-class LeaderboardWebsocketEntries(BaseModel):
-    """Views data for leaderboard websocket response."""
-
-    runs: GetRunListViewResponse | None = None
-
-
-class LeaderboardWebsocketResources(BaseModel):
-    """Hydrated resources for leaderboard websocket — selected only."""
-
-    pass
-
-
-class GetLeaderboardWebsocketResponse(InternalResponseBase):
-    """Websocket-facing leaderboard response with hydrated resources."""
-
-    entries: LeaderboardWebsocketEntries | None = None
-    resources: LeaderboardWebsocketResources

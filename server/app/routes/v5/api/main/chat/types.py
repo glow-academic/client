@@ -16,7 +16,6 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.routes.v5.api.main.types import InternalResponseBase
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 
 # =============================================================================
 # Shared types
@@ -400,45 +399,6 @@ class GetChatResponse(BaseModel):
     images: ChatImageSection | None = None
     problem_statements: ChatProblemStatementSection | None = None
     objectives: ChatObjectiveSection | None = None
-
-
-# =============================================================================
-# Bundle Websocket types
-# =============================================================================
-
-
-class ChatWebsocketEntries(BaseModel):
-    """Draft view for chat bundle websocket consumers."""
-
-    draft_training: Any | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class ChatWebsocketResources(BaseModel):
-    """Hydrated resources for chat bundle websocket — selected only."""
-
-    names: list[Any] | None = None
-    descriptions: list[Any] | None = None
-    flags: list[Any] | None = None
-    departments: list[Any] | None = None
-    personas: list[Any] | None = None
-    documents: list[Any] | None = None
-    parameter_fields: list[Any] | None = None
-    scenarios: list[Any] | None = None
-    fields: list[Any] | None = None
-    questions: list[Any] | None = None
-    options: list[Any] | None = None
-    videos: list[Any] | None = None
-    images: list[Any] | None = None
-    problem_statements: list[Any] | None = None
-    objectives: list[Any] | None = None
-
-
-class GetChatWebsocketResponse(InternalResponseBase):
-    """Websocket-facing chat bundle response with hydrated resources."""
-
-    entries: ChatWebsocketEntries | None = None
-    resources: ChatWebsocketResources
 
 
 # =============================================================================

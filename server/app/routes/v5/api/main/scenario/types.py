@@ -11,9 +11,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.routes.v5.api.main.persona.types import ImportField
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 
 # =============================================================================
 # Resource Types
@@ -372,76 +370,6 @@ class GetScenarioApiResponse(BaseModel):
     videos: ScenarioVideoSection | None = None
     questions: ScenarioQuestionSection | None = None
     options: ScenarioOptionSection | None = None
-
-
-class GetScenarioWebsocketResponse(InternalResponseBase):
-    """Minimal response for WebSocket handlers (get_scenario_websocket).
-
-    Contains only what's needed for AI generation:
-    - Group ID (for existing group context)
-    - Optional draft view (for Jinja templates)
-    - resource_agent_ids mapping (resource_type -> agent_id)
-    - Resources (for Jinja template context)
-    """
-
-    entries: "ScenarioWebsocketEntries | None" = None
-
-    resources: "ScenarioWebsocketResources"
-
-
-class ScenarioDraftEntry(BaseModel):
-    """Scenario draft entry for websocket."""
-
-    draft_id: UUID | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    version: int | None = None
-    generated: bool | None = None
-    mcp: bool | None = None
-    active: bool | None = None
-    group_id: UUID | None = None
-    name_ids: list[UUID] | None = None
-    description_ids: list[UUID] | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    option_ids: list[UUID] | None = None
-    problem_statement_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-
-
-class ScenarioWebsocketEntries(BaseModel):
-    """Optional websocket entries payload."""
-
-    draft_scenario: ScenarioDraftEntry | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class ScenarioWebsocketResources(BaseModel):
-    """Hydrated resources for websocket — selected only, no `current` wrapper."""
-
-    # 14 scenario resources (selected)
-    names: list[ScenarioNameResource] | None = None
-    descriptions: list[ScenarioDescriptionResource] | None = None
-    problem_statements: list[ScenarioProblemStatement] | None = None
-    flags: list[ScenarioFlagConfig] | None = None
-    departments: list[ScenarioDepartment] | None = None
-    personas: list[ScenarioPersona] | None = None
-    documents: list[ScenarioDocument] | None = None
-    parameters: list[ScenarioParameter] | None = None
-    parameter_fields: list[ScenarioField] | None = None
-    objectives: list[ScenarioObjective] | None = None
-    images: list[ScenarioImage] | None = None
-    videos: list[ScenarioVideo] | None = None
-    questions: list[ScenarioQuestion] | None = None
-    options: list[ScenarioOption] | None = None
-    fields: list[Any] | None = None
 
 
 # =============================================================================

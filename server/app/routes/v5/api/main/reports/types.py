@@ -6,8 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.v5.api.main.types import FilterOption, InternalResponseBase
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
+from app.routes.v5.api.main.types import FilterOption
 
 
 class ReportsRequest(BaseModel):
@@ -281,34 +280,3 @@ class ReportsResponse(BaseModel):
     simulation_options: list[FilterOption] = Field(default_factory=list)
     profile_options: list[FilterOption] = Field(default_factory=list)
     scenario_options: list[FilterOption] = Field(default_factory=list)
-
-
-# =============================================================================
-# WebSocket Types
-# =============================================================================
-
-
-class GetReportsApiRequest(BaseModel):
-    """Request model for get reports endpoint."""
-
-    reports_id: UUID | None = None
-    draft_id: UUID | None = None
-
-
-class ReportsWebsocketEntries(BaseModel):
-    """Views data for reports websocket response."""
-
-    runs: GetRunListViewResponse | None = None
-
-
-class ReportsWebsocketResources(BaseModel):
-    """Hydrated resources for reports websocket — selected only."""
-
-    pass
-
-
-class GetReportsWebsocketResponse(InternalResponseBase):
-    """Websocket-facing reports response with hydrated resources."""
-
-    entries: ReportsWebsocketEntries | None = None
-    resources: ReportsWebsocketResources

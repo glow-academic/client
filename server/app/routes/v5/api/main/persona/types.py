@@ -8,9 +8,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 from app.routes.v5.tools.resources.fields.types import GetFieldResponse
 from app.routes.v5.tools.resources.parameters.types import GetParameterResponse
 
@@ -296,43 +294,6 @@ class GetPersonaApiResponse(BaseModel):
     fields: list[GetFieldResponse] | None = None
     # Resolved parameter IDs (derived from saved parameter_fields)
     resolved_parameter_ids: list[str] | None = None
-
-
-class PersonaWebsocketEntries(BaseModel):
-    """Entries data for websocket response."""
-
-    draft_persona: PersonaDraftEntry | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class PersonaWebsocketResources(BaseModel):
-    """Hydrated resources for websocket — selected only, no suggestions."""
-
-    # 11 persona resources
-    names: list[PersonaNameResource] | None = None
-    descriptions: list[PersonaDescriptionResource] | None = None
-    colors: list[PersonaColorResource] | None = None
-    icons: list[PersonaIconResource] | None = None
-    instructions: list[PersonaInstructionResource] | None = None
-    flags: list[PersonaFlagConfig] | None = None
-    departments: list[PersonaDepartmentResource] | None = None
-    parameter_fields: list[PersonaParameterFieldResource] | None = None
-    examples: list[PersonaExampleResource] | None = None
-    parameters: list[GetParameterResponse] | None = None
-    voices: list[PersonaVoiceResource] | None = None
-    fields: list[GetFieldResponse] | None = None
-
-
-class GetPersonaWebsocketResponse(InternalResponseBase):
-    """Minimal response for WebSocket handlers (get_persona_websocket).
-
-    Uses views + resources pattern:
-    - Views: draft persona view (convenience for Jinja templates)
-    - Resources: hydrated selected objects + config for generation
-    """
-
-    entries: PersonaWebsocketEntries | None = None
-    resources: PersonaWebsocketResources
 
 
 class PersonaResourceBucket(BaseModel):

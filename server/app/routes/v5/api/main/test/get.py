@@ -1,9 +1,8 @@
 """Benchmark test artifact detail endpoint.
 
-Three-layer BFF pattern:
+Two-layer BFF pattern:
 - get_test_internal(): Core data fetcher, returns TestInternalData
 - get_test_client(): HTTP response layer with caching
-- get_test_websocket(): WebSocket response layer (stub)
 
 Uses composable context resolver with black-box tools.
 """
@@ -20,7 +19,6 @@ from app.routes.v5.api.main.test.permissions import compute_test_status
 from app.routes.v5.api.main.test.types import (
     GetTestArtifactRequest,
     GetTestArtifactResponse,
-    GetTestWebsocketResponse,
     TestEntries,
     TestInternalData,
     TestResources,
@@ -226,7 +224,7 @@ async def get_test_internal(
 
 
 # =============================================================================
-# Layer 2a: HTTP client response (with caching)
+# Layer 2: HTTP client response (with caching)
 # =============================================================================
 
 
@@ -287,39 +285,6 @@ async def get_test_client(
     )
 
     return api_response, False
-
-
-# =============================================================================
-# Layer 2b: WebSocket response (stub)
-# =============================================================================
-
-
-async def get_test_websocket(
-    conn: asyncpg.Connection,
-    test_id: UUID,
-    bypass_cache: bool = False,
-    profile_id: UUID | None = None,
-) -> GetTestWebsocketResponse:
-    """WebSocket response layer — stub.
-
-    Returns entries + resources from internal data.
-    Config chain resolution and tools/args/profiles are stubbed out.
-    """
-    data = await get_test_internal(
-        conn=conn,
-        test_id=test_id,
-        bypass_cache=bypass_cache,
-        profile_id=profile_id,
-    )
-
-    if not data.test:
-        return GetTestWebsocketResponse()
-
-    return GetTestWebsocketResponse(
-        entries=data.entries_payload,
-        resources=data.resources_payload,
-        params=GetTestArtifactRequest(test_id=test_id),
-    )
 
 
 # =============================================================================

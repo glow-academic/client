@@ -6,8 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.v5.api.main.types import FilterOption, InternalResponseBase
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
+from app.routes.v5.api.main.types import FilterOption
 
 
 class PricingDailyItem(BaseModel):
@@ -145,34 +144,3 @@ class ExportPricingApiResponse(BaseModel):
     upload_id: UUID
     file_name: str
     row_count: int
-
-
-# =============================================================================
-# WebSocket Types
-# =============================================================================
-
-
-class GetPricingApiRequest(BaseModel):
-    """Request model for get pricing endpoint."""
-
-    pricing_id: UUID | None = None
-    draft_id: UUID | None = None
-
-
-class PricingWebsocketEntries(BaseModel):
-    """Entries data for pricing websocket response."""
-
-    runs: GetRunListViewResponse | None = None
-
-
-class PricingWebsocketResources(BaseModel):
-    """Hydrated resources for pricing websocket — selected only."""
-
-    pass
-
-
-class GetPricingWebsocketResponse(InternalResponseBase):
-    """Websocket-facing pricing response with hydrated resources."""
-
-    entries: PricingWebsocketEntries | None = None
-    resources: PricingWebsocketResources

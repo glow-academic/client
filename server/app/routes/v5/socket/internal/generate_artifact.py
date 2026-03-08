@@ -224,83 +224,19 @@ async def _execute_artifact_tool_inline(
 ) -> tuple[str, list[str]]:
     """Execute artifact tool: re-fetch context, re-render developer messages.
 
-    Uses the REGISTRY to dispatch to the correct fetcher for any artifact type.
-
     Returns:
         (tool_result_json, developer_messages) — result for LLM + messages to inject
     """
-    import importlib
-
-    from app.infra.generation.render_developer_instructions import (
-        render_developer_instructions,
-    )
-    from app.routes.v5.socket.client.registry import REGISTRY
-    from app.routes.v5.socket.internal.generate_prepare import _build_jinja_context
-
-    config = REGISTRY.get(artifact_type)
-    if not config or not config.fetcher_module or not config.fetcher_func:
-        return (
-            json.dumps(
-                {
-                    "success": False,
-                    "message": f"Unsupported artifact type: {artifact_type}",
-                }
-            ),
-            [],
-        )
-
-    if not profile_id:
-        return (
-            json.dumps({"success": False, "message": "No profile_id available"}),
-            [],
-        )
-
-    mod = importlib.import_module(config.fetcher_module)
-    fn = getattr(mod, config.fetcher_func)
-
-    kwargs = _build_refetch_kwargs(
-        artifact_type,
-        arguments,
-        profile_id,
-        artifact_id,
-        draft_id,
-        config.fetcher_id_kwarg,
-    )
-
-    try:
-        if config.needs_conn:
-            async with get_db_connection() as conn:
-                kwargs["conn"] = conn
-                result = await fn(**kwargs)
-        elif config.requires_pool:
-            from app.infra.globals import get_pool
-
-            pool = get_pool()
-            kwargs["pool"] = pool
-            result = await fn(**kwargs)
-        else:
-            result = await fn(**kwargs)
-    except Exception as e:
-        return (
-            json.dumps(
-                {
-                    "success": False,
-                    "message": f"Failed to refetch {artifact_type}: {str(e)}",
-                }
-            ),
-            [],
-        )
-
-    # Build Jinja context from the refreshed result and re-render
-    jinja_context = _build_jinja_context(result)
-    rendered_msgs = render_developer_instructions(
-        templates=developer_instruction_templates,
-        jinja_context=jinja_context,
-    )
-
+    # Legacy websocket fetcher path removed — context is now resolved
+    # via resolve_websocket_context in generate_prepare.
     return (
-        json.dumps({"success": True, "message": f"Refreshed {artifact_type} context"}),
-        rendered_msgs,
+        json.dumps(
+            {
+                "success": False,
+                "message": f"Artifact tool refetch not supported for: {artifact_type}",
+            }
+        ),
+        [],
     )
 
 

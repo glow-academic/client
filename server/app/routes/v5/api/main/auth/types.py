@@ -333,6 +333,17 @@ class PatchAuthDraftApiResponse(BaseModel):
     message: str
 
 
+# ========== Export Endpoint Types ==========
+
+
+class ExportAuthApiResponse(BaseModel):
+    """Response model for export auth endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
 class ListAuthApiAuth(BaseModel):
     """Auth type for list endpoint with computed permissions."""
 

@@ -325,3 +325,14 @@ class DuplicateFieldApiResponse(BaseModel):
     success: bool
     field_id: UUID
     message: str
+
+
+# ========== Export Endpoint Types ==========
+
+
+class ExportFieldApiResponse(BaseModel):
+    """Response model for export field endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

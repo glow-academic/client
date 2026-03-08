@@ -303,6 +303,17 @@ class PatchRubricDraftApiResponse(BaseModel):
     message: str
 
 
+# ========== Export Endpoint Types ==========
+
+
+class ExportRubricApiResponse(BaseModel):
+    """Response model for export rubric endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
 # ========== List Endpoint Types ==========
 
 

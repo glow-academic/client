@@ -110,53 +110,6 @@ class GetSessionDetailResponse(BaseModel):
     timeline: list[SessionTimelineItem] = Field(default_factory=list)
 
 
-# =============================================================================
-# WebSocket Types
-# =============================================================================
-
-
-class GetSessionApiRequest(BaseModel):
-    """Request model for get session endpoint."""
-
-    session_id: UUID | None = None
-    draft_id: UUID | None = None
-
-
-class SessionWebsocketEntries(BaseModel):
-    """Entries data for session websocket response."""
-
-    runs: GetRunListViewResponse | None = None
-    groups: list[Any] | None = None
-
-
-class SessionWebsocketResources(BaseModel):
-    """Hydrated resources for session websocket — selected only."""
-
-    pass
-
-
-class GetSessionWebsocketResponse(BaseModel):
-    """Websocket-facing session response with hydrated resources.
-
-    Uses Any for config chain fields to accept resource fetcher types.
-    """
-
-    systems: list[Any] | None = None
-    agents: list[Any] | None = None
-    models: list[Any] | None = None
-    providers: list[Any] | None = None
-    tools: list[Any] | None = None
-    args: list[Any] | None = None
-    args_outputs: list[Any] | None = None
-    profile: list[Any] | None = None
-    params: BaseModel | None = None
-    resource_system_ids: dict[str, UUID | None] | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
-    entries: SessionWebsocketEntries | None = None
-    resources: SessionWebsocketResources
-
-
 @dataclass
 class SessionInternalData:
     """Internal data from core session fetching (cacheable layer)."""

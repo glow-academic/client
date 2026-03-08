@@ -10,23 +10,7 @@ from app.routes.v5.api.main.chat.types import (
     StandardGroupMapping,
     StandardMapping,
 )
-from app.routes.v5.api.main.types import HistoryResponse, InternalResponseBase
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetDepartmentsV4Item,
-    QGetDocumentsV4Item,
-    QGetImagesV4Item,
-    QGetObjectivesV4Item,
-    QGetOptionsV4Item,
-    QGetParameterFieldsV4Item,
-    QGetParametersV4Item,
-    QGetPersonasV4Item,
-    QGetProblemStatementsV4Item,
-    QGetQuestionsV4Item,
-    QGetScenariosV4Item,
-    QGetTrainingDraftsEntriesV4Item,
-    QGetVideosV4Item,
-)
+from app.routes.v5.api.main.types import HistoryResponse
 
 # =============================================================================
 # Export Types
@@ -49,43 +33,6 @@ class ExportPracticeApiResponse(BaseModel):
     upload_id: UUID
     file_name: str
     row_count: int
-
-
-# =============================================================================
-# Websocket types
-# =============================================================================
-
-
-class PracticeWebsocketEntries(BaseModel):
-    """Draft entries for practice bundle websocket consumers."""
-
-    draft_training: QGetTrainingDraftsEntriesV4Item | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class PracticeWebsocketResources(BaseModel):
-    """Hydrated resources for practice bundle websocket — selected only."""
-
-    # 12 domain resources
-    departments: list[QGetDepartmentsV4Item] | None = None
-    personas: list[QGetPersonasV4Item] | None = None
-    documents: list[QGetDocumentsV4Item] | None = None
-    parameter_fields: list[QGetParameterFieldsV4Item] | None = None
-    scenarios: list[QGetScenariosV4Item] | None = None
-    parameters: list[QGetParametersV4Item] | None = None
-    questions: list[QGetQuestionsV4Item] | None = None
-    options: list[QGetOptionsV4Item] | None = None
-    videos: list[QGetVideosV4Item] | None = None
-    images: list[QGetImagesV4Item] | None = None
-    problem_statements: list[QGetProblemStatementsV4Item] | None = None
-    objectives: list[QGetObjectivesV4Item] | None = None
-
-
-class GetPracticeWebsocketResponse(InternalResponseBase):
-    """Websocket-facing practice bundle response with hydrated resources."""
-
-    entries: PracticeWebsocketEntries | None = None
-    resources: PracticeWebsocketResources
 
 
 # =============================================================================

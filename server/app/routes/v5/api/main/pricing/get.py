@@ -11,13 +11,10 @@ from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.infra.pricing_context import resolve_pricing_context
 from app.routes.v5.api.main.pricing.types import (
-    GetPricingWebsocketResponse,
     PricingDailyItem,
     PricingRequest,
     PricingResources,
     PricingResponse,
-    PricingWebsocketEntries,
-    PricingWebsocketResources,
 )
 from app.routes.v5.api.main.types import FilterOption
 from app.utils.cache.cache_key import cache_key
@@ -53,25 +50,6 @@ def _compute_run_costs(
                     ) * info["price"]
         result[run.run_id] = total_cost
     return result
-
-
-# ---------------------------------------------------------------------------
-# Websocket stub
-# ---------------------------------------------------------------------------
-
-
-async def get_pricing_websocket(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    pricing_id: UUID | None = None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> GetPricingWebsocketResponse:
-    """Stub — websocket consumers will be updated separately."""
-    return GetPricingWebsocketResponse(
-        entries=PricingWebsocketEntries(),
-        resources=PricingWebsocketResources(),
-    )
 
 
 # ---------------------------------------------------------------------------

@@ -6,7 +6,6 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.routes.v5.api.main.session.types import SessionListItem
-from app.routes.v5.api.main.types import InternalResponseBase
 
 
 class ActivityRequest(BaseModel):
@@ -72,34 +71,3 @@ class ListActivityResponse(BaseModel):
     page: int = 0
     page_size: int = 50
     total_pages: int = 0
-
-
-# =============================================================================
-# WebSocket Types
-# =============================================================================
-
-
-class GetActivityApiRequest(BaseModel):
-    """Request model for get activity endpoint."""
-
-    activity_id: UUID | None = None
-    draft_id: UUID | None = None
-
-
-class ActivityWebsocketEntries(BaseModel):
-    """Entries data for activity websocket response."""
-
-    pass
-
-
-class ActivityWebsocketResources(BaseModel):
-    """Hydrated resources for activity websocket — selected only."""
-
-    pass
-
-
-class GetActivityWebsocketResponse(InternalResponseBase):
-    """Websocket-facing activity response with hydrated resources."""
-
-    entries: ActivityWebsocketEntries | None = None
-    resources: ActivityWebsocketResources

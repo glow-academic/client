@@ -3,7 +3,6 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -141,55 +140,6 @@ class GetGroupDetailResponse(BaseModel):
     models: list[GroupDetailResourceItem] = Field(default_factory=list)
     agents: list[GroupDetailResourceItem] = Field(default_factory=list)
     profiles: list[GroupDetailResourceItem] = Field(default_factory=list)
-
-
-# =============================================================================
-# WebSocket Types
-# =============================================================================
-
-
-class GetGroupApiRequest(BaseModel):
-    """Request model for get group endpoint."""
-
-    group_id: UUID | None = None
-    draft_id: UUID | None = None
-
-
-class GroupWebsocketEntries(BaseModel):
-    """Entries data for group websocket response."""
-
-    runs: GetRunListViewResponse | None = None
-    group_runs: list[RunViewItem] | None = None
-    messages: list[SearchMessageResponse] | None = None
-    calls: list[SearchCallResponse] | None = None
-
-
-class GroupWebsocketResources(BaseModel):
-    """Hydrated resources for group websocket — selected only."""
-
-    pass
-
-
-class GetGroupWebsocketResponse(BaseModel):
-    """Websocket-facing group response with hydrated resources.
-
-    Uses Any for config chain fields to accept resource fetcher types.
-    """
-
-    systems: list[Any] | None = None
-    agents: list[Any] | None = None
-    models: list[Any] | None = None
-    providers: list[Any] | None = None
-    tools: list[Any] | None = None
-    args: list[Any] | None = None
-    args_outputs: list[Any] | None = None
-    profile: list[Any] | None = None
-    params: BaseModel | None = None
-    resource_system_ids: dict[str, UUID | None] | None = None
-    resource_agent_ids: dict[str, UUID | None] | None = None
-    group_id: UUID | None = None
-    entries: GroupWebsocketEntries | None = None
-    resources: GroupWebsocketResources
 
 
 @dataclass

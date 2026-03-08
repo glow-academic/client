@@ -7,9 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)
@@ -144,31 +142,6 @@ class GetParameterApiResponse(BaseModel):
     flags: ParameterFlagSection | None = None
     departments: ParameterDepartmentSection | None = None
     fields: ParameterFieldSection | None = None
-
-
-# ---------------------------------------------------------------------------
-# Websocket types
-# ---------------------------------------------------------------------------
-
-
-class ParameterWebsocketEntries(BaseModel):
-    draft_parameter: ParameterDraftEntry | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class ParameterWebsocketResources(BaseModel):
-    """Hydrated selected resources for websocket generation context."""
-
-    names: list[ParameterNameResource] | None = None
-    descriptions: list[ParameterDescriptionResource] | None = None
-    flags: list[ParameterFlagConfig] | None = None
-    departments: list[ParameterDepartmentResource] | None = None
-    fields: list[ParameterFieldResource] | None = None
-
-
-class GetParameterWebsocketResponse(InternalResponseBase):
-    entries: ParameterWebsocketEntries | None = None
-    resources: ParameterWebsocketResources
 
 
 # ========== List Endpoint Types ==========
@@ -408,3 +381,14 @@ class DuplicateParameterApiResponse(BaseModel):
     success: bool
     parameter_id: UUID
     message: str
+
+
+# ========== Export Endpoint Types ==========
+
+
+class ExportParameterApiResponse(BaseModel):
+    """Response model for export parameter endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

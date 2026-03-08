@@ -362,18 +362,6 @@ async def get_provider_client(
 
 
 # ---------------------------------------------------------------------------
-# get_provider_websocket — stub (to be rewritten with infra functions)
-# ---------------------------------------------------------------------------
-
-
-async def get_provider_websocket(*args: object, **kwargs: object) -> None:
-    """Stub — will be rewritten to use composable infra functions."""
-    raise NotImplementedError(
-        "get_provider_websocket needs to be rewritten with infra functions"
-    )
-
-
-# ---------------------------------------------------------------------------
 # Route handler
 # ---------------------------------------------------------------------------
 

@@ -497,18 +497,3 @@ async def practice_get(
             sql_params=sql_params,
             request=http_request,
         )
-
-
-# =============================================================================
-# Websocket stub (referenced by socket registry)
-# =============================================================================
-
-
-async def get_practice_websocket(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    chat_entry_id: UUID,
-    **kwargs: Any,
-) -> dict[str, Any]:
-    """Stub — websocket handler for practice generation. To be implemented."""
-    return {}

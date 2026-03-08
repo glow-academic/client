@@ -11,9 +11,6 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-
 # =============================================================================
 # GET Request / Response
 # =============================================================================
@@ -24,30 +21,6 @@ class GetInvocationApiRequest(BaseModel):
 
     benchmark_entry_id: UUID
     draft_id: UUID | None = None
-
-
-# =============================================================================
-# WebSocket Types
-# =============================================================================
-
-
-class InvocationWebsocketEntries(BaseModel):
-    """Views data for invocation websocket response."""
-
-    runs: GetRunListViewResponse | None = None
-
-
-class InvocationWebsocketResources(BaseModel):
-    """Hydrated resources for invocation websocket — selected only."""
-
-    pass
-
-
-class GetInvocationWebsocketResponse(InternalResponseBase):
-    """Websocket-facing invocation response with hydrated resources."""
-
-    entries: InvocationWebsocketEntries | None = None
-    resources: InvocationWebsocketResources
 
 
 # =============================================================================
@@ -166,41 +139,6 @@ class GetSuiteResponse(BaseModel):
     reasoning_levels: SuiteReasoningLevelSection | None = None
     qualities: SuiteQualitySection | None = None
     voices: SuiteVoiceSection | None = None
-
-
-# --- Websocket types (mirrors training bundle websocket pattern) ---
-
-
-class SuiteWebsocketResources(BaseModel):
-    """Hydrated resources for bundle websocket — selected only."""
-
-    names: list[Any] | None = None
-    descriptions: list[Any] | None = None
-    values: list[Any] | None = None
-    flags: list[Any] | None = None
-    departments: list[Any] | None = None
-    keys: list[Any] | None = None
-    endpoints: list[Any] | None = None
-    modalities: list[Any] | None = None
-    temperature_levels: list[Any] | None = None
-    pricing: list[Any] | None = None
-    reasoning_levels: list[Any] | None = None
-    qualities: list[Any] | None = None
-    voices: list[Any] | None = None
-
-
-class SuiteWebsocketEntries(BaseModel):
-    """Draft view for bundle websocket consumers."""
-
-    draft_suite: Any | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class GetSuiteWebsocketResponse(InternalResponseBase):
-    """Websocket-facing bundle response with hydrated resources."""
-
-    entries: SuiteWebsocketEntries | None = None
-    resources: SuiteWebsocketResources
 
 
 # =============================================================================

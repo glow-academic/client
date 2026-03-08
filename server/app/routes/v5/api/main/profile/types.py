@@ -7,9 +7,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)
@@ -159,29 +157,6 @@ class GetProfileApiResponse(BaseModel):
     flags: ProfileFlagSection | None = None
     departments: ProfileDepartmentSection | None = None
     roles: ProfileRoleSection | None = None
-
-
-# ---------------------------------------------------------------------------
-# Websocket types
-# ---------------------------------------------------------------------------
-
-
-class ProfileWebsocketEntries(BaseModel):
-    draft_profile: ProfileDraftEntry | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class ProfileWebsocketResources(BaseModel):
-    names: list[ProfileNameResource] | None = None
-    emails: list[ProfileEmailResource] | None = None
-    request_limits: list[ProfileRequestLimitResource] | None = None
-    flags: list[ProfileFlagConfig] | None = None
-    departments: list[ProfileDepartmentResource] | None = None
-
-
-class GetProfileWebsocketResponse(InternalResponseBase):
-    entries: ProfileWebsocketEntries | None = None
-    resources: ProfileWebsocketResources
 
 
 # ========== Shared Create/Update Types ==========
@@ -390,6 +365,17 @@ class PatchProfileDraftApiResponse(BaseModel):
 
 
 # ========== List Endpoint Types ==========
+
+
+# ========== Export Endpoint Types ==========
+
+
+class ExportProfileApiResponse(BaseModel):
+    """Response model for export profile endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
 
 
 class ListProfilesApiProfile(BaseModel):

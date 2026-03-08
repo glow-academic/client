@@ -271,6 +271,17 @@ class PatchDepartmentDraftApiResponse(BaseModel):
     message: str
 
 
+# ========== Export Endpoint Types ==========
+
+
+class ExportDepartmentApiResponse(BaseModel):
+    """Response model for export department endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
 class ListDepartmentApiDepartment(BaseModel):
     department_id: UUID | None = None
     name: str | None = None

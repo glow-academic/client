@@ -10,9 +10,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 from app.routes.v5.tools.resources.personas.types import GetPersonaResponse
 
 # =============================================================================
@@ -222,62 +220,6 @@ class GetCohortApiResponse(BaseModel):
     simulation_availability: CohortSimulationAvailabilitySection | None = None
     profiles: CohortProfileSection | None = None
     profile_personas: CohortProfilePersonaSection | None = None
-    personas: list[GetPersonaResponse] | None = None
-
-
-class GetCohortWebsocketResponse(InternalResponseBase):
-    """Minimal response for WebSocket handlers (get_cohort_websocket).
-
-    Contains only what's needed for AI generation:
-    - Group ID (for existing group context)
-    - Optional draft view
-    - resource_agent_ids mapping
-    - selected resources plus config resources for Jinja context
-    """
-
-    entries: "CohortWebsocketEntries | None" = None
-    resources: "CohortWebsocketResources"
-
-
-class CohortDraftEntry(BaseModel):
-    """Cohort draft entry for websocket."""
-
-    draft_id: UUID | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    version: int | None = None
-    generated: bool | None = None
-    mcp: bool | None = None
-    active: bool | None = None
-    group_id: UUID | None = None
-    name_ids: list[UUID] | None = None
-    description_ids: list[UUID] | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    simulation_position_ids: list[UUID] | None = None
-    simulation_availability_ids: list[UUID] | None = None
-    profile_ids: list[UUID] | None = None
-    profile_persona_ids: list[UUID] | None = None
-
-
-class CohortWebsocketEntries(BaseModel):
-    draft_cohort: CohortDraftEntry | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class CohortWebsocketResources(BaseModel):
-    """Hydrated websocket resources — selected resources only plus config chain."""
-
-    names: list[CohortNameResource] | None = None
-    descriptions: list[CohortDescriptionResource] | None = None
-    flags: list[CohortFlagConfig] | None = None
-    departments: list[CohortDepartment] | None = None
-    simulations: list[CohortSimulation] | None = None
-    simulation_positions: list[CohortSimulationPosition] | None = None
-    simulation_availability: list[CohortSimulationAvailability] | None = None
-    profiles: list[CohortProfile] | None = None
-    profile_personas: list[CohortProfilePersona] | None = None
     personas: list[GetPersonaResponse] | None = None
 
 

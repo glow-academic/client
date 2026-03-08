@@ -20,9 +20,7 @@ GAPs / TODOs:
           Consider extracting into build_agent_dispatch for full purity.
   - TODO: _fetch_artifact_types and _fetch_entry_types are I/O functions
           kept here. Could move to a data_fetchers.py module.
-  - resolve_websocket_context is wired as dual-path: used when ARTIFACT_RESOLVERS
-          has the artifact type, falls back to legacy fetcher otherwise.
-          Add more ArtifactResolverConfigs to expand coverage.
+  - resolve_websocket_context is the sole context resolution path.
 """
 
 from __future__ import annotations
@@ -33,7 +31,7 @@ from typing import Any
 
 from app.infra.generation import convert_tools_to_dict
 from app.infra.generation.media_context import wrap_media_entries
-from app.infra.globals import get_internal_sio, get_pool, get_redis_client
+from app.infra.globals import get_internal_sio, get_redis_client
 from app.infra.types import ArtifactRequest
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.init_run_trackers import init_run_trackers
@@ -45,32 +43,26 @@ from app.infra.websocket.setup_generation_test import (
 )
 from app.infra.websocket.socket_event import SocketEvent, flush_events, internal_event
 from app.infra.websocket.typed_emit import emit_to_internal
-from app.infra.websocket_context import ARTIFACT_RESOLVERS, resolve_websocket_context
+from app.infra.websocket_context import resolve_websocket_context
 from app.routes.v5.socket.client.registry import REGISTRY
 from app.routes.v5.socket.client.types import GeneratePayload
 from app.routes.v5.socket.internal.generate_artifact import GenerateArtifactPayload
 from app.routes.v5.socket.internal.generation_types import GenerationStartedData
 from app.routes.v5.socket.internal.prepare_pipeline import (
     build_agent_dispatch,
-    build_agent_groups,
     build_agent_groups_from_scores,
     build_jinja_from_ws_ctx,
-    build_namespaced_context,
     build_resource_agent_ids_from_scores,
     compute_all_artifact_types,
     compute_createable_resources,
-    dump_fetcher_result,
     enrich_tools_with_args,
     enrich_tools_with_args_outputs,
     resolve_agent_config,
     validate_payload,
 )
 from app.routes.v5.socket.types import GenerateErrorApiRequest
-from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.instructions.get import get_instructions
-from app.routes.v5.tools.resources.models.get import get_models
 from app.routes.v5.tools.resources.prompts.get import get_prompts
-from app.routes.v5.tools.resources.providers.get import get_providers
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -99,31 +91,18 @@ async def _emit_error(
 
 
 async def _fetch_artifact_types(
-    artifact_types: list[Any],
-    profile_id: uuid.UUID,
-    artifact_id: uuid.UUID | None,
-    draft_id: uuid.UUID | None,
-    pool: Any,
+    artifact_types: list[Any],  # noqa: ARG001
+    profile_id: uuid.UUID,  # noqa: ARG001
+    artifact_id: uuid.UUID | None,  # noqa: ARG001
+    draft_id: uuid.UUID | None,  # noqa: ARG001
+    pool: Any,  # noqa: ARG001
 ) -> dict[str, dict[str, dict[str, Any]]]:
-    """Fetch data for each artifact_type item. Returns {name: {operation: dumped}}."""
-    results: dict[str, dict[str, dict[str, Any]]] = {}
-    for item in artifact_types:
-        config = REGISTRY.get(item.name)
-        if not config or not config.fetcher or item.operation != "get":
-            continue
-        try:
-            fetcher_pool = pool if config.requires_pool else None
-            result = await config.fetcher(
-                profile_id, artifact_id, draft_id, fetcher_pool
-            )
-            results.setdefault(item.name, {})[item.operation] = dump_fetcher_result(
-                result
-            )
-        except Exception as e:
-            logger.warning(
-                f"Failed to fetch artifact_type '{item.name}.{item.operation}': {e}"
-            )
-    return results
+    """Fetch data for each artifact_type item. Returns {name: {operation: dumped}}.
+
+    Legacy fetcher path removed — artifact data is now resolved via
+    resolve_websocket_context in the main handler.
+    """
+    return {}
 
 
 async def _fetch_entry_types(
@@ -249,205 +228,74 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
         redis = get_redis_client()
         bypass_cache = True
 
-        use_ws_ctx = artifact_type in ARTIFACT_RESOLVERS
-
-        if use_ws_ctx:
-            # ── New path: resolve_websocket_context ──────────────────────
-            async with get_db_connection() as ctx_conn:
-                ws_ctx = await resolve_websocket_context(
-                    ctx_conn,
-                    redis,
-                    profile_id=profile_id,
-                    requests=[
-                        ArtifactRequest(
-                            artifact_type=artifact_type,
-                            artifact_id=artifact_id,
-                            group_id=group_id,
-                            draft_id=payload.draft_id,
-                        )
-                    ],
-                    bypass_cache=bypass_cache,
-                )
-
-            if ws_ctx is None:
-                await _emit_error(sid, "Failed to resolve context.", artifact_type)
-                return
-
-            if not ws_ctx.agents:
-                await _emit_error(
-                    sid, "No system/agent configuration found.", artifact_type
-                )
-                return
-
-            # Lookups from ws_ctx (already resolved + deduped)
-            agents_by_id = {a.id: a for a in ws_ctx.agents}
-            models_by_id = {m.id: m for m in ws_ctx.models}
-            providers_by_id = {p.id: p for p in ws_ctx.providers}
-            config_agents = ws_ctx.agents
-
-            # Agent groups from tool scores
-            agent_groups = build_agent_groups_from_scores(
-                resource_types=resource_types,
-                scores=ws_ctx.scores,
-            )
-
-            # resource_agent_ids for metadata (image_agent_id, video_agent_id)
-            resource_agent_ids = build_resource_agent_ids_from_scores(ws_ctx.scores)
-
-            # Jinja context from ws_ctx artifacts
-            entry_results: dict[str, dict[str, Any]] | None = None
-            if payload.entry_types:
-                async with get_db_connection() as entry_conn:
-                    entry_results = await _fetch_entry_types(
-                        payload.entry_types, entry_conn
+        # Resolve context via composable websocket context resolver
+        async with get_db_connection() as ctx_conn:
+            ws_ctx = await resolve_websocket_context(
+                ctx_conn,
+                redis,
+                profile_id=profile_id,
+                requests=[
+                    ArtifactRequest(
+                        artifact_type=artifact_type,
+                        artifact_id=artifact_id,
+                        group_id=group_id,
+                        draft_id=payload.draft_id,
                     )
-
-            jinja_context_base = build_jinja_from_ws_ctx(ws_ctx, entry_results)
-            wrap_media_entries(jinja_context_base)
-
-            # Tools from ws_ctx (already resolved)
-            config_tools = ws_ctx.tools
-            all_tool_dicts = convert_tools_to_dict(config_tools)
-            all_tool_dicts = enrich_tools_with_args(
-                all_tool_dicts, config_tools, ws_ctx.args
+                ],
+                bypass_cache=bypass_cache,
             )
-            all_tool_dicts = enrich_tools_with_args_outputs(
-                all_tool_dicts, config_tools, ws_ctx.args_outputs
+
+        if ws_ctx is None:
+            await _emit_error(sid, "Failed to resolve context.", artifact_type)
+            return
+
+        if not ws_ctx.agents:
+            await _emit_error(
+                sid, "No system/agent configuration found.", artifact_type
             )
-            createable_resources = compute_createable_resources(config_tools)
-            all_artifact_types = compute_all_artifact_types(all_tool_dicts)
+            return
 
-            # Prompts/instructions lookups (no per-agent fetch needed)
-            prompts_by_id = {p.id: p for p in ws_ctx.prompts}
-            instructions_by_id = {i.id: i for i in ws_ctx.instructions}
+        # Lookups from ws_ctx (already resolved + deduped)
+        agents_by_id = {a.id: a for a in ws_ctx.agents}
+        models_by_id = {m.id: m for m in ws_ctx.models}
+        providers_by_id = {p.id: p for p in ws_ctx.providers}
+        config_agents = ws_ctx.agents
 
-        else:
-            # ── Legacy path: registry fetcher ────────────────────────────
-            pool = get_pool()
-            if not pool:
-                raise RuntimeError("Database pool not initialized")
+        # Agent groups from tool scores
+        agent_groups = build_agent_groups_from_scores(
+            resource_types=resource_types,
+            scores=ws_ctx.scores,
+        )
 
-            if not config.fetcher:
-                await _emit_error(
-                    sid, f"No fetcher configured for {artifact_type}", artifact_type
+        # resource_agent_ids for metadata (image_agent_id, video_agent_id)
+        resource_agent_ids = build_resource_agent_ids_from_scores(ws_ctx.scores)
+
+        # Jinja context from ws_ctx artifacts
+        entry_results: dict[str, dict[str, Any]] | None = None
+        if payload.entry_types:
+            async with get_db_connection() as entry_conn:
+                entry_results = await _fetch_entry_types(
+                    payload.entry_types, entry_conn
                 )
-                return
 
-            result: Any = await config.fetcher(
-                profile_id, artifact_id, payload.draft_id, pool
-            )
+        jinja_context_base = build_jinja_from_ws_ctx(ws_ctx, entry_results)
+        wrap_media_entries(jinja_context_base)
 
-            # Resolve systems → agents → models → providers
-            config_systems = getattr(result, "systems", None) or []
-            config_agents = getattr(result, "agents", None) or []
+        # Tools from ws_ctx (already resolved)
+        config_tools = ws_ctx.tools
+        all_tool_dicts = convert_tools_to_dict(config_tools)
+        all_tool_dicts = enrich_tools_with_args(
+            all_tool_dicts, config_tools, ws_ctx.args
+        )
+        all_tool_dicts = enrich_tools_with_args_outputs(
+            all_tool_dicts, config_tools, ws_ctx.args_outputs
+        )
+        createable_resources = compute_createable_resources(config_tools)
+        all_artifact_types = compute_all_artifact_types(all_tool_dicts)
 
-            if config_systems:
-                system_agent_ids = {
-                    aid
-                    for s in config_systems
-                    for aid in (getattr(s, "agent_ids", None) or [])
-                    if aid
-                }
-                if system_agent_ids:
-                    async with pool.acquire() as c:
-                        config_agents = await get_agents(
-                            c, list(system_agent_ids), redis, bypass_cache
-                        )
-
-            if not config_agents:
-                await _emit_error(
-                    sid, "No system/agent configuration found.", artifact_type
-                )
-                return
-
-            agents_by_id = {a.id: a for a in config_agents if a.id}
-            config_tools_all = getattr(result, "tools", None) or []
-            tools_by_id = {t.id: t for t in config_tools_all if getattr(t, "id", None)}
-
-            model_ids = list({a.model_id for a in config_agents if a.model_id})
-            config_models = []
-            if model_ids:
-                async with pool.acquire() as c:
-                    config_models = await get_models(c, model_ids, redis, bypass_cache)
-            models_by_id = {m.id: m for m in config_models if m.id}
-
-            provider_ids = list(
-                {
-                    m.provider_id
-                    for m in config_models
-                    if getattr(m, "provider_id", None) is not None
-                }
-            )
-            config_providers = []
-            if provider_ids:
-                async with pool.acquire() as c:
-                    config_providers = await get_providers(
-                        c, provider_ids, redis, bypass_cache=bypass_cache
-                    )
-            providers_by_id = {
-                p.id: p for p in config_providers if getattr(p, "id", None)
-            }
-
-            # Build agent groups
-            resource_system_ids: dict[str, uuid.UUID] = (
-                getattr(result, "resource_system_ids", {}) or {}
-            )
-            resource_agent_ids: dict[str, uuid.UUID] = result.resource_agent_ids or {}
-            systems_by_id = {s.id: s for s in config_systems if s.id}
-
-            agent_groups = build_agent_groups(
-                resource_types=resource_types,
-                config_systems=config_systems,
-                config_agents=config_agents,
-                agents_by_id=agents_by_id,
-                tools_by_id=tools_by_id,
-                systems_by_id=systems_by_id,
-                resource_system_ids=resource_system_ids,
-                resource_agent_ids=resource_agent_ids,
-                requested_modality=payload.modality or "call",
-            )
-
-            # Jinja context
-            artifact_results = await _fetch_artifact_types(
-                payload.artifact_types,
-                profile_id,
-                artifact_id,
-                payload.draft_id,
-                pool,
-            )
-            if artifact_type not in artifact_results:
-                artifact_results[artifact_type] = {"get": dump_fetcher_result(result)}
-
-            entry_results = None
-            if payload.entry_types:
-                async with get_db_connection() as entry_conn:
-                    entry_results = await _fetch_entry_types(
-                        payload.entry_types, entry_conn
-                    )
-
-            jinja_context_base = build_namespaced_context(
-                artifact_results, entry_results
-            )
-            wrap_media_entries(jinja_context_base)
-
-            # Enrich tools
-            config_tools = getattr(result, "tools", None) or []
-            config_args = getattr(result, "args", None) or []
-            config_args_outputs = getattr(result, "args_outputs", None) or []
-
-            all_tool_dicts = convert_tools_to_dict(config_tools)
-            all_tool_dicts = enrich_tools_with_args(
-                all_tool_dicts, config_tools, config_args
-            )
-            all_tool_dicts = enrich_tools_with_args_outputs(
-                all_tool_dicts, config_tools, config_args_outputs
-            )
-            createable_resources = compute_createable_resources(config_tools)
-            all_artifact_types = compute_all_artifact_types(all_tool_dicts)
-
-            # No pre-resolved prompts/instructions in legacy path
-            prompts_by_id = None
-            instructions_by_id = None
+        # Prompts/instructions lookups (no per-agent fetch needed)
+        prompts_by_id = {p.id: p for p in ws_ctx.prompts}
+        instructions_by_id = {i.id: i for i in ws_ctx.instructions}
 
         # --- Step 8: Create run (all identity context already resolved) ---
         agent_ids_for_run = [aid for aid in agent_groups if aid]

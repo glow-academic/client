@@ -1,9 +1,8 @@
 """Attempt detail endpoint - POST /attempt/get.
 
-Three-layer BFF pattern:
+Two-layer BFF pattern:
 - get_attempt_internal(): Core data fetcher, returns AttemptInternalData
 - get_attempt_client(): HTTP response layer with caching
-- get_attempt_websocket(): WebSocket response layer (stub)
 
 Uses composable context resolver with black-box tools.
 """
@@ -36,14 +35,12 @@ from app.routes.v5.api.main.attempt.types import (
     AttemptEntries,
     AttemptInternalData,
     AttemptResources,
-    AttemptWebsocketResources,
     ChatData,
     ContentEntry,
     DocumentEntry,
     FeedbackEntry,
     GetAttemptDetailRequest,
     GetAttemptDetailResponse,
-    GetAttemptWebsocketResponse,
     GradeData,
     GradingStateData,
     HighlightEntry,
@@ -980,7 +977,7 @@ async def get_attempt_internal(
 
 
 # =============================================================================
-# Layer 2a: HTTP client response (with caching)
+# Layer 2: HTTP client response (with caching)
 # =============================================================================
 
 
@@ -1061,63 +1058,6 @@ async def get_attempt_client(
     )
 
     return api_response, False
-
-
-# =============================================================================
-# Layer 2b: WebSocket response (stub)
-# =============================================================================
-
-
-async def get_attempt_websocket(
-    conn: asyncpg.Connection,
-    profile_id: UUID,
-    attempt_id: UUID,
-    bypass_cache: bool = False,
-) -> GetAttemptWebsocketResponse:
-    """WebSocket response layer — stub.
-
-    Returns entries + resources from internal data.
-    Config chain resolution and tools/args/profiles are stubbed out.
-    """
-    data = await get_attempt_internal(
-        conn=conn,
-        profile_id=profile_id,
-        attempt_id=attempt_id,
-        bypass_cache=bypass_cache,
-    )
-
-    if not data.attempt_exists or data.access_denied:
-        return GetAttemptWebsocketResponse()
-
-    rp = data.resources_payload
-    ws_resources = AttemptWebsocketResources(
-        scenarios=list(rp.scenarios.values()) if rp.scenarios else None,
-        personas=list(rp.personas.values()) if rp.personas else None,
-        documents=list(rp.documents.values()) if rp.documents else None,
-        images=list(rp.images.values()) if rp.images else None,
-        videos=list(rp.videos.values()) if rp.videos else None,
-        objectives=list(rp.objectives.values()) if rp.objectives else None,
-        questions=list(rp.questions.values()) if rp.questions else None,
-        options=list(rp.options.values()) if rp.options else None,
-        problem_statements=list(rp.problem_statements.values())
-        if rp.problem_statements
-        else None,
-        rubrics=list(rp.rubrics.values()) if rp.rubrics else None,
-        standard_groups=list(rp.standard_groups.values())
-        if rp.standard_groups
-        else None,
-        standards=list(rp.standards.values()) if rp.standards else None,
-    )
-
-    return GetAttemptWebsocketResponse(
-        entries=AttemptEntries(
-            attempt=[data.attempt_item] if data.attempt_item else None,
-            attempt_chat=data.chats,
-            attempt_message=data.messages,
-        ),
-        resources=ws_resources,
-        params=GetAttemptDetailRequest(attempt_id=attempt_id),
-    )
 
 
 # =============================================================================

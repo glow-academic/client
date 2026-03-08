@@ -349,18 +349,6 @@ async def get_tool_client(
 
 
 # ---------------------------------------------------------------------------
-# get_tool_websocket — stub (to be rewritten with infra functions)
-# ---------------------------------------------------------------------------
-
-
-async def get_tool_websocket(*args: object, **kwargs: object) -> None:
-    """Stub — will be rewritten to use composable infra functions."""
-    raise NotImplementedError(
-        "get_tool_websocket needs to be rewritten with infra functions"
-    )
-
-
-# ---------------------------------------------------------------------------
 # Route handler
 # ---------------------------------------------------------------------------
 

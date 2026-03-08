@@ -14,13 +14,10 @@ from app.routes.v5.api.main.leaderboard.permissions import (
     build_leaderboard_sections_v3,
 )
 from app.routes.v5.api.main.leaderboard.types import (
-    GetLeaderboardWebsocketResponse,
     LeaderboardProfileResource,
     LeaderboardRequest,
     LeaderboardResources,
     LeaderboardResponse,
-    LeaderboardWebsocketEntries,
-    LeaderboardWebsocketResources,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -28,25 +25,6 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
-
-
-# ---------------------------------------------------------------------------
-# Websocket stub
-# ---------------------------------------------------------------------------
-
-
-async def get_leaderboard_websocket(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    leaderboard_id: UUID | None = None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> GetLeaderboardWebsocketResponse:
-    """Stub — websocket consumers will be updated separately."""
-    return GetLeaderboardWebsocketResponse(
-        entries=LeaderboardWebsocketEntries(),
-        resources=LeaderboardWebsocketResources(),
-    )
 
 
 # ---------------------------------------------------------------------------

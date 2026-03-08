@@ -11,9 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)
@@ -207,36 +205,6 @@ class DocumentResources(BaseModel):
 
     resources: DocumentResourceBucket | None = None
     current: DocumentResourceBucket | None = None
-
-
-# ========== Websocket Types ==========
-
-
-class DocumentWebsocketEntries(BaseModel):
-    """Optional websocket entries payload."""
-
-    draft_document: DocumentDraftEntry | None = None
-    runs: GetRunListViewResponse | None = None
-
-
-class DocumentWebsocketResources(BaseModel):
-    """Hydrated websocket resources: selected document + config resources."""
-
-    names: list[DocumentNameResource] | None = None
-    descriptions: list[DocumentDescriptionResource] | None = None
-    flags: list[DocumentFlagConfig] | None = None
-    departments: list[DocumentDepartmentResource] | None = None
-    fields: list[DocumentParameterFieldResource] | None = None
-    uploads: list[DocumentFileResource] | None = None
-    images: list[DocumentImageResource] | None = None
-    texts: list[DocumentTextResource] | None = None
-
-
-class GetDocumentWebsocketResponse(InternalResponseBase):
-    """Minimal response for document websocket generation handlers."""
-
-    entries: DocumentWebsocketEntries | None = None
-    resources: DocumentWebsocketResources
 
 
 # ========== List Endpoint Types ==========
@@ -605,3 +573,14 @@ class PatchDocumentDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+
+
+# ========== Export Endpoint Types ==========
+
+
+class ExportDocumentApiResponse(BaseModel):
+    """Response model for export document endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

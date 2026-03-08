@@ -425,3 +425,14 @@ class DuplicateSettingApiResponse(BaseModel):
     success: bool
     setting_id: UUID
     message: str
+
+
+# ========== Export Endpoint Types ==========
+
+
+class ExportSettingApiResponse(BaseModel):
+    """Response model for export setting endpoint."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

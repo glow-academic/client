@@ -497,18 +497,3 @@ async def home_get(
             sql_params=sql_params,
             request=http_request,
         )
-
-
-# =============================================================================
-# Websocket stub (referenced by socket registry)
-# =============================================================================
-
-
-async def get_home_websocket(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    chat_entry_id: UUID,
-    **kwargs: Any,
-) -> dict[str, Any]:
-    """Stub — websocket handler for home generation. To be implemented."""
-    return {}
