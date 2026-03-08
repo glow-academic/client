@@ -34,10 +34,10 @@ from app.routes.v5.socket.types import MESSAGE_ENTRY_TYPES
 from app.routes.v5.tools.entries.attempt_chat.get import get_attempt_chats
 from app.routes.v5.tools.entries.attempt_message.refresh import refresh_attempt_message
 from app.routes.v5.tools.entries.attempt_message_tree.create import (
-    create_attempt_message_tree_entry_internal,
+    create_attempt_message_tree,
 )
 from app.routes.v5.tools.entries.attempt_message_tree.refresh import (
-    refresh_attempt_message_tree_internal,
+    refresh_attempt_message_tree,
 )
 from app.routes.v5.tools.entries.messages.create import create_message
 from app.routes.v5.tools.entries.messages.search import search_messages
@@ -198,17 +198,19 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
             if user_message_id:
                 # If forking from an existing message, link parent -> user
                 if payload.parent_message_id:
-                    await create_attempt_message_tree_entry_internal(
+                    await create_attempt_message_tree(
                         conn,
                         parent_id=payload.parent_message_id,
                         child_id=user_message_id,
+                        session_id=uuid.UUID(session_id_str),
                     )
 
                 # Always link user -> assistant
-                await create_attempt_message_tree_entry_internal(
+                await create_attempt_message_tree(
                     conn,
                     parent_id=user_message_id,
                     child_id=assistant_message_id,
+                    session_id=uuid.UUID(session_id_str),
                 )
 
         await internal_sio.emit(
@@ -224,7 +226,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
         # Step 5b: Refresh MVs so generate_prepare sees the new message
         async with get_db_connection() as conn:
             await refresh_attempt_message(conn)
-            await refresh_attempt_message_tree_internal(conn)
+            await refresh_attempt_message_tree(conn)
 
         # Step 5c: Invalidate attempt caches so generate_prepare fetches fresh data
         await invalidate_tags(["attempt", "messages"], redis=get_redis_client())

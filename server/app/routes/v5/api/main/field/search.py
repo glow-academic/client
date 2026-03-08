@@ -37,7 +37,6 @@ class SearchFieldApiRequest(BaseModel):
     page_offset: int | None = 0
 
 
-@router.post("/list", response_model=ListFieldApiResponse)
 @router.post("/search", response_model=ListFieldApiResponse)
 async def search_field(
     request: SearchFieldApiRequest,

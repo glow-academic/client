@@ -12,6 +12,11 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.infra.websocket.test_events_impl import test_error_impl as _test_error_impl
+from app.infra.websocket.test_events_impl import test_next_impl as _test_next_impl
+from app.infra.websocket.test_events_impl import (
+    test_progress_impl as _test_progress_impl,
+    test_run_done_impl as _test_run_done_impl,
+)
 from app.infra.websocket.attempt_events_impl import (
     attempt_next_impl,
     audio_delta_impl,
@@ -491,3 +496,183 @@ class TestTestErrorImpl:
         emit, events = recording_emit()
         await _test_error_impl({"sid": "s1"}, emit=emit)
         assert events[0].data["message"] == "Test error"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# test_progress_impl
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.asyncio
+class TestProgressImpl:
+    async def test_no_invocation_id_emits_nothing(self):
+        emit, events = recording_emit()
+        await _test_progress_impl({"sid": "s1"}, emit=emit)
+        assert events == []
+
+    async def test_emits_test_grade_start(self):
+        emit, events = recording_emit()
+        await _test_progress_impl(
+            {
+                "sid": "s1",
+                "invocation_id": "inv-1",
+                "run_id": "r1",
+                "current_run": 2,
+                "total_runs": 5,
+                "message": "Grading...",
+            },
+            emit=emit,
+        )
+        assert len(events) == 1
+        assert events[0].event == "test_grade_start"
+        assert events[0].data["invocation_id"] == "inv-1"
+        assert events[0].data["current_run"] == 2
+        assert events[0].data["total_runs"] == 5
+        assert events[0].data["message"] == "Grading..."
+        assert events[0].data["rooms"] == ["s1", "test_inv-1"]
+
+    async def test_fallback_to_chat_id(self):
+        emit, events = recording_emit()
+        await _test_progress_impl({"sid": "s1", "chat_id": "chat-1"}, emit=emit)
+        assert events[0].data["invocation_id"] == "chat-1"
+
+    async def test_no_sid_empty_rooms(self):
+        emit, events = recording_emit()
+        await _test_progress_impl({"invocation_id": "inv-1"}, emit=emit)
+        assert events[0].data["rooms"] == []
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# test_run_done_impl
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.asyncio
+class TestRunDoneImpl:
+    async def test_no_invocation_id_emits_nothing(self):
+        emit, events = recording_emit()
+        await _test_run_done_impl({"sid": "s1"}, emit=emit)
+        assert events == []
+
+    async def test_emits_test_run_complete(self):
+        emit, events = recording_emit()
+        await _test_run_done_impl(
+            {
+                "sid": "s1",
+                "invocation_id": "inv-1",
+                "run_id": "r1",
+                "original_run_resource_id": "orig-1",
+                "tool_calls": [{"name": "tool1"}],
+                "current_run": 2,
+                "total_runs": 5,
+            },
+            emit=emit,
+        )
+        assert len(events) == 1
+        assert events[0].event == "test_run_complete"
+        assert events[0].data["invocation_id"] == "inv-1"
+        assert events[0].data["run_id"] == "r1"
+        assert events[0].data["original_run_resource_id"] == "orig-1"
+        assert events[0].data["tool_calls"] == [{"name": "tool1"}]
+        assert events[0].data["current_run"] == 2
+        assert events[0].data["total_runs"] == 5
+        assert events[0].data["remaining_runs"] == 3
+        assert events[0].data["rooms"] == ["s1", "test_inv-1"]
+
+    async def test_defaults_current_and_total(self):
+        emit, events = recording_emit()
+        await _test_run_done_impl(
+            {"sid": "s1", "invocation_id": "inv-1"}, emit=emit
+        )
+        assert events[0].data["current_run"] == 1
+        assert events[0].data["total_runs"] == 1
+        assert events[0].data["remaining_runs"] == 0
+
+    async def test_no_run_id_is_none(self):
+        emit, events = recording_emit()
+        await _test_run_done_impl(
+            {"sid": "s1", "invocation_id": "inv-1"}, emit=emit
+        )
+        assert events[0].data["run_id"] is None
+        assert events[0].data["original_run_resource_id"] is None
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# test_next_impl
+# ═══════════════════════════════════════════════════════════════════════════
+
+_TEST_GET = "app.routes.v5.api.main.test.get"
+
+
+@pytest.mark.asyncio
+class TestNextImpl:
+    async def test_no_sid_emits_nothing(self):
+        emit, events = recording_emit()
+        await _test_next_impl({"test_id": "123"}, emit=emit, conn=AsyncMock())
+        assert events == []
+
+    async def test_invalid_test_id_emits_error(self):
+        emit, events = recording_emit()
+        await _test_next_impl({"sid": "s1"}, emit=emit, conn=AsyncMock())
+        assert len(events) == 1
+        assert events[0].bus == "client"
+        assert events[0].event == "test_error"
+        assert events[0].room == "s1"
+
+    @patch(f"{_TEST_GET}.get_test_internal")
+    async def test_no_invocations_emits_all_complete(self, mock_get):
+        result = SimpleNamespace(invocations=[])
+        mock_get.return_value = result
+
+        emit, events = recording_emit()
+        await _test_next_impl(
+            {"sid": "s1", "test_id": "019b3be4-36f0-788c-9df2-481eb5917940"},
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert len(events) == 1
+        assert events[0].bus == "client"
+        assert events[0].event == "test_all_complete"
+        assert events[0].data["success"] is True
+        assert events[0].room == "s1"
+
+    @patch(f"{_TEST_GET}.get_test_internal")
+    async def test_pending_invocation_emits_test_run(self, mock_get):
+        inv = SimpleNamespace(
+            invocation_id="inv-1",
+            invocation_completed=False,
+        )
+        result = SimpleNamespace(invocations=[inv])
+        mock_get.return_value = result
+
+        emit, events = recording_emit()
+        await _test_next_impl(
+            {"sid": "s1", "test_id": "019b3be4-36f0-788c-9df2-481eb5917940"},
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert len(events) == 1
+        assert events[0].bus == "internal"
+        assert events[0].event == "test_run"
+        assert events[0].data["sid"] == "s1"
+        assert events[0].data["invocation_id"] == "inv-1"
+
+    @patch(f"{_TEST_GET}.get_test_internal")
+    async def test_all_completed_emits_all_complete(self, mock_get):
+        inv1 = SimpleNamespace(invocation_id="inv-1", invocation_completed=True)
+        inv2 = SimpleNamespace(invocation_id="inv-2", invocation_completed=True)
+        result = SimpleNamespace(invocations=[inv1, inv2])
+        mock_get.return_value = result
+
+        emit, events = recording_emit()
+        await _test_next_impl(
+            {"sid": "s1", "test_id": "019b3be4-36f0-788c-9df2-481eb5917940"},
+            emit=emit,
+            conn=AsyncMock(),
+        )
+        assert len(events) == 1
+        assert events[0].bus == "client"
+        assert events[0].event == "test_all_complete"
+        assert events[0].data["invocation_id"] == "inv-2"
+        assert events[0].data["total_runs"] == 2
+        assert events[0].data["success"] is True

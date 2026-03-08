@@ -177,16 +177,18 @@ async def log_metrics_snapshot() -> None:
         # Write to database
         async with _db_pool.acquire() as conn:
             async with conn.transaction():
-                from app.routes.metrics.snapshot import log_metrics_snapshot
+                from app.routes.v5.tools.entries.metrics.create import (
+                    create_metrics_entry_internal,
+                )
 
-                await log_metrics_snapshot(
-                    ts,
-                    requests_total,
-                    errors_total,
-                    avg_latency_ms,
-                    cpu_percent,
-                    memory_bytes,
+                await create_metrics_entry_internal(
                     conn,
+                    ts=ts.isoformat(),
+                    requests_total=requests_total,
+                    errors_total=errors_total,
+                    avg_latency_ms=avg_latency_ms,
+                    cpu_percent=cpu_percent,
+                    memory_bytes=memory_bytes,
                 )
     except Exception as e:
         # Log error but don't break metrics collection
@@ -220,11 +222,16 @@ async def log_health_checks() -> None:
         # Write to database
         async with _db_pool.acquire() as conn:
             async with conn.transaction():
-                from app.routes.metrics.health import log_service_health
+                from app.routes.v5.tools.entries.health.create import create_health
 
                 for service, result in checks.items():
-                    await log_service_health(
-                        ts, service, result.ok, result.latency_ms, result.error, conn
+                    await create_health(
+                        conn,
+                        service=service,
+                        ok=result.ok,
+                        latency_ms=result.latency_ms,
+                        ts=ts,
+                        error=result.error,
                     )
     except Exception as e:
         # Log error but don't break health endpoint

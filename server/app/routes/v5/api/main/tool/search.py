@@ -36,7 +36,6 @@ class SearchToolApiRequest(BaseModel):
     page_offset: int | None = 0
 
 
-@router.post("/list", response_model=ListToolApiResponse)
 @router.post("/search", response_model=ListToolApiResponse)
 async def search_tool(
     request: SearchToolApiRequest,

@@ -19,7 +19,7 @@ async def get_grants(
 
     rows = await conn.fetch(
         f"""
-        SELECT id, session_id, expires_at, created_at, active, generated, mcp
+        SELECT id, session_id, expires_at, created_at, active, generated, mcp, profiles_id
         FROM {MV_NAME}
         WHERE id = ANY($1)
         """,

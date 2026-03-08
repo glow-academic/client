@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Annotated, cast
+from typing import Annotated
 from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.auth.settings import resolve_settings_theme
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.auth.permissions import derive_theme_tokens
@@ -24,16 +25,9 @@ from app.routes.v5.tools.resources.systems.get import get_systems
 from app.routes.v5.tools.resources.tools.get import get_tools
 from app.sql.types import (
     GetProfileContextApiRequest,
-    GetSettingsThemeDataSqlParams,
-    GetSettingsThemeDataSqlRow,
     QGetProfileContextV4ThemeTokens,
 )
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_SETTINGS_THEME_PATH = (
-    "app/sql/queries/settings/get_settings_theme_data_complete.sql"
-)
 
 router = APIRouter()
 
@@ -78,17 +72,13 @@ async def get_auth_settings_internal(
                 settings_item = items[0]
                 settings_system_ids = list(settings_item.system_ids or [])
 
-    # Step 2: Fetch systems to get agent_ids, and fetch theme in parallel
+    # Step 2: Fetch systems and theme in parallel
     async def fetch_settings_theme():
         if not settings_id:
             return None
         async with pool.acquire() as c:
-            theme_params = GetSettingsThemeDataSqlParams(settings_id_param=settings_id)
-            return cast(
-                GetSettingsThemeDataSqlRow | None,
-                await execute_sql_typed(
-                    c, SQL_SETTINGS_THEME_PATH, params=theme_params
-                ),
+            return await resolve_settings_theme(
+                c, redis, settings_id, bypass_cache=bypass_cache
             )
 
     async def fetch_systems():
@@ -126,7 +116,7 @@ async def get_auth_settings_internal(
             settings_systems=[],
             settings_agents=[],
             settings_tools=[],
-            settings_theme=settings_theme,  # type: ignore[arg-type]
+            settings_theme=settings_theme,
             settings_tokens=QGetProfileContextV4ThemeTokens(),
             artifact_has_generate={},
             agent_tool_entries=[],

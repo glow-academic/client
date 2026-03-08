@@ -37,7 +37,6 @@ class SearchAgentApiRequest(BaseModel):
     page_offset: int | None = 0
 
 
-@router.post("/list", response_model=ListAgentApiResponse)
 @router.post("/search", response_model=ListAgentApiResponse)
 async def search_agent(
     request: SearchAgentApiRequest,

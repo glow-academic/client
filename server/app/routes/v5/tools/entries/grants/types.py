@@ -18,3 +18,4 @@ class GetGrantResponse(BaseModel):
     active: bool
     generated: bool
     mcp: bool
+    profiles_id: UUID | None = None

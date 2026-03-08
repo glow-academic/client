@@ -35,7 +35,6 @@ class SearchRubricApiRequest(BaseModel):
     page_offset: int | None = 0
 
 
-@router.post("/list", response_model=ListRubricApiResponse)
 @router.post("/search", response_model=ListRubricApiResponse)
 async def search_rubric(
     request: SearchRubricApiRequest,

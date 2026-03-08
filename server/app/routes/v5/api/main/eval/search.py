@@ -33,7 +33,6 @@ class SearchEvalApiRequest(BaseModel):
     page_offset: int | None = 0
 
 
-@router.post("/list", response_model=ListEvalApiResponse)
 @router.post("/search", response_model=ListEvalApiResponse)
 async def search_eval(
     request: SearchEvalApiRequest,

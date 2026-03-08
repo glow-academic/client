@@ -22,7 +22,7 @@ async def search_grants(
 
     rows = await conn.fetch(
         f"""
-        SELECT id, session_id, expires_at, created_at, active, generated, mcp
+        SELECT id, session_id, expires_at, created_at, active, generated, mcp, profiles_id
         FROM {source}
         WHERE ($1::uuid[] IS NULL OR session_id = ANY($1))
         ORDER BY created_at DESC

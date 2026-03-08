@@ -6,15 +6,17 @@
 --
 
 CREATE MATERIALIZED VIEW public.grants_mv AS
- SELECT id,
-    session_id,
-    expires_at,
-    created_at,
-    active,
-    generated,
-    mcp
-   FROM public.grants_entry
-  WHERE (active = true)
+ SELECT g.id,
+    g.session_id,
+    g.expires_at,
+    g.created_at,
+    g.active,
+    g.generated,
+    g.mcp,
+    pgc.profiles_id
+   FROM (public.grants_entry g
+     LEFT JOIN public.profiles_grants_connection pgc ON (((pgc.grant_id = g.id) AND (pgc.active = true))))
+  WHERE (g.active = true)
   WITH NO DATA;
 
 

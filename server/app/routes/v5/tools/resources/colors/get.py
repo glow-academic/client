@@ -34,7 +34,7 @@ async def get_colors(
 
     rows = await conn.fetch(
         """
-        SELECT id, name, description, hex_code,
+        SELECT id, name, description, hex_code, type,
                created_at, active, mcp, generated
         FROM colors_resource
         WHERE id = ANY($1)
@@ -49,6 +49,7 @@ async def get_colors(
             name=r["name"],
             description=r["description"],
             hex_code=r["hex_code"],
+            type=r["type"],
             created_at=r["created_at"],
             active=r["active"],
             mcp=r["mcp"],

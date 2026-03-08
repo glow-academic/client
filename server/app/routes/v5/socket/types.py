@@ -23,17 +23,10 @@ from app.infra.websocket.generation_types import (
 # =============================================================================
 # Test domain types
 # =============================================================================
-
-
-class TestAllCompleteEvent(BaseModel):
-    """Server-to-client event: test_all_complete.
-
-    Emitted when all runs are complete.
-    """
-
-    invocation_id: str
-    total_runs: int
-    success: bool = True
+# Re-exported from infra — canonical location is app.infra.websocket.test_types
+from app.infra.websocket.test_types import (
+    TestAllCompleteEvent as TestAllCompleteEvent,
+)
 
 
 # Entry type constants (predefined per handler, not in payload)

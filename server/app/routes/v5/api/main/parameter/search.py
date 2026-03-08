@@ -37,7 +37,6 @@ class SearchParameterApiRequest(BaseModel):
     page_offset: int | None = 0
 
 
-@router.post("/list", response_model=ListParameterApiResponse)
 @router.post("/search", response_model=ListParameterApiResponse)
 async def search_parameter(
     request: SearchParameterApiRequest,

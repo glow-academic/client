@@ -18,6 +18,14 @@ CREATE UNIQUE INDEX grants_mv_id_idx ON public.grants_mv USING btree (id);
 
 --
 
+-- Name: grants_mv_profiles_id_idx; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX grants_mv_profiles_id_idx ON public.grants_mv USING btree (profiles_id);
+
+
+--
+
 -- Name: grants_mv_session_id_idx; Type: INDEX; Schema: public; Owner: -
 --
 

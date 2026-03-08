@@ -22,9 +22,8 @@ from app.routes.v5.socket.internal.attempt.types import (
     AttemptProceedData,
     GenerateRequestData,
 )
-from app.routes.v5.tools.entries.attempt_grade.create import (
-    create_attempt_grade_entry_internal,
-)
+from app.routes.v5.tools.entries.attempt_grade.create import create_attempt_grade
+from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.logging.db_logger import get_logger
@@ -90,14 +89,21 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
                 )
                 run_id = run_result.id
 
-                grade_result = await create_attempt_grade_entry_internal(
+                call_result = await create_call(
                     conn,
-                    {
-                        "chat_id": uuid.UUID(chat_id),
-                        "score": 0,
-                        "passed": False,
-                    },
                     run_id=run_id,
+                    session_id=session_id,
+                )
+                call_id = call_result.id
+
+                grade_result = await create_attempt_grade(
+                    conn,
+                    chat_id=uuid.UUID(chat_id),
+                    call_id=call_id,
+                    run_id=run_id,
+                    time_taken=0,
+                    passed=False,
+                    score=0,
                 )
                 grade_id = grade_result.id
 

@@ -9,13 +9,13 @@ from app.routes.v5.tools.entries.metrics.types import CreateMetricsEntryResponse
 
 async def create_metrics_entry_internal(
     conn: asyncpg.Connection,
-    session_id: UUID,
     ts: str,
     requests_total: int,
     errors_total: int,
     avg_latency_ms: float,
     cpu_percent: float,
     memory_bytes: int,
+    session_id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateMetricsEntryResponse:

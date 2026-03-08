@@ -35,6 +35,13 @@ class RunViewItem(BaseModel):
     pricing: list[RunPricingItem] = Field(default_factory=list)
 
 
+class GetRunListViewResponse(BaseModel):
+    """Response containing run list data."""
+
+    items: list[RunViewItem] = Field(default_factory=list, description="Run data items")
+    total_count: int = Field(default=0, description="Total count before pagination")
+
+
 def _build_pricing_list(item: object) -> list[RunPricingItem]:
     """Build pricing list from flat columns."""
     pricing: list[RunPricingItem] = []

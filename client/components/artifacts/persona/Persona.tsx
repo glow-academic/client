@@ -52,8 +52,10 @@ import type { ResourceType } from "@/lib/resources/types";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SavePersonaIn = InputOf<"/api/v5/artifacts/personas/save", "post">;
-type SavePersonaOut = OutputOf<"/api/v5/artifacts/personas/save", "post">;
+type CreatePersonaIn = InputOf<"/api/v5/artifacts/personas/create", "post">;
+type CreatePersonaOut = OutputOf<"/api/v5/artifacts/personas/create", "post">;
+type UpdatePersonaIn = InputOf<"/api/v5/artifacts/personas/update", "post">;
+type UpdatePersonaOut = OutputOf<"/api/v5/artifacts/personas/update", "post">;
 type PatchPersonaDraftIn = InputOf<"/api/v5/artifacts/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<
   "/api/v5/artifacts/personas/draft",
@@ -85,8 +87,9 @@ export interface PersonaProps {
   personaId?: string;
   // Server-provided data (for server-side rendering)
   personaData?: PersonaData;
-  // Server actions (replaces useMutation)
-  savePersonaAction?: (input: SavePersonaIn) => Promise<SavePersonaOut>;
+  // Server actions — separate create/update for explicit intent
+  createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
+  updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
   patchPersonaDraftAction?: (
     input: PatchPersonaDraftIn,
   ) => Promise<PatchPersonaDraftOut>;
@@ -152,7 +155,8 @@ const PERSONA_RESOURCES: ResourceConfig[] = [
 function PersonaComponent({
   personaId,
   personaData,
-  savePersonaAction,
+  createPersonaAction,
+  updatePersonaAction,
   patchPersonaDraftAction,
 }: PersonaProps) {
   const router = useRouter();
@@ -421,7 +425,7 @@ function PersonaComponent({
     patchPersonaDraftActionRef.current = patchPersonaDraftAction;
   }, [patchPersonaDraftAction]);
 
-  // Stable ref wrapper for patch action
+  // Stable ref wrapper for patch action — handles form_state sync from response
   const patchActionRef = React.useRef<
     | ((
         payload: Record<string, unknown>,
@@ -431,13 +435,36 @@ function PersonaComponent({
   React.useEffect(() => {
     if (patchPersonaDraftAction) {
       patchActionRef.current = async (payload: Record<string, unknown>) => {
-        return await patchPersonaDraftAction({
+        const result = await patchPersonaDraftAction({
           body: payload,
         } as PatchPersonaDraftIn);
+
+        // Sync resolved IDs from server form_state (server is source of truth)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const fs = (result as any)?.form_state as Record<string, unknown> | undefined;
+        if (fs) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name_id: (fs["name_id"] as string) ?? prev.name_id,
+            description_id: (fs["description_id"] as string) ?? prev.description_id,
+            instructions_id: (fs["instructions_id"] as string) ?? prev.instructions_id,
+            color_id: (fs["color_id"] as string) ?? prev.color_id,
+            icon_id: (fs["icon_id"] as string) ?? prev.icon_id,
+            active_flag_id: (fs["active_flag_id"] as string) ?? prev.active_flag_id,
+            department_ids: (fs["department_ids"] as string[]) ?? prev.department_ids,
+            parameter_field_ids: (fs["parameter_field_ids"] as string[]) ?? prev.parameter_field_ids,
+            example_ids: (fs["example_ids"] as string[]) ?? prev.example_ids,
+            voice_ids: (fs["voice_ids"] as string[]) ?? prev.voice_ids,
+          }));
+        }
+
+        return result;
       };
     } else {
       patchActionRef.current = undefined;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patchPersonaDraftAction]);
 
   const formStateDepartmentIdsStr = React.useMemo(
@@ -457,6 +484,12 @@ function PersonaComponent({
     [formState.voice_ids],
   );
 
+  // Memoize stringified value fields
+  const formStateExamplesStr = React.useMemo(
+    () => JSON.stringify(formState.examples),
+    [formState.examples],
+  );
+
   // formStateKey excludes draftId — the hook prepends it
   const formStateKey = React.useMemo(
     () =>
@@ -471,6 +504,11 @@ function PersonaComponent({
         parameter_field_ids: formState.parameter_field_ids,
         example_ids: formState.example_ids,
         voice_ids: formState.voice_ids,
+        // Value fields for creatables — trigger autosave when text changes
+        name: formState.name,
+        description: formState.description,
+        instructions: formState.instructions,
+        examples: formState.examples,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -484,13 +522,22 @@ function PersonaComponent({
       formStateParameterFieldIdsStr,
       formStateExampleIdsStr,
       formStateVoiceIdsStr,
+      formState.name,
+      formState.description,
+      formState.instructions,
+      formStateExamplesStr,
     ],
   );
 
-  const hasResourceIds = checkHasResourceIds(
-    PERSONA_RESOURCES,
-    formState as unknown as Record<string, unknown>,
-  );
+  const hasResourceIds =
+    checkHasResourceIds(
+      PERSONA_RESOURCES,
+      formState as unknown as Record<string, unknown>,
+    ) ||
+    !!formState.name ||
+    !!formState.description ||
+    !!formState.instructions ||
+    formState.examples.length > 0;
 
   const buildPatchPayload = useCallback(
     (
@@ -498,16 +545,51 @@ function PersonaComponent({
       expectedVersion: number,
       flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => {
+      const current = formStateRef.current as unknown as PersonaFormState;
+      const ref = lastPatchedFormStateRef.current;
+
+      // Build ID-only payload for non-creatable resources
+      const idPayload = buildDraftPayload(PERSONA_RESOURCES, {
+        formState: formStateRef.current,
+        referenceState: lastPatchedFormStateRef.current as unknown as Record<
+          string,
+          unknown
+        > | null,
+        flushResults: (flushResults ?? {}) as Record<string, unknown>,
+      });
+
+      // Add value fields for creatables (value takes precedence over ID)
+      if (current.name != null) {
+        if (!ref || current.name !== ref.name) {
+          idPayload["name"] = current.name;
+          delete idPayload["name_id"];
+        }
+      }
+      if (current.description != null) {
+        if (!ref || current.description !== ref.description) {
+          idPayload["description"] = current.description;
+          delete idPayload["description_id"];
+        }
+      }
+      if (current.instructions != null) {
+        if (!ref || current.instructions !== ref.instructions) {
+          idPayload["instructions"] = current.instructions;
+          delete idPayload["instructions_id"];
+        }
+      }
+      if (current.examples.length > 0) {
+        if (
+          !ref ||
+          JSON.stringify(current.examples) !== JSON.stringify(ref.examples)
+        ) {
+          idPayload["examples"] = current.examples;
+          delete idPayload["example_ids"];
+        }
+      }
+
       return {
         input_draft_id: draftId || null,
-        ...buildDraftPayload(PERSONA_RESOURCES, {
-          formState: formStateRef.current,
-          referenceState: lastPatchedFormStateRef.current as unknown as Record<
-            string,
-            unknown
-          > | null,
-          flushResults: (flushResults ?? {}) as Record<string, unknown>,
-        }),
+        ...idPayload,
         expected_version: expectedVersion,
       };
     },
@@ -523,6 +605,35 @@ function PersonaComponent({
     lastPatchedFormStateRef.current = {
       ...(formStateRef.current as unknown as PersonaFormState),
     };
+  }, []);
+
+  // --- Value Change Handlers (creatables report values upward) ---
+  const handleNameChange = useCallback((name: string) => {
+    setFormState((prev) => ({ ...prev, name: name || null, name_id: null }));
+  }, []);
+
+  const handleDescriptionChange = useCallback((description: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      description: description || null,
+      description_id: null,
+    }));
+  }, []);
+
+  const handleInstructionsChange = useCallback((instructions: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      instructions: instructions || null,
+      instructions_id: null,
+    }));
+  }, []);
+
+  const handleExamplesChange = useCallback((examples: string[]) => {
+    setFormState((prev) => ({
+      ...prev,
+      examples: examples.filter(Boolean),
+      example_ids: [],
+    }));
   }, []);
 
   const {

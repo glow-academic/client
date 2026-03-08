@@ -2,7 +2,8 @@
 
 import secrets
 import time
-from typing import Annotated, Any, cast
+from datetime import UTC, datetime
+from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg
@@ -10,16 +11,18 @@ from fastapi import APIRouter, Depends, Form, Header, HTTPException, Query, Requ
 from fastapi.responses import RedirectResponse
 from jose import jwt
 
-from app.infra.globals import get_db
-from app.sql.types import (
-    ConsumeEmulationGrantSqlParams,
-    ConsumeEmulationGrantSqlRow,
-    ResolveDefaultIdpProfileSqlParams,
-    ResolveDefaultIdpProfileSqlRow,
-    load_sql_query,
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.artifacts.profile.get import get_profiles as get_profile_artifacts
+from app.routes.v5.tools.entries.emulations.search import search_emulations
+from app.routes.v5.tools.entries.grant_consumptions.create import (
+    create_grant_consumption,
 )
+from app.routes.v5.tools.entries.grant_consumptions.search import (
+    search_grant_consumptions,
+)
+from app.routes.v5.tools.entries.grants.get import get_grants
+from app.routes.v5.tools.resources.profiles.get import get_profiles as get_profile_resources
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
 
 from .jwks import get_key_id, get_private_key
 
@@ -93,9 +96,6 @@ async def authorize(
     conn: Annotated[asyncpg.Connection, Depends(get_db)] = None,
 ) -> RedirectResponse:
     """Authorization endpoint - handles Keycloak broker redirects."""
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
-
     try:
         # Validate response_type
         if response_type != "code":
@@ -120,34 +120,46 @@ async def authorize(
                     detail="Invalid emulation grant token.",
                 )
 
-        if emulation_grant is not None:
-            sql_query = load_sql_query(
-                "app/sql/queries/auth/consume_emulation_grant_complete.sql"
-            )
-            grant_params = ConsumeEmulationGrantSqlParams(
-                grant_id=emulation_grant,
-            )
-            sql_params = grant_params.to_tuple()
+        actor_profile_id: UUID | None = None
 
-            grant_result = await execute_sql_typed(
-                conn,
-                "app/sql/queries/auth/consume_emulation_grant_complete.sql",
-                params=grant_params,
-            )
-            if not grant_result:
+        if emulation_grant is not None:
+            # 1. Check grant exists and is valid
+            grants = await get_grants(conn, ids=[emulation_grant])
+            if not grants:
                 raise HTTPException(
                     status_code=404,
                     detail="Emulation grant not found.",
                 )
 
-            grant_data = cast(ConsumeEmulationGrantSqlRow, grant_result)
-            if not grant_data.ok or not grant_data.target_profile_id:
+            grant = grants[0]
+            if grant.expires_at <= datetime.now(UTC):
                 raise HTTPException(
                     status_code=403,
-                    detail=grant_data.reason or "Emulation grant invalid.",
+                    detail="Grant expired.",
                 )
 
-            resolved_profile_id = grant_data.target_profile_id
+            # 2. Check not already consumed
+            consumptions = await search_grant_consumptions(
+                conn, grant_ids=[emulation_grant], limit=1
+            )
+            if consumptions:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Grant already used.",
+                )
+
+            # 3. Consume the grant
+            await create_grant_consumption(conn, grant_id=emulation_grant)
+
+            # 4. Actor profile from grant connection
+            actor_profile_id = grant.profiles_id
+
+            # 5. Target profile from emulation connection
+            emulations = await search_emulations(
+                conn, grant_ids=[emulation_grant], limit=1
+            )
+            if emulations:
+                resolved_profile_id = emulations[0].profile_id
 
         if resolved_profile_id is None:
             raise HTTPException(
@@ -155,61 +167,48 @@ async def authorize(
                 detail="Missing profile_id for default IdP login.",
             )
 
-        # Resolve profile using new SQL function
-        sql_query = load_sql_query(
-            "app/sql/queries/auth/resolve_default_idp_profile_complete.sql"
+        # Resolve profile details via black-box artifact + resource functions
+        # Step 1: Get artifact → profiles_resource IDs
+        artifacts = await get_profile_artifacts(
+            conn, ids=[resolved_profile_id], profiles=True
         )
-        profile_params = ResolveDefaultIdpProfileSqlParams(
-            p_profile_id=resolved_profile_id,
-        )
-        sql_params = profile_params.to_tuple()
-
-        profile_result = await execute_sql_typed(
-            conn,
-            "app/sql/queries/auth/resolve_default_idp_profile_complete.sql",
-            params=profile_params,
-        )
-
-        if not profile_result:
+        if not artifacts or not artifacts[0].profile_ids:
             raise HTTPException(
-                status_code=404, detail="Profile not found for this default IdP login."
+                status_code=404,
+                detail="Profile not found for this default IdP login.",
             )
 
-        profile_data = cast(ResolveDefaultIdpProfileSqlRow, profile_result)
-
-        if not profile_data.profile_id or not profile_data.primary_email:
+        # Step 2: Get resource → name, email, role
+        redis = get_redis_client()
+        resources = await get_profile_resources(
+            conn, ids=artifacts[0].profile_ids, redis=redis, bypass_cache=True
+        )
+        if not resources or not resources[0].primary_email:
             raise HTTPException(
                 status_code=404,
                 detail="Profile or email not found for this default IdP login.",
             )
 
+        profile = resources[0]
+
         # Generate authorization code
         code = secrets.token_urlsafe(32)
         expires_at = int(time.time()) + _code_ttl
 
-        # Determine if this is an emulation flow
-        is_emulation = emulation_grant is not None
-        actor_profile_id = None
-        if is_emulation and "grant_data" in dir() and grant_data:
-            actor_profile_id = (
-                str(grant_data.actor_profile_id)
-                if grant_data.actor_profile_id
-                else None
-            )
-
         # Store authorization code with profile data (including emulation context)
+        is_emulation = emulation_grant is not None
         _authorization_codes[code] = {
-            "profile_id": str(profile_data.profile_id),
-            "email": profile_data.primary_email,
-            "name": profile_data.name or "",
-            "role": str(profile_data.role) if profile_data.role else None,
+            "profile_id": str(profile_row["profile_id"]),
+            "email": profile_row["primary_email"],
+            "name": profile_row["name"] or "",
+            "role": str(profile_row["role"]) if profile_row["role"] else None,
             "nonce": nonce,
             "expires_at": expires_at,
             "client_id": client_id,
             "redirect_uri": redirect_uri,
             # Emulation context
             "is_emulation": is_emulation,
-            "actor_profile_id": actor_profile_id,
+            "actor_profile_id": str(actor_profile_id) if actor_profile_id else None,
         }
 
         # Clean up expired codes (simple cleanup, could be optimized)
@@ -233,8 +232,8 @@ async def authorize(
             error=e,
             route_path=request.url.path,
             operation="authorize",
-            sql_query=sql_query,
-            sql_params=sql_params,
+            sql_query=None,
+            sql_params=None,
             request=request,
         )
 

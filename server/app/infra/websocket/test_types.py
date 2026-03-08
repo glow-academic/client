@@ -59,3 +59,14 @@ class TestErrorData(BaseModel):
     run_id: str | None = None
     message: str
     error_type: str | None = None
+
+
+class TestAllCompleteEvent(BaseModel):
+    """Server-to-client event: test_all_complete.
+
+    Emitted when all runs are complete.
+    """
+
+    invocation_id: str
+    total_runs: int
+    success: bool = True

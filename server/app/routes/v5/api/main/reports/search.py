@@ -26,7 +26,7 @@ from app.utils.error.handle_route_error import handle_route_error
 router = APIRouter()
 
 
-@router.post("/get", response_model=ReportsResponse)
+@router.post("/search", response_model=ReportsResponse)
 async def get_reports(
     request: ReportsRequest,
     http_request: Request,

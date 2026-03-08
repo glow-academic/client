@@ -37,7 +37,6 @@ class SearchScenarioApiRequest(BaseModel):
     page_offset: int | None = 0
 
 
-@router.post("/list", response_model=ListScenarioApiResponse)
 @router.post("/search", response_model=ListScenarioApiResponse)
 async def search_scenario(
     request: SearchScenarioApiRequest,

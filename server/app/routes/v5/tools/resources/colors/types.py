@@ -11,6 +11,7 @@ class GetColorResponse(BaseModel):
     name: str
     description: str
     hex_code: str
+    type: str
     created_at: datetime
     active: bool
     mcp: bool

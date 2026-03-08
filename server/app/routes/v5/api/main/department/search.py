@@ -29,7 +29,6 @@ class SearchDepartmentApiRequest(BaseModel):
     page_offset: int | None = 0
 
 
-@router.post("/list", response_model=ListDepartmentApiResponse)
 @router.post("/search", response_model=ListDepartmentApiResponse)
 async def search_department(
     request: SearchDepartmentApiRequest,

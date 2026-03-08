@@ -281,7 +281,7 @@ fastapi_app.include_router(socket_v5_router)
 # ---------------------------------------------------------------------------
 # Routers — root-level (version-agnostic)
 # ---------------------------------------------------------------------------
-from app.auth import router as auth_router  # noqa: E402
+from app.routes.auth import router as auth_router  # noqa: E402
 from app.utils.mcp.get_mcp import get_mcp  # noqa: E402
 from app.utils.profile.get_profile_id import get_profile_id  # noqa: E402
 from app.utils.session.get_session_id import get_session_id  # noqa: E402

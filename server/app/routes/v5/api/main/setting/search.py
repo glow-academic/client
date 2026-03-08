@@ -25,7 +25,6 @@ class SearchSettingApiRequest(BaseModel):
     pass
 
 
-@router.post("/list", response_model=ListSettingApiResponse)
 @router.post("/search", response_model=ListSettingApiResponse)
 async def search_setting(
     request: SearchSettingApiRequest,

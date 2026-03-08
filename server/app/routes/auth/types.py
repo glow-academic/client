@@ -13,8 +13,8 @@ from app.routes.auth.route_permissions import (
     PageMetadata,
     SidebarSection,
 )
+from app.infra.auth.settings import SettingsThemeResult
 from app.sql.types import (
-    GetSettingsThemeDataSqlRow,
     QGetAgentsV4Item,
     QGetCohortsV4Item,
     QGetDepartmentsV4Item,
@@ -84,7 +84,7 @@ class AuthSettingsInternalData:
     settings_systems: list[QGetSystemsV4Item]
     settings_agents: list[QGetAgentsV4Item]
     settings_tools: list[QGetToolsV4Item]
-    settings_theme: GetSettingsThemeDataSqlRow
+    settings_theme: SettingsThemeResult | None
     settings_tokens: QGetProfileContextV4ThemeTokens
     artifact_has_generate: dict[str, bool]
     agent_tool_entries: list[SettingsAgentToolEntry]

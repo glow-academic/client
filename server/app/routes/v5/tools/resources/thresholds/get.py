@@ -36,7 +36,7 @@ async def get_thresholds(
 
     rows = await conn.fetch(
         """
-        SELECT id, value,
+        SELECT id, value, type,
                created_at, active, mcp, generated
         FROM thresholds_resource
         WHERE id = ANY($1)
@@ -49,6 +49,7 @@ async def get_thresholds(
         GetThresholdResponse(
             id=r["id"],
             value=r["value"],
+            type=r["type"],
             created_at=r["created_at"],
             active=r["active"],
             mcp=r["mcp"],

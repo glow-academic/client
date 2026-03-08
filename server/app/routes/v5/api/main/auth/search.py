@@ -33,7 +33,6 @@ class SearchAuthApiRequest(BaseModel):
     page_offset: int | None = 0
 
 
-@router.post("/list", response_model=ListAuthApiResponse)
 @router.post("/search", response_model=ListAuthApiResponse)
 async def search_auth(
     request: SearchAuthApiRequest,
