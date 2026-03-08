@@ -13,7 +13,7 @@ import type { Metadata } from "next";
 import { loadEvalsSearchParams } from "@/lib/search-params/evals";
 
 /** ---- Strong types from OpenAPI ---- */
-type EvalsListOut = OutputOf<"/api/v5/artifacts/evals/list", "post">;
+type EvalsListOut = OutputOf<"/api/v5/artifacts/evals/search", "post">;
 type DeleteEvalIn = InputOf<"/api/v5/artifacts/evals/delete", "post">;
 type DeleteEvalOut = OutputOf<"/api/v5/artifacts/evals/delete", "post">;
 
@@ -30,7 +30,7 @@ type EvalsListBody = {
 const getEvalsList = async (body: EvalsListBody): Promise<EvalsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/evals/list",
+    "/artifacts/evals/search",
     { body },
     {
       cache: "no-store",

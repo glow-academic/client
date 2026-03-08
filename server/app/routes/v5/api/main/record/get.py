@@ -362,7 +362,7 @@ async def get_record(
         # Inline history
         if request.history_page_size and request.history_page_size > 0:
             from app.infra.dashboard_context import resolve_dashboard_search_context
-            from app.routes.v5.api.main.dashboard.list import _build_history_response
+            from app.routes.v5.api.main.dashboard.search import _build_history_response
 
             profile_resource_id: UUID | None = await conn.fetchval(
                 """

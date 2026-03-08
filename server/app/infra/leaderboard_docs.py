@@ -67,7 +67,7 @@ async def docs_leaderboard_client(
     )
     from app.routes.v5.api.main.leaderboard.export import export_leaderboard
     from app.routes.v5.api.main.leaderboard.get import get_leaderboard
-    from app.routes.v5.api.main.leaderboard.list import list_leaderboard
+    from app.routes.v5.api.main.leaderboard.search import search_leaderboard
     from app.routes.v5.api.main.leaderboard.refresh import leaderboard_refresh
 
     return ComposedDocsResponse(
@@ -103,8 +103,8 @@ async def docs_leaderboard_client(
                 description="POST /get — Get leaderboard rankings and accolades.",
             ),
             get_operation_info(
-                list_leaderboard,
-                description="POST /list — List leaderboard history entries.",
+                search_leaderboard,
+                description="POST /search — Search leaderboard history entries.",
             ),
             get_operation_info(
                 leaderboard_refresh,

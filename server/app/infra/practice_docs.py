@@ -72,7 +72,7 @@ async def docs_practice_client(
     # Lazy imports to avoid circular dependencies
     from app.routes.v5.api.main.practice.export import export_practice
     from app.routes.v5.api.main.practice.get import practice_get
-    from app.routes.v5.api.main.practice.list import practice_list
+    from app.routes.v5.api.main.practice.search import search_practice
 
     return ComposedDocsResponse(
         name="practice",
@@ -90,8 +90,8 @@ async def docs_practice_client(
                 description="POST /get — Get practice dashboard with personal stats.",
             ),
             get_operation_info(
-                practice_list,
-                description="POST /list — List practice history entries.",
+                search_practice,
+                description="POST /search — Search practice history entries.",
             ),
             get_operation_info(
                 export_practice,

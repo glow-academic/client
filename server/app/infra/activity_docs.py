@@ -72,7 +72,7 @@ async def docs_activity_client(
     # Lazy imports to avoid circular dependencies
     from app.routes.v5.api.main.activity.export import export_activity
     from app.routes.v5.api.main.activity.get import get_activity
-    from app.routes.v5.api.main.activity.list import list_activity
+    from app.routes.v5.api.main.activity.search import search_activity
     from app.routes.v5.api.main.activity.problem import create_problem
     from app.routes.v5.api.main.activity.refresh import activity_refresh
     from app.routes.v5.api.main.activity.resolve import resolve_problem
@@ -93,8 +93,8 @@ async def docs_activity_client(
                 description="POST /get — Get activity analytics for a profile.",
             ),
             get_operation_info(
-                list_activity,
-                description="POST /list — List activity history with filters.",
+                search_activity,
+                description="POST /search — Search activity history with filters.",
             ),
             get_operation_info(
                 resolve_problem,

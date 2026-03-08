@@ -14,7 +14,7 @@ import type { Metadata } from "next";
 import { loadScenariosListSearchParams } from "@/lib/search-params/scenarios-list";
 
 /** ---- Strong types from OpenAPI ---- */
-type ScenariosListOut = OutputOf<"/api/v5/artifacts/scenarios/list", "post">;
+type ScenariosListOut = OutputOf<"/api/v5/artifacts/scenarios/search", "post">;
 type DuplicateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/duplicate", "post">;
 type DuplicateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/duplicate", "post">;
 type DeleteScenarioIn = InputOf<"/api/v5/artifacts/scenarios/delete", "post">;
@@ -46,7 +46,7 @@ type ScenariosListBody = {
 const getScenariosList = async (body: ScenariosListBody): Promise<ScenariosListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/scenarios/list",
+    "/artifacts/scenarios/search",
     { body },
     {
       cache: "no-store",

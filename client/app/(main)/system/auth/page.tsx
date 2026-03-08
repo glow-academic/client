@@ -9,7 +9,7 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type AuthListOut = OutputOf<"/api/v5/artifacts/auths/list", "post">;
+type AuthListOut = OutputOf<"/api/v5/artifacts/auths/search", "post">;
 type DuplicateAuthIn = InputOf<"/api/v5/artifacts/auths/duplicate", "post">;
 type DuplicateAuthOut = OutputOf<"/api/v5/artifacts/auths/duplicate", "post">;
 type DeleteAuthIn = InputOf<"/api/v5/artifacts/auths/delete", "post">;
@@ -22,7 +22,7 @@ type DeleteAuthOut = OutputOf<"/api/v5/artifacts/auths/delete", "post">;
 const getAuthList = async (): Promise<AuthListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/auths/list",
+    "/artifacts/auths/search",
     { body: {} },
     {
       cache: "no-store",

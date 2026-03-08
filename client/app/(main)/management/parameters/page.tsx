@@ -11,7 +11,7 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ParametersListOut = OutputOf<"/api/v5/artifacts/parameters/list", "post">;
+type ParametersListOut = OutputOf<"/api/v5/artifacts/parameters/search", "post">;
 type DuplicateParameterIn = InputOf<"/api/v5/artifacts/parameters/duplicate", "post">;
 type DuplicateParameterOut = OutputOf<"/api/v5/artifacts/parameters/duplicate", "post">;
 type DeleteParameterIn = InputOf<"/api/v5/artifacts/parameters/delete", "post">;
@@ -24,7 +24,7 @@ type DeleteParameterOut = OutputOf<"/api/v5/artifacts/parameters/delete", "post"
 const getParametersList = async (): Promise<ParametersListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/parameters/list",
+    "/artifacts/parameters/search",
     { body: {} },
     {
       cache: "no-store",

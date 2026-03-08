@@ -11,7 +11,7 @@ import type { Metadata } from "next";
 import { loadProvidersSearchParams } from "@/lib/search-params/providers";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProvidersListOut = OutputOf<"/api/v5/artifacts/providers/list", "post">;
+type ProvidersListOut = OutputOf<"/api/v5/artifacts/providers/search", "post">;
 type DeleteProviderIn = InputOf<"/api/v5/artifacts/providers/delete", "post">;
 type DeleteProviderOut = OutputOf<"/api/v5/artifacts/providers/delete", "post">;
 
@@ -34,7 +34,7 @@ type ProvidersListBody = {
 const getProvidersList = async (body: ProvidersListBody): Promise<ProvidersListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/providers/list",
+    "/artifacts/providers/search",
     { body },
     {
       cache: "no-store",

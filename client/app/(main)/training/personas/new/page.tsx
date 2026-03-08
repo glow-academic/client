@@ -19,8 +19,8 @@ import {
 /** ---- Strong types from OpenAPI ---- */
 type GetPersonaIn = InputOf<"/api/v5/artifacts/personas/get", "post">;
 type GetPersonaOut = OutputOf<"/api/v5/artifacts/personas/get", "post">;
-type SavePersonaIn = InputOf<"/api/v5/artifacts/personas/save", "post">;
-type SavePersonaOut = OutputOf<"/api/v5/artifacts/personas/save", "post">;
+type CreatePersonaIn = InputOf<"/api/v5/artifacts/personas/create", "post">;
+type CreatePersonaOut = OutputOf<"/api/v5/artifacts/personas/create", "post">;
 type PatchPersonaDraftIn = InputOf<"/api/v5/artifacts/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/api/v5/artifacts/personas/draft", "patch">;
 
@@ -39,9 +39,9 @@ const getPersonaDefault = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function savePersona(input: SavePersonaIn): Promise<SavePersonaOut> {
+async function createPersona(input: CreatePersonaIn): Promise<CreatePersonaOut> {
   "use server";
-  return api.post("/artifacts/personas/save", input);
+  return api.post("/artifacts/personas/create", input);
 }
 
 async function patchPersonaDraft(
@@ -128,7 +128,7 @@ export default async function NewPersonaPage({
       <Persona
         key={q.draftId || "no-draft"}
         personaData={personaDetailDefault}
-        savePersonaAction={savePersona}
+        createPersonaAction={createPersona}
         patchPersonaDraftAction={patchPersonaDraft}
       />
     </div>

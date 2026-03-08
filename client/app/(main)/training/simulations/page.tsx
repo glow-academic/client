@@ -14,7 +14,7 @@ import type { Metadata } from "next";
 import { loadSimulationsListSearchParams } from "@/lib/search-params/simulations";
 
 /** ---- Strong types from OpenAPI ---- */
-type SimulationsListOut = OutputOf<"/api/v5/artifacts/simulations/list", "post">;
+type SimulationsListOut = OutputOf<"/api/v5/artifacts/simulations/search", "post">;
 type DuplicateSimulationIn = InputOf<"/api/v5/artifacts/simulations/duplicate", "post">;
 type DuplicateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/duplicate", "post">;
 type DeleteSimulationIn = InputOf<"/api/v5/artifacts/simulations/delete", "post">;
@@ -46,7 +46,7 @@ type SimulationsListBody = {
 const getSimulationsList = async (body: SimulationsListBody): Promise<SimulationsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/simulations/list",
+    "/artifacts/simulations/search",
     { body },
     {
       cache: "no-store",

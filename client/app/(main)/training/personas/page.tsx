@@ -14,7 +14,7 @@ import type { Metadata } from "next";
 import { loadPersonasSearchParams } from "@/lib/search-params/personas";
 
 /** ---- Strong types from OpenAPI ---- */
-type PersonasListOut = OutputOf<"/api/v5/artifacts/personas/list", "post">;
+type PersonasListOut = OutputOf<"/api/v5/artifacts/personas/search", "post">;
 type DuplicatePersonaIn = InputOf<"/api/v5/artifacts/personas/duplicate", "post">;
 type DuplicatePersonaOut = OutputOf<"/api/v5/artifacts/personas/duplicate", "post">;
 type DeletePersonaIn = InputOf<"/api/v5/artifacts/personas/delete", "post">;
@@ -50,7 +50,7 @@ type PersonasListBody = {
 const getPersonasList = async (body: PersonasListBody): Promise<PersonasListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/personas/list",
+    "/artifacts/personas/search",
     { body },
     {
       cache: "no-store",

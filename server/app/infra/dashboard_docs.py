@@ -69,7 +69,7 @@ async def docs_dashboard_client(
     )
     from app.routes.v5.api.main.dashboard.export import export_dashboard
     from app.routes.v5.api.main.dashboard.get import get_dashboard
-    from app.routes.v5.api.main.dashboard.list import list_dashboard
+    from app.routes.v5.api.main.dashboard.search import search_dashboard
     from app.routes.v5.api.main.dashboard.refresh import dashboard_refresh
 
     return ComposedDocsResponse(
@@ -109,8 +109,8 @@ async def docs_dashboard_client(
                 description="POST /get — Get dashboard analytics with metrics and sections.",
             ),
             get_operation_info(
-                list_dashboard,
-                description="POST /list — List dashboard history entries.",
+                search_dashboard,
+                description="POST /search — Search dashboard history entries.",
             ),
             get_operation_info(
                 dashboard_refresh,

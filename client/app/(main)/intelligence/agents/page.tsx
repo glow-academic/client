@@ -13,7 +13,7 @@ import type { Metadata } from "next";
 import { loadAgentsSearchParams } from "@/lib/search-params/agents";
 
 /** ---- Strong types from OpenAPI ---- */
-type AgentsListOut = OutputOf<"/api/v5/artifacts/agents/list", "post">;
+type AgentsListOut = OutputOf<"/api/v5/artifacts/agents/search", "post">;
 type DuplicateAgentIn = InputOf<"/api/v5/artifacts/agents/duplicate", "post">;
 type DuplicateAgentOut = OutputOf<"/api/v5/artifacts/agents/duplicate", "post">;
 type DeleteAgentIn = InputOf<"/api/v5/artifacts/agents/delete", "post">;
@@ -39,7 +39,7 @@ type AgentsListBody = {
 const getAgentsList = async (body: AgentsListBody): Promise<AgentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/agents/list",
+    "/artifacts/agents/search",
     { body },
     {
       cache: "no-store",

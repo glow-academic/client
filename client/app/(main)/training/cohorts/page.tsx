@@ -14,7 +14,7 @@ import type { Metadata } from "next";
 import { loadCohortsListSearchParams } from "@/lib/search-params/cohorts";
 
 /** ---- Strong types from OpenAPI ---- */
-type CohortsListOut = OutputOf<"/api/v5/artifacts/cohorts/list", "post">;
+type CohortsListOut = OutputOf<"/api/v5/artifacts/cohorts/search", "post">;
 type DuplicateCohortIn = InputOf<"/api/v5/artifacts/cohorts/duplicate", "post">;
 type DuplicateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/duplicate", "post">;
 type DeleteCohortIn = InputOf<"/api/v5/artifacts/cohorts/delete", "post">;
@@ -46,7 +46,7 @@ type CohortsListBody = {
 const getCohortsList = async (body: CohortsListBody): Promise<CohortsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/cohorts/list",
+    "/artifacts/cohorts/search",
     { body },
     {
       cache: "no-store",

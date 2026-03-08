@@ -85,7 +85,7 @@ async def docs_home_client(
     )
     from app.routes.v5.api.main.home.export import export_home
     from app.routes.v5.api.main.home.get import home_get
-    from app.routes.v5.api.main.home.list import home_list
+    from app.routes.v5.api.main.home.search import search_home
 
     return ComposedDocsResponse(
         name="home",
@@ -140,8 +140,8 @@ async def docs_home_client(
                 description="POST /get — Get home dashboard with personal stats.",
             ),
             get_operation_info(
-                home_list,
-                description="POST /list — List home history entries.",
+                search_home,
+                description="POST /search — Search home history entries.",
             ),
             get_operation_info(
                 export_home,

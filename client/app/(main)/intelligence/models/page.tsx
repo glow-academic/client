@@ -13,7 +13,7 @@ import type { Metadata } from "next";
 import { loadModelsSearchParams } from "@/lib/search-params/models";
 
 /** ---- Strong types from OpenAPI ---- */
-type ModelsListOut = OutputOf<"/api/v5/artifacts/models/list", "post">;
+type ModelsListOut = OutputOf<"/api/v5/artifacts/models/search", "post">;
 type DuplicateModelIn = InputOf<"/api/v5/artifacts/models/duplicate", "post">;
 type DuplicateModelOut = OutputOf<"/api/v5/artifacts/models/duplicate", "post">;
 type DeleteModelIn = InputOf<"/api/v5/artifacts/models/delete", "post">;
@@ -39,7 +39,7 @@ type ModelsListBody = {
 const getModelsList = async (body: ModelsListBody): Promise<ModelsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/models/list",
+    "/artifacts/models/search",
     { body },
     {
       cache: "no-store",

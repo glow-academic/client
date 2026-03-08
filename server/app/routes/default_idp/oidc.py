@@ -12,7 +12,9 @@ from fastapi.responses import RedirectResponse
 from jose import jwt
 
 from app.infra.globals import get_db, get_redis_client
-from app.routes.v5.tools.artifacts.profile.get import get_profiles as get_profile_artifacts
+from app.routes.v5.tools.artifacts.profile.get import (
+    get_profiles as get_profile_artifacts,
+)
 from app.routes.v5.tools.entries.emulations.search import search_emulations
 from app.routes.v5.tools.entries.grant_consumptions.create import (
     create_grant_consumption,
@@ -21,7 +23,9 @@ from app.routes.v5.tools.entries.grant_consumptions.search import (
     search_grant_consumptions,
 )
 from app.routes.v5.tools.entries.grants.get import get_grants
-from app.routes.v5.tools.resources.profiles.get import get_profiles as get_profile_resources
+from app.routes.v5.tools.resources.profiles.get import (
+    get_profiles as get_profile_resources,
+)
 from app.utils.error.handle_route_error import handle_route_error
 
 from .jwks import get_key_id, get_private_key
@@ -198,10 +202,10 @@ async def authorize(
         # Store authorization code with profile data (including emulation context)
         is_emulation = emulation_grant is not None
         _authorization_codes[code] = {
-            "profile_id": str(profile_row["profile_id"]),
-            "email": profile_row["primary_email"],
-            "name": profile_row["name"] or "",
-            "role": str(profile_row["role"]) if profile_row["role"] else None,
+            "profile_id": str(resolved_profile_id),
+            "email": profile.primary_email,
+            "name": profile.name or "",
+            "role": profile.role if profile.role else None,
             "nonce": nonce,
             "expires_at": expires_at,
             "client_id": client_id,

@@ -11,7 +11,7 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type FieldsListOut = OutputOf<"/api/v5/artifacts/fields/list", "post">;
+type FieldsListOut = OutputOf<"/api/v5/artifacts/fields/search", "post">;
 type DuplicateFieldIn = InputOf<"/api/v5/artifacts/fields/duplicate", "post">;
 type DuplicateFieldOut = OutputOf<"/api/v5/artifacts/fields/duplicate", "post">;
 type DeleteFieldIn = InputOf<"/api/v5/artifacts/fields/delete", "post">;
@@ -21,7 +21,7 @@ type DeleteFieldOut = OutputOf<"/api/v5/artifacts/fields/delete", "post">;
 const getFieldsList = async (): Promise<FieldsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/fields/list",
+    "/artifacts/fields/search",
     { body: {} },
     {
       cache: "no-store",

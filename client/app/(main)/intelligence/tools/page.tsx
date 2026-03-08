@@ -11,8 +11,8 @@ import type { Metadata } from "next";
 import { loadToolsSearchParams } from "@/lib/search-params/tools";
 
 /** ---- Strong types from OpenAPI ---- */
-type ToolsListIn = InputOf<"/api/v5/artifacts/tools/list", "post">;
-type ToolsListOut = OutputOf<"/api/v5/artifacts/tools/list", "post">;
+type ToolsListIn = InputOf<"/api/v5/artifacts/tools/search", "post">;
+type ToolsListOut = OutputOf<"/api/v5/artifacts/tools/search", "post">;
 type DeleteToolIn = InputOf<"/api/v5/artifacts/tools/delete", "post">;
 type DeleteToolOut = OutputOf<"/api/v5/artifacts/tools/delete", "post">;
 type DuplicateToolIn = InputOf<"/api/v5/artifacts/tools/duplicate", "post">;
@@ -37,7 +37,7 @@ type ToolsListBody = {
 const getToolsList = async (body: ToolsListBody): Promise<ToolsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/tools/list",
+    "/artifacts/tools/search",
     { body } as ToolsListIn,
     {
       cache: "no-store",

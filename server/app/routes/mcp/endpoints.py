@@ -48,7 +48,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     # "agent": {
     #     "get": ("app.routes.v5.api.main.agent.get", "get_agent"),
-    #     "list": ("app.routes.v5.api.main.agent.list", "get_agent_list"),
+    #     "search": ("app.routes.v5.api.main.agent.search", "search_agent"),
     #     "save": ("app.routes.v5.api.main.agent.save", "save_agent"),
     #     "delete": ("app.routes.v5.api.main.agent.delete", "delete_agent"),
     #     "duplicate": ("app.routes.v5.api.main.agent.duplicate", "duplicate_agent"),
@@ -61,7 +61,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     # "auth": {
     #     "get": ("app.routes.v5.api.main.auth.get", "get_auth"),
-    #     "list": ("app.routes.v5.api.main.auth.list", "get_auth_list"),
+    #     "search": ("app.routes.v5.api.main.auth.search", "search_auth"),
     #     "save": ("app.routes.v5.api.main.auth.save", "save_auth"),
     #     "delete": ("app.routes.v5.api.main.auth.delete", "delete_auth"),
     #     "duplicate": ("app.routes.v5.api.main.auth.duplicate", "duplicate_auth"),
@@ -75,7 +75,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     "cohort": {
         "get": ("app.routes.v5.api.main.cohort.get", "get_cohort"),
-        "list": ("app.routes.v5.api.main.cohort.list", "get_cohort_list"),
+        "search": ("app.routes.v5.api.main.cohort.search", "search_cohort"),
         "save": ("app.routes.v5.api.main.cohort.save", "save_cohort"),
         "delete": ("app.routes.v5.api.main.cohort.delete", "delete_cohort"),
         "duplicate": ("app.routes.v5.api.main.cohort.duplicate", "duplicate_cohort"),
@@ -99,7 +99,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     # "department": {
     #     "get": ("app.routes.v5.api.main.department.get", "get_department"),
-    #     "list": ("app.routes.v5.api.main.department.list", "get_department_list"),
+    #     "search": ("app.routes.v5.api.main.department.search", "search_department"),
     #     "save": ("app.routes.v5.api.main.department.save", "save_department"),
     #     "delete": ("app.routes.v5.api.main.department.delete", "delete_department"),
     #     "duplicate": (
@@ -111,7 +111,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     # "document": {
     #     "get": ("app.routes.v5.api.main.document.get", "get_document"),
-    #     "list": ("app.routes.v5.api.main.document.list", "get_document_list"),
+    #     "search": ("app.routes.v5.api.main.document.search", "search_document"),
     #     "save": ("app.routes.v5.api.main.document.save", "save_document"),
     #     "delete": ("app.routes.v5.api.main.document.delete", "delete_document"),
     #     "duplicate": ("app.routes.v5.api.main.document.duplicate", "duplicate_document"),
@@ -120,7 +120,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     # "eval": {
     #     "get": ("app.routes.v5.api.main.eval.get", "get_eval"),
-    #     "list": ("app.routes.v5.api.main.eval.list", "get_eval_list"),
+    #     "search": ("app.routes.v5.api.main.eval.search", "search_eval"),
     #     "save": ("app.routes.v5.api.main.eval.save", "save_eval"),
     #     "delete": ("app.routes.v5.api.main.eval.delete", "delete_eval"),
     #     "duplicate": ("app.routes.v5.api.main.eval.duplicate", "duplicate_eval"),
@@ -129,7 +129,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     # "field": {
     #     "get": ("app.routes.v5.api.main.field.get", "get_field"),
-    #     "list": ("app.routes.v5.api.main.field.list", "get_field_list"),
+    #     "search": ("app.routes.v5.api.main.field.search", "search_field"),
     #     "save": ("app.routes.v5.api.main.field.save", "save_field"),
     #     "delete": ("app.routes.v5.api.main.field.delete", "delete_field"),
     #     "duplicate": ("app.routes.v5.api.main.field.duplicate", "duplicate_field"),
@@ -155,7 +155,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     # "model": {
     #     "get": ("app.routes.v5.api.main.model.get", "get_model"),
-    #     "list": ("app.routes.v5.api.main.model.list", "get_model_list"),
+    #     "search": ("app.routes.v5.api.main.model.search", "search_model"),
     #     "save": ("app.routes.v5.api.main.model.save", "save_model"),
     #     "delete": ("app.routes.v5.api.main.model.delete", "delete_model"),
     #     "duplicate": ("app.routes.v5.api.main.model.duplicate", "duplicate_model"),
@@ -164,7 +164,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     # "parameter": {
     #     "get": ("app.routes.v5.api.main.parameter.get", "get_parameter"),
-    #     "list": ("app.routes.v5.api.main.parameter.list", "get_parameter_list"),
+    #     "search": ("app.routes.v5.api.main.parameter.search", "search_parameter"),
     #     "save": ("app.routes.v5.api.main.parameter.save", "save_parameter"),
     #     "delete": ("app.routes.v5.api.main.parameter.delete", "delete_parameter"),
     #     "duplicate": (
@@ -176,7 +176,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     "persona": {
         "get": ("app.routes.v5.api.main.persona.get", "get_persona"),
-        "list": ("app.routes.v5.api.main.persona.list", "get_persona_list"),
+        "search": ("app.routes.v5.api.main.persona.search", "search_persona"),
         "save": ("app.routes.v5.api.main.persona.save", "save_persona"),
         "delete": ("app.routes.v5.api.main.persona.delete", "delete_persona"),
         "duplicate": ("app.routes.v5.api.main.persona.duplicate", "duplicate_persona"),
@@ -190,7 +190,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     # "profile": {
     #     "get": ("app.routes.v5.api.main.profile.get", "get_profile"),
-    #     "list": ("app.routes.v5.api.main.profile.list", "get_profile_list"),
+    #     "search": ("app.routes.v5.api.main.profile.search", "search_profile"),
     #     "save": ("app.routes.v5.api.main.profile.save", "save_profile"),
     #     "delete": ("app.routes.v5.api.main.profile.delete", "delete_profile"),
     #     "duplicate": ("app.routes.v5.api.main.profile.duplicate", "duplicate_profile"),
@@ -199,7 +199,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     # "provider": {
     #     "get": ("app.routes.v5.api.main.provider.get", "get_provider"),
-    #     "list": ("app.routes.v5.api.main.provider.list", "get_provider_list"),
+    #     "search": ("app.routes.v5.api.main.provider.search", "search_provider"),
     #     "save": ("app.routes.v5.api.main.provider.save", "save_provider"),
     #     "delete": ("app.routes.v5.api.main.provider.delete", "delete_provider"),
     #     "duplicate": ("app.routes.v5.api.main.provider.duplicate", "duplicate_provider"),
@@ -207,13 +207,13 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     #     "docs": ("app.infra.provider_docs", "docs_provider_client"),
     # },
     "reports": {
-        "get": ("app.routes.v5.api.main.reports.get", "get_reports"),
+        "get": ("app.routes.v5.api.main.reports.search", "get_reports"),
         "refresh": ("app.routes.v5.api.main.reports.refresh", "reports_refresh"),
         "docs": ("app.infra.reports_docs", "docs_reports_client"),
     },
     # "rubric": {
     #     "get": ("app.routes.v5.api.main.rubric.get", "get_rubric"),
-    #     "list": ("app.routes.v5.api.main.rubric.list", "get_rubric_list"),
+    #     "search": ("app.routes.v5.api.main.rubric.search", "search_rubric"),
     #     "save": ("app.routes.v5.api.main.rubric.save", "save_rubric"),
     #     "delete": ("app.routes.v5.api.main.rubric.delete", "delete_rubric"),
     #     "duplicate": ("app.routes.v5.api.main.rubric.duplicate", "duplicate_rubric"),
@@ -222,7 +222,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     "scenario": {
         "get": ("app.routes.v5.api.main.scenario.get", "get_scenario"),
-        "list": ("app.routes.v5.api.main.scenario.list", "get_scenario_list"),
+        "search": ("app.routes.v5.api.main.scenario.search", "search_scenario"),
         "save": ("app.routes.v5.api.main.scenario.save", "save_scenario"),
         "delete": ("app.routes.v5.api.main.scenario.delete", "delete_scenario"),
         "duplicate": (
@@ -238,7 +238,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     # "setting": {
     #     "get": ("app.routes.v5.api.main.setting.get", "get_setting"),
-    #     "list": ("app.routes.v5.api.main.setting.list", "get_setting_list"),
+    #     "search": ("app.routes.v5.api.main.setting.search", "search_setting"),
     #     "save": ("app.routes.v5.api.main.setting.save", "save_setting"),
     #     "delete": ("app.routes.v5.api.main.setting.delete", "delete_setting"),
     #     "duplicate": ("app.routes.v5.api.main.setting.duplicate", "duplicate_setting"),
@@ -247,7 +247,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     "simulation": {
         "get": ("app.routes.v5.api.main.simulation.get", "get_simulation"),
-        "list": ("app.routes.v5.api.main.simulation.list", "get_simulation_list"),
+        "search": ("app.routes.v5.api.main.simulation.search", "search_simulation"),
         "save": ("app.routes.v5.api.main.simulation.save", "save_simulation"),
         "delete": ("app.routes.v5.api.main.simulation.delete", "delete_simulation"),
         "duplicate": (
@@ -263,7 +263,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     # "tool": {
     #     "get": ("app.routes.v5.api.main.tool.get", "get_tool"),
-    #     "list": ("app.routes.v5.api.main.tool.list", "get_tool_list"),
+    #     "search": ("app.routes.v5.api.main.tool.search", "search_tool"),
     #     "save": ("app.routes.v5.api.main.tool.save", "save_tool"),
     #     "delete": ("app.routes.v5.api.main.tool.delete", "delete_tool"),
     #     "duplicate": ("app.routes.v5.api.main.tool.duplicate", "duplicate_tool"),
@@ -807,7 +807,7 @@ def format_example_payload(artifact_name: str, operation: str) -> str:
     examples = {
         "get": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000"}}',
         "save": f'{{"name": "My {artifact_name.title()}", "description": "...", ...}}',
-        "list": "{}",
+        "search": "{}",
         "duplicate": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000", "name": "Copy"}}',
         "delete": f'{{"{artifact_id_field}": "123e4567-e89b-12d3-a456-426614174000"}}',
         "draft": f'{{"name": "Draft {artifact_name.title()}", ...}}',
@@ -1277,7 +1277,7 @@ def register_endpoints(server: FastMCP) -> None:
             kwargs: Filter/pagination parameters — use docs(artifact) for full schema.
         """
         payload: dict[str, Any] = kwargs or {}
-        return await call_handler(artifact, "list", payload)
+        return await call_handler(artifact, "search", payload)
 
     @server.tool(
         description=(

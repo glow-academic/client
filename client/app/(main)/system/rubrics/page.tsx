@@ -13,7 +13,7 @@ import type { Metadata } from "next";
 import { loadRubricsSearchParams } from "@/lib/search-params/rubrics";
 
 /** ---- Strong types from OpenAPI ---- */
-type RubricsListOut = OutputOf<"/api/v5/artifacts/rubrics/list", "post">;
+type RubricsListOut = OutputOf<"/api/v5/artifacts/rubrics/search", "post">;
 type DuplicateRubricIn = InputOf<"/api/v5/artifacts/rubrics/duplicate", "post">;
 type DuplicateRubricOut = OutputOf<"/api/v5/artifacts/rubrics/duplicate", "post">;
 type DeleteRubricIn = InputOf<"/api/v5/artifacts/rubrics/delete", "post">;
@@ -39,7 +39,7 @@ type RubricsListBody = {
 const getRubricsList = async (body: RubricsListBody): Promise<RubricsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/rubrics/list",
+    "/artifacts/rubrics/search",
     { body },
     {
       cache: "no-store",

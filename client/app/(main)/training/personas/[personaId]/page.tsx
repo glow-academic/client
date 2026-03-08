@@ -21,8 +21,8 @@ import {
 /** ---- Strong types from OpenAPI ---- */
 type GetPersonaIn = InputOf<"/api/v5/artifacts/personas/get", "post">;
 type GetPersonaOut = OutputOf<"/api/v5/artifacts/personas/get", "post">;
-type SavePersonaIn = InputOf<"/api/v5/artifacts/personas/save", "post">;
-type SavePersonaOut = OutputOf<"/api/v5/artifacts/personas/save", "post">;
+type UpdatePersonaIn = InputOf<"/api/v5/artifacts/personas/update", "post">;
+type UpdatePersonaOut = OutputOf<"/api/v5/artifacts/personas/update", "post">;
 type PatchPersonaDraftIn = InputOf<"/api/v5/artifacts/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/api/v5/artifacts/personas/draft", "patch">;
 /** ---- Direct fetch (no caching - source of truth) ----
@@ -56,11 +56,9 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function savePersona(input: SavePersonaIn): Promise<SavePersonaOut> {
+async function updatePersona(input: UpdatePersonaIn): Promise<UpdatePersonaOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/personas/save", input);
+  return api.post("/artifacts/personas/update", input);
 }
 
 async function patchPersonaDraft(
@@ -146,7 +144,7 @@ export default async function PersonaEditPage({
         <Persona
           personaId={personaId}
           personaData={personaDetail}
-          savePersonaAction={savePersona}
+          updatePersonaAction={updatePersona}
           patchPersonaDraftAction={patchPersonaDraft}
         />
       </div>

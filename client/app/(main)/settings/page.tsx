@@ -9,7 +9,7 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type SettingsListOut = OutputOf<"/api/v5/artifacts/settings/list", "post">;
+type SettingsListOut = OutputOf<"/api/v5/artifacts/settings/search", "post">;
 
 /** ---- Direct fetch (no Next.js cache) ----
  * Using cache: 'no-store' to disable Next.js default fetch caching so hard refresh works.
@@ -18,7 +18,7 @@ type SettingsListOut = OutputOf<"/api/v5/artifacts/settings/list", "post">;
 const getSettingsList = async (): Promise<SettingsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/settings/list",
+    "/artifacts/settings/search",
     { body: {} },
     {
       cache: "no-store",

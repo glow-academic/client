@@ -60,7 +60,7 @@ async def docs_record_client(
     # Lazy imports to avoid circular dependencies
     from app.routes.v5.api.main.record.export import export_record
     from app.routes.v5.api.main.record.get import get_record
-    from app.routes.v5.api.main.record.list import list_record
+    from app.routes.v5.api.main.record.search import search_record
 
     return ComposedDocsResponse(
         name="record",
@@ -78,8 +78,8 @@ async def docs_record_client(
                 description="POST /get — Get record dashboard for a specific profile.",
             ),
             get_operation_info(
-                list_record,
-                description="POST /list — List record history entries.",
+                search_record,
+                description="POST /search — Search record history entries.",
             ),
             get_operation_info(
                 export_record,

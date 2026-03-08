@@ -12,8 +12,8 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type DocumentsListIn = InputOf<"/api/v5/artifacts/documents/list", "post">;
-type DocumentsListOut = OutputOf<"/api/v5/artifacts/documents/list", "post">;
+type DocumentsListIn = InputOf<"/api/v5/artifacts/documents/search", "post">;
+type DocumentsListOut = OutputOf<"/api/v5/artifacts/documents/search", "post">;
 type DeleteDocumentIn = InputOf<"/api/v5/artifacts/documents/delete", "post">;
 type DeleteDocumentOut = OutputOf<"/api/v5/artifacts/documents/delete", "post">;
 // GenerateTemplate types removed - now using WebSocket
@@ -27,7 +27,7 @@ type GenerateTemplateOut = never;
 const getDocumentsList = async (): Promise<DocumentsListOut> => {
   const bypassCache = await isHardRefresh();
   return api.post(
-    "/artifacts/documents/list",
+    "/artifacts/documents/search",
     { body: {} },
     {
       cache: "no-store",

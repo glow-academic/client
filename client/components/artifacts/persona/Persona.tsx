@@ -749,47 +749,51 @@ function PersonaComponent({
   // --- Submit ---
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      const effectiveFormState = formStateRef.current as unknown as PersonaFormState;
+      const fs = formStateRef.current as unknown as PersonaFormState;
 
-      if (personaData?.names?.required && !effectiveFormState.name_id) {
+      // Validate required fields (check value OR ID for creatables)
+      if (
+        personaData?.names?.required &&
+        !fs.name_id &&
+        !fs.name
+      ) {
         toast.error("Persona name is required");
         throw new Error("Persona name is required");
       }
-      if (personaData?.colors?.required && !effectiveFormState.color_id) {
+      if (personaData?.colors?.required && !fs.color_id) {
         toast.error("Persona color is required");
         throw new Error("Persona color is required");
       }
-      if (personaData?.icons?.required && !effectiveFormState.icon_id) {
+      if (personaData?.icons?.required && !fs.icon_id) {
         toast.error("Persona icon is required");
         throw new Error("Persona icon is required");
       }
       if (
         personaData?.instructions?.required &&
-        !effectiveFormState.instructions_id
+        !fs.instructions_id &&
+        !fs.instructions
       ) {
         toast.error("Instructions are required");
         throw new Error("Instructions are required");
       }
       if (
         personaData?.departments?.required &&
-        (!effectiveFormState.department_ids ||
-          effectiveFormState.department_ids.length === 0)
+        (!fs.department_ids || fs.department_ids.length === 0)
       ) {
         toast.error("Departments are required");
         throw new Error("Departments are required");
       }
       if (
         personaData?.parameter_fields?.required &&
-        (!effectiveFormState.parameter_field_ids ||
-          effectiveFormState.parameter_field_ids.length === 0)
+        (!fs.parameter_field_ids || fs.parameter_field_ids.length === 0)
       ) {
         toast.error("Parameter fields are required");
         throw new Error("Parameter fields are required");
       }
       if (
         personaData?.examples?.required &&
-        (!effectiveFormState.example_ids ||
-          effectiveFormState.example_ids.length === 0)
+        (!fs.example_ids || fs.example_ids.length === 0) &&
+        fs.examples.length === 0
       ) {
         toast.error("Examples are required");
         throw new Error("Examples are required");
@@ -799,45 +803,44 @@ function PersonaComponent({
         toast.error("Profile not loaded. Please refresh the page.");
         throw new Error("Profile not loaded");
       }
-      if (!savePersonaAction) {
-        toast.error("Save action not available");
-        throw new Error("Save action not available");
-      }
-      if (
-        !effectiveFormState.name_id ||
-        !effectiveFormState.color_id ||
-        !effectiveFormState.icon_id ||
-        !effectiveFormState.instructions_id
-      ) {
-        toast.error("Required fields are missing");
-        throw new Error("Required fields are missing");
-      }
+
+      // Build common fields (dual-mode: ID or value for creatables)
+      const commonFields = {
+        name_id: fs.name_id ?? undefined,
+        name: !fs.name_id ? (fs.name ?? undefined) : undefined,
+        color_id: fs.color_id ?? undefined,
+        icon_id: fs.icon_id ?? undefined,
+        instructions_id: fs.instructions_id ?? undefined,
+        instructions: !fs.instructions_id ? (fs.instructions ?? undefined) : undefined,
+        description_id: fs.description_id ?? undefined,
+        description: !fs.description_id ? (fs.description ?? undefined) : undefined,
+        active_flag_id: fs.active_flag_id ?? undefined,
+        department_ids: fs.department_ids?.length ? fs.department_ids : undefined,
+        parameter_field_ids: fs.parameter_field_ids?.length ? fs.parameter_field_ids : undefined,
+        example_ids: fs.example_ids?.length ? fs.example_ids : undefined,
+        examples: !fs.example_ids?.length && fs.examples?.length ? fs.examples : undefined,
+        voice_ids: fs.voice_ids?.length ? fs.voice_ids : undefined,
+      };
 
       try {
-        await savePersonaAction({
-          body: {
-            input_persona_id: isEditMode && personaId ? personaId : null,
-            name_id: effectiveFormState.name_id!,
-            color_id: effectiveFormState.color_id!,
-            icon_id: effectiveFormState.icon_id!,
-            instructions_id: effectiveFormState.instructions_id!,
-            description_id: effectiveFormState.description_id ?? null,
-            active_flag_id: effectiveFormState.active_flag_id ?? null,
-            department_ids: effectiveFormState.department_ids?.length
-              ? effectiveFormState.department_ids
-              : null,
-            parameter_field_ids: effectiveFormState.parameter_field_ids?.length
-              ? effectiveFormState.parameter_field_ids
-              : null,
-            example_ids: effectiveFormState.example_ids?.length
-              ? effectiveFormState.example_ids
-              : null,
-            parameter_ids: null,
-            voice_ids: effectiveFormState.voice_ids?.length
-              ? effectiveFormState.voice_ids
-              : null,
-          },
-        });
+        if (isEditMode && personaId && updatePersonaAction) {
+          await updatePersonaAction({
+            body: {
+              personas: [{ persona_id: personaId, ...commonFields }],
+              group_id: personaData?.group_id ?? undefined,
+            },
+          } as UpdatePersonaIn);
+        } else if (createPersonaAction) {
+          await createPersonaAction({
+            body: {
+              personas: [commonFields],
+              group_id: personaData?.group_id ?? undefined,
+            },
+          } as CreatePersonaIn);
+        } else {
+          toast.error("Action not available");
+          throw new Error("No create or update action available");
+        }
         toast.success(
           `Persona ${isEditMode ? "updated" : "created"} successfully!`,
         );
@@ -853,16 +856,16 @@ function PersonaComponent({
       isEditMode,
       personaId,
       profile?.id,
-      savePersonaAction,
+      createPersonaAction,
+      updatePersonaAction,
       personaData?.names,
-      personaData?.descriptions,
       personaData?.colors,
       personaData?.icons,
       personaData?.instructions,
-      personaData?.flags,
       personaData?.departments,
       personaData?.parameter_fields,
       personaData?.examples,
+      personaData?.group_id,
       router,
     ],
   );
@@ -870,11 +873,11 @@ function PersonaComponent({
   // --- Step Status ---
   const getStepStatus = useCallback(
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
-      const hasName = !!formState.name_id;
-      const hasDescription = !!formState.description_id;
+      const hasName = !!formState.name_id || !!formState.name;
+      const hasDescription = !!formState.description_id || !!formState.description;
       const hasColor = !!formState.color_id;
       const hasIcon = !!formState.icon_id;
-      const hasInstructions = !!formState.instructions_id;
+      const hasInstructions = !!formState.instructions_id || !!formState.instructions;
       const hasParameters = formState.parameter_field_ids.length > 0;
 
       switch (stepId) {
@@ -1033,8 +1036,13 @@ function PersonaComponent({
                   names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId }))
+                    setFormState((prev) => ({
+                      ...prev,
+                      name_id: nameId,
+                      name: null,
+                    }))
                   }
+                  onNameChange={handleNameChange}
                   onGenerate={generateHandlers["names"]}
                   placeholder="e.g., Enthusiastic Student"
                   defaultName="New Persona"
@@ -1075,8 +1083,10 @@ function PersonaComponent({
                     setFormState((prev) => ({
                       ...prev,
                       description_id: descriptionId,
+                      description: null,
                     }))
                   }
+                  onDescriptionChange={handleDescriptionChange}
                   searchTerm={
                     (stepFormData["descriptionSearch"] as
                       | string
@@ -1403,8 +1413,10 @@ function PersonaComponent({
                   setFormState((prev) => ({
                     ...prev,
                     instructions_id: instructionsId,
+                    instructions: null,
                   }))
                 }
+                onInstructionsChange={handleInstructionsChange}
                 searchTerm={
                   (stepFormData["instructionsSearch"] as
                     | string
@@ -1434,8 +1446,13 @@ function PersonaComponent({
                 examples={s?.examples?.resources ?? []}
                 disabled={disabled}
                 onChange={(ids) =>
-                  setFormState((prev) => ({ ...prev, example_ids: ids }))
+                  setFormState((prev) => ({
+                    ...prev,
+                    example_ids: ids,
+                    examples: [],
+                  }))
                 }
+                onExamplesChange={handleExamplesChange}
                 onGenerate={generateHandlers["examples"]}
                 maxItems={10}
                 addButtonLabel="Add example"
@@ -1455,7 +1472,6 @@ function PersonaComponent({
                       )
                     : {}
                 }
-                isAutosaveEnabled={isAutosaveEnabled}
                 create_tool_id={s?.examples?.tool_id ?? null}
               />
               <Voices
@@ -1502,6 +1518,10 @@ function PersonaComponent({
       handleDirectStepGenerate,
       isAutosaveEnabled,
       makeOnGenerationComplete,
+      handleNameChange,
+      handleDescriptionChange,
+      handleInstructionsChange,
+      handleExamplesChange,
     ],
   );
 
@@ -1590,16 +1610,9 @@ export default React.memo(PersonaComponent, (prevProps, nextProps) => {
   }
 
   if (
-    prevProps.savePersonaAction !== nextProps.savePersonaAction ||
-    prevProps.patchPersonaDraftAction !== nextProps.patchPersonaDraftAction ||
-    prevProps.createNamesAction !== nextProps.createNamesAction ||
-    prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||
-    prevProps.createColorsAction !== nextProps.createColorsAction ||
-    prevProps.createInstructionsAction !== nextProps.createInstructionsAction ||
-    prevProps.createExamplesAction !== nextProps.createExamplesAction ||
-    prevProps.createParameterFieldsAction !==
-      nextProps.createParameterFieldsAction ||
-    prevProps.createVoicesAction !== nextProps.createVoicesAction
+    prevProps.createPersonaAction !== nextProps.createPersonaAction ||
+    prevProps.updatePersonaAction !== nextProps.updatePersonaAction ||
+    prevProps.patchPersonaDraftAction !== nextProps.patchPersonaDraftAction
   ) {
     return false;
   }

@@ -12,8 +12,8 @@ import { isHardRefresh } from "@/lib/cache-utils";
 import type { Metadata } from "next";
 
 /** ---- Strong types from OpenAPI ---- */
-type ProfilesListIn = InputOf<"/api/v5/artifacts/profiles/list", "post">;
-type ProfilesListOut = OutputOf<"/api/v5/artifacts/profiles/list", "post">;
+type ProfilesListIn = InputOf<"/api/v5/artifacts/profiles/search", "post">;
+type ProfilesListOut = OutputOf<"/api/v5/artifacts/profiles/search", "post">;
 type DeleteProfileIn = InputOf<"/api/v5/artifacts/profiles/delete", "post">;
 type DeleteProfileOut = OutputOf<"/api/v5/artifacts/profiles/delete", "post">;
 type BulkDeleteProfileIn = InputOf<"/api/v5/artifacts/profiles/bulk/delete", "post">;
@@ -45,7 +45,7 @@ type CSVColumnMapping = ProcessCSVIn["body"]["column_mappings"][number];
  */
 const getProfilesList = async (input: ProfilesListIn): Promise<ProfilesListOut> => {
   const bypassCache = await isHardRefresh();
-  return api.post("/artifacts/profiles/list", input, {
+  return api.post("/artifacts/profiles/search", input, {
     cache: "no-store",
     ...(bypassCache && {
       headers: {

@@ -72,7 +72,7 @@ async def docs_pricing_client(
     # Lazy imports to avoid circular dependencies
     from app.routes.v5.api.main.pricing.export import export_pricing
     from app.routes.v5.api.main.pricing.get import get_pricing
-    from app.routes.v5.api.main.pricing.list import list_pricing
+    from app.routes.v5.api.main.pricing.search import search_pricing
     from app.routes.v5.api.main.pricing.refresh import pricing_refresh
 
     return ComposedDocsResponse(
@@ -91,8 +91,8 @@ async def docs_pricing_client(
                 description="POST /get — Get pricing analytics with cost breakdowns.",
             ),
             get_operation_info(
-                list_pricing,
-                description="POST /list — List pricing history entries.",
+                search_pricing,
+                description="POST /search — Search pricing history entries.",
             ),
             get_operation_info(
                 pricing_refresh,
