@@ -100,21 +100,17 @@ async def generate_prepare_impl(
         return
 
     try:
-        # Direct module import to avoid triggering socket __init__.py chain
-        import importlib
-
-        _pipeline = importlib.import_module(
-            "app.routes.v5.socket.internal.prepare_pipeline"
+        from app.infra.websocket.prepare_pipeline import (
+            build_agent_dispatch,
+            build_agent_groups_from_scores,
+            build_jinja_from_ws_ctx,
+            compute_all_artifact_types,
+            compute_createable_resources,
+            enrich_tools_with_args,
+            enrich_tools_with_args_outputs,
+            resolve_agent_config,
+            validate_payload,
         )
-        build_agent_dispatch = _pipeline.build_agent_dispatch
-        build_agent_groups_from_scores = _pipeline.build_agent_groups_from_scores
-        build_jinja_from_ws_ctx = _pipeline.build_jinja_from_ws_ctx
-        compute_all_artifact_types = _pipeline.compute_all_artifact_types
-        compute_createable_resources = _pipeline.compute_createable_resources
-        enrich_tools_with_args = _pipeline.enrich_tools_with_args
-        enrich_tools_with_args_outputs = _pipeline.enrich_tools_with_args_outputs
-        resolve_agent_config = _pipeline.resolve_agent_config
-        validate_payload = _pipeline.validate_payload
 
         # --- Step 1: Validate (pure) ---
         resource_types = [rt.name for rt in payload.resource_types if rt]
@@ -190,7 +186,7 @@ async def generate_prepare_impl(
 
         # Tools
         config_tools = ws_ctx.tools
-        all_tool_dicts = convert_tools_to_dict(config_tools)
+        all_tool_dicts = convert_tools_to_dict(config_tools) or []
         all_tool_dicts = enrich_tools_with_args(
             all_tool_dicts, config_tools, ws_ctx.args
         )

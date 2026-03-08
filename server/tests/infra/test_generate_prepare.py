@@ -17,7 +17,7 @@ from app.infra.websocket.generate_prepare_impl import generate_prepare_impl
 from app.infra.websocket.socket_event import recording_emit
 
 _P = "app.infra.websocket.generate_prepare_impl"
-_PP = "app.routes.v5.socket.internal.prepare_pipeline"
+_PP = "app.infra.websocket.prepare_pipeline"
 
 _PROFILE_ID = "00000000-0000-0000-0000-000000000001"
 _PROFILES_ID = "00000000-0000-0000-0000-000000000002"
