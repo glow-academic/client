@@ -1,1 +1,0 @@
-"""Model flags resource endpoints."""

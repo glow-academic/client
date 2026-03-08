@@ -410,13 +410,13 @@ _RESOURCES_WITH_CREATE = {
 RESOURCE_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {}
 for _name in _ALL_RESOURCES:
     _entry: dict[str, tuple[str, str]] = {
-        "get": (f"app.routes.v5.api.resources.{_name}.get", f"get_{_name}"),
-        "search": (f"app.routes.v5.api.resources.{_name}.search", f"search_{_name}"),
-        "docs": (f"app.routes.v5.api.resources.{_name}.docs", f"get_{_name}_docs"),
+        "get": (f"app.routes.v5.tools.resources.{_name}.get", f"get_{_name}"),
+        "search": (f"app.routes.v5.tools.resources.{_name}.search", f"search_{_name}"),
+        "docs": (f"app.routes.v5.tools.resources.{_name}.docs", f"get_{_name}_docs"),
     }
     if _name in _RESOURCES_WITH_CREATE:
         _entry["create"] = (
-            f"app.routes.v5.api.resources.{_name}.create",
+            f"app.routes.v5.tools.resources.{_name}.create",
             f"create_{_name}",
         )
     RESOURCE_REGISTRY[_name] = _entry
@@ -1378,9 +1378,9 @@ def register_endpoints(server: FastMCP) -> None:
                 Use discover_resources() to see all available resources.
             ids: List of resource UUIDs to fetch.
         """
-        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
+        from uuid import UUID
 
-        profile_id = get_mcp_profile_id()
+        from app.infra.globals import get_db, get_redis_client
 
         if resource not in RESOURCE_REGISTRY:
             suggestion = _suggest_item_name(resource)
@@ -1389,20 +1389,19 @@ def register_endpoints(server: FastMCP) -> None:
                 result["suggestion"] = suggestion
             return result
 
-        handler = _get_handler(*RESOURCE_REGISTRY[resource]["get"])
-
-        # Auto-detect ids vs p_ids field name
-        request_model = get_request_model_from_handler(handler)
-        if (
-            request_model
-            and hasattr(request_model, "model_fields")
-            and "p_ids" in request_model.model_fields
-        ):
-            payload: dict[str, Any] = {"p_ids": ids}
-        else:
-            payload = {"ids": ids}
-
-        return await call_endpoint_handler(handler, payload, profile_id)
+        try:
+            handler = _get_handler(*RESOURCE_REGISTRY[resource]["get"])
+            redis = get_redis_client()
+            uuid_ids = [UUID(i) for i in ids]
+            async for conn in get_db():
+                items = await handler(conn, uuid_ids, redis=redis)
+                return cast(
+                    dict[str, Any],
+                    {"items": [i.model_dump(mode="json") if hasattr(i, "model_dump") else i for i in items]},
+                )
+            return {"error": "Database connection not available", "status": "error"}
+        except Exception as e:
+            return {"error": str(e), "status": "error", "type": type(e).__name__}
 
     @server.tool()
     async def search_resource(
@@ -1422,9 +1421,7 @@ def register_endpoints(server: FastMCP) -> None:
             offset: Pagination offset (default 0).
             kwargs: Additional parameters — use docs(resource) for full schema.
         """
-        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
-
-        profile_id = get_mcp_profile_id()
+        from app.infra.globals import get_db, get_redis_client
 
         if resource not in RESOURCE_REGISTRY:
             suggestion = _suggest_item_name(resource)
@@ -1433,17 +1430,26 @@ def register_endpoints(server: FastMCP) -> None:
                 result["suggestion"] = suggestion
             return result
 
-        payload: dict[str, Any] = {
-            "limit_count": limit,
-            "offset_count": offset,
-        }
-        if query is not None:
-            payload["search"] = query
-        if kwargs:
-            payload.update(kwargs)
-
-        handler = _get_handler(*RESOURCE_REGISTRY[resource]["search"])
-        return await call_endpoint_handler(handler, payload, profile_id)
+        try:
+            handler = _get_handler(*RESOURCE_REGISTRY[resource]["search"])
+            redis = get_redis_client()
+            search_kwargs: dict[str, Any] = {
+                "limit_count": limit,
+                "offset_count": offset,
+            }
+            if query is not None:
+                search_kwargs["search"] = query
+            if kwargs:
+                search_kwargs.update(kwargs)
+            async for conn in get_db():
+                items = await handler(conn, redis=redis, **search_kwargs)
+                return cast(
+                    dict[str, Any],
+                    {"items": [i.model_dump(mode="json") if hasattr(i, "model_dump") else i for i in items]},
+                )
+            return {"error": "Database connection not available", "status": "error"}
+        except Exception as e:
+            return {"error": str(e), "status": "error", "type": type(e).__name__}
 
     @server.tool(
         description=(
@@ -1469,9 +1475,7 @@ def register_endpoints(server: FastMCP) -> None:
             group_id: Group ID from get_artifact() response.
             tool_id: Tool ID from get_artifact() response (if available for this resource type).
         """
-        from app.utils.mcp.get_mcp_profile_id import get_mcp_profile_id
-
-        profile_id = get_mcp_profile_id()
+        from app.infra.globals import get_db, get_redis_client
 
         if resource not in RESOURCE_REGISTRY:
             return {"error": f"'{resource}' is not a valid resource."}
@@ -1479,15 +1483,21 @@ def register_endpoints(server: FastMCP) -> None:
         if "create" not in RESOURCE_REGISTRY[resource]:
             return {"error": f"Resource '{resource}' does not support create."}
 
-        if group_id is not None or tool_id is not None:
-            payload = {**payload}
+        try:
+            handler = _get_handler(*RESOURCE_REGISTRY[resource]["create"])
+            redis = get_redis_client()
             if group_id is not None:
-                payload["group_id"] = group_id
+                payload = {**payload, "group_id": group_id}
             if tool_id is not None:
-                payload["tool_id"] = tool_id
-
-        handler = _get_handler(*RESOURCE_REGISTRY[resource]["create"])
-        return await call_endpoint_handler(handler, payload, profile_id)
+                payload = {**payload, "tool_id": tool_id}
+            async for conn in get_db():
+                result = await handler(conn, redis=redis, **payload)
+                if hasattr(result, "model_dump"):
+                    return cast(dict[str, Any], result.model_dump(mode="json"))
+                return cast(dict[str, Any], {"data": result})
+            return {"error": "Database connection not available", "status": "error"}
+        except Exception as e:
+            return {"error": str(e), "status": "error", "type": type(e).__name__}
 
     # ==================================================================
     # Category 4: Entry Tools (3 tools)

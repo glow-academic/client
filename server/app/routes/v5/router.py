@@ -60,9 +60,8 @@ from app.routes.v5.api.main.test import router as test_artifact_router
 from app.routes.v5.api.main.tool import router as tools_router
 
 # ============================================================================
-# Resources
+# Resources (removed — resource CRUD flows through draft endpoints)
 # ============================================================================
-from app.routes.v5.api.resources import router as resources_router
 from app.utils.mcp.get_mcp import get_mcp
 from app.utils.profile.get_profile_id import get_profile_id
 from app.utils.session.get_session_id import get_session_id
@@ -124,11 +123,6 @@ artifacts_router.include_router(benchmark_artifact_router)
 artifacts_router.include_router(test_artifact_router)
 
 router.include_router(artifacts_router)
-
-# ============================================================================
-# Resources
-# ============================================================================
-router.include_router(resources_router)
 
 # ============================================================================
 # Docs

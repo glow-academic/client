@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.routes.v5.api.resources.cohorts.types import QGetCohortsV4Item
-from app.routes.v5.api.resources.departments.get import QGetDepartmentsV4Item
 from app.sql.types import (
+    QGetCohortsV4Item,
+    QGetDepartmentsV4Item,
     QGetProfileContextAccessV4ArtifactAgent,
     QGetProfileContextV4Cohort,
     QGetProfileContextV4Department,

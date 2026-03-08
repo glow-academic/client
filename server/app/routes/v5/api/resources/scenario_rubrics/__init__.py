@@ -1,1 +1,0 @@
-"""Scenario rubrics resource endpoints."""

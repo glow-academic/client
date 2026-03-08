@@ -391,7 +391,7 @@ ARTIFACT_OPS: dict[tuple[str, str], tuple[str, str] | None] = {
 #   docs   → None (not yet implemented)
 # ---------------------------------------------------------------------------
 
-_R = "app.routes.v5.api.resources"
+_R = "app.routes.v5.tools.resources"
 
 
 def _res(
@@ -404,13 +404,13 @@ def _res(
 ) -> dict[tuple[str, str], tuple[str, str] | None]:
     """Helper to generate resource op entries."""
     d: dict[tuple[str, str], tuple[str, str] | None] = {}
-    d[(name, "get")] = (f"{_R}.{name}.get", f"get_{name}_internal") if get else None
+    d[(name, "get")] = (f"{_R}.{name}.get", f"get_{name}") if get else None
     d[(name, "create")] = (
-        (f"{_R}.{name}.create", f"create_{name}_internal") if create else None
+        (f"{_R}.{name}.create", f"create_{name}") if create else None
     )
-    d[(name, "link")] = (f"{_R}.{name}.link", f"link_{name}_internal") if link else None
+    d[(name, "link")] = (f"{_R}.{name}.link", f"link_{name}") if link else None
     d[(name, "search")] = (
-        (f"{_R}.{name}.search", f"search_{name}_internal") if search else None
+        (f"{_R}.{name}.search", f"search_{name}") if search else None
     )
     d[(name, "docs")] = None
     return d

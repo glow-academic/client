@@ -1,1 +1,0 @@
-"""Systems resources package."""
