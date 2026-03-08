@@ -71,14 +71,12 @@ export function Names({
   group_id,
   create_tool_id,
   showAiGenerate = false,
-  createNamesAction,
+  onNameChange,
   link_tool_id,
   linkNamesAction,
   isAutosaveEnabled = true,
-  registerFlush,
 }: NamesProps) {
   const resource = name_resource ?? null;
-  const resourceId = name_id ?? null;
   const show = show_name ?? true;
   const suggestionsList = useMemo(
     () => name_suggestions ?? [],
@@ -104,55 +102,6 @@ export function Names({
   const lastSavedValueRef = useRef<string>(initialValue);
   const isInitialMountRef = useRef(true);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ name_id: string | null } | void>) | undefined>(undefined);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ name_id: string | null } | void> => {
-    // Skip if no action available
-    if (!createNamesAction || !group_id) {
-      return;
-    }
-
-    // Skip if no change AND we already have a resource for this value
-    if (internalValue === lastSavedValueRef.current && resourceId) {
-      return { name_id: resourceId };
-    }
-
-    try {
-      if (internalValue.trim()) {
-        const result = await createNamesAction({
-          body: {
-            group_id: group_id,
-            name: internalValue,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        if (result.name_id) {
-          onNameIdChange(result.name_id);
-          lastSavedValueRef.current = internalValue;
-          return { name_id: result.name_id };
-        }
-      } else {
-        onNameIdChange(null);
-        lastSavedValueRef.current = internalValue;
-        return { name_id: null };
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to create name resource:", error);
-      throw error;
-    }
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Convert name_suggestions UUIDs to name strings for autocomplete
   const suggestionNames = useMemo(() => {
@@ -216,6 +165,7 @@ export function Names({
 
     // Skip on initial mount
     if (isInitialMountRef.current) {
+      isInitialMountRef.current = false;
       return;
     }
 
@@ -228,50 +178,10 @@ export function Names({
     }
   }, [internalValue, isAutosaveEnabled]);
 
-  // Debounced resource creation - only when autosave is enabled
-  useEffect(() => {
-    // Skip if autosave is disabled (manual save mode)
-    if (!isAutosaveEnabled) {
-      return;
-    }
-
-    // Skip on initial mount
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      lastSavedValueRef.current = internalValue;
-      return;
-    }
-
-    // Skip if value hasn't changed
-    if (internalValue === lastSavedValueRef.current) {
-      return;
-    }
-
-    // Skip if no action
-    if (!createNamesAction) {
-      return;
-    }
-
-    // Clear existing timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new timer
-    debounceTimerRef.current = setTimeout(() => {
-      flushRef.current?.();
-    }, 1000);
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [internalValue, createNamesAction, isAutosaveEnabled]);
-
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
-  }, []);
+    onNameChange?.(newValue);
+  }, [onNameChange]);
 
   const handleFocus = useCallback(
     (e: React.FocusEvent<HTMLInputElement>) => {

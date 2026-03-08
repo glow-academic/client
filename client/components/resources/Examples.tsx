@@ -1,7 +1,7 @@
 /**
  * Examples.tsx
- * Resource component for example messages
- * Uses ReorderableList for UI, creates example resources, reports IDs to parent
+ * Pure UI component for example messages
+ * Uses ReorderableList for UI, reports value changes upward via onExamplesChange
  */
 
 "use client";
@@ -49,22 +49,10 @@ export interface ExamplesProps {
     | ((input: LinkExamplesIn) => Promise<LinkExamplesOut>)
     | undefined;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  createExamplesAction?:
-    | ((input: {
-        body: {
-          group_id: string;
-          example: string;
-          mcp?: boolean;
-        };
-      }) => Promise<{ example_id?: string | null }>)
-    | undefined;
   onGenerate?: () => void | Promise<void>;
   // Optional: mapping of example_id -> example text (for initial display)
   exampleMapping?: Record<string, string>;
-  /** When false, skip automatic resource creation (manual save mode) */
-  isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ example_ids: string[] } | void>) => void;
+  onExamplesChange?: (examples: string[]) => void; // Report raw text values upward
   // Legacy props for backward compatibility
   exampleIds?: string[];
   suggestions?: string[]; // History suggestions for autocomplete (legacy)
@@ -78,7 +66,7 @@ export function Examples({
   example_suggestions,
   examples,
   disabled = false,
-  onChange,
+  onChange: _onChange,
   label = "Example Messages",
   id = "examples",
   required = false,
@@ -86,15 +74,13 @@ export function Examples({
   addButtonLabel = "Add example",
   itemPlaceholder = "Message",
   group_id,
-  create_tool_id,
+  create_tool_id: _create_tool_id,
   link_tool_id,
   linkExamplesAction,
   showAiGenerate = false,
-  createExamplesAction,
   onGenerate,
   exampleMapping = {},
-  isAutosaveEnabled = true,
-  registerFlush,
+  onExamplesChange,
   // Legacy props for backward compatibility
   exampleIds,
   suggestions = [],
@@ -172,66 +158,10 @@ export function Examples({
     return [""];
   });
 
-  const debounceTimersRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
-  const lastSavedTextsRef = useRef<string[]>(internalTexts);
-  const lastReportedIdsRef = useRef<string[]>(ids); // Track last IDs reported to parent
   const isInitialMountRef = useRef(true);
   const exampleIdMapRef = useRef<Map<string, string>>(new Map()); // Maps example text -> example_id
-  const onChangeRef = useRef(onChange); // Stable ref to avoid useEffect dependency
-  onChangeRef.current = onChange;
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ example_ids: string[] } | void>) | undefined>(undefined);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ example_ids: string[] } | void> => {
-    if (!createExamplesAction || !group_id) return;
-
-    // Find texts that need creation (have text but no ID)
-    const textsToCreate = internalTexts.filter(
-      (text) => text.trim() && !exampleIdMapRef.current.has(text)
-    );
-
-    // Create resources for each
-    for (const text of textsToCreate) {
-      try {
-        const result = await createExamplesAction({
-          body: {
-            group_id: group_id,
-            example: text,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        if (result.example_id) {
-          exampleIdMapRef.current.set(text, result.example_id);
-        }
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.error(`Failed to create example: "${text}"`, error);
-        throw error;
-      }
-    }
-
-    // Update parent with all IDs
-    const allIds = internalTexts
-      .filter((t) => t.trim())
-      .map((t) => exampleIdMapRef.current.get(t))
-      .filter((id): id is string => id !== undefined);
-
-    lastReportedIdsRef.current = allIds;
-    onChangeRef.current(allIds);
-    lastSavedTextsRef.current = internalTexts;
-
-    return { example_ids: allIds };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
+  const onExamplesChangeRef = useRef(onExamplesChange);
+  onExamplesChangeRef.current = onExamplesChange;
 
   // Sync external example_ids changes (when loading from server)
   useEffect(() => {
@@ -254,103 +184,29 @@ export function Examples({
             exampleIdMapRef.current.set(texts[idx], id);
           }
         });
-        // Keep lastReportedIdsRef in sync with external ids
-        lastReportedIdsRef.current = ids;
       }
     }
   }, [ids, effectiveExampleMapping]);
 
-  // Track and report pending changes (for manual save mode only)
+  // Report example text changes upward via onExamplesChange
   useEffect(() => {
-    // Only report pending changes when autosave is disabled
-    // When autosave is enabled, Persona.tsx handles the "saving" state directly
-    if (isAutosaveEnabled) {
-      return;
-    }
-
-    // Skip on initial mount
-    if (isInitialMountRef.current) {
-      return;
-    }
-
-    const hasPendingChanges =
-      JSON.stringify(internalTexts) !== JSON.stringify(lastSavedTextsRef.current);
-    if (hasPendingChanges) {
-      // Notify save context that there are unsaved changes
-      window.dispatchEvent(
-        new CustomEvent("unsaved-changes", { detail: { hasChanges: true } })
-      );
-    }
-  }, [internalTexts, isAutosaveEnabled]);
-
-  // Debounced resource creation for each example text - only when autosave is enabled
-  useEffect(() => {
-    // Skip if autosave is disabled (manual save mode)
-    if (!isAutosaveEnabled) {
-      return;
-    }
-
     // Skip on initial mount
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false;
-      lastSavedTextsRef.current = internalTexts;
       return;
     }
 
-    // Clear all existing timers
-    debounceTimersRef.current.forEach((timer) => clearTimeout(timer));
-    debounceTimersRef.current.clear();
-
-    // Check if there are any texts that need creation
-    const hasTextsToCreate = internalTexts.some(
-      (text) => text.trim() && !exampleIdMapRef.current.has(text)
-    );
-
-    if (!hasTextsToCreate) {
-      // All texts already have IDs, update parent only if IDs changed (reorder/delete)
-      const allIds = internalTexts
-        .filter((t) => t.trim())
-        .map((t) => exampleIdMapRef.current.get(t))
-        .filter((id): id is string => id !== undefined);
-      // Only call onChange if IDs actually changed to prevent infinite loops
-      const lastReportedStr = JSON.stringify(lastReportedIdsRef.current);
-      const newIdsStr = JSON.stringify(allIds);
-      if (lastReportedStr !== newIdsStr) {
-        lastReportedIdsRef.current = allIds;
-        onChangeRef.current(allIds);
-      }
-      return;
-    }
-
-    // Debounce the flush
-    const timer = setTimeout(() => {
-      flushRef.current?.();
-    }, 1000);
-
-    debounceTimersRef.current.set(0, timer);
-
-    lastSavedTextsRef.current = internalTexts;
-
-    // Capture ref value at effect start for cleanup
-    const timersAtStart = debounceTimersRef.current;
-
-    return () => {
-      // Use captured ref value for cleanup
-      timersAtStart.forEach((timer) => clearTimeout(timer));
-      timersAtStart.clear();
-    };
-  // Note: onChange is accessed via onChangeRef to avoid dependency issues
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [internalTexts, createExamplesAction, isAutosaveEnabled]);
+    const currentTexts = internalTexts.filter((t) => t.trim());
+    onExamplesChangeRef.current?.([...currentTexts]);
+  }, [internalTexts]);
 
   const handleItemsChange = useCallback((items: string[]) => {
     const newItems = items.length > 0 ? items : [""];
-    // Check for newly added texts that match existing suggestions — link instead of create
+    // Check for newly added texts that match existing suggestions — fire link tracking
     for (const text of newItems) {
       if (text.trim() && !exampleIdMapRef.current.has(text)) {
         const existingId = suggestionTextToIdMap.get(text);
         if (existingId) {
-          // Map the text to the existing resource ID so flush skips creation
           exampleIdMapRef.current.set(text, existingId);
           // Fire link tracking
           if (linkExamplesAction && group_id && link_tool_id) {

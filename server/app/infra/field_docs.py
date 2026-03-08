@@ -36,10 +36,10 @@ from app.routes.v5.tools.resources.departments.docs import get_departments_docs
 from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
 from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
-from app.routes.v5.tools.resources.parameters.docs import get_parameters_docs
 
 # Name hydration
 from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.parameters.docs import get_parameters_docs
 from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(

@@ -33,6 +33,9 @@ from app.routes.v5.tools.resources.departments.docs import get_departments_docs
 from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
 from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
+
+# Name hydration
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.personas.docs import get_personas_docs
 from app.routes.v5.tools.resources.profile_personas.docs import (
     get_profile_personas_docs,
@@ -45,9 +48,6 @@ from app.routes.v5.tools.resources.simulation_positions.docs import (
     get_simulation_positions_docs,
 )
 from app.routes.v5.tools.resources.simulations.docs import get_simulations_docs
-
-# Name hydration
-from app.routes.v5.tools.resources.names.get import get_names
 from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(

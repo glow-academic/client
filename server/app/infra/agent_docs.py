@@ -35,6 +35,9 @@ from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.instructions.docs import get_instructions_docs
 from app.routes.v5.tools.resources.models.docs import get_models_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
+
+# Name hydration
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.prompts.docs import get_prompts_docs
 from app.routes.v5.tools.resources.qualities.docs import get_qualities_docs
 from app.routes.v5.tools.resources.reasoning_levels.docs import (
@@ -46,9 +49,6 @@ from app.routes.v5.tools.resources.temperature_levels.docs import (
 )
 from app.routes.v5.tools.resources.tools.docs import get_tools_docs
 from app.routes.v5.tools.resources.voices.docs import get_voices_docs
-
-# Name hydration
-from app.routes.v5.tools.resources.names.get import get_names
 from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(

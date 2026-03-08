@@ -170,8 +170,6 @@ export interface DescriptionsProps {
   onSearchChange?: (term: string) => void; // Callback when search term changes
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created ID */
-  registerFlush?: (flush: () => Promise<{ description_id: string | null } | void>) => void;
 }
 
 export function Descriptions({
@@ -193,13 +191,12 @@ export function Descriptions({
   group_id,
   create_tool_id,
   showAiGenerate = false,
-  createDescriptionsAction,
+  onDescriptionChange,
   link_tool_id,
   linkDescriptionsAction,
   searchTerm,
   onSearchChange,
   isAutosaveEnabled = true,
-  registerFlush,
 }: DescriptionsProps) {
   const resource = description_resource ?? null;
   const resourceId = description_id ?? null;
@@ -222,59 +219,6 @@ export function Descriptions({
 
   // Keep a stable "server identity" for when we should accept server as source of truth
   const lastServerTextRef = useRef<string>(resourceDescription);
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ description_id: string | null } | void>) | undefined>(undefined);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ description_id: string | null } | void> => {
-    // Skip if no action available
-    if (!createDescriptionsAction || !group_id) return;
-
-    // Skip if no change AND we already have a resource for this value
-    // If resourceId is null, we still need to create the resource even if value hasn't changed
-    if (internalValue === lastSavedValueRef.current && resourceId) {
-      return { description_id: resourceId };
-    }
-
-    const seq = ++saveSeqRef.current;
-    try {
-      if (internalValue.trim()) {
-        const result = await createDescriptionsAction({
-          body: {
-            group_id: group_id,
-            description: internalValue,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        if (seq !== saveSeqRef.current) return;
-        if (result.description_id) {
-          onDescriptionIdChange(result.description_id);
-          lastSavedValueRef.current = internalValue;
-          isDirtyRef.current = false;
-          return { description_id: result.description_id };
-        }
-      } else {
-        if (seq !== saveSeqRef.current) return;
-        onDescriptionIdChange(null);
-        lastSavedValueRef.current = internalValue;
-        isDirtyRef.current = false;
-        return { description_id: null };
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to create description resource:", error);
-      throw error;
-    }
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   const descriptionsById = useMemo(() => {
     const mapping: Record<string, string> = {};
@@ -331,51 +275,11 @@ export function Descriptions({
     }
   }, [internalValue, isAutosaveEnabled]);
 
-  // Debounced resource creation - only when autosave is enabled
-  useEffect(() => {
-    // Skip if autosave is disabled (manual save mode)
-    if (!isAutosaveEnabled) {
-      return;
-    }
-
-    // Skip on initial mount
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      lastSavedValueRef.current = internalValue;
-      return;
-    }
-
-    // Skip if value hasn't changed
-    if (internalValue === lastSavedValueRef.current) {
-      return;
-    }
-
-    // Skip if no action
-    if (!createDescriptionsAction) {
-      return;
-    }
-
-    // Clear existing timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new timer
-    debounceTimerRef.current = setTimeout(() => {
-      flushRef.current?.();
-    }, 1000);
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [internalValue, createDescriptionsAction, isAutosaveEnabled]);
-
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
     isDirtyRef.current = newValue !== lastSavedValueRef.current;
-  }, []);
+    onDescriptionChange?.(newValue);
+  }, [onDescriptionChange]);
 
   // AI suggestion handling via shared hook
   const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({

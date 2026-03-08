@@ -2,7 +2,7 @@
  * Instructions.tsx
  * Resource component for instructions textarea fields
  * Full UI component with Label + Textarea + optional AI generate button
- * Creates resources independently and reports resource IDs to parent
+ * Pure UI component that reports value changes upward via onInstructionsChange
  */
 
 "use client";
@@ -23,14 +23,6 @@ import { GenericPicker } from "@/components/common/forms/GenericPicker";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
-type CreateDraftInstructionsIn = InputOf<
-  "/api/v5/resources/instructions",
-  "post"
->;
-type CreateDraftInstructionsOut = OutputOf<
-  "/api/v5/resources/instructions",
-  "post"
->;
 type LinkInstructionsIn = InputOf<"/api/v5/resources/instructions/link", "post">;
 type LinkInstructionsOut = OutputOf<"/api/v5/resources/instructions/link", "post">;
 
@@ -169,15 +161,13 @@ export interface InstructionsProps {
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  createInstructionsAction?: ((input: CreateDraftInstructionsIn) => Promise<CreateDraftInstructionsOut>) | undefined;
+  onInstructionsChange?: (instructions: string) => void; // Report value changes to parent
   link_tool_id?: string | null; // Tool ID for linking existing resources
   linkInstructionsAction?: ((input: LinkInstructionsIn) => Promise<LinkInstructionsOut>) | undefined;
   searchTerm?: string; // Search term for filtering instructions
   onSearchChange?: (term: string) => void; // Callback when search term changes
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created ID */
-  registerFlush?: (flush: () => Promise<{ instructions_id: string | null } | void>) => void;
   // Legacy props for backward compatibility
   instructionsResource?: { id: string; template: string; generated?: boolean | null } | null;
   instructionsId?: string | null;
@@ -203,13 +193,12 @@ export function Instructions({
   group_id,
   create_tool_id,
   showAiGenerate = false,
-  createInstructionsAction,
+  onInstructionsChange,
   link_tool_id,
   linkInstructionsAction,
   searchTerm,
   onSearchChange,
   isAutosaveEnabled = true,
-  registerFlush,
   // Legacy props for backward compatibility
   instructionsResource,
   instructionsId,
@@ -233,59 +222,6 @@ export function Instructions({
   const saveSeqRef = useRef(0);
   const isDirtyRef = useRef(false);
   const lastServerTextRef = useRef<string>(resourceTemplate);
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ instructions_id: string | null } | void>) | undefined>(undefined);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ instructions_id: string | null } | void> => {
-    // Skip if no action available
-    if (!createInstructionsAction || !group_id) return;
-
-    // Skip if no change AND we already have a resource for this value
-    // If resourceId is null, we still need to create the resource even if value hasn't changed
-    if (internalValue === lastSavedValueRef.current && resourceId) {
-      return { instructions_id: resourceId };
-    }
-
-    const seq = ++saveSeqRef.current;
-    try {
-      if (internalValue.trim()) {
-        const result = await createInstructionsAction({
-          body: {
-            group_id: group_id,
-            template: internalValue,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        if (seq !== saveSeqRef.current) return;
-        if (result.instruction_id) {
-          onInstructionsIdChange(result.instruction_id);
-          lastSavedValueRef.current = internalValue;
-          isDirtyRef.current = false;
-          return { instructions_id: result.instruction_id };
-        }
-      } else {
-        if (seq !== saveSeqRef.current) return;
-        onInstructionsIdChange(null);
-        lastSavedValueRef.current = internalValue;
-        isDirtyRef.current = false;
-        return { instructions_id: null };
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to create instructions resource:", error);
-      throw error;
-    }
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   const instructionsById = useMemo(() => {
     const mapping: Record<string, string> = {};
@@ -340,51 +276,11 @@ export function Instructions({
     }
   }, [internalValue, isAutosaveEnabled]);
 
-  // Debounced resource creation - only when autosave is enabled
-  useEffect(() => {
-    // Skip if autosave is disabled (manual save mode)
-    if (!isAutosaveEnabled) {
-      return;
-    }
-
-    // Skip on initial mount
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      lastSavedValueRef.current = internalValue;
-      return;
-    }
-
-    // Skip if value hasn't changed
-    if (internalValue === lastSavedValueRef.current) {
-      return;
-    }
-
-    // Skip if no action
-    if (!createInstructionsAction) {
-      return;
-    }
-
-    // Clear existing timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new timer
-    debounceTimerRef.current = setTimeout(() => {
-      flushRef.current?.();
-    }, 1000);
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [internalValue, createInstructionsAction, isAutosaveEnabled]);
-
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
     isDirtyRef.current = newValue !== lastSavedValueRef.current;
-  }, []);
+    onInstructionsChange?.(newValue);
+  }, [onInstructionsChange]);
 
   // AI suggestion handling via shared hook
   const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({

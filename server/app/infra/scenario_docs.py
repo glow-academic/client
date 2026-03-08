@@ -37,6 +37,7 @@ from app.routes.v5.tools.resources.documents.docs import get_documents_docs
 from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.images.docs import get_images_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.objectives.docs import get_objectives_docs
 from app.routes.v5.tools.resources.options.docs import get_options_docs
 from app.routes.v5.tools.resources.parameter_fields.docs import (
@@ -48,7 +49,6 @@ from app.routes.v5.tools.resources.problem_statements.docs import (
     get_problem_statements_docs,
 )
 from app.routes.v5.tools.resources.questions.docs import get_questions_docs
-from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.videos.docs import get_videos_docs
 from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
 

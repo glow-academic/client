@@ -38,9 +38,9 @@ from app.routes.v5.tools.resources.departments.docs import get_departments_docs
 from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
 from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.profiles.docs import get_profiles_docs
 from app.routes.v5.tools.resources.provider_keys.docs import get_provider_keys_docs
-from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.systems.docs import get_systems_docs
 from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
 

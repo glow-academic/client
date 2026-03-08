@@ -37,6 +37,7 @@ from app.routes.v5.tools.resources.departments.docs import get_departments_docs
 from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
 from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.rubrics.docs import get_rubrics_docs
 from app.routes.v5.tools.resources.scenario_flags.docs import get_scenario_flags_docs
 from app.routes.v5.tools.resources.scenario_positions.docs import (
@@ -48,7 +49,6 @@ from app.routes.v5.tools.resources.scenario_rubrics.docs import (
 from app.routes.v5.tools.resources.scenario_time_limits.docs import (
     get_scenario_time_limits_docs,
 )
-from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.scenarios.docs import get_scenarios_docs
 from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
 

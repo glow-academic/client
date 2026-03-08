@@ -38,14 +38,14 @@ from app.routes.v5.tools.resources.files.docs import get_files_docs
 from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.images.docs import get_images_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
+
+# Name hydration
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.parameter_fields.docs import (
     get_parameter_fields_docs,
 )
 from app.routes.v5.tools.resources.parameters.docs import get_parameters_docs
 from app.routes.v5.tools.resources.texts.docs import get_texts_docs
-
-# Name hydration
-from app.routes.v5.tools.resources.names.get import get_names
 from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(

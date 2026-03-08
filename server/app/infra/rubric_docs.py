@@ -35,11 +35,11 @@ from app.routes.v5.tools.resources.departments.docs import get_departments_docs
 from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
 from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.points.docs import get_points_docs
 from app.routes.v5.tools.resources.standard_groups.docs import (
     get_standard_groups_docs,
 )
-from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.standards.docs import get_standards_docs
 from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
 
