@@ -1,89 +1,34 @@
-"""Health refresh endpoint - POST /health/refresh.
+"""Health refresh endpoint — composable infra architecture."""
 
-Uses api_refresh_health_v4 SQL function to refresh all health MVs in dependency order.
-"""
-
-from typing import Annotated, Any, cast
+from typing import Annotated
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, Request, Response
+from redis.asyncio import Redis
 
-from app.infra.globals import get_db, get_pool
-from app.routes.auth.profile import get_auth_profile_internal
-from app.sql.types import (
-    RefreshMvHealthApiRequest,
-    RefreshMvHealthApiResponse,
-    RefreshMvHealthSqlParams,
-    RefreshMvHealthSqlRow,
-)
-from app.utils.cache.invalidate_tags import invalidate_tags
-from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/analytics/refresh_mv_health_complete.sql"
+from app.infra.globals import get_db, get_redis
+from app.infra.health_refresh import refresh_health_client
+from app.infra.refresh.types import RefreshResponse
 
 router = APIRouter()
 
 
-@router.post("/refresh", response_model=RefreshMvHealthApiResponse)
+@router.post("/refresh", response_model=RefreshResponse)
 async def health_refresh(
-    request: RefreshMvHealthApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> RefreshMvHealthApiResponse:
-    """Refresh all health section materialized views."""
-    tags = ["artifacts", "health"]
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> RefreshResponse:
+    """Refresh health materialized views and invalidate caches."""
+    profile_id = http_request.state.profile_id
 
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
+    result = await refresh_health_client(
+        conn,
+        redis,
+        profile_id=profile_id,
+    )
 
-    try:
-        profile_id = http_request.state.profile_id
-        if not profile_id:
-            raise HTTPException(
-                status_code=401,
-                detail="Profile ID is required. Please sign in again.",
-            )
+    response.headers["X-Invalidate-Tags"] = ",".join(result.invalidated_tags)
 
-        pool = get_pool()
-        if pool:
-            async with pool.acquire() as context_conn:
-                profile_ctx = await get_auth_profile_internal(
-                    conn=context_conn,
-                    profile_id=profile_id,
-                    bypass_cache=False,
-                )
-                actor_name = profile_ctx.access.actor_name
-        else:
-            actor_name = None
-
-        request_dict = request.model_dump(mode="json")
-        params = RefreshMvHealthSqlParams(**request_dict, profile_id=profile_id)  # type: ignore[arg-type]
-        sql_params = params.to_tuple()
-
-        result = cast(
-            RefreshMvHealthSqlRow,
-            await execute_sql_typed(conn, SQL_PATH, params=params),
-        )
-
-        api_response = RefreshMvHealthApiResponse.model_validate(result.model_dump())
-
-        await invalidate_tags(tags, redis=get_redis_client())
-        response.headers["X-Invalidate-Tags"] = ",".join(tags)
-
-        return api_response
-
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except Exception as e:
-        handle_route_error(
-            error=e,
-            route_path=http_request.url.path,
-            operation="health_refresh",
-            sql_query=sql_query,
-            sql_params=sql_params,
-            request=http_request,
-        )
+    return result

@@ -7,7 +7,7 @@ from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.metrics.create import create_metrics_entry_internal
-from app.routes.v5.tools.entries.metrics.get import get_metrics_entries_internal
+from app.routes.v5.tools.entries.metrics.get import get_metrics
 from app.routes.v5.tools.entries.metrics.search import search_metrics
 
 
@@ -35,8 +35,8 @@ async def get_metrics_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Creates a new metrics entry with system performance data (internal only).",
             ),
             get_operation_info(
-                get_metrics_entries_internal,
-                description="Batch retrieves metrics entries by IDs (internal only).",
+                get_metrics,
+                description="Batch retrieves metrics entries by date_hour IDs from metrics_mv.",
             ),
             get_operation_info(
                 search_metrics,

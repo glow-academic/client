@@ -9,6 +9,7 @@ from app.routes.v5.api.main.parameter.draft import router as draft_router
 from app.routes.v5.api.main.parameter.duplicate import router as duplicate_router
 from app.routes.v5.api.main.parameter.export import router as export_router
 from app.routes.v5.api.main.parameter.get import router as get_router
+from app.routes.v5.api.main.parameter.refresh import router as refresh_router
 from app.routes.v5.api.main.parameter.save import router as save_router
 from app.routes.v5.api.main.parameter.search import router as search_router
 from app.routes.v5.api.main.parameter.update import router as update_router
@@ -26,3 +27,4 @@ router.include_router(delete_router)
 router.include_router(draft_router)
 router.include_router(docs_router)
 router.include_router(export_router)
+router.include_router(refresh_router)

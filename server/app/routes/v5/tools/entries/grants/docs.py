@@ -6,7 +6,7 @@ from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
 from app.routes.v5.tools.entries.grants.create import create_grant
-from app.routes.v5.tools.entries.grants.get import get_grants_entries_internal
+from app.routes.v5.tools.entries.grants.get import get_grants
 from app.routes.v5.tools.entries.grants.search import search_grants
 
 
@@ -32,8 +32,8 @@ async def get_grants_docs(conn: asyncpg.Connection) -> DocsResponse:
                 description="Creates a new grant entry with optional expiration time (defaults to 1 hour).",
             ),
             get_operation_info(
-                get_grants_entries_internal,
-                description="Batch retrieves grant entries by IDs from grants_entry.",
+                get_grants,
+                description="Batch retrieves grant entries by IDs from grants_mv.",
             ),
             get_operation_info(
                 search_grants,
