@@ -396,11 +396,7 @@ def compute_continuation_options(
             chats_list,
             key=lambda c: (
                 c.grade_score if c.grade_score is not None else -1,
-                -(
-                    c.grade_time_taken
-                    if c.grade_time_taken is not None
-                    else 999999
-                ),
+                -(c.grade_time_taken if c.grade_time_taken is not None else 999999),
             ),
         )
         best_per_entry[ceid] = best
@@ -415,11 +411,7 @@ def compute_continuation_options(
     remaining_options: list[PreviousChatOption] = []
     for position, (ceid, chat) in enumerate(ordered_remaining):
         score = chat.grade_score
-        time_taken = (
-            float(chat.grade_time_taken)
-            if chat.grade_time_taken
-            else 0.0
-        )
+        time_taken = float(chat.grade_time_taken) if chat.grade_time_taken else 0.0
         # Use scenario_names keyed by scenario_id for display
         name = scenario_names.get(str(chat.scenario_id)) if chat.scenario_id else None
 

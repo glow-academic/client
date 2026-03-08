@@ -308,15 +308,9 @@ async def get_attempt_internal(
         }
 
         # Build entry MV lookup maps (like scenario pattern — no upload resolution)
-        image_entry_map = {
-            i.images_id: i for i in ctx.entries.get("images", [])
-        }
-        video_entry_map = {
-            v.videos_id: v for v in ctx.entries.get("videos", [])
-        }
-        file_entry_map = {
-            f.files_id: f for f in ctx.entries.get("files", [])
-        }
+        image_entry_map = {i.images_id: i for i in ctx.entries.get("images", [])}
+        video_entry_map = {v.videos_id: v for v in ctx.entries.get("videos", [])}
+        file_entry_map = {f.files_id: f for f in ctx.entries.get("files", [])}
 
         for item in _res("images"):
             if item.id:

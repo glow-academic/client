@@ -469,7 +469,120 @@ class ListPersonaApiResponse(BaseModel):
     import_fields: list[ImportField] | None = None
 
 
-# ========== Save Endpoint Types ==========
+# ========== Shared Save/Create/Update Types ==========
+
+
+class PersonaFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class PersonaResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    persona_id: UUID | None = None
+    message: str
+    errors: list[PersonaFieldError] | None = None
+
+
+# ========== Create Endpoint Types ==========
+
+
+class CreatePersonaItem(BaseModel):
+    """Single persona item for create — no persona_id.
+
+    Required fields (name, color, icon, instructions): provide ID or value.
+    """
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    color_id: UUID | None = None
+    color: str | None = None
+    icon_id: UUID | None = None
+    icon: str | None = None
+    instructions_id: UUID | None = None
+    instructions: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    parameter_fields: list[str] | None = None
+    example_ids: list[UUID] | None = None
+    examples: list[str] | None = None
+    voice_ids: list[UUID] | None = None
+    voices: list[str] | None = None
+
+
+class CreatePersonaApiRequest(BaseModel):
+    """Request model for bulk create persona endpoint."""
+
+    personas: list[CreatePersonaItem]
+    group_id: UUID | None = None
+
+
+class CreatePersonaApiResponse(BaseModel):
+    """Response model for bulk create persona endpoint."""
+
+    results: list[PersonaResultItem]
+
+
+# ========== Update Endpoint Types ==========
+
+
+class UpdatePersonaItem(BaseModel):
+    """Single persona item for update — persona_id required, all fields optional.
+
+    Only provided fields are updated (partial update).
+    """
+
+    persona_id: UUID  # Required — which persona to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    color_id: UUID | None = None
+    color: str | None = None
+    icon_id: UUID | None = None
+    icon: str | None = None
+    instructions_id: UUID | None = None
+    instructions: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    parameter_fields: list[str] | None = None
+    example_ids: list[UUID] | None = None
+    examples: list[str] | None = None
+    voice_ids: list[UUID] | None = None
+    voices: list[str] | None = None
+
+
+class UpdatePersonaApiRequest(BaseModel):
+    """Request model for bulk update persona endpoint."""
+
+    personas: list[UpdatePersonaItem]
+    group_id: UUID | None = None
+
+
+class UpdatePersonaApiResponse(BaseModel):
+    """Response model for bulk update persona endpoint."""
+
+    results: list[PersonaResultItem]
+
+
+# ========== Legacy Save Types (backwards compat) ==========
 
 
 class SavePersonaFieldError(BaseModel):
@@ -532,80 +645,6 @@ class SavePersonaApiResponse(BaseModel):
     """Response model for bulk save persona endpoint."""
 
     results: list[SavePersonaResult]
-
-
-class SavePersonaSqlParams(BaseModel):
-    """SQL parameters for save persona - flat resource IDs."""
-
-    profile_id: UUID
-    input_persona_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    color_id: UUID | None = None
-    icon_id: UUID | None = None
-    instructions_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    example_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-    personas_resource_id: UUID | None = None
-    active_value: bool = True
-
-    @classmethod
-    def from_request(
-        cls,
-        request: SavePersonaItem,
-        profile_id: UUID,
-        personas_resource_id: UUID | None = None,
-        active_value: bool = True,
-    ) -> SavePersonaSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_persona_id=request.input_persona_id,
-            name_id=request.name_id,
-            description_id=request.description_id,
-            color_id=request.color_id,
-            icon_id=request.icon_id,
-            instructions_id=request.instructions_id,
-            active_flag_id=request.active_flag_id,
-            department_ids=request.department_ids,
-            parameter_field_ids=request.parameter_field_ids,
-            example_ids=request.example_ids,
-            voice_ids=request.voice_ids,
-            personas_resource_id=personas_resource_id,
-            active_value=active_value,
-        )
-
-    def to_tuple(self) -> tuple:
-        """Convert to tuple for SQL execution.
-
-        Arrays are passed as-is (None preserved) so SQL COALESCE can
-        distinguish 'not provided' (NULL) from 'explicitly empty' ([]).
-        """
-        return (
-            self.profile_id,
-            self.input_persona_id,
-            self.name_id,
-            self.description_id,
-            self.color_id,
-            self.icon_id,
-            self.instructions_id,
-            self.active_flag_id,
-            self.department_ids,
-            self.parameter_field_ids,
-            self.example_ids,
-            self.voice_ids,
-            self.personas_resource_id,
-            self.active_value,
-        )
-
-
-class SavePersonaSqlRow(BaseModel):
-    """SQL row for save persona."""
-
-    persona_id: UUID | None = None
-    actor_name: str | None = None
 
 
 # ========== Delete Endpoint Types ==========

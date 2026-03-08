@@ -263,5 +263,3 @@ def _empty_response(
 
 async def _empty_list() -> list:
     return []
-
-

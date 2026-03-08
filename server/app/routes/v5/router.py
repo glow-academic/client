@@ -49,6 +49,7 @@ from app.routes.v5.api.main.practice import router as practice_artifact_router
 from app.routes.v5.api.main.pricing import router as pricing_artifact_router
 from app.routes.v5.api.main.profile import router as profile_router
 from app.routes.v5.api.main.provider import router as providers_router
+from app.routes.v5.api.main.record import router as record_artifact_router
 from app.routes.v5.api.main.reports import router as reports_artifact_router
 from app.routes.v5.api.main.rubric import router as rubrics_router
 from app.routes.v5.api.main.scenario import router as scenarios_router
@@ -112,6 +113,7 @@ artifacts_router.include_router(practice_artifact_router)
 artifacts_router.include_router(attempt_artifact_router)
 
 # View-based artifacts
+artifacts_router.include_router(record_artifact_router)
 artifacts_router.include_router(dashboard_artifact_router)
 artifacts_router.include_router(reports_artifact_router)
 artifacts_router.include_router(leaderboard_artifact_router)

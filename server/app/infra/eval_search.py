@@ -168,13 +168,11 @@ async def search_eval_client(
         dept_ids_str = [str(d) for d in (a.department_ids or [])]
 
         # Resolve flags for this eval
-        artifact_flags = [flag_map[fid] for fid in (a.flag_ids or []) if fid in flag_map]
-        is_dynamic = any(
-            f.name == "eval_dynamic" and f.value for f in artifact_flags
-        )
-        use_groups = any(
-            f.name == "eval_groups" and f.value for f in artifact_flags
-        )
+        artifact_flags = [
+            flag_map[fid] for fid in (a.flag_ids or []) if fid in flag_map
+        ]
+        is_dynamic = any(f.name == "eval_dynamic" and f.value for f in artifact_flags)
+        use_groups = any(f.name == "eval_groups" and f.value for f in artifact_flags)
 
         can_edit = compute_can_edit(user_role=user_role)
         can_delete = compute_can_delete(user_role=user_role)
@@ -225,5 +223,3 @@ async def search_eval_client(
 
 async def _empty_list() -> list:
     return []
-
-
