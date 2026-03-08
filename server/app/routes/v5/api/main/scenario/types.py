@@ -701,6 +701,8 @@ class SaveScenarioApiResponse(BaseModel):
 class ExportScenarioApiRequest(BaseModel):
     """Request model for export scenario endpoint."""
 
+    scenario_id: UUID | None = None
+
     search: str | None = None
     persona_ids: list[str] | None = None
     simulation_ids: list[str] | None = None

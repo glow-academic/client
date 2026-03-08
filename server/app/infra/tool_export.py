@@ -52,6 +52,7 @@ async def export_tool_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    tool_id: UUID | None = None,
 ) -> dict:
     """Tool full export using composable infra functions.
 
@@ -78,19 +79,22 @@ async def export_tool_client(
 
     # -- Step 2: Search all tools (full dump) --
 
-    tool_ids, _total_count = await search_tools(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not tool_ids:
-        return ExportToolApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if tool_id:
+        tool_ids = [tool_id]
+    else:
+        tool_ids, _total_count = await search_tools(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not tool_ids:
+            return ExportToolApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # -- Step 3: Get tool artifacts with all junction IDs --
 

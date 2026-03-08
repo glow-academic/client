@@ -65,6 +65,7 @@ async def export_scenario_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    scenario_id: UUID | None = None,
 ) -> dict:
     """Scenario full export using composable infra functions.
 
@@ -91,19 +92,22 @@ async def export_scenario_client(
 
     # -- Step 2: Search all scenarios (full dump) --
 
-    scenario_ids, _total_count = await search_scenarios(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not scenario_ids:
-        return ExportScenarioApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if scenario_id:
+        scenario_ids = [scenario_id]
+    else:
+        scenario_ids, _total_count = await search_scenarios(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not scenario_ids:
+            return ExportScenarioApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # -- Step 3: Get scenario artifacts with all junction IDs --
 

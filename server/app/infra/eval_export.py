@@ -48,6 +48,7 @@ async def export_eval_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    eval_id: UUID | None = None,
 ) -> dict:
     """Eval full export using composable infra functions.
 
@@ -74,19 +75,22 @@ async def export_eval_client(
 
     # ── Step 2: Search all evals (full dump) ────────────────────────
 
-    eval_ids, _total_count = await search_evals(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not eval_ids:
-        return ExportEvalApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if eval_id:
+        eval_ids = [eval_id]
+    else:
+        eval_ids, _total_count = await search_evals(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not eval_ids:
+            return ExportEvalApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # ── Step 3: Get eval artifacts with all junction IDs ────────────
 

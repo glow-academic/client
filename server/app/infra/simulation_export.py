@@ -56,6 +56,7 @@ async def export_simulation_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    simulation_id: UUID | None = None,
 ) -> dict:
     """Simulation full export using composable infra functions.
 
@@ -82,19 +83,22 @@ async def export_simulation_client(
 
     # -- Step 2: Search all simulations (full dump) --
 
-    simulation_ids, _total_count = await search_simulations(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not simulation_ids:
-        return ExportSimulationApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if simulation_id:
+        simulation_ids = [simulation_id]
+    else:
+        simulation_ids, _total_count = await search_simulations(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not simulation_ids:
+            return ExportSimulationApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # -- Step 3: Get simulation artifacts with all junction IDs --
 

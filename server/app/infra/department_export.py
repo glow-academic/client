@@ -48,6 +48,7 @@ async def export_department_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    department_id: UUID | None = None,
 ) -> dict:
     """Department full export using composable infra functions.
 
@@ -74,19 +75,22 @@ async def export_department_client(
 
     # -- Step 2: Search all departments (full dump) --
 
-    department_ids, _total_count = await search_departments(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not department_ids:
-        return ExportDepartmentApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if department_id:
+        department_ids = [department_id]
+    else:
+        department_ids, _total_count = await search_departments(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not department_ids:
+            return ExportDepartmentApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # -- Step 3: Get department artifacts with all junction IDs --
 

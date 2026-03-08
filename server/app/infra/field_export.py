@@ -51,6 +51,7 @@ async def export_field_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    field_id: UUID | None = None,
 ) -> dict:
     """Field full export using composable infra functions.
 
@@ -77,19 +78,22 @@ async def export_field_client(
 
     # ── Step 2: Search all fields (full dump) ────────────────────────
 
-    field_ids, _total_count = await search_fields(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not field_ids:
-        return ExportFieldApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if field_id:
+        field_ids = [field_id]
+    else:
+        field_ids, _total_count = await search_fields(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not field_ids:
+            return ExportFieldApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # ── Step 3: Get field artifacts with all junction IDs ────────────
 

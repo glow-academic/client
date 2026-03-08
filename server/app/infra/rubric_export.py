@@ -52,6 +52,7 @@ async def export_rubric_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    rubric_id: UUID | None = None,
 ) -> dict:
     """Rubric full export using composable infra functions.
 
@@ -78,19 +79,22 @@ async def export_rubric_client(
 
     # ── Step 2: Search all rubrics (full dump) ───────────────────────
 
-    rubric_ids, _total_count = await search_rubrics(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not rubric_ids:
-        return ExportRubricApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if rubric_id:
+        rubric_ids = [rubric_id]
+    else:
+        rubric_ids, _total_count = await search_rubrics(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not rubric_ids:
+            return ExportRubricApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # ── Step 3: Get rubric artifacts with all junction IDs ───────────
 

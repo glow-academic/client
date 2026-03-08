@@ -60,6 +60,7 @@ async def export_model_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    model_id: UUID | None = None,
 ) -> dict:
     """Model full export using composable infra functions.
 
@@ -86,19 +87,22 @@ async def export_model_client(
 
     # ── Step 2: Search all models (full dump) ────────────────────────
 
-    model_ids, _total_count = await search_models(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not model_ids:
-        return ExportModelApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if model_id:
+        model_ids = [model_id]
+    else:
+        model_ids, _total_count = await search_models(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not model_ids:
+            return ExportModelApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # ── Step 3: Get model artifacts with all junction IDs ────────────
 

@@ -8,13 +8,17 @@ from redis.asyncio import Redis
 
 from app.infra.globals import get_db, get_redis
 from app.infra.scenario_export import export_scenario_client
-from app.routes.v5.api.main.scenario.types import ExportScenarioApiResponse
+from app.routes.v5.api.main.scenario.types import (
+    ExportScenarioApiRequest,
+    ExportScenarioApiResponse,
+)
 
 router = APIRouter()
 
 
 @router.post("/export", response_model=ExportScenarioApiResponse)
 async def export_scenarios(
+    body: ExportScenarioApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -29,4 +33,5 @@ async def export_scenarios(
         redis,
         profile_id=profile_id,
         session_id=session_id,
+        scenario_id=body.scenario_id,
     )

@@ -1,9 +1,11 @@
 """Rubric export endpoint — composable infra architecture."""
 
 from typing import Annotated
+from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, Request, Response
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.globals import get_db, get_redis
@@ -13,8 +15,15 @@ from app.routes.v5.api.main.rubric.types import ExportRubricApiResponse
 router = APIRouter()
 
 
+class ExportRubricApiRequest(BaseModel):
+    """Request model for rubric export."""
+
+    rubric_id: UUID | None = None
+
+
 @router.post("/export", response_model=ExportRubricApiResponse)
 async def export_rubrics(
+    body: ExportRubricApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -29,4 +38,5 @@ async def export_rubrics(
         redis,
         profile_id=profile_id,
         session_id=session_id,
+        rubric_id=body.rubric_id,
     )

@@ -50,6 +50,7 @@ async def export_setting_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    setting_id: UUID | None = None,
 ) -> dict:
     """Setting full export using composable infra functions.
 
@@ -76,19 +77,22 @@ async def export_setting_client(
 
     # -- Step 2: Search all settings (full dump) --
 
-    setting_ids, _total_count = await search_settings(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not setting_ids:
-        return ExportSettingApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if setting_id:
+        setting_ids = [setting_id]
+    else:
+        setting_ids, _total_count = await search_settings(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not setting_ids:
+            return ExportSettingApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # -- Step 3: Get setting artifacts with all junction IDs --
 

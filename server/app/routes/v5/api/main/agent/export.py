@@ -8,13 +8,17 @@ from redis.asyncio import Redis
 
 from app.infra.agent_export import export_agent_client
 from app.infra.globals import get_db, get_redis
-from app.routes.v5.api.main.agent.types import ExportAgentApiResponse
+from app.routes.v5.api.main.agent.types import (
+    ExportAgentApiRequest,
+    ExportAgentApiResponse,
+)
 
 router = APIRouter()
 
 
 @router.post("/export", response_model=ExportAgentApiResponse)
 async def export_agents(
+    body: ExportAgentApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -29,4 +33,5 @@ async def export_agents(
         redis,
         profile_id=profile_id,
         session_id=session_id,
+        agent_id=body.agent_id,
     )

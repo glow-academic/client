@@ -8,13 +8,17 @@ from redis.asyncio import Redis
 
 from app.infra.globals import get_db, get_redis
 from app.infra.persona_export import export_persona_client
-from app.routes.v5.api.main.persona.types import ExportPersonaApiResponse
+from app.routes.v5.api.main.persona.types import (
+    ExportPersonaApiRequest,
+    ExportPersonaApiResponse,
+)
 
 router = APIRouter()
 
 
 @router.post("/export", response_model=ExportPersonaApiResponse)
 async def export_personas(
+    body: ExportPersonaApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -29,4 +33,5 @@ async def export_personas(
         redis,
         profile_id=profile_id,
         session_id=session_id,
+        persona_id=body.persona_id,
     )

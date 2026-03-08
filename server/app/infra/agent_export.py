@@ -56,6 +56,7 @@ async def export_agent_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    agent_id: UUID | None = None,
 ) -> dict:
     """Agent full export using composable infra functions.
 
@@ -82,19 +83,22 @@ async def export_agent_client(
 
     # -- Step 2: Search all agents (full dump) --
 
-    agent_ids, _total_count = await search_agents(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not agent_ids:
-        return ExportAgentApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if agent_id:
+        agent_ids = [agent_id]
+    else:
+        agent_ids, _total_count = await search_agents(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not agent_ids:
+            return ExportAgentApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # -- Step 3: Get agent artifacts with all junction IDs --
 

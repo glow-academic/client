@@ -48,6 +48,7 @@ async def export_parameter_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    parameter_id: UUID | None = None,
 ) -> dict:
     """Parameter full export using composable infra functions.
 
@@ -74,19 +75,22 @@ async def export_parameter_client(
 
     # ── Step 2: Search all parameters (full dump) ────────────────────
 
-    parameter_ids, _total_count = await search_parameters(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not parameter_ids:
-        return ExportParameterApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if parameter_id:
+        parameter_ids = [parameter_id]
+    else:
+        parameter_ids, _total_count = await search_parameters(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not parameter_ids:
+            return ExportParameterApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # ── Step 3: Get parameter artifacts with all junction IDs ────────
 

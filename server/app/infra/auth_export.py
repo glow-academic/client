@@ -52,6 +52,7 @@ async def export_auth_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    auth_id: UUID | None = None,
 ) -> dict:
     """Auth full export using composable infra functions.
 
@@ -78,19 +79,22 @@ async def export_auth_client(
 
     # -- Step 2: Search all auths (full dump) --
 
-    auth_ids, _total_count = await search_auths(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not auth_ids:
-        return ExportAuthApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if auth_id:
+        auth_ids = [auth_id]
+    else:
+        auth_ids, _total_count = await search_auths(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not auth_ids:
+            return ExportAuthApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # -- Step 3: Get auth artifacts with all junction IDs --
 

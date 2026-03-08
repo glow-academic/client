@@ -8,13 +8,17 @@ from redis.asyncio import Redis
 
 from app.infra.globals import get_db, get_redis
 from app.infra.simulation_export import export_simulation_client
-from app.routes.v5.api.main.simulation.types import ExportSimulationApiResponse
+from app.routes.v5.api.main.simulation.types import (
+    ExportSimulationApiRequest,
+    ExportSimulationApiResponse,
+)
 
 router = APIRouter()
 
 
 @router.post("/export", response_model=ExportSimulationApiResponse)
 async def export_simulations(
+    body: ExportSimulationApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -29,4 +33,5 @@ async def export_simulations(
         redis,
         profile_id=profile_id,
         session_id=session_id,
+        simulation_id=body.simulation_id,
     )

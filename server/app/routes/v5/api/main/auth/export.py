@@ -1,9 +1,11 @@
 """Auth export endpoint — composable infra architecture."""
 
 from typing import Annotated
+from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, Request, Response
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.auth_export import export_auth_client
@@ -13,8 +15,15 @@ from app.routes.v5.api.main.auth.types import ExportAuthApiResponse
 router = APIRouter()
 
 
+class ExportAuthApiRequest(BaseModel):
+    """Request model for auth export."""
+
+    auth_id: UUID | None = None
+
+
 @router.post("/export", response_model=ExportAuthApiResponse)
 async def export_auths(
+    body: ExportAuthApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -29,4 +38,5 @@ async def export_auths(
         redis,
         profile_id=profile_id,
         session_id=session_id,
+        auth_id=body.auth_id,
     )

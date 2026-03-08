@@ -704,6 +704,8 @@ class PatchPersonaDraftApiResponse(BaseModel):
 class ExportPersonaApiRequest(BaseModel):
     """Request model for export persona endpoint."""
 
+    persona_id: UUID | None = None
+
     # Same filters as list endpoint
     search: str | None = None
     scenario_ids: list[str] | None = None

@@ -754,6 +754,8 @@ class SaveSimulationSqlRow(BaseModel):
 class ExportSimulationApiRequest(BaseModel):
     """Request model for export simulation endpoint."""
 
+    simulation_id: UUID | None = None
+
     search: str | None = None
     filter_scenario_ids: list[str] | None = None
     filter_cohort_ids: list[str] | None = None

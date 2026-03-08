@@ -1,9 +1,11 @@
 """Field export endpoint — composable infra architecture."""
 
 from typing import Annotated
+from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, Request, Response
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.field_export import export_field_client
@@ -13,8 +15,15 @@ from app.routes.v5.api.main.field.types import ExportFieldApiResponse
 router = APIRouter()
 
 
+class ExportFieldApiRequest(BaseModel):
+    """Request model for field export."""
+
+    field_id: UUID | None = None
+
+
 @router.post("/export", response_model=ExportFieldApiResponse)
 async def export_fields(
+    body: ExportFieldApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -29,4 +38,5 @@ async def export_fields(
         redis,
         profile_id=profile_id,
         session_id=session_id,
+        field_id=body.field_id,
     )

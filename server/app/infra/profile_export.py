@@ -50,6 +50,7 @@ async def export_profile_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    profile_export_id: UUID | None = None,
 ) -> dict:
     """Profile full export using composable infra functions.
 
@@ -76,19 +77,22 @@ async def export_profile_client(
 
     # ── Step 2: Search all profiles (full dump) ──────────────────────
 
-    profile_ids, _total_count = await search_profiles(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not profile_ids:
-        return ExportProfileApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if profile_export_id:
+        profile_ids = [profile_export_id]
+    else:
+        profile_ids, _total_count = await search_profiles(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not profile_ids:
+            return ExportProfileApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # ── Step 3: Get profile artifacts with all junction IDs ──────────
 

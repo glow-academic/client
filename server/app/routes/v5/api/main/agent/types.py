@@ -464,6 +464,12 @@ class PatchAgentDraftApiResponse(BaseModel):
 # ========== Export Endpoint Types ==========
 
 
+class ExportAgentApiRequest(BaseModel):
+    """Request model for export agent endpoint."""
+
+    agent_id: UUID | None = None
+
+
 class ExportAgentApiResponse(BaseModel):
     """Response model for export agent endpoint."""
 

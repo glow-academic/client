@@ -49,6 +49,7 @@ async def export_document_client(
     *,
     profile_id: UUID,
     session_id: UUID,
+    document_id: UUID | None = None,
 ) -> dict:
     """Document full export using composable infra functions.
 
@@ -75,19 +76,22 @@ async def export_document_client(
 
     # ── Step 2: Search all documents (full dump) ────────────────────────
 
-    document_ids, _total_count = await search_documents(
-        conn,
-        active_only=False,
-        limit_count=100000,
-        offset_count=0,
-    )
-
-    if not document_ids:
-        return ExportDocumentApiResponse(
-            upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-            file_name="",
-            row_count=0,
+    if document_id:
+        document_ids = [document_id]
+    else:
+        document_ids, _total_count = await search_documents(
+            conn,
+            active_only=False,
+            limit_count=100000,
+            offset_count=0,
         )
+
+        if not document_ids:
+            return ExportDocumentApiResponse(
+                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                file_name="",
+                row_count=0,
+            )
 
     # ── Step 3: Get document artifacts with all junction IDs ────────────
 
