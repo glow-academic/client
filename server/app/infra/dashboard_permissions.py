@@ -5,7 +5,7 @@ from datetime import date
 from statistics import mean
 from typing import Any
 
-from app.routes.v5.api.main.dashboard.shared import RubricScoreItem
+from app.infra.dashboard_context import RubricScoreItem
 from app.routes.v5.api.main.dashboard.types import (
     DashboardBundleResponse,
     DashboardFooterMetrics,

@@ -26,7 +26,7 @@ from redis.asyncio import Redis
 
 from app.infra.globals import UPLOAD_FOLDER
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main._shared.pricing import compute_costs_from_runs
+from app.infra.pricing import compute_costs_from_runs
 from app.routes.v5.tools.entries.groups.search import search_groups
 from app.routes.v5.tools.entries.runs.search import search_runs
 from app.routes.v5.tools.entries.sessions.get import get_sessions

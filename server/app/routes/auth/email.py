@@ -47,8 +47,6 @@ async def get_profile_by_email(
             role=result.role,
             active=result.active,
             req_per_day=result.req_per_day,
-            created_at=result.created_at,
-            updated_at=result.updated_at,
             primary_department_id=result.primary_department_id,
             actor_name=result.actor_name,
         )

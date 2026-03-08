@@ -1,24 +1,28 @@
-"""Document get endpoint - Two-layer architecture.
+"""Document GET endpoint — composable infra architecture.
 
-This implements the two-layer BFF pattern:
-1. get_document_internal() - Core data fetching (cacheable, returns dataclass)
-2. get_document_client() - Full BFF response for HTTP endpoint/frontend
-
-The internal layer handles SQL queries and resource fetching.
-The presentation layer transforms internal data into the client-specific format.
+Uses composable infra layers:
+  1. resolve_common_context — profile + tool graph + runs
+  2. resolve_document_permissions_context — fail-fast 404/403
+  3. resolve_document_context — artifact + draft → merged + hydrated resources
+  4. score_tools — tool graph + artifact resources → per-resource tool picks
+  5. Pure Python — permissions, show/required flags, response assembly
 """
 
-import asyncio
-from dataclasses import dataclass
-from typing import Annotated, Any, cast
+from __future__ import annotations
+
+from typing import Annotated
 from uuid import UUID
 
-import asyncpg  # type: ignore
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from redis.asyncio import Redis
 
-from app.infra.globals import get_db, get_pool, get_redis_client
-from app.routes.auth.profile import get_auth_profile_internal
-from app.routes.auth.settings import get_auth_settings_internal
+from app.infra.common_context import resolve_common_context
+from app.infra.document_context import resolve_document_context
+from app.infra.document_permissions_context import resolve_document_permissions_context
+from app.infra.globals import get_db, get_redis_client
+from app.infra.helpers import dedupe_by_id
+from app.infra.tool_graph import score_tools
 from app.infra.document_permissions import (
     DOCUMENT_RESOURCES,
     compute_can_edit,
@@ -45,505 +49,158 @@ from app.routes.v5.api.main.document.types import (
     DocumentFlagSection,
     DocumentImageSection,
     DocumentNameSection,
-    DocumentResourceBucket,
-    DocumentResources,
     DocumentTextSection,
     DocumentUploadSection,
     GetDocumentApiRequest,
     GetDocumentApiResponse,
 )
-from app.routes.v5.api.permissions import (
-    has_tools_for_resource,
-    resolve_agents_for_artifact,
-)
-from app.routes.v5.tools.entries.document_drafts.get import (
-    get_document_drafts_entries_internal,
-)
-from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.departments.get import get_departments
-from app.routes.v5.tools.resources.departments.search import search_departments
-from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.descriptions.search import (
-    search_descriptions,
-)
-from app.routes.v5.tools.resources.fields.search import search_fields
-from app.routes.v5.tools.resources.files.get import get_files as get_uploads
-from app.routes.v5.tools.resources.files.search import search_files as search_uploads
-from app.routes.v5.tools.resources.flags.get import get_flags
-from app.routes.v5.tools.resources.flags.search import search_flags
-from app.routes.v5.tools.resources.images.get import get_images
-from app.routes.v5.tools.resources.images.search import search_images
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.names.search import search_names
-from app.routes.v5.tools.resources.parameter_fields.get import (
-    get_parameter_fields,
-)
-from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.texts.get import get_texts
-from app.routes.v5.tools.resources.texts.search import search_texts
-from app.sql.types import (
-    GetDocumentAccessSqlParams,
-    GetDocumentAccessSqlRow,
-    GetDocumentIdsSqlParams,
-    GetDocumentIdsSqlRow,
-    load_sql_query,
-)
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
-
-# SQL paths
-QUERY1_SQL_PATH = "app/sql/queries/documents/get_document_access_complete.sql"
-QUERY2_SQL_PATH = "app/sql/queries/documents/get_document_ids_complete.sql"
 
 router = APIRouter()
 
 
-@dataclass
-class DocumentInternalData:
-    """Internal data from core document fetching (cacheable layer)."""
-
-    # Access/context
-    actor_name: str | None
-    document_exists: bool | None
-    can_edit: bool
-    disabled_reason: str | None
-    draft_version: int | None
-    group_id: UUID | None
-
-    # Agent IDs (resource_type -> agent_id)
-    agent_ids: dict[str, UUID | None]
-
-    # Show/required flags
-    show_flags_map: dict[str, bool]
-    required_flags_map: dict[str, bool]
-
-    # Suggestions (resource -> list of suggestion IDs)
-    suggestions_map: dict[str, list[UUID]]
-
-    # Show AI generate flags (computed: agent exists for that resource)
-    show_ai_generate_map: dict[str, bool]
-    basic_show_ai_generate: bool
-    content_show_ai_generate: bool
-
-    # Resources payload
-    resources_payload: DocumentResources
-
-    # Per-resource tool IDs (from selected agents)
-    create_tool_ids_map: dict[str, UUID | None]
-    link_tool_ids_map: dict[str, UUID | None]
-
-    # Config resources (for generation context)
-    config_agent_resources: list[Any] | None
-    config_model_resources: list[Any] | None
-    config_provider_resources: list[Any] | None
+# ---------------------------------------------------------------------------
+# get_document_client — composable infra architecture
+# ---------------------------------------------------------------------------
 
 
-async def get_document_internal(
+def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
+    """Derive key and label from flag name like 'document_active' -> ('active', 'Active')"""
+    if not name:
+        return ("unknown", "Unknown")
+    key = name.replace("document_", "")
+    label = key.replace("_", " ").title()
+    return (key, label)
+
+
+async def get_document_client(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
     profile_id: UUID,
     document_id: UUID | None,
     draft_id: UUID | None = None,
+    group_id: UUID,
+    parameter_ids: list[UUID] | None = None,
+    # Search filters
+    descriptions_search: str | None = None,
     bypass_cache: bool = False,
-    group_id: UUID | None = None,
-) -> DocumentInternalData:
-    """Core data fetching layer (cacheable).
+) -> GetDocumentApiResponse:
+    """Document GET using composable infra functions.
 
-    Fetches all document data using two-pass architecture and returns
-    a dataclass with all computed values.
+    Flow:
+      1. resolve_common_context(profile_id) → profile, tool_graph, runs
+      2. resolve_document_permissions_context → access check (404, 403, fail fast)
+      3. resolve_document_context(document_id, draft_id, ...) → hydrated resources
+      4. score_tools(tool_graph, DOCUMENT_RESOURCES) → per-resource tool picks
+      5. Pure Python: permissions, show/required/AI flags, response assembly
     """
 
-    # === QUERY 1: Access Check (always fresh, no cache) ===
-    pool = get_pool()
-    if not pool:
-        raise RuntimeError("Database pool not initialized")
+    # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
-    # Resolve shared profile context first (default path).
-    async with pool.acquire() as context_conn:
-        profile_ctx = await get_auth_profile_internal(
-            conn=context_conn,
-            profile_id=profile_id,
-            bypass_cache=bypass_cache,
+    common = await resolve_common_context(
+        conn,
+        redis,
+        profile_id=profile_id,
+        group_id=group_id,
+        bypass_cache=bypass_cache,
+    )
+
+    if common is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
         )
 
-    # Extract user context from internal fetch (single source of truth)
-    user_role = profile_ctx.access.role
-    actor_name = profile_ctx.access.actor_name
-    user_department_ids = [
-        d.department_id for d in profile_ctx.departments if d.department_id
-    ]
+    profile = common.profile
 
-    draft_item = None
-    if draft_id is not None:
-        async with pool.acquire() as draft_conn:
-            draft_items = await get_document_drafts_entries_internal(
-                conn=draft_conn,
-                ids=[draft_id],
-                bypass_cache=bypass_cache,
+    # ── Step 2: Permissions check (fail fast before full hydration) ──────
+
+    perms = None
+    if document_id is not None:
+        perms = await resolve_document_permissions_context(conn, document_id)
+
+        if not perms.exists:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Document {document_id} not found",
             )
-            if draft_items:
-                draft_item = draft_items[0]
 
-    async with pool.acquire() as conn:
-        query1_params = GetDocumentAccessSqlParams(
-            profile_id=profile_id,
-            document_id=document_id,
-            draft_id=draft_id,
-            draft_group_id=draft_item.group_id if draft_item is not None else None,
-            draft_version=draft_item.version if draft_item is not None else None,
-        )
+        if not has_access(profile.role, profile.department_ids, perms.department_ids):
+            raise HTTPException(
+                status_code=403,
+                detail="You don't have access to this document. It may be restricted to other departments.",
+            )
 
-        access_result = cast(
-            GetDocumentAccessSqlRow,
-            await execute_sql_typed(conn, QUERY1_SQL_PATH, params=query1_params),
-        )
+    # ── Step 3: Document artifact context ─────────────────────────────────
 
-        # Extract artifact-specific state from Query 1 (no user context)
-        document_department_ids = access_result.document_department_ids or []
-        active_scenario_count = access_result.active_scenario_count or 0
-
-        # Early validation: check document exists
-        if document_id is not None:
-            if access_result.document_exists is False:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Document {document_id} not found",
-                )
-
-            # Check access
-            if not has_access(user_role, user_department_ids, document_department_ids):
-                raise HTTPException(
-                    status_code=403,
-                    detail="You don't have access to this document. It may be restricted to other departments.",
-                )
-
-        # === GROUP ID: Use provided group_id, or fall back to SQL-created one ===
-        if group_id:
-            effective_group_id = group_id
-        else:
-            effective_group_id = access_result.group_id
-        effective_draft_version = access_result.effective_draft_version
-
-        # === QUERY 2: ID Fetching (using user_department_ids from Query 1) ===
-        query2_params = GetDocumentIdsSqlParams(
-            profile_id=profile_id,
-            document_id=document_id,
-            draft_id=draft_id,
-            group_id=effective_group_id,
-            user_department_ids=user_department_ids,
-        )
-
-        ids_result = cast(
-            GetDocumentIdsSqlRow,
-            await execute_sql_typed(conn, QUERY2_SQL_PATH, params=query2_params),
-        )
-
-    selected_name_id = ids_result.name_id
-    selected_description_id = ids_result.description_id
-    selected_active_flag_id = ids_result.active_flag_id
-
-    selected_department_ids = ids_result.department_ids or []
-    selected_field_ids = ids_result.field_ids or []
-    selected_upload_ids = ids_result.upload_ids or []
-    selected_image_ids = ids_result.image_ids or []
-    selected_text_ids = ids_result.text_ids or []
-
-    # Draft values override canonical document-junction values.
-    if draft_item is not None:
-        if draft_item.name_ids:
-            selected_name_id = draft_item.name_ids[0]
-        if draft_item.description_ids:
-            selected_description_id = draft_item.description_ids[0]
-        if draft_item.flag_ids:
-            selected_active_flag_id = draft_item.flag_ids[0]
-
-        if draft_item.department_ids:
-            selected_department_ids = draft_item.department_ids
-        if draft_item.parameter_field_ids:
-            selected_field_ids = draft_item.parameter_field_ids
-        if draft_item.upload_ids:
-            selected_upload_ids = draft_item.upload_ids
-        if draft_item.image_ids:
-            selected_image_ids = draft_item.image_ids
-        if draft_item.text_ids:
-            selected_text_ids = draft_item.text_ids
-
-    # === RESOLVE AGENTS FROM SETTINGS (source of truth) ===
-    async with pool.acquire() as settings_conn:
-        settings_data = await get_auth_settings_internal(
-            settings_conn, profile_id, bypass_cache
-        )
-
-    agent_ids, create_tool_ids_map, link_tool_ids_map = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, DOCUMENT_RESOURCES
+    document = await resolve_document_context(
+        conn,
+        redis,
+        document_id=document_id,
+        group_id=group_id,
+        draft_id=draft_id,
+        user_department_ids=profile.department_ids,
+        parameter_ids=parameter_ids,
+        descriptions_search=descriptions_search,
+        bypass_cache=bypass_cache,
     )
 
-    # Derive has_tools flags from settings
-    names_has_tools = has_tools_for_resource(settings_data.agent_tool_entries, "names")
+    # ── Step 4: Tool scoring ─────────────────────────────────────────────
 
-    # === COMPUTE SHOW_AI_GENERATE FLAGS ===
-    def compute_show_ai_generate(resource: str) -> bool:
-        """Returns True if agent exists for that resource."""
-        agent_id = agent_ids.get(resource)
-        return agent_id is not None
+    scores = score_tools(common.tool_graph, DOCUMENT_RESOURCES)
 
-    name_show_ai_generate = compute_show_ai_generate("names")
-    description_show_ai_generate = compute_show_ai_generate("descriptions")
-    flag_show_ai_generate = compute_show_ai_generate("flags")
-    departments_show_ai_generate = compute_show_ai_generate("departments")
-    fields_show_ai_generate = compute_show_ai_generate("fields")
-    uploads_show_ai_generate = compute_show_ai_generate("uploads")
-    images_show_ai_generate = compute_show_ai_generate("images")
-    texts_show_ai_generate = compute_show_ai_generate("texts")
+    agent_ids: dict[str, UUID | None] = {
+        r: (scores.best[r].agent_id if scores.best.get(r) else None)
+        for r in DOCUMENT_RESOURCES
+    }
 
-    # Step-level show_ai_generate flags
-    basic_show_ai_generate = any(
-        [
-            name_show_ai_generate,
-            description_show_ai_generate,
-            flag_show_ai_generate,
-            departments_show_ai_generate,
-        ]
-    )
-    content_show_ai_generate = any(
-        [
-            fields_show_ai_generate,
-            uploads_show_ai_generate,
-            images_show_ai_generate,
-            texts_show_ai_generate,
-        ]
-    )
+    tool_ids_map: dict[str, UUID | None] = {
+        r: (scores.best[r].tool_id if scores.best.get(r) else None)
+        for r in DOCUMENT_RESOURCES
+    }
 
-    # === PYTHON BUSINESS LOGIC ===
+    # ── Step 5: Permissions ──────────────────────────────────────────────
+
+    perms_department_ids = perms.department_ids if perms else []
+    perms_scenario_count = perms.active_scenario_count if perms else 0
+
     can_edit = compute_can_edit(
-        user_role=user_role,
-        document_department_ids=document_department_ids,
-        active_scenario_count=active_scenario_count,
-        user_department_ids=user_department_ids,
+        user_role=profile.role,
+        document_department_ids=perms_department_ids,
+        active_scenario_count=perms_scenario_count,
+        user_department_ids=profile.department_ids,
     )
 
     disabled_reason = compute_disabled_reason(
-        user_role=user_role,
-        document_department_ids=document_department_ids,
-        active_scenario_count=active_scenario_count,
-        user_department_ids=user_department_ids,
+        user_role=profile.role,
+        document_department_ids=perms_department_ids,
+        active_scenario_count=perms_scenario_count,
+        user_department_ids=profile.department_ids,
     )
 
-    # === PASS 2: Parallel Resource Fetching ===
+    # ── Step 6: Show / Required / AI flags ───────────────────────────────
 
-    name_ids = [selected_name_id] if selected_name_id else []
-    description_ids = [selected_description_id] if selected_description_id else []
-    flag_ids = [selected_active_flag_id] if selected_active_flag_id else []
-    department_ids = selected_department_ids
-    field_ids = selected_field_ids
-    upload_ids = selected_upload_ids
-    image_ids = selected_image_ids
-    text_ids = selected_text_ids
+    names_has_tools = scores.has_any.get("names", False)
 
-    async def fetch_names():
-        async with pool.acquire() as c:
-            selected = await get_names(
-                c, name_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-            suggestions = await search_names(
-                c,
-                get_redis_client(),
-                draft_id=effective_group_id,
-                exclude_ids=name_ids,
-                bypass_cache=bypass_cache,
-                document=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_descriptions():
-        async with pool.acquire() as c:
-            selected = await get_descriptions(
-                c, description_ids, get_redis_client(), cache
-            )
-            suggestions = await search_descriptions(
-                c,
-                get_redis_client(),
-                draft_id=effective_group_id,
-                exclude_ids=description_ids,
-                bypass_cache=bypass_cache,
-                document=True,
-            )
-            return (selected, suggestions)
-
-    # Document-specific flag names (business logic)
-    DOCUMENT_FLAG_NAMES = {"document_active"}
-
-    async def fetch_flags():
-        async with pool.acquire() as c:
-            selected = await get_flags(c, flag_ids, get_redis_client(), bypass_cache)
-            all_flags = await search_flags(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=50,
-                offset_count=0,
-                exclude_ids=flag_ids,
-                bypass_cache=bypass_cache,
-                document=True,
-            )
-            # Filter to only document-specific flags
-            suggestions = [f for f in all_flags if f.name in DOCUMENT_FLAG_NAMES]
-            return (selected, suggestions)
-
-    async def fetch_departments():
-        async with pool.acquire() as c:
-            selected = await get_departments(
-                c, department_ids, get_redis_client(), bypass_cache=bypass_cache
-            )
-            suggestions = await search_departments(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=20,
-                offset_count=0,
-                department_ids=user_department_ids,
-                suggest_source="all",
-                exclude_ids=department_ids,
-                bypass_cache=bypass_cache,
-                document=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_fields():
-        async with pool.acquire() as c:
-            selected = await get_parameter_fields(
-                c, field_ids, get_redis_client(), bypass_cache
-            )
-            # Search for available fields scoped to user departments
-            suggestions = await search_fields(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=20,
-                offset_count=0,
-                department_ids=user_department_ids,
-                suggest_source="all",
-                exclude_ids=field_ids,
-                bypass_cache=bypass_cache,
-            )
-            return (selected, suggestions)
-
-    async def fetch_uploads():
-        async with pool.acquire() as c:
-            selected = await get_uploads(
-                c, upload_ids, get_redis_client(), bypass_cache
-            )
-            suggestions = await search_uploads(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=20,
-                offset_count=0,
-                exclude_ids=upload_ids,
-                bypass_cache=bypass_cache,
-                document=True,
-            )
-            return (selected, suggestions)
-
-    async def fetch_images():
-        async with pool.acquire() as c:
-            selected = await get_images(c, image_ids, get_redis_client(), bypass_cache)
-            suggestions = await search_images(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=20,
-                offset_count=0,
-                exclude_ids=image_ids,
-                bypass_cache=bypass_cache,
-            )
-            return (selected, suggestions)
-
-    async def fetch_texts():
-        async with pool.acquire() as c:
-            selected = await get_texts(c, text_ids, get_redis_client(), bypass_cache)
-            suggestions = await search_texts(
-                c,
-                get_redis_client(),
-                search=None,
-                limit_count=20,
-                offset_count=0,
-                exclude_ids=text_ids,
-                bypass_cache=bypass_cache,
-            )
-            return (selected, suggestions)
-
-    # Parallel fetch all resources
-    (
-        (names_selected, names_suggestions),
-        (descriptions_selected, descriptions_suggestions),
-        (flags_selected, flags_suggestions),
-        (departments_selected, departments_suggestions),
-        (fields_selected, fields_suggestions),
-        (uploads_selected, uploads_suggestions),
-        (images_selected, images_suggestions),
-        (texts_selected, texts_suggestions),
-    ) = await asyncio.gather(
-        fetch_names(),
-        fetch_descriptions(),
-        fetch_flags(),
-        fetch_departments(),
-        fetch_fields(),
-        fetch_uploads(),
-        fetch_images(),
-        fetch_texts(),
+    all_departments = dedupe_by_id(
+        document.resources["departments"].selected
+        + document.resources["departments"].suggestions
+    )
+    all_fields = dedupe_by_id(
+        document.resources["parameter_fields"].selected
+        + document.resources["parameter_fields"].suggestions
     )
 
-    names = _dedupe_by_id(names_selected + names_suggestions, "id")
-    descriptions = _dedupe_by_id(descriptions_selected + descriptions_suggestions, "id")
-    flags = _dedupe_by_id(flags_selected + flags_suggestions, "id")
-    departments = _dedupe_by_id(departments_selected + departments_suggestions, "id")
-    fields = _dedupe_by_id(fields_selected, "field_id")
-    uploads = _dedupe_by_id(uploads_selected + uploads_suggestions, "id")
-    images = _dedupe_by_id(images_selected + images_suggestions, "id")
-    texts = _dedupe_by_id(texts_selected + texts_suggestions, "id")
-
-    # Find selected resources
-    name_resource = next((n for n in names if n.id == selected_name_id), None)
-    description_resource = next(
-        (d for d in descriptions if d.id == selected_description_id),
-        None,
-    )
-    flag_resource = next((f for f in flags if f.id == selected_active_flag_id), None)
-
-    department_resources = [d for d in departments if d.id in selected_department_ids]
-    field_resources = [f for f in fields if f.field_id in selected_field_ids]
-    upload_resources = [u for u in uploads if u.id in selected_upload_ids]
-    image_resources = [i for i in images if i.id in selected_image_ids]
-    text_resources = [t for t in texts if t.id in selected_text_ids]
-
-    name_suggestions = [n.id for n in names_suggestions]
-    description_suggestions = [d.id for d in descriptions_suggestions]
-    department_suggestions = [d.id for d in departments_suggestions]
-    field_suggestions = [f.id for f in fields_suggestions]
-    upload_suggestions = [u.id for u in uploads_suggestions]
-    image_suggestions = [i.id for i in images_suggestions]
-    text_suggestions = [t.id for t in texts_suggestions]
-
-    # Compute final show flags based on actual data
-    show_name = compute_show_name(names_has_tools)
-    show_description_flag = compute_show_description()
-    show_flag = compute_show_flag()
-    show_departments_flag = compute_show_departments(len(departments))
-    show_fields_flag = compute_show_fields(len(fields))
-    show_uploads_flag = compute_show_uploads()
-    show_images_flag = True
-    show_texts_flag = True
-
-    # Build show and required flags maps
     show_flags_map = {
-        "names": show_name,
-        "descriptions": show_description_flag,
-        "flags": show_flag,
-        "departments": show_departments_flag,
-        "fields": show_fields_flag,
-        "uploads": show_uploads_flag,
-        "images": show_images_flag,
-        "texts": show_texts_flag,
+        "names": compute_show_name(names_has_tools),
+        "descriptions": compute_show_description(),
+        "flags": compute_show_flag(),
+        "departments": compute_show_departments(len(all_departments)),
+        "fields": compute_show_fields(len(all_fields)),
+        "uploads": compute_show_uploads(),
+        "images": True,
+        "texts": True,
     }
 
     required_flags_map = {
@@ -557,261 +214,177 @@ async def get_document_internal(
         "texts": False,
     }
 
-    # Transform flags to enriched format for client
+    def compute_show_ai_generate(resource: str) -> bool:
+        return agent_ids.get(resource) is not None
+
+    show_ai_generate_map = {r: compute_show_ai_generate(r) for r in DOCUMENT_RESOURCES}
+
+    basic_show_ai_generate = any(
+        [
+            show_ai_generate_map.get("names", False),
+            show_ai_generate_map.get("descriptions", False),
+            show_ai_generate_map.get("flags", False),
+            show_ai_generate_map.get("departments", False),
+        ]
+    )
+    content_show_ai_generate = any(
+        [
+            show_ai_generate_map.get("fields", False),
+            show_ai_generate_map.get("uploads", False),
+            show_ai_generate_map.get("images", False),
+            show_ai_generate_map.get("texts", False),
+        ]
+    )
+
+    # ── Step 7: Response assembly ────────────────────────────────────────
+
+    # Flags — enriched format
+    all_flags = dedupe_by_id(
+        document.resources["flags"].selected + document.resources["flags"].suggestions
+    )
     document_flags = [
         DocumentFlagConfig(
             key=derive_flag_key_and_label(flag.name)[0],
             label=derive_flag_key_and_label(flag.name)[1],
             description=flag.description,
             flag_option_id=flag.id,
-            show=show_flag,
-            required=compute_flag_required(),
+            show=show_flags_map.get("flags", True),
+            required=required_flags_map.get("flags", False),
             generated=flag.generated,
         )
-        for flag in flags
+        for flag in all_flags
         if flag.id
     ]
 
-    # Validation for new mode
-    if document_id is None:
-        if not departments:
-            raise HTTPException(
-                status_code=400, detail="No accessible departments found for user"
-            )
-
-    # Detail mode: check access via name_resource
-    if document_id is not None and not name_resource:
-        raise HTTPException(
-            status_code=403,
-            detail="You don't have access to this document. It may be restricted to other departments.",
+    current_flags = [
+        DocumentFlagConfig(
+            key=derive_flag_key_and_label(flag.name)[0],
+            label=derive_flag_key_and_label(flag.name)[1],
+            description=flag.description,
+            flag_option_id=flag.id,
+            show=show_flags_map.get("flags", True),
+            required=required_flags_map.get("flags", False),
+            generated=flag.generated,
         )
-
-    # === Construct Response ===
-    resources_payload = DocumentResources(
-        resources=DocumentResourceBucket(
-            names=names,
-            descriptions=descriptions,
-            flags=document_flags,
-            departments=departments,
-            fields=fields,
-            uploads=uploads,
-            images=images,
-            texts=texts,
-        ),
-        current=DocumentResourceBucket(
-            names=[name_resource] if name_resource else [],
-            descriptions=[description_resource] if description_resource else [],
-            flags=[flag_resource] if flag_resource else [],
-            departments=department_resources or [],
-            fields=field_resources or [],
-            uploads=upload_resources or [],
-            images=image_resources or [],
-            texts=text_resources or [],
-        ),
-    )
-
-    # Build show_ai_generate map
-    show_ai_generate_map = {
-        "names": name_show_ai_generate,
-        "descriptions": description_show_ai_generate,
-        "flags": flag_show_ai_generate,
-        "departments": departments_show_ai_generate,
-        "fields": fields_show_ai_generate,
-        "uploads": uploads_show_ai_generate,
-        "images": images_show_ai_generate,
-        "texts": texts_show_ai_generate,
-    }
-
-    # Build suggestions map
-    suggestions_map = {
-        "names": name_suggestions,
-        "descriptions": description_suggestions,
-        "departments": department_suggestions,
-        "fields": field_suggestions,
-        "uploads": upload_suggestions,
-        "images": image_suggestions,
-        "texts": text_suggestions,
-    }
-
-    # Fetch config resources for generation context (from settings agents).
-    config_agent_resource_ids = [a.id for a in settings_data.settings_agents if a.id]
-    config_model_resource_ids = [
-        a.model_id for a in settings_data.settings_agents if a.model_id
+        for flag in document.resources["flags"].selected
+        if flag.id
     ]
 
-    config_agents_result: list[Any] = []
-    config_models_result: list[Any] = []
-    config_providers_result: list[Any] = []
-    if config_agent_resource_ids:
-        async with pool.acquire() as c:
-            config_agents_result = await get_agents(
-                c, config_agent_resource_ids, get_redis_client(), bypass_cache
-            )
-    if config_model_resource_ids:
-        async with pool.acquire() as c:
-            config_models_result = await get_models(
-                c, config_model_resource_ids, get_redis_client(), bypass_cache
-            )
-        provider_ids = list(
-            dict.fromkeys(
-                [
-                    getattr(model, "provider_id", None)
-                    for model in config_models_result
-                    if getattr(model, "provider_id", None) is not None
-                ]
-            )
-        )
-        if provider_ids:
-            async with pool.acquire() as c:
-                config_providers_result = await get_providers(
-                    c, provider_ids, get_redis_client(), bypass_cache=bypass_cache
-                )
-
-    return DocumentInternalData(
-        # Access/context
-        actor_name=actor_name,
-        document_exists=access_result.document_exists,
-        can_edit=can_edit,
-        disabled_reason=disabled_reason,
-        draft_version=effective_draft_version,
-        group_id=effective_group_id,
-        # Agent IDs
-        agent_ids=agent_ids,
-        # Show/required flags
-        show_flags_map=show_flags_map,
-        required_flags_map=required_flags_map,
-        # Suggestions
-        suggestions_map=suggestions_map,
-        # Show AI generate
-        show_ai_generate_map=show_ai_generate_map,
-        basic_show_ai_generate=basic_show_ai_generate,
-        content_show_ai_generate=content_show_ai_generate,
-        # Resources
-        resources_payload=resources_payload,
-        # Per-resource tool IDs
-        create_tool_ids_map=create_tool_ids_map,
-        link_tool_ids_map=link_tool_ids_map,
-        # Config resources
-        config_agent_resources=config_agents_result or None,
-        config_model_resources=config_models_result or None,
-        config_provider_resources=config_providers_result or None,
+    # Names, Descriptions — all = selected + suggestions deduped
+    all_names = dedupe_by_id(
+        document.resources["names"].selected + document.resources["names"].suggestions
+    )
+    all_descriptions = dedupe_by_id(
+        document.resources["descriptions"].selected
+        + document.resources["descriptions"].suggestions
+    )
+    all_files = dedupe_by_id(
+        document.resources["files"].selected + document.resources["files"].suggestions
+    )
+    all_images = dedupe_by_id(
+        document.resources["images"].selected + document.resources["images"].suggestions
+    )
+    all_texts = dedupe_by_id(
+        document.resources["texts"].selected + document.resources["texts"].suggestions
     )
 
+    # Suggestions maps (IDs only)
+    suggestions_map = {
+        "names": [n.id for n in document.resources["names"].suggestions],
+        "descriptions": [d.id for d in document.resources["descriptions"].suggestions],
+        "departments": [d.id for d in document.resources["departments"].suggestions],
+        "fields": [f.id for f in document.resources["parameter_fields"].suggestions],
+        "uploads": [f.id for f in document.resources["files"].suggestions],
+        "images": [i.id for i in document.resources["images"].suggestions],
+        "texts": [t.id for t in document.resources["texts"].suggestions],
+    }
 
-async def get_document_client(
-    profile_id: UUID,
-    document_id: UUID | None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-    group_id: UUID | None = None,
-) -> GetDocumentApiResponse:
-    """BFF response for HTTP endpoint/frontend.
-
-    Returns the full section-first response with all UI fields, suggestions, and
-    computed *_show_ai_generate flags.
-    """
-    data = await get_document_internal(
-        profile_id=profile_id,
-        document_id=document_id,
-        draft_id=draft_id,
-        cache=cache,
-        group_id=group_id,
-    )
-
-    resources_bucket = data.resources_payload.resources
-    current_bucket = data.resources_payload.current
-
-    def section_common(resource_key: str) -> dict[str, Any]:
+    def _section(resource_key: str) -> dict:
         return {
-            "show": data.show_flags_map.get(resource_key, False),
-            "required": data.required_flags_map.get(resource_key, False),
-            "suggestions": data.suggestions_map.get(resource_key, []),
-            "show_ai_generate": data.show_ai_generate_map.get(resource_key, False),
-            "create_tool_id": data.create_tool_ids_map.get(resource_key),
-            "link_tool_id": data.link_tool_ids_map.get(resource_key),
+            "show": show_flags_map.get(resource_key, False),
+            "required": required_flags_map.get(resource_key, False),
+            "suggestions": suggestions_map.get(resource_key, []),
+            "show_ai_generate": show_ai_generate_map.get(resource_key, False),
+            "tool_id": tool_ids_map.get(resource_key),
         }
 
+    # Validation: new mode must have departments
+    if document_id is None and not all_departments:
+        raise HTTPException(
+            status_code=400, detail="No accessible departments found for user"
+        )
+
     return GetDocumentApiResponse(
-        actor_name=data.actor_name,
-        document_exists=data.document_exists,
-        can_edit=data.can_edit,
-        disabled_reason=data.disabled_reason,
-        draft_version=data.draft_version,
-        group_id=data.group_id,
-        basic_show_ai_generate=data.basic_show_ai_generate,
-        content_show_ai_generate=data.content_show_ai_generate,
+        actor_name=profile.name,
+        document_exists=document.artifact_id is not None,
+        can_edit=can_edit,
+        disabled_reason=disabled_reason,
+        draft_version=document.draft_version,
+        group_id=group_id,
+        basic_show_ai_generate=basic_show_ai_generate,
+        content_show_ai_generate=content_show_ai_generate,
         names=DocumentNameSection(
-            resource=(
-                current_bucket.names[0]
-                if current_bucket and current_bucket.names
-                else None
-            ),
-            resources=(resources_bucket.names if resources_bucket else None),
-            **section_common("names"),
+            **_section("names"),
+            resource=document.resources["names"].selected[0]
+            if document.resources["names"].selected
+            else None,
+            resources=all_names,
         ),
         descriptions=DocumentDescriptionSection(
-            resource=(
-                current_bucket.descriptions[0]
-                if current_bucket and current_bucket.descriptions
-                else None
-            ),
-            resources=(resources_bucket.descriptions if resources_bucket else None),
-            **section_common("descriptions"),
+            **_section("descriptions"),
+            resource=document.resources["descriptions"].selected[0]
+            if document.resources["descriptions"].selected
+            else None,
+            resources=all_descriptions,
         ),
         flags=DocumentFlagSection(
-            current=(current_bucket.flags if current_bucket else None),
-            resources=(resources_bucket.flags if resources_bucket else None),
-            **section_common("flags"),
+            **_section("flags"),
+            current=current_flags or None,
+            resources=document_flags,
         ),
         departments=DocumentDepartmentSection(
-            current=(current_bucket.departments if current_bucket else None),
-            resources=(resources_bucket.departments if resources_bucket else None),
-            **section_common("departments"),
+            **_section("departments"),
+            current=document.resources["departments"].selected or None,
+            resources=all_departments,
         ),
         fields=DocumentFieldSection(
-            current=(current_bucket.fields if current_bucket else None),
-            resources=(resources_bucket.fields if resources_bucket else None),
-            **section_common("fields"),
+            **_section("fields"),
+            current=document.resources["parameter_fields"].selected or None,
+            resources=all_fields,
         ),
         uploads=DocumentUploadSection(
-            current=(current_bucket.uploads if current_bucket else None),
-            resources=(resources_bucket.uploads if resources_bucket else None),
-            **section_common("uploads"),
+            **_section("uploads"),
+            current=document.resources["files"].selected or None,
+            resources=all_files,
         ),
         images=DocumentImageSection(
-            current=(current_bucket.images if current_bucket else None),
-            resources=(resources_bucket.images if resources_bucket else None),
-            **section_common("images"),
+            **_section("images"),
+            current=document.resources["images"].selected or None,
+            resources=all_images,
         ),
         texts=DocumentTextSection(
-            current=(current_bucket.texts if current_bucket else None),
-            resources=(resources_bucket.texts if resources_bucket else None),
-            **section_common("texts"),
+            **_section("texts"),
+            current=document.resources["texts"].selected or None,
+            resources=all_texts,
         ),
     )
 
 
-def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
-    """Derive key and label from flag name like 'document_active' -> ('active', 'Active')"""
-    if not name:
-        return ("unknown", "Unknown")
-    # Remove artifact prefix (e.g., 'document_active' -> 'active')
-    key = name.replace("document_", "")
-    # Title case for label
-    label = key.replace("_", " ").title()
-    return (key, label)
+# ---------------------------------------------------------------------------
+# get_document_websocket — stub (to be rewritten with infra functions)
+# ---------------------------------------------------------------------------
 
 
-def _dedupe_by_id(items: list[Any], id_attr: str) -> list[Any]:
-    """Preserve order while deduplicating by id attribute."""
-    seen: set[UUID] = set()
-    output: list[Any] = []
-    for item in items:
-        item_id = getattr(item, id_attr, None)
-        if item_id and item_id not in seen:
-            seen.add(item_id)
-            output.append(item)
-    return output
+async def get_document_websocket(*args, **kwargs):
+    """Stub — will be rewritten to use composable infra functions."""
+    raise NotImplementedError(
+        "get_document_websocket needs to be rewritten with infra functions"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Route handler
+# ---------------------------------------------------------------------------
 
 
 @router.post("/get", response_model=GetDocumentApiResponse)
@@ -821,13 +394,10 @@ async def get_document(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetDocumentApiResponse:
-    """Get document information using two-pass architecture."""
-    # Check for cache bypass header
+    """Get document information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
-        # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -835,19 +405,28 @@ async def get_document(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Call the client (BFF) function
+        # Resolve group_id: client provides it, or create a new one
+        group_id = request.group_id
+        if not group_id:
+            group_id = await conn.fetchval(
+                "INSERT INTO groups_entry (created_at, updated_at) "
+                "VALUES (NOW(), NOW()) RETURNING id"
+            )
+
+        redis = get_redis_client()
+
         response_data = await get_document_client(
+            conn,
+            redis,
             profile_id=profile_id,
             document_id=request.document_id,
             draft_id=request.draft_id,
+            group_id=group_id,
             bypass_cache=bypass_cache,
-            group_id=request.group_id,
         )
 
-        # No global cache for this response - individual resources are cached
         response.headers["X-Cache-Tags"] = "documents"
         response.headers["X-Cache-Hit"] = "0"
-        response.headers["X-Two-Pass"] = "1"
 
         return response_data
     except HTTPException:
@@ -859,11 +438,7 @@ async def get_document(
             error=e,
             route_path=http_request.url.path,
             operation="get_document",
-            sql_query=load_sql_query(QUERY1_SQL_PATH),
+            sql_query=None,
             sql_params=None,
             request=http_request,
         )
-
-
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached

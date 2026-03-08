@@ -20,11 +20,86 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.types import ArtifactContext, ResourcePair
-from app.routes.v5.api.main.dashboard.shared import (
-    MessageStats,
-    RubricScoreItem,
-    RubricScoresResponse,
-)
+
+
+# ---------------------------------------------------------------------------
+# Dashboard context types
+# ---------------------------------------------------------------------------
+
+
+class RubricScoreItem:
+    """Single (chat, standard_group) rubric score row."""
+
+    __slots__ = (
+        "chat_id",
+        "standard_group_id",
+        "rubric_id",
+        "score_percent",
+        "simulation_id",
+        "profile_id",
+        "cohort_id",
+        "department_id",
+        "attempt_date",
+        "attempt_type",
+        "is_archived",
+    )
+
+    def __init__(
+        self,
+        chat_id: UUID,
+        standard_group_id: UUID,
+        rubric_id: UUID | None = None,
+        score_percent: float | None = None,
+        simulation_id: UUID | None = None,
+        profile_id: UUID | None = None,
+        cohort_id: UUID | None = None,
+        department_id: UUID | None = None,
+        attempt_date: date | None = None,
+        attempt_type: str | None = None,
+        is_archived: bool = False,
+    ) -> None:
+        self.chat_id = chat_id
+        self.standard_group_id = standard_group_id
+        self.rubric_id = rubric_id
+        self.score_percent = score_percent
+        self.simulation_id = simulation_id
+        self.profile_id = profile_id
+        self.cohort_id = cohort_id
+        self.department_id = department_id
+        self.attempt_date = attempt_date
+        self.attempt_type = attempt_type
+        self.is_archived = is_archived
+
+
+class RubricScoresResponse:
+    """Response from rubric scores query."""
+
+    __slots__ = ("items", "total_count")
+
+    def __init__(
+        self,
+        items: list[RubricScoreItem] | None = None,
+        total_count: int = 0,
+    ) -> None:
+        self.items = items or []
+        self.total_count = total_count
+
+
+class MessageStats:
+    """Message statistics for a single chat."""
+
+    __slots__ = ("chat_id", "num_messages_total", "avg_response_sec")
+
+    def __init__(
+        self,
+        chat_id: UUID,
+        num_messages_total: int = 0,
+        avg_response_sec: float | None = None,
+    ) -> None:
+        self.chat_id = chat_id
+        self.num_messages_total = num_messages_total
+        self.avg_response_sec = avg_response_sec
+
 
 # Entry search tools
 from app.routes.v5.tools.entries.attempt.search import search_attempts

@@ -13,10 +13,15 @@ async def create_grant(
     session_id: UUID,
     id: UUID | None = None,
     expires_at: datetime | None = None,
+    profiles_id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateGrantResponse:
-    """Create a grants entry. Defaults to 1 hour expiry if not specified."""
+    """Create a grants entry with optional profile link.
+
+    ``profiles_id`` is the profiles_resource.id (parent resource).
+    Defaults to 1 hour expiry if not specified.
+    """
     if expires_at is None:
         expires_at = datetime.now(UTC) + timedelta(hours=1)
 
@@ -35,5 +40,16 @@ async def create_grant(
 
     if grant_id is None:
         raise ValueError("Failed to create grants entry")
+
+    # Link grant → profiles_resource
+    if profiles_id is not None:
+        await conn.execute(
+            """
+            INSERT INTO profiles_grants_connection (profiles_id, grant_id)
+            VALUES ($1, $2)
+            """,
+            profiles_id,
+            grant_id,
+        )
 
     return CreateGrantResponse(id=grant_id)

@@ -56,8 +56,6 @@ async def search_simulatable_profiles(
                     role=p.role,
                     active=p.active,
                     req_per_day=p.req_per_day,
-                    created_at=p.created_at,
-                    updated_at=p.updated_at,
                     primary_department_id=p.primary_department_id,
                 )
                 for p in result.profiles

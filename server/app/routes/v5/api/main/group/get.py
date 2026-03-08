@@ -21,7 +21,7 @@ from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.infra.group_context import resolve_group_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main._shared.pricing import compute_costs_from_runs
+from app.infra.pricing import compute_costs_from_runs
 from app.routes.v5.api.main.group.types import (
     GetGroupDetailRequest,
     GetGroupDetailResponse,

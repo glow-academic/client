@@ -20,7 +20,7 @@ from app.infra.dashboard_permissions import (
     compute_primary_metrics_v2,
     compute_secondary_metrics_v2,
 )
-from app.routes.v5.api.main.dashboard.shared import (
+from app.infra.dashboard_builders import (
     build_field_meta,
     build_parameter_meta,
     build_rubric_meta,

@@ -1,26 +1,18 @@
-"""Profile emulation endpoint - issue default-idp emulation grant."""
+"""Profile emulation endpoint — thin route, delegates to infra."""
 
-import os
-from typing import Annotated, Any, cast
-from urllib.parse import quote
+from typing import Annotated
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.auth.emulate import resolve_emulation
+from app.infra.globals import get_db, get_redis_client
 from app.sql.types import (
     CreateEmulationGrantApiRequest,
     CreateEmulationGrantApiResponse,
-    CreateEmulationGrantSqlParams,
-    CreateEmulationGrantSqlRow,
-    load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
-
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/queries/auth/create_emulation_grant_complete.sql"
 
 router = APIRouter()
 
@@ -33,85 +25,42 @@ async def authorize_emulation(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateEmulationGrantApiResponse:
     """Create emulation grant and return default-idp redirect URL."""
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
-
     try:
         requester_profile_id = getattr(http_request.state, "profile_id", None)
         if requester_profile_id is None:
             raise HTTPException(status_code=401, detail="Missing requester profile")
 
-        origin = os.getenv("ORIGIN", "http://localhost:3000").rstrip("/")
-        app_prefix = os.getenv("APP_PREFIX", "").strip("/")
-        prefix = f"/{app_prefix}" if app_prefix else ""
-        signin_base_url = f"{origin}{prefix}/api/auth/signin/keycloak"
-        callback_url = quote(f"{origin}{prefix}/", safe="")
-        # Use single default-idp for all emulation flows (hidden from login, handles all profiles)
-        # The grant ID passed via login_hint contains target_profile_id
-        idp_alias = "default-idp"
+        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+        redis = get_redis_client()
 
-        # Get Keycloak config for URL construction
-        # In local dev, hit Keycloak directly at port 8080 (no nginx proxy)
-        # In production, use ORIGIN + prefix (nginx routes ${APP_PREFIX}/auth/ to Keycloak)
-        is_local_dev = "localhost" in origin.lower()
-        default_keycloak_url = (
-            "http://localhost:8080/auth" if is_local_dev else f"{origin}{prefix}/auth"
-        )
-        keycloak_public_url = os.getenv("KEYCLOAK_PUBLIC_URL", default_keycloak_url)
-        keycloak_client_id = os.getenv("AUTH_KEYCLOAK_ID", "glow-client")
-
-        # URL-encode return_url if provided (for use in query string)
-        return_url_encoded = (
-            quote(request.return_url, safe="") if request.return_url else None
-        )
-
-        # Convert API request to SQL params using double star pattern
-        params = CreateEmulationGrantSqlParams(
+        result = await resolve_emulation(
+            conn,
+            redis,
             requester_profile_id=requester_profile_id,
             target_profile_id=request.target_profile_id,
             ttl_minutes=request.ttl_minutes,
-            signin_base_url=signin_base_url,
-            callback_url=callback_url,
-            idp_alias=idp_alias,
-            # New params for URL construction
-            return_url=return_url_encoded,
-            keycloak_public_url=keycloak_public_url,
-            keycloak_client_id=keycloak_client_id,
-            origin=origin,
-            prefix=prefix,
-        )
-        sql_params = params.to_tuple()
-
-        # Execute SQL with typed helper
-        result = cast(
-            CreateEmulationGrantSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
+            return_url=request.return_url,
+            bypass_cache=bypass_cache,
         )
 
         if not result.allowed:
             raise HTTPException(status_code=403, detail=result.reason or "Forbidden")
 
-        # Construct logout_url from emulate_page_url (Python handles URL encoding properly)
-        logout_url = None
-        if result.emulate_page_url:
-            logout_url = (
-                f"{keycloak_public_url}/realms/master/protocol/openid-connect/logout"
-                f"?client_id={quote(keycloak_client_id, safe='')}"
-                f"&post_logout_redirect_uri={quote(result.emulate_page_url, safe='')}"
-            )
+        api_response = CreateEmulationGrantApiResponse(
+            allowed=result.allowed,
+            reason=result.reason,
+            actor_name=result.actor_name,
+            grant_id=result.grant_id,
+            expires_at=result.expires_at,
+            target_profile_id=result.target_profile_id,
+            redirect_url=result.redirect_url,
+            logout_url=result.logout_url,
+            emulate_page_url=result.emulate_page_url,
+        )
 
-        # Convert SQL result to API response, adding the computed logout_url
-        response_data = result.model_dump()
-        response_data["logout_url"] = logout_url
-        api_response = CreateEmulationGrantApiResponse.model_validate(response_data)
-
-        # Invalidate cache after authorization check (may affect profile context)
-        tags = ["profile"]  # From router tags
-        await invalidate_tags(tags, redis=get_redis_client())
+        # Invalidate cache after mutation
+        tags = ["profile"]
+        await invalidate_tags(tags, redis=redis)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
         return api_response
@@ -122,7 +71,5 @@ async def authorize_emulation(
             error=e,
             route_path=http_request.url.path,
             operation="authorize_emulation",
-            sql_query=sql_query,
-            sql_params=sql_params,
             request=http_request,
         )
