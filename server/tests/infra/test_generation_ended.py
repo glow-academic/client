@@ -42,12 +42,14 @@ class FakeWinner:
 def _make_resolution_ctx(
     *,
     sid: str = "sid-1",
+    run_id: str = RUN_ID,
     artifact_type: str = "agent",
     group_id: str = "g1",
     resource_actions: dict | None = None,
 ) -> dict:
     return {
         "sid": sid,
+        "run_id": run_id,
         "artifact_type": artifact_type,
         "group_id": group_id,
         "resource_actions": resource_actions or {"names": "created"},
@@ -55,7 +57,7 @@ def _make_resolution_ctx(
 
 
 def _make_redis(ctx: dict | None = None) -> AsyncMock:
-    """Create a fake Redis that returns resolution context."""
+    """Create a fake Redis that returns resolution context keyed by test_id."""
     redis = AsyncMock()
     if ctx is not None:
         redis.get.return_value = json.dumps(ctx)
@@ -85,10 +87,52 @@ class TestGenerationEndedImpl:
 
         with patch(f"{_P}.resolve_generation_winner", return_value=None):
             await generation_ended_impl(
-                {"test_id": TEST_ID, "run_id": RUN_ID},
+                {"test_id": TEST_ID},
                 emit=emit,
                 conn=AsyncMock(),
                 redis=_make_redis(),
+            )
+
+        assert events == []
+
+    async def test_no_resolution_context_emits_nothing(self):
+        """No resolution context in Redis → no run_id → early return."""
+        emit, events = recording_emit()
+
+        winner = FakeWinner(
+            winning_agent_id=uuid.UUID(WINNER_AGENT),
+            winning_invocation_id=INVOCATION_ID,
+            winning_score=80,
+        )
+
+        with patch(f"{_P}.resolve_generation_winner", return_value=winner):
+            await generation_ended_impl(
+                {"test_id": TEST_ID},
+                emit=emit,
+                conn=AsyncMock(),
+                redis=_make_redis(ctx=None),  # no context stored
+            )
+
+        assert events == []
+
+    async def test_resolution_context_missing_run_id_emits_nothing(self):
+        """Resolution context exists but has no run_id → early return."""
+        emit, events = recording_emit()
+
+        winner = FakeWinner(
+            winning_agent_id=uuid.UUID(WINNER_AGENT),
+            winning_invocation_id=INVOCATION_ID,
+            winning_score=80,
+        )
+
+        ctx_without_run_id = {"sid": "sid-1", "artifact_type": "agent"}
+
+        with patch(f"{_P}.resolve_generation_winner", return_value=winner):
+            await generation_ended_impl(
+                {"test_id": TEST_ID},
+                emit=emit,
+                conn=AsyncMock(),
+                redis=_make_redis(ctx=ctx_without_run_id),
             )
 
         assert events == []
@@ -123,7 +167,7 @@ class TestGenerationEndedImpl:
             patch(f"{_P}.cleanup_run"),
         ):
             await generation_ended_impl(
-                {"test_id": TEST_ID, "run_id": RUN_ID},
+                {"test_id": TEST_ID},
                 emit=emit,
                 conn=AsyncMock(),
                 redis=redis,
@@ -146,26 +190,11 @@ class TestGenerationEndedImpl:
         mock_fail.assert_called_once()
         assert mock_fail.call_args.kwargs["agent_id"] == LOSER_AGENT
 
-    async def test_no_run_id_emits_nothing(self):
-        """No run_id in data and no fallback → early return."""
-        emit, events = recording_emit()
+        # Verify Redis lookup was by test_id
+        redis.get.assert_called_once_with(f"generation_resolution:{TEST_ID}")
 
-        winner = FakeWinner(
-            winning_agent_id=uuid.UUID(WINNER_AGENT),
-            winning_invocation_id=INVOCATION_ID,
-            winning_score=80,
-            all_results=[],  # empty → no fallback lookup
-        )
-
-        with patch(f"{_P}.resolve_generation_winner", return_value=winner):
-            await generation_ended_impl(
-                {"test_id": TEST_ID},  # no run_id
-                emit=emit,
-                conn=AsyncMock(),
-                redis=_make_redis(),
-            )
-
-        assert events == []
+        # Verify cleanup deletes by test_id
+        redis.delete.assert_called_once_with(f"generation_resolution:{TEST_ID}")
 
     async def test_malformed_unit_key_skipped(self):
         """Unit keys with wrong format are silently skipped."""
@@ -179,7 +208,6 @@ class TestGenerationEndedImpl:
             winning_score=90,
         )
 
-        # Malformed key (only 2 parts) + valid key
         units = {
             "bad:key": UnitState(state="soft"),
             f"{WINNER_AGENT}:resource:names": UnitState(state="soft", result_id=None),
@@ -192,13 +220,12 @@ class TestGenerationEndedImpl:
             patch(f"{_P}.cleanup_run"),
         ):
             await generation_ended_impl(
-                {"test_id": TEST_ID, "run_id": RUN_ID},
+                {"test_id": TEST_ID},
                 emit=emit,
                 conn=AsyncMock(),
                 redis=redis,
             )
 
-        # Still emits complete (skips malformed, processes valid)
         assert len(events) == 1
         assert events[0].data["type"] == "complete"
         mock_promote.assert_called_once()

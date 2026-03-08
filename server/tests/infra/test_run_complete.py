@@ -152,8 +152,10 @@ class TestRunCompleteImpl:
         assert events[0].data["test_id"] == test_id
         assert events[0].data["force_proceed"] is True
 
-        # Stored resolution context in Redis
+        # Stored resolution context in Redis, keyed by test_id
         redis.setex.assert_called_once()
+        key = redis.setex.call_args[0][0]
+        assert key == f"generation_resolution:{test_id}"
 
     async def test_chat_special_case_emits_chat_started(self):
         """Chat artifact → refreshes MVs, emits attempt_chat_started."""

@@ -130,21 +130,21 @@ async def _run_persona_seeds(
     persona_defs: list[dict],
 ) -> list[UUID]:
     """Run persona seed definitions through create_persona_client."""
-    # Load persona types directly from file to avoid triggering the route
-    # package __init__.py which imports all route modules and breaks on
-    # missing globals (get_redis).
+    # Import persona_create directly (infra layer — no route chain)
+    from app.infra.persona_create import create_persona_client
+
+    # Load persona types from file to avoid triggering main/__init__.py
+    # which imports all routers and cascades into unrelated modules.
     import importlib.util
 
     types_path = SERVER_DIR / "app" / "routes" / "v5" / "api" / "main" / "persona" / "types.py"
-    spec = importlib.util.spec_from_file_location("persona_types", str(types_path))
+    spec = importlib.util.spec_from_file_location(
+        "app.routes.v5.api.main.persona.types", str(types_path)
+    )
     persona_types = importlib.util.module_from_spec(spec)
-    sys.modules["persona_types"] = persona_types
+    sys.modules[spec.name] = persona_types
     spec.loader.exec_module(persona_types)
-
-    import app.infra.persona_create as persona_create_mod
-
     CreatePersonaItem = persona_types.CreatePersonaItem
-    create_persona_client = persona_create_mod.create_persona_client
 
     items = [CreatePersonaItem(**p) for p in persona_defs]
 

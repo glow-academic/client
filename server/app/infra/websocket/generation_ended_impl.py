@@ -5,7 +5,7 @@ No socket handler registration, no module-level sio, no global I/O —
 importable without triggering the socket tree.
 
 Flow:
-  1. Load minimal resolution context from generation_resolution:{run_id}
+  1. Load resolution context from generation_resolution:{test_id} (stored by run_complete_impl)
   2. Call resolve_generation_winner(conn, test_id) → winning agent_id from DB grades
   3. Get all run_tracker units → promote winner's targets, fail losers
   4. Activate winner's dormant DB records
@@ -71,47 +71,26 @@ async def generation_ended_impl(
         f"score={winner.winning_score}"
     )
 
-    # Step 2: Find run_id
-    run_id = data.get("run_id")
-
-    # Fallback: look up from any invocation's run connection
-    if not run_id and winner.all_results:
-        try:
-            row = await conn.fetchval(
-                """
-                SELECT tirc.runs_id::text
-                FROM test_invocation_runs_entry tire
-                JOIN test_invocation_runs_runs_connection tirc
-                    ON tirc.test_invocation_runs_id = tire.id
-                WHERE tire.test_invocation_id = $1 AND tire.active = true
-                LIMIT 1
-                """,
-                winner.winning_invocation_id,
-            )
-            if row:
-                run_id = row
-        except Exception as e:
-            logger.exception(f"Failed to look up run_id for test {test_id}: {e}")
-
-    if not run_id:
-        logger.warning(f"Could not determine run_id for test {test_id}")
-        return
-
-    # Step 3: Load minimal resolution context
+    # Step 2: Load resolution context (keyed by test_id, stored by run_complete_impl)
     ctx: dict[str, Any] = {}
     try:
-        ctx_raw = await redis.get(f"generation_resolution:{run_id}")
+        ctx_raw = await redis.get(f"generation_resolution:{test_id}")
         if ctx_raw:
             ctx = json.loads(ctx_raw)
     except Exception as e:
-        logger.warning(f"Failed to load resolution context for {run_id}: {e}")
+        logger.warning(f"Failed to load resolution context for test {test_id}: {e}")
+
+    run_id = ctx.get("run_id")
+    if not run_id:
+        logger.warning(f"No run_id in resolution context for test {test_id}")
+        return
 
     sid = ctx.get("sid", data.get("sid", ""))
     artifact_type = ctx.get("artifact_type", "unknown")
     group_id_str = ctx.get("group_id", "")
     resource_actions = ctx.get("resource_actions", {})
 
-    # Step 4: Get all units and promote winner / fail losers
+    # Step 3: Get all units and promote winner / fail losers
     units = await get_all_units(redis, run_id=run_id)
 
     for unit_key, unit_state in units.items():
@@ -155,7 +134,7 @@ async def generation_ended_impl(
                 f"Failed to resolve {agent_id}:{target_type}:{target_name}: {e}"
             )
 
-    # Step 5: Emit generation_complete
+    # Step 4: Emit generation_complete
     await emit([
         internal_event(
             "generation_channel",
@@ -171,9 +150,9 @@ async def generation_ended_impl(
         )
     ])
 
-    # Step 6: Cleanup
+    # Step 5: Cleanup
     await cleanup_run(redis, run_id=run_id)
     try:
-        await redis.delete(f"generation_resolution:{run_id}")
+        await redis.delete(f"generation_resolution:{test_id}")
     except Exception:
         pass

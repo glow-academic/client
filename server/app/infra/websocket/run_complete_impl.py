@@ -36,6 +36,8 @@ from app.infra.websocket.run_tracker import (
     record_agent_done,
 )
 from app.infra.websocket.socket_event import EmitFn, internal_event
+from app.routes.v5.tools.entries.attempt.refresh import refresh_attempt
+from app.routes.v5.tools.entries.attempt_chat.refresh import refresh_attempt_chat
 from app.routes.v5.tools.entries.tokens.create import create_token
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
@@ -184,6 +186,7 @@ async def run_complete_impl(
 
             # Store minimal resolution context in Redis so generation_ended
             # can emit generation_complete with the right fields.
+            # Keyed by test_id (which test_ended carries), not run_id.
             resolution_ctx = {
                 "sid": sid,
                 "run_id": run_id,
@@ -194,7 +197,7 @@ async def run_complete_impl(
             }
             try:
                 await redis.setex(
-                    f"generation_resolution:{run_id}",
+                    f"generation_resolution:{generation_test_id}",
                     3600,
                     json.dumps(resolution_ctx),
                 )
@@ -269,8 +272,8 @@ async def run_complete_impl(
         attempt_chat_id_data = metadata.get("attempt_chat_id")
         if attempt_id_data and attempt_chat_id_data:
             try:
-                await conn.execute("REFRESH MATERIALIZED VIEW attempt_mv")
-                await conn.execute("REFRESH MATERIALIZED VIEW attempt_chat_mv")
+                await refresh_attempt(conn)
+                await refresh_attempt_chat(conn)
                 await invalidate_tags(["attempt", "attempts"], redis=redis)
 
                 await emit([

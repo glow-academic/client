@@ -1,24 +1,17 @@
-"""Keys decrypt endpoint - decrypt encrypted key value."""
+"""Keys decrypt endpoint — thin route, delegates to infra."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated
 
-import asyncpg  # type: ignore
+import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.auth.decrypt import resolve_decrypt
+from app.infra.globals import get_db, get_redis_client
 from app.sql.types import (
     GetKeyForDecryptApiRequest,
     GetKeyForDecryptApiResponse,
-    GetKeyForDecryptSqlParams,
-    GetKeyForDecryptSqlRow,
-    load_sql_query,
 )
-from app.utils.auth.decrypt_api_key import decrypt_api_key
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
-
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/queries/keys/get_key_for_decrypt_complete.sql"
 
 router = APIRouter()
 
@@ -31,11 +24,7 @@ async def decrypt_key(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetKeyForDecryptApiResponse:
     """Decrypt a key's encrypted value."""
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
-
     try:
-        # Get profile_id from header (set by router-level dependency)
         profile_id = http_request.state.profile_id
         if not profile_id:
             raise HTTPException(
@@ -43,41 +32,24 @@ async def decrypt_key(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Convert API request to SQL params (add profile_id from header)
-        params = GetKeyForDecryptSqlParams(
-            **request.model_dump(), profile_id=profile_id
-        )
-        sql_params = params.to_tuple()
+        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+        redis = get_redis_client()
 
-        # Execute SQL with typed helper
-        result = cast(
-            GetKeyForDecryptSqlRow,
-            await execute_sql_typed(
-                conn,
-                SQL_PATH,
-                params=params,
-            ),
+        result = await resolve_decrypt(
+            conn,
+            redis,
+            profile_id=profile_id,
+            key_id=request.key_id,
+            bypass_cache=bypass_cache,
         )
 
-        if not result or not result.key:
-            raise HTTPException(
-                status_code=400, detail=f"Key not found: {request.key_id}"
-            )
-
-        # Decrypt the key
-        try:
-            decrypted_key = decrypt_api_key(result.key)
-        except ValueError as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
-
-        # Convert SQL result to API response
-        api_response = GetKeyForDecryptApiResponse.model_validate(
-            {
-                "key": decrypted_key,
-            }
+        return GetKeyForDecryptApiResponse(
+            key=result.key,
+            name=result.name,
+            actor_name=result.actor_name,
         )
-
-        return api_response
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     except HTTPException:
         raise
     except Exception as e:
@@ -85,7 +57,5 @@ async def decrypt_key(
             error=e,
             route_path=http_request.url.path,
             operation="decrypt_key",
-            sql_query=sql_query,
-            sql_params=sql_params,
             request=http_request,
         )
