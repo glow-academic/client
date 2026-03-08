@@ -8,7 +8,6 @@
 
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Tooltip,
@@ -19,8 +18,8 @@ import {
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { Check, Loader2, Plus, Sparkles, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Check, Loader2, Sparkles, X } from "lucide-react";
+import { useCallback, useMemo } from "react";
 
 type LinkVoicesIn = InputOf<"/api/v5/resources/voices/link", "post">;
 type LinkVoicesOut = OutputOf<"/api/v5/resources/voices/link", "post">;
@@ -265,49 +264,6 @@ export function Voices({
           </div>
         </div>
       )}
-      {/* Custom voice inline input */}
-      {isAddingVoice && (
-        <div className="flex items-center gap-2">
-          <Input
-            value={newVoiceValue}
-            onChange={(e) => setNewVoiceValue(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                void handleAddVoice();
-              } else if (e.key === "Escape") {
-                setIsAddingVoice(false);
-                setNewVoiceValue("");
-              }
-            }}
-            placeholder="Enter voice name..."
-            className="flex-1"
-            autoFocus
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-success hover:text-success"
-            onClick={() => void handleAddVoice()}
-          >
-            <Check className="h-4 w-4" />
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => {
-              setIsAddingVoice(false);
-              setNewVoiceValue("");
-            }}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-
       <SelectableGrid<GridItem>
         horizontal
         items={gridItems}
@@ -316,19 +272,7 @@ export function Voices({
         onSelect={handleGridSelect}
         getId={(item) => (item.type === "voice" ? item.id : "__add__")}
         renderItem={(item, isSelected) => {
-          if (item.type === "add") {
-            return (
-              <div
-                className={cn(
-                  "relative flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-dashed bg-card text-card-foreground transition-all text-center",
-                  "hover:shadow-md hover:bg-accent/50",
-                )}
-              >
-                <Plus className="h-5 w-5 text-muted-foreground" />
-                <span className="text-sm font-medium text-muted-foreground">Custom</span>
-              </div>
-            );
-          }
+          if (item.type !== "voice") return null;
 
           const isAiSuggested = showDiff && aiSuggestedIds.has(item.id);
 

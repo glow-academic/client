@@ -19,14 +19,17 @@ from app.infra.auth.analytics import (
     resolve_pricing_filters,
     resolve_profile_facts_filters,
 )
+from app.infra.auth.simulatable import SIMULATABLE_ROLES
 from app.infra.globals import get_db, get_pool, get_redis_client
-from app.routes.auth.access import get_access_internal
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.auth.types import (
     AnalyticsFilterField,
     AnalyticsFilterFields,
     AnalyticsFilterOption,
     GetAnalyticsFiltersApiResponse,
 )
+from app.routes.v5.tools.artifacts.cohort.get import get_cohorts as get_cohort_artifacts
+from app.routes.v5.tools.artifacts.cohort.search import search_cohorts
 
 router = APIRouter()
 
@@ -197,21 +200,39 @@ async def get_analytics_filters(
 
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-    # Use shared cached access resolver instead of inline SQL
-    try:
-        access = await get_access_internal(conn, profile_id, bypass_cache)
-    except HTTPException:
+    if not profile_id:
         return None
 
-    dept_ids = list(access.department_ids or [])
-    cohort_ids = list(access.cohort_ids or [])
-    scoped_roles = access.scoped_roles or []
+    redis = get_redis_client()
+    identity = await resolve_profile_identity_context(
+        conn, profile_id, redis, bypass_cache=bypass_cache
+    )
+    if not identity:
+        return None
+
+    dept_ids = list(identity.department_ids or [])
+    scoped_roles = list(SIMULATABLE_ROLES.get(identity.role, set()))
+
+    # Resolve cohort resource IDs via black boxes
+    cohort_ids: list[UUID] = []
+    if identity.profiles_id:
+        cohort_artifact_ids, _ = await search_cohorts(
+            conn, profile_ids=[identity.profiles_id], active_only=True, limit_count=1000
+        )
+        if cohort_artifact_ids:
+            pool_for_cohorts = get_pool()
+            if pool_for_cohorts:
+                async with pool_for_cohorts.acquire() as c:
+                    cohort_arts = await get_cohort_artifacts(
+                        c, cohort_artifact_ids, cohorts=True
+                    )
+                    for ca in cohort_arts:
+                        cohort_ids.extend(ca.cohort_ids or [])
 
     pool = get_pool()
     if not pool:
         raise HTTPException(status_code=500, detail="Database pool not available")
 
-    redis = get_redis_client()
     fields = config.fields
 
     # Dispatch to the appropriate infra resolver

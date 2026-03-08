@@ -41,14 +41,12 @@ import { StepCardAiButton } from "@/components/common/forms/StepCardAiButton";
 import { useArtifactAi } from "@/hooks/use-artifact-ai";
 
 import { useDraftLifecycle } from "@/hooks/use-draft-lifecycle";
-import { useFlushRegistry } from "@/hooks/use-flush-registry";
 
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import {
   type ResourceConfig,
   buildDraftPayload,
   checkHasResourceIds,
-  computeEffectiveFormState,
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
 import { parseAsArrayOf, parseAsBoolean, parseAsString, type Parser } from "nuqs";
@@ -65,6 +63,7 @@ type PatchPersonaDraftOut = OutputOf<
 type PersonaData = OutputOf<"/api/v5/artifacts/personas/get", "post">;
 
 type PersonaFormState = {
+  // ID fields
   name_id: string | null;
   description_id: string | null;
   color_id: string | null;
@@ -75,6 +74,11 @@ type PersonaFormState = {
   parameter_field_ids: string[];
   example_ids: string[];
   voice_ids: string[];
+  // Value fields for creatables (sent to draft endpoint when set)
+  name: string | null;
+  description: string | null;
+  instructions: string | null;
+  examples: string[];
 };
 
 export interface PersonaProps {
@@ -87,19 +91,6 @@ export interface PersonaProps {
     input: PatchPersonaDraftIn,
   ) => Promise<PatchPersonaDraftOut>;
 }
-
-const FLUSH_KEYS = [
-  "names",
-  "descriptions",
-  "instructions",
-  "examples",
-  "colors",
-  "icons",
-  "flags",
-  "departments",
-  "parameter_fields",
-  "voices",
-] as const;
 
 const VALID_RESOURCE_TYPES: ResourceType[] = [
   "names",
@@ -170,9 +161,9 @@ function PersonaComponent({
   const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
 
   // Empty flush registry — resource creation is handled by the unified draft endpoint
-  const emptyFlushRegistryRef = useRef(
-    new Map<string, () => Promise<Record<string, unknown> | void>>()
-  );
+  const emptyFlushRegistryRef = useRef<
+    Map<string, () => Promise<Record<string, unknown> | void>>
+  >(new Map());
 
   // --- AI Generation State ---
   const { isGenerating, makeOnGenerationComplete, generate } =
@@ -308,6 +299,10 @@ function PersonaComponent({
         parameter_field_ids: [],
         example_ids: [],
         voice_ids: [],
+        name: null,
+        description: null,
+        instructions: null,
+        examples: [],
       };
     }
 
@@ -330,6 +325,11 @@ function PersonaComponent({
       voice_ids: (data.voices?.current ?? [])
         .map((v) => v.id)
         .filter(Boolean) as string[],
+      // Value fields start null — IDs from server are the source of truth on load
+      name: null,
+      description: null,
+      instructions: null,
+      examples: [],
     };
   }, []);
 

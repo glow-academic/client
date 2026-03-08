@@ -7,7 +7,6 @@ from typing import Any
 from app.sql.types import (
     QGetCohortsV4Item,
     QGetDepartmentsV4Item,
-    QGetProfileContextAccessV4ArtifactAgent,
     QGetProfileContextV4Cohort,
     QGetProfileContextV4Department,
     QGetProfileContextV4RoleResource,
@@ -138,37 +137,3 @@ def convert_role(role: Any) -> QGetProfileContextV4RoleResource:
     )
 
 
-OPERATIONAL_ARTIFACTS = frozenset(
-    {
-        "agent",
-        "auth",
-        "chat",
-        "cohort",
-        "department",
-        "document",
-        "eval",
-        "field",
-        "invocation",
-        "model",
-        "parameter",
-        "persona",
-        "profile",
-        "provider",
-        "rubric",
-        "scenario",
-        "setting",
-        "simulation",
-        "tool",
-    }
-)
-
-
-def build_artifact_generation_maps(
-    items: list[QGetProfileContextAccessV4ArtifactAgent] | None,
-) -> dict[str, bool]:
-    has_generate: dict[str, bool] = {}
-    for item in items or []:
-        if item.artifact and item.has_generation:
-            if item.artifact in OPERATIONAL_ARTIFACTS:
-                has_generate[item.artifact] = True
-    return has_generate

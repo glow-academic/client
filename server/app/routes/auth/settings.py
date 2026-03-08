@@ -4,18 +4,15 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Annotated, Any, cast
+from typing import Annotated, cast
 from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_pool, get_redis_client
-from app.routes.auth.access import get_access_internal
-from app.routes.auth.permissions import (
-    build_artifact_generation_maps,
-    derive_theme_tokens,
-)
+from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.routes.auth.permissions import derive_theme_tokens
 from app.routes.auth.types import (
     AuthSettingsInternalData,
     GetAuthSettingsApiResponse,
@@ -51,17 +48,37 @@ async def get_auth_settings_internal(
     Underlying resource calls are individually cached, so repeated calls
     across artifact endpoints within the same request window are cheap.
     """
-    cache = None if bypass_cache else (get_cached, set_cached)
-    access = await get_access_internal(conn, profile_id, bypass_cache)
+    if not profile_id:
+        raise HTTPException(status_code=404, detail="Profile context not found")
+
+    redis = get_redis_client()
+    identity = await resolve_profile_identity_context(
+        conn, profile_id, redis, bypass_cache=bypass_cache
+    )
+    if not identity:
+        raise HTTPException(
+            status_code=404, detail=f"Profile context not found: {profile_id}"
+        )
 
     pool = get_pool()
     if not pool:
         raise HTTPException(status_code=500, detail="Database pool not available")
 
-    settings_id = access.settings_id
-    settings_system_ids = access.settings_system_ids or []
-    settings_agent_ids = access.settings_agent_ids or []
+    settings_id = identity.settings_id
 
+    # Step 1: Fetch settings resource to get system_ids
+    settings_item = None
+    settings_system_ids: list[UUID] = []
+    if settings_id:
+        async with pool.acquire() as c:
+            items = await get_settings(
+                c, [settings_id], redis, bypass_cache=bypass_cache
+            )
+            if items:
+                settings_item = items[0]
+                settings_system_ids = list(settings_item.system_ids or [])
+
+    # Step 2: Fetch systems to get agent_ids, and fetch theme in parallel
     async def fetch_settings_theme():
         if not settings_id:
             return None
@@ -74,46 +91,35 @@ async def get_auth_settings_internal(
                 ),
             )
 
-    async def fetch_settings():
-        if not settings_id:
-            return None
-        async with pool.acquire() as c:
-            items = await get_settings(
-                c, [settings_id], get_redis_client(), bypass_cache=bypass_cache
-            )
-            return items[0] if items else None
-
-    async def fetch_agents():
-        if not settings_agent_ids:
-            return []
-        async with pool.acquire() as c:
-            return await get_agents(
-                c, settings_agent_ids, get_redis_client(), bypass_cache
-            )
-
     async def fetch_systems():
         if not settings_system_ids:
             return []
         async with pool.acquire() as c:
             return await get_systems(
-                c, settings_system_ids, get_redis_client(), bypass_cache=bypass_cache
+                c, settings_system_ids, redis, bypass_cache=bypass_cache
             )
 
-    (
-        settings_theme,
-        settings_item,
-        settings_systems,
-        settings_agents,
-    ) = await asyncio.gather(
+    settings_theme, settings_systems = await asyncio.gather(
         fetch_settings_theme(),
-        fetch_settings(),
         fetch_systems(),
-        fetch_agents(),
     )
 
+    # Step 3: Derive agent_ids from systems
+    settings_agent_ids: list[UUID] = []
+    for system in settings_systems:
+        if system.agent_ids:
+            settings_agent_ids.extend(system.agent_ids)
+    settings_agent_ids = list(set(settings_agent_ids))
+
+    # Step 4: Fetch agents
+    settings_agents = []
+    if settings_agent_ids:
+        async with pool.acquire() as c:
+            settings_agents = await get_agents(
+                c, settings_agent_ids, redis, bypass_cache
+            )
+
     if not settings_theme or not settings_theme.primary_color:
-        # No active settings or missing primary color — return empty settings.
-        # This can happen for profiles without a department/settings association.
         return AuthSettingsInternalData(
             settings_id=settings_id,
             settings=None,
@@ -126,7 +132,7 @@ async def get_auth_settings_internal(
             agent_tool_entries=[],
         )
 
-    # Derive tools from settings agents
+    # Step 5: Derive tools from settings agents
     all_tool_ids: list[UUID] = []
     for agent in settings_agents:
         if agent.tool_ids:
@@ -137,12 +143,11 @@ async def get_auth_settings_internal(
             settings_tools = await get_tools(
                 c,
                 list(set(all_tool_ids)),
-                get_redis_client(),
+                redis,
                 bypass_cache=bypass_cache,
             )
 
     # Resolve agent→tool→resource entries in Python using already-fetched data.
-    # Each agent has tool_ids (tools_resource IDs), each tool has a resource type.
     agent_tool_entries: list[SettingsAgentToolEntry] = []
     if settings_agents and settings_tools:
         tool_by_id = {t.id: t for t in settings_tools if t.id}
@@ -180,8 +185,6 @@ async def get_auth_settings_internal(
         "chart5": settings_theme.chart5 or "",
     }
 
-    has_generate = build_artifact_generation_maps(access.artifact_agent_ids)
-
     return AuthSettingsInternalData(
         settings_id=settings_id,
         settings=settings_item,
@@ -190,7 +193,7 @@ async def get_auth_settings_internal(
         settings_tools=settings_tools,
         settings_theme=settings_theme,
         settings_tokens=derive_theme_tokens(theme_primitives),
-        artifact_has_generate=has_generate,
+        artifact_has_generate={},
         agent_tool_entries=agent_tool_entries,
     )
 
@@ -203,9 +206,6 @@ async def get_auth_settings(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetAuthSettingsApiResponse:
     """Department-level settings + theme endpoint."""
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
-
     try:
         try:
             profile_id = http_request.state.profile_id
@@ -213,7 +213,6 @@ async def get_auth_settings(
             profile_id = None
 
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-        cache = None if bypass_cache else (get_cached, set_cached)
 
         pass1_start = time.time()
         data = await get_auth_settings_internal(conn, profile_id, bypass_cache)
@@ -247,11 +246,5 @@ async def get_auth_settings(
             error=e,
             route_path=http_request.url.path,
             operation="get_auth_settings",
-            sql_query=sql_query,
-            sql_params=sql_params,
             request=http_request,
         )
-
-
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached

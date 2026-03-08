@@ -22,14 +22,6 @@ import { cn } from "@/lib/utils";
 import { Check, ChevronDown, ChevronRight, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftParameterFieldsIn = InputOf<
-  "/api/v5/resources/parameter_fields",
-  "post"
->;
-type CreateDraftParameterFieldsOut = OutputOf<
-  "/api/v5/resources/parameter_fields",
-  "post"
->;
 type LinkParameterFieldsIn = InputOf<"/api/v5/resources/parameter_fields/link", "post">;
 type LinkParameterFieldsOut = OutputOf<"/api/v5/resources/parameter_fields/link", "post">;
 
@@ -48,16 +40,12 @@ export interface ParameterFieldsNewProps {
   disabled?: boolean;
   group_id?: string | null;
   showAiGenerate?: boolean;
-  createParameterFieldsAction?:
-    | ((input: CreateDraftParameterFieldsIn) => Promise<CreateDraftParameterFieldsOut>)
-    | undefined;
   link_tool_id?: string | null; // Tool ID for linking existing resources
   linkParameterFieldsAction?:
     | ((input: LinkParameterFieldsIn) => Promise<LinkParameterFieldsOut>)
     | undefined;
   onGenerate?: () => void | Promise<void>;
   isAutosaveEnabled?: boolean;
-  registerFlush?: (flush: () => Promise<{ parameter_field_ids: string[] } | void>) => void;
   create_tool_id?: string | null;
   required?: boolean;
   label?: string;
@@ -84,12 +72,10 @@ export function ParameterFieldsNew({
   disabled = false,
   group_id,
   showAiGenerate = false,
-  createParameterFieldsAction,
   link_tool_id,
   linkParameterFieldsAction,
   onGenerate,
   isAutosaveEnabled = true,
-  registerFlush,
   create_tool_id,
   required = false,
   label = "Parameter Fields",
@@ -113,11 +99,8 @@ export function ParameterFieldsNew({
   const [resourceIds, setResourceIds] = useState<Map<string, string>>(new Map());
   const [localKeyToResourceId, setLocalKeyToResourceId] = useState<Map<string, string>>(new Map());
   const [pendingSelections, setPendingSelections] = useState<Set<string>>(new Set());
-  const creatingKeysRef = useRef<Set<string>>(new Set());
   const hasInitializedRef = useRef(false);
   const lastEmittedRef = useRef<string>("");
-  const flushRef = useRef<(() => Promise<{ parameter_field_ids: string[] } | void>) | undefined>(undefined);
-
   // Sync resourceIds with selected resources from server
   useEffect(() => {
     setResourceIds((prev) => {
@@ -145,107 +128,12 @@ export function ParameterFieldsNew({
     }
   }, [resourceIds, onChange]);
 
-  // Flush function for manual save mode
-  flushRef.current = async (): Promise<{ parameter_field_ids: string[] } | void> => {
-    if (!createParameterFieldsAction || !group_id) return;
-    if (pendingSelections.size === 0) {
-      return { parameter_field_ids: Array.from(resourceIds.values()) };
-    }
-
-    const promises: Promise<string | null>[] = [];
-    pendingSelections.forEach((key) => {
-      const [parameterId, fieldId] = key.split(":");
-      if (parameterId && fieldId) {
-        promises.push(
-          (async () => {
-            try {
-              const result = await createParameterFieldsAction({
-                body: {
-                  group_id: group_id,
-                  parameter_id: parameterId,
-                  field_id: fieldId,
-                  mcp: false,
-                  tool_id: create_tool_id ?? null,
-                },
-              });
-              if (result?.parameter_fields_id) {
-                const resultId = result.parameter_fields_id as string;
-                setLocalKeyToResourceId((prev) => new Map(prev).set(key, resultId));
-                setResourceIds((prev) => new Map(prev).set(resultId, resultId));
-                return resultId;
-              }
-              return null;
-            } catch {
-              return null;
-            }
-          })()
-        );
-      }
-    });
-
-    const results = await Promise.all(promises);
-    setPendingSelections(new Set());
-
-    const newlyCreatedIds = results.filter((id): id is string => id !== null);
-    const existingIds = Array.from(resourceIds.values());
-    return { parameter_field_ids: [...new Set([...existingIds, ...newlyCreatedIds])] };
-  };
-
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
   const createParameterField = useCallback(
-    async (parameterId: string, fieldId: string) => {
-      const key = `${parameterId}:${fieldId}`;
-      if (!isAutosaveEnabled) {
-        setPendingSelections((prev) => new Set(prev).add(key));
-        return null;
-      }
-      if (!createParameterFieldsAction || !group_id) return null;
-      if (creatingKeysRef.current.has(key)) return null;
-      creatingKeysRef.current.add(key);
-
-      try {
-        const result = await createParameterFieldsAction({
-          body: {
-            group_id: group_id,
-            parameter_id: parameterId,
-            field_id: fieldId,
-            mcp: false,
-            tool_id: create_tool_id ?? null,
-          },
-        });
-        if (!result?.parameter_fields_id) {
-          creatingKeysRef.current.delete(key);
-          return null;
-        }
-        const resultId = result.parameter_fields_id as string;
-        setLocalKeyToResourceId((prev) => new Map(prev).set(key, resultId));
-        setResourceIds((prev) => new Map(prev).set(resultId, resultId));
-        // Clear optimistic pending now that we have the real ID
-        setPendingSelections((prev) => {
-          if (!prev.has(key)) return prev;
-          const next = new Set(prev);
-          next.delete(key);
-          return next;
-        });
-        return resultId;
-      } catch {
-        creatingKeysRef.current.delete(key);
-        // Clear optimistic pending on failure too
-        setPendingSelections((prev) => {
-          if (!prev.has(key)) return prev;
-          const next = new Set(prev);
-          next.delete(key);
-          return next;
-        });
-        return null;
-      }
+    async (_parameterId: string, _fieldId: string) => {
+      // In draft context, parameter fields only link by ID (no creation needed)
+      return null;
     },
-    [createParameterFieldsAction, group_id, isAutosaveEnabled, create_tool_id]
+    []
   );
 
   const handleToggle = useCallback(
@@ -289,7 +177,7 @@ export function ParameterFieldsNew({
         }
       }
     },
-    [selectedFieldKeyToResourceId, localKeyToResourceId, pendingSelections, createParameterField, isAutosaveEnabled, linkParameterFieldsAction, group_id, link_tool_id]
+    [selectedFieldKeyToResourceId, localKeyToResourceId, pendingSelections, createParameterField, linkParameterFieldsAction, group_id, link_tool_id]
   );
 
   const isFieldSelected = useCallback(

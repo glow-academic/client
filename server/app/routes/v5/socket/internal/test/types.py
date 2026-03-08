@@ -1,69 +1,9 @@
-"""Pydantic models for test-domain internal bus emits.
+"""Re-export — canonical location is app.infra.websocket.test_types."""
 
-Each model represents a dict payload passed to ``internal_sio.emit()``.
-Construct the model, then call ``.model_dump(mode="json")``
-before sending via internal_sio.emit(..., model.model_dump(mode="json")).
-"""
-
-from __future__ import annotations
-
-from typing import Any
-
-from pydantic import BaseModel
-
-
-class TestProgressData(BaseModel):
-    sid: str | None = None
-    rooms: list[str] = []
-    invocation_id: str
-    run_id: str | None = None
-    current_run: int | None = None
-    total_runs: int | None = None
-    message: str | None = None
-
-
-class TestRunCompleteData(BaseModel):
-    sid: str | None = None
-    rooms: list[str] = []
-    invocation_id: str
-    run_id: str | None = None
-    original_run_resource_id: str | None = None
-    tool_calls: Any | None = None
-    current_run: int = 1
-    total_runs: int = 1
-    remaining_runs: int = 0
-
-
-class TestGradedData(BaseModel):
-    sid: str | None = None
-    rooms: list[str] = []
-    invocation_id: str
-    grade_id: str | None = None
-    score: int | None = None
-    passed: bool | None = None
-    feedback: str | None = None
-
-
-class TestProceedData(BaseModel):
-    """Internal bus payload for test_proceed — find next invocation to run.
-
-    Fields:
-        completed_invocation_id: If set, mark this invocation completed before proceeding.
-        complete_all: If True, mark all remaining invocations completed → emit test_ended.
-        force_proceed: If True, skip use_custom lobby.
-    """
-
-    sid: str
-    test_id: str
-    force_proceed: bool = False
-    completed_invocation_id: str | None = None
-    complete_all: bool = False
-
-
-class TestErrorData(BaseModel):
-    sid: str | None = None
-    rooms: list[str] = []
-    invocation_id: str | None = None
-    run_id: str | None = None
-    message: str
-    error_type: str | None = None
+from app.infra.websocket.test_types import (
+    TestErrorData as TestErrorData,
+    TestGradedData as TestGradedData,
+    TestProceedData as TestProceedData,
+    TestProgressData as TestProgressData,
+    TestRunCompleteData as TestRunCompleteData,
+)

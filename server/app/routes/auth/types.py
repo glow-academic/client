@@ -14,7 +14,6 @@ from app.routes.auth.route_permissions import (
     SidebarSection,
 )
 from app.sql.types import (
-    GetProfileContextAccessSqlRow,
     GetSettingsThemeDataSqlRow,
     QGetAgentsV4Item,
     QGetCohortsV4Item,
@@ -25,6 +24,8 @@ from app.sql.types import (
     QGetSystemsV4Item,
     QGetToolsV4Item,
 )
+
+from app.infra.profile_identity_context import ProfileIdentityContext
 
 
 class QGetProfileContextV4Draft(BaseModel):
@@ -40,9 +41,11 @@ class QGetProfileContextV4Draft(BaseModel):
 
 @dataclass
 class AuthProfileInternalData:
-    """Hydrated profile identity — access + departments + cohorts."""
+    """Hydrated profile identity — identity context + departments + cohorts."""
 
-    access: GetProfileContextAccessSqlRow
+    identity: ProfileIdentityContext
+    profile_id: UUID
+    scoped_roles: list[str]
     departments: list[QGetDepartmentsV4Item]
     cohorts: list[QGetCohortsV4Item]
     role_resources: list[QGetProfileContextV4RoleResource]
@@ -123,27 +126,6 @@ class GetProfileContextApiResponse(BaseModel):
     page_access: PageAccess | None = None
     page_metadata: PageMetadata | None = None
 
-
-@dataclass
-class ProfileContextInternalData:
-    """Internal profile-context facts graph shared by HTTP and artifacts."""
-
-    access: GetProfileContextAccessSqlRow
-    actor_name: str | None
-    user_role: str | None
-    primary_department_id: UUID | None
-    departments: list[QGetDepartmentsV4Item]
-    cohorts: list[QGetCohortsV4Item]
-    settings: QGetSettingsV4Item | None
-    settings_agents: list[QGetAgentsV4Item]
-    settings_tools: list[QGetToolsV4Item]
-    role_resources: list[QGetProfileContextV4RoleResource]
-    settings_theme: GetSettingsThemeDataSqlRow
-    settings_tokens: QGetProfileContextV4ThemeTokens
-    session_id: UUID | None
-    artifact_has_generate: dict[str, bool]
-    pass1_time_ms: float
-    pass2_time_ms: float
 
 
 class GetAuthProfileApiResponse(BaseModel):
