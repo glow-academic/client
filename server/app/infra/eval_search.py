@@ -34,6 +34,7 @@ from app.routes.v5.tools.artifacts.eval.search import (
 )
 from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
+from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.names.get import get_names
 
 
@@ -125,26 +126,30 @@ async def search_eval_client(
 
     all_name_ids: list[UUID] = []
     all_description_ids: list[UUID] = []
+    all_flag_ids: list[UUID] = []
 
     for a in artifacts:
         all_name_ids.extend(a.name_ids or [])
         all_description_ids.extend(a.description_ids or [])
+        all_flag_ids.extend(a.flag_ids or [])
 
     (
         names_data,
         descriptions_data,
+        flags_data,
         department_facet,
-        eval_metadata,
     ) = await asyncio.gather(
         get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
         get_descriptions(conn, all_description_ids, redis)
         if all_description_ids
         else _empty_list(),
+        get_flags(conn, all_flag_ids, redis) if all_flag_ids else _empty_list(),
         search_departments(
             conn, redis, search=department_search, eval=True, limit_count=100
         ),
-        _fetch_eval_metadata(conn, eval_ids),
     )
+
+    flag_map = {f.id: f for f in flags_data}
 
     # Build lookup maps
     name_map = {n.id: n for n in names_data}
@@ -161,7 +166,15 @@ async def search_eval_client(
         )
 
         dept_ids_str = [str(d) for d in (a.department_ids or [])]
-        meta = eval_metadata.get(a.id, {})
+
+        # Resolve flags for this eval
+        artifact_flags = [flag_map[fid] for fid in (a.flag_ids or []) if fid in flag_map]
+        is_dynamic = any(
+            f.name == "eval_dynamic" and f.value for f in artifact_flags
+        )
+        use_groups = any(
+            f.name == "eval_groups" and f.value for f in artifact_flags
+        )
 
         can_edit = compute_can_edit(user_role=user_role)
         can_delete = compute_can_delete(user_role=user_role)
@@ -174,10 +187,10 @@ async def search_eval_client(
                 description=desc_obj.description if desc_obj else None,
                 department_ids=dept_ids_str,
                 is_inactive=not a.active,
-                is_dynamic=meta.get("is_dynamic"),
-                use_groups=meta.get("use_groups"),
-                num_runs=meta.get("num_runs", 0),
-                num_groups=meta.get("num_groups", 0),
+                is_dynamic=is_dynamic,
+                use_groups=use_groups,
+                num_runs=None,
+                num_groups=None,
                 can_edit=can_edit,
                 can_duplicate=can_duplicate,
                 can_delete=can_delete,
@@ -214,57 +227,3 @@ async def _empty_list() -> list:
     return []
 
 
-async def _fetch_eval_metadata(
-    conn: asyncpg.Connection,
-    eval_ids: list[UUID],
-) -> dict[UUID, dict]:
-    """Fetch eval-specific metadata: is_dynamic, use_groups, num_runs, num_groups.
-
-    These come from flags and related entry counts.
-    """
-    if not eval_ids:
-        return {}
-
-    rows = await conn.fetch(
-        """
-        SELECT
-            e.id as eval_id,
-            EXISTS (
-                SELECT 1 FROM eval_flags_junction ef
-                JOIN flags_resource f ON ef.flags_id = f.id
-                WHERE ef.eval_id = e.id AND f.name = 'eval_dynamic' AND f.value = true
-            ) as is_dynamic,
-            EXISTS (
-                SELECT 1 FROM eval_flags_junction ef
-                JOIN flags_resource f ON ef.flags_id = f.id
-                WHERE ef.eval_id = e.id AND f.name = 'eval_groups' AND f.value = true
-            ) as use_groups,
-            COALESCE(
-                (SELECT COUNT(*)::int FROM test_invocation_runs_artifact tir
-                 JOIN test_invocation_runs_evals_junction tire ON tire.test_invocation_run_id = tir.id AND tire.active = true
-                 WHERE tire.evals_id IN (
-                     SELECT eej.evals_id FROM eval_evals_junction eej WHERE eej.eval_id = e.id AND eej.active = true
-                 )), 0
-            ) as num_runs,
-            COALESCE(
-                (SELECT COUNT(*)::int FROM test_invocation_groups_artifact tig
-                 JOIN test_invocation_groups_evals_junction tige ON tige.test_invocation_group_id = tig.id AND tige.active = true
-                 WHERE tige.evals_id IN (
-                     SELECT eej.evals_id FROM eval_evals_junction eej WHERE eej.eval_id = e.id AND eej.active = true
-                 )), 0
-            ) as num_groups
-        FROM eval_artifact e
-        WHERE e.id = ANY($1)
-        """,
-        eval_ids,
-    )
-
-    return {
-        r["eval_id"]: {
-            "is_dynamic": r["is_dynamic"],
-            "use_groups": r["use_groups"],
-            "num_runs": r["num_runs"],
-            "num_groups": r["num_groups"],
-        }
-        for r in rows
-    }

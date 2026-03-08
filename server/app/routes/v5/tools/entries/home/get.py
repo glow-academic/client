@@ -1,15 +1,14 @@
 """home/get — reusable data-access layer."""
 
-from typing import cast
+import json
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.infra.globals import get_redis_client
 from app.routes.v5.tools.entries.home.types import GetHomeResponse
 from app.sql.types import (
     GetHomeContextViewSqlRow,
-    GetHomeEntriesSqlParams,
-    GetHomeEntriesSqlRow,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -53,8 +52,6 @@ async def get_homes(
         for r in rows
     ]
 
-
-SQL_PATH = "app/sql/queries/entries/home/get_home_entries_complete.sql"
 
 VIEW_SQL_PATH = "app/sql/queries/views/home/context/get_home_context_view_complete.sql"
 
@@ -117,13 +114,34 @@ async def get_home_entries_internal(
         if cached:
             return list(cached.get("items", []))
 
-    params = GetHomeEntriesSqlParams(ids=ids)
-    result = cast(
-        GetHomeEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+    result = await conn.fetchval(
+        """
+        SELECT COALESCE(jsonb_agg(jsonb_build_object(
+            'home_id', m.home_id,
+            'simulation_ids', m.simulation_ids,
+            'cohort_ids', m.cohort_ids,
+            'department_ids', m.department_ids,
+            'profile_ids', m.profile_ids,
+            'rubric_ids', m.rubric_ids,
+            'time_limit_ids', m.time_limit_ids,
+            'flag_ids', m.flag_ids,
+            'position_ids', m.position_ids,
+            'persona_ids', m.persona_ids,
+            'training_ids', m.training_ids,
+            'scenario_ids', m.scenario_ids,
+            'created_at', m.created_at,
+            'updated_at', m.updated_at,
+            'active', m.active
+        )), '[]'::jsonb)
+        FROM home_mv m
+        WHERE m.home_id = ANY($1)
+        """,
+        ids,
     )
 
-    items: list[dict] = result.items if result and result.items else []
+    items: list[dict] = (
+        json.loads(result) if isinstance(result, str) else (result or [])
+    )
 
     await set_cached(
         cache_key_val,

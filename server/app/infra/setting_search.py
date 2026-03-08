@@ -24,7 +24,6 @@ from app.routes.v5.api.main.setting.permissions import (
     compute_can_edit,
 )
 from app.routes.v5.api.main.setting.types import (
-    ListSettingApiKey,
     ListSettingApiResponse,
     ListSettingApiSetting,
 )
@@ -101,13 +100,11 @@ async def search_setting_client(
     (
         names_data,
         descriptions_data,
-        keys_data,
     ) = await asyncio.gather(
         get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
         get_descriptions(conn, all_description_ids, redis)
         if all_description_ids
         else _empty_list(),
-        _fetch_keys(conn, user_role, user_department_ids),
     )
 
     # Build lookup maps
@@ -155,7 +152,7 @@ async def search_setting_client(
         actor_name=actor_name,
         user_role=user_role,
         settings=settings_list,
-        keys=keys_data,
+        keys=None,
     )
 
 
@@ -170,7 +167,7 @@ def _empty_response(
         actor_name=actor_name,
         user_role=user_role,
         settings=[],
-        keys=[],
+        keys=None,
     )
 
 
@@ -178,78 +175,3 @@ async def _empty_list() -> list:
     return []
 
 
-async def _fetch_keys(
-    conn: asyncpg.Connection,
-    user_role: str | None,
-    user_department_ids: list[UUID],
-) -> list[ListSettingApiKey]:
-    """Fetch accessible keys for the user.
-
-    Replicates the settings list SQL logic for keys:
-    - Include keys with matching department links
-    - Include default keys (no department links)
-    - Superadmin can see all
-    """
-    rows = await conn.fetch(
-        """
-        WITH key_departments_data AS (
-            SELECT
-                pkr.key_id,
-                ARRAY_AGG(DISTINCT ds.department_id::text ORDER BY ds.department_id::text) as department_ids
-            FROM setting_provider_keys_junction spk
-            JOIN provider_keys_resource pkr ON pkr.id = spk.provider_keys_id
-            JOIN setting_artifact s ON s.id = spk.setting_id
-                AND EXISTS (
-                    SELECT 1 FROM setting_flags_junction sf
-                    JOIN flags_resource f ON sf.flags_id = f.id
-                    WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND f.value = true
-                )
-            JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
-            WHERE spk.active = true
-            GROUP BY pkr.key_id
-        )
-        SELECT
-            kr.id as key_id,
-            kr.name,
-            CASE
-                WHEN LENGTH(kr.key) > 4 THEN LEFT(kr.key, 4) || '****'
-                ELSE '****'
-            END as key_masked,
-            kr.description,
-            kr.active,
-            kdd.department_ids
-        FROM keys_resource kr
-        LEFT JOIN key_departments_data kdd ON kdd.key_id = kr.id
-        WHERE
-            EXISTS (
-                SELECT 1 FROM setting_provider_keys_junction spk
-                JOIN provider_keys_resource pkr ON pkr.id = spk.provider_keys_id
-                JOIN setting_artifact s ON s.id = spk.setting_id
-                    AND EXISTS (
-                        SELECT 1 FROM setting_flags_junction sf
-                        JOIN flags_resource f ON sf.flags_id = f.id
-                        WHERE sf.setting_id = s.id AND f.name = 'setting_active' AND f.value = true
-                    )
-                JOIN department_settings_junction ds ON ds.settings_id = s.id AND ds.active = true
-                WHERE pkr.key_id = kr.id AND spk.active = true
-                AND ds.department_id = ANY($1)
-            )
-            OR NOT EXISTS (SELECT 1 FROM key_departments_data kdd2 WHERE kdd2.key_id = kr.id)
-            OR $2 = 'superadmin'
-        ORDER BY kr.created_at DESC
-        """,
-        [UUID(str(d)) for d in user_department_ids] if user_department_ids else [],
-        user_role or "member",
-    )
-
-    return [
-        ListSettingApiKey(
-            key_id=r["key_id"],
-            name=r["name"],
-            key_masked=r["key_masked"],
-            description=r["description"],
-            active=r["active"],
-            department_ids=r["department_ids"],
-        )
-        for r in rows
-    ]

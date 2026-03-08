@@ -1,20 +1,14 @@
 """run_pricing/get internal — reusable data-access layer."""
 
-from typing import cast
+import json
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.sql.types import (
-    GetRunPricingEntriesSqlParams,
-    GetRunPricingEntriesSqlRow,
-)
+from app.infra.globals import get_redis_client
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/entries/run_pricing/get_run_pricing_entries_complete.sql"
 
 
 async def get_run_pricing_entries_internal(
@@ -37,13 +31,28 @@ async def get_run_pricing_entries_internal(
         if cached:
             return list(cached.get("items", []))
 
-    params = GetRunPricingEntriesSqlParams(ids=ids)
-    result = cast(
-        GetRunPricingEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+    result = await conn.fetchval(
+        """
+        SELECT COALESCE(jsonb_agg(jsonb_build_object(
+            'pricing_type', m.pricing_type,
+            'count', m.count,
+            'created_at', m.created_at,
+            'updated_at', m.updated_at,
+            'run_id', m.run_id,
+            'generated', m.generated,
+            'mcp', m.mcp,
+            'active', m.active,
+            'id', m.id
+        )), '[]'::jsonb)
+        FROM run_pricing_mv m
+        WHERE m.id = ANY($1)
+        """,
+        ids,
     )
 
-    items: list[dict] = result.items if result and result.items else []
+    items: list[dict] = (
+        json.loads(result) if isinstance(result, str) else (result or [])
+    )
 
     await set_cached(
         cache_key_val,

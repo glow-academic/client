@@ -1,18 +1,10 @@
 """run_pricing/create internal — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.tools.entries.run_pricing.types import (
-    CreateRunPricingEntryResponse,
-    CreateRunPricingEntrySqlParams,
-    CreateRunPricingEntrySqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/entries/run_pricing/create_run_pricing_entries_complete.sql"
+from app.routes.v5.tools.entries.run_pricing.types import CreateRunPricingEntryResponse
 
 
 async def create_run_pricing_entry_internal(
@@ -24,22 +16,21 @@ async def create_run_pricing_entry_internal(
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateRunPricingEntryResponse:
-    """Create a run_pricing entry. Internal only — no HTTP route."""
-    params = CreateRunPricingEntrySqlParams(
-        session_id=session_id,
-        pricing_type=pricing_type,
-        count=count,
-        run_id=run_id,
-        active=not soft,
-        mcp=mcp,
+    """Create a run_pricing entry."""
+    pricing_id = await conn.fetchval(
+        """
+        INSERT INTO run_pricing_entry (session_id, pricing_type, count, run_id, mcp, generated)
+        VALUES ($1, $2::pricing_type, $3, $4, $5, true)
+        RETURNING id
+        """,
+        session_id,
+        pricing_type,
+        count,
+        run_id,
+        mcp,
     )
 
-    result = cast(
-        CreateRunPricingEntrySqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    if not result or not result.id:
+    if pricing_id is None:
         raise ValueError("Failed to create run_pricing entry")
 
-    return CreateRunPricingEntryResponse.model_validate(result.model_dump())
+    return CreateRunPricingEntryResponse(id=pricing_id)

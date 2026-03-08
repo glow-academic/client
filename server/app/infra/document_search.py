@@ -17,6 +17,7 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
+from app.infra.document_permissions_context import resolve_document_permissions_context
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.document.permissions import (
     compute_can_delete,
@@ -124,17 +125,19 @@ async def search_document_client(
     # Deduplicate files IDs
     all_files_ids = list(set(all_files_ids))
 
+    # Per-document permissions context (gives us active_scenario_count)
+    perm_tasks = [resolve_document_permissions_context(conn, a.id) for a in artifacts]
+
     (
         names_data,
         uploads_data,
-        active_scenario_counts,
         scenario_facet,
         field_facet,
         department_facet,
+        *perm_results,
     ) = await asyncio.gather(
         get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
         get_uploads(conn, all_files_ids, redis) if all_files_ids else _empty_list(),
-        _fetch_active_scenario_counts(conn, artifacts),
         search_scenarios_resource(
             conn, redis, search=scenario_search, scenario=True, limit_count=100
         ),
@@ -144,6 +147,7 @@ async def search_document_client(
         search_departments(
             conn, redis, search=department_search, document=True, limit_count=100
         ),
+        *perm_tasks,
     )
 
     # Build lookup maps
@@ -159,11 +163,11 @@ async def search_document_client(
 
     documents: list[ListDocumentApiDocument] = []
 
-    for a in artifacts:
+    for i, a in enumerate(artifacts):
         name_obj = name_map.get(a.name_ids[0]) if a.name_ids else None
 
         dept_ids_str = [str(d) for d in (a.department_ids or [])]
-        active_scenario_count = active_scenario_counts.get(a.id, 0)
+        active_scenario_count = perm_results[i].active_scenario_count
 
         is_inactive = not a.active
 
@@ -261,43 +265,3 @@ async def _empty_list() -> list:
     return []
 
 
-async def _fetch_active_scenario_counts(
-    conn: asyncpg.Connection,
-    artifacts: list,
-) -> dict[UUID, int]:
-    """Count active scenarios per document artifact.
-
-    Path: document_artifact -> document_documents_junction -> documents_resource
-          -> scenario_documents_junction -> scenario_artifact
-    """
-    all_document_resource_ids: list[UUID] = []
-    artifact_to_doc_resource: dict[UUID, list[UUID]] = {}
-
-    for a in artifacts:
-        doc_res_ids = a.document_ids or []
-        artifact_to_doc_resource[a.id] = doc_res_ids
-        all_document_resource_ids.extend(doc_res_ids)
-
-    if not all_document_resource_ids:
-        return {}
-
-    rows = await conn.fetch(
-        """
-        SELECT sdj.documents_id, COUNT(DISTINCT sdj.scenario_id) as cnt
-        FROM scenario_documents_junction sdj
-        JOIN scenario_artifact sa ON sa.id = sdj.scenario_id AND sa.active = true
-        WHERE sdj.documents_id = ANY($1) AND sdj.active = true
-        GROUP BY sdj.documents_id
-        """,
-        all_document_resource_ids,
-    )
-
-    resource_counts: dict[UUID, int] = {r["documents_id"]: r["cnt"] for r in rows}
-
-    result: dict[UUID, int] = {}
-    for a_id, doc_res_ids in artifact_to_doc_resource.items():
-        total = sum(resource_counts.get(did, 0) for did in doc_res_ids)
-        if total > 0:
-            result[a_id] = total
-
-    return result

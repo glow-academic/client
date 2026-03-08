@@ -3,26 +3,20 @@
 Three-layer BFF pattern:
 - get_attempt_internal(): Core data fetcher, returns AttemptInternalData
 - get_attempt_client(): HTTP response layer with caching
-- get_attempt_websocket(): WebSocket response layer with config resources
+- get_attempt_websocket(): WebSocket response layer (stub)
 
-Uses view internal handlers with parallel query execution:
-1. Query 1 (Attempt): Attempt-level data via attempt view
-2. Query 2 (Chats): Chat-level data via attempt_chat view
-3. Query 3 (Messages): Message-level data via attempt_message view
-
-All three queries run in parallel using pool.acquire() for each,
-then results are assembled in Python.
+Uses composable context resolver with black-box tools.
 """
 
-import asyncio
+from collections import defaultdict as _defaultdict
 from typing import Annotated, Any
 from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.attempt_context import resolve_attempt_context
 from app.infra.globals import get_db, get_pool, get_redis_client
-from app.routes.auth.settings import get_auth_settings_internal
 from app.routes.v5.api.main.attempt.permissions import (
     check_attempt_access,
     compute_achieved_standards,
@@ -74,61 +68,8 @@ from app.routes.v5.api.main.attempt.types import (
     TimerData,
     VideoEntry,
 )
-from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.tools.entries.attempt.get import (
-    get_attempt_chats_internal,
-    get_attempt_messages_internal,
-)
-from app.routes.v5.tools.entries.attempt.search import get_attempt_list_internal
-from app.routes.v5.tools.entries.attempt_analysis.get import (
-    get_attempt_analysis_internal,
-)
-from app.routes.v5.tools.entries.attempt_content.get import get_attempt_content_internal
-from app.routes.v5.tools.entries.attempt_feedback.get import (
-    get_attempt_feedback_internal,
-)
-from app.routes.v5.tools.entries.attempt_grade.get import get_attempt_grade_internal
-from app.routes.v5.tools.entries.attempt_highlight.get import (
-    get_attempt_highlight_internal,
-)
-from app.routes.v5.tools.entries.attempt_hint.get import get_attempt_hint_internal
-from app.routes.v5.tools.entries.attempt_improvement.get import (
-    get_attempt_improvement_internal,
-)
-from app.routes.v5.tools.entries.attempt_replacement.get import (
-    get_attempt_replacement_internal,
-)
-from app.routes.v5.tools.entries.attempt_responses.get import (
-    get_simulation_responses_internal,
-)
-from app.routes.v5.tools.entries.attempt_strength.get import (
-    get_attempt_strength_internal,
-)
+from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 from app.routes.v5.tools.entries.uploads.get import get_upload_list_view_internal
-from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.args.get import get_args
-from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
-from app.routes.v5.tools.resources.documents.get import get_documents
-from app.routes.v5.tools.resources.images.get import get_images
-from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.objectives.get import get_objectives
-from app.routes.v5.tools.resources.options.get import get_options
-from app.routes.v5.tools.resources.personas.get import get_personas
-from app.routes.v5.tools.resources.problem_statements.get import (
-    get_problem_statements,
-)
-from app.routes.v5.tools.resources.profiles.get import get_profiles
-from app.routes.v5.tools.resources.providers.get import get_providers
-from app.routes.v5.tools.resources.questions.get import get_questions
-from app.routes.v5.tools.resources.rubrics.get import get_rubrics
-from app.routes.v5.tools.resources.scenarios.get import get_scenarios
-from app.routes.v5.tools.resources.simulations.get import get_simulations
-from app.routes.v5.tools.resources.standard_groups.get import (
-    get_standard_groups,
-)
-from app.routes.v5.tools.resources.standards.get import get_standards
-from app.routes.v5.tools.resources.tools.get import get_tools
-from app.routes.v5.tools.resources.videos.get import get_videos
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -140,14 +81,7 @@ router = APIRouter()
 def _format_timer(
     elapsed: int, limit_seconds: int | None, infinite_mode: bool, negative: bool = False
 ) -> TimerData:
-    """Format timer data.
-
-    Args:
-        elapsed: Elapsed time in seconds
-        limit_seconds: Time limit in seconds (not minutes)
-        infinite_mode: Whether the attempt is in infinite mode
-        negative: Whether the timer can go negative (continue past zero)
-    """
+    """Format timer data."""
     if limit_seconds is None or limit_seconds == 0:
         return TimerData(
             elapsed=elapsed,
@@ -158,12 +92,10 @@ def _format_timer(
         )
 
     remaining = limit_seconds - elapsed
-    # If negative is allowed, don't clamp remaining to 0
     if not negative:
         remaining = max(remaining, 0)
     exceeded = remaining <= 0 if infinite_mode else elapsed > limit_seconds
 
-    # Format time (handle negative values)
     abs_remaining = abs(remaining)
     hours = abs_remaining // 3600
     minutes = (abs_remaining % 3600) // 60
@@ -194,8 +126,8 @@ async def get_attempt_internal(
 ) -> AttemptInternalData:
     """Core attempt detail fetcher.
 
-    Fetches all data, computes business logic, and returns AttemptInternalData.
-    No caching — consumer layers handle their own caching.
+    Fetches all data via context resolver, computes business logic,
+    and returns AttemptInternalData. No caching.
     """
     try:
         # Resolve profile_id (artifact) to profiles_id (resource) + role
@@ -212,414 +144,62 @@ async def get_attempt_internal(
         profiles_id = requester_row["profiles_id"] if requester_row else None
         requester_role: str | None = requester_row["role"] if requester_row else None
 
-        # Get pool for parallel queries
         pool = get_pool()
         if not pool:
             raise RuntimeError("Database pool not initialized")
 
-        # === PARALLEL FETCH FUNCTIONS ===
-        # Each function acquires its own connection for true parallelism
-
-        async def fetch_attempt(aid: UUID) -> Any:
-            async with pool.acquire() as c:
-                return await get_attempt_list_internal(
-                    conn=c,
-                    attempt_ids=[aid],
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_chats(aid: UUID) -> Any:
-            async with pool.acquire() as c:
-                return await get_attempt_chats_internal(
-                    conn=c,
-                    attempt_id=aid,
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_messages(aid: UUID) -> Any:
-            async with pool.acquire() as c:
-                # Hints are always included from MV
-                return await get_attempt_messages_internal(
-                    conn=c,
-                    attempt_id=aid,
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_resource_metadata(
-            image_ids: list[UUID],
-            video_ids: list[UUID],
-            document_ids: list[UUID],
-            persona_ids: list[UUID],
-            objective_ids: list[UUID],
-            question_ids: list[UUID],
-            option_ids: list[UUID],
-            problem_statement_ids: list[UUID],
-            scenario_ids: list[UUID],
-            rubric_ids: list[UUID],
-            standard_group_ids: list[UUID],
-            standard_ids: list[UUID],
-        ) -> dict[str, dict[UUID, dict]]:
-            """Fetch resource metadata using internal handlers (with caching)."""
-            result: dict[str, dict[UUID, dict]] = {
-                "images": {},
-                "videos": {},
-                "documents": {},
-                "personas": {},
-                "objectives": {},
-                "questions": {},
-                "options": {},
-                "problem_statements": {},
-                "scenarios": {},
-                "rubrics": {},
-                "standard_groups": {},
-                "standards": {},
-            }
-
-            async with pool.acquire() as c:
-                # Fetch images
-                if image_ids:
-                    items = await get_images(
-                        c, image_ids, get_redis_client(), bypass_cache=bypass_cache
-                    )
-                    for item in items:
-                        if item.image_id:
-                            # Resolve upload_id from uploads_resource to uploads_entry
-                            # via uploads_mv view
-                            entry_upload_id = item.upload_id
-                            if item.upload_id:
-                                upload_view = await get_upload_list_view_internal(
-                                    conn=c,
-                                    files_id_filter=item.upload_id,
-                                    bypass_cache=bypass_cache,
-                                )
-                                if upload_view.items:
-                                    entry_upload_id = upload_view.items[0].upload_id
-
-                            result["images"][item.image_id] = {
-                                "name": item.name,
-                                "description": item.description,
-                                "upload_id": entry_upload_id,
-                            }
-
-                # Fetch videos
-                if video_ids:
-                    items = await get_videos(
-                        c, video_ids, get_redis_client(), bypass_cache=bypass_cache
-                    )
-                    for item in items:
-                        if item.video_id:
-                            # Resolve upload_id from uploads_resource to uploads_entry
-                            # via uploads_mv view
-                            entry_upload_id = item.upload_id
-                            if item.upload_id:
-                                upload_view = await get_upload_list_view_internal(
-                                    conn=c,
-                                    files_id_filter=item.upload_id,
-                                    bypass_cache=bypass_cache,
-                                )
-                                if upload_view.items:
-                                    entry_upload_id = upload_view.items[0].upload_id
-
-                            result["videos"][item.video_id] = {
-                                "name": item.name,
-                                "description": item.description,
-                                "upload_id": entry_upload_id,
-                            }
-
-                # Fetch documents
-                if document_ids:
-                    items = await get_documents(
-                        c, document_ids, get_redis_client(), bypass_cache=bypass_cache
-                    )
-                    for item in items:
-                        if item.document_id:
-                            # Resolve upload_id from uploads_resource to uploads_entry
-                            # via uploads_mv view
-                            entry_upload_id = item.upload_id
-                            if item.upload_id:
-                                upload_view = await get_upload_list_view_internal(
-                                    conn=c,
-                                    files_id_filter=item.upload_id,
-                                    bypass_cache=bypass_cache,
-                                )
-                                if upload_view.items:
-                                    entry_upload_id = upload_view.items[0].upload_id
-
-                            result["documents"][item.document_id] = {
-                                "name": item.name,
-                                "description": item.description,
-                                "upload_id": entry_upload_id,
-                                "template": item.template,
-                            }
-
-                # Fetch personas
-                if persona_ids:
-                    items = await get_personas(
-                        c, persona_ids, get_redis_client(), bypass_cache=bypass_cache
-                    )
-                    for item in items:
-                        if item.persona_id:
-                            result["personas"][item.persona_id] = {
-                                "name": item.name,
-                                "icon": item.icon,
-                                "color": item.color,
-                                "instructions": item.instructions,
-                                "examples": item.examples,
-                            }
-
-                # Fetch objectives
-                if objective_ids:
-                    items = await get_objectives(
-                        c, objective_ids, get_redis_client(), bypass_cache=bypass_cache
-                    )
-                    for item in items:
-                        if item.objective_id:
-                            result["objectives"][item.objective_id] = {
-                                "objective": item.objective,
-                            }
-
-                # Fetch questions
-                if question_ids:
-                    items = await get_questions(
-                        c, question_ids, get_redis_client(), bypass_cache=bypass_cache
-                    )
-                    for item in items:
-                        if item.question_id:
-                            result["questions"][item.question_id] = {
-                                "question_text": item.question_text,
-                                "allow_multiple": item.allow_multiple,
-                                "time": item.time,
-                            }
-
-                # Fetch options
-                if option_ids:
-                    items = await get_options(
-                        c, option_ids, get_redis_client(), bypass_cache=bypass_cache
-                    )
-                    for item in items:
-                        if item.option_id:
-                            result["options"][item.option_id] = {
-                                "option_text": item.option_text,
-                                "is_correct": item.is_correct,
-                                "question_id": item.question_id,
-                            }
-
-                # Fetch problem statements
-                if problem_statement_ids:
-                    items = await get_problem_statements(
-                        c,
-                        problem_statement_ids,
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-                    for item in items:
-                        if item.problem_statement_id:
-                            result["problem_statements"][item.problem_statement_id] = {
-                                "problem_statement": item.problem_statement,
-                            }
-
-                # Fetch scenarios
-                if scenario_ids:
-                    items = await get_scenarios(
-                        c, scenario_ids, get_redis_client(), bypass_cache=bypass_cache
-                    )
-                    for item in items:
-                        if item.scenario_id:
-                            result["scenarios"][item.scenario_id] = {
-                                "name": item.name,
-                                "description": item.description,
-                            }
-
-                # Fetch rubrics
-                if rubric_ids:
-                    items = await get_rubrics(
-                        c, rubric_ids, get_redis_client(), bypass_cache=bypass_cache
-                    )
-                    for item in items:
-                        if item.id:
-                            result["rubrics"][item.id] = {
-                                "name": item.name,
-                                "description": item.description,
-                                "total_points": item.total_points,
-                                "pass_points": item.pass_points,
-                            }
-
-                # Fetch standard groups
-                if standard_group_ids:
-                    items = await get_standard_groups(
-                        c,
-                        standard_group_ids,
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-                    for item in items:
-                        if item.standard_group_id:
-                            result["standard_groups"][item.standard_group_id] = {
-                                "name": item.name,
-                                "description": item.description,
-                                "points": item.points,
-                                "pass_points": item.pass_points,
-                            }
-
-                # Fetch standards
-                if standard_ids:
-                    items = await get_standards(
-                        c, standard_ids, get_redis_client(), bypass_cache=bypass_cache
-                    )
-                    for item in items:
-                        if item.standard_id:
-                            result["standards"][item.standard_id] = {
-                                "name": item.name,
-                                "description": item.description,
-                                "points": item.points,
-                                "standard_group_id": item.standard_group_id,
-                            }
-
-            return result
-
-        # === EXECUTE PASS 1: CORE VIEWS IN PARALLEL ===
-        attempt_result, chats_result, messages_result = await asyncio.gather(
-            fetch_attempt(attempt_id),
-            fetch_chats(attempt_id),
-            fetch_messages(attempt_id),
+        # === RESOLVE CONTEXT ===
+        ctx = await resolve_attempt_context(
+            pool,
+            get_redis_client(),
+            attempt_id=attempt_id,
+            bypass_cache=bypass_cache,
         )
 
-        # === PASS 2: FETCH ENTRY-LEVEL DATA BY PARENT IDs ===
-        message_ids = [m.message_id for m in (messages_result or [])]
-        chat_ids = [c.chat_id for c in (chats_result or [])]
+        # === EXTRACT ENTRIES ===
+        attempts = ctx.entries.get("attempts", [])
+        chats_result = ctx.entries.get("chats", [])
+        messages_result = ctx.entries.get("messages", [])
+        contents_result = ctx.entries.get("contents", [])
+        strengths_result = ctx.entries.get("strengths", [])
+        improvements_result = ctx.entries.get("improvements", [])
+        hints_result = ctx.entries.get("hints", [])
+        grades_result = ctx.entries.get("grades", [])
+        responses_result = ctx.entries.get("responses", [])
+        highlights_result = ctx.entries.get("highlights", [])
+        replacements_result = ctx.entries.get("replacements", [])
+        feedbacks_result = ctx.entries.get("feedbacks", [])
+        analyses_result = ctx.entries.get("analyses", [])
 
-        if message_ids or chat_ids:
-
-            async def fetch_contents() -> list:
-                if not message_ids:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_attempt_content_internal(
-                        c, message_ids=message_ids, bypass_cache=bypass_cache
-                    )
-
-            async def fetch_strengths() -> list:
-                if not message_ids:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_attempt_strength_internal(
-                        c, message_ids=message_ids, bypass_cache=bypass_cache
-                    )
-
-            async def fetch_improvements() -> list:
-                if not message_ids:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_attempt_improvement_internal(
-                        c, message_ids=message_ids, bypass_cache=bypass_cache
-                    )
-
-            async def fetch_hints() -> list:
-                if not message_ids:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_attempt_hint_internal(
-                        c, message_ids=message_ids, bypass_cache=bypass_cache
-                    )
-
-            async def fetch_grades() -> list:
-                if not chat_ids:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_attempt_grade_internal(
-                        c, chat_ids=chat_ids, bypass_cache=bypass_cache
-                    )
-
-            async def fetch_responses() -> list:
-                if not chat_ids:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_simulation_responses_internal(
-                        c, chat_ids=chat_ids, bypass_cache=bypass_cache
-                    )
-
-            (
-                contents_result,
-                strengths_result,
-                improvements_result,
-                hints_result,
-                grades_result,
-                responses_result,
-            ) = await asyncio.gather(
-                fetch_contents(),
-                fetch_strengths(),
-                fetch_improvements(),
-                fetch_hints(),
-                fetch_grades(),
-                fetch_responses(),
+        if not attempts:
+            return AttemptInternalData(
+                actor_name=None,
+                attempt_exists=False,
+                access_denied=True,
+                is_own_attempt=False,
+                practice=False,
+                profiles_id=profiles_id,
+                profile_name=None,
+                simulation_name=None,
+                training_id=None,
+                chat_entry_id=None,
+                group_id=None,
             )
-        else:
-            contents_result = []
-            strengths_result = []
-            improvements_result = []
-            hints_result = []
-            grades_result = []
-            responses_result = []
 
-        # === PASS 3: FETCH GRANDCHILD DATA ===
-        strength_ids = [s.strength_id for s in strengths_result]
-        improvement_ids = [i.improvement_id for i in improvements_result]
-        grade_ids = [g.grade_id for g in grades_result]
+        attempt_item = attempts[0]
 
-        if strength_ids or improvement_ids or grade_ids:
+        # === EXTRACT RESOURCES ===
+        def _res(key: str) -> list:
+            return ctx.resources[key].selected if key in ctx.resources else []
 
-            async def fetch_highlights() -> list:
-                if not strength_ids:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_attempt_highlight_internal(
-                        c, strength_ids=strength_ids, bypass_cache=bypass_cache
-                    )
+        simulations_list = _res("simulations")
+        profiles_list = _res("profiles")
 
-            async def fetch_replacements() -> list:
-                if not improvement_ids:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_attempt_replacement_internal(
-                        c, improvement_ids=improvement_ids, bypass_cache=bypass_cache
-                    )
+        # Build resource lookup maps
+        simulation_map = {s.simulation_id: s for s in simulations_list}
+        profile_map = {p.profile_id: p for p in profiles_list}
 
-            async def fetch_feedbacks() -> list:
-                if not grade_ids:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_attempt_feedback_internal(
-                        c, grade_ids=grade_ids, bypass_cache=bypass_cache
-                    )
-
-            async def fetch_analyses() -> list:
-                if not grade_ids:
-                    return []
-                async with pool.acquire() as c:
-                    return await get_attempt_analysis_internal(
-                        c, grade_ids=grade_ids, bypass_cache=bypass_cache
-                    )
-
-            (
-                highlights_result,
-                replacements_result,
-                feedbacks_result,
-                analyses_result,
-            ) = await asyncio.gather(
-                fetch_highlights(),
-                fetch_replacements(),
-                fetch_feedbacks(),
-                fetch_analyses(),
-            )
-        else:
-            highlights_result = []
-            replacements_result = []
-            feedbacks_result = []
-            analyses_result = []
-
-        # === BUILD LOOKUP DICTS (group children by parent FK) ===
-        from collections import defaultdict as _defaultdict
-
+        # === BUILD LOOKUP DICTS ===
         contents_by_message: dict[UUID, list] = _defaultdict(list)
         for c in contents_result:
             if c.message_id:
@@ -670,78 +250,21 @@ async def get_attempt_internal(
             if r.chat_id:
                 responses_by_chat[r.chat_id].append(r)
 
-        if not attempt_result or not attempt_result.items:
-            return AttemptInternalData(
-                actor_name=None,
-                attempt_exists=False,
-                access_denied=True,
-                is_own_attempt=False,
-                practice=False,
-                profiles_id=profiles_id,
-                profile_name=None,
-                simulation_name=None,
-                training_id=None,
-                chat_entry_id=None,
-                group_id=None,
-            )
-
-        attempt_item = attempt_result.items[0] if attempt_result.items else None
-
-        if not attempt_item:
-            return AttemptInternalData(
-                actor_name=None,
-                attempt_exists=False,
-                access_denied=True,
-                is_own_attempt=False,
-                practice=False,
-                profiles_id=profiles_id,
-                profile_name=None,
-                simulation_name=None,
-                training_id=None,
-                chat_entry_id=None,
-                group_id=None,
-            )
-
         practice = attempt_item.practice or False
 
-        # === FETCH SIMULATION AND PROFILE METADATA ===
+        # === RESOLVE NAMES FROM RESOURCES ===
         simulation_name: str | None = None
+        if attempt_item.simulation_id and attempt_item.simulation_id in simulation_map:
+            simulation_name = simulation_map[attempt_item.simulation_id].name
+
         profile_name: str | None = None
+        if attempt_item.profile_id and attempt_item.profile_id in profile_map:
+            profile_name = profile_map[attempt_item.profile_id].name
 
-        async def fetch_simulation_meta(sim_id: UUID | None) -> str | None:
-            if not sim_id:
-                return None
-            async with pool.acquire() as c:
-                items = await get_simulations(
-                    c, [sim_id], get_redis_client(), bypass_cache=bypass_cache
-                )
-                if items and items[0].name:
-                    return items[0].name
-            return None
-
-        async def fetch_profile_meta(prof_id: UUID | None) -> str | None:
-            if not prof_id:
-                return None
-            async with pool.acquire() as c:
-                items = await get_profiles(
-                    c, [prof_id], get_redis_client(), bypass_cache=bypass_cache
-                )
-                if items and items[0].name:
-                    return items[0].name
-            return None
-
-        simulation_name, profile_name = await asyncio.gather(
-            fetch_simulation_meta(attempt_item.simulation_id),
-            fetch_profile_meta(attempt_item.profile_id),
-        )
-
-        # Fetch attempt owner's role for permission check
+        # === PERMISSION CHECK ===
         attempt_owner_role: str | None = None
-        if attempt_item.profile_id:
-            attempt_owner_role = await conn.fetchval(
-                "SELECT role FROM profiles_resource WHERE id = $1",
-                attempt_item.profile_id,
-            )
+        if attempt_item.profile_id and attempt_item.profile_id in profile_map:
+            attempt_owner_role = profile_map[attempt_item.profile_id].role
 
         if not check_attempt_access(
             attempt_item.profile_id,
@@ -763,404 +286,301 @@ async def get_attempt_internal(
                 group_id=None,
             )
 
-        # === RESOLVE TRAINING CONTEXT (for lobby flow) ===
-        training_id: UUID | None = None
-        chat_entry_id: UUID | None = None
-        training_row = await conn.fetchrow(
-            """
-            SELECT COALESCE(pte.chat_id, hte.chat_id) AS chat_entry_id
-            FROM attempt_entry a
-            LEFT JOIN attempt_practice_entry apc ON apc.attempt_id = a.id AND apc.active = true
-            LEFT JOIN practice_chat_entry pte ON pte.practice_id = apc.practice_id AND pte.active = true
-            LEFT JOIN attempt_home_entry ahc ON ahc.attempt_id = a.id AND ahc.active = true
-            LEFT JOIN home_chat_entry hte ON hte.home_id = ahc.home_id AND hte.active = true
-            WHERE a.id = $1
-            """,
-            attempt_id,
-        )
-        if training_row:
-            chat_entry_id = training_row["chat_entry_id"]
-            training_id = chat_entry_id
+        # === TRAINING CONTEXT (from attempt_mv — no inline SQL) ===
+        chat_entry_id = attempt_item.chat_entry_id
+        training_id = chat_entry_id
 
-        # === RESOLVE CONFIG CHAIN FROM SETTINGS (department agent resolution) ===
         first_chat_item = chats_result[0] if chats_result else None
         group_id = first_chat_item.group_id if first_chat_item else None
 
-        ATTEMPT_RESOURCE_TYPES: set[str] = {
-            "scenarios",
-            "personas",
-            "documents",
-            "images",
-            "videos",
-            "objectives",
-            "questions",
-            "options",
-            "problem_statements",
-            "rubrics",
-            "standard_groups",
-            "standards",
+        # === COMPUTE TIME LIMIT FROM CHATS ===
+        time_limit_seconds = sum(ch.time_limit_seconds or 0 for ch in chats_result)
+        allows_negative_time = any(ch.negative or False for ch in chats_result)
+
+        # === BUILD RESOURCE METADATA MAPS ===
+        resource_meta: dict[str, dict[UUID, dict]] = {
+            "images": {},
+            "videos": {},
+            "documents": {},
+            "personas": {},
+            "objectives": {},
+            "questions": {},
+            "options": {},
+            "problem_statements": {},
+            "scenarios": {},
+            "rubrics": {},
+            "standard_groups": {},
+            "standards": {},
         }
-        ATTEMPT_ENTRY_TYPES: set[str] = {
-            "contents",
-            "hints",
-            "feedbacks",
-            "strengths",
-            "improvements",
-            "analyses",
-            "highlights",
-            "replacements",
-        }
-        ATTEMPT_ARTIFACT_TYPES: set[str] = {
-            "attempt",
-        }
-        ATTEMPT_ALL_TYPES = (
-            ATTEMPT_RESOURCE_TYPES | ATTEMPT_ENTRY_TYPES | ATTEMPT_ARTIFACT_TYPES
-        )
 
-        async with pool.acquire() as settings_conn:
-            settings_data = await get_auth_settings_internal(
-                settings_conn, profile_id, bypass_cache
-            )
-
-        agent_ids, _tool_ids_map, _link_tool_ids_map = resolve_agents_for_artifact(
-            settings_data.agent_tool_entries, ATTEMPT_ALL_TYPES
-        )
-
-        # Config chain resource IDs (only resolved agents)
-        selected_agent_ids = [aid for aid in agent_ids.values() if aid]
-        config_agent_resource_ids = list(dict.fromkeys(selected_agent_ids))
-        config_model_resource_ids = [
-            a.model_id
-            for a in settings_data.settings_agents
-            if a.model_id and a.id in set(config_agent_resource_ids)
-        ]
-
-        config_agent_resources = None
-        config_model_resources = None
-        config_provider_resources = None
-
-        if config_agent_resource_ids:
-
-            async def fetch_config_agents() -> Any:
-                async with pool.acquire() as c:
-                    return await get_agents(
-                        c,
-                        config_agent_resource_ids,
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            async def fetch_config_models() -> Any:
-                if not config_model_resource_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_models(
-                        c,
-                        config_model_resource_ids,
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            (
-                config_agent_resources,
-                config_model_resources,
-            ) = await asyncio.gather(
-                fetch_config_agents(),
-                fetch_config_models(),
-            )
-
-            # Derive provider IDs from fetched models (sequential)
-            if config_model_resources:
-                config_provider_ids = list(
-                    dict.fromkeys(
-                        m.provider_id for m in config_model_resources if m.provider_id
-                    )
-                )
-                if config_provider_ids:
+        for item in _res("images"):
+            if item.image_id:
+                entry_upload_id = item.upload_id
+                if item.upload_id:
                     async with pool.acquire() as c:
-                        config_provider_resources = await get_providers(
-                            c,
-                            config_provider_ids,
-                            get_redis_client(),
+                        upload_view = await get_upload_list_view_internal(
+                            conn=c,
+                            files_id_filter=item.upload_id,
                             bypass_cache=bypass_cache,
                         )
+                        if upload_view.items:
+                            entry_upload_id = upload_view.items[0].upload_id
+                resource_meta["images"][item.image_id] = {
+                    "name": item.name,
+                    "description": item.description,
+                    "upload_id": entry_upload_id,
+                }
 
-        # === COMPUTE TIME LIMIT FROM CHATS ===
-        time_limit_seconds = sum(
-            c.time_limit_seconds or 0 for c in (chats_result or [])
-        )
-        allows_negative_time = any(
-            getattr(c, "negative", False) for c in (chats_result or [])
-        )
+        for item in _res("videos"):
+            if item.video_id:
+                entry_upload_id = item.upload_id
+                if item.upload_id:
+                    async with pool.acquire() as c:
+                        upload_view = await get_upload_list_view_internal(
+                            conn=c,
+                            files_id_filter=item.upload_id,
+                            bypass_cache=bypass_cache,
+                        )
+                        if upload_view.items:
+                            entry_upload_id = upload_view.items[0].upload_id
+                resource_meta["videos"][item.video_id] = {
+                    "name": item.name,
+                    "description": item.description,
+                    "upload_id": entry_upload_id,
+                }
 
-        # === COLLECT AND ENRICH RESOURCE REFS ===
-        all_image_ids: list[UUID] = []
-        all_video_ids: list[UUID] = []
-        all_document_ids: list[UUID] = []
-        all_persona_ids: list[UUID] = []
-        all_objective_ids: list[UUID] = []
-        all_question_ids: list[UUID] = []
-        all_option_ids: list[UUID] = []
-        all_problem_statement_ids: list[UUID] = []
-        all_scenario_ids: list[UUID] = []
-        all_rubric_ids: list[UUID] = []
-        all_standard_group_ids: list[UUID] = []
-        all_standard_ids: list[UUID] = []
+        for item in _res("documents"):
+            if item.document_id:
+                entry_upload_id = item.upload_id
+                if item.upload_id:
+                    async with pool.acquire() as c:
+                        upload_view = await get_upload_list_view_internal(
+                            conn=c,
+                            files_id_filter=item.upload_id,
+                            bypass_cache=bypass_cache,
+                        )
+                        if upload_view.items:
+                            entry_upload_id = upload_view.items[0].upload_id
+                resource_meta["documents"][item.document_id] = {
+                    "name": item.name,
+                    "description": item.description,
+                    "upload_id": entry_upload_id,
+                    "template": item.template,
+                }
 
-        for chat_item in chats_result or []:
-            if chat_item.image_ids:
-                all_image_ids.extend(chat_item.image_ids)
-            if chat_item.video_ids:
-                all_video_ids.extend(chat_item.video_ids)
-            if chat_item.document_ids:
-                all_document_ids.extend(chat_item.document_ids)
-            if chat_item.persona_ids:
-                all_persona_ids.extend(chat_item.persona_ids)
-            if chat_item.objective_ids:
-                all_objective_ids.extend(chat_item.objective_ids)
-            if chat_item.question_ids:
-                all_question_ids.extend(chat_item.question_ids)
-            if chat_item.option_ids:
-                all_option_ids.extend(chat_item.option_ids)
-            if chat_item.problem_statement_id:
-                all_problem_statement_ids.append(chat_item.problem_statement_id)
-            if chat_item.scenario_id:
-                all_scenario_ids.append(chat_item.scenario_id)
-            if chat_item.rubric_id:
-                all_rubric_ids.append(chat_item.rubric_id)
-            if chat_item.standard_group_ids:
-                all_standard_group_ids.extend(chat_item.standard_group_ids)
-            if chat_item.standard_ids:
-                all_standard_ids.extend(chat_item.standard_ids)
+        for item in _res("personas"):
+            if item.persona_id:
+                resource_meta["personas"][item.persona_id] = {
+                    "name": item.name,
+                    "icon": item.icon,
+                    "color": item.color,
+                    "instructions": item.instructions,
+                    "examples": item.examples,
+                }
 
-        resource_meta = await fetch_resource_metadata(
-            image_ids=list(set(all_image_ids)),
-            video_ids=list(set(all_video_ids)),
-            document_ids=list(set(all_document_ids)),
-            persona_ids=list(set(all_persona_ids)),
-            objective_ids=list(set(all_objective_ids)),
-            question_ids=list(set(all_question_ids)),
-            option_ids=list(set(all_option_ids)),
-            problem_statement_ids=list(set(all_problem_statement_ids)),
-            scenario_ids=list(set(all_scenario_ids)),
-            rubric_ids=list(set(all_rubric_ids)),
-            standard_group_ids=list(set(all_standard_group_ids)),
-            standard_ids=list(set(all_standard_ids)),
-        )
+        for item in _res("objectives"):
+            if item.objective_id:
+                resource_meta["objectives"][item.objective_id] = {
+                    "objective": item.objective,
+                }
+
+        for item in _res("questions"):
+            if item.question_id:
+                resource_meta["questions"][item.question_id] = {
+                    "question_text": item.question_text,
+                    "allow_multiple": item.allow_multiple,
+                    "time": item.time,
+                }
+
+        for item in _res("options"):
+            if item.option_id:
+                resource_meta["options"][item.option_id] = {
+                    "option_text": item.option_text,
+                    "is_correct": item.is_correct,
+                    "question_id": item.question_id,
+                }
+
+        for item in _res("problem_statements"):
+            if item.problem_statement_id:
+                resource_meta["problem_statements"][item.problem_statement_id] = {
+                    "problem_statement": item.problem_statement,
+                }
+
+        for item in _res("scenarios"):
+            if item.scenario_id:
+                resource_meta["scenarios"][item.scenario_id] = {
+                    "name": item.name,
+                    "description": item.description,
+                }
+
+        for item in _res("rubrics"):
+            if item.id:
+                resource_meta["rubrics"][item.id] = {
+                    "name": item.name,
+                    "description": item.description,
+                    "total_points": item.total_points,
+                    "pass_points": item.pass_points,
+                }
+
+        for item in _res("standard_groups"):
+            if item.standard_group_id:
+                resource_meta["standard_groups"][item.standard_group_id] = {
+                    "name": item.name,
+                    "description": item.description,
+                    "points": item.points,
+                    "pass_points": item.pass_points,
+                }
+
+        for item in _res("standards"):
+            if item.standard_id:
+                resource_meta["standards"][item.standard_id] = {
+                    "name": item.name,
+                    "description": item.description,
+                    "points": item.points,
+                    "standard_group_id": item.standard_group_id,
+                }
 
         # === BUILD RESOURCE MAPS (normalized) ===
         resources_payload = AttemptResources(
             images={
-                str(image_id): ImageEntry(
-                    image_id=image_id,
-                    upload_id=resource_meta["images"]
-                    .get(image_id, {})
-                    .get("upload_id"),
-                    name=resource_meta["images"].get(image_id, {}).get("name"),
-                    description=resource_meta["images"]
-                    .get(image_id, {})
-                    .get("description"),
+                str(k): ImageEntry(
+                    image_id=k,
+                    upload_id=v.get("upload_id"),
+                    name=v.get("name"),
+                    description=v.get("description"),
                 )
-                for image_id in resource_meta["images"].keys()
+                for k, v in resource_meta["images"].items()
             }
-            if resource_meta.get("images")
-            else None,
+            or None,
             videos={
-                str(video_id): VideoEntry(
-                    video_id=video_id,
-                    upload_id=resource_meta["videos"]
-                    .get(video_id, {})
-                    .get("upload_id"),
-                    name=resource_meta["videos"].get(video_id, {}).get("name"),
-                    description=resource_meta["videos"]
-                    .get(video_id, {})
-                    .get("description"),
+                str(k): VideoEntry(
+                    video_id=k,
+                    upload_id=v.get("upload_id"),
+                    name=v.get("name"),
+                    description=v.get("description"),
                 )
-                for video_id in resource_meta["videos"].keys()
+                for k, v in resource_meta["videos"].items()
             }
-            if resource_meta.get("videos")
-            else None,
+            or None,
             documents={
-                str(document_id): DocumentEntry(
-                    document_id=document_id,
-                    upload_id=resource_meta["documents"]
-                    .get(document_id, {})
-                    .get("upload_id"),
-                    name=resource_meta["documents"].get(document_id, {}).get("name"),
-                    description=resource_meta["documents"]
-                    .get(document_id, {})
-                    .get("description"),
-                    template=resource_meta["documents"]
-                    .get(document_id, {})
-                    .get("template"),
+                str(k): DocumentEntry(
+                    document_id=k,
+                    upload_id=v.get("upload_id"),
+                    name=v.get("name"),
+                    description=v.get("description"),
+                    template=v.get("template"),
                 )
-                for document_id in resource_meta["documents"].keys()
+                for k, v in resource_meta["documents"].items()
             }
-            if resource_meta.get("documents")
-            else None,
+            or None,
             personas={
-                str(persona_id): PersonaEntry(
-                    id=persona_id,
-                    name=resource_meta["personas"].get(persona_id, {}).get("name"),
-                    icon=resource_meta["personas"].get(persona_id, {}).get("icon"),
-                    color=resource_meta["personas"].get(persona_id, {}).get("color"),
-                    instructions=resource_meta["personas"]
-                    .get(persona_id, {})
-                    .get("instructions"),
-                    examples=resource_meta["personas"]
-                    .get(persona_id, {})
-                    .get("examples"),
+                str(k): PersonaEntry(
+                    id=k,
+                    name=v.get("name"),
+                    icon=v.get("icon"),
+                    color=v.get("color"),
+                    instructions=v.get("instructions"),
+                    examples=v.get("examples"),
                 )
-                for persona_id in resource_meta["personas"].keys()
+                for k, v in resource_meta["personas"].items()
             }
-            if resource_meta.get("personas")
-            else None,
+            or None,
             objectives={
-                str(objective_id): ObjectiveEntry(
-                    objective_id=objective_id,
-                    objective=resource_meta["objectives"]
-                    .get(objective_id, {})
-                    .get("objective"),
+                str(k): ObjectiveEntry(
+                    objective_id=k,
+                    objective=v.get("objective"),
                 )
-                for objective_id in resource_meta["objectives"].keys()
+                for k, v in resource_meta["objectives"].items()
             }
-            if resource_meta.get("objectives")
-            else None,
+            or None,
             questions={
-                str(question_id): QuestionEntry(
-                    question_id=question_id,
-                    question_text=resource_meta["questions"]
-                    .get(question_id, {})
-                    .get("question_text"),
-                    allow_multiple=resource_meta["questions"]
-                    .get(question_id, {})
-                    .get("allow_multiple"),
-                    times=(
-                        [resource_meta["questions"].get(question_id, {}).get("time")]
-                        if resource_meta["questions"].get(question_id, {}).get("time")
-                        is not None
-                        else None
-                    ),
+                str(k): QuestionEntry(
+                    question_id=k,
+                    question_text=v.get("question_text"),
+                    allow_multiple=v.get("allow_multiple"),
+                    times=([v.get("time")] if v.get("time") is not None else None),
                 )
-                for question_id in resource_meta["questions"].keys()
+                for k, v in resource_meta["questions"].items()
             }
-            if resource_meta.get("questions")
-            else None,
+            or None,
             options={
-                str(option_id): OptionEntry(
-                    option_id=option_id,
-                    question_id=resource_meta["options"]
-                    .get(option_id, {})
-                    .get("question_id"),
-                    option_text=resource_meta["options"]
-                    .get(option_id, {})
-                    .get("option_text"),
-                    is_correct=resource_meta["options"]
-                    .get(option_id, {})
-                    .get("is_correct"),
+                str(k): OptionEntry(
+                    option_id=k,
+                    question_id=v.get("question_id"),
+                    option_text=v.get("option_text"),
+                    is_correct=v.get("is_correct"),
                 )
-                for option_id in resource_meta["options"].keys()
+                for k, v in resource_meta["options"].items()
             }
-            if resource_meta.get("options")
-            else None,
+            or None,
             problem_statements={
-                str(problem_statement_id): ProblemStatementEntry(
-                    problem_statement_id=problem_statement_id,
-                    problem_statement=resource_meta["problem_statements"]
-                    .get(problem_statement_id, {})
-                    .get("problem_statement"),
+                str(k): ProblemStatementEntry(
+                    problem_statement_id=k,
+                    problem_statement=v.get("problem_statement"),
                 )
-                for problem_statement_id in resource_meta["problem_statements"].keys()
+                for k, v in resource_meta["problem_statements"].items()
             }
-            if resource_meta.get("problem_statements")
-            else None,
+            or None,
             scenarios={
-                str(scenario_id): ScenarioEntry(
-                    scenario_id=scenario_id,
-                    name=resource_meta["scenarios"].get(scenario_id, {}).get("name"),
-                    description=resource_meta["scenarios"]
-                    .get(scenario_id, {})
-                    .get("description"),
+                str(k): ScenarioEntry(
+                    scenario_id=k,
+                    name=v.get("name"),
+                    description=v.get("description"),
                 )
-                for scenario_id in resource_meta["scenarios"].keys()
+                for k, v in resource_meta["scenarios"].items()
             }
-            if resource_meta.get("scenarios")
-            else None,
+            or None,
             rubrics={
-                str(rubric_id): RubricEntry(
-                    rubric_id=rubric_id,
-                    name=resource_meta["rubrics"].get(rubric_id, {}).get("name"),
-                    description=resource_meta["rubrics"]
-                    .get(rubric_id, {})
-                    .get("description"),
-                    total_points=resource_meta["rubrics"]
-                    .get(rubric_id, {})
-                    .get("total_points"),
-                    pass_points=resource_meta["rubrics"]
-                    .get(rubric_id, {})
-                    .get("pass_points"),
+                str(k): RubricEntry(
+                    rubric_id=k,
+                    name=v.get("name"),
+                    description=v.get("description"),
+                    total_points=v.get("total_points"),
+                    pass_points=v.get("pass_points"),
                 )
-                for rubric_id in resource_meta["rubrics"].keys()
+                for k, v in resource_meta["rubrics"].items()
             }
-            if resource_meta.get("rubrics")
-            else None,
+            or None,
             standard_groups={
-                str(standard_group_id): StandardGroupEntry(
-                    standard_group_id=standard_group_id,
-                    name=resource_meta["standard_groups"]
-                    .get(standard_group_id, {})
-                    .get("name"),
-                    description=resource_meta["standard_groups"]
-                    .get(standard_group_id, {})
-                    .get("description"),
-                    points=resource_meta["standard_groups"]
-                    .get(standard_group_id, {})
-                    .get("points"),
-                    pass_points=resource_meta["standard_groups"]
-                    .get(standard_group_id, {})
-                    .get("pass_points"),
+                str(k): StandardGroupEntry(
+                    standard_group_id=k,
+                    name=v.get("name"),
+                    description=v.get("description"),
+                    points=v.get("points"),
+                    pass_points=v.get("pass_points"),
                 )
-                for standard_group_id in resource_meta["standard_groups"].keys()
+                for k, v in resource_meta["standard_groups"].items()
             }
-            if resource_meta.get("standard_groups")
-            else None,
+            or None,
             standards={
-                str(standard_id): StandardEntry(
-                    standard_id=standard_id,
-                    standard_group_id=resource_meta["standards"]
-                    .get(standard_id, {})
-                    .get("standard_group_id"),
-                    name=resource_meta["standards"].get(standard_id, {}).get("name"),
-                    description=resource_meta["standards"]
-                    .get(standard_id, {})
-                    .get("description"),
-                    points=resource_meta["standards"]
-                    .get(standard_id, {})
-                    .get("points"),
+                str(k): StandardEntry(
+                    standard_id=k,
+                    standard_group_id=v.get("standard_group_id"),
+                    name=v.get("name"),
+                    description=v.get("description"),
+                    points=v.get("points"),
                 )
-                for standard_id in resource_meta["standards"].keys()
+                for k, v in resource_meta["standards"].items()
             }
-            if resource_meta.get("standards")
-            else None,
+            or None,
         )
 
         # === BUILD MESSAGES (VIEW MODEL) ===
         messages_payload: list[MessageData] = []
         is_own_attempt = attempt_item.profile_id == profiles_id
 
-        for msg in messages_result or []:
+        for msg in messages_result:
             msg_feedbacks: list[MessageFeedbackEntry] = []
 
-            # Strengths (from parallel-fetched lookup)
+            # Strengths
             msg_strengths = strengths_by_message.get(msg.message_id, [])
             for idx, s in enumerate(msg_strengths):
                 highlights: list[HighlightEntry] = []
                 for h in highlights_by_strength.get(s.strength_id, []):
                     highlights.append(HighlightEntry(section=h.section, idx=h.idx))
-                feedback_id = f"{msg.message_id}-strength-{idx}"
                 msg_feedbacks.append(
                     MessageFeedbackEntry(
-                        id=feedback_id,
+                        id=f"{msg.message_id}-strength-{idx}",
                         name=s.name,
                         description=s.description,
                         type="strength",
@@ -1169,7 +589,7 @@ async def get_attempt_internal(
                     )
                 )
 
-            # Improvements (from parallel-fetched lookup)
+            # Improvements
             msg_improvements = improvements_by_message.get(msg.message_id, [])
             for idx, i in enumerate(msg_improvements):
                 replaces: list[ReplacementEntry] = []
@@ -1181,10 +601,9 @@ async def get_attempt_internal(
                             idx=r.idx,
                         )
                     )
-                feedback_id = f"{msg.message_id}-improvement-{idx}"
                 msg_feedbacks.append(
                     MessageFeedbackEntry(
-                        id=feedback_id,
+                        id=f"{msg.message_id}-improvement-{idx}",
                         name=i.name,
                         description=i.description,
                         type="improvement",
@@ -1193,7 +612,7 @@ async def get_attempt_internal(
                     )
                 )
 
-            # Hints (from parallel-fetched lookup)
+            # Hints
             msg_hints_list = hints_by_message.get(msg.message_id, [])
             hints: list[HintEntry] | None = (
                 [HintEntry(hint=h.hint, idx=h.idx) for h in msg_hints_list]
@@ -1201,7 +620,7 @@ async def get_attempt_internal(
                 else None
             )
 
-            # Contents (from parallel-fetched lookup)
+            # Contents
             msg_contents = contents_by_message.get(msg.message_id, [])
             contents: list[ContentEntry] | None = None
             if msg_contents:
@@ -1255,18 +674,18 @@ async def get_attempt_internal(
 
         # === BUILD CHATS (VIEW MODEL) ===
         chats: list[ChatData] = []
-        for chat_item in chats_result or []:
+        for chat_item in chats_result:
             grade = None
-            if chat_item.grade:
+            if chat_item.grade_score is not None or chat_item.grade_passed is not None:
                 rubric_meta = (
                     resource_meta["rubrics"].get(chat_item.rubric_id, {})
                     if chat_item.rubric_id
                     else {}
                 )
                 grade = GradeData(
-                    score=chat_item.grade.score,
-                    passed=chat_item.grade.passed,
-                    time_taken=chat_item.grade.time_taken,
+                    score=chat_item.grade_score,
+                    passed=chat_item.grade_passed,
+                    time_taken=chat_item.grade_time_taken,
                     total_points=rubric_meta.get("total_points"),
                     pass_points=rubric_meta.get("pass_points"),
                 )
@@ -1275,7 +694,7 @@ async def get_attempt_internal(
             chat_grade_obj = grades_by_chat.get(chat_item.chat_id)
             chat_grade_id = chat_grade_obj.grade_id if chat_grade_obj else None
 
-            # Feedbacks from simulation feedbacks view (keyed by grade_id)
+            # Feedbacks
             feedbacks: list[FeedbackEntry] = []
             chat_feedbacks = (
                 feedbacks_by_grade.get(chat_grade_id, []) if chat_grade_id else []
@@ -1295,7 +714,7 @@ async def get_attempt_internal(
                     )
                 )
 
-            # Analyses from simulation analyses view (keyed by grade_id)
+            # Analyses
             analyses_entries: list[AnalysisEntry] | None = None
             chat_analyses = (
                 analyses_by_grade.get(chat_grade_id, []) if chat_grade_id else []
@@ -1306,7 +725,7 @@ async def get_attempt_internal(
                 ]
 
             grading_state_data: GradingStateData | None = None
-            if chat_item.grade or chat_feedbacks:
+            if grade or chat_feedbacks:
                 achieved_dict: dict[str, bool] = {}
                 passed_dict: dict[str, bool] = {}
                 feedback_dict: dict[str, str] = {}
@@ -1349,8 +768,8 @@ async def get_attempt_internal(
                 ChatData(
                     id=chat_item.chat_id,
                     created_at=(
-                        chat_item.created_at.isoformat()
-                        if chat_item.created_at
+                        chat_item.chat_created_at.isoformat()
+                        if chat_item.chat_created_at
                         else None
                     ),
                     completed=chat_item.completed,
@@ -1393,7 +812,9 @@ async def get_attempt_internal(
         attempt = AttemptData(
             id=attempt_item.attempt_id,
             created_at=(
-                attempt_item.created_at.isoformat() if attempt_item.created_at else None
+                attempt_item.attempt_created_at.isoformat()
+                if attempt_item.attempt_created_at
+                else None
             ),
             infinite_mode=attempt_item.infinite_mode,
             profile_id=attempt_item.profile_id,
@@ -1403,18 +824,23 @@ async def get_attempt_internal(
             is_archived=False if practice else None,
         )
 
-        first_chat = chats_result[0] if chats_result else None
         simulation = SimulationData(
             id=attempt_item.simulation_id,
             name=simulation_name,
             description=None,
             time_limit=time_limit_seconds if time_limit_seconds > 0 else None,
-            hints_enabled=first_chat.hints_enabled if first_chat else None,
-            objectives_enabled=first_chat.show_objectives if first_chat else None,
-            image_input_active=first_chat.show_images if first_chat else None,
-            copy_paste_allowed=first_chat.copy_paste_allowed if first_chat else None,
+            hints_enabled=first_chat_item.hints_enabled if first_chat_item else None,
+            objectives_enabled=(
+                first_chat_item.show_objectives if first_chat_item else None
+            ),
+            image_input_active=(
+                first_chat_item.show_images if first_chat_item else None
+            ),
+            copy_paste_allowed=(
+                first_chat_item.copy_paste_allowed if first_chat_item else None
+            ),
             practice_simulation=practice,
-            rubric_id=first_chat.rubric_id if first_chat else None,
+            rubric_id=first_chat_item.rubric_id if first_chat_item else None,
         )
 
         compute_chat_position_and_current(chats)
@@ -1448,6 +874,14 @@ async def get_attempt_internal(
         current_chat_index = compute_current_chat_index(chats)
         expected_chat_count = total_chats
         is_active = not timer.exceeded if timer else True
+
+        # === RUBRIC STRUCTURE ===
+        all_standard_group_ids = [
+            sgid for ch in chats_result for sgid in (ch.standard_group_ids or [])
+        ]
+        all_standard_ids = [
+            sid for ch in chats_result for sid in (ch.standard_ids or [])
+        ]
 
         rubric_structure: RubricStructureData | None = None
         if all_standard_group_ids or all_standard_ids:
@@ -1507,39 +941,42 @@ async def get_attempt_internal(
             and bool(chat_entry_id)
         )
 
-        # Fetch continuation options only when in lobby (non-practice only)
         continuation_options = None
         if is_lobby and not practice and attempt_item.profile_id:
             try:
-                prev_result = await get_attempt_list_internal(
-                    conn,
-                    profile_id_filter=attempt_item.profile_id,
-                    simulation_id_filter=attempt_item.simulation_id,
-                    practice_filter=False,
-                )
+                from app.routes.v5.tools.entries.attempt.search import search_attempts
+
+                async with pool.acquire() as c:
+                    prev_attempts = await search_attempts(
+                        c,
+                        profile_ids=[attempt_item.profile_id],
+                        simulation_ids=(
+                            [attempt_item.simulation_id]
+                            if attempt_item.simulation_id
+                            else None
+                        ),
+                        practice=False,
+                        limit=100000,
+                    )
                 other_ids = [
-                    a.attempt_id
-                    for a in (prev_result.items or [])
-                    if a.attempt_id != attempt_id
+                    a.attempt_id for a in prev_attempts if a.attempt_id != attempt_id
                 ]
                 if other_ids:
                     async with pool.acquire() as c:
-                        prev_chats = await get_attempt_chats_internal(
-                            c, attempt_ids=other_ids
+                        prev_chats = await search_attempt_chats(
+                            c, attempt_ids=other_ids, sort_order="asc", limit=100000
                         )
-                    # Build scenario name lookup from resource_meta
                     scenario_names: dict[str, str] = {}
                     for sid, meta in resource_meta.get("scenarios", {}).items():
                         name = meta.get("name") if isinstance(meta, dict) else None
                         if name:
                             scenario_names[str(sid)] = name
                     continuation_options = compute_continuation_options(
-                        current_chats=chats_result or [],
+                        current_chats=chats_result,
                         previous_chats=prev_chats,
                         scenario_names=scenario_names,
                     )
             except Exception:
-                # Don't fail the whole request if continuation computation fails
                 continuation_options = None
 
         return AttemptInternalData(
@@ -1554,7 +991,7 @@ async def get_attempt_internal(
             training_id=training_id,
             chat_entry_id=chat_entry_id,
             group_id=group_id,
-            agent_ids=agent_ids,
+            agent_ids={},
             attempt_item=attempt_item,
             chats_result=chats_result,
             messages_result=messages_result,
@@ -1574,9 +1011,6 @@ async def get_attempt_internal(
             should_show_controls=should_show_controls,
             rubric_structure=rubric_structure,
             continuation_options=continuation_options,
-            config_agent_resources=config_agent_resources,
-            config_model_resources=config_model_resources,
-            config_provider_resources=config_provider_resources,
         )
 
     except HTTPException:
@@ -1588,11 +1022,8 @@ async def get_attempt_internal(
             error=e,
             route_path="/api/v5/artifacts/attempt/get",
             operation="attempt_get_internal",
-            sql_query="view_internals: attempts, chats, messages",
-            sql_params=None,
             request=http_request,
         )
-        # handle_route_error raises, but mypy needs a return
         raise  # pragma: no cover
 
 
@@ -1681,7 +1112,7 @@ async def get_attempt_client(
 
 
 # =============================================================================
-# Layer 2b: WebSocket response (config resources + tools)
+# Layer 2b: WebSocket response (stub)
 # =============================================================================
 
 
@@ -1691,16 +1122,11 @@ async def get_attempt_websocket(
     attempt_id: UUID,
     bypass_cache: bool = False,
 ) -> GetAttemptWebsocketResponse:
-    """WebSocket response layer with config resources.
+    """WebSocket response layer — stub.
 
-    Calls get_attempt_internal() and assembles GetAttemptWebsocketResponse
-    with content resources + config resources (agents, models, providers, tools).
-    Also fetches config_profile (for rate limiting) and runs_today in parallel.
+    Returns entries + resources from internal data.
+    Config chain resolution and tools/args/profiles are stubbed out.
     """
-    from datetime import UTC, datetime
-
-    from app.routes.v5.tools.entries.runs.search import get_run_list_entries_internal
-
     data = await get_attempt_internal(
         conn=conn,
         profile_id=profile_id,
@@ -1711,91 +1137,6 @@ async def get_attempt_websocket(
     if not data.attempt_exists or data.access_denied:
         return GetAttemptWebsocketResponse()
 
-    pool = get_pool()
-
-    async def fetch_config_profile():
-        if not pool:
-            return None
-        async with pool.acquire() as c:
-            return await get_profiles(c, [profile_id], get_redis_client(), bypass_cache)
-
-    async def fetch_runs_today():
-        if not pool:
-            return None
-        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
-        async with pool.acquire() as c:
-            return await get_run_list_entries_internal(
-                conn=c,
-                profile_id_filter=profile_id,
-                date_from=today_utc,
-                date_to=tomorrow_utc,
-                page_limit=1,
-                bypass_cache=True,
-            )
-
-    async def fetch_tools():
-        if not data.config_agent_resources or not pool:
-            return None
-        tool_ids: list[UUID] = []
-        for agent in data.config_agent_resources:
-            if agent.tool_ids:
-                tool_ids.extend(agent.tool_ids)
-        if not tool_ids:
-            return None
-        async with pool.acquire() as c:
-            return await get_tools(
-                c, list(set(tool_ids)), get_redis_client(), bypass_cache=bypass_cache
-            )
-
-    config_profile_result, runs_result, config_tools = await asyncio.gather(
-        fetch_config_profile(),
-        fetch_runs_today(),
-        fetch_tools(),
-    )
-
-    # Pre-fetch args and args_outputs from tool IDs (both cached via *_internal)
-    config_args = None
-    config_args_outputs = None
-    if config_tools and pool:
-        all_args_ids: list[UUID] = []
-        all_args_output_ids: list[UUID] = []
-        for tool in config_tools:
-            if tool.args_ids:
-                all_args_ids.extend(tool.args_ids)
-            if tool.args_output_ids:
-                all_args_output_ids.extend(tool.args_output_ids)
-
-        if all_args_ids or all_args_output_ids:
-
-            async def fetch_args():
-                if not all_args_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args(
-                        c,
-                        list(set(all_args_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            async def fetch_args_outputs():
-                if not all_args_output_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args_outputs(
-                        c,
-                        list(set(all_args_output_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
-
-            config_args, config_args_outputs = await asyncio.gather(
-                fetch_args(),
-                fetch_args_outputs(),
-            )
-
-    # Build websocket resources (content + config)
     rp = data.resources_payload
     ws_resources = AttemptWebsocketResources(
         scenarios=list(rp.scenarios.values()) if rp.scenarios else None,
@@ -1821,19 +1162,9 @@ async def get_attempt_websocket(
             attempt=[data.attempt_item] if data.attempt_item else None,
             attempt_chat=data.chats,
             attempt_message=data.messages,
-            runs=runs_result,
         ),
         resources=ws_resources,
         params=GetAttemptDetailRequest(attempt_id=attempt_id),
-        agents=data.config_agent_resources,
-        models=data.config_model_resources,
-        providers=data.config_provider_resources,
-        tools=config_tools,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=config_profile_result or None,
-        resource_agent_ids=data.agent_ids if data.agent_ids else None,
-        group_id=data.group_id,
     )
 
 
@@ -1849,19 +1180,9 @@ async def attempt_get(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetAttemptDetailResponse:
-    """Get attempt detail with parallel MV fetching.
-
-    Uses view internal handlers with pool-based parallel fetch:
-    - View 1: attempt (attempt-level aggregates)
-    - View 2: attempt_chat (chat-level data with grades/feedbacks)
-    - View 3: attempt_message (message-level data with strengths/improvements/hints)
-
-    Each query runs on its own connection from the pool for true parallelism.
-    The practice flag is determined from the attempt data itself.
-    """
+    """Get attempt detail with parallel MV fetching."""
     tags = ["attempt"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
 
     try:
         profile_id_str = http_request.state.profile_id
@@ -1897,7 +1218,5 @@ async def attempt_get(
             error=e,
             route_path=http_request.url.path,
             operation="attempt_get",
-            sql_query="view_internals: attempts, chats, messages",
-            sql_params=None,
             request=http_request,
         )

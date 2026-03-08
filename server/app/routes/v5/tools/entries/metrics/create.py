@@ -1,18 +1,10 @@
 """metrics/create internal — reusable data-access layer."""
 
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
-from app.routes.v5.tools.entries.metrics.types import (
-    CreateMetricsEntryResponse,
-    CreateMetricsEntrySqlParams,
-    CreateMetricsEntrySqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/entries/metrics/create_metrics_entries_complete.sql"
+from app.routes.v5.tools.entries.metrics.types import CreateMetricsEntryResponse
 
 
 async def create_metrics_entry_internal(
@@ -27,25 +19,25 @@ async def create_metrics_entry_internal(
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateMetricsEntryResponse:
-    """Create a metrics entry. Internal only — no HTTP route."""
-    params = CreateMetricsEntrySqlParams(
-        session_id=session_id,
-        ts=ts,
-        requests_total=requests_total,
-        errors_total=errors_total,
-        avg_latency_ms=avg_latency_ms,
-        cpu_percent=cpu_percent,
-        memory_bytes=memory_bytes,
-        active=not soft,
-        mcp=mcp,
+    """Create a metrics entry."""
+    out_ts = await conn.fetchval(
+        """
+        INSERT INTO metrics_entry (session_id, ts, requests_total, errors_total,
+                                   avg_latency_ms, cpu_percent, memory_bytes, mcp)
+        VALUES ($1, $2::timestamptz, $3, $4, $5, $6, $7, $8)
+        RETURNING ts::text
+        """,
+        session_id,
+        ts,
+        requests_total,
+        errors_total,
+        avg_latency_ms,
+        cpu_percent,
+        memory_bytes,
+        mcp,
     )
 
-    result = cast(
-        CreateMetricsEntrySqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
-    )
-
-    if not result or not result.out_ts:
+    if not out_ts:
         raise ValueError("Failed to create metrics entry")
 
-    return CreateMetricsEntryResponse(ts=result.out_ts)
+    return CreateMetricsEntryResponse(ts=out_ts)

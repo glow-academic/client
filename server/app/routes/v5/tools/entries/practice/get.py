@@ -1,15 +1,14 @@
 """practice/get — reusable data-access layer."""
 
-from typing import cast
+import json
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.infra.globals import get_redis_client
 from app.routes.v5.tools.entries.practice.types import GetPracticeResponse
 from app.sql.types import (
     GetPracticeContextViewSqlRow,
-    GetPracticeEntriesSqlParams,
-    GetPracticeEntriesSqlRow,
 )
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
@@ -54,8 +53,6 @@ async def get_practices(
         for r in rows
     ]
 
-
-SQL_PATH = "app/sql/queries/entries/practice/get_practice_entries_complete.sql"
 
 VIEW_SQL_PATH = (
     "app/sql/queries/views/practice/context/get_practice_context_view_complete.sql"
@@ -120,13 +117,29 @@ async def get_practice_entries_internal(
         if cached:
             return list(cached.get("items", []))
 
-    params = GetPracticeEntriesSqlParams(ids=ids)
-    result = cast(
-        GetPracticeEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+    result = await conn.fetchval(
+        """
+        SELECT COALESCE(jsonb_agg(jsonb_build_object(
+            'practice_id', m.practice_id,
+            'simulation_ids', m.simulation_ids,
+            'cohort_ids', m.cohort_ids,
+            'department_ids', m.department_ids,
+            'profile_ids', m.profile_ids,
+            'chat_ids', m.chat_ids,
+            'scenario_ids', m.scenario_ids,
+            'created_at', m.created_at,
+            'updated_at', m.updated_at,
+            'active', m.active
+        )), '[]'::jsonb)
+        FROM practice_mv m
+        WHERE m.practice_id = ANY($1)
+        """,
+        ids,
     )
 
-    items: list[dict] = result.items if result and result.items else []
+    items: list[dict] = (
+        json.loads(result) if isinstance(result, str) else (result or [])
+    )
 
     await set_cached(
         cache_key_val,

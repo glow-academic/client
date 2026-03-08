@@ -17,6 +17,9 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
+from app.infra.parameter_permissions_context import (
+    resolve_parameter_permissions_context,
+)
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.parameter.permissions import (
     compute_can_delete,
@@ -32,10 +35,12 @@ from app.routes.v5.tools.artifacts.parameter.get import get_parameters
 from app.routes.v5.tools.artifacts.parameter.search import search_parameters
 from app.routes.v5.tools.resources.departments.search import search_departments
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
+from app.routes.v5.tools.resources.fields.get import get_fields as get_fields_resource
 from app.routes.v5.tools.resources.fields.search import (
     search_fields as search_fields_resource,
 )
 from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.parameter_fields.get import get_parameter_fields
 from app.routes.v5.tools.resources.scenarios.search import (
     search_scenarios as search_scenarios_resource,
 )
@@ -116,28 +121,32 @@ async def search_parameter_client(
 
     all_name_ids: list[UUID] = []
     all_description_ids: list[UUID] = []
+    all_field_junction_ids: list[UUID] = []
 
     for a in artifacts:
         all_name_ids.extend(a.name_ids or [])
         all_description_ids.extend(a.description_ids or [])
+        all_field_junction_ids.extend(a.field_ids or [])
+
+    # Per-parameter permissions context (gives us active_scenario_count)
+    perm_tasks = [resolve_parameter_permissions_context(conn, a.id) for a in artifacts]
 
     (
         names_data,
         descriptions_data,
-        active_scenario_counts,
-        num_items_map,
-        sample_items_map,
+        parameter_fields_data,
         scenario_facet,
         field_facet,
         department_facet,
+        *perm_results,
     ) = await asyncio.gather(
         get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
         get_descriptions(conn, all_description_ids, redis)
         if all_description_ids
         else _empty_list(),
-        _fetch_active_scenario_counts(conn, artifacts),
-        _fetch_num_items(conn, artifacts),
-        _fetch_sample_items(conn, artifacts),
+        get_parameter_fields(conn, all_field_junction_ids, redis)
+        if all_field_junction_ids
+        else _empty_list(),
         search_scenarios_resource(
             conn, redis, search=scenario_search, scenario=True, limit_count=100
         ),
@@ -147,7 +156,23 @@ async def search_parameter_client(
         search_departments(
             conn, redis, search=department_search, parameter=True, limit_count=100
         ),
+        *perm_tasks,
     )
+
+    # Hydrate field names for sample_items
+    all_fields_resource_ids = list({pf.field_id for pf in parameter_fields_data})
+    fields_resource_data = (
+        await get_fields_resource(conn, all_fields_resource_ids, redis)
+        if all_fields_resource_ids
+        else []
+    )
+    field_name_map: dict[UUID, str] = {f.id: f.name for f in fields_resource_data}
+    # Map parameter_fields_resource ID -> field name
+    pf_id_to_name: dict[UUID, str] = {}
+    for pf in parameter_fields_data:
+        name = field_name_map.get(pf.field_id)
+        if name:
+            pf_id_to_name[pf.id] = name
 
     # Build lookup maps
     name_map = {n.id: n for n in names_data}
@@ -157,14 +182,14 @@ async def search_parameter_client(
 
     parameters: list[ListParameterApiParameter] = []
 
-    for a in artifacts:
+    for i, a in enumerate(artifacts):
         name_obj = name_map.get(a.name_ids[0]) if a.name_ids else None
         desc_obj = (
             description_map.get(a.description_ids[0]) if a.description_ids else None
         )
 
         dept_ids_str = [str(d) for d in (a.department_ids or [])]
-        active_scenario_count = active_scenario_counts.get(a.id, 0)
+        active_scenario_count = perm_results[i].active_scenario_count
 
         can_edit = compute_can_edit(
             user_role=user_role,
@@ -187,8 +212,12 @@ async def search_parameter_client(
                 active=a.active,
                 department_ids=dept_ids_str,
                 scenario_ids=None,
-                num_items=num_items_map.get(a.id, 0),
-                sample_items=sample_items_map.get(a.id, []),
+                num_items=len(a.field_ids or []),
+                sample_items=[
+                    pf_id_to_name[fid]
+                    for fid in (a.field_ids or [])[:3]
+                    if fid in pf_id_to_name
+                ],
                 can_edit=can_edit,
                 can_duplicate=can_duplicate,
                 can_delete=can_delete,
@@ -252,134 +281,3 @@ async def _empty_list() -> list:
     return []
 
 
-async def _fetch_active_scenario_counts(
-    conn: asyncpg.Connection,
-    artifacts: list,
-) -> dict[UUID, int]:
-    """Count active scenarios per parameter artifact.
-
-    Path: parameter_artifact -> parameter_parameters_junction -> parameters_resource
-          -> parameter_fields_resource -> scenario_parameter_fields_junction -> scenario_artifact
-    """
-    all_parameter_resource_ids: list[UUID] = []
-    artifact_to_param_resource: dict[UUID, list[UUID]] = {}
-
-    for a in artifacts:
-        param_res_ids = a.parameter_ids or []
-        artifact_to_param_resource[a.id] = param_res_ids
-        all_parameter_resource_ids.extend(param_res_ids)
-
-    if not all_parameter_resource_ids:
-        return {}
-
-    rows = await conn.fetch(
-        """
-        SELECT pfr.parameter_id, COUNT(DISTINCT spfj.scenario_id) as cnt
-        FROM parameter_fields_resource pfr
-        JOIN scenario_parameter_fields_junction spfj
-            ON spfj.parameter_fields_id = pfr.id AND spfj.active = true
-        JOIN scenario_artifact sa ON sa.id = spfj.scenario_id AND sa.active = true
-        WHERE pfr.parameter_id = ANY($1)
-        GROUP BY pfr.parameter_id
-        """,
-        all_parameter_resource_ids,
-    )
-
-    resource_counts: dict[UUID, int] = {r["parameter_id"]: r["cnt"] for r in rows}
-
-    result: dict[UUID, int] = {}
-    for a_id, param_res_ids in artifact_to_param_resource.items():
-        total = sum(resource_counts.get(pid, 0) for pid in param_res_ids)
-        if total > 0:
-            result[a_id] = total
-
-    return result
-
-
-async def _fetch_num_items(
-    conn: asyncpg.Connection,
-    artifacts: list,
-) -> dict[UUID, int]:
-    """Count parameter field items per parameter artifact.
-
-    Uses parameter_parameters_junction -> parameter_fields_resource to count fields.
-    """
-    all_parameter_resource_ids: list[UUID] = []
-    artifact_to_param_resource: dict[UUID, list[UUID]] = {}
-
-    for a in artifacts:
-        param_res_ids = a.parameter_ids or []
-        artifact_to_param_resource[a.id] = param_res_ids
-        all_parameter_resource_ids.extend(param_res_ids)
-
-    if not all_parameter_resource_ids:
-        return {}
-
-    rows = await conn.fetch(
-        """
-        SELECT pfr.parameter_id, COUNT(*) as cnt
-        FROM parameter_fields_resource pfr
-        WHERE pfr.parameter_id = ANY($1)
-        GROUP BY pfr.parameter_id
-        """,
-        all_parameter_resource_ids,
-    )
-
-    resource_counts: dict[UUID, int] = {r["parameter_id"]: r["cnt"] for r in rows}
-
-    result: dict[UUID, int] = {}
-    for a_id, param_res_ids in artifact_to_param_resource.items():
-        total = sum(resource_counts.get(pid, 0) for pid in param_res_ids)
-        if total > 0:
-            result[a_id] = total
-
-    return result
-
-
-async def _fetch_sample_items(
-    conn: asyncpg.Connection,
-    artifacts: list,
-) -> dict[UUID, list[str]]:
-    """Fetch sample parameter field names per parameter artifact (up to 3)."""
-    all_parameter_resource_ids: list[UUID] = []
-    resource_to_artifact: dict[UUID, UUID] = {}
-
-    for a in artifacts:
-        for pid in a.parameter_ids or []:
-            resource_to_artifact[pid] = a.id
-            all_parameter_resource_ids.append(pid)
-
-    if not all_parameter_resource_ids:
-        return {}
-
-    rows = await conn.fetch(
-        """
-        SELECT pfr.parameter_id, fr.name
-        FROM parameter_fields_resource pfr
-        JOIN fields_resource fr ON fr.id = pfr.field_id
-        WHERE pfr.parameter_id = ANY($1)
-        ORDER BY pfr.parameter_id, fr.name
-        """,
-        all_parameter_resource_ids,
-    )
-
-    # Group by parameter_id, take up to 3
-    resource_samples: dict[UUID, list[str]] = {}
-    for r in rows:
-        pid = r["parameter_id"]
-        name = r["name"]
-        if name:
-            lst = resource_samples.setdefault(pid, [])
-            if len(lst) < 3:
-                lst.append(name)
-
-    # Map to artifact IDs
-    result: dict[UUID, list[str]] = {}
-    for pid, names in resource_samples.items():
-        a_id = resource_to_artifact.get(pid)
-        if a_id:
-            existing = result.get(a_id, [])
-            existing.extend(names)
-            result[a_id] = existing[:3]
-
-    return result

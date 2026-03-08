@@ -57,7 +57,7 @@ async def resolve_model_permissions_context(
     department_ids = list(artifact.department_ids or [])
     model_resource_ids = list(artifact.model_ids or [])
 
-    active_agent_ids, _total = (
+    _, total = (
         await search_agents(
             conn,
             model_ids=model_resource_ids,
@@ -71,5 +71,5 @@ async def resolve_model_permissions_context(
     return ModelPermissionsContext(
         exists=True,
         department_ids=department_ids,
-        active_agent_count=len(active_agent_ids),
+        active_agent_count=total,
     )

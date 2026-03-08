@@ -15,7 +15,9 @@ if TYPE_CHECKING:
         AvailableContinuationOptions,
         ChatData,
     )
-    from app.routes.v5.tools.entries.attempt.get import ChatViewItem
+    from app.routes.v5.tools.entries.attempt_chat.types import (
+        GetAttemptChatResponse as ChatViewItem,
+    )
 
 # Default styling for user messages
 DEFAULT_USER_COLOR = "#6366f1"  # Indigo
@@ -377,7 +379,7 @@ def compute_continuation_options(
     # 3. Group previous graded chats by chat_entry_id (only remaining ones)
     prev_by_entry: dict[str, list[ChatViewItem]] = {}
     for chat in previous_chats:
-        if not chat.chat_entry_id or not chat.grade or not chat.completed:
+        if not chat.chat_entry_id or chat.grade_score is None or not chat.completed:
             continue
         ceid = str(chat.chat_entry_id)
         if ceid in current_chat_entry_ids:
@@ -393,10 +395,10 @@ def compute_continuation_options(
         best = max(
             chats_list,
             key=lambda c: (
-                c.grade.score if c.grade and c.grade.score is not None else -1,
+                c.grade_score if c.grade_score is not None else -1,
                 -(
-                    c.grade.time_taken
-                    if c.grade and c.grade.time_taken is not None
+                    c.grade_time_taken
+                    if c.grade_time_taken is not None
                     else 999999
                 ),
             ),
@@ -412,10 +414,10 @@ def compute_continuation_options(
     # 6. Build PreviousChatOption list
     remaining_options: list[PreviousChatOption] = []
     for position, (ceid, chat) in enumerate(ordered_remaining):
-        score = chat.grade.score if chat.grade else None
+        score = chat.grade_score
         time_taken = (
-            float(chat.grade.time_taken)
-            if chat.grade and chat.grade.time_taken
+            float(chat.grade_time_taken)
+            if chat.grade_time_taken
             else 0.0
         )
         # Use scenario_names keyed by scenario_id for display

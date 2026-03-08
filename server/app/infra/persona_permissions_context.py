@@ -57,7 +57,7 @@ async def resolve_persona_permissions_context(
     department_ids = list(artifact.department_ids or [])
     personas_resource_ids = list(artifact.persona_ids or [])
 
-    active_scenario_ids, _total = (
+    _, total = (
         await search_scenarios(
             conn,
             persona_ids=personas_resource_ids,
@@ -71,5 +71,5 @@ async def resolve_persona_permissions_context(
     return PersonaPermissionsContext(
         exists=True,
         department_ids=department_ids,
-        active_scenario_count=len(active_scenario_ids),
+        active_scenario_count=total,
     )

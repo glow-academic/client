@@ -1,25 +1,18 @@
 """chat/get — reusable data-access layer."""
 
+import json
 from dataclasses import dataclass, field
-from typing import cast
 from uuid import UUID
 
 import asyncpg
 
 from app.infra.globals import get_redis_client
 from app.routes.v5.tools.entries.chat.types import GetChatResponse
-from app.sql.types import (
-    GetChatEntriesSqlParams,
-    GetChatEntriesSqlRow,
-)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
 MV_NAME = "chat_mv"
-
-CHAT_ENTRIES_SQL_PATH = "app/sql/queries/entries/chat/get_chat_entries_complete.sql"
 
 
 async def get_chats(
@@ -101,13 +94,76 @@ async def get_chat_entries_internal(
         if cached:
             return list(cached.get("items", []))
 
-    params = GetChatEntriesSqlParams(ids=ids)
-    result = cast(
-        GetChatEntriesSqlRow,
-        await execute_sql_typed(conn, CHAT_ENTRIES_SQL_PATH, params=params),
+    result = await conn.fetchval(
+        """
+        SELECT COALESCE(jsonb_agg(jsonb_build_object(
+            'chat_entry_id', m.chat_entry_id,
+            'parent_id', m.parent_id,
+            'scenario_id', m.scenario_id,
+            'department_ids', m.department_ids,
+            'persona_ids', m.persona_ids,
+            'document_ids', m.document_ids,
+            'parameter_field_ids', m.parameter_field_ids,
+            'parameter_ids', m.parameter_ids,
+            'question_ids', m.question_ids,
+            'option_ids', m.option_ids,
+            'video_ids', m.video_ids,
+            'image_ids', m.image_ids,
+            'problem_statement_ids', m.problem_statement_ids,
+            'objective_ids', m.objective_ids,
+            'flag_ids', m.flag_ids,
+            'name_ids', m.name_ids,
+            'description_ids', m.description_ids,
+            'rubric_ids', m.rubric_ids,
+            'standard_ids', m.standard_ids,
+            'standard_group_ids', m.standard_group_ids,
+            'video_enabled', m.video_enabled,
+            'problem_statement_enabled', m.problem_statement_enabled,
+            'objectives_enabled', m.objectives_enabled,
+            'images_enabled', m.images_enabled,
+            'questions_enabled', m.questions_enabled,
+            'position', m."position",
+            'time_limit', m.time_limit,
+            'negative_time', m.negative_time,
+            'name', m.name,
+            'description', m.description,
+            'use_custom', m.use_custom,
+            'use_previous', m.use_previous,
+            'audio_enabled', m.audio_enabled,
+            'text_enabled', m.text_enabled,
+            'hints_enabled', m.hints_enabled,
+            'copy_paste_allowed', m.copy_paste_allowed,
+            'show_images', m.show_images,
+            'show_objectives', m.show_objectives,
+            'show_problem_statement', m.show_problem_statement,
+            'analyses_enabled', m.analyses_enabled,
+            'improvements_enabled', m.improvements_enabled,
+            'replacements_enabled', m.replacements_enabled,
+            'strengths_enabled', m.strengths_enabled,
+            'generate_problem_statements', m.generate_problem_statements,
+            'generate_objectives', m.generate_objectives,
+            'generate_videos', m.generate_videos,
+            'generate_images', m.generate_images,
+            'generate_questions', m.generate_questions,
+            'generate_names', m.generate_names,
+            'generate_descriptions', m.generate_descriptions,
+            'generate_personas', m.generate_personas,
+            'generate_documents', m.generate_documents,
+            'generate_options', m.generate_options,
+            'generate_parameter_fields', m.generate_parameter_fields,
+            'created_at', m.created_at,
+            'updated_at', m.updated_at,
+            'active', m.active
+        )), '[]'::jsonb)
+        FROM chat_mv m
+        WHERE m.chat_entry_id = ANY($1)
+        """,
+        ids,
     )
 
-    items: list[dict] = result.items if result and result.items else []
+    items: list[dict] = (
+        json.loads(result) if isinstance(result, str) else (result or [])
+    )
 
     await set_cached(
         cache_key_val,

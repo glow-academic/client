@@ -1,23 +1,17 @@
 """home_chat/get — reusable data-access layer."""
 
-from typing import cast
+import json
 from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.infra.globals import get_redis_client
 from app.routes.v5.tools.entries.home_chat.types import GetHomeChatResponse
-from app.sql.types import (
-    GetHomeChatEntriesSqlParams,
-    GetHomeChatEntriesSqlRow,
-)
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
-from app.utils.sql_helper import execute_sql_typed
 
 MV_NAME = "home_chat_mv"
-
-SQL_PATH = "app/sql/queries/entries/home_chat/get_home_chat_entries_complete.sql"
 
 
 async def get_home_chats(
@@ -72,13 +66,26 @@ async def get_home_chat_entries_internal(
         if cached:
             return list(cached.get("items", []))
 
-    params = GetHomeChatEntriesSqlParams(ids=ids)
-    result = cast(
-        GetHomeChatEntriesSqlRow,
-        await execute_sql_typed(conn, SQL_PATH, params=params),
+    result = await conn.fetchval(
+        """
+        SELECT COALESCE(jsonb_agg(jsonb_build_object(
+            'id', m.id,
+            'home_id', m.home_id,
+            'chat_id', m.chat_id,
+            'created_at', m.created_at,
+            'active', m.active,
+            'generated', m.generated,
+            'mcp', m.mcp
+        )), '[]'::jsonb)
+        FROM home_chat_mv m
+        WHERE m.id = ANY($1)
+        """,
+        ids,
     )
 
-    items: list[dict] = result.items if result and result.items else []
+    items: list[dict] = (
+        json.loads(result) if isinstance(result, str) else (result or [])
+    )
 
     await set_cached(
         cache_key_val,

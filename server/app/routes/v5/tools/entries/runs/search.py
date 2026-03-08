@@ -1,23 +1,18 @@
 """runs/search internal — reusable data-access layer."""
 
+import json
 from datetime import datetime
-from typing import cast
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from pydantic import BaseModel, Field
 
 from app.infra.docs.resolve_mv_source import resolve_mv_source
-from app.sql.types import (
-    SearchRunsEntriesSqlParams,
-    SearchRunsEntriesSqlRow,
-)
+from app.infra.globals import get_redis_client
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
 from app.utils.sql_helper import execute_sql_typed
-
-SEARCH_SQL_PATH = "app/sql/queries/entries/runs/search_runs_entries_complete.sql"
 
 LIST_SQL_PATH = "app/sql/queries/views/run/list/get_run_list_view_complete.sql"
 
@@ -94,21 +89,48 @@ async def search_runs_entries_internal(
         if cached:
             return list(cached.get("items", []))
 
-    params = SearchRunsEntriesSqlParams(
-        search=search,
-        limit_count=limit_count,
-        offset_count=offset_count,
-        group_id=group_id,
-        input_pricing_pricing_id=input_pricing_pricing_id,
-        output_pricing_pricing_id=output_pricing_pricing_id,
-        cached_pricing_pricing_id=cached_pricing_pricing_id,
-    )
-    result = cast(
-        SearchRunsEntriesSqlRow,
-        await execute_sql_typed(conn, SEARCH_SQL_PATH, params=params),
+    result = await conn.fetchval(
+        """
+        SELECT COALESCE(jsonb_agg(row_data), '[]'::jsonb)
+        FROM (
+            SELECT jsonb_build_object(
+                'run_id', m.run_id,
+                'group_id', m.group_id,
+                'input_tokens', m.input_tokens,
+                'output_tokens', m.output_tokens,
+                'cached_input_tokens', m.cached_input_tokens,
+                'run_created_at', m.run_created_at,
+                'agent_ids', m.agent_ids,
+                'model_ids', m.model_ids,
+                'provider_ids', m.provider_ids,
+                'input_pricing_count', m.input_pricing_count,
+                'input_pricing_pricing_id', m.input_pricing_pricing_id,
+                'output_pricing_count', m.output_pricing_count,
+                'output_pricing_pricing_id', m.output_pricing_pricing_id,
+                'cached_pricing_count', m.cached_pricing_count,
+                'cached_pricing_pricing_id', m.cached_pricing_pricing_id
+            ) AS row_data
+            FROM runs_mv m
+            WHERE ($1::uuid IS NULL OR m.group_id = $1)
+              AND ($2::uuid IS NULL OR m.input_pricing_pricing_id = $2)
+              AND ($3::uuid IS NULL OR m.output_pricing_pricing_id = $3)
+              AND ($4::uuid IS NULL OR m.cached_pricing_pricing_id = $4)
+            ORDER BY m.run_created_at DESC
+            LIMIT $5
+            OFFSET $6
+        ) sub
+        """,
+        group_id,
+        input_pricing_pricing_id,
+        output_pricing_pricing_id,
+        cached_pricing_pricing_id,
+        limit_count,
+        offset_count,
     )
 
-    items: list[dict] = result.items if result and result.items else []
+    items: list[dict] = (
+        json.loads(result) if isinstance(result, str) else (result or [])
+    )
 
     await set_cached(
         cache_key_val,
