@@ -689,6 +689,24 @@ class PatchPersonaDraftApiRequest(BaseModel):
     voice_ids: list[UUID] | None = None
 
 
+class DraftFormState(BaseModel):
+    """Full form state after draft patch — server is source of truth.
+
+    Client replaces its local form state with this after every successful patch.
+    """
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    instructions_id: UUID | None = None
+    color_id: UUID | None = None
+    icon_id: UUID | None = None
+    active_flag_id: UUID | None = None
+    department_ids: list[UUID] = []
+    example_ids: list[UUID] = []
+    parameter_field_ids: list[UUID] = []
+    voice_ids: list[UUID] = []
+
+
 class PatchPersonaDraftApiResponse(BaseModel):
     """Response model for new-style persona draft endpoint."""
 
@@ -696,6 +714,7 @@ class PatchPersonaDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+    form_state: DraftFormState
 
 
 # ========== Export Endpoint Types ==========

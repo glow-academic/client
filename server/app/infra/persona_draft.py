@@ -20,6 +20,7 @@ from redis.asyncio import Redis
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.persona.permissions import compute_can_draft
 from app.routes.v5.api.main.persona.types import (
+    DraftFormState,
     PatchPersonaDraftApiRequest,
     PatchPersonaDraftApiResponse,
     SavePersonaFieldError,
@@ -149,11 +150,26 @@ async def patch_persona_draft_client(
             voice_ids=request.voice_ids,
         )
 
-    # ── Step 5: Refresh MV ─────────────────────────────────────────────
+    # ── Step 5: Build form state (server is source of truth) ──────────
+
+    form_state = DraftFormState(
+        name_id=request.name_id,
+        description_id=request.description_id,
+        instructions_id=request.instructions_id,
+        color_id=request.color_id,
+        icon_id=request.icon_id,
+        active_flag_id=request.flag_id,
+        department_ids=request.department_ids or [],
+        example_ids=request.example_ids or [],
+        parameter_field_ids=request.parameter_field_ids or [],
+        voice_ids=request.voice_ids or [],
+    )
+
+    # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
     await refresh_persona_drafts(conn)
 
-    # ── Step 6: Invalidate cache ───────────────────────────────────────
+    # ── Step 7: Invalidate cache ───────────────────────────────────────
 
     await invalidate_tags(["personas", "drafts"], redis=redis)
 
@@ -162,4 +178,5 @@ async def patch_persona_draft_client(
         draft_id=result.id,
         new_version=new_version,
         message="Draft created successfully",
+        form_state=form_state,
     )
