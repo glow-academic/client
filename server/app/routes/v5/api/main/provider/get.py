@@ -25,7 +25,7 @@ from app.infra.provider_permissions_context import (
     resolve_provider_permissions_context,
 )
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.provider.permissions import (
+from app.infra.provider_permissions import (
     PROVIDER_BASIC_RESOURCES,
     PROVIDER_RESOURCES,
     compute_can_edit,

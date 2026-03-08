@@ -25,7 +25,7 @@ from app.routes.v5.api.main.chat.types import (
     StandardGroupMapping,
     StandardMapping,
 )
-from app.routes.v5.api.main.home.permissions import (
+from app.infra.home_permissions import (
     compute_completion_pct,
     compute_mode,
     compute_pass_pct,

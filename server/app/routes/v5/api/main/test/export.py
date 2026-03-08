@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from app.infra.globals import get_db, get_redis
+from app.infra.globals import get_db, get_redis_client
 from app.infra.test_export import export_test_client
 from app.routes.v5.api.main.test.types import ExportTestApiResponse
 
@@ -25,7 +25,7 @@ async def export_test(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis)],
+    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> ExportTestApiResponse:
     """Export test data as a clean, denormalized ZIP."""
     profile_id = http_request.state.profile_id

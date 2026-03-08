@@ -23,7 +23,7 @@ from app.infra.helpers import dedupe_by_id
 from app.infra.model_context import resolve_model_context
 from app.infra.model_permissions_context import resolve_model_permissions_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.model.permissions import (
+from app.infra.model_permissions import (
     MODEL_BASIC_RESOURCES,
     MODEL_FEATURES_RESOURCES,
     MODEL_PROVIDER_RESOURCES,

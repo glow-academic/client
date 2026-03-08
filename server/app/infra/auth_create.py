@@ -50,7 +50,7 @@ async def create_auth_client(
       5. invalidate_tags
       6. perform_keycloak_sync (non-fatal)
     """
-    from app.routes.v5.api.main.auth.permissions import compute_can_create
+    from app.infra.auth_permissions import compute_can_create
     from app.routes.v5.api.main.auth.types import (
         AuthResultItem,
         CreateAuthApiResponse,

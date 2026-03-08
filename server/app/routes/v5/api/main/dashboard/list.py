@@ -15,7 +15,7 @@ from app.infra.common_context import resolve_common_context
 from app.infra.dashboard_context import resolve_dashboard_search_context
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.infra.types import ArtifactContext
-from app.routes.v5.api.main.chat.permissions import (
+from app.infra.chat_permissions import (
     compute_pass_pct,
     compute_score_status,
     compute_show_continue,

@@ -23,7 +23,7 @@ from app.infra.helpers import dedupe_by_id
 from app.infra.scenario_context import resolve_scenario_context
 from app.infra.scenario_permissions_context import resolve_scenario_permissions_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.scenario.permissions import (
+from app.infra.scenario_permissions import (
     SCENARIO_BASIC_RESOURCES,
     SCENARIO_CONTENT_RESOURCES,
     SCENARIO_RESOURCES,

@@ -94,7 +94,7 @@ async def docs_field_client(
     from app.routes.v5.api.main.field.duplicate import duplicate_field
     from app.routes.v5.api.main.field.export import export_fields
     from app.routes.v5.api.main.field.get import get_field
-    from app.routes.v5.api.main.field.permissions import (
+    from app.infra.field_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

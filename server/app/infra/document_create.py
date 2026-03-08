@@ -44,7 +44,7 @@ async def create_document_client(
       4. Single transaction: create_document_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.document.permissions import compute_can_create
+    from app.infra.document_permissions import compute_can_create
     from app.routes.v5.api.main.document.types import (
         CreateDocumentApiResponse,
         DocumentResultItem,

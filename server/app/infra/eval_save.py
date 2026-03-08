@@ -184,7 +184,7 @@ async def save_eval_client(
       5. invalidate_tags
       6. sync_benchmark_entries (non-fatal)
     """
-    from app.routes.v5.api.main.eval.permissions import (
+    from app.infra.eval_permissions import (
         compute_can_create,
         compute_can_edit,
         has_access,

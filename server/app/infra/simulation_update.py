@@ -48,7 +48,7 @@ async def update_simulation_client(
       4. Single transaction: update_simulation_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.simulation.permissions import compute_can_edit
+    from app.infra.simulation_permissions import compute_can_edit
     from app.routes.v5.api.main.simulation.types import (
         SimulationResultItem,
         UpdateSimulationApiResponse,

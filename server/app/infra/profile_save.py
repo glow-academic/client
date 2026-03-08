@@ -173,7 +173,7 @@ async def save_profile_client(
       4. Single transaction: artifact create/update + denormalized snapshot
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.profile.permissions import (
+    from app.infra.profile_permissions import (
         compute_can_create,
         compute_can_edit,
     )

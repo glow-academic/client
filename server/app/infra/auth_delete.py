@@ -19,7 +19,7 @@ from redis.asyncio import Redis
 
 from app.infra.auth_permissions_context import resolve_auth_permissions_context
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.auth.permissions import compute_can_delete
+from app.infra.auth_permissions import compute_can_delete
 from app.routes.v5.api.main.auth.types import (
     DeleteAuthApiResponse,
     DeleteAuthResult,

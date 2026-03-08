@@ -23,7 +23,7 @@ from app.infra.helpers import dedupe_by_id
 from app.infra.profile_context import resolve_profile_context
 from app.infra.profile_permissions_context import resolve_profile_permissions_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.profile.permissions import (
+from app.infra.profile_permissions import (
     PROFILE_RESOURCES,
     compute_can_edit,
     compute_departments_required,

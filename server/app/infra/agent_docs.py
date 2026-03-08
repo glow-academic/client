@@ -117,7 +117,7 @@ async def docs_agent_client(
     from app.routes.v5.api.main.agent.duplicate import duplicate_agent
     from app.routes.v5.api.main.agent.export import export_agents
     from app.routes.v5.api.main.agent.get import get_agent
-    from app.routes.v5.api.main.agent.permissions import (
+    from app.infra.agent_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

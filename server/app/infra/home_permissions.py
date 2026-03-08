@@ -5,7 +5,7 @@ Re-exports shared functions from chat/permissions.py that home uses,
 plus home-specific helpers.
 """
 
-from app.routes.v5.api.main.chat.permissions import (
+from app.infra.chat_permissions import (
     compute_completion_pct,
     compute_mode,
     compute_pass_pct,

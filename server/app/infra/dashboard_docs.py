@@ -48,7 +48,7 @@ async def docs_dashboard_client(
     from app.routes.v5.api.main.dashboard.export import export_dashboard
     from app.routes.v5.api.main.dashboard.get import get_dashboard
     from app.routes.v5.api.main.dashboard.list import list_dashboard
-    from app.routes.v5.api.main.dashboard.permissions import (
+    from app.infra.dashboard_permissions import (
         build_dashboard_bundle,
         compute_footer_metrics,
         compute_header_metrics,

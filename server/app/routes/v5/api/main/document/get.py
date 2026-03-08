@@ -19,7 +19,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.auth.profile import get_auth_profile_internal
 from app.routes.auth.settings import get_auth_settings_internal
-from app.routes.v5.api.main.document.permissions import (
+from app.infra.document_permissions import (
     DOCUMENT_RESOURCES,
     compute_can_edit,
     compute_departments_required,

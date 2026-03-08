@@ -112,7 +112,7 @@ async def docs_persona_client(
     from app.routes.v5.api.main.persona.duplicate import duplicate_persona
     from app.routes.v5.api.main.persona.export import export_personas
     from app.routes.v5.api.main.persona.get import get_persona
-    from app.routes.v5.api.main.persona.permissions import (
+    from app.infra.persona_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

@@ -44,7 +44,7 @@ async def create_persona_client(
       4. Single transaction: create_persona_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.persona.permissions import compute_can_create
+    from app.infra.persona_permissions import compute_can_create
     from app.routes.v5.api.main.persona.types import (
         CreatePersonaApiResponse,
         PersonaResultItem,

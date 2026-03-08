@@ -23,7 +23,7 @@ from app.infra.helpers import dedupe_by_id
 from app.infra.setting_context import resolve_setting_context
 from app.infra.setting_permissions_context import resolve_setting_permissions_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.setting.permissions import (
+from app.infra.setting_permissions import (
     SETTING_RESOURCES,
     compute_auth_item_keys_required,
     compute_auths_required,

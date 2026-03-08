@@ -25,7 +25,7 @@ from app.infra.parameter_permissions_context import (
     resolve_parameter_permissions_context,
 )
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.parameter.permissions import (
+from app.infra.parameter_permissions import (
     PARAMETER_BASIC_RESOURCES,
     PARAMETER_FIELDS_RESOURCES,
     PARAMETER_RESOURCES,

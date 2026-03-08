@@ -25,7 +25,7 @@ from app.infra.department_permissions_context import (
 from app.infra.globals import get_db, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.department.permissions import (
+from app.infra.department_permissions import (
     DEPARTMENT_BASIC_RESOURCES,
     DEPARTMENT_RESOURCES,
     compute_can_edit,

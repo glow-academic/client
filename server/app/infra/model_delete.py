@@ -18,7 +18,7 @@ from redis.asyncio import Redis
 
 from app.infra.model_permissions_context import resolve_model_permissions_context
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.model.permissions import compute_can_delete
+from app.infra.model_permissions import compute_can_delete
 from app.routes.v5.api.main.model.types import (
     DeleteModelApiResponse,
     DeleteModelResult,

@@ -6,7 +6,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, Request, Response
 from redis.asyncio import Redis
 
-from app.infra.globals import get_db, get_redis
+from app.infra.globals import get_db, get_redis_client
 from app.infra.practice_refresh import refresh_practice_client
 from app.infra.refresh.types import RefreshResponse
 
@@ -18,7 +18,7 @@ async def practice_refresh(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis)],
+    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> RefreshResponse:
     """Refresh practice materialized views and invalidate caches."""
     profile_id = http_request.state.profile_id

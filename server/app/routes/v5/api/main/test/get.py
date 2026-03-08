@@ -15,7 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.infra.test_context import resolve_test_context
-from app.routes.v5.api.main.test.permissions import compute_test_status
+from app.infra.test_permissions import compute_test_status
 from app.routes.v5.api.main.test.types import (
     GetTestArtifactRequest,
     GetTestArtifactResponse,

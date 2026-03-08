@@ -44,7 +44,7 @@ async def create_profile_client(
       4. Single transaction: create_profile_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.profile.permissions import compute_can_create
+    from app.infra.profile_permissions import compute_can_create
     from app.routes.v5.api.main.profile.types import (
         CreateProfileApiResponse,
         ProfileResultItem,

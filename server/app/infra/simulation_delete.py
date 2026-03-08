@@ -20,7 +20,7 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.simulation_permissions_context import (
     resolve_simulation_permissions_context,
 )
-from app.routes.v5.api.main.simulation.permissions import compute_can_delete
+from app.infra.simulation_permissions import compute_can_delete
 from app.routes.v5.api.main.simulation.types import (
     DeleteSimulationApiResponse,
     DeleteSimulationResult,

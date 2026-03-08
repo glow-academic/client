@@ -260,7 +260,7 @@ async def save_cohort_client(
       5. invalidate_tags
       6. sync_home_practice_entries (non-fatal)
     """
-    from app.routes.v5.api.main.cohort.permissions import (
+    from app.infra.cohort_permissions import (
         compute_can_create,
         compute_can_edit,
         has_access,

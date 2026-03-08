@@ -58,7 +58,7 @@ async def docs_attempt_client(
     from app.routes.v5.api.main.attempt.archive import archive_attempts
     from app.routes.v5.api.main.attempt.export import export_attempt
     from app.routes.v5.api.main.attempt.get import attempt_get
-    from app.routes.v5.api.main.attempt.permissions import (
+    from app.infra.attempt_permissions import (
         check_attempt_access,
         compute_achieved_standards,
         compute_attempt_aggregates,

@@ -48,7 +48,7 @@ async def docs_leaderboard_client(
     from app.routes.v5.api.main.leaderboard.export import export_leaderboard
     from app.routes.v5.api.main.leaderboard.get import get_leaderboard
     from app.routes.v5.api.main.leaderboard.list import list_leaderboard
-    from app.routes.v5.api.main.leaderboard.permissions import (
+    from app.infra.leaderboard_permissions import (
         build_leaderboard_rows,
         build_leaderboard_sections,
         compute_accolade_winners,

@@ -25,7 +25,7 @@ from app.infra.tool_graph import score_tools
 from app.infra.tool_permissions_context import (
     resolve_tool_permissions_context,
 )
-from app.routes.v5.api.main.tool.permissions import (
+from app.infra.tool_permissions import (
     TOOL_RESOURCES,
     compute_args_outputs_required,
     compute_args_required,

@@ -8,7 +8,7 @@ from redis.asyncio import Redis
 
 from app.infra.cohort_docs import docs_cohort_client
 from app.infra.docs.types import ComposedDocsResponse
-from app.infra.globals import get_db, get_redis
+from app.infra.globals import get_db, get_redis_client
 
 router = APIRouter()
 
@@ -18,7 +18,7 @@ async def get_cohort_docs_endpoint(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis)],
+    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> ComposedDocsResponse:
     """Get composed documentation for the cohort artifact."""
     profile_id = http_request.state.profile_id

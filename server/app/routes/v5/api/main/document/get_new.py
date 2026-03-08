@@ -23,7 +23,7 @@ from app.infra.document_permissions_context import resolve_document_permissions_
 from app.infra.globals import get_db, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.document.permissions import (
+from app.infra.document_permissions import (
     DOCUMENT_RESOURCES,
     compute_can_edit,
     compute_departments_required,

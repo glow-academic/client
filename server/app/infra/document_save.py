@@ -202,7 +202,7 @@ async def save_document_client(
       4. Single transaction: artifact create/update + denormalized snapshot
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.document.permissions import (
+    from app.infra.document_permissions import (
         compute_can_create,
         compute_can_edit,
         has_access,

@@ -48,7 +48,7 @@ async def update_profile_client(
       4. Single transaction: update_profile_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.profile.permissions import compute_can_edit
+    from app.infra.profile_permissions import compute_can_edit
     from app.routes.v5.api.main.profile.types import (
         ProfileResultItem,
         UpdateProfileApiResponse,

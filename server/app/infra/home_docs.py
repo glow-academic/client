@@ -60,7 +60,7 @@ async def docs_home_client(
     from app.routes.v5.api.main.home.export import export_home
     from app.routes.v5.api.main.home.get import home_get
     from app.routes.v5.api.main.home.list import home_list
-    from app.routes.v5.api.main.home.permissions import (
+    from app.infra.home_permissions import (
         compute_completion_pct,
         compute_mode,
         compute_pass_pct,

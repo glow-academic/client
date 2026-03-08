@@ -46,7 +46,7 @@ async def docs_reports_client(
 
     # Lazy imports to avoid circular dependencies
     from app.routes.v5.api.main.reports.export import export_reports
-    from app.routes.v5.api.main.reports.permissions import (
+    from app.infra.reports_permissions import (
         build_reports_sections,
         compute_history_section,
         compute_leaderboard_section,

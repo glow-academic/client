@@ -23,7 +23,7 @@ from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.auth.permissions import (
+from app.infra.auth_permissions import (
     AUTH_BASIC_RESOURCES,
     AUTH_RESOURCES,
     compute_can_edit,

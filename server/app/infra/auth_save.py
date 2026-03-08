@@ -188,7 +188,7 @@ async def save_auth_client(
       5. invalidate_tags
       6. perform_keycloak_sync (non-fatal)
     """
-    from app.routes.v5.api.main.auth.permissions import (
+    from app.infra.auth_permissions import (
         compute_can_create,
         compute_can_edit,
     )

@@ -44,7 +44,7 @@ async def create_tool_client(
       4. Single transaction: create_tool_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.tool.permissions import compute_can_create
+    from app.infra.tool_permissions import compute_can_create
     from app.routes.v5.api.main.tool.types import (
         CreateToolApiResponse,
         ToolResultItem,

@@ -57,7 +57,7 @@ async def docs_benchmark_client(
     # Lazy imports to avoid circular dependencies
     from app.routes.v5.api.main.benchmark.export import export_benchmark
     from app.routes.v5.api.main.benchmark.get import get_benchmark
-    from app.routes.v5.api.main.benchmark.permissions import (
+    from app.infra.benchmark_permissions import (
         compute_benchmark_eval_status,
     )
     from app.routes.v5.api.main.benchmark.refresh import benchmark_refresh

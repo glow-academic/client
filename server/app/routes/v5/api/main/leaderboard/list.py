@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.infra.leaderboard_context import resolve_leaderboard_search_context
-from app.routes.v5.api.main.leaderboard.permissions import (
+from app.infra.leaderboard_permissions import (
     build_leaderboard_rows_v3,
 )
 from app.routes.v5.api.main.leaderboard.types import (

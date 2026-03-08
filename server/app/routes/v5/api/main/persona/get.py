@@ -22,7 +22,7 @@ from app.infra.helpers import dedupe_by_id
 from app.infra.persona_context import resolve_persona_context
 from app.infra.persona_permissions_context import resolve_persona_permissions_context
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.persona.permissions import (
+from app.infra.persona_permissions import (
     PERSONA_RESOURCES,
     compute_can_edit,
     compute_color_required,

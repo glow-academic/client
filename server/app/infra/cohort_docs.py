@@ -110,7 +110,7 @@ async def docs_cohort_client(
     from app.routes.v5.api.main.cohort.duplicate import duplicate_cohort
     from app.routes.v5.api.main.cohort.export import export_cohorts
     from app.routes.v5.api.main.cohort.get import get_cohort
-    from app.routes.v5.api.main.cohort.permissions import (
+    from app.infra.cohort_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

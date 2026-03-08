@@ -48,7 +48,7 @@ async def update_rubric_client(
       4. Single transaction: update_rubric_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.rubric.permissions import compute_can_edit
+    from app.infra.rubric_permissions import compute_can_edit
     from app.routes.v5.api.main.rubric.types import (
         RubricResultItem,
         UpdateRubricApiResponse,

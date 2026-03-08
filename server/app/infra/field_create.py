@@ -44,7 +44,7 @@ async def create_field_client(
       4. Single transaction: create_field_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.field.permissions import compute_can_create
+    from app.infra.field_permissions import compute_can_create
     from app.routes.v5.api.main.field.types import (
         CreateFieldApiResponse,
         FieldResultItem,

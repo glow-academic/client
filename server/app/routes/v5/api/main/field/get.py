@@ -23,7 +23,7 @@ from app.infra.field_permissions_context import resolve_field_permissions_contex
 from app.infra.globals import get_db, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.field.permissions import (
+from app.infra.field_permissions import (
     FIELD_BASIC_RESOURCES,
     FIELD_RESOURCES,
     compute_can_edit,

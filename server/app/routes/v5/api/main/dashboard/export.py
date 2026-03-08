@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.dashboard_export import export_dashboard_client
-from app.infra.globals import get_db, get_redis
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.main.dashboard.types import ExportDashboardApiResponse
 
 router = APIRouter()
@@ -18,7 +18,7 @@ async def export_dashboard(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis)],
+    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> ExportDashboardApiResponse:
     """Export all dashboard data as a clean, denormalized ZIP."""
     profile_id = http_request.state.profile_id

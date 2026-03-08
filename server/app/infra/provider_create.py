@@ -44,7 +44,7 @@ async def create_provider_client(
       4. Single transaction: create_provider_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.provider.permissions import compute_can_create
+    from app.infra.provider_permissions import compute_can_create
     from app.routes.v5.api.main.provider.types import (
         CreateProviderApiResponse,
         ProviderResultItem,

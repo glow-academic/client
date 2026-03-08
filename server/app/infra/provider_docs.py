@@ -95,7 +95,7 @@ async def docs_provider_client(
     from app.routes.v5.api.main.provider.duplicate import duplicate_provider
     from app.routes.v5.api.main.provider.export import export_providers
     from app.routes.v5.api.main.provider.get import get_provider
-    from app.routes.v5.api.main.provider.permissions import (
+    from app.infra.provider_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

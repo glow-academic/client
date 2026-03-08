@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from app.infra.globals import get_db, get_redis
+from app.infra.globals import get_db, get_redis_client
 from app.infra.invocation_export import export_invocation_client
 from app.routes.v5.api.main.invocation.types import ExportInvocationApiResponse
 
@@ -30,7 +30,7 @@ async def export_invocation(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis)],
+    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> ExportInvocationApiResponse:
     """Export a single invocation as a clean, denormalized CSV."""
     profile_id = http_request.state.profile_id

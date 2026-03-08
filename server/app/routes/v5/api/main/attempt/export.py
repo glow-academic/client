@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.attempt_export import export_attempt_client
-from app.infra.globals import get_db, get_redis
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.main.attempt.types import ExportAttemptApiResponse
 
 router = APIRouter()
@@ -25,7 +25,7 @@ async def export_attempt(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis)],
+    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> ExportAttemptApiResponse:
     """Export attempt data as a clean, denormalized ZIP."""
     profile_id = http_request.state.profile_id

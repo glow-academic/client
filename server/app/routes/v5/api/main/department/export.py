@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.department_export import export_department_client
-from app.infra.globals import get_db, get_redis
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.main.department.types import ExportDepartmentApiResponse
 
 router = APIRouter()
@@ -27,7 +27,7 @@ async def export_departments(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis)],
+    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> ExportDepartmentApiResponse:
     """Export all departments as a clean, denormalized CSV."""
     profile_id = http_request.state.profile_id

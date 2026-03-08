@@ -152,7 +152,7 @@ async def save_tool_client(
       4. Single transaction: artifact create/update + denormalized snapshot
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.tool.permissions import (
+    from app.infra.tool_permissions import (
         compute_can_create,
         compute_can_edit,
     )

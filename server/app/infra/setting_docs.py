@@ -104,7 +104,7 @@ async def docs_setting_client(
     from app.routes.v5.api.main.setting.duplicate import duplicate_setting
     from app.routes.v5.api.main.setting.export import export_settings
     from app.routes.v5.api.main.setting.get import get_setting
-    from app.routes.v5.api.main.setting.permissions import (
+    from app.infra.setting_permissions import (
         compute_can_delete,
         compute_can_draft,
         compute_can_duplicate,

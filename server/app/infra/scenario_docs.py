@@ -120,7 +120,7 @@ async def docs_scenario_client(
     from app.routes.v5.api.main.scenario.duplicate import duplicate_scenario
     from app.routes.v5.api.main.scenario.export import export_scenarios
     from app.routes.v5.api.main.scenario.get import get_scenario
-    from app.routes.v5.api.main.scenario.permissions import (
+    from app.infra.scenario_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

@@ -50,7 +50,7 @@ async def update_department_client(
       5. invalidate_tags
       6. perform_keycloak_sync (non-fatal)
     """
-    from app.routes.v5.api.main.department.permissions import compute_can_edit
+    from app.infra.department_permissions import compute_can_edit
     from app.routes.v5.api.main.department.types import (
         DepartmentResultItem,
         UpdateDepartmentApiResponse,

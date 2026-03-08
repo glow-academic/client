@@ -48,7 +48,7 @@ async def update_parameter_client(
       4. Single transaction: update_parameter_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.parameter.permissions import compute_can_edit
+    from app.infra.parameter_permissions import compute_can_edit
     from app.routes.v5.api.main.parameter.types import (
         ParameterResultItem,
         UpdateParameterApiResponse,

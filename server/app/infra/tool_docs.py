@@ -92,7 +92,7 @@ async def docs_tool_client(
     from app.routes.v5.api.main.tool.duplicate import duplicate_tool
     from app.routes.v5.api.main.tool.export import export_tools
     from app.routes.v5.api.main.tool.get import get_tool
-    from app.routes.v5.api.main.tool.permissions import (
+    from app.infra.tool_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

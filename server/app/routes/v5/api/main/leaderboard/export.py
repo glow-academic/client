@@ -6,7 +6,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, Request, Response
 from redis.asyncio import Redis
 
-from app.infra.globals import get_db, get_redis
+from app.infra.globals import get_db, get_redis_client
 from app.infra.leaderboard_export import export_leaderboard_client
 from app.routes.v5.api.main.leaderboard.types import ExportLeaderboardApiResponse
 
@@ -18,7 +18,7 @@ async def export_leaderboard(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis)],
+    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> ExportLeaderboardApiResponse:
     """Export all leaderboard data as a clean, denormalized ZIP."""
     profile_id = http_request.state.profile_id

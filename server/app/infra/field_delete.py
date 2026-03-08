@@ -19,7 +19,7 @@ from redis.asyncio import Redis
 
 from app.infra.field_permissions_context import resolve_field_permissions_context
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.field.permissions import compute_can_delete
+from app.infra.field_permissions import compute_can_delete
 from app.routes.v5.api.main.field.types import (
     DeleteFieldApiResponse,
     DeleteFieldResult,

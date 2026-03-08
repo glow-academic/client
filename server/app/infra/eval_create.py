@@ -44,7 +44,7 @@ async def create_eval_client(
       4. Single transaction: create_eval_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.eval.permissions import compute_can_create
+    from app.infra.eval_permissions import compute_can_create
     from app.routes.v5.api.main.eval.types import (
         CreateEvalApiResponse,
         EvalResultItem,

@@ -44,7 +44,7 @@ async def create_simulation_client(
       4. Single transaction: create_simulation_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.simulation.permissions import compute_can_create
+    from app.infra.simulation_permissions import compute_can_create
     from app.routes.v5.api.main.simulation.types import (
         CreateSimulationApiResponse,
         SimulationResultItem,

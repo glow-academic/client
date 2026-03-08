@@ -98,7 +98,7 @@ async def docs_eval_client(
     from app.routes.v5.api.main.eval.duplicate import duplicate_eval
     from app.routes.v5.api.main.eval.export import export_evals
     from app.routes.v5.api.main.eval.get import get_eval
-    from app.routes.v5.api.main.eval.permissions import (
+    from app.infra.eval_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

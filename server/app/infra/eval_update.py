@@ -48,7 +48,7 @@ async def update_eval_client(
       4. Single transaction: update_eval_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.eval.permissions import compute_can_edit
+    from app.infra.eval_permissions import compute_can_edit
     from app.routes.v5.api.main.eval.types import (
         EvalResultItem,
         UpdateEvalApiResponse,

@@ -48,7 +48,7 @@ async def update_model_client(
       4. Single transaction: update_model_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.model.permissions import compute_can_edit
+    from app.infra.model_permissions import compute_can_edit
     from app.routes.v5.api.main.model.types import (
         ModelResultItem,
         UpdateModelApiResponse,

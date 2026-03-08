@@ -25,7 +25,7 @@ from app.infra.simulation_permissions_context import (
     resolve_simulation_permissions_context,
 )
 from app.infra.tool_graph import score_tools
-from app.routes.v5.api.main.simulation.permissions import (
+from app.infra.simulation_permissions import (
     SIMULATION_RESOURCES,
     compute_can_edit,
     compute_departments_required,

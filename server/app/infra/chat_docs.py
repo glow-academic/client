@@ -58,7 +58,7 @@ async def docs_chat_client(
     from app.routes.v5.api.main.chat.draft import patch_chat_draft
     from app.routes.v5.api.main.chat.export import export_chat
     from app.routes.v5.api.main.chat.get import chat_get
-    from app.routes.v5.api.main.chat.permissions import (
+    from app.infra.chat_permissions import (
         compute_bundle_section_show,
         compute_completion_pct,
         compute_mode,

@@ -15,7 +15,7 @@ from app.routes.v5.api.main.benchmark.types import (
     BenchmarkHistoryResponse,
     BenchmarkRequest,
 )
-from app.routes.v5.api.main.test.permissions import compute_test_status
+from app.infra.test_permissions import compute_test_status
 from app.routes.v5.api.main.types import FilterOption
 from app.utils.error.handle_route_error import handle_route_error
 

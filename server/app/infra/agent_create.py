@@ -44,7 +44,7 @@ async def create_agent_client(
       4. Single transaction: create_agent_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.agent.permissions import compute_can_create
+    from app.infra.agent_permissions import compute_can_create
     from app.routes.v5.api.main.agent.types import (
         AgentResultItem,
         CreateAgentApiResponse,

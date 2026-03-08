@@ -97,7 +97,7 @@ async def docs_rubric_client(
     from app.routes.v5.api.main.rubric.duplicate import duplicate_rubric
     from app.routes.v5.api.main.rubric.export import export_rubrics
     from app.routes.v5.api.main.rubric.get import get_rubric
-    from app.routes.v5.api.main.rubric.permissions import (
+    from app.infra.rubric_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

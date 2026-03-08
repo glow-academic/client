@@ -114,7 +114,7 @@ async def docs_model_client(
     from app.routes.v5.api.main.model.duplicate import duplicate_model
     from app.routes.v5.api.main.model.export import export_models
     from app.routes.v5.api.main.model.get import get_model
-    from app.routes.v5.api.main.model.permissions import (
+    from app.infra.model_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

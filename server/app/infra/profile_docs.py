@@ -92,7 +92,7 @@ async def docs_profile_client(
     from app.routes.v5.api.main.profile.duplicate import duplicate_profile
     from app.routes.v5.api.main.profile.export import export_profiles
     from app.routes.v5.api.main.profile.get import get_profile
-    from app.routes.v5.api.main.profile.permissions import (
+    from app.infra.profile_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

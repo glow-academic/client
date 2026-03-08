@@ -95,7 +95,7 @@ async def docs_auth_client(
     from app.routes.v5.api.main.auth.duplicate import duplicate_auth
     from app.routes.v5.api.main.auth.export import export_auths
     from app.routes.v5.api.main.auth.get import get_auth
-    from app.routes.v5.api.main.auth.permissions import (
+    from app.infra.auth_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

@@ -106,7 +106,7 @@ async def docs_document_client(
     from app.routes.v5.api.main.document.duplicate import duplicate_document
     from app.routes.v5.api.main.document.export import export_documents
     from app.routes.v5.api.main.document.get import get_document
-    from app.routes.v5.api.main.document.permissions import (
+    from app.infra.document_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

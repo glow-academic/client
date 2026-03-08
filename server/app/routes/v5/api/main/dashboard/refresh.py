@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.dashboard_refresh import refresh_dashboard_client
-from app.infra.globals import get_db, get_redis
+from app.infra.globals import get_db, get_redis_client
 from app.infra.refresh.types import RefreshResponse
 
 router = APIRouter()
@@ -18,7 +18,7 @@ async def dashboard_refresh(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis)],
+    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> RefreshResponse:
     """Refresh dashboard caches (no materialized views)."""
     profile_id = http_request.state.profile_id

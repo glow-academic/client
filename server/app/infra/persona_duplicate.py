@@ -19,7 +19,7 @@ from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.api.main.persona.permissions import compute_can_duplicate
+from app.infra.persona_permissions import compute_can_duplicate
 from app.routes.v5.api.main.persona.types import (
     DuplicatePersonaApiResponse,
 )

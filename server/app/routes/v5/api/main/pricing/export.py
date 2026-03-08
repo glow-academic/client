@@ -6,7 +6,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, Request, Response
 from redis.asyncio import Redis
 
-from app.infra.globals import get_db, get_redis
+from app.infra.globals import get_db, get_redis_client
 from app.infra.pricing_export import export_pricing_client
 from app.routes.v5.api.main.pricing.types import ExportPricingApiResponse
 
@@ -18,7 +18,7 @@ async def export_pricing(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis)],
+    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> ExportPricingApiResponse:
     """Export all pricing data as a clean, denormalized ZIP."""
     profile_id = http_request.state.profile_id

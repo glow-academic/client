@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Request, Response
 from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from app.infra.globals import get_db, get_redis
+from app.infra.globals import get_db, get_redis_client
 from app.infra.session_export import export_session_client
 from app.routes.v5.api.main.session.types import ExportSessionApiResponse
 
@@ -25,7 +25,7 @@ async def export_session(
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis)],
+    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> ExportSessionApiResponse:
     """Export session data as a clean, denormalized ZIP."""
     profile_id = http_request.state.profile_id

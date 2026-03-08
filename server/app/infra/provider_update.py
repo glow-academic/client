@@ -48,7 +48,7 @@ async def update_provider_client(
       4. Single transaction: update_provider_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.provider.permissions import compute_can_edit
+    from app.infra.provider_permissions import compute_can_edit
     from app.routes.v5.api.main.provider.types import (
         ProviderResultItem,
         UpdateProviderApiResponse,

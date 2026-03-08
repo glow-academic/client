@@ -88,7 +88,7 @@ async def docs_department_client(
     from app.routes.v5.api.main.department.duplicate import duplicate_department
     from app.routes.v5.api.main.department.export import export_departments
     from app.routes.v5.api.main.department.get import get_department
-    from app.routes.v5.api.main.department.permissions import (
+    from app.infra.department_permissions import (
         compute_can_create,
         compute_can_delete,
         compute_can_draft,

@@ -180,7 +180,7 @@ async def save_field_client(
       4. Single transaction: artifact create/update + denormalized snapshot
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.field.permissions import (
+    from app.infra.field_permissions import (
         compute_can_create,
         compute_can_edit,
     )

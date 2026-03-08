@@ -48,7 +48,7 @@ async def update_agent_client(
       4. Single transaction: update_agent_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.agent.permissions import (
+    from app.infra.agent_permissions import (
         compute_can_edit,
         has_access,
     )

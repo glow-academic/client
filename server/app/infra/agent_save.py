@@ -183,7 +183,7 @@ async def save_agent_client(
       4. Single transaction: artifact create/update + denormalized snapshot
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.agent.permissions import (
+    from app.infra.agent_permissions import (
         compute_can_create,
         compute_can_edit,
         has_access,
