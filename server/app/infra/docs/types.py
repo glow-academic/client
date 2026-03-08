@@ -4,6 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from app.utils.docs_helper import DocsApiResponse
+
 
 class ColumnInfo(BaseModel):
     name: str
@@ -60,3 +62,4 @@ class ComposedDocsResponse(BaseModel):
     resources: list[DocsResponse]
     permissions: list[OperationInfo]
     api_operations: list[OperationInfo]
+    page_metadata: DocsApiResponse | None = None

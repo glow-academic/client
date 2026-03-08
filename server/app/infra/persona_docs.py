@@ -23,6 +23,9 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
 from app.routes.v5.tools.artifacts.persona.docs import get_persona_docs
+from app.routes.v5.tools.artifacts.persona.get import (
+    get_personas as get_persona_artifacts,
+)
 
 # Entry tool docs
 from app.routes.v5.tools.entries.persona_drafts.docs import get_persona_drafts_docs
@@ -37,11 +40,37 @@ from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.icons.docs import get_icons_docs
 from app.routes.v5.tools.resources.instructions.docs import get_instructions_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
+
+# Name hydration
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.parameter_fields.docs import (
     get_parameter_fields_docs,
 )
 from app.routes.v5.tools.resources.parameters.docs import get_parameters_docs
 from app.routes.v5.tools.resources.voices.docs import get_voices_docs
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Personas",
+    list_description="Manage character profiles used in scenarios.",
+    detail_title="— Persona",
+    detail_description="View and edit persona configuration and linked resources.",
+    new_title="New Persona",
+    new_description="Create a new persona character profile.",
+)
+
+
+async def _resolve_entity_name(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    entity_id: UUID,
+) -> str | None:
+    """Get display name for a persona by ID using black-box tools."""
+    artifacts = await get_persona_artifacts(conn, [entity_id], names=True)
+    if not artifacts or not artifacts[0].name_ids:
+        return None
+    names_data = await get_names(conn, artifacts[0].name_ids, redis)
+    return names_data[0].name if names_data else None
 
 
 async def docs_persona_client(
@@ -49,6 +78,7 @@ async def docs_persona_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Persona docs using composable infra functions.
 
@@ -103,7 +133,15 @@ async def docs_persona_client(
         get_voices_docs(conn),
     )
 
-    # ── Step 3: Assemble response ──────────────────────────────────────
+    # ── Step 3: Page metadata ───────────────────────────────────────────
+
+    entity_name = None
+    if entity_id is not None:
+        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+
+    page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
+
+    # ── Step 4: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
     from app.infra.persona_permissions import (
@@ -213,4 +251,5 @@ async def docs_persona_client(
                 description="POST /export — Export personas as denormalized CSV.",
             ),
         ],
+        page_metadata=page_metadata,
     )

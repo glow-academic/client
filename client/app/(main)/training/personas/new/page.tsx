@@ -23,38 +23,6 @@ type SavePersonaIn = InputOf<"/api/v5/artifacts/personas/save", "post">;
 type SavePersonaOut = OutputOf<"/api/v5/artifacts/personas/save", "post">;
 type PatchPersonaDraftIn = InputOf<"/api/v5/artifacts/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<"/api/v5/artifacts/personas/draft", "patch">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftInstructionsIn = InputOf<
-  "/api/v5/resources/instructions",
-  "post"
->;
-type CreateDraftInstructionsOut = OutputOf<
-  "/api/v5/resources/instructions",
-  "post"
->;
-type CreateDraftColorsIn = InputOf<"/api/v5/resources/colors", "post">;
-type CreateDraftColorsOut = OutputOf<"/api/v5/resources/colors", "post">;
-type CreateDraftExamplesIn = InputOf<"/api/v5/resources/examples", "post">;
-type CreateDraftExamplesOut = OutputOf<"/api/v5/resources/examples", "post">;
-type CreateDraftParameterFieldsIn = InputOf<
-  "/api/v5/resources/parameter_fields",
-  "post"
->;
-type CreateDraftParameterFieldsOut = OutputOf<
-  "/api/v5/resources/parameter_fields",
-  "post"
->;
-type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
-type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
 
 /** ---- Direct fetch (no caching - source of truth) ----
  * Always bypass cache to ensure fresh data for detail/edit pages.
@@ -73,8 +41,6 @@ const getPersonaDefault = async (
 /** ---- Strongly-typed server actions (single source of truth) ---- */
 async function savePersona(input: SavePersonaIn): Promise<SavePersonaOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/artifacts/personas/save", input);
 }
 
@@ -82,64 +48,7 @@ async function patchPersonaDraft(
   input: PatchPersonaDraftIn
 ): Promise<PatchPersonaDraftOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   return api.patch("/artifacts/personas/draft", input);
-}
-
-async function createDraftNames(
-  input: CreateDraftNamesIn
-): Promise<CreateDraftNamesOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/names", input);
-}
-
-async function createDraftDescriptions(
-  input: CreateDraftDescriptionsIn
-): Promise<CreateDraftDescriptionsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/descriptions", input);
-}
-
-async function createDraftInstructions(
-  input: CreateDraftInstructionsIn
-): Promise<CreateDraftInstructionsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/instructions", input);
-}
-
-async function createDraftColors(
-  input: CreateDraftColorsIn
-): Promise<CreateDraftColorsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/colors", input);
-}
-
-async function createDraftExamples(
-  input: CreateDraftExamplesIn
-): Promise<CreateDraftExamplesOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/examples", input);
-}
-
-async function createDraftParameterFields(
-  input: CreateDraftParameterFieldsIn
-): Promise<CreateDraftParameterFieldsOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/parameter_fields", input);
-}
-
-async function createDraftVoices(
-  input: CreateDraftVoicesIn
-): Promise<CreateDraftVoicesOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/resources/voices", input);
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -193,7 +102,6 @@ export default async function NewPersonaPage({
   const q = loadPersonaSearchParams(searchParamsObj);
 
   // Fetch default persona detail server-side with filter params and draft_id
-  // Note: OpenAPI schema needs regeneration to include new filter params
   const input: GetPersonaIn = {
     body: {
       persona_id: null, // NULL for new mode
@@ -218,20 +126,11 @@ export default async function NewPersonaPage({
       aria-label="Create new persona page"
     >
       <Persona
-        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+        key={q.draftId || "no-draft"}
         personaData={personaDetailDefault}
         savePersonaAction={savePersona}
         patchPersonaDraftAction={patchPersonaDraft}
-        createNamesAction={createDraftNames}
-        createDescriptionsAction={createDraftDescriptions}
-        createInstructionsAction={createDraftInstructions}
-        createColorsAction={createDraftColors}
-        createExamplesAction={createDraftExamples}
-        createParameterFieldsAction={createDraftParameterFields}
-        createVoicesAction={createDraftVoices}
       />
     </div>
   );
 }
-
-// Types are now defined inline in components using InputOf/OutputOf

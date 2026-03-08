@@ -56,38 +56,6 @@ import { parseAsArrayOf, parseAsBoolean, parseAsString, type Parser } from "nuqs
 // Types defined inline using InputOf/OutputOf
 type SavePersonaIn = InputOf<"/api/v5/artifacts/personas/save", "post">;
 type SavePersonaOut = OutputOf<"/api/v5/artifacts/personas/save", "post">;
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftColorsIn = InputOf<"/api/v5/resources/colors", "post">;
-type CreateDraftColorsOut = OutputOf<"/api/v5/resources/colors", "post">;
-type CreateDraftInstructionsIn = InputOf<
-  "/api/v5/resources/instructions",
-  "post"
->;
-type CreateDraftInstructionsOut = OutputOf<
-  "/api/v5/resources/instructions",
-  "post"
->;
-type CreateDraftExamplesIn = InputOf<"/api/v5/resources/examples", "post">;
-type CreateDraftExamplesOut = OutputOf<"/api/v5/resources/examples", "post">;
-type CreateDraftParameterFieldsIn = InputOf<
-  "/api/v5/resources/parameter_fields",
-  "post"
->;
-type CreateDraftParameterFieldsOut = OutputOf<
-  "/api/v5/resources/parameter_fields",
-  "post"
->;
-type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
-type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
 type PatchPersonaDraftIn = InputOf<"/api/v5/artifacts/personas/draft", "patch">;
 type PatchPersonaDraftOut = OutputOf<
   "/api/v5/artifacts/personas/draft",
@@ -95,20 +63,6 @@ type PatchPersonaDraftOut = OutputOf<
 >;
 
 type PersonaData = OutputOf<"/api/v5/artifacts/personas/get", "post">;
-
-// Type for flush results - each resource returns its created ID(s)
-type FlushResult = {
-  name_id?: string | null;
-  description_id?: string | null;
-  color_id?: string | null;
-  icon_id?: string | null;
-  instructions_id?: string | null;
-  active_flag_id?: string | null;
-  department_ids?: string[];
-  example_ids?: string[];
-  parameter_field_ids?: string[];
-  voice_ids?: string[];
-};
 
 type PersonaFormState = {
   name_id: string | null;
@@ -132,28 +86,6 @@ export interface PersonaProps {
   patchPersonaDraftAction?: (
     input: PatchPersonaDraftIn,
   ) => Promise<PatchPersonaDraftOut>;
-  // Resource creation actions
-  createNamesAction?: (
-    input: CreateDraftNamesIn,
-  ) => Promise<CreateDraftNamesOut>;
-  createDescriptionsAction?: (
-    input: CreateDraftDescriptionsIn,
-  ) => Promise<CreateDraftDescriptionsOut>;
-  createColorsAction?: (
-    input: CreateDraftColorsIn,
-  ) => Promise<CreateDraftColorsOut>;
-  createInstructionsAction?: (
-    input: CreateDraftInstructionsIn,
-  ) => Promise<CreateDraftInstructionsOut>;
-  createExamplesAction?: (
-    input: CreateDraftExamplesIn,
-  ) => Promise<CreateDraftExamplesOut>;
-  createParameterFieldsAction?: (
-    input: CreateDraftParameterFieldsIn,
-  ) => Promise<CreateDraftParameterFieldsOut>;
-  createVoicesAction?: (
-    input: CreateDraftVoicesIn,
-  ) => Promise<CreateDraftVoicesOut>;
 }
 
 const FLUSH_KEYS = [
@@ -231,22 +163,16 @@ function PersonaComponent({
   personaData,
   savePersonaAction,
   patchPersonaDraftAction,
-  createNamesAction,
-  createDescriptionsAction,
-  createColorsAction,
-  createInstructionsAction,
-  createExamplesAction,
-  createParameterFieldsAction,
-  createVoicesAction,
 }: PersonaProps) {
   const router = useRouter();
   const isEditMode = !!personaId;
   const { profile } = useProfile();
   const { setSelectedDraftId, isAutosaveEnabled } = useDrafts();
 
-  // --- Flush Registry ---
-  const { flushRegistryRef, registerFlushCallbacks, flushAllResources } =
-    useFlushRegistry<FlushResult>(FLUSH_KEYS);
+  // Empty flush registry — resource creation is handled by the unified draft endpoint
+  const emptyFlushRegistryRef = useRef(
+    new Map<string, () => Promise<Record<string, unknown> | void>>()
+  );
 
   // --- AI Generation State ---
   const { isGenerating, makeOnGenerationComplete, generate } =
@@ -613,7 +539,7 @@ function PersonaComponent({
     setSelectedDraftId,
     serverDraftVersion: draftVersion ?? null,
     hasResourceIds,
-    flushRegistryRef,
+    flushRegistryRef: emptyFlushRegistryRef,
     formStateRef,
     onPatchSuccess,
   });
@@ -712,16 +638,7 @@ function PersonaComponent({
   // --- Submit ---
   const handleSubmit = useCallback(
     async (_formData: Record<string, unknown>) => {
-      let flushResults: FlushResult = {};
-      if (!isAutosaveEnabled) {
-        flushResults = await flushAllResources();
-      }
-
-      const effectiveFormState = computeEffectiveFormState(
-        PERSONA_RESOURCES,
-        formStateRef.current,
-        flushResults as Record<string, unknown>,
-      ) as unknown as PersonaFormState;
+      const effectiveFormState = formStateRef.current as unknown as PersonaFormState;
 
       if (personaData?.names?.required && !effectiveFormState.name_id) {
         toast.error("Persona name is required");
@@ -822,8 +739,6 @@ function PersonaComponent({
       }
     },
     [
-      isAutosaveEnabled,
-      flushAllResources,
       isEditMode,
       personaId,
       profile?.id,
@@ -1016,15 +931,7 @@ function PersonaComponent({
                   hideDescription={true}
 
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
-                  createNamesAction={
-                    createNamesAction as
-                      | ((
-                          input: CreateDraftNamesIn,
-                        ) => Promise<CreateDraftNamesOut>)
-                      | undefined
-                  }
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["names"]}
                   create_tool_id={s?.names?.tool_id ?? null}
                 />
               }
@@ -1076,9 +983,7 @@ function PersonaComponent({
                   data-testid="input-persona-description"
 
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
-                  createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["descriptions"]}
                   create_tool_id={s?.descriptions?.tool_id ?? null}
                 />
                 <Departments
@@ -1096,7 +1001,6 @@ function PersonaComponent({
 
                   showAiGenerate={s?.departments?.show_ai_generate ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["departments"]}
                 />
                 <Flags
                   flags={s?.flags?.resources ?? []}
@@ -1107,6 +1011,7 @@ function PersonaComponent({
                   disabled={disabled}
 
                   showAiGenerate={s?.flags?.show_ai_generate ?? false}
+                  isAutosaveEnabled={isAutosaveEnabled}
                   onChange={(flagId) =>
                     setFormState((prev) => ({
                       ...prev,
@@ -1114,8 +1019,6 @@ function PersonaComponent({
                     }))
                   }
                   onGenerate={generateHandlers["flags"]}
-                  isAutosaveEnabled={isAutosaveEnabled}
-                  registerFlush={registerFlushCallbacks["flags"]}
                 />
               </div>
             </StepCard>
@@ -1187,10 +1090,8 @@ function PersonaComponent({
                   s?.parameter_fields?.show_ai_generate ?? false
                 }
                 required={s?.parameter_fields?.required ?? false}
-                createParameterFieldsAction={createParameterFieldsAction}
                 onGenerate={generateHandlers["parameter_fields"]}
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["parameter_fields"]}
                 create_tool_id={s?.parameter_fields?.tool_id ?? null}
               />
             </StepCard>
@@ -1266,10 +1167,8 @@ function PersonaComponent({
                 }
 
                 showAiGenerate={s?.colors?.show_ai_generate ?? false}
-                createColorsAction={createColorsAction}
                 required={s?.colors?.required ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["colors"]}
                 create_tool_id={s?.colors?.tool_id ?? null}
               />
             </StepCard>
@@ -1347,7 +1246,6 @@ function PersonaComponent({
                 showAiGenerate={s?.icons?.show_ai_generate ?? false}
                 required={s?.icons?.required ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["icons"]}
               />
             </StepCard>
           );
@@ -1414,9 +1312,7 @@ function PersonaComponent({
                 data-testid="input-instructions"
 
                 showAiGenerate={s?.instructions?.show_ai_generate ?? false}
-                createInstructionsAction={createInstructionsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["instructions"]}
                 create_tool_id={s?.instructions?.tool_id ?? null}
               />
               <Examples
@@ -1435,21 +1331,6 @@ function PersonaComponent({
                 itemPlaceholder="Message"
 
                 showAiGenerate={s?.examples?.show_ai_generate ?? false}
-                createExamplesAction={
-                  createExamplesAction
-                    ? async (input: {
-                        body: {
-                          group_id: string;
-                          example: string;
-                          mcp?: boolean;
-                        };
-                      }) => {
-                        return await createExamplesAction({
-                          body: { ...input.body, mcp: input.body.mcp ?? false },
-                        });
-                      }
-                    : undefined
-                }
                 required={s?.examples?.required ?? false}
                 exampleMapping={
                   s?.examples?.resources && formState.example_ids
@@ -1464,7 +1345,6 @@ function PersonaComponent({
                     : {}
                 }
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["examples"]}
                 create_tool_id={s?.examples?.tool_id ?? null}
               />
               <Voices
@@ -1481,9 +1361,7 @@ function PersonaComponent({
                 showAiGenerate={s?.voices?.show_ai_generate ?? false}
                 onGenerate={generateHandlers["voices"]}
                 create_tool_id={s?.voices?.tool_id ?? null}
-                createVoicesAction={createVoicesAction}
                 isAutosaveEnabled={isAutosaveEnabled}
-                registerFlush={registerFlushCallbacks["voices"]}
               />
             </StepCard>
           );
@@ -1509,17 +1387,9 @@ function PersonaComponent({
       formState.parameter_field_ids,
       formState.example_ids,
       formState.voice_ids,
-      createNamesAction,
-      createDescriptionsAction,
-      createColorsAction,
-      createInstructionsAction,
-      createExamplesAction,
       canRegenerate,
       handleDirectStepGenerate,
       isAutosaveEnabled,
-      registerFlushCallbacks,
-      createParameterFieldsAction,
-      createVoicesAction,
       makeOnGenerationComplete,
     ],
   );

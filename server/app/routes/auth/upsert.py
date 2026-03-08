@@ -1,24 +1,18 @@
-"""Profile create or update endpoint - create or update a profile based on email."""
+"""Profile create or update endpoint — thin route, delegates to infra."""
 
-from typing import Annotated, Any, cast
+from typing import Annotated
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, transaction
+from app.infra.auth.upsert import resolve_profile_upsert
+from app.infra.globals import get_db, get_redis_client, transaction
 from app.sql.types import (
     CreateOrUpdateProfileApiRequest,
     CreateOrUpdateProfileApiResponse,
-    CreateOrUpdateProfileSqlParams,
-    CreateOrUpdateProfileSqlRow,
-    load_sql_query,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
-
-# Load SQL with types at module level - makes it clear what SQL file is used
-SQL_PATH = "app/sql/queries/profile/create_or_update_profile_complete.sql"
 
 router = APIRouter()
 
@@ -31,17 +25,12 @@ async def create_or_update_profile(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateOrUpdateProfileApiResponse:
     """Create or update a profile based on email."""
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
-
     try:
-        # Validate emails array
         if not request.emails or len(request.emails) == 0:
             raise HTTPException(
                 status_code=400, detail="At least one email is required"
             )
 
-        # Determine primary email index (default to 0)
         primary_index = (
             request.primary_email_index
             if request.primary_email_index is not None
@@ -50,54 +39,36 @@ async def create_or_update_profile(
         if primary_index < 0 or primary_index >= len(request.emails):
             raise HTTPException(status_code=400, detail="Invalid primary_email_index")
 
-        # Get current_profile_id from header (optional for upsert)
         current_profile_id = http_request.state.profile_id
-
-        # Convert API request to SQL params using double star pattern
-        # Pydantic handles UUID conversion from strings automatically if types are correct
-        # SQL handles None-to-empty conversions via COALESCE in params CTE
-        # SQL generates profile_id_new if not provided (for creates)
-        # Exclude current_profile_id from request if present (we override it)
-        request_dict = request.model_dump(
-            exclude={"current_profile_id"}, exclude_none=False
-        )
-        params = CreateOrUpdateProfileSqlParams(
-            **request_dict,
-            current_profile_id=current_profile_id,
-        )
-        sql_params = params.to_tuple()
+        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+        redis = get_redis_client()
 
         async with transaction(conn):
-            # Execute SQL with typed helper
-            result = cast(
-                CreateOrUpdateProfileSqlRow,
-                await execute_sql_typed(
-                    conn,
-                    SQL_PATH,
-                    params=params,
-                ),
+            result = await resolve_profile_upsert(
+                conn,
+                redis,
+                name=request.name,
+                emails=request.emails,
+                role=request.role,
+                primary_email_index=primary_index,
+                active=request.active if request.active is not None else True,
+                department_ids=request.department_ids,
+                profile_id_new=request.profile_id_new,
+                current_profile_id=current_profile_id,
+                bypass_cache=bypass_cache,
             )
 
-            if not result:
-                raise HTTPException(
-                    status_code=500, detail="Failed to create or update profile"
-                )
-
-            profile_id = result.profile_id
-            created = result.created
-
-            profile_name = request.name
-        # Convert SQL result to API response
-        response_data = CreateOrUpdateProfileApiResponse.model_validate(
-            result.model_dump()
-        )
-
         # Invalidate cache after mutation
-        tags = ["profile"]  # Profile operations
-        await invalidate_tags(tags, redis=get_redis_client())
+        tags = ["profile"]
+        await invalidate_tags(tags, redis=redis)
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        return response_data
+        return CreateOrUpdateProfileApiResponse(
+            profile_id=result.profile_id,
+            created=result.created,
+            session_id=result.session_id,
+        )
+
     except HTTPException:
         raise
     except Exception as e:
@@ -105,7 +76,5 @@ async def create_or_update_profile(
             error=e,
             route_path=http_request.url.path,
             operation="create_or_update_profile",
-            sql_query=sql_query,
-            sql_params=sql_params,
             request=http_request,
         )
