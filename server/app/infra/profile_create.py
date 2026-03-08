@@ -1,0 +1,129 @@
+"""Profile create logic — composable infra architecture.
+
+Composes existing black-box tools:
+  1. resolve_profile_identity_context — profile (role, departments)
+  2. compute_can_create — permission check
+  3. resolve_profile_values — raw value → ID resolution
+  4. create_profile_artifact — junction writes
+  5. create_denormalized_snapshot — profiles_resource snapshot
+"""
+
+from __future__ import annotations
+
+from uuid import UUID
+
+import asyncpg
+from fastapi import HTTPException
+from redis.asyncio import Redis
+
+from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.infra.profile_permissions_context import (
+    create_denormalized_snapshot,
+    resolve_profile_values,
+)
+from app.routes.v5.tools.artifacts.profile.create import (
+    create_profile as create_profile_artifact,
+)
+from app.utils.cache.invalidate_tags import invalidate_tags
+
+
+async def create_profile_client(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
+    profile_id: UUID,
+    items: list,
+    group_id: UUID | None = None,
+) -> dict:
+    """Profile bulk create using composable infra functions.
+
+    Flow:
+      1. resolve_profile_identity_context → role, department_ids
+      2. compute_can_create — single check (applies to all items)
+      3. Per-item value resolution (raw → ID, required field enforcement)
+      4. Single transaction: create_profile_artifact + denormalized snapshot per item
+      5. invalidate_tags
+    """
+    from app.routes.v5.api.main.profile.permissions import compute_can_create
+    from app.routes.v5.api.main.profile.types import (
+        CreateProfileApiResponse,
+        ProfileResultItem,
+    )
+
+    # ── Step 1: Profile context ────────────────────────────────────────
+
+    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+
+    if profile is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
+        )
+
+    # ── Step 2: Permission check ───────────────────────────────────────
+
+    if not compute_can_create(user_role=profile.role, department_ids=None):
+        raise HTTPException(
+            status_code=403,
+            detail="You don't have permission to create profiles.",
+        )
+
+    # ── Step 3: Per-item value resolution ──────────────────────────────
+
+    has_errors = False
+    error_results: list[ProfileResultItem] = []
+
+    for idx, item in enumerate(items):
+        item_errors = await resolve_profile_values(conn, redis, item, is_create=True)
+        if item_errors:
+            has_errors = True
+            error_results.append(
+                ProfileResultItem(
+                    success=False,
+                    message=f"Item {idx}: Validation errors",
+                    errors=item_errors,
+                )
+            )
+        else:
+            error_results.append(ProfileResultItem(success=True, message="Validated"))
+
+    if has_errors:
+        return CreateProfileApiResponse(results=error_results)
+
+    # ── Step 4: Single transaction ─────────────────────────────────────
+
+    results: list[ProfileResultItem] = []
+
+    async with conn.transaction():
+        for item in items:
+            # Create denormalized snapshot
+            profiles_resource_id = await create_denormalized_snapshot(
+                conn,
+                redis,
+                name_id=item.name_id,
+            )
+
+            result = await create_profile_artifact(
+                conn,
+                name_id=item.name_id,
+                request_limit_id=item.request_limit_id,
+                department_ids=item.department_ids,
+                flag_ids=[item.flag_id] if item.flag_id else None,
+                email_ids=item.email_ids,
+                role_ids=item.role_ids,
+                profile_ids=[profiles_resource_id],
+            )
+
+            results.append(
+                ProfileResultItem(
+                    success=True,
+                    profile_id=result.id,
+                    message="Profile created successfully",
+                )
+            )
+
+    # ── Step 5: Invalidate cache ───────────────────────────────────────
+
+    await invalidate_tags(["profiles"], redis=redis)
+
+    return CreateProfileApiResponse(results=results)

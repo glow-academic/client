@@ -354,7 +354,117 @@ class ListCohortApiResponse(BaseModel):
 
 
 # =============================================================================
-# SAVE Endpoint Types
+# Shared Create/Update Types
+# =============================================================================
+
+
+class CohortFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class CohortResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    cohort_id: UUID | None = None
+    message: str
+    errors: list[CohortFieldError] | None = None
+
+
+# =============================================================================
+# Create Endpoint Types
+# =============================================================================
+
+
+class CreateCohortItem(BaseModel):
+    """Single cohort item for create — no cohort_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # Single-select flag
+    flag_id: UUID | None = None
+    # Multi-select IDs
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_ids: list[UUID] | None = None
+    simulation_availability_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
+    profile_persona_ids: list[UUID] | None = None
+    # Value-based fields (for CSV import — resolved to IDs)
+    is_inactive: bool | None = None
+    departments: list[str] | None = None
+    simulations: list[str] | None = None
+    profiles: list[str] | None = None
+
+
+class CreateCohortApiRequest(BaseModel):
+    """Request model for bulk create cohort endpoint."""
+
+    cohorts: list[CreateCohortItem]
+    group_id: UUID | None = None
+
+
+class CreateCohortApiResponse(BaseModel):
+    """Response model for bulk create cohort endpoint."""
+
+    results: list[CohortResultItem]
+
+
+# =============================================================================
+# Update Endpoint Types
+# =============================================================================
+
+
+class UpdateCohortItem(BaseModel):
+    """Single cohort item for update — cohort_id required, all fields optional."""
+
+    cohort_id: UUID  # Required — which cohort to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    # Single-select flag
+    flag_id: UUID | None = None
+    # Multi-select IDs
+    department_ids: list[UUID] | None = None
+    simulation_ids: list[UUID] | None = None
+    simulation_position_ids: list[UUID] | None = None
+    simulation_availability_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
+    profile_persona_ids: list[UUID] | None = None
+    # Value-based fields (for CSV import — resolved to IDs)
+    is_inactive: bool | None = None
+    departments: list[str] | None = None
+    simulations: list[str] | None = None
+    profiles: list[str] | None = None
+
+
+class UpdateCohortApiRequest(BaseModel):
+    """Request model for bulk update cohort endpoint."""
+
+    cohorts: list[UpdateCohortItem]
+    group_id: UUID | None = None
+
+
+class UpdateCohortApiResponse(BaseModel):
+    """Response model for bulk update cohort endpoint."""
+
+    results: list[CohortResultItem]
+
+
+# =============================================================================
+# Legacy Save Types (backwards compat)
 # =============================================================================
 
 

@@ -1,18 +1,24 @@
-"""Resolve auth permissions context — lightweight access + edit check.
+"""Auth permissions context + shared save helpers.
 
-Given an auth_id, fetches just the data needed for permission checks:
-  1. get_auths → department_ids
-  2. search_settings (artifact) → active_settings_count
+Permissions context:
+  1. resolve_auth_permissions_context — lightweight access + edit check
+
+Shared save helpers (used by both create and update):
+  2. resolve_auth_values — raw string → resource ID resolution
+  3. create_denormalized_snapshot — hydrate IDs → auths_resource snapshot
 
 Composes existing black-box fetchers — no raw SQL.
 """
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 import asyncpg
+from redis.asyncio import Redis
 
 from app.routes.v5.tools.artifacts.auth.get import (
     get_auths as get_auth_artifacts,
@@ -20,6 +26,21 @@ from app.routes.v5.tools.artifacts.auth.get import (
 from app.routes.v5.tools.artifacts.setting.search import (
     search_settings as search_setting_artifacts,
 )
+from app.routes.v5.tools.resources.auths.create import (
+    create_auth as create_auth_resource,
+)
+from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.create import create_description
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
+from app.routes.v5.tools.resources.names.create import create_name
+from app.routes.v5.tools.resources.names.get import get_names
+
+if TYPE_CHECKING:
+    from app.routes.v5.api.main.auth.types import (
+        AuthFieldError,
+        CreateAuthItem,
+        UpdateAuthItem,
+    )
 
 
 @dataclass(frozen=True)
@@ -75,3 +96,102 @@ async def resolve_auth_permissions_context(
         department_ids=department_ids,
         active_settings_count=active_settings_count,
     )
+
+
+# ---------------------------------------------------------------------------
+# Shared save helpers — used by both auth_create and auth_update
+# ---------------------------------------------------------------------------
+
+
+async def resolve_auth_values(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    item: CreateAuthItem | UpdateAuthItem,
+    is_create: bool,
+) -> list[AuthFieldError]:
+    """Resolve raw value fields to resource IDs (mutates item in place).
+
+    For 'create' resources (name, description):
+      Creates a new resource via the create tool.
+    For 'match' resources (departments):
+      Searches by name via the search tool, matches exact (case-insensitive).
+
+    Returns a list of errors (empty if all resolved).
+    """
+    from app.routes.v5.api.main.auth.types import AuthFieldError
+
+    errors: list[AuthFieldError] = []
+
+    # --- Create resources ---
+
+    if item.name is not None and item.name_id is None:
+        result = await create_name(conn, item.name, redis)
+        item.name_id = result.id
+
+    if item.description is not None and item.description_id is None:
+        result = await create_description(conn, item.description, redis)
+        item.description_id = result.id
+
+    # --- Match resources ---
+
+    if item.departments is not None and item.department_ids is None:
+        all_depts = await search_departments(
+            conn,
+            redis,
+            search=None,
+            limit_count=1000,
+            auth=True,
+        )
+        dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
+        resolved_ids = []
+        for dept_name in item.departments:
+            dept_id = dept_name_map.get(dept_name.lower())
+            if dept_id:
+                resolved_ids.append(dept_id)
+            else:
+                errors.append(
+                    AuthFieldError(
+                        field="departments",
+                        message=f'Department "{dept_name}" not found',
+                    )
+                )
+        if not any(e.field == "departments" for e in errors):
+            item.department_ids = resolved_ids
+
+    # --- Validate required fields (create only) ---
+
+    if is_create:
+        if item.name_id is None and item.name is None:
+            errors.append(AuthFieldError(field="name", message="Name is required"))
+
+    return errors
+
+
+async def create_denormalized_snapshot(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
+    name_id: UUID | None,
+    description_id: UUID | None,
+    department_ids: list[UUID] | None,
+) -> UUID:
+    """Create an auths_resource snapshot by hydrating IDs to values."""
+
+    async def _empty() -> list:
+        return []
+
+    names, descriptions = await asyncio.gather(
+        get_names(conn, [name_id], redis, bypass_cache=True) if name_id else _empty(),
+        get_descriptions(conn, [description_id], redis, bypass_cache=True)
+        if description_id
+        else _empty(),
+    )
+
+    result = await create_auth_resource(
+        conn,
+        redis,
+        name=names[0].name if names else "",
+        description=descriptions[0].description if descriptions else "",
+        department_ids=department_ids,
+    )
+    return result.id

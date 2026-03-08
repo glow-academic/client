@@ -1,8 +1,11 @@
-"""Resolve profile permissions context — lightweight access + edit check.
+"""Profile permissions context + shared save helpers.
 
-Given a target_profile_id, fetches just the data needed for permission checks:
-  1. get_profiles (artifact) → department_ids + profile_ids (resource IDs)
-  2. search_cohorts → any active cohorts using this profile?
+Permissions context:
+  1. resolve_profile_permissions_context — lightweight access + edit check
+
+Shared save helpers (used by both create and update):
+  2. resolve_profile_values — raw string → resource ID resolution
+  3. create_denormalized_snapshot — hydrate IDs → profiles_resource snapshot
 
 Composes existing black-box fetchers — no raw SQL.
 """
@@ -10,14 +13,29 @@ Composes existing black-box fetchers — no raw SQL.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 import asyncpg
+from redis.asyncio import Redis
 
 from app.routes.v5.tools.artifacts.cohort.search import search_cohorts
 from app.routes.v5.tools.artifacts.profile.get import (
     get_profiles as get_profile_artifacts,
 )
+from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.names.create import create_name
+from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.profiles.create import (
+    create_profile as create_profile_resource,
+)
+
+if TYPE_CHECKING:
+    from app.routes.v5.api.main.profile.types import (
+        CreateProfileItem,
+        ProfileFieldError,
+        UpdateProfileItem,
+    )
 
 
 @dataclass(frozen=True)
@@ -76,3 +94,94 @@ async def resolve_profile_permissions_context(
         department_ids=department_ids,
         active_cohort_count=total,
     )
+
+
+# ---------------------------------------------------------------------------
+# Shared save helpers — used by both profile_create and profile_update
+# ---------------------------------------------------------------------------
+
+
+async def resolve_profile_values(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    item: CreateProfileItem | UpdateProfileItem,
+    is_create: bool,
+) -> list[ProfileFieldError]:
+    """Resolve raw value fields to resource IDs (mutates item in place).
+
+    For 'create' resources (name):
+      Creates a new resource via the create tool.
+    For 'match' resources (departments):
+      Searches by name via the search tool, matches exact (case-insensitive).
+
+    Returns a list of errors (empty if all resolved).
+    """
+    from app.routes.v5.api.main.profile.types import ProfileFieldError
+
+    errors: list[ProfileFieldError] = []
+
+    # --- Create resources ---
+
+    if item.name is not None and item.name_id is None:
+        result = await create_name(conn, item.name, redis)
+        item.name_id = result.id
+
+    # --- Match resources ---
+
+    if item.departments is not None and item.department_ids is None:
+        all_depts = await search_departments(
+            conn,
+            redis,
+            search=None,
+            limit_count=1000,
+            profile=True,
+        )
+        dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
+        resolved_ids = []
+        for dept_name in item.departments:
+            dept_id = dept_name_map.get(dept_name.lower())
+            if dept_id:
+                resolved_ids.append(dept_id)
+            else:
+                errors.append(
+                    ProfileFieldError(
+                        field="departments",
+                        message=f'Department "{dept_name}" not found',
+                    )
+                )
+        if not any(e.field == "departments" for e in errors):
+            item.department_ids = resolved_ids
+
+    # --- Validate required fields (create only) ---
+
+    if is_create:
+        if item.name_id is None:
+            errors.append(ProfileFieldError(field="name", message="Name is required"))
+
+    return errors
+
+
+async def create_denormalized_snapshot(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
+    name_id: UUID | None,
+) -> UUID:
+    """Create a profiles_resource snapshot by hydrating IDs to values."""
+
+    async def _empty() -> list:
+        return []
+
+    names = (
+        await get_names(conn, [name_id], redis, bypass_cache=True)
+        if name_id
+        else await _empty()
+    )
+
+    result = await create_profile_resource(
+        conn,
+        redis,
+        name=names[0].name if names else "",
+        description="",
+    )
+    return result.id

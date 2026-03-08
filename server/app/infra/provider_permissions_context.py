@@ -1,23 +1,45 @@
-"""Resolve provider permissions context — lightweight access + edit check.
+"""Provider permissions context + shared save helpers.
 
-Given a provider_id, fetches just the data needed for permission checks:
-  1. get_providers → department_ids
-  2. search_models → any active models using this provider?
+Permissions context:
+  1. resolve_provider_permissions_context — lightweight access + edit check
+
+Shared save helpers (used by both create and update):
+  2. resolve_provider_values — raw string → resource ID resolution
+  3. create_denormalized_snapshot — hydrate IDs → providers_resource snapshot
 
 Composes existing black-box fetchers — no raw SQL.
 """
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 import asyncpg
+from redis.asyncio import Redis
 
 from app.routes.v5.tools.artifacts.model.search import search_models
 from app.routes.v5.tools.artifacts.provider.get import (
     get_providers as get_provider_artifacts,
 )
+from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.create import create_description
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
+from app.routes.v5.tools.resources.flags.search import search_flags
+from app.routes.v5.tools.resources.names.create import create_name
+from app.routes.v5.tools.resources.names.get import get_names
+from app.routes.v5.tools.resources.providers.create import (
+    create_provider as create_provider_resource,
+)
+
+if TYPE_CHECKING:
+    from app.routes.v5.api.main.provider.types import (
+        CreateProviderItem,
+        ProviderFieldError,
+        UpdateProviderItem,
+    )
 
 
 @dataclass(frozen=True)
@@ -67,3 +89,120 @@ async def resolve_provider_permissions_context(
         department_ids=department_ids,
         active_model_count=total,
     )
+
+
+# ---------------------------------------------------------------------------
+# Shared save helpers — used by both provider_create and provider_update
+# ---------------------------------------------------------------------------
+
+
+async def resolve_provider_values(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    item: CreateProviderItem | UpdateProviderItem,
+    is_create: bool,
+) -> list[ProviderFieldError]:
+    """Resolve raw value fields to resource IDs (mutates item in place).
+
+    For 'create' resources (name, description):
+      Creates a new resource via the create tool.
+    For 'match' resources (departments, active_flag):
+      Searches by name via the search tool, matches exact (case-insensitive).
+
+    Returns a list of errors (empty if all resolved).
+    """
+    from app.routes.v5.api.main.provider.types import ProviderFieldError
+
+    errors: list[ProviderFieldError] = []
+
+    # --- Create resources ---
+
+    if item.name is not None and item.name_id is None:
+        result = await create_name(conn, item.name, redis)
+        item.name_id = result.id
+
+    if item.description is not None and item.description_id is None:
+        result = await create_description(conn, item.description, redis)
+        item.description_id = result.id
+
+    # --- Match resources ---
+
+    if item.active_flag is not None and item.active_flag_id is None:
+        results = await search_flags(
+            conn,
+            redis,
+            search=None,
+            flag_type="provider_active",
+            limit_count=100,
+            provider=True,
+        )
+        match = next((r for r in results if r.type == "provider_active"), None)
+        if match and match.id:
+            if item.active_flag:
+                item.active_flag_id = match.id
+        elif item.active_flag:
+            errors.append(
+                ProviderFieldError(
+                    field="active_flag", message="Active flag resource not found"
+                )
+            )
+
+    if item.departments is not None and item.department_ids is None:
+        all_depts = await search_departments(
+            conn,
+            redis,
+            search=None,
+            limit_count=1000,
+            provider=True,
+        )
+        dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
+        resolved_ids: list[UUID] = []
+        for dept_name in item.departments:
+            dept_id = dept_name_map.get(dept_name.lower())
+            if dept_id:
+                resolved_ids.append(dept_id)
+            else:
+                errors.append(
+                    ProviderFieldError(
+                        field="departments",
+                        message=f'Department "{dept_name}" not found',
+                    )
+                )
+        if not any(e.field == "departments" for e in errors):
+            item.department_ids = resolved_ids
+
+    # --- Validate required fields (create only) ---
+
+    if is_create:
+        if item.name_id is None:
+            errors.append(ProviderFieldError(field="name", message="Name is required"))
+
+    return errors
+
+
+async def create_denormalized_snapshot(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
+    name_id: UUID | None,
+    description_id: UUID | None,
+) -> UUID:
+    """Create a providers_resource snapshot by hydrating IDs to values."""
+
+    async def _empty() -> list:
+        return []
+
+    names, descriptions = await asyncio.gather(
+        get_names(conn, [name_id], redis, bypass_cache=True) if name_id else _empty(),
+        get_descriptions(conn, [description_id], redis, bypass_cache=True)
+        if description_id
+        else _empty(),
+    )
+
+    result = await create_provider_resource(
+        conn,
+        name=names[0].name if names else "",
+        description=descriptions[0].description if descriptions else "",
+        redis=redis,
+    )
+    return result.id

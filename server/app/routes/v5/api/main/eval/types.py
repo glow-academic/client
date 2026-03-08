@@ -134,7 +134,102 @@ class ListEvalApiResponse(BaseModel):
     user_role: str | None = None
 
 
-# ========== Save Endpoint Types ==========
+# ========== Shared Create/Update Types ==========
+
+
+class EvalFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class EvalResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    eval_id: UUID | None = None
+    message: str
+    errors: list[EvalFieldError] | None = None
+
+
+# ========== Create Endpoint Types ==========
+
+
+class CreateEvalItem(BaseModel):
+    """Single eval item for create — no eval_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # Multi-select — IDs only (matching get.py junctions)
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    model_ids: list[UUID] | None = None
+    model_flag_ids: list[UUID] | None = None
+    model_rubric_ids: list[UUID] | None = None
+    model_position_ids: list[UUID] | None = None
+
+
+class CreateEvalApiRequest(BaseModel):
+    """Request model for bulk create eval endpoint."""
+
+    evals: list[CreateEvalItem]
+    group_id: UUID | None = None
+
+
+class CreateEvalApiResponse(BaseModel):
+    """Response model for bulk create eval endpoint."""
+
+    results: list[EvalResultItem]
+
+
+# ========== Update Endpoint Types ==========
+
+
+class UpdateEvalItem(BaseModel):
+    """Single eval item for update — eval_id required, all fields optional.
+
+    Only provided fields are updated (partial update).
+    """
+
+    eval_id: UUID  # Required — which eval to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    # Multi-select — IDs only (matching get.py junctions)
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    model_ids: list[UUID] | None = None
+    model_flag_ids: list[UUID] | None = None
+    model_rubric_ids: list[UUID] | None = None
+    model_position_ids: list[UUID] | None = None
+
+
+class UpdateEvalApiRequest(BaseModel):
+    """Request model for bulk update eval endpoint."""
+
+    evals: list[UpdateEvalItem]
+    group_id: UUID | None = None
+
+
+class UpdateEvalApiResponse(BaseModel):
+    """Response model for bulk update eval endpoint."""
+
+    results: list[EvalResultItem]
+
+
+# ========== Legacy Save Types (backwards compat) ==========
 
 
 class SaveEvalFieldError(BaseModel):

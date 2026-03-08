@@ -193,7 +193,121 @@ class ModelMultiResourceAction(BaseModel):
 
 
 # =============================================================================
-# SAVE Endpoint Types
+# Shared Create/Update Types
+# =============================================================================
+
+
+class ModelFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class ModelResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    model_id: UUID | None = None
+    message: str
+    errors: list[ModelFieldError] | None = None
+
+
+# =============================================================================
+# Create Endpoint Types
+# =============================================================================
+
+
+class CreateModelItem(BaseModel):
+    """Single model item for create — no model_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    # Dual-mode: name
+    name_id: UUID | None = None
+    name: str | None = None
+    # Dual-mode: description
+    description_id: UUID | None = None
+    description: str | None = None
+    # Dual-mode: departments (match by name)
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    flag_ids: list[UUID] | None = None
+    modality_ids: list[UUID] | None = None
+    pricing_ids: list[UUID] | None = None
+    provider_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    value_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+
+
+class CreateModelApiRequest(BaseModel):
+    """Request model for bulk create model endpoint."""
+
+    models: list[CreateModelItem]
+    group_id: UUID | None = None
+
+
+class CreateModelApiResponse(BaseModel):
+    """Response model for bulk create model endpoint."""
+
+    results: list[ModelResultItem]
+
+
+# =============================================================================
+# Update Endpoint Types
+# =============================================================================
+
+
+class UpdateModelItem(BaseModel):
+    """Single model item for update — model_id required, all fields optional.
+
+    Only provided fields are updated (partial update).
+    """
+
+    model_id: UUID  # Required — which model to update
+    # Dual-mode: name
+    name_id: UUID | None = None
+    name: str | None = None
+    # Dual-mode: description
+    description_id: UUID | None = None
+    description: str | None = None
+    # Dual-mode: departments (match by name)
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    flag_ids: list[UUID] | None = None
+    modality_ids: list[UUID] | None = None
+    pricing_ids: list[UUID] | None = None
+    provider_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    value_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+
+
+class UpdateModelApiRequest(BaseModel):
+    """Request model for bulk update model endpoint."""
+
+    models: list[UpdateModelItem]
+    group_id: UUID | None = None
+
+
+class UpdateModelApiResponse(BaseModel):
+    """Response model for bulk update model endpoint."""
+
+    results: list[ModelResultItem]
+
+
+# =============================================================================
+# Legacy Save Endpoint Types (backwards compat)
 # =============================================================================
 
 

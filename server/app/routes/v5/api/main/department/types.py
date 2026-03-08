@@ -65,6 +65,95 @@ class GetDepartmentApiResponse(BaseModel):
     settings: DepartmentSettingSection | None = None
 
 
+# ========== Shared Create/Update Types ==========
+
+
+class DepartmentFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class DepartmentResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    department_id: UUID | None = None
+    message: str
+    errors: list[DepartmentFieldError] | None = None
+
+
+# ========== Create Endpoint Types ==========
+
+
+class CreateDepartmentItem(BaseModel):
+    """Single department item for create — no department_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # ID-only fields
+    settings_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+
+
+class CreateDepartmentApiRequest(BaseModel):
+    """Request model for bulk create department endpoint."""
+
+    departments: list[CreateDepartmentItem]
+    group_id: UUID | None = None
+
+
+class CreateDepartmentApiResponse(BaseModel):
+    """Response model for bulk create department endpoint."""
+
+    results: list[DepartmentResultItem]
+
+
+# ========== Update Endpoint Types ==========
+
+
+class UpdateDepartmentItem(BaseModel):
+    """Single department item for update — department_id required, all fields optional."""
+
+    department_id: UUID  # Required — which department to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # ID-only fields
+    settings_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+
+
+class UpdateDepartmentApiRequest(BaseModel):
+    """Request model for bulk update department endpoint."""
+
+    departments: list[UpdateDepartmentItem]
+    group_id: UUID | None = None
+
+
+class UpdateDepartmentApiResponse(BaseModel):
+    """Response model for bulk update department endpoint."""
+
+    results: list[DepartmentResultItem]
+
+
+# ========== Legacy Save Types (backwards compat) ==========
+
+
 class SaveDepartmentFieldError(BaseModel):
     """Per-field error from value resolution."""
 

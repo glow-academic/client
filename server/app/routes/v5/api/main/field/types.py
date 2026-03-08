@@ -105,7 +105,100 @@ class ListFieldApiResponse(BaseModel):
     total_count: int | None = None
 
 
-# ========== Save/Draft Types ==========
+# ========== Shared Create/Update Types ==========
+
+
+class FieldFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class FieldResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    field_id: UUID | None = None
+    message: str
+    errors: list[FieldFieldError] | None = None
+
+
+# ========== Create Endpoint Types ==========
+
+
+class CreateFieldItem(BaseModel):
+    """Single field item for create — no field_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # Optional single-select — provide ID only
+    flag_id: UUID | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    conditional_parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+
+
+class CreateFieldApiRequest(BaseModel):
+    """Request model for bulk create field endpoint."""
+
+    fields: list[CreateFieldItem]
+    group_id: UUID | None = None
+
+
+class CreateFieldApiResponse(BaseModel):
+    """Response model for bulk create field endpoint."""
+
+    results: list[FieldResultItem]
+
+
+# ========== Update Endpoint Types ==========
+
+
+class UpdateFieldItem(BaseModel):
+    """Single field item for update — field_id required, all fields optional.
+
+    Only provided fields are updated (partial update).
+    """
+
+    field_id: UUID  # Required — which field to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    # Optional single-select — provide ID only
+    flag_id: UUID | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    conditional_parameter_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+
+
+class UpdateFieldApiRequest(BaseModel):
+    """Request model for bulk update field endpoint."""
+
+    fields: list[UpdateFieldItem]
+    group_id: UUID | None = None
+
+
+class UpdateFieldApiResponse(BaseModel):
+    """Response model for bulk update field endpoint."""
+
+    results: list[FieldResultItem]
+
+
+# ========== Legacy Save Types (backwards compat) ==========
 
 
 class SaveFieldFieldError(BaseModel):

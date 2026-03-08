@@ -105,6 +105,105 @@ class SaveAuthItemInput(BaseModel):
     key_id: UUID | None = None
 
 
+# ========== Shared Create/Update Types ==========
+
+
+class AuthFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class AuthResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    auth_id: UUID | None = None
+    message: str
+    errors: list[AuthFieldError] | None = None
+
+
+# ========== Create Endpoint Types ==========
+
+
+class CreateAuthItem(BaseModel):
+    """Single auth item for create — no auth_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    slug_id: UUID | None = None
+    # Optional flag
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    protocol_ids: list[UUID] | None = None
+    item_ids: list[UUID] | None = None
+    auth_resource_ids: list[UUID] | None = None
+
+
+class CreateAuthApiRequest(BaseModel):
+    """Request model for bulk create auth endpoint."""
+
+    auths: list[CreateAuthItem]
+    group_id: UUID | None = None
+
+
+class CreateAuthApiResponse(BaseModel):
+    """Response model for bulk create auth endpoint."""
+
+    results: list[AuthResultItem]
+
+
+# ========== Update Endpoint Types ==========
+
+
+class UpdateAuthItem(BaseModel):
+    """Single auth item for update — auth_id required, all fields optional."""
+
+    auth_id: UUID  # Required — which auth to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    slug_id: UUID | None = None
+    # Optional flag
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    protocol_ids: list[UUID] | None = None
+    item_ids: list[UUID] | None = None
+    auth_resource_ids: list[UUID] | None = None
+
+
+class UpdateAuthApiRequest(BaseModel):
+    """Request model for bulk update auth endpoint."""
+
+    auths: list[UpdateAuthItem]
+    group_id: UUID | None = None
+
+
+class UpdateAuthApiResponse(BaseModel):
+    """Response model for bulk update auth endpoint."""
+
+    results: list[AuthResultItem]
+
+
+# ========== Legacy Save Types (backwards compat) ==========
+
+
 class SaveAuthFieldError(BaseModel):
     """Per-field error from value resolution."""
 

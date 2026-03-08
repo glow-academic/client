@@ -184,6 +184,92 @@ class GetProfileWebsocketResponse(InternalResponseBase):
     resources: ProfileWebsocketResources
 
 
+# ========== Shared Create/Update Types ==========
+
+
+class ProfileFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class ProfileResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    profile_id: UUID | None = None
+    message: str
+    errors: list[ProfileFieldError] | None = None
+
+
+# ========== Create Endpoint Types ==========
+
+
+class CreateProfileItem(BaseModel):
+    """Single profile item for create — no profile_id."""
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide IDs only
+    request_limit_id: UUID | None = None
+    flag_id: UUID | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    email_ids: list[UUID] | None = None
+    role_ids: list[UUID] | None = None
+
+
+class CreateProfileApiRequest(BaseModel):
+    """Request model for bulk create profile endpoint."""
+
+    profiles: list[CreateProfileItem]
+    group_id: UUID | None = None
+
+
+class CreateProfileApiResponse(BaseModel):
+    """Response model for bulk create profile endpoint."""
+
+    results: list[ProfileResultItem]
+
+
+# ========== Update Endpoint Types ==========
+
+
+class UpdateProfileItem(BaseModel):
+    """Single profile item for update — profile_id required, all fields optional."""
+
+    profile_id: UUID  # Required — which profile to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    request_limit_id: UUID | None = None
+    flag_id: UUID | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    email_ids: list[UUID] | None = None
+    role_ids: list[UUID] | None = None
+
+
+class UpdateProfileApiRequest(BaseModel):
+    """Request model for bulk update profile endpoint."""
+
+    profiles: list[UpdateProfileItem]
+    group_id: UUID | None = None
+
+
+class UpdateProfileApiResponse(BaseModel):
+    """Response model for bulk update profile endpoint."""
+
+    results: list[ProfileResultItem]
+
+
+# ========== Legacy Save Types (backwards compat) ==========
+
+
 class SaveProfileFieldError(BaseModel):
     """Per-field error from value resolution."""
 

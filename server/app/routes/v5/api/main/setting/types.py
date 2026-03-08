@@ -133,7 +133,116 @@ class SettingGenerationCompleteEvent(BaseModel):
     success: bool = False
 
 
-# ========== Save Endpoint Types ==========
+# ========== Shared Save/Create/Update Types ==========
+
+
+class SettingFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SettingResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    setting_id: UUID | None = None
+    message: str
+    errors: list[SettingFieldError] | None = None
+
+
+# ========== Create Endpoint Types ==========
+
+
+class CreateSettingItem(BaseModel):
+    """Single setting item for create — no setting_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # Optional flag
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    color_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
+    auth_ids: list[UUID] | None = None
+    provider_key_ids: list[UUID] | None = None
+    auth_item_key_ids: list[UUID] | None = None
+    auth_item_value_ids: list[UUID] | None = None
+    system_ids: list[UUID] | None = None
+    threshold_ids: list[UUID] | None = None
+    setting_resource_ids: list[UUID] | None = None
+
+
+class CreateSettingApiRequest(BaseModel):
+    """Request model for bulk create setting endpoint."""
+
+    settings: list[CreateSettingItem]
+    group_id: UUID | None = None
+
+
+class CreateSettingApiResponse(BaseModel):
+    """Response model for bulk create setting endpoint."""
+
+    results: list[SettingResultItem]
+
+
+# ========== Update Endpoint Types ==========
+
+
+class UpdateSettingItem(BaseModel):
+    """Single setting item for update — setting_id required, all fields optional.
+
+    Only provided fields are updated (partial update).
+    """
+
+    setting_id: UUID  # Required — which setting to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    # Optional flag
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    color_ids: list[UUID] | None = None
+    profile_ids: list[UUID] | None = None
+    auth_ids: list[UUID] | None = None
+    provider_key_ids: list[UUID] | None = None
+    auth_item_key_ids: list[UUID] | None = None
+    auth_item_value_ids: list[UUID] | None = None
+    system_ids: list[UUID] | None = None
+    threshold_ids: list[UUID] | None = None
+    setting_resource_ids: list[UUID] | None = None
+
+
+class UpdateSettingApiRequest(BaseModel):
+    """Request model for bulk update setting endpoint."""
+
+    settings: list[UpdateSettingItem]
+    group_id: UUID | None = None
+
+
+class UpdateSettingApiResponse(BaseModel):
+    """Response model for bulk update setting endpoint."""
+
+    results: list[SettingResultItem]
+
+
+# ========== Legacy Save Endpoint Types (backwards compat) ==========
 
 
 class SaveSettingFieldError(BaseModel):

@@ -292,7 +292,108 @@ class DocumentMultiResourceAction(BaseModel):
     link_tool_id: UUID | None = None
 
 
-# ========== Save Endpoint Types ==========
+# ========== Shared Create/Update Types ==========
+
+
+class DocumentFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class DocumentResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    document_id: UUID | None = None
+    message: str
+    errors: list[DocumentFieldError] | None = None
+
+
+# ========== Create Endpoint Types ==========
+
+
+class CreateDocumentItem(BaseModel):
+    """Single document item for create — no document_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # Flag — provide ID or boolean
+    flag_id: UUID | None = None
+    is_inactive: bool | None = None
+    # Multi-select — provide IDs or names
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # Multi-select — IDs only
+    field_ids: list[UUID] | None = None
+    upload_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    text_ids: list[UUID] | None = None
+
+
+class CreateDocumentApiRequest(BaseModel):
+    """Request model for bulk create document endpoint."""
+
+    documents: list[CreateDocumentItem]
+    group_id: UUID | None = None
+
+
+class CreateDocumentApiResponse(BaseModel):
+    """Response model for bulk create document endpoint."""
+
+    results: list[DocumentResultItem]
+
+
+# ========== Update Endpoint Types ==========
+
+
+class UpdateDocumentItem(BaseModel):
+    """Single document item for update — document_id required, all fields optional.
+
+    Only provided fields are updated (partial update).
+    """
+
+    document_id: UUID  # Required — which document to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    # Flag — provide ID or boolean
+    flag_id: UUID | None = None
+    is_inactive: bool | None = None
+    # Multi-select — provide IDs or names
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # Multi-select — IDs only
+    field_ids: list[UUID] | None = None
+    upload_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    text_ids: list[UUID] | None = None
+
+
+class UpdateDocumentApiRequest(BaseModel):
+    """Request model for bulk update document endpoint."""
+
+    documents: list[UpdateDocumentItem]
+    group_id: UUID | None = None
+
+
+class UpdateDocumentApiResponse(BaseModel):
+    """Response model for bulk update document endpoint."""
+
+    results: list[DocumentResultItem]
+
+
+# ========== Legacy Save Types (backwards compat) ==========
 
 
 class SaveDocumentFieldError(BaseModel):

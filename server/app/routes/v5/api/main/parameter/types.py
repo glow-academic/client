@@ -199,7 +199,90 @@ class ListParameterApiResponse(BaseModel):
     total_count: int | None = None
 
 
-# ========== Save/Draft Types ==========
+# ========== Shared Create/Update Types ==========
+
+
+class ParameterFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class ParameterResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    parameter_id: UUID | None = None
+    message: str
+    errors: list[ParameterFieldError] | None = None
+
+
+# ========== Create Endpoint Types ==========
+
+
+class CreateParameterItem(BaseModel):
+    """Single parameter item for create — no parameter_id."""
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    flag_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+
+
+class CreateParameterApiRequest(BaseModel):
+    """Request model for bulk create parameter endpoint."""
+
+    parameters: list[CreateParameterItem]
+    group_id: UUID | None = None
+
+
+class CreateParameterApiResponse(BaseModel):
+    """Response model for bulk create parameter endpoint."""
+
+    results: list[ParameterResultItem]
+
+
+# ========== Update Endpoint Types ==========
+
+
+class UpdateParameterItem(BaseModel):
+    """Single parameter item for update — parameter_id required, all fields optional."""
+
+    parameter_id: UUID  # Required — which parameter to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    flag_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
+
+
+class UpdateParameterApiRequest(BaseModel):
+    """Request model for bulk update parameter endpoint."""
+
+    parameters: list[UpdateParameterItem]
+    group_id: UUID | None = None
+
+
+class UpdateParameterApiResponse(BaseModel):
+    """Response model for bulk update parameter endpoint."""
+
+    results: list[ParameterResultItem]
+
+
+# ========== Legacy Save Types (backwards compat) ==========
 
 
 class SaveParameterFieldError(BaseModel):

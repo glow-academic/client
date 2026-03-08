@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from app.routes.v5.api.main.eval.create import router as create_router
 from app.routes.v5.api.main.eval.delete import router as delete_router
 from app.routes.v5.api.main.eval.docs import router as docs_router
 from app.routes.v5.api.main.eval.draft import router as draft_router
@@ -9,12 +10,15 @@ from app.routes.v5.api.main.eval.duplicate import router as duplicate_router
 from app.routes.v5.api.main.eval.get import router as get_router
 from app.routes.v5.api.main.eval.save import router as save_router
 from app.routes.v5.api.main.eval.search import router as search_router
+from app.routes.v5.api.main.eval.update import router as update_router
 
 router = APIRouter(prefix="/evals", tags=["evals"])
 
 # Include all endpoint routers (standard 6 endpoints)
 router.include_router(search_router)
 router.include_router(get_router)
+router.include_router(create_router)
+router.include_router(update_router)
 router.include_router(save_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)

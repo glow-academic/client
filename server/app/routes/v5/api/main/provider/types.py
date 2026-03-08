@@ -115,6 +115,100 @@ class ListProviderApiResponse(BaseModel):
     total_count: int | None = None
 
 
+# ========== Shared Create/Update Types ==========
+
+
+class ProviderFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class ProviderResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    provider_id: UUID | None = None
+    message: str
+    errors: list[ProviderFieldError] | None = None
+
+
+# ========== Create Endpoint Types ==========
+
+
+class CreateProviderItem(BaseModel):
+    """Single provider item for create — no provider_id."""
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    endpoint_ids: list[UUID] | None = None
+    key_ids: list[UUID] | None = None
+    value_ids: list[UUID] | None = None
+
+
+class CreateProviderApiRequest(BaseModel):
+    """Request model for bulk create provider endpoint."""
+
+    providers: list[CreateProviderItem]
+    group_id: UUID | None = None
+
+
+class CreateProviderApiResponse(BaseModel):
+    """Response model for bulk create provider endpoint."""
+
+    results: list[ProviderResultItem]
+
+
+# ========== Update Endpoint Types ==========
+
+
+class UpdateProviderItem(BaseModel):
+    """Single provider item for update — provider_id required, all fields optional."""
+
+    provider_id: UUID  # Required — which provider to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    endpoint_ids: list[UUID] | None = None
+    key_ids: list[UUID] | None = None
+    value_ids: list[UUID] | None = None
+
+
+class UpdateProviderApiRequest(BaseModel):
+    """Request model for bulk update provider endpoint."""
+
+    providers: list[UpdateProviderItem]
+    group_id: UUID | None = None
+
+
+class UpdateProviderApiResponse(BaseModel):
+    """Response model for bulk update provider endpoint."""
+
+    results: list[ProviderResultItem]
+
+
+# ========== Legacy Save Types (backwards compat) ==========
+
+
 class SaveProviderFieldError(BaseModel):
     """Per-field error from value resolution."""
 

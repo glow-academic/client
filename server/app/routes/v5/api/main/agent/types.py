@@ -141,6 +141,108 @@ class AgentMultiResourceAction(BaseModel):
     link_tool_id: UUID | None = None
 
 
+# ========== Shared Create/Update Types ==========
+
+
+class AgentFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class AgentResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    agent_id: UUID | None = None
+    message: str
+    errors: list[AgentFieldError] | None = None
+
+
+# ========== Create Endpoint Types ==========
+
+
+class CreateAgentItem(BaseModel):
+    """Single agent item for create — no agent_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    # Dual-mode: name
+    name_id: UUID | None = None
+    name: str | None = None
+    # Dual-mode: description
+    description_id: UUID | None = None
+    description: str | None = None
+    # Dual-mode: departments (match by name)
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    flag_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    tool_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    agent_ids: list[UUID] | None = None
+
+
+class CreateAgentApiRequest(BaseModel):
+    """Request model for bulk create agent endpoint."""
+
+    agents: list[CreateAgentItem]
+    group_id: UUID | None = None
+
+
+class CreateAgentApiResponse(BaseModel):
+    """Response model for bulk create agent endpoint."""
+
+    results: list[AgentResultItem]
+
+
+# ========== Update Endpoint Types ==========
+
+
+class UpdateAgentItem(BaseModel):
+    """Single agent item for update — agent_id required, all fields optional."""
+
+    agent_id: UUID  # Required — which agent to update
+    # Dual-mode: name
+    name_id: UUID | None = None
+    name: str | None = None
+    # Dual-mode: description
+    description_id: UUID | None = None
+    description: str | None = None
+    # Dual-mode: departments (match by name)
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    flag_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    tool_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    agent_ids: list[UUID] | None = None
+
+
+class UpdateAgentApiRequest(BaseModel):
+    """Request model for bulk update agent endpoint."""
+
+    agents: list[UpdateAgentItem]
+    group_id: UUID | None = None
+
+
+class UpdateAgentApiResponse(BaseModel):
+    """Response model for bulk update agent endpoint."""
+
+    results: list[AgentResultItem]
+
+
+# ========== Legacy Save Types (backwards compat) ==========
+
+
 class SaveAgentFieldError(BaseModel):
     """Per-field error from value resolution."""
 

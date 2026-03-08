@@ -214,3 +214,6 @@ class GroupInternalData:
     group_id: UUID | None = None
     # Context
     actor_name: str | None = None
+    # Resource maps (from context resolver)
+    name_map: dict[UUID, str] = field(default_factory=dict)
+    tool_name_map: dict[UUID, str] = field(default_factory=dict)

@@ -84,6 +84,100 @@ class GetRubricApiResponse(BaseModel):
     standards: RubricStandardsSection | None = None
 
 
+# ========== Shared Create/Update Types ==========
+
+
+class RubricFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class RubricResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    rubric_id: UUID | None = None
+    message: str
+    errors: list[RubricFieldError] | None = None
+
+
+# ========== Create Endpoint Types ==========
+
+
+class CreateRubricItem(BaseModel):
+    """Single rubric item for create — no rubric_id."""
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    point_ids: list[UUID] | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_ids: list[UUID] | None = None
+
+
+class CreateRubricApiRequest(BaseModel):
+    """Request model for bulk create rubric endpoint."""
+
+    rubrics: list[CreateRubricItem]
+    group_id: UUID | None = None
+
+
+class CreateRubricApiResponse(BaseModel):
+    """Response model for bulk create rubric endpoint."""
+
+    results: list[RubricResultItem]
+
+
+# ========== Update Endpoint Types ==========
+
+
+class UpdateRubricItem(BaseModel):
+    """Single rubric item for update — rubric_id required, all fields optional."""
+
+    rubric_id: UUID  # Required — which rubric to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    point_ids: list[UUID] | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_ids: list[UUID] | None = None
+
+
+class UpdateRubricApiRequest(BaseModel):
+    """Request model for bulk update rubric endpoint."""
+
+    rubrics: list[UpdateRubricItem]
+    group_id: UUID | None = None
+
+
+class UpdateRubricApiResponse(BaseModel):
+    """Response model for bulk update rubric endpoint."""
+
+    results: list[RubricResultItem]
+
+
+# ========== Legacy Save Types (backwards compat) ==========
+
+
 class SaveRubricFieldError(BaseModel):
     """Per-field error from value resolution."""
 
