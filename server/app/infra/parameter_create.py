@@ -100,12 +100,14 @@ async def create_parameter_client(
             parameters_resource_id = await create_denormalized_snapshot(
                 conn,
                 redis,
+                id=item.id,
                 name_id=item.name_id,
                 description_id=item.description_id,
             )
 
             result = await create_parameter_artifact(
                 conn,
+                id=item.id,
                 name_id=item.name_id,
                 description_id=item.description_id,
                 department_ids=item.department_ids,

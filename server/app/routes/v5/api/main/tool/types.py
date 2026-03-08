@@ -137,6 +137,8 @@ class CreateToolItem(BaseModel):
     Required fields (name): provide ID or value.
     """
 
+    id: UUID | None = None
+
     # Dual-mode: name
     name_id: UUID | None = None
     name: str | None = None

@@ -197,6 +197,8 @@ class ParameterResultItem(BaseModel):
 class CreateParameterItem(BaseModel):
     """Single parameter item for create — no parameter_id."""
 
+    id: UUID | None = None
+
     # Required single-select — provide ID or value
     name_id: UUID | None = None
     name: str | None = None

@@ -184,6 +184,8 @@ class ProfileResultItem(BaseModel):
 class CreateProfileItem(BaseModel):
     """Single profile item for create — no profile_id."""
 
+    id: UUID | None = None
+
     # Required single-select — provide ID or value
     name_id: UUID | None = None
     name: str | None = None

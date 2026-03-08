@@ -161,6 +161,8 @@ class CreateSettingItem(BaseModel):
     Required fields (name): provide ID or value.
     """
 
+    id: UUID | None = None
+
     # Required single-select — provide ID or value
     name_id: UUID | None = None
     name: str | None = None

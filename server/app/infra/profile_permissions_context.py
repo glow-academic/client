@@ -165,6 +165,7 @@ async def create_denormalized_snapshot(
     conn: asyncpg.Connection,
     redis: Redis,
     *,
+    id: UUID | None = None,
     name_id: UUID | None,
 ) -> UUID:
     """Create a profiles_resource snapshot by hydrating IDs to values."""
@@ -181,6 +182,7 @@ async def create_denormalized_snapshot(
     result = await create_profile_resource(
         conn,
         redis,
+        id=id,
         name=names[0].name if names else "",
         description="",
     )

@@ -106,6 +106,7 @@ async def create_auth_client(
             auths_resource_id = await create_denormalized_snapshot(
                 conn,
                 redis,
+                id=item.id,
                 name_id=item.name_id,
                 description_id=item.description_id,
                 department_ids=item.department_ids,
@@ -113,6 +114,7 @@ async def create_auth_client(
 
             result = await create_auth_artifact(
                 conn,
+                id=item.id,
                 name_id=item.name_id,
                 description_id=item.description_id,
                 slug_id=item.slug_id,

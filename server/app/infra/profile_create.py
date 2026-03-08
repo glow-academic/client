@@ -100,11 +100,13 @@ async def create_profile_client(
             profiles_resource_id = await create_denormalized_snapshot(
                 conn,
                 redis,
+                id=item.id,
                 name_id=item.name_id,
             )
 
             result = await create_profile_artifact(
                 conn,
+                id=item.id,
                 name_id=item.name_id,
                 request_limit_id=item.request_limit_id,
                 department_ids=item.department_ids,

@@ -501,6 +501,8 @@ class CreateScenarioItem(BaseModel):
     Required fields (name): provide ID or value.
     """
 
+    id: UUID | None = None
+
     # Dual-mode: provide ID or raw value
     name_id: UUID | None = None
     name: str | None = None

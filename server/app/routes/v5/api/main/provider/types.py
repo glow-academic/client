@@ -140,6 +140,8 @@ class ProviderResultItem(BaseModel):
 class CreateProviderItem(BaseModel):
     """Single provider item for create — no provider_id."""
 
+    id: UUID | None = None
+
     # Required single-select — provide ID or value
     name_id: UUID | None = None
     name: str | None = None

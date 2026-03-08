@@ -415,6 +415,7 @@ async def create_denormalized_snapshot(
     conn: asyncpg.Connection,
     redis: Redis,
     *,
+    id: UUID | None = None,
     name_id: UUID | None,
     description_id: UUID | None,
 ) -> UUID:
@@ -433,6 +434,7 @@ async def create_denormalized_snapshot(
     result = await create_scenario_resource(
         conn,
         redis,
+        id=id,
         name=names[0].name if names else "",
         description=descriptions[0].description if descriptions else "",
     )
