@@ -3,11 +3,14 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.v5.api.main.types import InternalResponseBase
+from app.routes.v5.tools.entries.calls.types import SearchCallResponse
+from app.routes.v5.tools.entries.messages.types import SearchMessageResponse
+from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse, RunViewItem
 
 
 class GroupListItem(BaseModel):
@@ -155,11 +158,10 @@ class GetGroupApiRequest(BaseModel):
 class GroupWebsocketEntries(BaseModel):
     """Entries data for group websocket response."""
 
-    runs: "GetRunListViewResponse | None" = None
-    # Domain views (from internal layer)
-    group_runs: "list[RunViewItem] | None" = None
-    messages: "list[QGetMessageListViewV4Item] | None" = None
-    calls: "list[QGetCallListViewV4Item] | None" = None
+    runs: GetRunListViewResponse | None = None
+    group_runs: list[RunViewItem] | None = None
+    messages: list[SearchMessageResponse] | None = None
+    calls: list[SearchCallResponse] | None = None
 
 
 class GroupWebsocketResources(BaseModel):
@@ -168,49 +170,47 @@ class GroupWebsocketResources(BaseModel):
     pass
 
 
-class GetGroupWebsocketResponse(InternalResponseBase):
-    """Websocket-facing group response with hydrated resources."""
+class GetGroupWebsocketResponse(BaseModel):
+    """Websocket-facing group response with hydrated resources.
 
+    Uses Any for config chain fields to accept resource fetcher types.
+    """
+
+    systems: list[Any] | None = None
+    agents: list[Any] | None = None
+    models: list[Any] | None = None
+    providers: list[Any] | None = None
+    tools: list[Any] | None = None
+    args: list[Any] | None = None
+    args_outputs: list[Any] | None = None
+    profile: list[Any] | None = None
+    params: BaseModel | None = None
+    resource_system_ids: dict[str, UUID | None] | None = None
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
     entries: GroupWebsocketEntries | None = None
     resources: GroupWebsocketResources
-
-
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse, RunViewItem
-from app.sql.types import (  # noqa: E402
-    GetCallListViewSqlRow,
-    GetGroupListViewSqlRow,
-    GetMessageListViewSqlRow,
-    QGetAgentsV4Item,
-    QGetCallListViewV4Item,
-    QGetMessageListViewV4Item,
-    QGetModelsV4Item,
-    QGetProfilesV4Item,
-    QGetProvidersV4Item,
-    QGetToolsV4Item,
-)
-
-GroupWebsocketEntries.model_rebuild()
-GroupWebsocketResources.model_rebuild()
-GetGroupWebsocketResponse.model_rebuild()
 
 
 @dataclass
 class GroupInternalData:
     """Internal data from core group fetching (cacheable layer)."""
 
-    # Views
-    group_view: GetGroupListViewSqlRow
-    runs_result: GetRunListViewResponse
-    messages_result: GetMessageListViewSqlRow
-    calls_result: GetCallListViewSqlRow
-    # Config chain
-    config_agents: list[QGetAgentsV4Item] = field(default_factory=list)
-    config_models: list[QGetModelsV4Item] = field(default_factory=list)
-    config_providers: list[QGetProvidersV4Item] = field(default_factory=list)
-    config_tools: list[QGetToolsV4Item] = field(default_factory=list)
-    config_profile: list[QGetProfilesV4Item] = field(default_factory=list)
+    # Domain entries (from MV search tools)
+    group_exists: bool = False
+    runs: list[RunViewItem] = field(default_factory=list)
+    messages: list[SearchMessageResponse] = field(default_factory=list)
+    calls: list[SearchCallResponse] = field(default_factory=list)
+    # Config chain (from resource get tools)
+    config_agents: list = field(default_factory=list)
+    config_models: list = field(default_factory=list)
+    config_providers: list = field(default_factory=list)
+    config_tools: list = field(default_factory=list)
+    config_systems: list = field(default_factory=list)
+    config_profile: list = field(default_factory=list)
     runs_today: GetRunListViewResponse | None = None
     resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
+    resource_system_ids: dict[str, UUID | None] = field(default_factory=dict)
     group_id: UUID | None = None
     # Context
     actor_name: str | None = None
