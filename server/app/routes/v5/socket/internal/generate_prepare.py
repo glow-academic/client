@@ -52,7 +52,6 @@ from app.routes.v5.socket.internal.prepare_pipeline import (
     build_agent_dispatch,
     build_agent_groups_from_scores,
     build_jinja_from_ws_ctx,
-    build_resource_agent_ids_from_scores,
     compute_all_artifact_types,
     compute_createable_resources,
     enrich_tools_with_args,
@@ -267,9 +266,6 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
             scores=ws_ctx.scores,
         )
 
-        # resource_agent_ids for metadata (image_agent_id, video_agent_id)
-        resource_agent_ids = build_resource_agent_ids_from_scores(ws_ctx.scores)
-
         # Jinja context from ws_ctx artifacts
         entry_results: dict[str, dict[str, Any]] | None = None
         if payload.entry_types:
@@ -452,7 +448,6 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
                 system_prompt=system_prompt,
                 developer_instruction_templates=dev_templates,
                 payload_metadata=enriched_metadata,
-                resource_agent_ids=resource_agent_ids,
                 save=None,  # save:bool removed — all results are soft-created, promoted later
             )
 

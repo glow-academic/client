@@ -411,7 +411,6 @@ def build_agent_dispatch(
     system_prompt: str,
     developer_instruction_templates: list[str],
     payload_metadata: dict[str, Any],
-    resource_agent_ids: dict[str, UUID],
     save: bool | None,
 ) -> AgentDispatch:
     """Build a complete AgentDispatch for one agent (pure).
@@ -501,10 +500,6 @@ def build_agent_dispatch(
     metadata: dict[str, Any] = dict(payload_metadata)
     if save is not None:
         metadata["save"] = save
-    if resource_agent_ids.get("images"):
-        metadata["image_agent_id"] = str(resource_agent_ids["images"])
-    if resource_agent_ids.get("videos"):
-        metadata["video_agent_id"] = str(resource_agent_ids["videos"])
 
     return AgentDispatch(
         agent_id=agent_id,
@@ -546,20 +541,6 @@ def build_agent_groups_from_scores(
             agent_groups.setdefault(best.agent_id, []).append(rt)
 
     return agent_groups
-
-
-def build_resource_agent_ids_from_scores(
-    scores: Any,
-) -> dict[str, UUID]:
-    """Derive resource_agent_ids mapping from ArtifactToolScores.best.
-
-    Used for metadata injection (image_agent_id, video_agent_id).
-    """
-    return {
-        target: tool.agent_id
-        for target, tool in scores.best.items()
-        if tool is not None
-    }
 
 
 def build_jinja_from_ws_ctx(

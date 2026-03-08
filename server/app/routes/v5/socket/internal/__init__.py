@@ -26,8 +26,6 @@ Canonical event handlers (one per generate_* event):
 Generation side-effects:
 - generation_progress (resource progress tracking)
 - generation_error (error passthrough to generation_channel)
-- generation_media (intercepts media tool_results → triggers image/video generation)
-
 Attempt:
 - attempt_start (auto-proceed after chat completes)
 - attempt_proceed (shared core: completion marking, prepare → check → link/generate)
@@ -53,7 +51,6 @@ from . import (
     generate_video_start,  # noqa: F401 — registers generate_video_start handler
     generation_ended,  # noqa: F401 — registers test_ended handler for generation resolution
     generation_error,  # noqa: F401 — registers error handler
-    generation_media,  # noqa: F401 — registers media generation handler
     generation_progress,  # noqa: F401 — registers generate_call_complete progress handler
     test,  # noqa: F401 — registers test_* internal events
 )
