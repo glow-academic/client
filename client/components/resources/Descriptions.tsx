@@ -2,7 +2,7 @@
  * Descriptions.tsx
  * Resource component for description textarea fields
  * Full UI component with Label + Textarea + optional AI generate button
- * Creates resources independently and reports resource IDs to parent
+ * Pure UI component that reports value changes upward via onDescriptionChange
  */
 
 "use client";
@@ -23,14 +23,6 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftDescriptionsIn = InputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
-type CreateDraftDescriptionsOut = OutputOf<
-  "/api/v5/resources/descriptions",
-  "post"
->;
 type LinkDescriptionsIn = InputOf<"/api/v5/resources/descriptions/link", "post">;
 type LinkDescriptionsOut = OutputOf<"/api/v5/resources/descriptions/link", "post">;
 
@@ -169,11 +161,7 @@ export interface DescriptionsProps {
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  createDescriptionsAction?:
-    | ((
-        input: CreateDraftDescriptionsIn
-      ) => Promise<CreateDraftDescriptionsOut>)
-    | undefined;
+  onDescriptionChange?: (description: string) => void; // Report value changes to parent
   link_tool_id?: string | null; // Tool ID for linking existing resources
   linkDescriptionsAction?:
     | ((input: LinkDescriptionsIn) => Promise<LinkDescriptionsOut>)

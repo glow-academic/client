@@ -23,6 +23,9 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
 from app.routes.v5.tools.artifacts.scenario.docs import get_scenario_docs
+from app.routes.v5.tools.artifacts.scenario.get import (
+    get_scenarios as get_scenario_artifacts,
+)
 
 # Entry tool docs
 from app.routes.v5.tools.entries.scenario_drafts.docs import get_scenario_drafts_docs
@@ -45,7 +48,31 @@ from app.routes.v5.tools.resources.problem_statements.docs import (
     get_problem_statements_docs,
 )
 from app.routes.v5.tools.resources.questions.docs import get_questions_docs
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.videos.docs import get_videos_docs
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Scenarios",
+    list_description="Manage simulation content and configuration.",
+    detail_title="— Scenario",
+    detail_description="View and edit scenario configuration and linked resources.",
+    new_title="New Scenario",
+    new_description="Create a new scenario configuration.",
+)
+
+
+async def _resolve_entity_name(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    entity_id: UUID,
+) -> str | None:
+    """Get display name for a scenario by ID using black-box tools."""
+    artifacts = await get_scenario_artifacts(conn, [entity_id], names=True)
+    if not artifacts or not artifacts[0].name_ids:
+        return None
+    names_data = await get_names(conn, artifacts[0].name_ids, redis)
+    return names_data[0].name if names_data else None
 
 
 async def docs_scenario_client(
@@ -53,6 +80,7 @@ async def docs_scenario_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Scenario docs using composable infra functions.
 
@@ -111,7 +139,15 @@ async def docs_scenario_client(
         get_videos_docs(conn),
     )
 
-    # -- Step 3: Assemble response ---------------------------------------------
+    # -- Step 3: Page metadata ---------------------------------------------------
+
+    entity_name = None
+    if entity_id is not None:
+        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+
+    page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
+
+    # -- Step 4: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
     from app.infra.scenario_permissions import (
@@ -224,4 +260,5 @@ async def docs_scenario_client(
                 description="POST /export — Export scenarios as denormalized CSV.",
             ),
         ],
+        page_metadata=page_metadata,
     )

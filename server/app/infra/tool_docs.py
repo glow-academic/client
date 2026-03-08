@@ -23,6 +23,7 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
 from app.routes.v5.tools.artifacts.tool.docs import get_tool_docs
+from app.routes.v5.tools.artifacts.tool.get import get_tools as get_tool_artifacts
 
 # Entry tool docs
 from app.routes.v5.tools.entries.tool_drafts.docs import get_tool_drafts_docs
@@ -34,6 +35,30 @@ from app.routes.v5.tools.resources.args_outputs.docs import get_args_outputs_doc
 from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
 from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
+from app.routes.v5.tools.resources.names.get import get_names
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Tools",
+    list_description="Manage function calling configurations for agents.",
+    detail_title="— Tool",
+    detail_description="View and edit tool configuration and linked resources.",
+    new_title="New Tool",
+    new_description="Create a new function calling tool.",
+)
+
+
+async def _resolve_entity_name(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    entity_id: UUID,
+) -> str | None:
+    """Get display name for a tool by ID using black-box tools."""
+    artifacts = await get_tool_artifacts(conn, [entity_id], names=True)
+    if not artifacts or not artifacts[0].name_ids:
+        return None
+    names_data = await get_names(conn, artifacts[0].name_ids, redis)
+    return names_data[0].name if names_data else None
 
 
 async def docs_tool_client(
@@ -41,6 +66,7 @@ async def docs_tool_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Tool docs using composable infra functions.
 
@@ -83,7 +109,15 @@ async def docs_tool_client(
         get_args_outputs_docs(conn),
     )
 
-    # -- Step 3: Assemble response ---------------------------------------------
+    # -- Step 3: Page metadata ---------------------------------------------------
+
+    entity_name = None
+    if entity_id is not None:
+        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+
+    page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
+
+    # -- Step 4: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
     from app.infra.tool_permissions import (
@@ -186,4 +220,5 @@ async def docs_tool_client(
                 description="POST /export — Export tools as denormalized CSV.",
             ),
         ],
+        page_metadata=page_metadata,
     )

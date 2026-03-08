@@ -19,6 +19,16 @@ from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.attempt.docs import get_attempt_docs
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Attempts",
+    list_description="View simulation attempt history and results.",
+    detail_title="Attempt",
+    detail_description="View detailed attempt with chat history and scoring.",
+    new_title="Attempt",
+    new_description="View simulation attempt history and results.",
+)
 
 
 async def docs_attempt_client(
@@ -26,6 +36,7 @@ async def docs_attempt_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Attempt docs using composable infra functions.
 
@@ -51,6 +62,10 @@ async def docs_attempt_client(
     (attempt_entry,) = await asyncio.gather(
         get_attempt_docs(conn),
     )
+
+    # -- Page metadata ---------------------------------------------------------
+
+    page_metadata = compute_docs_metadata(_PAGE_METADATA)
 
     # -- Step 3: Assemble response ---------------------------------------------
 
@@ -142,4 +157,5 @@ async def docs_attempt_client(
                 description="POST /export — Export attempt data as CSV/ZIP.",
             ),
         ],
+        page_metadata=page_metadata,
     )

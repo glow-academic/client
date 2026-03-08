@@ -21,6 +21,16 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Entry tool docs
 from app.routes.v5.tools.entries.home.docs import get_home_docs
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Home",
+    list_description="View personalized simulation dashboard.",
+    detail_title="Home",
+    detail_description="View personal stats and progress tracking.",
+    new_title="Home",
+    new_description="View personalized simulation dashboard.",
+)
 
 
 async def docs_home_client(
@@ -28,6 +38,7 @@ async def docs_home_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Home docs using composable infra functions.
 
@@ -53,6 +64,10 @@ async def docs_home_client(
     (home,) = await asyncio.gather(
         get_home_docs(conn),
     )
+
+    # -- Page metadata -----------------------------------------------------
+
+    page_metadata = compute_docs_metadata(_PAGE_METADATA)
 
     # -- Step 3: Assemble response ----------------------------------------
 
@@ -133,4 +148,5 @@ async def docs_home_client(
                 description="POST /export — Export home data as CSV/ZIP.",
             ),
         ],
+        page_metadata=page_metadata,
     )

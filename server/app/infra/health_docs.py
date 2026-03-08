@@ -20,6 +20,16 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Entry tool docs
 from app.routes.v5.tools.entries.health.docs import get_health_docs
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Health",
+    list_description="Monitor system performance and health.",
+    detail_title="Health",
+    detail_description="View system health metrics and status.",
+    new_title="Health",
+    new_description="Monitor system performance and health.",
+)
 
 
 async def docs_health_client(
@@ -27,6 +37,7 @@ async def docs_health_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Health docs using composable infra functions.
 
@@ -52,6 +63,10 @@ async def docs_health_client(
     (health,) = await asyncio.gather(
         get_health_docs(conn),
     )
+
+    # -- Page metadata -----------------------------------------------------
+
+    page_metadata = compute_docs_metadata(_PAGE_METADATA)
 
     # -- Step 3: Assemble response ----------------------------------------
 
@@ -84,4 +99,5 @@ async def docs_health_client(
                 description="POST /export — Export health data as CSV/ZIP.",
             ),
         ],
+        page_metadata=page_metadata,
     )

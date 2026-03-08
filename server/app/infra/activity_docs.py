@@ -19,6 +19,16 @@ from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.activity.docs import get_activity_docs
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Activity",
+    list_description="Track user engagement and usage metrics.",
+    detail_title="Activity",
+    detail_description="View activity analytics for a profile.",
+    new_title="Activity",
+    new_description="Track user engagement and usage metrics.",
+)
 
 
 async def docs_activity_client(
@@ -26,6 +36,7 @@ async def docs_activity_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Activity docs using composable infra functions.
 
@@ -51,6 +62,10 @@ async def docs_activity_client(
     (activity_entry,) = await asyncio.gather(
         get_activity_docs(conn),
     )
+
+    # -- Page metadata ---------------------------------------------------------
+
+    page_metadata = compute_docs_metadata(_PAGE_METADATA)
 
     # -- Step 3: Assemble response ---------------------------------------------
 
@@ -98,4 +113,5 @@ async def docs_activity_client(
                 description="POST /export — Export activity data as CSV/ZIP.",
             ),
         ],
+        page_metadata=page_metadata,
     )

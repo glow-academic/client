@@ -16,6 +16,16 @@ from redis.asyncio import Redis
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Leaderboard",
+    list_description="View performance rankings and accolades.",
+    detail_title="Leaderboard",
+    detail_description="View leaderboard rankings and comparative metrics.",
+    new_title="Leaderboard",
+    new_description="View leaderboard rankings and comparative metrics.",
+)
 
 
 async def docs_leaderboard_client(
@@ -23,6 +33,7 @@ async def docs_leaderboard_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Leaderboard docs using composable infra functions.
 
@@ -41,6 +52,9 @@ async def docs_leaderboard_client(
             status_code=401,
             detail="Profile not found. Please sign in again.",
         )
+
+    # ── Page metadata ───────────────────────────────────────────────────
+    page_metadata = compute_docs_metadata(_PAGE_METADATA)
 
     # ── Step 2: Assemble response ──────────────────────────────────────
 
@@ -101,4 +115,5 @@ async def docs_leaderboard_client(
                 description="POST /export — Export leaderboard data as CSV/ZIP.",
             ),
         ],
+        page_metadata=page_metadata,
     )

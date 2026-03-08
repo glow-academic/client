@@ -23,6 +23,9 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
 from app.routes.v5.tools.artifacts.department.docs import get_department_docs
+from app.routes.v5.tools.artifacts.department.get import (
+    get_departments as get_department_artifacts,
+)
 
 # Entry tool docs
 from app.routes.v5.tools.entries.department_drafts.docs import (
@@ -35,12 +38,39 @@ from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
 from app.routes.v5.tools.resources.settings.docs import get_settings_docs
 
+# Name hydration
+from app.routes.v5.tools.resources.names.get import get_names
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Departments",
+    list_description="Manage organizational units.",
+    detail_title="— Department",
+    detail_description="View and edit department configuration and linked resources.",
+    new_title="New Department",
+    new_description="Create a new department.",
+)
+
+
+async def _resolve_entity_name(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    entity_id: UUID,
+) -> str | None:
+    """Get display name for a department by ID using black-box tools."""
+    artifacts = await get_department_artifacts(conn, [entity_id], names=True)
+    if not artifacts or not artifacts[0].name_ids:
+        return None
+    names_data = await get_names(conn, artifacts[0].name_ids, redis)
+    return names_data[0].name if names_data else None
+
 
 async def docs_department_client(
     conn: asyncpg.Connection,
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Department docs using composable infra functions.
 
@@ -79,7 +109,13 @@ async def docs_department_client(
         get_settings_docs(conn),
     )
 
-    # ── Step 3: Assemble response ──────────────────────────────────────
+    # ── Step 3: Page metadata ───────────────────────────────────────────
+    entity_name = None
+    if entity_id is not None:
+        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+    page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
+
+    # ── Step 4: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
     from app.infra.department_permissions import (
@@ -180,4 +216,5 @@ async def docs_department_client(
                 description="POST /export — Export departments as denormalized CSV.",
             ),
         ],
+        page_metadata=page_metadata,
     )

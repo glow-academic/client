@@ -19,6 +19,16 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Entry tool docs
 from app.routes.v5.tools.entries.sessions.docs import get_sessions_docs
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Sessions",
+    list_description="View simulation session details.",
+    detail_title="Session",
+    detail_description="View session timeline with groups and run history.",
+    new_title="Session",
+    new_description="View session timeline with groups and run history.",
+)
 
 
 async def docs_session_client(
@@ -26,6 +36,7 @@ async def docs_session_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Session docs using composable infra functions.
 
@@ -49,6 +60,9 @@ async def docs_session_client(
     # -- Step 2: Entry docs fetch -----------------------------------------
 
     sessions = await get_sessions_docs(conn)
+
+    # ── Page metadata ───────────────────────────────────────────────────
+    page_metadata = compute_docs_metadata(_PAGE_METADATA)
 
     # -- Step 3: Assemble response ----------------------------------------
 
@@ -76,4 +90,5 @@ async def docs_session_client(
                 description="POST /export — Export session data as CSV/ZIP.",
             ),
         ],
+        page_metadata=page_metadata,
     )

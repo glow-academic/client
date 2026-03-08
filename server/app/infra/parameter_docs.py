@@ -23,6 +23,9 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
 from app.routes.v5.tools.artifacts.parameter.docs import get_parameter_docs
+from app.routes.v5.tools.artifacts.parameter.get import (
+    get_parameters as get_parameter_artifacts,
+)
 
 # Entry tool docs
 from app.routes.v5.tools.entries.parameter_drafts.docs import get_parameter_drafts_docs
@@ -32,9 +35,33 @@ from app.routes.v5.tools.resources.departments.docs import get_departments_docs
 from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
 from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.parameter_fields.docs import (
     get_parameter_fields_docs,
 )
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Parameters",
+    list_description="Manage configurable parameter sets.",
+    detail_title="— Parameter",
+    detail_description="View and edit parameter configuration and linked resources.",
+    new_title="New Parameter",
+    new_description="Create a new parameter configuration.",
+)
+
+
+async def _resolve_entity_name(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    entity_id: UUID,
+) -> str | None:
+    """Get display name for a parameter by ID using black-box tools."""
+    artifacts = await get_parameter_artifacts(conn, [entity_id], names=True)
+    if not artifacts or not artifacts[0].name_ids:
+        return None
+    names_data = await get_names(conn, artifacts[0].name_ids, redis)
+    return names_data[0].name if names_data else None
 
 
 async def docs_parameter_client(
@@ -42,6 +69,7 @@ async def docs_parameter_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Parameter docs using composable infra functions.
 
@@ -82,7 +110,15 @@ async def docs_parameter_client(
         get_parameter_fields_docs(conn),
     )
 
-    # ── Step 3: Assemble response ──────────────────────────────────────
+    # ── Step 3: Page metadata ───────────────────────────────────────────
+
+    entity_name = None
+    if entity_id is not None:
+        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+
+    page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
+
+    # ── Step 4: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
     from app.infra.parameter_permissions import (
@@ -184,4 +220,5 @@ async def docs_parameter_client(
                 description="POST /export — Export parameters as denormalized CSV.",
             ),
         ],
+        page_metadata=page_metadata,
     )

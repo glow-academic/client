@@ -23,6 +23,9 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
 from app.routes.v5.tools.artifacts.document.docs import get_document_docs
+from app.routes.v5.tools.artifacts.document.get import (
+    get_documents as get_document_artifacts,
+)
 
 # Entry tool docs
 from app.routes.v5.tools.entries.document_drafts.docs import get_document_drafts_docs
@@ -41,12 +44,39 @@ from app.routes.v5.tools.resources.parameter_fields.docs import (
 from app.routes.v5.tools.resources.parameters.docs import get_parameters_docs
 from app.routes.v5.tools.resources.texts.docs import get_texts_docs
 
+# Name hydration
+from app.routes.v5.tools.resources.names.get import get_names
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Documents",
+    list_description="Manage structured content templates.",
+    detail_title="— Document",
+    detail_description="View and edit document configuration and linked resources.",
+    new_title="New Document",
+    new_description="Create a new document.",
+)
+
+
+async def _resolve_entity_name(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    entity_id: UUID,
+) -> str | None:
+    """Get display name for a document by ID using black-box tools."""
+    artifacts = await get_document_artifacts(conn, [entity_id], names=True)
+    if not artifacts or not artifacts[0].name_ids:
+        return None
+    names_data = await get_names(conn, artifacts[0].name_ids, redis)
+    return names_data[0].name if names_data else None
+
 
 async def docs_document_client(
     conn: asyncpg.Connection,
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Document docs using composable infra functions.
 
@@ -97,7 +127,13 @@ async def docs_document_client(
         get_texts_docs(conn),
     )
 
-    # -- Step 3: Assemble response ---------------------------------------------
+    # -- Step 3: Page metadata ───────────────────────────────────────────
+    entity_name = None
+    if entity_id is not None:
+        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+    page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
+
+    # -- Step 4: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
     from app.infra.document_permissions import (
@@ -205,4 +241,5 @@ async def docs_document_client(
                 description="POST /export — Export documents as denormalized CSV.",
             ),
         ],
+        page_metadata=page_metadata,
     )

@@ -20,6 +20,16 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Entry tool docs
 from app.routes.v5.tools.entries.groups.docs import get_groups_docs
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Groups",
+    list_description="View test invocation group results.",
+    detail_title="Group",
+    detail_description="View group runs and aggregated metrics.",
+    new_title="Group",
+    new_description="View test invocation group results.",
+)
 
 
 async def docs_group_client(
@@ -27,6 +37,7 @@ async def docs_group_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Group docs using composable infra functions.
 
@@ -52,6 +63,10 @@ async def docs_group_client(
     (groups,) = await asyncio.gather(
         get_groups_docs(conn),
     )
+
+    # -- Page metadata -----------------------------------------------------
+
+    page_metadata = compute_docs_metadata(_PAGE_METADATA)
 
     # -- Step 3: Assemble response ----------------------------------------
 
@@ -79,4 +94,5 @@ async def docs_group_client(
                 description="POST /export — Export group data as CSV/ZIP.",
             ),
         ],
+        page_metadata=page_metadata,
     )

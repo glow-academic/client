@@ -23,6 +23,7 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
 from app.routes.v5.tools.artifacts.field.docs import get_field_docs
+from app.routes.v5.tools.artifacts.field.get import get_fields as get_field_artifacts
 
 # Entry tool docs
 from app.routes.v5.tools.entries.field_drafts.docs import get_field_drafts_docs
@@ -37,12 +38,39 @@ from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
 from app.routes.v5.tools.resources.parameters.docs import get_parameters_docs
 
+# Name hydration
+from app.routes.v5.tools.resources.names.get import get_names
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Fields",
+    list_description="Manage form field configurations.",
+    detail_title="— Field",
+    detail_description="View and edit field configuration and linked resources.",
+    new_title="New Field",
+    new_description="Create a new field.",
+)
+
+
+async def _resolve_entity_name(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    entity_id: UUID,
+) -> str | None:
+    """Get display name for a field by ID using black-box tools."""
+    artifacts = await get_field_artifacts(conn, [entity_id], names=True)
+    if not artifacts or not artifacts[0].name_ids:
+        return None
+    names_data = await get_names(conn, artifacts[0].name_ids, redis)
+    return names_data[0].name if names_data else None
+
 
 async def docs_field_client(
     conn: asyncpg.Connection,
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Field docs using composable infra functions.
 
@@ -85,7 +113,13 @@ async def docs_field_client(
         get_parameters_docs(conn),
     )
 
-    # -- Step 3: Assemble response ---------------------------------------------
+    # -- Step 3: Page metadata ───────────────────────────────────────────
+    entity_name = None
+    if entity_id is not None:
+        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+    page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
+
+    # -- Step 4: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
     from app.infra.field_permissions import (
@@ -189,4 +223,5 @@ async def docs_field_client(
                 description="POST /export — Export fields as denormalized CSV.",
             ),
         ],
+        page_metadata=page_metadata,
     )

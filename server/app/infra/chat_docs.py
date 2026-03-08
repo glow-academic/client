@@ -19,6 +19,16 @@ from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.chat.docs import get_chat_docs
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Training",
+    list_description="View simulation conversation analytics.",
+    detail_title="Training Chat",
+    detail_description="View chat messages, scoring, and rubric evaluations.",
+    new_title="Training",
+    new_description="View simulation conversation analytics.",
+)
 
 
 async def docs_chat_client(
@@ -26,6 +36,7 @@ async def docs_chat_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Chat docs using composable infra functions.
 
@@ -51,6 +62,10 @@ async def docs_chat_client(
     (chat_entry,) = await asyncio.gather(
         get_chat_docs(conn),
     )
+
+    # -- Page metadata ---------------------------------------------------------
+
+    page_metadata = compute_docs_metadata(_PAGE_METADATA)
 
     # -- Step 3: Assemble response ---------------------------------------------
 
@@ -142,4 +157,5 @@ async def docs_chat_client(
                 description="POST /export — Export chat data as CSV.",
             ),
         ],
+        page_metadata=page_metadata,
     )

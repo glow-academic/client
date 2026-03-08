@@ -9,12 +9,14 @@ from redis.asyncio import Redis
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.globals import get_db, get_redis_client
 from app.infra.group_docs import docs_group_client
+from app.utils.docs_helper import DocsApiRequest
 
 router = APIRouter()
 
 
 @router.post("/docs", response_model=ComposedDocsResponse)
 async def get_group_docs_endpoint(
+    body: DocsApiRequest,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
@@ -22,4 +24,6 @@ async def get_group_docs_endpoint(
 ) -> ComposedDocsResponse:
     """Get composed documentation for the group analytics."""
     profile_id = http_request.state.profile_id
-    return await docs_group_client(conn, redis, profile_id=profile_id)
+    return await docs_group_client(
+        conn, redis, profile_id=profile_id, entity_id=body.entity_id
+    )

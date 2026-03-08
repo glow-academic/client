@@ -23,6 +23,9 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
 from app.routes.v5.tools.artifacts.setting.docs import get_setting_docs
+from app.routes.v5.tools.artifacts.setting.get import (
+    get_settings as get_setting_artifacts,
+)
 
 # Entry tool docs
 from app.routes.v5.tools.entries.setting_drafts.docs import get_setting_drafts_docs
@@ -37,7 +40,31 @@ from app.routes.v5.tools.resources.flags.docs import get_flags_docs
 from app.routes.v5.tools.resources.names.docs import get_names_docs
 from app.routes.v5.tools.resources.profiles.docs import get_profiles_docs
 from app.routes.v5.tools.resources.provider_keys.docs import get_provider_keys_docs
+from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.systems.docs import get_systems_docs
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Settings",
+    list_description="Manage system configuration and preferences.",
+    detail_title="— Setting",
+    detail_description="View and edit setting configuration and linked resources.",
+    new_title="New Setting",
+    new_description="Create a new system setting.",
+)
+
+
+async def _resolve_entity_name(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    entity_id: UUID,
+) -> str | None:
+    """Get display name for a setting by ID using black-box tools."""
+    artifacts = await get_setting_artifacts(conn, [entity_id], names=True)
+    if not artifacts or not artifacts[0].name_ids:
+        return None
+    names_data = await get_names(conn, artifacts[0].name_ids, redis)
+    return names_data[0].name if names_data else None
 
 
 async def docs_setting_client(
@@ -45,6 +72,7 @@ async def docs_setting_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Setting docs using composable infra functions.
 
@@ -95,7 +123,15 @@ async def docs_setting_client(
         get_systems_docs(conn),
     )
 
-    # -- Step 3: Assemble response ---------------------------------------------
+    # -- Step 3: Page metadata ---------------------------------------------------
+
+    entity_name = None
+    if entity_id is not None:
+        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+
+    page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
+
+    # -- Step 4: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
     from app.infra.setting_permissions import (
@@ -198,4 +234,5 @@ async def docs_setting_client(
                 description="POST /export — Export settings as denormalized CSV.",
             ),
         ],
+        page_metadata=page_metadata,
     )

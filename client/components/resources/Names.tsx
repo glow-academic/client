@@ -2,7 +2,7 @@
  * Names.tsx
  * Resource component for name input fields
  * Header-style input with optional AI generate button
- * Creates resources independently and reports resource IDs to parent
+ * Pure UI component that reports value changes upward via onNameChange
  */
 
 "use client";
@@ -19,8 +19,6 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
-type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type LinkNamesIn = InputOf<"/api/v5/resources/names/link", "post">;
 type LinkNamesOut = OutputOf<"/api/v5/resources/names/link", "post">;
 
@@ -46,17 +44,13 @@ export interface NamesProps {
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  createNamesAction?:
-    | ((input: CreateDraftNamesIn) => Promise<CreateDraftNamesOut>)
-    | undefined;
+  onNameChange?: (name: string) => void; // Report value changes upward
   link_tool_id?: string | null; // Tool ID for linking existing resources
   linkNamesAction?:
     | ((input: LinkNamesIn) => Promise<LinkNamesOut>)
     | undefined;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created ID */
-  registerFlush?: (flush: () => Promise<{ name_id: string | null } | void>) => void;
 }
 
 export function Names({

@@ -23,6 +23,7 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
 from app.routes.v5.tools.artifacts.agent.docs import get_agent_docs
+from app.routes.v5.tools.artifacts.agent.get import get_agents as get_agent_artifacts
 
 # Entry tool docs
 from app.routes.v5.tools.entries.agent_drafts.docs import get_agent_drafts_docs
@@ -46,12 +47,39 @@ from app.routes.v5.tools.resources.temperature_levels.docs import (
 from app.routes.v5.tools.resources.tools.docs import get_tools_docs
 from app.routes.v5.tools.resources.voices.docs import get_voices_docs
 
+# Name hydration
+from app.routes.v5.tools.resources.names.get import get_names
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Agents",
+    list_description="Manage AI assistant configurations.",
+    detail_title="— Agent",
+    detail_description="View and edit agent configuration and linked resources.",
+    new_title="New Agent",
+    new_description="Create a new agent.",
+)
+
+
+async def _resolve_entity_name(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    entity_id: UUID,
+) -> str | None:
+    """Get display name for an agent by ID using black-box tools."""
+    artifacts = await get_agent_artifacts(conn, [entity_id], names=True)
+    if not artifacts or not artifacts[0].name_ids:
+        return None
+    names_data = await get_names(conn, artifacts[0].name_ids, redis)
+    return names_data[0].name if names_data else None
+
 
 async def docs_agent_client(
     conn: asyncpg.Connection,
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Agent docs using composable infra functions.
 
@@ -108,7 +136,13 @@ async def docs_agent_client(
         get_voices_docs(conn),
     )
 
-    # ── Step 3: Assemble response ──────────────────────────────────────
+    # ── Step 3: Page metadata ───────────────────────────────────────────
+    entity_name = None
+    if entity_id is not None:
+        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+    page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
+
+    # ── Step 4: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
     from app.infra.agent_permissions import (
@@ -219,4 +253,5 @@ async def docs_agent_client(
                 description="POST /export — Export agents as denormalized CSV.",
             ),
         ],
+        page_metadata=page_metadata,
     )

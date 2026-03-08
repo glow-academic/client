@@ -20,6 +20,16 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Entry tool docs
 from app.routes.v5.tools.entries.run_pricing.docs import get_run_pricing_docs
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Pricing",
+    list_description="Track AI model usage costs and trends.",
+    detail_title="Pricing",
+    detail_description="View pricing analytics with cost breakdowns.",
+    new_title="Pricing",
+    new_description="View pricing analytics with cost breakdowns.",
+)
 
 
 async def docs_pricing_client(
@@ -27,6 +37,7 @@ async def docs_pricing_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Pricing docs using composable infra functions.
 
@@ -52,6 +63,9 @@ async def docs_pricing_client(
     (run_pricing,) = await asyncio.gather(
         get_run_pricing_docs(conn),
     )
+
+    # ── Page metadata ───────────────────────────────────────────────────
+    page_metadata = compute_docs_metadata(_PAGE_METADATA)
 
     # ── Step 3: Assemble response ──────────────────────────────────────
 
@@ -89,4 +103,5 @@ async def docs_pricing_client(
                 description="POST /export — Export pricing data as CSV/ZIP.",
             ),
         ],
+        page_metadata=page_metadata,
     )

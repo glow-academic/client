@@ -15,6 +15,16 @@ from redis.asyncio import Redis
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Records",
+    list_description="View per-profile performance dashboards.",
+    detail_title="Record",
+    detail_description="View profile performance with attempt history and trends.",
+    new_title="Record",
+    new_description="View profile performance with attempt history and trends.",
+)
 
 
 async def docs_record_client(
@@ -22,6 +32,7 @@ async def docs_record_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Record docs using composable infra functions.
 
@@ -40,6 +51,9 @@ async def docs_record_client(
             status_code=401,
             detail="Profile not found. Please sign in again.",
         )
+
+    # ── Page metadata ───────────────────────────────────────────────────
+    page_metadata = compute_docs_metadata(_PAGE_METADATA)
 
     # -- Step 2: Assemble response ----------------------------------------
 
@@ -72,4 +86,5 @@ async def docs_record_client(
                 description="POST /export — Export record data as CSV/ZIP.",
             ),
         ],
+        page_metadata=page_metadata,
     )

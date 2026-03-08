@@ -20,6 +20,16 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Entry tool docs
 from app.routes.v5.tools.entries.invocation.docs import get_invocation_docs
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Invocations",
+    list_description="View test invocation results and drafts.",
+    detail_title="Invocation",
+    detail_description="View invocation execution details and run history.",
+    new_title="Invocation",
+    new_description="View invocation execution details and run history.",
+)
 
 
 async def docs_invocation_client(
@@ -27,6 +37,7 @@ async def docs_invocation_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Invocation docs using composable infra functions.
 
@@ -52,6 +63,9 @@ async def docs_invocation_client(
     (invocation,) = await asyncio.gather(
         get_invocation_docs(conn),
     )
+
+    # ── Page metadata ───────────────────────────────────────────────────
+    page_metadata = compute_docs_metadata(_PAGE_METADATA)
 
     # ── Step 3: Assemble response ──────────────────────────────────────
 
@@ -84,4 +98,5 @@ async def docs_invocation_client(
                 description="POST /export — Export invocation data as CSV.",
             ),
         ],
+        page_metadata=page_metadata,
     )

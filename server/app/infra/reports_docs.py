@@ -16,6 +16,16 @@ from redis.asyncio import Redis
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.types import ComposedDocsResponse
 from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Reports",
+    list_description="Generate comprehensive performance reports.",
+    detail_title="Reports",
+    detail_description="View report analytics with overview and trends.",
+    new_title="Reports",
+    new_description="View report analytics with overview and trends.",
+)
 
 
 async def docs_reports_client(
@@ -23,6 +33,7 @@ async def docs_reports_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Reports docs using composable infra functions.
 
@@ -41,6 +52,9 @@ async def docs_reports_client(
             status_code=401,
             detail="Profile not found. Please sign in again.",
         )
+
+    # ── Page metadata ───────────────────────────────────────────────────
+    page_metadata = compute_docs_metadata(_PAGE_METADATA)
 
     # -- Step 2: Assemble response ----------------------------------------
 
@@ -107,4 +121,5 @@ async def docs_reports_client(
                 description="POST /export — Export reports data as CSV/ZIP.",
             ),
         ],
+        page_metadata=page_metadata,
     )

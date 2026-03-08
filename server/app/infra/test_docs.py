@@ -20,6 +20,16 @@ from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Entry tool docs
 from app.routes.v5.tools.entries.test.docs import get_test_docs
+from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+
+_PAGE_METADATA = PageMetadataConfig(
+    list_title="Tests",
+    list_description="View benchmark test configurations.",
+    detail_title="Test",
+    detail_description="View test invocations and evaluation results.",
+    new_title="Test",
+    new_description="View test invocations and evaluation results.",
+)
 
 
 async def docs_test_client(
@@ -27,6 +37,7 @@ async def docs_test_client(
     redis: Redis,
     *,
     profile_id: UUID,
+    entity_id: UUID | None = None,
 ) -> ComposedDocsResponse:
     """Test docs using composable infra functions.
 
@@ -50,6 +61,9 @@ async def docs_test_client(
     # -- Step 2: Entry docs fetch -----------------------------------------
 
     test_entry = await get_test_docs(conn)
+
+    # ── Page metadata ───────────────────────────────────────────────────
+    page_metadata = compute_docs_metadata(_PAGE_METADATA)
 
     # -- Step 3: Assemble response ----------------------------------------
 
@@ -88,4 +102,5 @@ async def docs_test_client(
                 description="POST /export — Export test data as CSV/ZIP.",
             ),
         ],
+        page_metadata=page_metadata,
     )
