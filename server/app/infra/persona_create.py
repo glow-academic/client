@@ -61,6 +61,28 @@ class CreatePersonaItem(BaseModel):
     voices: list[str] | None = None
 
 
+class PersonaFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class PersonaResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    persona_id: UUID | None = None
+    message: str
+    errors: list[PersonaFieldError] | None = None
+
+
+class CreatePersonaApiResponse(BaseModel):
+    """Response model for bulk create persona endpoint."""
+
+    results: list[PersonaResultItem]
+
+
 async def create_persona_client(
     conn: asyncpg.Connection,
     redis: Redis,
@@ -79,10 +101,6 @@ async def create_persona_client(
       5. invalidate_tags
     """
     from app.infra.persona_permissions import compute_can_create
-    from app.routes.v5.api.main.persona.types import (
-        CreatePersonaApiResponse,
-        PersonaResultItem,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

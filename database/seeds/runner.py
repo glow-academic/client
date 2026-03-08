@@ -130,21 +130,7 @@ async def _run_persona_seeds(
     persona_defs: list[dict],
 ) -> list[UUID]:
     """Run persona seed definitions through create_persona_client."""
-    # Import persona_create directly (infra layer — no route chain)
-    from app.infra.persona_create import create_persona_client
-
-    # Load persona types from file to avoid triggering main/__init__.py
-    # which imports all routers and cascades into unrelated modules.
-    import importlib.util
-
-    create_path = SERVER_DIR / "app" / "infra" / "persona_create.py"
-    spec = importlib.util.spec_from_file_location(
-        "app.infra.persona_create", str(create_path)
-    )
-    persona_create = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = persona_create
-    spec.loader.exec_module(persona_create)
-    CreatePersonaItem = persona_create.CreatePersonaItem
+    from app.infra.persona_create import CreatePersonaItem, create_persona_client
 
     items = [CreatePersonaItem(**p) for p in persona_defs]
 
@@ -280,39 +266,43 @@ async def main(setup: str = "university") -> None:
     redis_url = f"redis://{redis_host}:{redis_port}/0"
 
     try:
-        conn = await asyncpg.connect(pg_url)
+        pool = await asyncpg.create_pool(pg_url, min_size=2, max_size=10)
 
         # 2. Load schema
         print("Loading schema...")
-        await conn.execute("""
-            CREATE SCHEMA IF NOT EXISTS keycloak;
-            CREATE TABLE IF NOT EXISTS keycloak.org (id text PRIMARY KEY, alias text);
-            CREATE TABLE IF NOT EXISTS keycloak.realm (name text PRIMARY KEY, ssl_required text);
-        """)
-        schema_sql = _filter_meta_commands(_concat_schema(SCHEMA_DIR))
-        await conn.execute(schema_sql)
+        async with pool.acquire() as conn:
+            await conn.execute("""
+                CREATE SCHEMA IF NOT EXISTS keycloak;
+                CREATE TABLE IF NOT EXISTS keycloak.org (id text PRIMARY KEY, alias text);
+                CREATE TABLE IF NOT EXISTS keycloak.realm (name text PRIMARY KEY, ssl_required text);
+            """)
+            schema_sql = _filter_meta_commands(_concat_schema(SCHEMA_DIR))
+            await conn.execute(schema_sql)
         print("  Schema loaded.")
 
         # 3. Load pre-existing modules (disable FK checks like load-modules.sh)
         print("Loading pre-existing modules (01-resources through 10-systems)...")
-        await conn.execute("SET session_replication_role = replica;")
-        modules_sql = _filter_meta_commands(_load_pre_existing_modules())
-        await conn.execute(modules_sql)
-        await conn.execute("SET session_replication_role = DEFAULT;")
+        async with pool.acquire() as conn:
+            await conn.execute("SET session_replication_role = replica;")
+            modules_sql = _filter_meta_commands(_load_pre_existing_modules())
+            await conn.execute(modules_sql)
+            await conn.execute("SET session_replication_role = DEFAULT;")
         print("  Modules loaded.")
 
         # 4. Refresh materialized views
         print("Refreshing materialized views...")
-        unpopulated = await conn.fetch(
-            "SELECT matviewname FROM pg_matviews WHERE NOT ispopulated"
-        )
-        for row in unpopulated:
-            await conn.execute(f'REFRESH MATERIALIZED VIEW "{row["matviewname"]}"')
+        async with pool.acquire() as conn:
+            unpopulated = await conn.fetch(
+                "SELECT matviewname FROM pg_matviews WHERE NOT ispopulated"
+            )
+            for row in unpopulated:
+                await conn.execute(f'REFRESH MATERIALIZED VIEW "{row["matviewname"]}"')
         print(f"  {len(unpopulated)} MVs refreshed.")
 
         # 5. Snapshot existing IDs
         print("Taking pre-seed snapshot...")
-        before = await _snapshot_counts(conn, PERSONA_TABLES)
+        async with pool.acquire() as conn:
+            before = await _snapshot_counts(conn, PERSONA_TABLES)
 
         # 6. Run seeds
         redis_client = Redis.from_url(redis_url)
@@ -332,11 +322,12 @@ async def main(setup: str = "university") -> None:
             )
 
             if module_name == "personas":
-                await _run_persona_seeds(conn, redis_client, mod.personas)
+                await _run_persona_seeds(pool, redis_client, mod.personas)
 
         # 7. Dump new rows
         print("\nDumping seed-created rows...")
-        new_rows = await _dump_new_rows(conn, before, PERSONA_TABLES)
+        async with pool.acquire() as conn:
+            new_rows = await _dump_new_rows(conn, before, PERSONA_TABLES)
 
         total = sum(len(rows) for rows in new_rows.values())
         print(f"  {total} new rows across {len(new_rows)} tables.")
@@ -372,7 +363,7 @@ async def main(setup: str = "university") -> None:
                 print(f"  Wrote {filepath}")
 
         await redis_client.aclose()
-        await conn.close()
+        await pool.close()
 
     finally:
         pg.stop()

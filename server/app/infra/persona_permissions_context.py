@@ -130,7 +130,7 @@ async def resolve_persona_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.persona.types import PersonaFieldError
+    from app.infra.persona_create import PersonaFieldError
 
     errors: list[PersonaFieldError] = []
 

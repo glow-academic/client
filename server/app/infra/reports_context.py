@@ -14,7 +14,7 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.types import ArtifactContext, ResourcePair
-from app.routes.v5.tools.entries.attempt_chat.get import ChatItem
+from app.routes.v5.tools.entries.attempt_chat.types import ChatItem
 from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts

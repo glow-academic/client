@@ -22,7 +22,7 @@ from app.routes.v5.api.main.leaderboard.types import (
     LeaderboardSections,
     LeaderboardSectionStatus,
 )
-from app.routes.v5.tools.entries.attempt_chat.get import ChatItem
+from app.routes.v5.tools.entries.attempt_chat.types import ChatItem
 from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
 from app.routes.v5.tools.entries.attempt_message.types import GetAttemptMessageResponse
 

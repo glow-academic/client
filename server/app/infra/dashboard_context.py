@@ -28,7 +28,7 @@ from app.routes.v5.api.main.dashboard.shared import (
 
 # Entry search tools
 from app.routes.v5.tools.entries.attempt.search import search_attempts
-from app.routes.v5.tools.entries.attempt_chat.get import ChatItem
+from app.routes.v5.tools.entries.attempt_chat.types import ChatItem
 from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
 from app.routes.v5.tools.entries.attempt_feedback.search import (
