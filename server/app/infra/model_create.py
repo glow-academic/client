@@ -11,6 +11,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 from uuid import UUID
+from pydantic import BaseModel
 
 import asyncpg
 from fastapi import HTTPException
@@ -25,6 +26,36 @@ from app.routes.v5.tools.artifacts.model.create import (
     create_model as create_model_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+
+
+class CreateModelItem(BaseModel):
+    """Single model item for create — no model_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    id: UUID | None = None
+
+    # Dual-mode: name
+    name_id: UUID | None = None
+    name: str | None = None
+    # Dual-mode: description
+    description_id: UUID | None = None
+    description: str | None = None
+    # Dual-mode: departments (match by name)
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # ID-only fields
+    flag_ids: list[UUID] | None = None
+    modality_ids: list[UUID] | None = None
+    pricing_ids: list[UUID] | None = None
+    provider_ids: list[UUID] | None = None
+    quality_ids: list[UUID] | None = None
+    reasoning_level_ids: list[UUID] | None = None
+    temperature_level_ids: list[UUID] | None = None
+    value_ids: list[UUID] | None = None
+    voice_ids: list[UUID] | None = None
+    model_ids: list[UUID] | None = None
 
 
 async def create_model_client(

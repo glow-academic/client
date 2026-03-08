@@ -34,8 +34,8 @@ from app.routes.v5.tools.resources.parameters.create import (
 )
 
 if TYPE_CHECKING:
+    from app.infra.parameter_create import CreateParameterItem
     from app.routes.v5.api.main.parameter.types import (
-        CreateParameterItem,
         ParameterFieldError,
         UpdateParameterItem,
     )

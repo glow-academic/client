@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.infra.rubric_create import CreateRubricItem
 
 
 class RubricFlagConfig(BaseModel):
@@ -105,27 +106,6 @@ class RubricResultItem(BaseModel):
 
 # ========== Create Endpoint Types ==========
 
-
-class CreateRubricItem(BaseModel):
-    """Single rubric item for create — no rubric_id."""
-
-    id: UUID | None = None
-
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    active_flag_id: UUID | None = None
-    active_flag: bool | None = None
-    # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    # ID-only fields
-    point_ids: list[UUID] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
 
 
 class CreateRubricApiRequest(BaseModel):

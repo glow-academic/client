@@ -33,8 +33,8 @@ from app.routes.v5.tools.resources.settings.create import (
 )
 
 if TYPE_CHECKING:
+    from app.infra.setting_create import CreateSettingItem
     from app.routes.v5.api.main.setting.types import (
-        CreateSettingItem,
         SettingFieldError,
         UpdateSettingItem,
     )

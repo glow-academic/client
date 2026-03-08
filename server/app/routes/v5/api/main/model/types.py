@@ -14,6 +14,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.infra.model_create import CreateModelItem
 
 # =============================================================================
 # Flag Config
@@ -217,35 +218,6 @@ class ModelResultItem(BaseModel):
 # Create Endpoint Types
 # =============================================================================
 
-
-class CreateModelItem(BaseModel):
-    """Single model item for create — no model_id.
-
-    Required fields (name): provide ID or value.
-    """
-
-    id: UUID | None = None
-
-    # Dual-mode: name
-    name_id: UUID | None = None
-    name: str | None = None
-    # Dual-mode: description
-    description_id: UUID | None = None
-    description: str | None = None
-    # Dual-mode: departments (match by name)
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    # ID-only fields
-    flag_ids: list[UUID] | None = None
-    modality_ids: list[UUID] | None = None
-    pricing_ids: list[UUID] | None = None
-    provider_ids: list[UUID] | None = None
-    quality_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    value_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
 
 
 class CreateModelApiRequest(BaseModel):

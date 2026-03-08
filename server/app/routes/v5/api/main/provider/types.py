@@ -9,6 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.infra.provider_create import CreateProviderItem
 
 
 class ProviderFlagConfig(BaseModel):
@@ -136,27 +137,6 @@ class ProviderResultItem(BaseModel):
 
 # ========== Create Endpoint Types ==========
 
-
-class CreateProviderItem(BaseModel):
-    """Single provider item for create — no provider_id."""
-
-    id: UUID | None = None
-
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    active_flag_id: UUID | None = None
-    active_flag: bool | None = None
-    # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    # ID-only fields
-    endpoint_ids: list[UUID] | None = None
-    key_ids: list[UUID] | None = None
-    value_ids: list[UUID] | None = None
 
 
 class CreateProviderApiRequest(BaseModel):

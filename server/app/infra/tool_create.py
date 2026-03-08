@@ -11,6 +11,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 from uuid import UUID
+from pydantic import BaseModel
 
 import asyncpg
 from fastapi import HTTPException
@@ -25,6 +26,33 @@ from app.routes.v5.tools.artifacts.tool.create import (
     create_tool as create_tool_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+
+
+class CreateToolItem(BaseModel):
+    """Single tool item for create — no tool_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    id: UUID | None = None
+
+    # Dual-mode: name
+    name_id: UUID | None = None
+    name: str | None = None
+    # Dual-mode: description
+    description_id: UUID | None = None
+    description: str | None = None
+    # ID-only fields
+    department_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = None
+    arg_positions_ids: list[UUID] | None = None
+    args_ids: list[UUID] | None = None
+    args_outputs_ids: list[UUID] | None = None
+    artifact_ids: list[UUID] | None = None
+    entry_ids: list[UUID] | None = None
+    operation_ids: list[UUID] | None = None
+    resource_ids: list[UUID] | None = None
+    tool_ids: list[UUID] | None = None
 
 
 async def create_tool_client(

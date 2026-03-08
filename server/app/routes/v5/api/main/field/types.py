@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.resources.parameters.types import GetParameterResponse
+from app.infra.field_create import CreateFieldItem
 
 
 class FieldFlagConfig(BaseModel):
@@ -126,28 +127,6 @@ class FieldResultItem(BaseModel):
 
 # ========== Create Endpoint Types ==========
 
-
-class CreateFieldItem(BaseModel):
-    """Single field item for create — no field_id.
-
-    Required fields (name): provide ID or value.
-    """
-
-    id: UUID | None = None
-
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    # Optional single-select — provide ID only
-    flag_id: UUID | None = None
-    # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    conditional_parameter_ids: list[UUID] | None = None
-    field_ids: list[UUID] | None = None
 
 
 class CreateFieldApiRequest(BaseModel):

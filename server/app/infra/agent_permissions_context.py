@@ -33,9 +33,9 @@ from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
+    from app.infra.agent_create import CreateAgentItem
     from app.routes.v5.api.main.agent.types import (
         AgentFieldError,
-        CreateAgentItem,
         UpdateAgentItem,
     )
 

@@ -12,6 +12,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 from uuid import UUID
+from pydantic import BaseModel
 
 import asyncpg
 from fastapi import HTTPException
@@ -30,6 +31,32 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
+
+
+class CreateAuthItem(BaseModel):
+    """Single auth item for create — no auth_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    id: UUID | None = None
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    slug_id: UUID | None = None
+    # Optional flag
+    active_flag_id: UUID | None = None
+    active_flag: bool | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    protocol_ids: list[UUID] | None = None
+    item_ids: list[UUID] | None = None
+    auth_resource_ids: list[UUID] | None = None
 
 
 async def create_auth_client(

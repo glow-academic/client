@@ -11,6 +11,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 from uuid import UUID
+from pydantic import BaseModel
 
 import asyncpg
 from fastapi import HTTPException
@@ -25,6 +26,35 @@ from app.routes.v5.tools.artifacts.simulation.create import (
     create_simulation as create_simulation_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+
+
+class CreateSimulationItem(BaseModel):
+    """Single simulation item for create — no simulation_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    id: UUID | None = None
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # Multi-select IDs
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+    # Value-based fields for CSV import (match-by-name resolution)
+    is_inactive: bool | None = None
+    is_practice: bool | None = None
+    departments: list[str] | None = None
+    scenarios: list[str] | None = None
 
 
 async def create_simulation_client(

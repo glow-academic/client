@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from uuid import UUID
+from pydantic import BaseModel
 
 import asyncpg
 from fastapi import HTTPException
@@ -28,7 +29,52 @@ from app.routes.v5.tools.artifacts.scenario.create import (
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 if TYPE_CHECKING:
-    from app.routes.v5.api.main.scenario.types import CreateScenarioItem
+
+
+class CreateScenarioItem(BaseModel):
+    """Single scenario item for create — no scenario_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    id: UUID | None = None
+
+    # Dual-mode: provide ID or raw value
+    name_id: UUID | None = None
+    name: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    problem_statement_id: UUID | None = None
+    problem_statement: str | None = None
+    # Flag IDs (individual typed flags)
+    active_flag_id: UUID | None = None
+    objectives_enabled_flag_id: UUID | None = None
+    images_enabled_flag_id: UUID | None = None
+    video_enabled_flag_id: UUID | None = None
+    questions_enabled_flag_id: UUID | None = None
+    problem_statement_enabled_flag_id: UUID | None = None
+    # Multi-select resource IDs
+    department_ids: list[UUID] | None = None
+    persona_ids: list[UUID] | None = None
+    document_ids: list[UUID] | None = None
+    parameter_ids: list[UUID] | None = None
+    parameter_field_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    objective_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
+    # Value-based fields for CSV import (resolved to IDs server-side)
+    active_flag: bool | None = None
+    departments: list[str] | None = None
+    personas: list[str] | None = None
+    documents: list[str] | None = None
+    parameter_fields: list[str] | None = None
+    objectives: list[str] | None = None
+    images: list[str] | None = None
+    videos: list[str] | None = None
+    questions: list[str] | None = None
+    options: list[str] | None = None
 
 
 def _collect_flag_ids(item: CreateScenarioItem) -> list[UUID] | None:

@@ -48,8 +48,8 @@ from app.routes.v5.tools.resources.personas.create import (
 from app.routes.v5.tools.resources.voices.search import search_voices
 
 if TYPE_CHECKING:
+    from app.infra.persona_create import CreatePersonaItem
     from app.routes.v5.api.main.persona.types import (
-        CreatePersonaItem,
         PersonaFieldError,
         UpdatePersonaItem,
     )

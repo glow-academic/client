@@ -12,6 +12,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.infra.document_create import CreateDocumentItem
 
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)
@@ -281,32 +282,6 @@ class DocumentResultItem(BaseModel):
 
 # ========== Create Endpoint Types ==========
 
-
-class CreateDocumentItem(BaseModel):
-    """Single document item for create — no document_id.
-
-    Required fields (name): provide ID or value.
-    """
-
-    id: UUID | None = None
-
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    # Flag — provide ID or boolean
-    flag_id: UUID | None = None
-    is_inactive: bool | None = None
-    # Multi-select — provide IDs or names
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    # Multi-select — IDs only
-    field_ids: list[UUID] | None = None
-    upload_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    text_ids: list[UUID] | None = None
 
 
 class CreateDocumentApiRequest(BaseModel):

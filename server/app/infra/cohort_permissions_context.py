@@ -36,9 +36,9 @@ from app.routes.v5.tools.resources.profiles.search import search_profiles
 from app.routes.v5.tools.resources.simulations.search import search_simulations
 
 if TYPE_CHECKING:
+    from app.infra.cohort_create import CreateCohortItem
     from app.routes.v5.api.main.cohort.types import (
         CohortFieldError,
-        CreateCohortItem,
         UpdateCohortItem,
     )
 

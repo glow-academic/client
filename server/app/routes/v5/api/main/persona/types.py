@@ -11,6 +11,7 @@ from pydantic import BaseModel
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.resources.fields.types import GetFieldResponse
 from app.routes.v5.tools.resources.parameters.types import GetParameterResponse
+from app.infra.persona_create import CreatePersonaItem
 
 # =============================================================================
 # Resource Types (handcrafted — no dependency on app.sql.types)
@@ -451,38 +452,6 @@ class PersonaResultItem(BaseModel):
 
 # ========== Create Endpoint Types ==========
 
-
-class CreatePersonaItem(BaseModel):
-    """Single persona item for create — no persona_id.
-
-    Required fields (name, color, icon, instructions): provide ID or value.
-    """
-
-    id: UUID | None = None
-
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    color_id: UUID | None = None
-    color: str | None = None
-    icon_id: UUID | None = None
-    icon: str | None = None
-    instructions_id: UUID | None = None
-    instructions: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    active_flag_id: UUID | None = None
-    active_flag: bool | None = None
-    # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    parameter_fields: list[str] | None = None
-    example_ids: list[UUID] | None = None
-    examples: list[str] | None = None
-    voice_ids: list[UUID] | None = None
-    voices: list[str] | None = None
 
 
 class CreatePersonaApiRequest(BaseModel):

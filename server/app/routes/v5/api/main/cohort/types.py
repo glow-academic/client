@@ -12,6 +12,7 @@ from pydantic import BaseModel
 
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.resources.personas.types import GetPersonaResponse
+from app.infra.cohort_create import CreateCohortItem
 
 # =============================================================================
 # Resource Types (imported from SQL types for reuse)
@@ -320,35 +321,6 @@ class CohortResultItem(BaseModel):
 # Create Endpoint Types
 # =============================================================================
 
-
-class CreateCohortItem(BaseModel):
-    """Single cohort item for create — no cohort_id.
-
-    Required fields (name): provide ID or value.
-    """
-
-    id: UUID | None = None
-
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    # Single-select flag
-    flag_id: UUID | None = None
-    # Multi-select IDs
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    simulation_position_ids: list[UUID] | None = None
-    simulation_availability_ids: list[UUID] | None = None
-    profile_ids: list[UUID] | None = None
-    profile_persona_ids: list[UUID] | None = None
-    # Value-based fields (for CSV import — resolved to IDs)
-    is_inactive: bool | None = None
-    departments: list[str] | None = None
-    simulations: list[str] | None = None
-    profiles: list[str] | None = None
 
 
 class CreateCohortApiRequest(BaseModel):

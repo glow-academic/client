@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.infra.tool_create import CreateToolItem
 
 
 class ToolFlagConfig(BaseModel):
@@ -130,32 +131,6 @@ class ToolResultItem(BaseModel):
 
 # ========== Create Endpoint Types ==========
 
-
-class CreateToolItem(BaseModel):
-    """Single tool item for create — no tool_id.
-
-    Required fields (name): provide ID or value.
-    """
-
-    id: UUID | None = None
-
-    # Dual-mode: name
-    name_id: UUID | None = None
-    name: str | None = None
-    # Dual-mode: description
-    description_id: UUID | None = None
-    description: str | None = None
-    # ID-only fields
-    department_ids: list[UUID] | None = None
-    flag_ids: list[UUID] | None = None
-    arg_positions_ids: list[UUID] | None = None
-    args_ids: list[UUID] | None = None
-    args_outputs_ids: list[UUID] | None = None
-    artifact_ids: list[UUID] | None = None
-    entry_ids: list[UUID] | None = None
-    operation_ids: list[UUID] | None = None
-    resource_ids: list[UUID] | None = None
-    tool_ids: list[UUID] | None = None
 
 
 class CreateToolApiRequest(BaseModel):

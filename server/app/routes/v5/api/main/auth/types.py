@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.infra.auth_create import CreateAuthItem
 
 
 class AuthFlagConfig(BaseModel):
@@ -126,31 +127,6 @@ class AuthResultItem(BaseModel):
 
 # ========== Create Endpoint Types ==========
 
-
-class CreateAuthItem(BaseModel):
-    """Single auth item for create — no auth_id.
-
-    Required fields (name): provide ID or value.
-    """
-
-    id: UUID | None = None
-
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    slug_id: UUID | None = None
-    # Optional flag
-    active_flag_id: UUID | None = None
-    active_flag: bool | None = None
-    # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    protocol_ids: list[UUID] | None = None
-    item_ids: list[UUID] | None = None
-    auth_resource_ids: list[UUID] | None = None
 
 
 class CreateAuthApiRequest(BaseModel):

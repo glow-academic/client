@@ -34,8 +34,8 @@ from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
+    from app.infra.model_create import CreateModelItem
     from app.routes.v5.api.main.model.types import (
-        CreateModelItem,
         ModelFieldError,
         UpdateModelItem,
     )

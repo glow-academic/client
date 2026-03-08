@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.infra.profile_create import CreateProfileItem
 
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)
@@ -180,23 +181,6 @@ class ProfileResultItem(BaseModel):
 
 # ========== Create Endpoint Types ==========
 
-
-class CreateProfileItem(BaseModel):
-    """Single profile item for create — no profile_id."""
-
-    id: UUID | None = None
-
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide IDs only
-    request_limit_id: UUID | None = None
-    flag_id: UUID | None = None
-    # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    email_ids: list[UUID] | None = None
-    role_ids: list[UUID] | None = None
 
 
 class CreateProfileApiRequest(BaseModel):

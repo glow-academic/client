@@ -9,6 +9,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.infra.eval_create import CreateEvalItem
 
 # ========== Eval-specific resource types ==========
 
@@ -155,29 +156,6 @@ class EvalResultItem(BaseModel):
 
 # ========== Create Endpoint Types ==========
 
-
-class CreateEvalItem(BaseModel):
-    """Single eval item for create — no eval_id.
-
-    Required fields (name): provide ID or value.
-    """
-
-    id: UUID | None = None
-
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    # Multi-select — IDs only (matching get.py junctions)
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    model_ids: list[UUID] | None = None
-    model_flag_ids: list[UUID] | None = None
-    model_rubric_ids: list[UUID] | None = None
-    model_position_ids: list[UUID] | None = None
 
 
 class CreateEvalApiRequest(BaseModel):

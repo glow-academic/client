@@ -11,6 +11,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 from uuid import UUID
+from pydantic import BaseModel
 
 import asyncpg
 from fastapi import HTTPException
@@ -25,6 +26,24 @@ from app.routes.v5.tools.artifacts.profile.create import (
     create_profile as create_profile_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+
+
+class CreateProfileItem(BaseModel):
+    """Single profile item for create — no profile_id."""
+
+    id: UUID | None = None
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide IDs only
+    request_limit_id: UUID | None = None
+    flag_id: UUID | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    email_ids: list[UUID] | None = None
+    role_ids: list[UUID] | None = None
 
 
 async def create_profile_client(

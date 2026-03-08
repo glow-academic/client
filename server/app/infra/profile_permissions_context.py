@@ -31,8 +31,8 @@ from app.routes.v5.tools.resources.profiles.create import (
 )
 
 if TYPE_CHECKING:
+    from app.infra.profile_create import CreateProfileItem
     from app.routes.v5.api.main.profile.types import (
-        CreateProfileItem,
         ProfileFieldError,
         UpdateProfileItem,
     )

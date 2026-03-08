@@ -36,9 +36,9 @@ from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
+    from app.infra.auth_create import CreateAuthItem
     from app.routes.v5.api.main.auth.types import (
         AuthFieldError,
-        CreateAuthItem,
         UpdateAuthItem,
     )
 

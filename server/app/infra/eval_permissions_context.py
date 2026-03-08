@@ -31,8 +31,8 @@ from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
+    from app.infra.eval_create import CreateEvalItem
     from app.routes.v5.api.main.eval.types import (
-        CreateEvalItem,
         EvalFieldError,
         UpdateEvalItem,
     )

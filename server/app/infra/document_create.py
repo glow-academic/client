@@ -11,6 +11,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 from uuid import UUID
+from pydantic import BaseModel
 
 import asyncpg
 from fastapi import HTTPException
@@ -25,6 +26,33 @@ from app.routes.v5.tools.artifacts.document.create import (
     create_document as create_document_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+
+
+class CreateDocumentItem(BaseModel):
+    """Single document item for create — no document_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    id: UUID | None = None
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # Flag — provide ID or boolean
+    flag_id: UUID | None = None
+    is_inactive: bool | None = None
+    # Multi-select — provide IDs or names
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    # Multi-select — IDs only
+    field_ids: list[UUID] | None = None
+    upload_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    text_ids: list[UUID] | None = None
 
 
 async def create_document_client(

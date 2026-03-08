@@ -137,14 +137,14 @@ async def _run_persona_seeds(
     # which imports all routers and cascades into unrelated modules.
     import importlib.util
 
-    types_path = SERVER_DIR / "app" / "routes" / "v5" / "api" / "main" / "persona" / "types.py"
+    create_path = SERVER_DIR / "app" / "infra" / "persona_create.py"
     spec = importlib.util.spec_from_file_location(
-        "app.routes.v5.api.main.persona.types", str(types_path)
+        "app.infra.persona_create", str(create_path)
     )
-    persona_types = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = persona_types
-    spec.loader.exec_module(persona_types)
-    CreatePersonaItem = persona_types.CreatePersonaItem
+    persona_create = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = persona_create
+    spec.loader.exec_module(persona_create)
+    CreatePersonaItem = persona_create.CreatePersonaItem
 
     items = [CreatePersonaItem(**p) for p in persona_defs]
 

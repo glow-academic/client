@@ -33,8 +33,8 @@ from app.routes.v5.tools.resources.tools.create import (
 )
 
 if TYPE_CHECKING:
+    from app.infra.tool_create import CreateToolItem
     from app.routes.v5.api.main.tool.types import (
-        CreateToolItem,
         ToolFieldError,
         UpdateToolItem,
     )

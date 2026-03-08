@@ -11,6 +11,7 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 from uuid import UUID
+from pydantic import BaseModel
 
 import asyncpg
 from fastapi import HTTPException
@@ -25,6 +26,24 @@ from app.routes.v5.tools.artifacts.parameter.create import (
     create_parameter as create_parameter_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
+
+
+class CreateParameterItem(BaseModel):
+    """Single parameter item for create — no parameter_id."""
+
+    id: UUID | None = None
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # Optional multi-select — provide IDs or values
+    department_ids: list[UUID] | None = None
+    departments: list[str] | None = None
+    flag_ids: list[UUID] | None = None
+    field_ids: list[UUID] | None = None
 
 
 async def create_parameter_client(
