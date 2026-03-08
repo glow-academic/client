@@ -57,8 +57,6 @@ interface CommonFlagsProps {
   linkFlagAction?: ((input: LinkFlagsIn) => Promise<LinkFlagsOut>) | undefined;
   /** When false, skip automatic link tracking (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save */
-  registerFlush?: (flush: () => Promise<{ active_flag_id: string | null } | void>) => void;
 }
 
 // Single-flag mode props - uses flag_id (optional) without flag_ids
@@ -93,7 +91,6 @@ export function Flags(props: FlagsProps) {
     onGenerate,
     linkFlagAction,
     isAutosaveEnabled = true,
-    registerFlush,
   } = props;
 
   // Determine mode based on props
@@ -167,12 +164,6 @@ export function Flags(props: FlagsProps) {
       throw error;
     }
   };
-
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Track pending changes for manual save mode
   useEffect(() => {

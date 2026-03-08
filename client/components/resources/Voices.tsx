@@ -22,10 +22,6 @@ import { cn } from "@/lib/utils";
 import { Check, Loader2, Plus, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type FlushResult = { voice_ids: string[] } | void;
-
-type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
-type CreateDraftVoicesOut = OutputOf<"/api/v5/resources/voices", "post">;
 type LinkVoicesIn = InputOf<"/api/v5/resources/voices/link", "post">;
 type LinkVoicesOut = OutputOf<"/api/v5/resources/voices/link", "post">;
 
@@ -54,17 +50,12 @@ export interface VoicesProps {
   required?: boolean;
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
-  createVoicesAction?:
-    | ((input: CreateDraftVoicesIn) => Promise<CreateDraftVoicesOut>)
-    | undefined;
   link_tool_id?: string | null; // Tool ID for linking existing resources
   linkVoicesAction?:
     | ((input: LinkVoicesIn) => Promise<LinkVoicesOut>)
     | undefined;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<FlushResult>) => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
   aiVoiceResources?: Array<{ id?: string | null; voice?: string | null }> | null;
@@ -83,11 +74,9 @@ export function Voices({
   required = false,
   group_id,
   create_tool_id,
-  createVoicesAction,
   link_tool_id,
   linkVoicesAction,
   isAutosaveEnabled = true,
-  registerFlush,
   showAiGenerate = false,
   onGenerate,
 }: VoicesProps) {
@@ -106,81 +95,13 @@ export function Voices({
     accumulate: true,
   });
 
-  // Track which voice IDs have already had resources created
-  const createdVoiceIdsRef = useRef<Set<string>>(new Set());
-
-  // Custom voice creation state
-  const [isAddingVoice, setIsAddingVoice] = useState(false);
-  const [newVoiceValue, setNewVoiceValue] = useState("");
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<FlushResult>) | undefined>(undefined);
-
-  // Initialize createdVoiceIdsRef with current IDs
-  useEffect(() => {
-    ids.forEach((id) => createdVoiceIdsRef.current.add(id));
-  }, [ids]);
-
-  // Helper to create a single voice resource
-  const createVoiceResource = useCallback(
-    async (voiceText: string): Promise<string | null> => {
-      if (!createVoicesAction || !create_tool_id || !group_id) {
-        return null;
-      }
-      const trimmed = voiceText.trim();
-      if (!trimmed) return null;
-
-      try {
-        const result = await createVoicesAction({
-          body: {
-            group_id: group_id,
-            voice: trimmed,
-            mcp: false,
-            tool_id: create_tool_id ?? undefined,
-          },
-        });
-        return result?.voices_id ?? null;
-      } catch {
-        return null;
-      }
-    },
-    [createVoicesAction, create_tool_id, group_id]
-  );
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<FlushResult> => {
-    if (!group_id) {
-      return;
-    }
-
-    // If there's a pending new voice being added, create it
-    if (isAddingVoice && newVoiceValue.trim() && createVoicesAction) {
-      const newId = await createVoiceResource(newVoiceValue.trim());
-      if (newId) {
-        return { voice_ids: [...ids, newId] };
-      }
-    }
-
-    return { voice_ids: ids };
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
-
-  // Build grid items: voice cards + optional "add" card
+  // Build grid items: voice cards
   const gridItems = useMemo<GridItem[]>(() => {
     const items: GridItem[] = allVoices
       .filter((v) => v.id && v.voice)
       .map((v) => ({ type: "voice" as const, id: v.id!, voice: v.voice! }));
-    if (!disabled && createVoicesAction) {
-      items.push({ type: "add" as const });
-    }
     return items;
-  }, [allVoices, disabled, createVoicesAction]);
+  }, [allVoices]);
 
   // Check if a voice is suggested
   const isSuggested = useCallback(
@@ -197,36 +118,8 @@ export function Voices({
     async (selectedIds: string[]) => {
       // Find newly selected IDs
       const newlySelected = selectedIds.filter(
-        (id) => !ids.includes(id) && !createdVoiceIdsRef.current.has(id)
+        (id) => !ids.includes(id)
       );
-
-      // Create resources for newly selected voices (only if autosave is enabled)
-      if (
-        isAutosaveEnabled &&
-        newlySelected.length > 0 &&
-        createVoicesAction &&
-        create_tool_id &&
-        group_id
-      ) {
-        for (const voiceId of newlySelected) {
-          try {
-            const voiceObj = allVoices.find((v) => v.id === voiceId);
-            if (voiceObj?.voice) {
-              await createVoicesAction({
-                body: {
-                  group_id: group_id,
-                  voice: voiceObj.voice,
-                  mcp: false,
-                  tool_id: create_tool_id ?? undefined,
-                },
-              });
-              createdVoiceIdsRef.current.add(voiceId);
-            }
-          } catch {
-            // Don't block UI - still update selection
-          }
-        }
-      }
 
       // Fire link tracking for each newly selected existing resource
       if (newlySelected.length > 0 && linkVoicesAction && group_id && link_tool_id) {
@@ -240,16 +133,12 @@ export function Voices({
       // Update parent state
       onVoiceIdsChange(selectedIds);
     },
-    [ids, onVoiceIdsChange, createVoicesAction, create_tool_id, group_id, allVoices, isAutosaveEnabled, linkVoicesAction, link_tool_id]
+    [ids, onVoiceIdsChange, group_id, linkVoicesAction, link_tool_id]
   );
 
-  // Handle grid card click — multi-select toggle or open custom input
+  // Handle grid card click — multi-select toggle
   const handleGridSelect = useCallback(
     (itemId: string) => {
-      if (itemId === "__add__") {
-        setIsAddingVoice(true);
-        return;
-      }
       const nextIds = ids.includes(itemId)
         ? ids.filter((i) => i !== itemId)
         : [...ids, itemId];
@@ -257,24 +146,6 @@ export function Voices({
     },
     [ids, handleSelect]
   );
-
-  // Handle adding a custom voice
-  const handleAddVoice = useCallback(async () => {
-    const trimmed = newVoiceValue.trim();
-    if (!trimmed) {
-      setIsAddingVoice(false);
-      setNewVoiceValue("");
-      return;
-    }
-    const newId = await createVoiceResource(trimmed);
-    if (!newId) return;
-
-    const nextIds = [...ids, newId];
-    createdVoiceIdsRef.current.add(newId);
-    onVoiceIdsChange(nextIds);
-    setIsAddingVoice(false);
-    setNewVoiceValue("");
-  }, [newVoiceValue, createVoiceResource, ids, onVoiceIdsChange]);
 
   // Check if any voice resource is generated (must be before early return)
   const hasGenerated = useMemo(() => {

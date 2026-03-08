@@ -19,13 +19,10 @@ import {
 } from "@/components/ui/tooltip";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
-import { getColorName } from "@/utils/color-helpers";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-type CreateDraftColorsIn = InputOf<"/api/v5/resources/colors", "post">;
-type CreateDraftColorsOut = OutputOf<"/api/v5/resources/colors", "post">;
 type LinkColorsIn = InputOf<"/api/v5/resources/colors/link", "post">;
 type LinkColorsOut = OutputOf<"/api/v5/resources/colors/link", "post">;
 
@@ -64,17 +61,12 @@ export interface ColorsProps {
   group_id?: string | null; // Group ID for linking resources
   create_tool_id?: string | null; // Tool ID for AI generation/creation
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
-  createColorsAction?:
-    | ((input: CreateDraftColorsIn) => Promise<CreateDraftColorsOut>)
-    | undefined;
   link_tool_id?: string | null; // Tool ID for linking existing resources
   linkColorsAction?:
     | ((input: LinkColorsIn) => Promise<LinkColorsOut>)
     | undefined;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save - returns created ID */
-  registerFlush?: (flush: () => Promise<{ color_id: string | null } | void>) => void;
   // Legacy props for backward compatibility
   colorResource?: {
     id: string;
@@ -112,11 +104,9 @@ export function Colors({
   group_id,
   create_tool_id,
   showAiGenerate = false,
-  createColorsAction,
   link_tool_id,
   linkColorsAction,
   isAutosaveEnabled = true,
-  registerFlush,
   // Legacy props for backward compatibility
   colorResource,
   colorId: _colorId,
@@ -196,76 +186,8 @@ export function Colors({
   // Handle nullable resource properties
   const resourceHexCode = resource?.hex_code ?? null;
   const [internalValue, setInternalValue] = useState(resourceHexCode || "");
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const lastSavedValueRef = useRef<string>(resourceHexCode || "");
   const isInitialMountRef = useRef(true);
-
-  // Ref for flush function (stable reference for registerFlush)
-  const flushRef = useRef<(() => Promise<{ color_id: string | null } | void>) | undefined>(undefined);
-
-  // Update flush function when dependencies change
-  flushRef.current = async (): Promise<{ color_id: string | null } | void> => {
-    // Skip if no color value
-    if (!internalValue) return;
-
-    // Skip if no change AND we already have a resource for this value
-    // (pre-defined colors will have resourceId set via handleChange)
-    if (internalValue === lastSavedValueRef.current && resourceId) {
-      return { color_id: resourceId };
-    }
-
-    const hexCode = internalValue.toLowerCase().startsWith("#")
-      ? internalValue.toLowerCase()
-      : `#${internalValue.toLowerCase()}`;
-
-    // Check if this is a pre-defined color (safety net in case handleChange didn't catch it)
-    if (colors) {
-      const existingColor = colors.find((c) => c.hex_code?.toLowerCase() === hexCode);
-      if (existingColor?.id) {
-        if (onColorIdChange) {
-          onColorIdChange(existingColor.id);
-        }
-        lastSavedValueRef.current = internalValue;
-        return { color_id: existingColor.id };
-      }
-    }
-
-    // Custom color - need to create a resource
-    if (!createColorsAction || !group_id) return;
-
-    try {
-      const colorName = getColorName(hexCode);
-      const result = await createColorsAction({
-        body: {
-          group_id: group_id,
-          name: colorName,
-          description: `Color: ${hexCode}`,
-          hex_code: hexCode,
-          mcp: false,
-          tool_id: create_tool_id ?? undefined,
-        },
-      });
-      if (result.color_id) {
-        if (onColorIdChange) {
-          onColorIdChange(result.color_id);
-        }
-        lastSavedValueRef.current = internalValue;
-        return { color_id: result.color_id };
-      }
-      return { color_id: null };
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to create color resource:", error);
-      throw error;
-    }
-  };
-
-  // Register flush callback with parent
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Update internal value when color_resource changes
   useEffect(() => {
@@ -304,60 +226,6 @@ export function Colors({
       );
     }
   }, [internalValue, isAutosaveEnabled]);
-
-  // Debounced resource creation - only for custom colors not in the pre-defined list
-  useEffect(() => {
-    // Skip if autosave is disabled (manual save mode - flush handles it)
-    if (!isAutosaveEnabled) {
-      return;
-    }
-
-    // Skip on initial mount
-    if (isInitialMountRef.current) {
-      isInitialMountRef.current = false;
-      lastSavedValueRef.current = internalValue;
-      return;
-    }
-
-    // Skip if value hasn't changed
-    if (internalValue === lastSavedValueRef.current) {
-      return;
-    }
-
-    // Skip if no action or empty value
-    if (!createColorsAction || !internalValue) {
-      return;
-    }
-
-    // Skip if this is a pre-defined color with an existing ID
-    // (handleChange already set the ID immediately)
-    if (colors) {
-      const normalizedValue = internalValue.toLowerCase().startsWith("#")
-        ? internalValue.toLowerCase()
-        : `#${internalValue.toLowerCase()}`;
-      const existingColor = colors.find((c) => c.hex_code?.toLowerCase() === normalizedValue);
-      if (existingColor?.id) {
-        lastSavedValueRef.current = internalValue;
-        return;
-      }
-    }
-
-    // Clear existing timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-
-    // Set new timer - only for custom colors that need to be created
-    debounceTimerRef.current = setTimeout(() => {
-      flushRef.current?.();
-    }, 1000);
-
-    return () => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-    };
-  }, [internalValue, createColorsAction, isAutosaveEnabled, colors]);
 
   const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue);
@@ -470,39 +338,6 @@ export function Colors({
         (id) => !ids.includes(id) && !createdColorIdsRef.current.has(id)
       );
 
-      // Create resources for newly selected colors
-      if (
-        newlySelected.length > 0 &&
-        createColorsAction &&
-        group_id
-      ) {
-        for (const colorId of newlySelected) {
-          try {
-            const color = colors?.find((c) => c.id === colorId);
-            if (color?.hex_code) {
-              await createColorsAction({
-                body: {
-                  group_id: group_id,
-                  name: color.name || "Color",
-                  description: color.description || `Color: ${color.hex_code}`,
-                  hex_code: color.hex_code,
-                  mcp: false,
-                  tool_id: create_tool_id ?? undefined,
-                },
-              });
-              createdColorIdsRef.current.add(colorId);
-            }
-          } catch (error) {
-            // eslint-disable-next-line no-console
-            console.error(
-              `Failed to create color resource for ${colorId}:`,
-              error
-            );
-            // Don't block UI - still update selection
-          }
-        }
-      }
-
       // Fire link tracking for each newly selected existing resource
       if (newlySelected.length > 0 && linkColorsAction && group_id && link_tool_id) {
         for (const colorId of newlySelected) {
@@ -517,7 +352,7 @@ export function Colors({
         onChange(selectedIds);
       }
     },
-    [ids, onChange, createColorsAction, group_id, colors, linkColorsAction, link_tool_id]
+    [ids, onChange, group_id, linkColorsAction, link_tool_id]
   );
 
   // Don't render if show_color is false (AFTER all hooks)

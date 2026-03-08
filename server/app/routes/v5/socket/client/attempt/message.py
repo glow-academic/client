@@ -17,11 +17,11 @@ All attempt_* emits go to internal bus → internal/ handlers (DB) → server/ h
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, get_redis_client, sio
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.routes.auth.access import get_access_internal
 from app.routes.v5.socket.client.types import AttemptMessagePayload
 from app.routes.v5.socket.internal.attempt.types import (
     AttemptAssistantStartData,
@@ -131,8 +131,8 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 )
                 return
 
-            access = await get_access_internal(conn, profile_id)
-            profiles_id = access.profiles_id
+            identity = await resolve_profile_identity_context(conn, profile_id, get_redis_client())
+            profiles_id = identity.profiles_id if identity else None
 
             run_result = await create_run(
                 conn,

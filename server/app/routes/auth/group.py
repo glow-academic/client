@@ -7,8 +7,8 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request
 
 from app.infra.auth.group import resolve_group as resolve_group_infra
-from app.infra.globals import get_pool
-from app.routes.auth.access import get_access_internal
+from app.infra.globals import get_pool, get_redis_client
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.auth.types import ResolveGroupApiRequest, ResolveGroupApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -36,14 +36,15 @@ async def resolve_group(
         if profile_id:
             async with pool.acquire() as conn:
                 bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-                access = await get_access_internal(
+                identity = await resolve_profile_identity_context(
                     conn,
-                    profile_id=UUID(profile_id)
+                    UUID(profile_id)
                     if isinstance(profile_id, str)
                     else profile_id,
+                    get_redis_client(),
                     bypass_cache=bypass_cache,
                 )
-                profiles_id = access.profiles_id
+                profiles_id = identity.profiles_id if identity else None
 
         # Delegate to infra
         async with pool.acquire() as conn:

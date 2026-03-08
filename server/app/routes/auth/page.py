@@ -9,8 +9,8 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool
-from app.routes.auth.access import get_access_internal
+from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.auth.route_permissions import (
     compute_available_routes,
     compute_available_sections,
@@ -48,14 +48,21 @@ async def get_auth_page(
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
         pathname = http_request.headers.get("X-Pathname", "")
 
+        if profile_id is None:
+            raise HTTPException(status_code=401, detail="Not authenticated")
+
         pass1_start = time.time()
-        access = await get_access_internal(conn, profile_id, bypass_cache)
+        identity = await resolve_profile_identity_context(
+            conn, profile_id, get_redis_client(), bypass_cache=bypass_cache
+        )
+        if not identity:
+            raise HTTPException(status_code=404, detail="Profile context not found")
         pass1_time = (time.time() - pass1_start) * 1000
 
         # Pure computation — no SQL in Pass 2
         pass2_start = time.time()
 
-        user_artifacts = access.artifacts or []
+        user_artifacts = identity.role_artifacts or []
         available_sections = compute_available_sections(user_artifacts)
         available_routes = compute_available_routes(user_artifacts)
 

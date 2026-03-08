@@ -59,8 +59,6 @@ export interface IconsProps {
   linkIconAction?: ((input: LinkIconsIn) => Promise<LinkIconsOut>) | undefined;
   /** When false, skip automatic link tracking (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save */
-  registerFlush?: (flush: () => Promise<{ icon_id: string | null } | void>) => void;
   // Legacy props for backward compatibility
   iconResource?: IconResourceItem | null;
   iconId?: string | null;
@@ -90,7 +88,6 @@ export function Icons({
   onGenerate,
   linkIconAction,
   isAutosaveEnabled = true,
-  registerFlush,
   // Legacy props for backward compatibility
   iconResource,
   iconId: _iconId,
@@ -150,12 +147,6 @@ export function Icons({
       throw error;
     }
   };
-
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Track pending changes for manual save mode
   useEffect(() => {

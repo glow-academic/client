@@ -55,8 +55,6 @@ export interface DepartmentsProps {
   linkDepartmentAction?: ((input: LinkDepartmentsIn) => Promise<LinkDepartmentsOut>) | undefined;
   /** When false, skip automatic link tracking (manual save mode) */
   isAutosaveEnabled?: boolean;
-  /** Register a flush callback with parent for manual save */
-  registerFlush?: (flush: () => Promise<{ department_ids: string[] } | void>) => void;
   aiDepartmentResources?: Array<{
     department_id?: string | null;
     name?: string | null;
@@ -84,7 +82,6 @@ export function Departments({
   onGenerate,
   linkDepartmentAction,
   isAutosaveEnabled = true,
-  registerFlush,
   aiDepartmentResources: _aiDepartmentResources,
   // Legacy props for backward compatibility
   departmentIds,
@@ -137,12 +134,6 @@ export function Departments({
       throw error;
     }
   };
-
-  useEffect(() => {
-    if (registerFlush) {
-      registerFlush(() => flushRef.current?.() ?? Promise.resolve());
-    }
-  }, [registerFlush]);
 
   // Stable serialization for deps
   const idsKey = ids.join(",");

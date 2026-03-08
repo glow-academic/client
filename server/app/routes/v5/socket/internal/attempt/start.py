@@ -18,10 +18,10 @@ import uuid
 from typing import Any
 
 from app.infra.globals import get_internal_sio, get_redis_client
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.routes.auth.access import get_access_internal
 from app.routes.v5.socket.client.types import AttemptStartPayload
 from app.routes.v5.socket.internal.attempt.types import (
     AttemptErrorData,
@@ -82,8 +82,8 @@ async def attempt_start_handler(data: dict[str, Any]) -> None:
                 # --- Resolution via _internal() calls ---
 
                 # 1. Resolve profiles_resource_id via access internal
-                access = await get_access_internal(conn, profile_id, bypass_cache=True)
-                profiles_resource_id = access.profiles_id
+                identity = await resolve_profile_identity_context(conn, profile_id, get_redis_client(), bypass_cache=True)
+                profiles_resource_id = identity.profiles_id if identity else None
                 if not profiles_resource_id:
                     raise ValueError(
                         f"Profile resource not found for profile_id {profile_id}"

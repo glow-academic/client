@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import uuid
 
-from app.infra.globals import get_internal_sio
+from app.infra.globals import get_internal_sio, get_redis_client
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.routes.auth.access import get_access_internal
 from app.routes.v5.socket.internal.attempt.types import GenerateRequestData
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.runs.create import create_run
@@ -44,8 +44,8 @@ async def emit_chat_generate(
     session_id = uuid.UUID(session_id_str)
 
     async with get_db_connection() as conn:
-        access = await get_access_internal(conn, profile_id)
-        profiles_id = access.profiles_id
+        identity = await resolve_profile_identity_context(conn, profile_id, get_redis_client())
+        profiles_id = identity.profiles_id if identity else None
 
         group_result = await create_group(
             conn,
