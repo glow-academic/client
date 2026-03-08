@@ -1,4 +1,4 @@
-"""Analytics filters endpoint — per-page filter config + MV-backed options.
+"""Analytics filters endpoint — thin route, delegates to infra.
 
 Returns filter field visibility and option lists based on the current page.
 Called alongside context from layout-server.tsx.
@@ -6,7 +6,6 @@ Called alongside context from layout-server.tsx.
 
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass, field
 from typing import Annotated, cast
 from uuid import UUID
@@ -14,20 +13,20 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request
 
-from app.infra.globals import get_db, get_pool
+from app.infra.auth.analytics import (
+    resolve_benchmark_filters,
+    resolve_health_filters,
+    resolve_pricing_filters,
+    resolve_profile_facts_filters,
+)
+from app.infra.globals import get_db, get_pool, get_redis_client
+from app.routes.auth.access import get_access_internal
 from app.routes.auth.types import (
     AnalyticsFilterField,
     AnalyticsFilterFields,
     AnalyticsFilterOption,
     GetAnalyticsFiltersApiResponse,
 )
-from app.sql.types import (
-    GetProfileContextAccessSqlParams,
-    GetProfileContextAccessSqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_ACCESS_PATH = "app/sql/queries/profile/get_profile_context_access_complete.sql"
 
 router = APIRouter()
 
@@ -173,214 +172,6 @@ def get_page_filter_config(pathname: str) -> PageFilterConfig | None:
 
 
 # ---------------------------------------------------------------------------
-# Per-MV fetch functions
-# ---------------------------------------------------------------------------
-
-
-async def fetch_profile_facts_filters(
-    pool: asyncpg.Pool,
-    dept_ids: list[str],
-    cohort_ids: list[str],
-    fields: AnalyticsFilterFields,
-) -> tuple[
-    list[AnalyticsFilterOption],
-    list[AnalyticsFilterOption],
-    str | None,
-    str | None,
-]:
-    """Fetch filter options from attempt_chat_mv."""
-    dept_opts: list[AnalyticsFilterOption] = []
-    cohort_opts: list[AnalyticsFilterOption] = []
-    earliest: str | None = None
-    latest: str | None = None
-
-    if fields.departments.visible and dept_ids:
-        async with pool.acquire() as c:
-            rows = await c.fetch(
-                """
-                SELECT DISTINCT pf.department_id, dr.name
-                FROM attempt_chat_mv pf
-                JOIN departments_resource dr ON dr.id = pf.department_id
-                WHERE pf.department_id = ANY($1::uuid[])
-                ORDER BY dr.name
-                """,
-                [UUID(did) for did in dept_ids],
-            )
-            dept_opts = [
-                AnalyticsFilterOption(value=str(r["department_id"]), label=r["name"])
-                for r in rows
-            ]
-
-    if fields.cohorts.visible and cohort_ids:
-        async with pool.acquire() as c:
-            rows = await c.fetch(
-                """
-                SELECT DISTINCT pf.cohort_id, cr.name
-                FROM attempt_chat_mv pf
-                JOIN cohorts_resource cr ON cr.id = pf.cohort_id
-                WHERE pf.cohort_id = ANY($1::uuid[])
-                ORDER BY cr.name
-                """,
-                [UUID(cid) for cid in cohort_ids],
-            )
-            cohort_opts = [
-                AnalyticsFilterOption(value=str(r["cohort_id"]), label=r["name"])
-                for r in rows
-            ]
-
-    if fields.date_range.visible and dept_ids:
-        async with pool.acquire() as c:
-            row = await c.fetchrow(
-                """
-                SELECT MIN(attempt_date) as earliest,
-                       MAX(attempt_date) as latest
-                FROM attempt_chat_mv
-                WHERE department_id = ANY($1::uuid[])
-                """,
-                [UUID(did) for did in dept_ids],
-            )
-            if row and row["earliest"]:
-                earliest = row["earliest"].isoformat()
-                latest = row["latest"].isoformat()
-
-    return dept_opts, cohort_opts, earliest, latest
-
-
-async def fetch_pricing_filters(
-    pool: asyncpg.Pool,
-    dept_ids: list[str],
-    fields: AnalyticsFilterFields,
-) -> tuple[
-    list[AnalyticsFilterOption],
-    list[AnalyticsFilterOption],
-    str | None,
-    str | None,
-]:
-    """Fetch filter options from pricing MVs.
-
-    Note: pricing MVs don't have department_id — departments are resolved
-    from the user's accessible departments via departments_resource.
-    """
-    dept_opts: list[AnalyticsFilterOption] = []
-    earliest: str | None = None
-    latest: str | None = None
-
-    if fields.departments.visible and dept_ids:
-        async with pool.acquire() as c:
-            rows = await c.fetch(
-                """
-                SELECT id as department_id, name
-                FROM departments_resource
-                WHERE id = ANY($1::uuid[])
-                ORDER BY name
-                """,
-                [UUID(did) for did in dept_ids],
-            )
-            dept_opts = [
-                AnalyticsFilterOption(value=str(r["department_id"]), label=r["name"])
-                for r in rows
-            ]
-
-    if fields.date_range.visible:
-        from app.routes.v5.tools.entries.runs.search import search_runs
-
-        async with pool.acquire() as c_earliest, pool.acquire() as c_latest:
-            (earliest_items, _), (latest_items, _) = await asyncio.gather(
-                search_runs(conn=c_earliest, sort_order="asc", limit=1),
-                search_runs(conn=c_latest, sort_order="desc", limit=1),
-            )
-            if earliest_items:
-                earliest_dt = earliest_items[0].run_created_at
-                if earliest_dt:
-                    earliest = earliest_dt.date().isoformat()
-            if latest_items:
-                latest_dt = latest_items[0].run_created_at
-                if latest_dt:
-                    latest = latest_dt.date().isoformat()
-
-    return dept_opts, [], earliest, latest
-
-
-async def fetch_benchmark_filters(
-    pool: asyncpg.Pool,
-    dept_ids: list[str],
-    fields: AnalyticsFilterFields,
-) -> tuple[
-    list[AnalyticsFilterOption],
-    list[AnalyticsFilterOption],
-    str | None,
-    str | None,
-]:
-    """Fetch filter options from test_mv."""
-    dept_opts: list[AnalyticsFilterOption] = []
-    earliest: str | None = None
-    latest: str | None = None
-
-    if fields.departments.visible and dept_ids:
-        async with pool.acquire() as c:
-            rows = await c.fetch(
-                """
-                SELECT DISTINCT unnest(tm.department_ids) AS department_id, dr.name
-                FROM test_mv tm
-                JOIN departments_resource dr ON dr.id = ANY(tm.department_ids)
-                WHERE tm.department_ids && $1::uuid[]
-                ORDER BY dr.name
-                """,
-                [UUID(did) for did in dept_ids],
-            )
-            dept_id_set = set(dept_ids)
-            seen: set[str] = set()
-            for r in rows:
-                did = str(r["department_id"])
-                if did in dept_id_set and did not in seen:
-                    seen.add(did)
-                    dept_opts.append(AnalyticsFilterOption(value=did, label=r["name"]))
-
-    if fields.date_range.visible:
-        async with pool.acquire() as c:
-            row = await c.fetchrow(
-                """
-                SELECT MIN(test_created_at) AS earliest,
-                       MAX(test_created_at) AS latest
-                FROM test_mv
-                """,
-            )
-            if row and row["earliest"]:
-                earliest = row["earliest"].isoformat()
-                latest = row["latest"].isoformat()
-
-    return dept_opts, [], earliest, latest
-
-
-async def fetch_health_filters(
-    pool: asyncpg.Pool,
-    fields: AnalyticsFilterFields,
-) -> tuple[
-    list[AnalyticsFilterOption],
-    list[AnalyticsFilterOption],
-    str | None,
-    str | None,
-]:
-    """Fetch filter options from health_mv."""
-    earliest: str | None = None
-    latest: str | None = None
-
-    if fields.date_range.visible:
-        async with pool.acquire() as c:
-            row = await c.fetchrow(
-                """
-                SELECT MIN(date_hour) AS earliest, MAX(date_hour) AS latest
-                FROM health_mv
-                """,
-            )
-            if row and row["earliest"]:
-                earliest = row["earliest"].isoformat()
-                latest = row["latest"].isoformat()
-
-    return [], [], earliest, latest
-
-
-# ---------------------------------------------------------------------------
 # HTTP endpoint
 # ---------------------------------------------------------------------------
 
@@ -393,69 +184,94 @@ async def get_analytics_filters(
     http_request: Request,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetAnalyticsFiltersApiResponse | None:
-    """Return per-page analytics filter config and MV-backed options.
-
-    Returns None for pages that don't show analytics filters.
-    """
+    """Return per-page analytics filter config and MV-backed options."""
     pathname = http_request.headers.get("X-Pathname", "")
     config = get_page_filter_config(pathname)
     if config is None:
         return None
 
-    # Re-run the lightweight access SQL to get department_ids, cohort_ids, scoped_roles
     try:
         profile_id = cast(UUID | None, http_request.state.profile_id)
     except AttributeError:
         profile_id = None
 
-    params = GetProfileContextAccessSqlParams(
-        profile_id=profile_id,
-        department_id=None,
-    )
-    access = cast(
-        GetProfileContextAccessSqlRow | None,
-        await execute_sql_typed(conn, SQL_ACCESS_PATH, params=params),
-    )
-    if not access:
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+
+    # Use shared cached access resolver instead of inline SQL
+    try:
+        access = await get_access_internal(conn, profile_id, bypass_cache)
+    except HTTPException:
         return None
 
-    dept_ids = [str(d) for d in (access.department_ids or [])]
-    cohort_ids = [str(c) for c in (access.cohort_ids or [])]
+    dept_ids = list(access.department_ids or [])
+    cohort_ids = list(access.cohort_ids or [])
     scoped_roles = access.scoped_roles or []
 
     pool = get_pool()
     if not pool:
         raise HTTPException(status_code=500, detail="Database pool not available")
 
-    # Dispatch to the appropriate MV fetch function
+    redis = get_redis_client()
+    fields = config.fields
+
+    # Dispatch to the appropriate infra resolver
     if config.mv_source == "profile_facts":
-        dept_opts, cohort_opts, earliest, latest = await fetch_profile_facts_filters(
-            pool, dept_ids, cohort_ids, config.fields
+        result = await resolve_profile_facts_filters(
+            pool,
+            redis,
+            department_ids=dept_ids,
+            cohort_ids=cohort_ids,
+            need_departments=fields.departments.visible,
+            need_cohorts=fields.cohorts.visible,
+            need_date_range=fields.date_range.visible,
+            bypass_cache=bypass_cache,
         )
     elif config.mv_source == "pricing":
-        dept_opts, cohort_opts, earliest, latest = await fetch_pricing_filters(
-            pool, dept_ids, config.fields
+        result = await resolve_pricing_filters(
+            pool,
+            redis,
+            department_ids=dept_ids,
+            need_departments=fields.departments.visible,
+            need_date_range=fields.date_range.visible,
+            bypass_cache=bypass_cache,
         )
     elif config.mv_source == "benchmark":
-        dept_opts, cohort_opts, earliest, latest = await fetch_benchmark_filters(
-            pool, dept_ids, config.fields
+        result = await resolve_benchmark_filters(
+            pool,
+            redis,
+            department_ids=dept_ids,
+            need_departments=fields.departments.visible,
+            need_date_range=fields.date_range.visible,
+            bypass_cache=bypass_cache,
         )
     elif config.mv_source == "health":
-        dept_opts, cohort_opts, earliest, latest = await fetch_health_filters(
-            pool, config.fields
+        result = await resolve_health_filters(
+            pool,
+            need_date_range=fields.date_range.visible,
         )
     else:
-        dept_opts, cohort_opts, earliest, latest = [], [], None, None
+        from app.infra.auth.analytics import AnalyticsFiltersResult
 
-    # Build role options from scoped_roles when visible
-    role_options = scoped_roles if config.fields.roles.visible else []
+        result = AnalyticsFiltersResult()
+
+    # Map infra FilterOption → route AnalyticsFilterOption
+    dept_opts = [
+        AnalyticsFilterOption(value=o.value, label=o.label)
+        for o in result.department_options
+    ]
+    cohort_opts = [
+        AnalyticsFilterOption(value=o.value, label=o.label)
+        for o in result.cohort_options
+    ]
+
+    role_options = scoped_roles if fields.roles.visible else []
 
     return GetAnalyticsFiltersApiResponse(
-        fields=config.fields,
+        fields=fields,
         department_options=dept_opts,
         cohort_options=cohort_opts,
         role_options=role_options,
         attempt_options=config.attempt_options,
-        date_range_earliest=earliest,
-        date_range_latest=latest,
+        date_range_earliest=result.date_range_earliest,
+        date_range_latest=result.date_range_latest,
     )

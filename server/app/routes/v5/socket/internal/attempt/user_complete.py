@@ -13,7 +13,7 @@ from app.infra.globals import get_internal_sio
 from app.infra.websocket.get_db_connection import get_db_connection
 from app.routes.v5.socket.internal.attempt.types import AttemptUserCompleteData
 from app.routes.v5.tools.entries.attempt_content.create import (
-    create_attempt_content_entry_internal,
+    create_attempt_content as create_attempt_content_entry_internal,
 )
 from app.routes.v5.tools.entries.attempt_message_completion.create import (
     create_attempt_message_completion,

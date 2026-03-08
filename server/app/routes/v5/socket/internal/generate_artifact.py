@@ -52,55 +52,11 @@ internal_sio = get_internal_sio()
 logger = logging.getLogger(__name__)
 
 
-class ModelConfig(BaseModel):
-    """Model configuration for token factory."""
-
-    model: str
-    api_key: str | None = None
-    base_url: str | None = None
-    temperature: float | None = None
-    reasoning: str | None = None
-    provider: str | None = None
-    voice: str | None = None
-    quality: str | None = None
-    length_seconds: int | None = None
-    response_format: dict[str, Any] | None = None
-    tool_choice: str | ToolChoice | None = None
-    extra_body: dict[str, Any] | None = None
-
-
-class GenerateArtifactPayload(BaseModel):
-    """Payload for generate_artifact internal event."""
-
-    sid: str | None = None
-    run_id: str
-    group_id: str | None = None
-    modality: str = "text"
-    artifact_type: str | None = None
-    resource_type: str | None = None
-    resource_types: list[str] | None = None
-    resource_id: str | None = None
-    messages: list[dict[str, Any]]
-    llm_config: ModelConfig
-    tools: list[dict[str, Any]] | None = None
-    tool_timeout_seconds: float = 60.0
-    file_path: str | None = None
-    # save: bool removed — all results are soft-created, promoted later
-    mime_type: str | None = None
-    file_size: int | None = None
-    upload_id: str | None = None
-    chat_id: str | None = None  # For audio session store, never emitted externally
-    metadata: dict[str, Any] | None = (
-        None  # Opaque passthrough — domain handlers read this
-    )
-    # Artifact tool support: needed to re-fetch context and re-render developer messages
-    profile_id: str | None = None
-    profiles_id: str | None = None
-    session_id: str | None = None
-    artifact_id: str | None = None
-    draft_id: str | None = None
-    developer_instruction_templates: list[str] | None = None
-    agent_id: str | None = None
+# Re-exported from infra — canonical location is app.infra.websocket.generation_types
+from app.infra.websocket.generation_types import (
+    GenerateArtifactPayload as GenerateArtifactPayload,
+    ModelConfig as ModelConfig,
+)
 
 
 _extract_template_var = extract_template_var
