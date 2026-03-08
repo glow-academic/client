@@ -1,71 +1,30 @@
-"""Benchmark artifact documentation."""
+"""Benchmark docs endpoint — composable infra architecture."""
 
-from typing import Any
+from typing import Annotated
 
-from fastapi import APIRouter
+import asyncpg
+from fastapi import APIRouter, Depends, Request, Response
+from redis.asyncio import Redis
 
-from app.utils.docs_helper import (
-    ArtifactDocsConfig,
-    DocsApiRequest,
-    DocsApiResponse,
-    PageMetadataConfig,
-    build_artifact_docs_static,
-    compute_docs_metadata,
-)
-
-CONFIG = ArtifactDocsConfig(
-    name="benchmark",
-    plural_name="benchmarks",
-    entity_type="analytics",
-    api_routing={
-        "base_path": "/api/v5/benchmark",
-        "endpoints": {
-            "get": {
-                "path": "/get",
-                "method": "POST",
-                "description": "Get benchmark data for an eval",
-            },
-            "refresh": {
-                "path": "/refresh",
-                "method": "POST",
-                "description": "Refresh benchmark materialized views",
-            },
-        },
-    },
-    glow_context={
-        "description": "Benchmarks provide evaluation-level analytics for comparing agent performance across test runs.",
-        "use_cases": [
-            "Running automated benchmark tests",
-            "Comparing agent performance across evals",
-            "Tracking benchmark progress and results",
-            "Viewing test summaries and scores",
-        ],
-        "related_concepts": [
-            "Evals - Benchmarks are run against evals",
-            "Tests - Benchmarks contain individual test cases",
-            "Agents - Benchmarks compare agent performance",
-        ],
-    },
-    page_metadata=PageMetadataConfig(
-        list_title="Benchmark",
-        list_description="Run and manage evaluations for teaching assistant training platform. Execute benchmark tests, analyze performance metrics, and evaluate system effectiveness for educational institutions and L&D programs.",
-        detail_title="Benchmark",
-        detail_description="Benchmark evaluation for teaching assistant training platform. View benchmark results and performance metrics.",
-        new_title="New Benchmark",
-        new_description="Create a new benchmark evaluation for teaching assistant training platform. Execute benchmark tests and analyze performance metrics.",
-    ),
-)
+from app.infra.benchmark_docs import docs_benchmark_client
+from app.infra.docs.types import ComposedDocsResponse
+from app.infra.globals import get_db, get_redis
 
 router = APIRouter()
 
 
-@router.post("/docs", response_model=DocsApiResponse)
+@router.post("/docs", response_model=ComposedDocsResponse)
 async def get_benchmark_docs_endpoint(
-    request: DocsApiRequest,
-) -> DocsApiResponse:
-    return compute_docs_metadata(CONFIG.page_metadata)
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> ComposedDocsResponse:
+    """Get composed documentation for the benchmark analytics."""
+    profile_id = http_request.state.profile_id
 
-
-def get_benchmarks_docs() -> dict[str, Any]:
-    """Get benchmark documentation (static portions only, for MCP)."""
-    return build_artifact_docs_static(CONFIG)
+    return await docs_benchmark_client(
+        conn,
+        redis,
+        profile_id=profile_id,
+    )

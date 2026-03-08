@@ -1,56 +1,25 @@
-"""Health artifact documentation."""
+"""Health docs endpoint — composable infra architecture."""
 
-from typing import Any
+from typing import Annotated
 
-from fastapi import APIRouter
+import asyncpg
+from fastapi import APIRouter, Depends, Request, Response
+from redis.asyncio import Redis
 
-from app.utils.docs_helper import (
-    ArtifactDocsConfig,
-    build_artifact_docs_static,
-)
-
-CONFIG = ArtifactDocsConfig(
-    name="health",
-    plural_name="health",
-    entity_type="analytics",
-    api_routing={
-        "base_path": "/api/v5/health",
-        "endpoints": {
-            "get": {
-                "path": "/get",
-                "method": "POST",
-                "description": "Get health metrics and service status",
-            },
-            "refresh": {
-                "path": "/refresh",
-                "method": "POST",
-                "description": "Refresh health materialized views",
-            },
-        },
-    },
-    glow_context={
-        "description": "Health provides system health monitoring including service status, error rates, and performance metrics.",
-        "use_cases": [
-            "Monitoring system health and uptime",
-            "Tracking error rates and latency",
-            "Viewing service-level metrics",
-            "Detecting performance degradation",
-        ],
-        "related_concepts": [
-            "Dashboard - Health metrics feed into dashboard",
-            "Pricing - Health includes cost monitoring",
-        ],
-    },
-)
+from app.infra.docs.types import ComposedDocsResponse
+from app.infra.globals import get_db, get_redis
+from app.infra.health_docs import docs_health_client
 
 router = APIRouter()
 
 
-@router.post("/docs")
-async def get_health_docs_endpoint() -> dict[str, Any]:
-    return build_artifact_docs_static(CONFIG)
-
-
-def get_health_docs_static() -> dict[str, Any]:
-    """Get health documentation (static portions only, for MCP)."""
-    return build_artifact_docs_static(CONFIG)
+@router.post("/docs", response_model=ComposedDocsResponse)
+async def get_health_docs_endpoint(
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> ComposedDocsResponse:
+    """Get composed documentation for the health analytics."""
+    profile_id = http_request.state.profile_id
+    return await docs_health_client(conn, redis, profile_id=profile_id)

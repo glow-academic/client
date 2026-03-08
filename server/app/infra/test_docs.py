@@ -1,0 +1,91 @@
+"""Test docs logic — composable infra architecture.
+
+Composes existing black-box tool docs:
+  1. resolve_profile_identity_context — profile (role, departments)
+  2. Entry tool docs — test entry documentation
+  3. Permission functions — introspected via get_operation_info
+  4. API operations — all public route handlers introspected
+"""
+
+from __future__ import annotations
+
+from uuid import UUID
+
+import asyncpg
+from redis.asyncio import Redis
+
+from app.infra.docs.get_operation_info import get_operation_info
+from app.infra.docs.types import ComposedDocsResponse
+from app.infra.profile_identity_context import resolve_profile_identity_context
+
+# Entry tool docs
+from app.routes.v5.tools.entries.test.docs import get_test_docs
+
+
+async def docs_test_client(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
+    profile_id: UUID,
+) -> ComposedDocsResponse:
+    """Test docs using composable infra functions.
+
+    Flow:
+      1. resolve_profile_identity_context -> profile check
+      2. Parallel: entry docs fetch
+      3. Assemble ComposedDocsResponse with permissions + API operations
+    """
+    from fastapi import HTTPException
+
+    # -- Step 1: Profile context ------------------------------------------
+
+    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+
+    if profile is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
+        )
+
+    # -- Step 2: Entry docs fetch -----------------------------------------
+
+    test_entry = await get_test_docs(conn)
+
+    # -- Step 3: Assemble response ----------------------------------------
+
+    # Lazy imports to avoid circular dependencies
+    from app.routes.v5.api.main.test.archive import archive_test_artifacts
+    from app.routes.v5.api.main.test.export import export_test
+    from app.routes.v5.api.main.test.get import get_test_artifact
+    from app.routes.v5.api.main.test.permissions import compute_test_status
+
+    return ComposedDocsResponse(
+        name="test",
+        type="analytics",
+        description=(
+            "Test analytics provides detailed views of benchmark test "
+            "configurations including invocations, runs, and evaluation results."
+        ),
+        entries=[test_entry],
+        resources=[],
+        permissions=[
+            get_operation_info(
+                compute_test_status,
+                description="Compute a minimal status label from chat completion counts.",
+            ),
+        ],
+        api_operations=[
+            get_operation_info(
+                get_test_artifact,
+                description="POST /get — Get a single test artifact with invocations.",
+            ),
+            get_operation_info(
+                archive_test_artifacts,
+                description="POST /archive — Archive completed tests.",
+            ),
+            get_operation_info(
+                export_test,
+                description="POST /export — Export test data as CSV/ZIP.",
+            ),
+        ],
+    )

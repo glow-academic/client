@@ -1,0 +1,104 @@
+"""Leaderboard docs logic — composable infra architecture.
+
+Composes existing black-box tool docs:
+  1. resolve_profile_identity_context — profile (role, departments)
+  2. Permission functions — introspected via get_operation_info
+  3. API operations — all public route handlers introspected
+"""
+
+from __future__ import annotations
+
+from uuid import UUID
+
+import asyncpg
+from redis.asyncio import Redis
+
+from app.infra.docs.get_operation_info import get_operation_info
+from app.infra.docs.types import ComposedDocsResponse
+from app.infra.profile_identity_context import resolve_profile_identity_context
+
+
+async def docs_leaderboard_client(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
+    profile_id: UUID,
+) -> ComposedDocsResponse:
+    """Leaderboard docs using composable infra functions.
+
+    Flow:
+      1. resolve_profile_identity_context → profile check
+      2. Assemble ComposedDocsResponse with permissions + API operations
+    """
+    from fastapi import HTTPException
+
+    # ── Step 1: Profile context ────────────────────────────────────────
+
+    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+
+    if profile is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
+        )
+
+    # ── Step 2: Assemble response ──────────────────────────────────────
+
+    # Lazy imports to avoid circular dependencies
+    from app.routes.v5.api.main.leaderboard.export import export_leaderboard
+    from app.routes.v5.api.main.leaderboard.get import get_leaderboard
+    from app.routes.v5.api.main.leaderboard.list import list_leaderboard
+    from app.routes.v5.api.main.leaderboard.permissions import (
+        build_leaderboard_rows,
+        build_leaderboard_sections,
+        compute_accolade_winners,
+        compute_message_stats,
+    )
+    from app.routes.v5.api.main.leaderboard.refresh import leaderboard_refresh
+
+    return ComposedDocsResponse(
+        name="leaderboard",
+        type="analytics",
+        description=(
+            "Leaderboard analytics ranks user performance with accolades, "
+            "comparative metrics, and historical tracking across simulations."
+        ),
+        entries=[],
+        resources=[],
+        permissions=[
+            get_operation_info(
+                build_leaderboard_rows,
+                description="Build ranked leaderboard data rows from MV slices.",
+            ),
+            get_operation_info(
+                compute_accolade_winners,
+                description="Compute accolade winners from leaderboard data rows.",
+            ),
+            get_operation_info(
+                build_leaderboard_sections,
+                description="Build leaderboard sections with status and metrics.",
+            ),
+            get_operation_info(
+                compute_message_stats,
+                description="Compute message-level statistics for leaderboard entries.",
+            ),
+        ],
+        api_operations=[
+            get_operation_info(
+                get_leaderboard,
+                description="POST /get — Get leaderboard rankings and accolades.",
+            ),
+            get_operation_info(
+                list_leaderboard,
+                description="POST /list — List leaderboard history entries.",
+            ),
+            get_operation_info(
+                leaderboard_refresh,
+                description="POST /refresh — Refresh leaderboard materialized views.",
+            ),
+            get_operation_info(
+                export_leaderboard,
+                description="POST /export — Export leaderboard data as CSV/ZIP.",
+            ),
+        ],
+    )

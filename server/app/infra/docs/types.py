@@ -55,7 +55,7 @@ class ComposedDocsResponse(BaseModel):
     name: str
     type: str
     description: str
-    artifact: DocsResponse
+    artifact: DocsResponse | None = None
     entries: list[DocsResponse]
     resources: list[DocsResponse]
     permissions: list[OperationInfo]

@@ -1,70 +1,25 @@
-"""Test artifact documentation."""
+"""Test docs endpoint — composable infra architecture."""
 
-from typing import Any
+from typing import Annotated
 
-from fastapi import APIRouter
+import asyncpg
+from fastapi import APIRouter, Depends, Request, Response
+from redis.asyncio import Redis
 
-from app.routes.v5.api.main.test import permissions
-from app.utils.docs_helper import (
-    ArtifactDocsConfig,
-    build_artifact_docs_static,
-)
-
-CONFIG = ArtifactDocsConfig(
-    name="test",
-    plural_name="tests",
-    entity_type="artifact",
-    table_name="test_artifact",
-    junction_prefix="test",
-    fk_pattern="test_%",
-    permissions_module=permissions,
-    permission_functions=[
-        "compute_test_status",
-    ],
-    api_routing={
-        "base_path": "/api/v5/test",
-        "endpoints": {
-            "get": {
-                "path": "/get",
-                "method": "POST",
-                "description": "Get a single test with full detail",
-            },
-            "list": {
-                "path": "/list",
-                "method": "POST",
-                "description": "List tests with filters",
-            },
-            "archive": {
-                "path": "/archive",
-                "method": "POST",
-                "description": "Archive a test",
-            },
-        },
-    },
-    glow_context={
-        "description": "Tests represent individual benchmark test cases within evals, tracking automated test execution and results.",
-        "use_cases": [
-            "Running individual benchmark tests",
-            "Tracking test pass/fail status",
-            "Viewing test execution details",
-            "Archiving completed tests",
-        ],
-        "related_concepts": [
-            "Benchmarks - Tests belong to benchmark runs",
-            "Evals - Tests are defined within evals",
-            "Agents - Tests evaluate agent performance",
-        ],
-    },
-)
+from app.infra.docs.types import ComposedDocsResponse
+from app.infra.globals import get_db, get_redis
+from app.infra.test_docs import docs_test_client
 
 router = APIRouter()
 
 
-@router.post("/docs")
-async def get_test_docs_endpoint() -> dict[str, Any]:
-    return build_artifact_docs_static(CONFIG)
-
-
-def get_tests_docs() -> dict[str, Any]:
-    """Get test documentation (static portions only, for MCP)."""
-    return build_artifact_docs_static(CONFIG)
+@router.post("/docs", response_model=ComposedDocsResponse)
+async def get_test_docs_endpoint(
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> ComposedDocsResponse:
+    """Get composed documentation for the test analytics."""
+    profile_id = http_request.state.profile_id
+    return await docs_test_client(conn, redis, profile_id=profile_id)

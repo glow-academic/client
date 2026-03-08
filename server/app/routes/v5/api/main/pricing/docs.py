@@ -1,72 +1,25 @@
-"""Pricing artifact documentation."""
+"""Pricing docs endpoint — composable infra architecture."""
 
-from typing import Any
+from typing import Annotated
 
-from fastapi import APIRouter
+import asyncpg
+from fastapi import APIRouter, Depends, Request, Response
+from redis.asyncio import Redis
 
-from app.utils.docs_helper import (
-    ArtifactDocsConfig,
-    DocsApiRequest,
-    DocsApiResponse,
-    PageMetadataConfig,
-    build_artifact_docs_static,
-    compute_docs_metadata,
-)
-
-CONFIG = ArtifactDocsConfig(
-    name="pricing",
-    plural_name="pricing",
-    entity_type="analytics",
-    api_routing={
-        "base_path": "/api/v5/pricing",
-        "endpoints": {
-            "get": {
-                "path": "/get",
-                "method": "POST",
-                "description": "Get pricing data and cost analytics",
-            },
-            "refresh": {
-                "path": "/refresh",
-                "method": "POST",
-                "description": "Refresh pricing materialized views",
-            },
-        },
-    },
-    glow_context={
-        "description": "Pricing provides cost analytics and usage tracking for AI model runs, including per-run, group, and daily aggregations.",
-        "use_cases": [
-            "Tracking AI model usage costs",
-            "Viewing cost breakdowns by group and run",
-            "Monitoring daily cost trends",
-            "Analyzing cost per department",
-        ],
-        "related_concepts": [
-            "Models - Pricing tracks costs per model",
-            "Providers - Pricing is organized by provider",
-            "Groups - Pricing aggregates at group level",
-            "Dashboard - Pricing feeds into dashboard cost metrics",
-        ],
-    },
-    page_metadata=PageMetadataConfig(
-        list_title="Pricing",
-        list_description="Manage pricing and subscription plans for GLOW teaching assistant training platform. Configure access levels, feature sets, and billing options for educational institutions and learning and development programs.",
-        detail_title="Pricing",
-        detail_description="Pricing details for teaching assistant training platform. View cost analytics and billing information.",
-        new_title="New Pricing",
-        new_description="Configure new pricing for teaching assistant training platform.",
-    ),
-)
+from app.infra.docs.types import ComposedDocsResponse
+from app.infra.globals import get_db, get_redis
+from app.infra.pricing_docs import docs_pricing_client
 
 router = APIRouter()
 
 
-@router.post("/docs", response_model=DocsApiResponse)
+@router.post("/docs", response_model=ComposedDocsResponse)
 async def get_pricing_docs_endpoint(
-    request: DocsApiRequest,
-) -> DocsApiResponse:
-    return compute_docs_metadata(CONFIG.page_metadata)
-
-
-def get_pricing_docs_static() -> dict[str, Any]:
-    """Get pricing documentation (static portions only, for MCP)."""
-    return build_artifact_docs_static(CONFIG)
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> ComposedDocsResponse:
+    """Get composed documentation for the pricing analytics."""
+    profile_id = http_request.state.profile_id
+    return await docs_pricing_client(conn, redis, profile_id=profile_id)

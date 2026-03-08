@@ -1,59 +1,25 @@
-"""Group artifact documentation."""
+"""Group docs endpoint — composable infra architecture."""
 
-from typing import Any
+from typing import Annotated
 
-from fastapi import APIRouter
+import asyncpg
+from fastapi import APIRouter, Depends, Request, Response
+from redis.asyncio import Redis
 
-from app.utils.docs_helper import (
-    ArtifactDocsConfig,
-    build_artifact_docs_static,
-)
-
-CONFIG = ArtifactDocsConfig(
-    name="group",
-    plural_name="groups",
-    entity_type="artifact",
-    table_name="group_artifact",
-    junction_prefix="group",
-    fk_pattern="group_%",
-    api_routing={
-        "base_path": "/api/v5/group",
-        "endpoints": {
-            "get": {
-                "path": "/get",
-                "method": "POST",
-                "description": "Get a single group by ID",
-            },
-            "list": {
-                "path": "/list",
-                "method": "POST",
-                "description": "List groups with filters",
-            },
-        },
-    },
-    glow_context={
-        "description": "Groups represent collections of simulation runs organized for evaluation and tracking purposes.",
-        "use_cases": [
-            "Organizing simulation runs into groups",
-            "Tracking group-level performance metrics",
-            "Viewing group details and member runs",
-        ],
-        "related_concepts": [
-            "Evals - Groups belong to evals",
-            "Sessions - Groups contain sessions",
-            "Pricing - Group-level pricing aggregation",
-        ],
-    },
-)
+from app.infra.docs.types import ComposedDocsResponse
+from app.infra.globals import get_db, get_redis
+from app.infra.group_docs import docs_group_client
 
 router = APIRouter()
 
 
-@router.post("/docs")
-async def get_group_docs_endpoint() -> dict[str, Any]:
-    return build_artifact_docs_static(CONFIG)
-
-
-def get_groups_docs() -> dict[str, Any]:
-    """Get group documentation (static portions only, for MCP)."""
-    return build_artifact_docs_static(CONFIG)
+@router.post("/docs", response_model=ComposedDocsResponse)
+async def get_group_docs_endpoint(
+    http_request: Request,
+    response: Response,
+    conn: Annotated[asyncpg.Connection, Depends(get_db)],
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> ComposedDocsResponse:
+    """Get composed documentation for the group analytics."""
+    profile_id = http_request.state.profile_id
+    return await docs_group_client(conn, redis, profile_id=profile_id)

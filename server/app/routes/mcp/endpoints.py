@@ -43,7 +43,7 @@ def _get_handler(module_path: str, func_name: str) -> Any:
 ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     "activity": {
         "get": ("app.routes.v5.api.main.activity.get", "get_activity"),
-        "docs": ("app.routes.v5.api.main.activity.docs", "get_activity_docs_static"),
+        "docs": ("app.infra.activity_docs", "docs_activity_client"),
         "refresh": ("app.routes.v5.api.main.activity.refresh", "activity_refresh"),
     },
     # "agent": {
@@ -57,7 +57,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     "attempt": {
         "get": ("app.routes.v5.api.main.attempt.get", "attempt_get"),
-        "docs": ("app.routes.v5.api.main.attempt.docs", "get_attempts_docs"),
+        "docs": ("app.infra.attempt_docs", "docs_attempt_client"),
     },
     # "auth": {
     #     "get": ("app.routes.v5.api.main.auth.get", "get_auth"),
@@ -71,7 +71,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     "benchmark": {
         "get": ("app.routes.v5.api.main.benchmark.get", "benchmark_bundle_get"),
         "refresh": ("app.routes.v5.api.main.benchmark.refresh", "benchmark_refresh"),
-        "docs": ("app.routes.v5.api.main.benchmark.docs", "get_benchmarks_docs"),
+        "docs": ("app.infra.benchmark_docs", "docs_benchmark_client"),
     },
     "cohort": {
         "get": ("app.routes.v5.api.main.cohort.get", "get_cohort"),
@@ -95,7 +95,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
             "get_dashboard_secondary",
         ),
         "refresh": ("app.routes.v5.api.main.dashboard.refresh", "dashboard_refresh"),
-        "docs": ("app.routes.v5.api.main.dashboard.docs", "get_dashboard_docs_static"),
+        "docs": ("app.infra.dashboard_docs", "docs_dashboard_client"),
     },
     # "department": {
     #     "get": ("app.routes.v5.api.main.department.get", "get_department"),
@@ -138,12 +138,12 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     # },
     "group": {
         "get": ("app.routes.v5.api.main.group.get", "get_group"),
-        "docs": ("app.routes.v5.api.main.group.docs", "get_groups_docs"),
+        "docs": ("app.infra.group_docs", "docs_group_client"),
     },
     # "health": {
     #     "get": ("app.routes.v5.api.main.health.get", "get_health"),
     #     "refresh": ("app.routes.v5.api.main.health.refresh", "health_refresh"),
-    #     "docs": ("app.routes.v5.api.main.health.docs", "get_health_docs_static"),
+    #     "docs": ("app.infra.health_docs", "docs_health_client"),
     # },
     "leaderboard": {
         "get": ("app.routes.v5.api.main.leaderboard.get", "get_leaderboard"),
@@ -151,10 +151,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
             "app.routes.v5.api.main.leaderboard.refresh",
             "leaderboard_refresh",
         ),
-        "docs": (
-            "app.routes.v5.api.main.leaderboard.docs",
-            "get_leaderboard_docs_static",
-        ),
+        "docs": ("app.infra.leaderboard_docs", "docs_leaderboard_client"),
     },
     # "model": {
     #     "get": ("app.routes.v5.api.main.model.get", "get_model"),
@@ -189,7 +186,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     "pricing": {
         "get": ("app.routes.v5.api.main.pricing.get", "get_pricing"),
         "refresh": ("app.routes.v5.api.main.pricing.refresh", "pricing_refresh"),
-        "docs": ("app.routes.v5.api.main.pricing.docs", "get_pricing_docs_static"),
+        "docs": ("app.infra.pricing_docs", "docs_pricing_client"),
     },
     # "profile": {
     #     "get": ("app.routes.v5.api.main.profile.get", "get_profile"),
@@ -212,7 +209,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     "reports": {
         "get": ("app.routes.v5.api.main.reports.get", "get_reports"),
         "refresh": ("app.routes.v5.api.main.reports.refresh", "reports_refresh"),
-        "docs": ("app.routes.v5.api.main.reports.docs", "get_reports_docs_static"),
+        "docs": ("app.infra.reports_docs", "docs_reports_client"),
     },
     # "rubric": {
     #     "get": ("app.routes.v5.api.main.rubric.get", "get_rubric"),
@@ -237,7 +234,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     "session": {
         "get": ("app.routes.v5.api.main.session.get", "get_session"),
-        "docs": ("app.routes.v5.api.main.session.docs", "get_sessions_docs"),
+        "docs": ("app.infra.session_docs", "docs_session_client"),
     },
     # "setting": {
     #     "get": ("app.routes.v5.api.main.setting.get", "get_setting"),
@@ -262,7 +259,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     },
     # "test": {
     #     "get": ("app.routes.v5.api.main.test.get", "get_test_artifact"),
-    #     "docs": ("app.routes.v5.api.main.test.docs", "get_tests_docs"),
+    #     "docs": ("app.infra.test_docs", "docs_test_client"),
     # },
     # "tool": {
     #     "get": ("app.routes.v5.api.main.tool.get", "get_tool"),
@@ -278,7 +275,7 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
         "list": ("app.routes.v5.api.main.chat.list", "chat_get"),
         "draft": ("app.routes.v5.api.main.chat.draft", "patch_chat_draft"),
         "refresh": ("app.routes.v5.api.main.chat.refresh", "chat_refresh"),
-        "docs": ("app.routes.v5.api.main.chat.docs", "get_chat_docs_static"),
+        "docs": ("app.infra.chat_docs", "docs_chat_client"),
     },
 }
 

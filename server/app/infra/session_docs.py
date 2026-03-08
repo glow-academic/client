@@ -1,0 +1,79 @@
+"""Session docs logic — composable infra architecture.
+
+Composes existing black-box tool docs:
+  1. resolve_profile_identity_context — profile (role, departments)
+  2. Entry tool docs — sessions entry documentation
+  3. API operations — all public route handlers introspected
+"""
+
+from __future__ import annotations
+
+from uuid import UUID
+
+import asyncpg
+from redis.asyncio import Redis
+
+from app.infra.docs.get_operation_info import get_operation_info
+from app.infra.docs.types import ComposedDocsResponse
+from app.infra.profile_identity_context import resolve_profile_identity_context
+
+# Entry tool docs
+from app.routes.v5.tools.entries.sessions.docs import get_sessions_docs
+
+
+async def docs_session_client(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
+    profile_id: UUID,
+) -> ComposedDocsResponse:
+    """Session docs using composable infra functions.
+
+    Flow:
+      1. resolve_profile_identity_context -> profile check
+      2. Parallel: entry docs fetch
+      3. Assemble ComposedDocsResponse with API operations
+    """
+    from fastapi import HTTPException
+
+    # -- Step 1: Profile context ------------------------------------------
+
+    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+
+    if profile is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
+        )
+
+    # -- Step 2: Entry docs fetch -----------------------------------------
+
+    sessions = await get_sessions_docs(conn)
+
+    # -- Step 3: Assemble response ----------------------------------------
+
+    # Lazy imports to avoid circular dependencies
+    from app.routes.v5.api.main.session.export import export_session
+    from app.routes.v5.api.main.session.get import get_session
+
+    return ComposedDocsResponse(
+        name="session",
+        type="analytics",
+        description=(
+            "Session analytics provides detailed views of simulation sessions "
+            "including timelines, group results, and run history."
+        ),
+        entries=[sessions],
+        resources=[],
+        permissions=[],
+        api_operations=[
+            get_operation_info(
+                get_session,
+                description="POST /get — Get a single session with timeline and groups.",
+            ),
+            get_operation_info(
+                export_session,
+                description="POST /export — Export session data as CSV/ZIP.",
+            ),
+        ],
+    )
