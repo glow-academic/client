@@ -62,51 +62,6 @@ CREATE TABLE public.attempt_chat_images_connection (
 
 --
 
--- Name: attempt_chat_rubrics_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_chat_rubrics_connection (
-    attempt_chat_id uuid CONSTRAINT chat_resolved_rubrics_connection_chat_resolved_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT chat_resolved_rubrics_connection_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT chat_resolved_rubrics_connection_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT chat_resolved_rubrics_connection_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT chat_resolved_rubrics_connection_mcp_not_null NOT NULL,
-    rubrics_id uuid NOT NULL
-);
-
-
---
-
--- Name: attempt_profiles_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_profiles_connection (
-    attempt_id uuid NOT NULL,
-    profiles_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
-);
-
-
---
-
--- Name: attempt_chat_names_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_chat_names_connection (
-    attempt_chat_id uuid NOT NULL,
-    names_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
-);
-
-
---
-
 -- Name: attempt_chat_objectives_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -137,51 +92,6 @@ CREATE TABLE public.attempt_chat_options_connection (
 
 --
 
--- Name: attempt_chat_parameter_fields_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_chat_parameter_fields_connection (
-    attempt_chat_id uuid CONSTRAINT chat_resolved_parameter_fields_connec_chat_resolved_id_not_null NOT NULL,
-    parameter_fields_id uuid CONSTRAINT chat_resolved_parameter_fields_con_parameter_fields_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT chat_resolved_parameter_fields_connection_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT chat_resolved_parameter_fields_connection_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT chat_resolved_parameter_fields_connection_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT chat_resolved_parameter_fields_connection_mcp_not_null NOT NULL
-);
-
-
---
-
--- Name: attempt_chat_parameters_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_chat_parameters_connection (
-    attempt_chat_id uuid CONSTRAINT chat_resolved_parameters_connection_chat_resolved_id_not_null NOT NULL,
-    parameters_id uuid CONSTRAINT chat_resolved_parameters_connection_parameters_id_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT chat_resolved_parameters_connection_created_at_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT chat_resolved_parameters_connection_active_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT chat_resolved_parameters_connection_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT chat_resolved_parameters_connection_mcp_not_null NOT NULL
-);
-
-
---
-
--- Name: attempt_chat_personas_connection; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.attempt_chat_personas_connection (
-    attempt_chat_id uuid NOT NULL,
-    personas_id uuid NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    generated boolean DEFAULT false NOT NULL,
-    mcp boolean DEFAULT false NOT NULL
-);
-
-
---
-
 -- Name: attempt_chat_problem_statements_connection; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -207,6 +117,21 @@ CREATE TABLE public.attempt_chat_questions_connection (
     active boolean DEFAULT true CONSTRAINT chat_resolved_questions_connection_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT chat_resolved_questions_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT chat_resolved_questions_connection_mcp_not_null NOT NULL
+);
+
+
+--
+
+-- Name: attempt_chat_rubrics_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_chat_rubrics_connection (
+    attempt_chat_id uuid CONSTRAINT chat_resolved_rubrics_connection_chat_resolved_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT chat_resolved_rubrics_connection_created_at_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT chat_resolved_rubrics_connection_active_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT chat_resolved_rubrics_connection_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT chat_resolved_rubrics_connection_mcp_not_null NOT NULL,
+    rubrics_id uuid NOT NULL
 );
 
 
@@ -252,6 +177,81 @@ CREATE TABLE public.attempt_chat_videos_connection (
     active boolean DEFAULT true CONSTRAINT chat_resolved_videos_connection_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT chat_resolved_videos_connection_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT chat_resolved_videos_connection_mcp_not_null NOT NULL
+);
+
+
+--
+
+-- Name: attempt_profiles_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_profiles_connection (
+    attempt_id uuid NOT NULL,
+    profiles_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+
+-- Name: attempt_chat_names_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_chat_names_connection (
+    attempt_chat_id uuid NOT NULL,
+    names_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
+);
+
+
+--
+
+-- Name: attempt_chat_parameter_fields_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_chat_parameter_fields_connection (
+    attempt_chat_id uuid CONSTRAINT chat_resolved_parameter_fields_connec_chat_resolved_id_not_null NOT NULL,
+    parameter_fields_id uuid CONSTRAINT chat_resolved_parameter_fields_con_parameter_fields_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT chat_resolved_parameter_fields_connection_created_at_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT chat_resolved_parameter_fields_connection_active_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT chat_resolved_parameter_fields_connection_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT chat_resolved_parameter_fields_connection_mcp_not_null NOT NULL
+);
+
+
+--
+
+-- Name: attempt_chat_parameters_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_chat_parameters_connection (
+    attempt_chat_id uuid CONSTRAINT chat_resolved_parameters_connection_chat_resolved_id_not_null NOT NULL,
+    parameters_id uuid CONSTRAINT chat_resolved_parameters_connection_parameters_id_not_null NOT NULL,
+    created_at timestamp with time zone DEFAULT now() CONSTRAINT chat_resolved_parameters_connection_created_at_not_null NOT NULL,
+    active boolean DEFAULT true CONSTRAINT chat_resolved_parameters_connection_active_not_null NOT NULL,
+    generated boolean DEFAULT false CONSTRAINT chat_resolved_parameters_connection_generated_not_null NOT NULL,
+    mcp boolean DEFAULT false CONSTRAINT chat_resolved_parameters_connection_mcp_not_null NOT NULL
+);
+
+
+--
+
+-- Name: attempt_chat_personas_connection; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.attempt_chat_personas_connection (
+    attempt_chat_id uuid NOT NULL,
+    personas_id uuid NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    generated boolean DEFAULT false NOT NULL,
+    mcp boolean DEFAULT false NOT NULL
 );
 
 

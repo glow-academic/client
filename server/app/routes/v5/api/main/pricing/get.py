@@ -149,7 +149,9 @@ async def get_pricing(
         for p in pricing_list:
             if p.id:
                 pricing_map[p.id] = {
-                    "price": Decimal(str(p.price)) if p.price is not None else Decimal("0"),
+                    "price": Decimal(str(p.price))
+                    if p.price is not None
+                    else Decimal("0"),
                     "unit_value": p.unit_value or 1,
                 }
 

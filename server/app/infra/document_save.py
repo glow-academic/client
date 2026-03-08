@@ -142,9 +142,7 @@ async def resolve_document_values(
     # --- Validate required fields ---
 
     if item.name_id is None:
-        errors.append(
-            SaveDocumentFieldError(field="name", message="Name is required")
-        )
+        errors.append(SaveDocumentFieldError(field="name", message="Name is required"))
 
     return errors
 

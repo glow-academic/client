@@ -123,9 +123,7 @@ async def resolve_eval_values(
     # --- Validate required fields ---
 
     if item.name_id is None:
-        errors.append(
-            SaveEvalFieldError(field="name", message="Name is required")
-        )
+        errors.append(SaveEvalFieldError(field="name", message="Name is required"))
 
     return errors
 

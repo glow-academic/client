@@ -10,8 +10,8 @@ from typing import Annotated
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_redis_client
 from app.infra.document_duplicate import duplicate_document_client
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.main.document.types import (
     DuplicateDocumentApiRequest,
     DuplicateDocumentApiResponse,

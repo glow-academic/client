@@ -42,7 +42,12 @@ async def _setup(conn, profile_id):
         conn, call_id=call2.id, group_id=group.id, chat_id=chat.id
     )
     result = await create_attempt_chat_completion(
-        conn, chat_id=attempt_chat.id, call_id=call2.id, stop=False, error=False, message=""
+        conn,
+        chat_id=attempt_chat.id,
+        call_id=call2.id,
+        stop=False,
+        error=False,
+        message="",
     )
     return result, attempt_chat
 
@@ -70,7 +75,9 @@ async def test_pagination_limit(conn, profile_id):
     result, attempt_chat = await _setup(conn, profile_id)
     await refresh_attempt_chat_completion(conn)
 
-    items = await search_attempt_chat_completions(conn, chat_ids=[attempt_chat.id], limit=1)
+    items = await search_attempt_chat_completions(
+        conn, chat_ids=[attempt_chat.id], limit=1
+    )
 
     assert len(items) <= 1
 

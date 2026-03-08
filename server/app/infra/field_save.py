@@ -119,9 +119,7 @@ async def resolve_field_values(
 
     if not is_update:
         if item.name_id is None:
-            errors.append(
-                SaveFieldFieldError(field="name", message="Name is required")
-            )
+            errors.append(SaveFieldFieldError(field="name", message="Name is required"))
 
     return errors
 

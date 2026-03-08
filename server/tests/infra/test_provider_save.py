@@ -230,9 +230,7 @@ class TestSaveProviderClientCreate:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_provider_client(
-                conn, redis, profile_id=uuid4(), items=[item]
-            )
+            await save_provider_client(conn, redis, profile_id=uuid4(), items=[item])
 
         assert exc_info.value.status_code == 403
 
@@ -310,9 +308,7 @@ class TestSaveProviderClientUpdate:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_provider_client(
-                conn, redis, profile_id=uuid4(), items=[item]
-            )
+            await save_provider_client(conn, redis, profile_id=uuid4(), items=[item])
 
         assert exc_info.value.status_code == 404
 
@@ -335,9 +331,7 @@ class TestSaveProviderClientUpdate:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_provider_client(
-                conn, redis, profile_id=uuid4(), items=[item]
-            )
+            await save_provider_client(conn, redis, profile_id=uuid4(), items=[item])
 
         assert exc_info.value.status_code == 403
 
@@ -381,8 +375,6 @@ class TestSaveProviderClientValidation:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_provider_client(
-                conn, redis, profile_id=uuid4(), items=[]
-            )
+            await save_provider_client(conn, redis, profile_id=uuid4(), items=[])
 
         assert exc_info.value.status_code == 401

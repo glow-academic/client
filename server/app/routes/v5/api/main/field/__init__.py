@@ -7,14 +7,14 @@ from app.routes.v5.api.main.field.docs import router as docs_router
 from app.routes.v5.api.main.field.draft import router as draft_router
 from app.routes.v5.api.main.field.duplicate import router as duplicate_router
 from app.routes.v5.api.main.field.get import router as get_router
-from app.routes.v5.api.main.field.list import router as list_router
 from app.routes.v5.api.main.field.save import router as save_router
+from app.routes.v5.api.main.field.search import router as search_router
 
 router = APIRouter(prefix="/fields", tags=["fields"])
 
 # Include all endpoint routers
 router.include_router(get_router)
-router.include_router(list_router)
+router.include_router(search_router)
 router.include_router(save_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)

@@ -8,14 +8,14 @@ from app.routes.v5.api.main.simulation.draft import router as draft_router
 from app.routes.v5.api.main.simulation.duplicate import router as duplicate_router
 from app.routes.v5.api.main.simulation.export import router as export_router
 from app.routes.v5.api.main.simulation.get import router as get_router
-from app.routes.v5.api.main.simulation.list import router as list_router
 from app.routes.v5.api.main.simulation.save import router as save_router
+from app.routes.v5.api.main.simulation.search import router as search_router
 
 router = APIRouter(prefix="/simulations", tags=["simulations"])
 
 # Include all endpoint routers
 router.include_router(get_router)
-router.include_router(list_router)
+router.include_router(search_router)
 router.include_router(save_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)

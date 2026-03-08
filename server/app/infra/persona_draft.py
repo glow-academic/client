@@ -134,7 +134,9 @@ async def patch_persona_draft_client(
             session_id=session_id,
             version=new_version,
             name_ids=[request.name_id] if request.name_id else None,
-            description_ids=[request.description_id] if request.description_id else None,
+            description_ids=[request.description_id]
+            if request.description_id
+            else None,
             color_ids=[request.color_id] if request.color_id else None,
             icon_ids=[request.icon_id] if request.icon_id else None,
             instruction_ids=[request.instructions_id]

@@ -44,19 +44,23 @@ CREATE MATERIALIZED VIEW public.attempt_message_mv AS
                  LIMIT 1) sa_archive ON (true))
           WHERE ((m.active = true) AND (c.active = true) AND (a.active = true) AND (COALESCE(sa_archive.archived, false) = false) AND (m.role = ANY (ARRAY['user'::public.message_type, 'assistant'::public.message_type])))
         )
- SELECT message_id,
-    chat_id,
-    attempt_id,
+ SELECT bm.message_id,
+    bm.chat_id,
+    bm.attempt_id,
         CASE
-            WHEN (role = 'user'::public.message_type) THEN 'query'::text
+            WHEN (bm.role = 'user'::public.message_type) THEN 'query'::text
             ELSE 'response'::text
         END AS type,
-    created_at,
-    completed,
-    text_id,
-    history_file_path,
-    audio_id
-   FROM base_messages bm
+    bm.created_at,
+    bm.completed,
+    bm.text_id,
+    bm.history_file_path,
+    bm.audio_id,
+    tree.parent_id AS parent_message_id,
+    (row_number() OVER (PARTITION BY COALESCE(tree.parent_id, bm.chat_id) ORDER BY bm.created_at, bm.message_id))::integer AS sibling_index,
+    (count(*) OVER (PARTITION BY COALESCE(tree.parent_id, bm.chat_id)))::integer AS sibling_count
+   FROM (base_messages bm
+     LEFT JOIN public.attempt_message_tree_entry tree ON (((tree.child_id = bm.message_id) AND (tree.active = true))))
   WITH NO DATA;
 
 

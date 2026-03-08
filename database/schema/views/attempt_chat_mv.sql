@@ -45,6 +45,62 @@ CREATE MATERIALIZED VIEW public.attempt_chat_mv AS
            FROM public.attempt_chat_documents_connection acdc
           WHERE (acdc.active = true)
           GROUP BY acdc.attempt_chat_id
+        ), chat_problem_statements AS (
+         SELECT DISTINCT ON (acpsc.attempt_chat_id) acpsc.attempt_chat_id AS chat_id,
+            acpsc.problem_statements_id AS problem_statement_id
+           FROM public.attempt_chat_problem_statements_connection acpsc
+          WHERE (acpsc.active = true)
+          ORDER BY acpsc.attempt_chat_id, acpsc.created_at DESC
+        ), chat_objectives AS (
+         SELECT acoc.attempt_chat_id AS chat_id,
+            array_agg(DISTINCT acoc.objectives_id) FILTER (WHERE (acoc.objectives_id IS NOT NULL)) AS objective_ids
+           FROM public.attempt_chat_objectives_connection acoc
+          WHERE (acoc.active = true)
+          GROUP BY acoc.attempt_chat_id
+        ), chat_questions AS (
+         SELECT acqc.attempt_chat_id AS chat_id,
+            array_agg(DISTINCT acqc.questions_id) FILTER (WHERE (acqc.questions_id IS NOT NULL)) AS question_ids
+           FROM public.attempt_chat_questions_connection acqc
+          WHERE (acqc.active = true)
+          GROUP BY acqc.attempt_chat_id
+        ), chat_options AS (
+         SELECT acoptc.attempt_chat_id AS chat_id,
+            array_agg(DISTINCT acoptc.options_id) FILTER (WHERE (acoptc.options_id IS NOT NULL)) AS option_ids
+           FROM public.attempt_chat_options_connection acoptc
+          WHERE (acoptc.active = true)
+          GROUP BY acoptc.attempt_chat_id
+        ), chat_images AS (
+         SELECT acic.attempt_chat_id AS chat_id,
+            array_agg(DISTINCT acic.images_id) FILTER (WHERE (acic.images_id IS NOT NULL)) AS image_ids
+           FROM public.attempt_chat_images_connection acic
+          WHERE (acic.active = true)
+          GROUP BY acic.attempt_chat_id
+        ), chat_videos AS (
+         SELECT acvc.attempt_chat_id AS chat_id,
+            array_agg(DISTINCT acvc.videos_id) FILTER (WHERE (acvc.videos_id IS NOT NULL)) AS video_ids
+           FROM public.attempt_chat_videos_connection acvc
+          WHERE (acvc.active = true)
+          GROUP BY acvc.attempt_chat_id
+        ), chat_standard_groups AS (
+         SELECT acsgc.attempt_chat_id AS chat_id,
+            array_agg(DISTINCT acsgc.standard_groups_id) FILTER (WHERE (acsgc.standard_groups_id IS NOT NULL)) AS standard_group_ids
+           FROM public.attempt_chat_standard_groups_connection acsgc
+          WHERE (acsgc.active = true)
+          GROUP BY acsgc.attempt_chat_id
+        ), chat_standards AS (
+         SELECT acsc.attempt_chat_id AS chat_id,
+            array_agg(DISTINCT acsc.standards_id) FILTER (WHERE (acsc.standards_id IS NOT NULL)) AS standard_ids
+           FROM public.attempt_chat_standards_connection acsc
+          WHERE (acsc.active = true)
+          GROUP BY acsc.attempt_chat_id
+        ), chat_time_limits AS (
+         SELECT DISTINCT ON (cstlc.chat_id) cstlc.chat_id,
+            stlr.time_limit_seconds,
+            stlr.negative
+           FROM (public.chat_scenario_time_limits_connection cstlc
+             JOIN public.scenario_time_limits_resource stlr ON ((stlr.id = cstlc.scenario_time_limits_id)))
+          WHERE ((cstlc.active = true) AND (stlr.active = true))
+          ORDER BY cstlc.chat_id, cstlc.created_at DESC
         )
  SELECT c.id AS chat_id,
     ac.attempt_id,
@@ -74,8 +130,25 @@ CREATE MATERIALIZED VIEW public.attempt_chat_mv AS
         END AS attempt_type,
     COALESCE(sa_archive.archived, false) AS is_archived,
     COALESCE(a.infinite_mode, false) AS infinite_mode,
-    cd.document_ids
-   FROM (((((((((((((((((public.attempt_chat_entry c
+    cd.document_ids,
+    COALESCE(tb.copy_paste_allowed, true) AS copy_paste_allowed,
+    COALESCE(tb.text_enabled, true) AS text_enabled,
+    COALESCE(tb.audio_enabled, true) AS audio_enabled,
+    COALESCE(tb.hints_enabled, true) AS hints_enabled,
+    COALESCE(tb.show_images, true) AS show_images,
+    COALESCE(tb.show_objectives, true) AS show_objectives,
+    COALESCE(tb.show_problem_statement, true) AS show_problem_statement,
+    COALESCE(ctl.time_limit_seconds, 0) AS time_limit_seconds,
+    COALESCE(ctl.negative, false) AS negative,
+    cps.problem_statement_id,
+    cobj.objective_ids,
+    cq.question_ids,
+    copt.option_ids,
+    cimg.image_ids,
+    cvid.video_ids,
+    csg.standard_group_ids,
+    cstd.standard_ids
+   FROM (((((((((((((((((((((((((((public.attempt_chat_entry c
      JOIN public.attempt_chat_bridge_entry ac ON ((ac.attempt_chat_id = c.id)))
      JOIN public.attempt_entry a ON ((a.id = ac.attempt_id)))
      JOIN public.attempt_profiles_connection apc ON (((apc.attempt_id = a.id) AND (apc.active = true))))
@@ -97,6 +170,16 @@ CREATE MATERIALIZED VIEW public.attempt_chat_mv AS
           WHERE ((attempt_archive_entry.attempt_id = a.id) AND (attempt_archive_entry.active = true))
           ORDER BY attempt_archive_entry.created_at DESC
          LIMIT 1) sa_archive ON (true))
+     LEFT JOIN public.chat_entry tb ON ((tb.id = c.chat_id)))
+     LEFT JOIN chat_time_limits ctl ON ((ctl.chat_id = c.chat_id)))
+     LEFT JOIN chat_problem_statements cps ON ((cps.chat_id = c.id)))
+     LEFT JOIN chat_objectives cobj ON ((cobj.chat_id = c.id)))
+     LEFT JOIN chat_questions cq ON ((cq.chat_id = c.id)))
+     LEFT JOIN chat_options copt ON ((copt.chat_id = c.id)))
+     LEFT JOIN chat_images cimg ON ((cimg.chat_id = c.id)))
+     LEFT JOIN chat_videos cvid ON ((cvid.chat_id = c.id)))
+     LEFT JOIN chat_standard_groups csg ON ((csg.chat_id = c.id)))
+     LEFT JOIN chat_standards cstd ON ((cstd.chat_id = c.id)))
   WHERE ((c.active = true) AND (a.active = true))
   WITH NO DATA;
 

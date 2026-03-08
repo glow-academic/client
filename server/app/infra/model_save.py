@@ -120,9 +120,7 @@ async def resolve_model_values(
 
     if not is_update:
         if item.name_id is None and item.name is None:
-            errors.append(
-                SaveModelFieldError(field="name", message="Name is required")
-            )
+            errors.append(SaveModelFieldError(field="name", message="Name is required"))
 
     return errors
 
@@ -210,9 +208,7 @@ async def save_model_client(
 
     for idx, item in enumerate(items):
         if item.input_model_id is not None:
-            perms = await resolve_model_permissions_context(
-                conn, item.input_model_id
-            )
+            perms = await resolve_model_permissions_context(conn, item.input_model_id)
             if not perms.exists:
                 raise HTTPException(
                     status_code=404,

@@ -13,19 +13,10 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.routes.v5.api.main.types import InternalResponseBase
-from app.routes.v5.tools.entries.attempt.get import (
-    AttemptMessageViewItem as MessageViewItem,
-)
-from app.routes.v5.tools.entries.attempt.get import ChatViewItem
+from app.routes.v5.tools.entries.attempt.types import GetAttemptResponse
+from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
+from app.routes.v5.tools.entries.attempt_message.types import GetAttemptMessageResponse
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetModelsV4Item,
-    QGetProvidersV4Item,
-)
-from app.sql.types import (
-    QGetAttemptListViewV4Item as AttemptViewItem,
-)
 
 # =============================================================================
 # Attempt detail endpoint types (client-facing)
@@ -501,7 +492,7 @@ class AttemptResources(BaseModel):
 class AttemptEntries(BaseModel):
     """Entry payloads grouped by entry type."""
 
-    attempt: list[AttemptViewItem] | None = None
+    attempt: list[GetAttemptResponse] | None = None
     attempt_chat: list[ChatData] | None = None
     attempt_message: list[MessageData] | None = None
     runs: GetRunListViewResponse | None = None
@@ -653,9 +644,9 @@ class AttemptInternalData:
     agent_ids: dict[str, UUID | None] = field(default_factory=dict)
 
     # Raw MV results
-    attempt_item: AttemptViewItem | None = None
-    chats_result: list[ChatViewItem] | None = None
-    messages_result: list[MessageViewItem] | None = None
+    attempt_item: GetAttemptResponse | None = None
+    chats_result: list[GetAttemptChatResponse] | None = None
+    messages_result: list[GetAttemptMessageResponse] | None = None
 
     # Resource metadata (raw lookup dict)
     resource_meta: dict[str, dict[UUID, dict]] = field(default_factory=dict)
@@ -678,11 +669,6 @@ class AttemptInternalData:
     should_show_controls: bool = False
     rubric_structure: RubricStructureData | None = None
     continuation_options: AvailableContinuationOptions | None = None
-
-    # Config resources (from group -> config chain)
-    config_agent_resources: list[QGetAgentsV4Item] | None = None
-    config_model_resources: list[QGetModelsV4Item] | None = None
-    config_provider_resources: list[QGetProvidersV4Item] | None = None
 
 
 # =============================================================================

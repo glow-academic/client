@@ -35,3 +35,22 @@ class GetAttemptChatResponse(BaseModel):
     is_archived: bool | None
     infinite_mode: bool | None
     document_ids: list[UUID] | None
+    # Training config flags
+    copy_paste_allowed: bool | None = None
+    text_enabled: bool | None = None
+    audio_enabled: bool | None = None
+    hints_enabled: bool | None = None
+    show_images: bool | None = None
+    show_objectives: bool | None = None
+    show_problem_statement: bool | None = None
+    time_limit_seconds: int | None = None
+    negative: bool | None = None
+    # Resource ID arrays
+    problem_statement_id: UUID | None = None
+    objective_ids: list[UUID] | None = None
+    question_ids: list[UUID] | None = None
+    option_ids: list[UUID] | None = None
+    image_ids: list[UUID] | None = None
+    video_ids: list[UUID] | None = None
+    standard_group_ids: list[UUID] | None = None
+    standard_ids: list[UUID] | None = None

@@ -1105,5 +1105,3 @@ class DuplicateScenarioSqlRow(BaseModel):
     scenario_id: UUID | None = None
     scenario_name: str | None = None
     actor_name: str | None = None
-
-

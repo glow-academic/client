@@ -456,9 +456,15 @@ class ListPersonaApiResponse(BaseModel):
 
     actor_name: str | None = None
     personas: list[ListPersonaApiPersona] | None = None
+    # Core filters
     scenario_filter: ListFilterSection | None = None
     field_filter: ListFilterSection | None = None
     department_filter: ListFilterSection | None = None
+    # Bulk edit filters
+    color_filter: ListFilterSection | None = None
+    icon_filter: ListFilterSection | None = None
+    voice_filter: ListFilterSection | None = None
+    instruction_filter: ListFilterSection | None = None
     total_count: int | None = None
     import_fields: list[ImportField] | None = None
 

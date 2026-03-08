@@ -98,7 +98,9 @@ async def list_pricing(
         for p in pricing_list:
             if p.id:
                 pricing_map[p.id] = {
-                    "price": Decimal(str(p.price)) if p.price is not None else Decimal("0"),
+                    "price": Decimal(str(p.price))
+                    if p.price is not None
+                    else Decimal("0"),
                     "unit_value": p.unit_value or 1,
                 }
 
@@ -143,9 +145,15 @@ async def list_pricing(
             stats["total_cost"] += run_cost
 
             if run.run_created_at:
-                if stats["first_run_at"] is None or run.run_created_at < stats["first_run_at"]:
+                if (
+                    stats["first_run_at"] is None
+                    or run.run_created_at < stats["first_run_at"]
+                ):
                     stats["first_run_at"] = run.run_created_at
-                if stats["last_run_at"] is None or run.run_created_at > stats["last_run_at"]:
+                if (
+                    stats["last_run_at"] is None
+                    or run.run_created_at > stats["last_run_at"]
+                ):
                     stats["last_run_at"] = run.run_created_at
             if run.agent_ids:
                 stats["agent_ids"].update(run.agent_ids)
@@ -160,8 +168,12 @@ async def list_pricing(
 
             agent_id_list = list(stats.get("agent_ids", set()))
             model_id_list = list(stats.get("model_ids", set()))
-            a_names = [name_map[aid] for aid in agent_id_list if aid in name_map] or None
-            m_names = [name_map[mid] for mid in model_id_list if mid in name_map] or None
+            a_names = [
+                name_map[aid] for aid in agent_id_list if aid in name_map
+            ] or None
+            m_names = [
+                name_map[mid] for mid in model_id_list if mid in name_map
+            ] or None
 
             items.append(
                 PricingGroupItem(

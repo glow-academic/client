@@ -243,9 +243,7 @@ async def save_provider_client(
                     detail=f"Item {idx}: You don't have permission to save this provider.",
                 )
         else:
-            if not compute_can_create(
-                user_role=profile.role, department_ids=None
-            ):
+            if not compute_can_create(user_role=profile.role, department_ids=None):
                 raise HTTPException(
                     status_code=403,
                     detail=f"Item {idx}: You don't have permission to create a provider.",
@@ -273,9 +271,7 @@ async def save_provider_client(
                 )
             )
         else:
-            error_results.append(
-                SaveProviderResult(success=True, message="Validated")
-            )
+            error_results.append(SaveProviderResult(success=True, message="Validated"))
 
     if has_errors:
         return SaveProviderApiResponse(results=error_results)

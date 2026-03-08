@@ -27,7 +27,8 @@ async def search_attempt_messages(
         f"""
         SELECT message_id, chat_id, attempt_id, type,
                created_at, completed, text_id,
-               history_file_path, audio_id
+               history_file_path, audio_id,
+               parent_message_id, sibling_index, sibling_count
         FROM {source}
         WHERE ($1::uuid[] IS NULL OR chat_id = ANY($1))
           AND ($2::uuid[] IS NULL OR attempt_id = ANY($2))

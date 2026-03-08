@@ -92,7 +92,9 @@ async def test_exclude_ids(conn, redis_client):
     p1 = await create_parameter(conn, name_id=n1.id)
     p2 = await create_parameter(conn, name_id=n2.id)
 
-    ids, _total = await search_parameters(conn, search=f"excl-{tag}", exclude_ids=[p1.id])
+    ids, _total = await search_parameters(
+        conn, search=f"excl-{tag}", exclude_ids=[p1.id]
+    )
     assert p1.id not in ids
     assert p2.id in ids
 

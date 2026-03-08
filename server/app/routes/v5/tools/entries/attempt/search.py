@@ -22,6 +22,7 @@ MV_NAME = "attempt_mv"
 
 async def search_attempts(
     conn: asyncpg.Connection,
+    attempt_ids: list[UUID] | None = None,
     simulation_ids: list[UUID] | None = None,
     profile_ids: list[UUID] | None = None,
     cohort_ids: list[UUID] | None = None,
@@ -46,17 +47,19 @@ async def search_attempts(
                attempt_created_at, infinite_mode, num_chats, is_archived,
                scenario_ids, chat_entry_id, attempt_chat_id
         FROM {source}
-        WHERE ($1::uuid[] IS NULL OR simulation_id = ANY($1))
-          AND ($2::uuid[] IS NULL OR profile_id = ANY($2))
-          AND ($3::uuid[] IS NULL OR cohort_id = ANY($3))
-          AND ($4::uuid[] IS NULL OR department_id = ANY($4))
-          AND ($5::uuid[] IS NULL OR scenario_ids && $5)
-          AND ($6::boolean IS NULL OR practice = $6)
-          AND ($7::boolean IS NULL OR is_archived = $7)
-          AND ($8::boolean IS NULL OR infinite_mode = $8)
+        WHERE ($1::uuid[] IS NULL OR attempt_id = ANY($1))
+          AND ($2::uuid[] IS NULL OR simulation_id = ANY($2))
+          AND ($3::uuid[] IS NULL OR profile_id = ANY($3))
+          AND ($4::uuid[] IS NULL OR cohort_id = ANY($4))
+          AND ($5::uuid[] IS NULL OR department_id = ANY($5))
+          AND ($6::uuid[] IS NULL OR scenario_ids && $6)
+          AND ($7::boolean IS NULL OR practice = $7)
+          AND ($8::boolean IS NULL OR is_archived = $8)
+          AND ($9::boolean IS NULL OR infinite_mode = $9)
         ORDER BY attempt_created_at {order}
-        LIMIT $9 OFFSET $10
+        LIMIT $10 OFFSET $11
         """,
+        attempt_ids,
         simulation_ids,
         profile_ids,
         cohort_ids,

@@ -224,9 +224,7 @@ async def save_rubric_client(
 
     for idx, item in enumerate(items):
         if item.input_rubric_id is not None:
-            perms = await resolve_rubric_permissions_context(
-                conn, item.input_rubric_id
-            )
+            perms = await resolve_rubric_permissions_context(conn, item.input_rubric_id)
             if not perms.exists:
                 raise HTTPException(
                     status_code=404,
@@ -242,9 +240,7 @@ async def save_rubric_client(
                     detail=f"Item {idx}: You don't have permission to save this rubric.",
                 )
         else:
-            if not compute_can_create(
-                user_role=profile.role, department_ids=None
-            ):
+            if not compute_can_create(user_role=profile.role, department_ids=None):
                 raise HTTPException(
                     status_code=403,
                     detail=f"Item {idx}: You don't have permission to create a rubric.",
@@ -272,9 +268,7 @@ async def save_rubric_client(
                 )
             )
         else:
-            error_results.append(
-                SaveRubricResult(success=True, message="Validated")
-            )
+            error_results.append(SaveRubricResult(success=True, message="Validated"))
 
     if has_errors:
         return SaveRubricApiResponse(results=error_results)

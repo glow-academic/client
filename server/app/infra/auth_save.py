@@ -124,9 +124,7 @@ async def resolve_auth_values(
 
     if not is_update:
         if item.name_id is None and item.name is None:
-            errors.append(
-                SaveAuthFieldError(field="name", message="Name is required")
-            )
+            errors.append(SaveAuthFieldError(field="name", message="Name is required"))
 
     return errors
 
@@ -213,9 +211,7 @@ async def save_auth_client(
 
     for idx, item in enumerate(items):
         if item.input_auth_id is not None:
-            perms = await resolve_auth_permissions_context(
-                conn, item.input_auth_id
-            )
+            perms = await resolve_auth_permissions_context(conn, item.input_auth_id)
             if not perms.exists:
                 raise HTTPException(
                     status_code=404,

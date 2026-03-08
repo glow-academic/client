@@ -31,9 +31,6 @@ from app.routes.v5.socket.internal.test.types import (
     TestProceedData,
 )
 from app.routes.v5.tools.entries.test.get import get_tests
-from app.routes.v5.tools.entries.test_invocation_completion.create import (
-    create_test_invocation_completion,
-)
 from app.routes.v5.tools.entries.test_invocation.create import (
     create_test_invocation,
 )
@@ -45,6 +42,9 @@ from app.routes.v5.tools.entries.test_invocation.search import (
 )
 from app.routes.v5.tools.entries.test_invocation_bridge.create import (
     create_test_invocation_bridge,
+)
+from app.routes.v5.tools.entries.test_invocation_completion.create import (
+    create_test_invocation_completion,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.logging.db_logger import get_logger
@@ -84,7 +84,7 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
                     await create_test_invocation_completion(
                         conn,
                         invocation_id=completed_invocation_id,
-                                                # TODO: call_id required but not available in this context
+                        # TODO: call_id required but not available in this context
                     )
                 except Exception:
                     logger.warning(
@@ -107,7 +107,7 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
                             await create_test_invocation_completion(
                                 conn,
                                 invocation_id=inv.invocation_id,
-                                                        # TODO: call_id required but not available in this context
+                                # TODO: call_id required but not available in this context
                             )
                         except Exception:
                             pass
@@ -141,9 +141,7 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
         is_dynamic = tests[0].is_dynamic if tests else True
         total_invocations = len(all_invocations)
         completed = [inv for inv in all_invocations if inv.invocation_completed]
-        uncompleted = [
-            inv for inv in all_invocations if not inv.invocation_completed
-        ]
+        uncompleted = [inv for inv in all_invocations if not inv.invocation_completed]
         completed_count = len(completed)
 
         if not all_invocations:

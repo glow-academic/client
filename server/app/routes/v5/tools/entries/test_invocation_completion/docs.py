@@ -6,10 +6,18 @@ from app.infra.docs.get_mv_info import get_mv_info
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.get_table_info import get_table_info
 from app.infra.docs.types import DocsResponse
-from app.routes.v5.tools.entries.test_invocation_completion.create import create_test_invocation_completion
-from app.routes.v5.tools.entries.test_invocation_completion.get import get_test_invocation_completions
-from app.routes.v5.tools.entries.test_invocation_completion.refresh import refresh_test_invocation_completion
-from app.routes.v5.tools.entries.test_invocation_completion.search import search_test_invocation_completions
+from app.routes.v5.tools.entries.test_invocation_completion.create import (
+    create_test_invocation_completion,
+)
+from app.routes.v5.tools.entries.test_invocation_completion.get import (
+    get_test_invocation_completions,
+)
+from app.routes.v5.tools.entries.test_invocation_completion.refresh import (
+    refresh_test_invocation_completion,
+)
+from app.routes.v5.tools.entries.test_invocation_completion.search import (
+    search_test_invocation_completions,
+)
 
 
 async def get_test_invocation_completion_docs(conn: asyncpg.Connection) -> DocsResponse:

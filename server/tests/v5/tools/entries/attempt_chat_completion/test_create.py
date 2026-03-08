@@ -7,7 +7,9 @@ from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
 from app.routes.v5.tools.entries.attempt_chat_completion.create import (
     create_attempt_chat_completion,
 )
-from app.routes.v5.tools.entries.attempt_chat_completion.get import get_attempt_chat_completions
+from app.routes.v5.tools.entries.attempt_chat_completion.get import (
+    get_attempt_chat_completions,
+)
 from app.routes.v5.tools.entries.attempt_chat_completion.refresh import (
     refresh_attempt_chat_completion,
 )

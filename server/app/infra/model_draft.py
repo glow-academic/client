@@ -121,7 +121,9 @@ async def patch_model_draft_client(
             session_id=session_id,
             version=new_version,
             name_ids=[request.name_id] if request.name_id else None,
-            description_ids=[request.description_id] if request.description_id else None,
+            description_ids=[request.description_id]
+            if request.description_id
+            else None,
             flag_ids=request.flag_ids,
             department_ids=request.department_ids,
             modality_ids=request.modality_ids,

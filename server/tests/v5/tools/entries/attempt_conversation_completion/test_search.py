@@ -48,7 +48,12 @@ async def _setup(conn, profile_id):
         conn, chat_id=attempt_chat.id, call_id=call2.id, run_id=run.id
     )
     result = await create_attempt_conversation_completion(
-        conn, conversation_id=conversation.id, call_id=call2.id, stop=False, error=False, message=""
+        conn,
+        conversation_id=conversation.id,
+        call_id=call2.id,
+        stop=False,
+        error=False,
+        message="",
     )
     return result, conversation
 

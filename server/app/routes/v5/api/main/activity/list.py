@@ -101,7 +101,9 @@ async def list_activity(
         for p in pricing_list:
             if p.id:
                 pricing_map[p.id] = {
-                    "price": Decimal(str(p.price)) if p.price is not None else Decimal("0"),
+                    "price": Decimal(str(p.price))
+                    if p.price is not None
+                    else Decimal("0"),
                     "unit_value": p.unit_value or 1,
                 }
 
@@ -148,9 +150,15 @@ async def list_activity(
             stats["total_cost"] += run_cost
 
             if run.run_created_at:
-                if stats["first_run_at"] is None or run.run_created_at < stats["first_run_at"]:
+                if (
+                    stats["first_run_at"] is None
+                    or run.run_created_at < stats["first_run_at"]
+                ):
                     stats["first_run_at"] = run.run_created_at
-                if stats["last_run_at"] is None or run.run_created_at > stats["last_run_at"]:
+                if (
+                    stats["last_run_at"] is None
+                    or run.run_created_at > stats["last_run_at"]
+                ):
                     stats["last_run_at"] = run.run_created_at
 
         # --- Phase 6: Build session items ---

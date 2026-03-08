@@ -148,9 +148,7 @@ async def resolve_activity_context(
 
     # Step 4: Hydrate resources
     names_selected = (
-        await get_names(
-            conn, list(all_profile_ids), redis, bypass_cache=bypass_cache
-        )
+        await get_names(conn, list(all_profile_ids), redis, bypass_cache=bypass_cache)
         if all_profile_ids
         else []
     )
@@ -239,9 +237,7 @@ async def resolve_activity_search_context(
     # Step 4: Runs for those groups
     group_ids = [g.id for g in groups]
     runs = (
-        await search_runs(conn, group_ids=group_ids, limit=100000)
-        if group_ids
-        else []
+        await search_runs(conn, group_ids=group_ids, limit=100000) if group_ids else []
     )
 
     # Step 5: Collect resource IDs
@@ -259,14 +255,10 @@ async def resolve_activity_search_context(
 
     # Step 6: Parallel hydrate resources
     names_selected, pricing_selected = await asyncio.gather(
-        get_names(
-            conn, list(profile_ids_set), redis, bypass_cache=bypass_cache
-        )
+        get_names(conn, list(profile_ids_set), redis, bypass_cache=bypass_cache)
         if profile_ids_set
         else _empty_list(),
-        get_pricing(
-            conn, list(pricing_ids_set), redis, bypass_cache
-        )
+        get_pricing(conn, list(pricing_ids_set), redis, bypass_cache)
         if pricing_ids_set
         else _empty_list(),
     )

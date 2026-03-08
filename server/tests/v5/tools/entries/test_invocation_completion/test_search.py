@@ -8,10 +8,16 @@ from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.test.create import create_test
-from app.routes.v5.tools.entries.test_invocation_completion.create import create_test_invocation_completion
-from app.routes.v5.tools.entries.test_invocation_completion.refresh import refresh_test_invocation_completion
-from app.routes.v5.tools.entries.test_invocation_completion.search import search_test_invocation_completions
 from app.routes.v5.tools.entries.test_invocation.create import create_test_invocation
+from app.routes.v5.tools.entries.test_invocation_completion.create import (
+    create_test_invocation_completion,
+)
+from app.routes.v5.tools.entries.test_invocation_completion.refresh import (
+    refresh_test_invocation_completion,
+)
+from app.routes.v5.tools.entries.test_invocation_completion.search import (
+    search_test_invocation_completions,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -27,7 +33,12 @@ async def _setup(conn, profile_id):
         conn, test_id=test.id, call_id=call2.id
     )
     result = await create_test_invocation_completion(
-        conn, invocation_id=test_invocation.id, call_id=call2.id, stop=False, error=False, message=""
+        conn,
+        invocation_id=test_invocation.id,
+        call_id=call2.id,
+        stop=False,
+        error=False,
+        message="",
     )
     return result, test_invocation
 
@@ -36,7 +47,9 @@ async def test_finds_created_entry(conn, profile_id):
     result, test_invocation = await _setup(conn, profile_id)
     await refresh_test_invocation_completion(conn)
 
-    items = await search_test_invocation_completions(conn, invocation_ids=[test_invocation.id])
+    items = await search_test_invocation_completions(
+        conn, invocation_ids=[test_invocation.id]
+    )
 
     ids = [item.id for item in items]
     assert result.id in ids
@@ -46,7 +59,9 @@ async def test_filters_by_invocation_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_test_invocation_completion(conn)
 
-    items = await search_test_invocation_completions(conn, invocation_ids=[nonexistent_id()])
+    items = await search_test_invocation_completions(
+        conn, invocation_ids=[nonexistent_id()]
+    )
 
     assert items == []
 

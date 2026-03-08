@@ -13,6 +13,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import UPLOAD_FOLDER, get_db, get_pool, get_redis_client
 from app.routes.auth.profile import get_auth_profile_internal
+from app.routes.v5.api.main.dashboard.shared import (
+    MessageStats,
+    get_message_stats_internal,
+)
 from app.routes.v5.api.main.leaderboard.permissions import build_leaderboard_rows_v2
 from app.routes.v5.api.main.leaderboard.types import (
     ExportLeaderboardApiRequest,
@@ -25,11 +29,6 @@ from app.sql.types import (
 )
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.sql_helper import execute_sql_typed
-
-from app.routes.v5.api.main.dashboard.shared import (
-    MessageStats,
-    get_message_stats_internal,
-)
 
 UPLOAD_SQL_PATH = "app/sql/queries/uploads/insert_upload_complete.sql"
 

@@ -141,9 +141,15 @@ async def get_group_list_internal(
         )
         stats["total_cost"] += run_costs.get(run.run_id, Decimal("0"))
         if run.run_created_at:
-            if stats["first_run_at"] is None or run.run_created_at < stats["first_run_at"]:
+            if (
+                stats["first_run_at"] is None
+                or run.run_created_at < stats["first_run_at"]
+            ):
                 stats["first_run_at"] = run.run_created_at
-            if stats["last_run_at"] is None or run.run_created_at > stats["last_run_at"]:
+            if (
+                stats["last_run_at"] is None
+                or run.run_created_at > stats["last_run_at"]
+            ):
                 stats["last_run_at"] = run.run_created_at
         if run.agent_ids:
             stats["agent_ids"].update(run.agent_ids)

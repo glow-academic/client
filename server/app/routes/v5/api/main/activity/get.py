@@ -11,9 +11,9 @@ from app.infra.activity_context import resolve_activity_context
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.v5.api.main.activity.types import (
+    ActivityRequest,
     ActivityResources,
     ActivityResponse,
-    ActivityRequest,
     ActivityWebsocketEntries,
     ActivityWebsocketResources,
     GetActivityWebsocketResponse,
@@ -187,15 +187,18 @@ async def get_activity(
 
         # --- Phase 4: Compute header metrics ---
         sessions_count = len(sessions)
-        active_profiles_count = len(
-            {a.profile_id for a in activity if a.profile_id}
-        )
+        active_profiles_count = len({a.profile_id for a in activity if a.profile_id})
         logins_count = len(logins)
         emulations_count = len(emulations)
 
         # --- Phase 5: Build profile summary ---
         profile_summary = _build_profile_summary(
-            sessions, activity, logins, problems, grants, name_map,
+            sessions,
+            activity,
+            logins,
+            problems,
+            grants,
+            name_map,
         )
 
         # --- Phase 6: Build resources ---

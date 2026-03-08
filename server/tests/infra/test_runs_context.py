@@ -4,7 +4,6 @@ resolve_runs_context is tested with mocked black-box fetchers.
 Tests verify: correct arguments flow to fetchers, date defaults, filtering.
 """
 
-from datetime import UTC, datetime
 from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 

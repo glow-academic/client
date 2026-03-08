@@ -254,9 +254,7 @@ async def save_parameter_client(
                 )
             )
         else:
-            error_results.append(
-                SaveParameterResult(success=True, message="Validated")
-            )
+            error_results.append(SaveParameterResult(success=True, message="Validated"))
 
     if has_errors:
         return SaveParameterApiResponse(results=error_results)

@@ -249,9 +249,7 @@ async def save_setting_client(
                 )
             )
         else:
-            error_results.append(
-                SaveSettingResult(success=True, message="Validated")
-            )
+            error_results.append(SaveSettingResult(success=True, message="Validated"))
 
     if has_errors:
         return SaveSettingApiResponse(results=error_results)

@@ -4,9 +4,9 @@ from datetime import datetime
 from uuid import UUID
 
 import asyncpg  # type: ignore
+from pydantic import BaseModel
 
 from app.infra.docs.resolve_mv_source import resolve_mv_source
-from pydantic import BaseModel
 
 MV_NAME = "attempt_message_completion_mv"
 

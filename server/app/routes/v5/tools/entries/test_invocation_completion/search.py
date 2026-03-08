@@ -5,7 +5,9 @@ from uuid import UUID
 import asyncpg  # type: ignore
 
 from app.infra.docs.resolve_mv_source import resolve_mv_source
-from app.routes.v5.tools.entries.test_invocation_completion.types import GetTestInvocationCompletionResponse
+from app.routes.v5.tools.entries.test_invocation_completion.types import (
+    GetTestInvocationCompletionResponse,
+)
 
 MV_NAME = "test_invocation_completion_mv"
 

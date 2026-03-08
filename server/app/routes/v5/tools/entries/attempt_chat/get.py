@@ -32,7 +32,13 @@ async def get_attempt_chats(
                grade_score, grade_total_points, grade_pass_points,
                grade_passed, grade_time_taken,
                completed, attempt_number, chat_created_at, attempt_date,
-               attempt_type, is_archived, infinite_mode, document_ids
+               attempt_type, is_archived, infinite_mode, document_ids,
+               copy_paste_allowed, text_enabled, audio_enabled,
+               hints_enabled, show_images, show_objectives,
+               show_problem_statement, time_limit_seconds, negative,
+               problem_statement_id, objective_ids, question_ids,
+               option_ids, image_ids, video_ids,
+               standard_group_ids, standard_ids
         FROM {MV_NAME}
         WHERE chat_id = ANY($1)
         """,
@@ -65,6 +71,23 @@ async def get_attempt_chats(
             is_archived=r["is_archived"],
             infinite_mode=r["infinite_mode"],
             document_ids=r["document_ids"],
+            copy_paste_allowed=r["copy_paste_allowed"],
+            text_enabled=r["text_enabled"],
+            audio_enabled=r["audio_enabled"],
+            hints_enabled=r["hints_enabled"],
+            show_images=r["show_images"],
+            show_objectives=r["show_objectives"],
+            show_problem_statement=r["show_problem_statement"],
+            time_limit_seconds=r["time_limit_seconds"],
+            negative=r["negative"],
+            problem_statement_id=r["problem_statement_id"],
+            objective_ids=r["objective_ids"],
+            question_ids=r["question_ids"],
+            option_ids=r["option_ids"],
+            image_ids=r["image_ids"],
+            video_ids=r["video_ids"],
+            standard_group_ids=r["standard_group_ids"],
+            standard_ids=r["standard_ids"],
         )
         for r in rows
     ]

@@ -265,9 +265,7 @@ class TestSaveDocumentClientCreate:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_document_client(
-                conn, redis, profile_id=uuid4(), items=[item]
-            )
+            await save_document_client(conn, redis, profile_id=uuid4(), items=[item])
 
         assert exc_info.value.status_code == 403
 
@@ -345,9 +343,7 @@ class TestSaveDocumentClientUpdate:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_document_client(
-                conn, redis, profile_id=uuid4(), items=[item]
-            )
+            await save_document_client(conn, redis, profile_id=uuid4(), items=[item])
 
         assert exc_info.value.status_code == 404
 
@@ -370,9 +366,7 @@ class TestSaveDocumentClientUpdate:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_document_client(
-                conn, redis, profile_id=uuid4(), items=[item]
-            )
+            await save_document_client(conn, redis, profile_id=uuid4(), items=[item])
 
         assert exc_info.value.status_code == 403
 
@@ -418,9 +412,7 @@ class TestSaveDocumentClientValidation:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_document_client(
-                conn, redis, profile_id=uuid4(), items=[]
-            )
+            await save_document_client(conn, redis, profile_id=uuid4(), items=[])
 
         assert exc_info.value.status_code == 401
 

@@ -120,9 +120,7 @@ async def resolve_agent_values(
 
     if not is_update:
         if item.name_id is None and item.name is None:
-            errors.append(
-                SaveAgentFieldError(field="name", message="Name is required")
-            )
+            errors.append(SaveAgentFieldError(field="name", message="Name is required"))
 
     return errors
 
@@ -209,9 +207,7 @@ async def save_agent_client(
 
     for idx, item in enumerate(items):
         if item.input_agent_id is not None:
-            perms = await resolve_agent_permissions_context(
-                conn, item.input_agent_id
-            )
+            perms = await resolve_agent_permissions_context(conn, item.input_agent_id)
             if not perms.exists:
                 raise HTTPException(
                     status_code=404,

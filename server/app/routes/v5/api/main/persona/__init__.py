@@ -8,14 +8,14 @@ from app.routes.v5.api.main.persona.draft import router as draft_router
 from app.routes.v5.api.main.persona.duplicate import router as duplicate_router
 from app.routes.v5.api.main.persona.export import router as export_router
 from app.routes.v5.api.main.persona.get import router as get_router
-from app.routes.v5.api.main.persona.list import router as list_router
 from app.routes.v5.api.main.persona.save import router as save_router
+from app.routes.v5.api.main.persona.search import router as search_router
 
 router = APIRouter(prefix="/personas", tags=["personas"])
 
 # Include all endpoint routers
 router.include_router(get_router)
-router.include_router(list_router)
+router.include_router(search_router)
 router.include_router(save_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)

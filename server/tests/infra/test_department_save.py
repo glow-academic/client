@@ -83,9 +83,7 @@ class TestResolveValues:
             new_callable=AsyncMock,
             return_value=_resource_result(name_id),
         ):
-            errors = await resolve_department_values(
-                None, None, item, is_update=False
-            )
+            errors = await resolve_department_values(None, None, item, is_update=False)
 
         assert errors == []
         assert item.name_id == name_id
@@ -103,9 +101,7 @@ class TestResolveValues:
             new_callable=AsyncMock,
             return_value=_resource_result(desc_id),
         ):
-            errors = await resolve_department_values(
-                None, None, item, is_update=False
-            )
+            errors = await resolve_department_values(None, None, item, is_update=False)
 
         assert errors == []
         assert item.description_id == desc_id
@@ -200,9 +196,7 @@ class TestSaveDepartmentClientCreate:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_department_client(
-                conn, redis, profile_id=uuid4(), items=[item]
-            )
+            await save_department_client(conn, redis, profile_id=uuid4(), items=[item])
 
         assert exc_info.value.status_code == 403
 
@@ -284,9 +278,7 @@ class TestSaveDepartmentClientUpdate:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_department_client(
-                conn, redis, profile_id=uuid4(), items=[item]
-            )
+            await save_department_client(conn, redis, profile_id=uuid4(), items=[item])
 
         assert exc_info.value.status_code == 404
 
@@ -309,9 +301,7 @@ class TestSaveDepartmentClientUpdate:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_department_client(
-                conn, redis, profile_id=uuid4(), items=[item]
-            )
+            await save_department_client(conn, redis, profile_id=uuid4(), items=[item])
 
         assert exc_info.value.status_code == 403
 
@@ -355,9 +345,7 @@ class TestSaveDepartmentClientValidation:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_department_client(
-                conn, redis, profile_id=uuid4(), items=[]
-            )
+            await save_department_client(conn, redis, profile_id=uuid4(), items=[])
 
         assert exc_info.value.status_code == 401
 

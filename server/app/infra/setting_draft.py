@@ -121,7 +121,9 @@ async def patch_setting_draft_client(
             session_id=session_id,
             version=new_version,
             name_ids=[request.name_id] if request.name_id else None,
-            description_ids=[request.description_id] if request.description_id else None,
+            description_ids=[request.description_id]
+            if request.description_id
+            else None,
             flag_ids=[request.flag_id] if request.flag_id else None,
             department_ids=request.department_ids,
             color_ids=request.color_ids,

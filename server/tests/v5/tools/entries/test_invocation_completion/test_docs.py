@@ -2,7 +2,9 @@
 
 import pytest
 
-from app.routes.v5.tools.entries.test_invocation_completion.docs import get_test_invocation_completion_docs
+from app.routes.v5.tools.entries.test_invocation_completion.docs import (
+    get_test_invocation_completion_docs,
+)
 
 pytestmark = pytest.mark.asyncio
 

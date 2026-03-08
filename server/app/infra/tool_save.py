@@ -89,9 +89,7 @@ async def resolve_tool_values(
 
     if not is_update:
         if item.name_id is None and item.name is None:
-            errors.append(
-                SaveToolFieldError(field="name", message="Name is required")
-            )
+            errors.append(SaveToolFieldError(field="name", message="Name is required"))
 
     return errors
 
@@ -177,9 +175,7 @@ async def save_tool_client(
 
     for idx, item in enumerate(items):
         if item.input_tool_id is not None:
-            perms = await resolve_tool_permissions_context(
-                conn, item.input_tool_id
-            )
+            perms = await resolve_tool_permissions_context(conn, item.input_tool_id)
             if not perms.exists:
                 raise HTTPException(
                     status_code=404,

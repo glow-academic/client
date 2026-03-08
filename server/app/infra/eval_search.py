@@ -1,0 +1,270 @@
+"""Eval search logic — composable infra architecture.
+
+Composes existing black-box tools:
+  1. resolve_profile_identity_context — profile (role, departments, name)
+  2. search_evals (artifact) — core artifact search (IDs + total_count)
+  3. get_evals (artifact) — hydrate junction IDs
+  4. Resource get tools — hydrate names, descriptions
+  5. Permissions — compute per-eval can_edit, can_delete, can_duplicate
+  6. Facets — department search for filter options
+"""
+
+from __future__ import annotations
+
+import asyncio
+from uuid import UUID
+
+import asyncpg
+from redis.asyncio import Redis
+
+from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.routes.v5.api.main.eval.permissions import (
+    compute_can_delete,
+    compute_can_duplicate,
+    compute_can_edit,
+)
+from app.routes.v5.api.main.eval.types import (
+    ListEvalApiEval,
+    ListEvalApiResponse,
+)
+from app.routes.v5.api.types import ListFilterOption, ListFilterSection
+from app.routes.v5.tools.artifacts.eval.get import get_evals
+from app.routes.v5.tools.artifacts.eval.search import (
+    search_evals as search_eval_artifacts,
+)
+from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.descriptions.get import get_descriptions
+from app.routes.v5.tools.resources.names.get import get_names
+
+
+async def search_eval_client(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
+    profile_id: UUID,
+    # Main filters
+    search: str | None = None,
+    filter_department_ids: list[UUID] | None = None,
+    # Facet search text
+    department_search: str | None = None,
+    # Pagination
+    page_size: int = 50,
+    page_offset: int = 0,
+) -> ListEvalApiResponse:
+    """Eval search using composable infra functions.
+
+    Flow:
+      1. resolve_profile_identity_context → role, departments, name
+      2. search_evals → (eval_artifact_ids, total_count)
+      3. get_evals → hydrate junction IDs
+      4. Parallel: hydrate resources + facets + eval metadata
+      5. Compute permissions per eval
+    """
+    from fastapi import HTTPException
+
+    # ── Step 1: Profile context ────────────────────────────────────────
+
+    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+
+    if profile is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
+        )
+
+    user_role = profile.role
+    actor_name = profile.name
+
+    # ── Step 2: Search evals ──────────────────────────────────────────
+
+    eval_ids, total_count = await search_eval_artifacts(
+        conn,
+        search=search,
+        department_ids=filter_department_ids,
+        limit_count=page_size,
+        offset_count=page_offset,
+    )
+
+    if not eval_ids:
+        # Still fetch facets for empty results
+        department_facet = await search_departments(
+            conn, redis, search=department_search, eval=True, limit_count=100
+        )
+
+        department_filter = ListFilterSection(
+            options=[
+                ListFilterOption(id=str(d.id), name=d.name, count=0)
+                for d in department_facet
+            ],
+            selected_ids=[str(did) for did in filter_department_ids]
+            if filter_department_ids
+            else None,
+            search=department_search,
+        )
+
+        return ListEvalApiResponse(
+            actor_name=actor_name,
+            evals=[],
+            department_filter=department_filter,
+            total_count=0,
+            user_role=user_role,
+        )
+
+    # ── Step 3: Get eval artifacts with junction IDs ──────────────────
+
+    artifacts = await get_evals(
+        conn,
+        eval_ids,
+        names=True,
+        descriptions=True,
+        departments=True,
+        flags=True,
+    )
+
+    # ── Step 4: Parallel hydration + facets ────────────────────────────
+
+    all_name_ids: list[UUID] = []
+    all_description_ids: list[UUID] = []
+
+    for a in artifacts:
+        all_name_ids.extend(a.name_ids or [])
+        all_description_ids.extend(a.description_ids or [])
+
+    (
+        names_data,
+        descriptions_data,
+        department_facet,
+        eval_metadata,
+    ) = await asyncio.gather(
+        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
+        get_descriptions(conn, all_description_ids, redis)
+        if all_description_ids
+        else _empty_list(),
+        search_departments(
+            conn, redis, search=department_search, eval=True, limit_count=100
+        ),
+        _fetch_eval_metadata(conn, eval_ids),
+    )
+
+    # Build lookup maps
+    name_map = {n.id: n for n in names_data}
+    description_map = {d.id: d for d in descriptions_data}
+
+    # ── Step 5: Build eval list with permissions ──────────────────────
+
+    evals_list: list[ListEvalApiEval] = []
+
+    for a in artifacts:
+        name_obj = name_map.get(a.name_ids[0]) if a.name_ids else None
+        desc_obj = (
+            description_map.get(a.description_ids[0]) if a.description_ids else None
+        )
+
+        dept_ids_str = [str(d) for d in (a.department_ids or [])]
+        meta = eval_metadata.get(a.id, {})
+
+        can_edit = compute_can_edit(user_role=user_role)
+        can_delete = compute_can_delete(user_role=user_role)
+        can_duplicate = compute_can_duplicate(user_role)
+
+        evals_list.append(
+            ListEvalApiEval(
+                eval_id=a.id,
+                name=name_obj.name if name_obj else None,
+                description=desc_obj.description if desc_obj else None,
+                department_ids=dept_ids_str,
+                is_inactive=not a.active,
+                is_dynamic=meta.get("is_dynamic"),
+                use_groups=meta.get("use_groups"),
+                num_runs=meta.get("num_runs", 0),
+                num_groups=meta.get("num_groups", 0),
+                can_edit=can_edit,
+                can_duplicate=can_duplicate,
+                can_delete=can_delete,
+                updated_at=a.updated_at,
+            )
+        )
+
+    # ── Step 6: Build facet sections ──────────────────────────────────
+
+    department_filter = ListFilterSection(
+        options=[
+            ListFilterOption(id=str(d.id), name=d.name, count=0)
+            for d in department_facet
+        ],
+        selected_ids=[str(did) for did in filter_department_ids]
+        if filter_department_ids
+        else None,
+        search=department_search,
+    )
+
+    return ListEvalApiResponse(
+        actor_name=actor_name,
+        evals=evals_list,
+        department_filter=department_filter,
+        total_count=total_count,
+        user_role=user_role,
+    )
+
+
+# ── Helpers ────────────────────────────────────────────────────────────
+
+
+async def _empty_list() -> list:
+    return []
+
+
+async def _fetch_eval_metadata(
+    conn: asyncpg.Connection,
+    eval_ids: list[UUID],
+) -> dict[UUID, dict]:
+    """Fetch eval-specific metadata: is_dynamic, use_groups, num_runs, num_groups.
+
+    These come from flags and related entry counts.
+    """
+    if not eval_ids:
+        return {}
+
+    rows = await conn.fetch(
+        """
+        SELECT
+            e.id as eval_id,
+            EXISTS (
+                SELECT 1 FROM eval_flags_junction ef
+                JOIN flags_resource f ON ef.flags_id = f.id
+                WHERE ef.eval_id = e.id AND f.name = 'eval_dynamic' AND f.value = true
+            ) as is_dynamic,
+            EXISTS (
+                SELECT 1 FROM eval_flags_junction ef
+                JOIN flags_resource f ON ef.flags_id = f.id
+                WHERE ef.eval_id = e.id AND f.name = 'eval_groups' AND f.value = true
+            ) as use_groups,
+            COALESCE(
+                (SELECT COUNT(*)::int FROM test_invocation_runs_artifact tir
+                 JOIN test_invocation_runs_evals_junction tire ON tire.test_invocation_run_id = tir.id AND tire.active = true
+                 WHERE tire.evals_id IN (
+                     SELECT eej.evals_id FROM eval_evals_junction eej WHERE eej.eval_id = e.id AND eej.active = true
+                 )), 0
+            ) as num_runs,
+            COALESCE(
+                (SELECT COUNT(*)::int FROM test_invocation_groups_artifact tig
+                 JOIN test_invocation_groups_evals_junction tige ON tige.test_invocation_group_id = tig.id AND tige.active = true
+                 WHERE tige.evals_id IN (
+                     SELECT eej.evals_id FROM eval_evals_junction eej WHERE eej.eval_id = e.id AND eej.active = true
+                 )), 0
+            ) as num_groups
+        FROM eval_artifact e
+        WHERE e.id = ANY($1)
+        """,
+        eval_ids,
+    )
+
+    return {
+        r["eval_id"]: {
+            "is_dynamic": r["is_dynamic"],
+            "use_groups": r["use_groups"],
+            "num_runs": r["num_runs"],
+            "num_groups": r["num_groups"],
+        }
+        for r in rows
+    }
