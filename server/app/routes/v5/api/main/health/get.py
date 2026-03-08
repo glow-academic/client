@@ -1,212 +1,206 @@
-"""Get endpoint for health artifact — internal + websocket layers."""
+"""Health artifact endpoint - POST /artifacts/health/get.
+
+Three-layer BFF pattern:
+- get_health_internal(): Core data fetcher via context resolver, returns HealthInternalData
+- get_health (HTTP route): HTTP response layer
+- get_health_websocket(): WebSocket response layer
+
+Uses composable context resolver with black-box MV search tools.
+Zero inline SQL — all data from context resolver + resource fetchers.
+"""
 
 import asyncio
-from dataclasses import dataclass, field
-from datetime import UTC, datetime
-from typing import Annotated, Any
+from datetime import datetime
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool, get_redis_client
-from app.routes.auth.settings import get_auth_settings_internal
+from app.infra.common_context import resolve_common_context
+from app.infra.globals import get_pool, get_redis_client
+from app.infra.health_context import resolve_health_context
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.health.types import (
     GetHealthApiRequest,
     GetHealthWebsocketResponse,
+    HealthInternalData,
     HealthRequest,
     HealthResponse,
     HealthViews,
     HealthWebsocketEntries,
     HealthWebsocketResources,
 )
-from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.tools.entries.health.get import get_health_list_view_internal
-from app.routes.v5.tools.entries.metrics.get import get_metric_list_view_internal
-from app.routes.v5.tools.entries.runs.search import (
-    GetRunListViewResponse,
-    get_run_list_entries_internal,
-)
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.sql.types import (
-    QGetAgentsV4Item,
-    QGetModelsV4Item,
-    QGetProfilesV4Item,
-    QGetProvidersV4Item,
-    QGetToolsV4Item,
-)
+from app.routes.v5.tools.resources.systems.get import get_systems
+from app.routes.v5.tools.resources.tools.get import get_tools
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
-# Health entry types for agent resolution
+# Health entry types for tool scoring
 HEALTH_BUNDLE_ENTRIES: set[str] = {"problems"}
 
 
-@router.post("/get", response_model=HealthResponse)
-async def get_health(
-    request: HealthRequest,
-    http_request: Request,
-    response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> HealthResponse:
-    """Get health artifact data."""
-    tags = ["artifacts", "health"]
-    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
-    pool = get_pool()
-
-    try:
-
-        async def fetch_service_hourly():
-            async with pool.acquire() as c:
-                return await get_health_list_view_internal(
-                    conn=c,
-                    service_filter=request.service,
-                    date_from=request.date_from,
-                    date_to=request.date_to,
-                    page_limit=request.page_limit,
-                    page_offset=request.page_offset,
-                    bypass_cache=bypass_cache,
-                )
-
-        async def fetch_metrics_hourly():
-            async with pool.acquire() as c:
-                return await get_metric_list_view_internal(
-                    conn=c,
-                    date_from=request.date_from,
-                    date_to=request.date_to,
-                    page_limit=request.page_limit,
-                    page_offset=request.page_offset,
-                    bypass_cache=bypass_cache,
-                )
-
-        service_hourly_result, metrics_hourly_result = await asyncio.gather(
-            fetch_service_hourly(),
-            fetch_metrics_hourly(),
-        )
-
-        views = HealthViews(
-            service_hourly=service_hourly_result.items,
-            metrics_hourly=metrics_hourly_result.items,
-        )
-
-        response.headers["X-Cache-Tags"] = ",".join(tags)
-        return HealthResponse(
-            views=views,
-            total_count=service_hourly_result.total_count,
-        )
-
-    except HTTPException:
-        raise
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except Exception as e:
-        handle_route_error(
-            error=e,
-            route_path=http_request.url.path,
-            operation="artifacts_health_get",
-            request=http_request,
-        )
-
-
-@dataclass
-class HealthInternalData:
-    """Internal data from core health fetching (cacheable layer)."""
-
-    config_agents: list[QGetAgentsV4Item] = field(default_factory=list)
-    config_models: list[QGetModelsV4Item] = field(default_factory=list)
-    config_providers: list[QGetProvidersV4Item] = field(default_factory=list)
-    config_tools: list[QGetToolsV4Item] = field(default_factory=list)
-    config_profile: list[QGetProfilesV4Item] = field(default_factory=list)
-    runs_today: GetRunListViewResponse | None = None
-    resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
-    group_id: UUID | None = None
+# =============================================================================
+# Layer 1: Core data fetcher (context resolver → pure Python assembly)
+# =============================================================================
 
 
 async def get_health_internal(
     pool: asyncpg.Pool,
     profile_id: UUID,
+    *,
+    service: str | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    page_limit: int = 168,
+    page_offset: int = 0,
     health_id: UUID | None = None,
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> HealthInternalData:
-    """Fetch config chain for health artifact.
+    """Core health data fetcher.
 
-    Returns a HealthInternalData dataclass consumed by the websocket wrapper.
+    Resolves health context (domain data) and common context (config chain)
+    in parallel, then assembles HealthInternalData.
     """
-    # 1. Settings-based agent resolution + config chain
-    async with pool.acquire() as settings_conn:
-        settings_data = await get_auth_settings_internal(
-            settings_conn, profile_id, bypass_cache
+    redis = get_redis_client()
+
+    # Phase 0: Resolve both contexts in parallel
+    async def _resolve_health() -> object:
+        return await resolve_health_context(
+            pool, redis,
+            service=service,
+            date_from=date_from,
+            date_to=date_to,
+            page_limit=page_limit,
+            page_offset=page_offset,
+            bypass_cache=bypass_cache,
         )
-    agent_ids, _create_tool_ids, _link_tool_ids = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, HEALTH_BUNDLE_ENTRIES
-    )
 
-    config_agents = list(settings_data.settings_agents)
-    config_tools = list(settings_data.settings_tools)
-
-    config_model_resource_ids = list(
-        dict.fromkeys(a.model_id for a in settings_data.settings_agents if a.model_id)
-    )
-    config_models: list[Any] = []
-    if config_model_resource_ids:
-        async with pool.acquire() as conn:
-            config_models = await get_models(
-                conn, config_model_resource_ids, get_redis_client(), bypass_cache
-            )
-
-    config_provider_resource_ids = list(
-        dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
-    )
-    config_providers: list[Any] = []
-    if config_provider_resource_ids:
-        async with pool.acquire() as conn:
-            config_providers = await get_providers(
-                conn,
-                config_provider_resource_ids,
-                get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-
-    # 2. Fetch config profile and today's runs in parallel
-    async def fetch_config_profile() -> list[QGetProfilesV4Item]:
+    async def _resolve_common() -> object:
         async with pool.acquire() as c:
-            return await get_profiles(c, [profile_id], get_redis_client(), bypass_cache)
-
-    async def fetch_runs_today() -> GetRunListViewResponse:
-        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
-        async with pool.acquire() as c:
-            return await get_run_list_entries_internal(
-                conn=c,
-                profile_id_filter=profile_id,
-                date_from=today_utc,
-                date_to=tomorrow_utc,
-                page_limit=1,
-                bypass_cache=True,
+            return await resolve_common_context(
+                c, redis, profile_id=profile_id, bypass_cache=bypass_cache
             )
 
-    config_profile_result, runs_result = await asyncio.gather(
-        fetch_config_profile(),
-        fetch_runs_today(),
+    ctx, common = await asyncio.gather(
+        _resolve_health(),
+        _resolve_common(),
     )
+
+    # Extract domain entries from health context
+    health = ctx.entries.get("health", [])
+    metrics = ctx.entries.get("metrics", [])
+
+    # Build config chain from common context (if available)
+    config_agents: list = []
+    config_models: list = []
+    config_providers: list = []
+    config_tools: list = []
+    config_systems: list = []
+    config_profile: list = []
+    runs_today = None
+    resource_agent_ids: dict[str, UUID | None] = {}
+    resource_system_ids: dict[str, UUID | None] = {}
+
+    if common:
+        scores = score_tools(common.tool_graph, HEALTH_BUNDLE_ENTRIES)
+        resource_agent_ids = {
+            target: (tool.agent_id if tool else None)
+            for target, tool in scores.best.items()
+        }
+        resource_system_ids = {
+            target: (tool.system_id if tool else None)
+            for target, tool in scores.best.items()
+        }
+
+        # Hydrate config chain from tool_graph
+        all_system_ids = list(dict.fromkeys(
+            t.system_id for t in common.tool_graph.tools
+        ))
+        all_agent_ids = list(dict.fromkeys(
+            t.agent_id for t in common.tool_graph.tools
+        ))
+        all_tool_ids = list(dict.fromkeys(
+            t.tool_id for t in common.tool_graph.tools
+        ))
+
+        async def _fetch_systems() -> list:
+            if not all_system_ids:
+                return []
+            async with pool.acquire() as c:
+                return await get_systems(c, all_system_ids, redis, bypass_cache)
+
+        async def _fetch_agents() -> list:
+            if not all_agent_ids:
+                return []
+            async with pool.acquire() as c:
+                return await get_agents(c, all_agent_ids, redis, bypass_cache)
+
+        async def _fetch_tools_config() -> list:
+            if not all_tool_ids:
+                return []
+            async with pool.acquire() as c:
+                return await get_tools(c, all_tool_ids, redis, bypass_cache)
+
+        config_systems, config_agents, config_tools = await asyncio.gather(
+            _fetch_systems(),
+            _fetch_agents(),
+            _fetch_tools_config(),
+        )
+
+        # Walk agent → model → provider chain
+        model_ids = list(dict.fromkeys(
+            a.model_id for a in config_agents if a.model_id
+        ))
+        if model_ids:
+            async with pool.acquire() as c:
+                config_models = await get_models(c, model_ids, redis, bypass_cache)
+
+        provider_ids = list(dict.fromkeys(
+            m.provider_id for m in config_models if m.provider_id
+        ))
+        if provider_ids:
+            async with pool.acquire() as c:
+                config_providers = await get_providers(
+                    c, provider_ids, redis, bypass_cache
+                )
+
+        # Config profile
+        if common.profile:
+            from app.routes.v5.tools.resources.profiles.get import get_profiles
+
+            async with pool.acquire() as c:
+                config_profile = await get_profiles(
+                    c, [common.profile.profiles_id], redis, bypass_cache
+                )
+
+        runs_today = common.runs.runs if common.runs else None
 
     return HealthInternalData(
+        health=health,
+        metrics=metrics,
         config_agents=config_agents,
         config_models=config_models,
         config_providers=config_providers,
         config_tools=config_tools,
-        config_profile=config_profile_result,
-        runs_today=runs_result,
-        resource_agent_ids=agent_ids,
+        config_systems=config_systems,
+        config_profile=config_profile,
+        runs_today=runs_today,
+        resource_agent_ids=resource_agent_ids,
+        resource_system_ids=resource_system_ids,
         group_id=None,
     )
+
+
+# =============================================================================
+# Layer 2b: WebSocket response
+# =============================================================================
 
 
 async def get_health_websocket(
@@ -216,7 +210,7 @@ async def get_health_websocket(
     draft_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetHealthWebsocketResponse:
-    """Thin wrapper for websocket consumers — config chain + rate limit info."""
+    """Thin wrapper for websocket consumers — config chain + domain views."""
     data = await get_health_internal(
         pool=pool,
         profile_id=profile_id,
@@ -225,7 +219,9 @@ async def get_health_websocket(
         bypass_cache=bypass_cache,
     )
 
-    # Pre-fetch args and args_outputs from tool IDs (both cached via *_internal)
+    redis = get_redis_client()
+
+    # Pre-fetch args and args_outputs from tool IDs
     config_args = None
     config_args_outputs = None
     config_tools = data.config_tools
@@ -240,25 +236,25 @@ async def get_health_websocket(
 
         if all_args_ids or all_args_output_ids:
 
-            async def fetch_args():
+            async def fetch_args():  # noqa: ANN202
                 if not all_args_ids:
                     return None
                 async with pool.acquire() as c:
                     return await get_args(
                         c,
                         list(set(all_args_ids)),
-                        get_redis_client(),
+                        redis,
                         bypass_cache=bypass_cache,
                     )
 
-            async def fetch_args_outputs():
+            async def fetch_args_outputs():  # noqa: ANN202
                 if not all_args_output_ids:
                     return None
                 async with pool.acquire() as c:
                     return await get_args_outputs(
                         c,
                         list(set(all_args_output_ids)),
-                        get_redis_client(),
+                        redis,
                         bypass_cache=bypass_cache,
                     )
 
@@ -272,6 +268,7 @@ async def get_health_websocket(
             runs=data.runs_today,
         ),
         resources=HealthWebsocketResources(),
+        systems=data.config_systems or None,
         agents=data.config_agents or None,
         models=data.config_models or None,
         providers=data.config_providers or None,
@@ -281,9 +278,65 @@ async def get_health_websocket(
         profile=data.config_profile or None,
         params=GetHealthApiRequest(health_id=health_id, draft_id=draft_id),
         resource_agent_ids=data.resource_agent_ids,
+        resource_system_ids=data.resource_system_ids,
         group_id=data.group_id,
     )
 
 
-from app.utils.cache.get_cached import get_cached
-from app.utils.cache.set_cached import set_cached
+# =============================================================================
+# Layer 2a: HTTP Endpoint
+# =============================================================================
+
+
+@router.post("/get", response_model=HealthResponse)
+async def get_health(
+    request: HealthRequest,
+    http_request: Request,
+    response: Response,
+) -> HealthResponse:
+    """Get health artifact data."""
+    tags = ["artifacts", "health"]
+    bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+    pool = get_pool()
+
+    try:
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
+        data = await get_health_internal(
+            pool=pool,
+            profile_id=profile_id,
+            service=request.service,
+            date_from=request.date_from,
+            date_to=request.date_to,
+            page_limit=request.page_limit,
+            page_offset=request.page_offset,
+            bypass_cache=bypass_cache,
+        )
+
+        views = HealthViews(
+            service_hourly=data.health,
+            metrics_hourly=data.metrics,
+        )
+
+        response.headers["X-Cache-Tags"] = ",".join(tags)
+        return HealthResponse(
+            views=views,
+            total_count=len(data.health),
+        )
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except Exception as e:
+        handle_route_error(
+            error=e,
+            route_path=http_request.url.path,
+            operation="artifacts_health_get",
+            request=http_request,
+        )
