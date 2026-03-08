@@ -237,7 +237,7 @@ async def resolve_activity_search_context(
     # Step 4: Runs for those groups
     group_ids = [g.id for g in groups]
     runs = (
-        await search_runs(conn, group_ids=group_ids, limit=100000) if group_ids else []
+        (await search_runs(conn, group_ids=group_ids, limit=100000))[0] if group_ids else []
     )
 
     # Step 5: Collect resource IDs

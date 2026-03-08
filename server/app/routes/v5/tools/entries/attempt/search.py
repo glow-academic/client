@@ -35,8 +35,11 @@ async def search_attempts(
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
-) -> list[GetAttemptResponse]:
-    """Search attempt entries from attempt_mv with declarative filters."""
+) -> tuple[list[GetAttemptResponse], int]:
+    """Search attempt entries from attempt_mv with declarative filters.
+
+    Returns (items, total_count).
+    """
     source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
     order = "ASC" if sort_order == "asc" else "DESC"
@@ -45,7 +48,8 @@ async def search_attempts(
         SELECT attempt_id, simulation_id, profile_id, user_persona_id,
                personas_id, cohort_id, department_id, practice,
                attempt_created_at, infinite_mode, num_chats, is_archived,
-               scenario_ids, chat_entry_id, attempt_chat_id
+               scenario_ids, chat_entry_id, attempt_chat_id,
+               COUNT(*) OVER() AS total_count
         FROM {source}
         WHERE ($1::uuid[] IS NULL OR attempt_id = ANY($1))
           AND ($2::uuid[] IS NULL OR simulation_id = ANY($2))
@@ -72,7 +76,12 @@ async def search_attempts(
         offset,
     )
 
-    return [GetAttemptResponse(**dict(r)) for r in rows]
+    total_count = rows[0]["total_count"] if rows else 0
+    items = [
+        GetAttemptResponse(**{k: v for k, v in dict(r).items() if k != "total_count"})
+        for r in rows
+    ]
+    return (items, total_count)
 
 
 LIST_SQL_PATH = "app/sql/queries/views/attempt/list/get_attempt_list_view_complete.sql"

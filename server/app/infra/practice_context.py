@@ -197,7 +197,7 @@ async def resolve_practice_search_context(
     page_offset = page * page_size
 
     # Step 1: Paginated attempts
-    all_attempts = await search_attempts(
+    all_attempts, _total_count = await search_attempts(
         conn,
         profile_ids=[profiles_resource_id],
         practice=True,
@@ -210,7 +210,7 @@ async def resolve_practice_search_context(
     )
 
     # Total count
-    total_attempts = await search_attempts(
+    total_attempts, total_count = await search_attempts(
         conn,
         profile_ids=[profiles_resource_id],
         practice=True,
@@ -224,7 +224,7 @@ async def resolve_practice_search_context(
     # Step 2: Fetch attempt_chats for paginated attempt_ids
     attempt_ids = [a.attempt_id for a in all_attempts]
     all_attempt_chats = (
-        await search_attempt_chats(conn, attempt_ids=attempt_ids, limit=10000)
+        (await search_attempt_chats(conn, attempt_ids=attempt_ids, limit=10000))[0]
         if attempt_ids
         else []
     )

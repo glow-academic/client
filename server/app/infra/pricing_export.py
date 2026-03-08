@@ -69,7 +69,7 @@ async def export_pricing_client(
 
     # -- Step 2: Search all runs (full dump) --
 
-    runs = await search_runs(conn, limit=100000, offset=0)
+    runs, _total_count = await search_runs(conn, limit=100000, offset=0)
 
     if not runs:
         return ExportPricingApiResponse(

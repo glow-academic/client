@@ -27,7 +27,7 @@ from app.infra.websocket.run_tracker import (
     get_all_units,
     promote_unit,
 )
-from app.infra.websocket.socket_event import SocketEvent, flush_events, internal_event
+from app.infra.websocket.socket_event import EmitFn, internal_event, make_emit
 from app.routes.v5.socket.internal.generation_types import GenerationCompleteData
 from app.utils.logging.db_logger import get_logger
 
@@ -42,12 +42,11 @@ def _table_name(target_type: str, target_name: str) -> str:
     return f"{target_name}_{suffix}"
 
 
-@internal_sio.on("test_ended")  # type: ignore
-async def handle_generation_ended(data: dict[str, Any]) -> None:
+async def generation_ended_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
     """Resolve contested targets after test grading completes.
 
-    Triggered by test_ended. Uses resolve_generation_winner to query grades
-    from DB, promotes winner's dormant records, fails losers.
+    Pure business logic — uses ``emit`` for all event output.
+    Callable from socket handler, API, or tests.
     """
     test_id = data.get("test_id")
     if not test_id:
@@ -165,8 +164,7 @@ async def handle_generation_ended(data: dict[str, Any]) -> None:
             )
 
     # Step 5: Emit generation_complete
-    events: list[SocketEvent] = []
-    events.append(
+    await emit([
         internal_event(
             "generation_channel",
             GenerationCompleteData(
@@ -179,7 +177,7 @@ async def handle_generation_ended(data: dict[str, Any]) -> None:
                 resource_actions=resource_actions,
             ).model_dump(mode="json"),
         )
-    )
+    ])
 
     # Step 6: Cleanup
     await cleanup_run(redis, run_id=run_id)
@@ -188,4 +186,8 @@ async def handle_generation_ended(data: dict[str, Any]) -> None:
     except Exception:
         pass
 
-    await flush_events(events, internal_sio=internal_sio)
+
+@internal_sio.on("test_ended")  # type: ignore
+async def handle_generation_ended(data: dict[str, Any]) -> None:
+    """Thin socket handler — delegates to generation_ended_impl."""
+    await generation_ended_impl(data, emit=make_emit())

@@ -110,7 +110,7 @@ async def export_session_client(
 
     all_group_ids = [g.id for g in groups]
     runs = (
-        await search_runs(conn, group_ids=all_group_ids, limit=100000, offset=0)
+        (await search_runs(conn, group_ids=all_group_ids, limit=100000, offset=0))[0]
         if all_group_ids
         else []
     )

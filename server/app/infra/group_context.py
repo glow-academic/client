@@ -45,9 +45,10 @@ async def resolve_group_context(
     # ── Phase 1: Fetch runs + actor name in parallel ─────────────────
     async def _fetch_runs() -> list:
         async with pool.acquire() as c:
-            return await search_runs(
+            items, _total_count = await search_runs(
                 c, group_ids=[group_id], sort_order="asc", limit=10000
             )
+            return items
 
     async def _fetch_actor_name() -> list:
         async with pool.acquire() as c:

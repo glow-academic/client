@@ -125,16 +125,16 @@ async def export_test_client(
     tests = await search_tests(conn, test_ids=[test_id], limit=1)
 
     # -- Step 3: Search invocations for this test --
-    invocations = await search_test_invocation_entries_internal(
+    invocations, _total_count = await search_test_invocation_entries_internal(
         conn, test_ids=[test_id], limit=100000, offset=0
     )
 
     # -- Step 4: Search runs for these invocations --
     invocation_ids = [inv.invocation_id for inv in invocations]
     runs = (
-        await search_test_invocation_runs(
+        (await search_test_invocation_runs(
             conn, test_invocation_ids=invocation_ids, limit=100000, offset=0
-        )
+        ))[0]
         if invocation_ids
         else []
     )

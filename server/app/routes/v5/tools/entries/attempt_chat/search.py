@@ -31,8 +31,11 @@ async def search_attempt_chats(
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
-) -> list[GetAttemptChatResponse]:
-    """Search attempt_chat entries from attempt_chat_mv with declarative filters."""
+) -> tuple[list[GetAttemptChatResponse], int]:
+    """Search attempt_chat entries from attempt_chat_mv with declarative filters.
+
+    Returns (items, total_count).
+    """
     source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
     order = "ASC" if sort_order.lower() == "asc" else "DESC"
@@ -51,7 +54,8 @@ async def search_attempt_chats(
                show_problem_statement, time_limit_seconds, negative,
                problem_statement_id, objective_ids, question_ids,
                option_ids, image_ids, video_ids,
-               standard_group_ids, standard_ids
+               standard_group_ids, standard_ids,
+               COUNT(*) OVER() AS total_count
         FROM {source}
         WHERE ($1::uuid[] IS NULL OR attempt_id = ANY($1))
           AND ($2::uuid[] IS NULL OR group_id = ANY($2))
@@ -88,4 +92,9 @@ async def search_attempt_chats(
         offset,
     )
 
-    return [GetAttemptChatResponse(**dict(r)) for r in rows]
+    total_count = rows[0]["total_count"] if rows else 0
+    items = [
+        GetAttemptChatResponse(**{k: v for k, v in dict(r).items() if k != "total_count"})
+        for r in rows
+    ]
+    return (items, total_count)

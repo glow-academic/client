@@ -88,9 +88,10 @@ async def resolve_session_context(
         if not group_ids:
             return []
         async with pool.acquire() as c:
-            return await search_runs(
+            items, _total_count = await search_runs(
                 c, group_ids=group_ids, sort_order="asc", limit=100000
             )
+            return items
 
     async def _fetch_logins() -> list:
         async with pool.acquire() as c:

@@ -88,7 +88,7 @@ async def export_group_client(
 
     # -- Step 3: Get runs for this group --
 
-    runs = await search_runs(conn, group_ids=[group_id], limit=100000, offset=0)
+    runs, _total_count = await search_runs(conn, group_ids=[group_id], limit=100000, offset=0)
 
     # -- Step 4: Compute per-run costs --
 

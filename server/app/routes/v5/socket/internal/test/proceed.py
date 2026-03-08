@@ -95,7 +95,7 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
         # Step 2: If complete_all, mark all remaining invocations completed → ended
         if complete_all:
             async with get_db_connection() as conn:
-                all_invocations = await search_test_invocation_entries_internal(
+                all_invocations, _total_count = await search_test_invocation_entries_internal(
                     conn,
                     test_ids=[test_id],
                     limit=1000,
@@ -129,7 +129,7 @@ async def test_proceed_handler(data: dict[str, Any]) -> None:
 
         # Step 3: Get context — search invocations, find next uncompleted
         async with get_db_connection() as conn:
-            all_invocations = await search_test_invocation_entries_internal(
+            all_invocations, _total_count = await search_test_invocation_entries_internal(
                 conn,
                 test_ids=[test_id],
                 limit=1000,

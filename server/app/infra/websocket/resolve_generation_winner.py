@@ -53,7 +53,7 @@ async def resolve_generation_winner(
       3. Map grades to agents, highest score wins
     """
     # 1. Get all invocations for this test (with agent_ids from MV)
-    invocations = await search_test_invocation_entries_internal(
+    invocations, _total_count = await search_test_invocation_entries_internal(
         conn,
         test_ids=[test_id],
         bypass_mv=True,

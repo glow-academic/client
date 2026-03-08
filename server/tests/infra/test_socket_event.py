@@ -1,7 +1,8 @@
-"""Tests for infra.websocket.socket_event — SocketEvent + flush_events.
+"""Tests for infra.websocket.socket_event — SocketEvent + EmitFn pattern.
 
 SocketEvent construction is pure (no mocks needed).
 flush_events uses dependency injection — pass mock emitters directly.
+make_emit / recording_emit provide the canonical EmitFn factories.
 """
 
 from unittest.mock import AsyncMock
@@ -13,6 +14,8 @@ from app.infra.websocket.socket_event import (
     client_event,
     flush_events,
     internal_event,
+    make_emit,
+    recording_emit,
 )
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -123,3 +126,97 @@ class TestFlushEvents:
         e = SocketEvent(bus="unknown", event="x", data={})
         with pytest.raises(ValueError, match="Unknown bus: unknown"):
             await flush_events([e], client_sio=AsyncMock(), internal_sio=AsyncMock())
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# make_emit — production EmitFn factory
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.asyncio
+class TestMakeEmit:
+    async def test_delegates_to_flush_events(self):
+        """make_emit wraps flush_events with injected emitters."""
+        mock_client = AsyncMock()
+        mock_internal = AsyncMock()
+        emit = make_emit(client_sio=mock_client, internal_sio=mock_internal)
+
+        await emit([
+            client_event("started", {"a": 1}, room="r1"),
+            internal_event("dispatch", {"b": 2}),
+        ])
+
+        mock_client.emit.assert_called_once_with("started", {"a": 1}, room="r1")
+        mock_internal.emit.assert_called_once_with("dispatch", {"b": 2})
+
+    async def test_multiple_calls_accumulate(self):
+        """Calling emit multiple times works (streaming pattern)."""
+        mock_internal = AsyncMock()
+        emit = make_emit(client_sio=AsyncMock(), internal_sio=mock_internal)
+
+        await emit([internal_event("progress", {"pct": 25})])
+        await emit([internal_event("progress", {"pct": 50})])
+        await emit([internal_event("complete", {"ok": True})])
+
+        assert mock_internal.emit.call_count == 3
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# recording_emit — test spy / recorder
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.asyncio
+class TestRecordingEmit:
+    async def test_captures_all_events(self):
+        emit, events = recording_emit()
+
+        await emit([internal_event("generation_started", {"run_id": "r1"})])
+        await emit([
+            internal_event("generate_artifact", {"agent": "a1"}),
+            internal_event("generate_artifact", {"agent": "a2"}),
+        ])
+
+        assert len(events) == 3
+        assert events[0].event == "generation_started"
+        assert events[1].event == "generate_artifact"
+        assert events[1].data == {"agent": "a1"}
+        assert events[2].data == {"agent": "a2"}
+
+    async def test_empty_emit_is_noop(self):
+        emit, events = recording_emit()
+        await emit([])
+        assert events == []
+
+    async def test_records_both_buses(self):
+        emit, events = recording_emit()
+
+        await emit([
+            client_event("user_progress", {"pct": 50}, room="r1"),
+            internal_event("generation_channel", {"type": "complete"}),
+        ])
+
+        assert events[0].bus == "client"
+        assert events[0].room == "r1"
+        assert events[1].bus == "internal"
+
+    async def test_pattern_business_logic_with_emit(self):
+        """Demonstrates the canonical pattern: function accepts emit, test records."""
+
+        async def some_business_logic(
+            data: dict, *, emit: ...,  # type: ignore[override]
+        ) -> str:
+            await emit([internal_event("step_1", {"input": data["x"]})])
+            result = data["x"] * 2
+            await emit([internal_event("step_2", {"result": result})])
+            return str(result)
+
+        emit, events = recording_emit()
+        result = await some_business_logic({"x": 21}, emit=emit)
+
+        assert result == "42"
+        assert len(events) == 2
+        assert events[0].event == "step_1"
+        assert events[0].data == {"input": 21}
+        assert events[1].event == "step_2"
+        assert events[1].data == {"result": 42}

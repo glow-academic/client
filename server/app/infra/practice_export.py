@@ -94,7 +94,7 @@ async def export_practice_client(
 
     # -- Step 2: Search all practice attempts (full dump) --
 
-    attempts = await search_attempts(
+    attempts, _total_count = await search_attempts(
         conn,
         practice=True,
         limit=100000,

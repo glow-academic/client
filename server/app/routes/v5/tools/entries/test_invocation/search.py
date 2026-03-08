@@ -25,8 +25,11 @@ async def search_test_invocation_entries_internal(
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
-) -> list[GetTestInvocationResponse]:
-    """Search test_invocation entries from test_invocation_mv with declarative filters."""
+) -> tuple[list[GetTestInvocationResponse], int]:
+    """Search test_invocation entries from test_invocation_mv with declarative filters.
+
+    Returns (items, total_count).
+    """
     source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
     rows = await conn.fetch(
@@ -36,7 +39,8 @@ async def search_test_invocation_entries_internal(
                grade_id, grade_score, grade_passed, grade_time_taken,
                rubric_id, agent_ids, quality_id, department_ids,
                run_agent_ids, group_agent_ids, voice_id,
-               temperature_level_id, reasoning_level_id, modality_ids
+               temperature_level_id, reasoning_level_id, modality_ids,
+               COUNT(*) OVER() AS total_count
         FROM {source}
         WHERE ($1::uuid[] IS NULL OR test_id = ANY($1))
           AND ($2::uuid[] IS NULL OR group_id = ANY($2))
@@ -65,4 +69,9 @@ async def search_test_invocation_entries_internal(
         offset,
     )
 
-    return [GetTestInvocationResponse(**dict(r)) for r in rows]
+    total_count = rows[0]["total_count"] if rows else 0
+    items = [
+        GetTestInvocationResponse(**{k: v for k, v in dict(r).items() if k != "total_count"})
+        for r in rows
+    ]
+    return (items, total_count)

@@ -106,9 +106,10 @@ async def resolve_benchmark_context(
         if not test_ids:
             return []
         async with pool.acquire() as c:
-            return await search_test_invocation_entries_internal(
+            items, _total_count = await search_test_invocation_entries_internal(
                 c, test_ids=test_ids, limit=100000
             )
+            return items
 
     test_invocations = await _fetch_test_invocations()
 
@@ -234,9 +235,10 @@ async def resolve_benchmark_search_context(
         if not test_ids:
             return []
         async with pool.acquire() as c:
-            return await search_test_invocation_entries_internal(
+            items, _total_count = await search_test_invocation_entries_internal(
                 c, test_ids=test_ids, limit=100000
             )
+            return items
 
     async def _get_evals() -> list:
         if not eval_ids_set:

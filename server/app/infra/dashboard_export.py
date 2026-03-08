@@ -95,7 +95,7 @@ async def export_dashboard_client(
 
     # -- Step 2: Search all attempts (full dump) --
 
-    attempts = await search_attempts(
+    attempts, _total_count = await search_attempts(
         conn,
         limit=100000,
         offset=0,

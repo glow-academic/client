@@ -19,8 +19,11 @@ async def search_attempt_messages(
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
-) -> list[GetAttemptMessageResponse]:
-    """Search attempt_message entries from attempt_message_mv with declarative filters."""
+) -> tuple[list[GetAttemptMessageResponse], int]:
+    """Search attempt_message entries from attempt_message_mv with declarative filters.
+
+    Returns (items, total_count).
+    """
     source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
     rows = await conn.fetch(
@@ -28,7 +31,8 @@ async def search_attempt_messages(
         SELECT message_id, chat_id, attempt_id, type,
                created_at, completed, text_id,
                history_file_path, audio_id,
-               parent_message_id, sibling_index, sibling_count
+               parent_message_id, sibling_index, sibling_count,
+               COUNT(*) OVER() AS total_count
         FROM {source}
         WHERE ($1::uuid[] IS NULL OR chat_id = ANY($1))
           AND ($2::uuid[] IS NULL OR attempt_id = ANY($2))
@@ -45,4 +49,9 @@ async def search_attempt_messages(
         offset,
     )
 
-    return [GetAttemptMessageResponse(**dict(r)) for r in rows]
+    total_count = rows[0]["total_count"] if rows else 0
+    items = [
+        GetAttemptMessageResponse(**{k: v for k, v in dict(r).items() if k != "total_count"})
+        for r in rows
+    ]
+    return (items, total_count)

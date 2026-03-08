@@ -47,7 +47,7 @@ async def resolve_pricing_context(
       - agents, models, pricing (for cost computation + filter options)
     """
     # Step 1: Fetch all runs for date range
-    all_runs = await search_runs(
+    all_runs, _total_count = await search_runs(
         conn,
         date_from=date_from,
         date_to=date_to,
@@ -144,7 +144,7 @@ async def resolve_pricing_search_context(
     # Step 2: Fetch runs for groups on current page
     group_ids = [g.id for g in all_groups]
     all_runs = (
-        await search_runs(conn, group_ids=group_ids, limit=100000) if group_ids else []
+        (await search_runs(conn, group_ids=group_ids, limit=100000))[0] if group_ids else []
     )
 
     # Step 3: Collect resource IDs

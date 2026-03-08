@@ -110,7 +110,7 @@ async def export_reports_client(
         )
 
     # -- Step 2: Search all test invocations (full dump) --
-    invocations = await search_test_invocation_entries_internal(
+    invocations, _total_count = await search_test_invocation_entries_internal(
         conn, limit=100000, offset=0
     )
 

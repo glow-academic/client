@@ -1,7 +1,12 @@
 """SocketEvent — pure data container for deferred WebSocket emission.
 
-Pure functions build SocketEvent lists instead of emitting directly.
-The thin I/O handler calls flush_events() to send them.
+Canonical pattern: business logic functions accept ``emit: EmitFn`` as a
+parameter and call ``await emit([...events])`` to produce events.  The
+function never knows about sockets, SSE, or any transport — the **caller**
+decides what ``emit`` does by providing the implementation.
+
+Production: ``emit = make_emit()`` → wraps ``flush_events``.
+Tests:      ``emit, events = recording_emit()`` → spy/recorder.
 
 Two buses:
   - "client"   → sio.emit (client-facing namespace)
@@ -21,8 +26,8 @@ class AsyncEmitter(Protocol):
     async def emit(self, event: str, data: Any, **kwargs: Any) -> None: ...
 
 
-# Type alias for emit callback — handlers accept this as a parameter.
-# Production default: flush_events. Tests: pass a spy/recorder.
+# Type alias for emit callback — every business logic function accepts this.
+# Production: make_emit(). Tests: recording_emit().
 EmitFn = Callable[[list["SocketEvent"]], Awaitable[None]]
 
 
@@ -85,3 +90,48 @@ async def flush_events(
             await internal_sio.emit(e.event, e.data)
         else:
             raise ValueError(f"Unknown bus: {e.bus}")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# EmitFn factories — production and test
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+def make_emit(
+    *,
+    client_sio: AsyncEmitter | None = None,
+    internal_sio: AsyncEmitter | None = None,
+) -> EmitFn:
+    """Create a production EmitFn that wraps flush_events.
+
+    Usage in a thin socket handler::
+
+        @internal_sio.on("some_event")
+        async def handler(data):
+            await some_business_logic(data, emit=make_emit())
+    """
+
+    async def _emit(events: list[SocketEvent]) -> None:
+        await flush_events(events, client_sio=client_sio, internal_sio=internal_sio)
+
+    return _emit
+
+
+def recording_emit() -> tuple[EmitFn, list[SocketEvent]]:
+    """Create a test EmitFn that records all events.
+
+    Returns (emit_fn, recorded_events) — assert against the list.
+
+    Usage in tests::
+
+        emit, events = recording_emit()
+        await some_business_logic(data, emit=emit)
+        assert len(events) == 2
+        assert events[0].event == "generation_started"
+    """
+    recorded: list[SocketEvent] = []
+
+    async def _emit(events: list[SocketEvent]) -> None:
+        recorded.extend(events)
+
+    return _emit, recorded

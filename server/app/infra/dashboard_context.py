@@ -109,7 +109,7 @@ async def _compute_message_stats(
 
     # Step 1: Fetch all messages for these chats
     async with pool.acquire() as c:
-        messages = await search_attempt_messages(c, chat_ids=chat_ids, limit=500000)
+        messages, _total_count = await search_attempt_messages(c, chat_ids=chat_ids, limit=500000)
 
     if not messages:
         return {}
@@ -344,7 +344,7 @@ async def resolve_dashboard_context(
     # ── Phase 1: Fetch chats + thresholds in parallel ────────────────
     async def _fetch_chats() -> list[ChatItem]:
         async with pool.acquire() as c:
-            raw = await search_attempt_chats(
+            raw, _total_count = await search_attempt_chats(
                 c,
                 profile_ids=[target_profile_id] if target_profile_id else None,
                 cohort_ids=cohort_ids,

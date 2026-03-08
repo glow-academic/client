@@ -74,9 +74,10 @@ async def resolve_test_context(
 
     async def _fetch_invocations() -> list:
         async with pool.acquire() as c:
-            return await search_test_invocation_entries_internal(
+            items, _total_count = await search_test_invocation_entries_internal(
                 c, test_ids=[test_id], limit=100000
             )
+            return items
 
     tests, invocations = await asyncio.gather(
         _fetch_tests(),
@@ -93,17 +94,19 @@ async def resolve_test_context(
         if not invocation_ids:
             return []
         async with pool.acquire() as c:
-            return await search_test_invocation_runs(
+            items, _total_count = await search_test_invocation_runs(
                 c, test_invocation_ids=invocation_ids, limit=100000
             )
+            return items
 
     async def _fetch_groups() -> list:
         if not invocation_ids:
             return []
         async with pool.acquire() as c:
-            return await search_test_invocation_groups(
+            items, _total_count = await search_test_invocation_groups(
                 c, test_invocation_ids=invocation_ids, limit=100000
             )
+            return items
 
     async def _fetch_grades() -> list:
         if not invocation_ids:

@@ -266,8 +266,11 @@ async def search_runs(
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
-) -> list[RunViewItem]:
-    """Search runs from runs_mv with declarative filters."""
+) -> tuple[list[RunViewItem], int]:
+    """Search runs from runs_mv with declarative filters.
+
+    Returns (items, total_count).
+    """
     source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
 
     order = "ASC" if sort_order.lower() == "asc" else "DESC"
@@ -280,7 +283,8 @@ async def search_runs(
                agent_ids, model_ids, provider_ids,
                input_pricing_count, input_pricing_pricing_id,
                output_pricing_count, output_pricing_pricing_id,
-               cached_pricing_count, cached_pricing_pricing_id
+               cached_pricing_count, cached_pricing_pricing_id,
+               COUNT(*) OVER() AS total_count
         FROM {source}
         WHERE ($1::uuid[] IS NULL OR group_id = ANY($1))
           AND ($2::timestamptz IS NULL OR run_created_at >= $2)
@@ -295,7 +299,8 @@ async def search_runs(
         offset,
     )
 
-    return [
+    total_count = rows[0]["total_count"] if rows else 0
+    items = [
         RunViewItem(
             run_id=r["run_id"],
             group_id=r["group_id"],
@@ -310,3 +315,4 @@ async def search_runs(
         )
         for r in rows
     ]
+    return (items, total_count)

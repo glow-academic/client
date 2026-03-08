@@ -52,7 +52,7 @@ async def resolve_leaderboard_context(
       - profiles
     """
     # Step 1: Fetch attempt_chats (no simulation/scenario filter for top sections)
-    all_attempt_chats = await search_attempt_chats(
+    all_attempt_chats, _total_count = await search_attempt_chats(
         conn,
         profile_ids=[target_profile_id] if target_profile_id else None,
         cohort_ids=cohort_ids,
@@ -67,7 +67,7 @@ async def resolve_leaderboard_context(
     # Step 2: Fetch attempt_messages for message stats
     chat_ids = [ac.chat_id for ac in all_attempt_chats if ac.chat_id]
     all_attempt_messages = (
-        await search_attempt_messages(conn, chat_ids=chat_ids, limit=1000000)
+        (await search_attempt_messages(conn, chat_ids=chat_ids, limit=1000000))[0]
         if chat_ids
         else []
     )
@@ -125,7 +125,7 @@ async def resolve_leaderboard_search_context(
       - profiles, simulations, scenarios
     """
     # Step 1: Fetch attempt_chats with full filter set
-    all_attempt_chats = await search_attempt_chats(
+    all_attempt_chats, _total_count = await search_attempt_chats(
         conn,
         profile_ids=[target_profile_id] if target_profile_id else None,
         cohort_ids=cohort_ids,
@@ -143,7 +143,7 @@ async def resolve_leaderboard_search_context(
     # Step 2: Fetch attempt_messages for message stats
     chat_ids = [ac.chat_id for ac in all_attempt_chats if ac.chat_id]
     all_attempt_messages = (
-        await search_attempt_messages(conn, chat_ids=chat_ids, limit=1000000)
+        (await search_attempt_messages(conn, chat_ids=chat_ids, limit=1000000))[0]
         if chat_ids
         else []
     )

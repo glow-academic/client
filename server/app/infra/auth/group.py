@@ -132,7 +132,7 @@ async def _resolve_from_attempt(
 ) -> ResolveGroupApiResponse | None:
     """Attempt → ownership check → chat state → group_id from current chat."""
     # Fetch attempt + chats in parallel
-    attempts, chats = await asyncio.gather(
+    attempts, (chats, _total_count) = await asyncio.gather(
         get_attempts(conn, [attempt_id]),
         search_attempt_chats(conn, attempt_ids=[attempt_id], limit=1000),
     )
@@ -193,7 +193,7 @@ async def _resolve_from_attempt(
 
     # Check if current chat has messages
     has_messages = False
-    messages = await search_attempt_messages(
+    messages, _total_count_msgs = await search_attempt_messages(
         conn, chat_ids=[current_chat.chat_id], limit=1
     )
     has_messages = len(messages) > 0
@@ -217,7 +217,7 @@ async def _resolve_from_test(
     test_id: UUID,
 ) -> ResolveGroupApiResponse | None:
     """Test → latest invocation → group_id + has_runs_or_groups check."""
-    invocations = await search_test_invocation_entries_internal(
+    invocations, _total_count = await search_test_invocation_entries_internal(
         conn, test_ids=[test_id], limit=1
     )
 
@@ -230,7 +230,7 @@ async def _resolve_from_test(
         return None
 
     # Check if invocation has runs or groups
-    runs, groups = await asyncio.gather(
+    (runs, _tc_runs), (groups, _tc_groups) = await asyncio.gather(
         search_test_invocation_runs(
             conn, test_invocation_ids=[invocation.invocation_id], limit=1
         ),
