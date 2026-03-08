@@ -18,6 +18,19 @@ from pydantic import BaseModel, Field
 from app.routes.v5.api.main.types import InternalResponseBase
 
 # =============================================================================
+# Export Types
+# =============================================================================
+
+
+class ExportChatApiResponse(BaseModel):
+    """Response model for chat export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
+# =============================================================================
 # Shared types
 # =============================================================================
 

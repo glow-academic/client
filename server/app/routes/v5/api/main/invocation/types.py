@@ -12,6 +12,19 @@ from uuid import UUID
 from pydantic import BaseModel
 
 # =============================================================================
+# Export Types
+# =============================================================================
+
+
+class ExportInvocationApiResponse(BaseModel):
+    """Response model for invocation export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
+
+
+# =============================================================================
 # GET Request / Response
 # =============================================================================
 
