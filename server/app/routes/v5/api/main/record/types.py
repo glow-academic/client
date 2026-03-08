@@ -1,10 +1,10 @@
 """Types for record artifact."""
 
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.main.types import InternalResponseBase
 from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
 
 # =============================================================================
@@ -31,8 +31,24 @@ class RecordWebsocketResources(BaseModel):
     pass
 
 
-class GetRecordWebsocketResponse(InternalResponseBase):
-    """Websocket-facing record response with hydrated resources."""
+class GetRecordWebsocketResponse(BaseModel):
+    """Websocket-facing record response with hydrated resources.
 
+    Uses Any for config chain fields to accept both compiled SQL types
+    and resource fetcher types during migration.
+    """
+
+    systems: list[Any] | None = None
+    agents: list[Any] | None = None
+    models: list[Any] | None = None
+    providers: list[Any] | None = None
+    tools: list[Any] | None = None
+    args: list[Any] | None = None
+    args_outputs: list[Any] | None = None
+    profile: list[Any] | None = None
+    params: BaseModel | None = None
+    resource_system_ids: dict[str, UUID | None] | None = None
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
     entries: RecordWebsocketEntries | None = None
     resources: RecordWebsocketResources
