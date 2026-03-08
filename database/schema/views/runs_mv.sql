@@ -52,8 +52,9 @@ CREATE MATERIALIZED VIEW public.runs_mv AS
     po.pricing_count AS output_pricing_count,
     po.pricing_id AS output_pricing_pricing_id,
     pc.pricing_count AS cached_pricing_count,
-    pc.pricing_id AS cached_pricing_pricing_id
-   FROM (((((public.runs_entry r
+    pc.pricing_id AS cached_pricing_pricing_id,
+    prc.profiles_id
+   FROM ((((((public.runs_entry r
      LEFT JOIN LATERAL ( SELECT tokens_entry.input_tokens,
             tokens_entry.output_tokens,
             tokens_entry.cached_input_tokens
@@ -65,6 +66,7 @@ CREATE MATERIALIZED VIEW public.runs_mv AS
      LEFT JOIN pricing_input pi ON ((pi.run_id = r.id)))
      LEFT JOIN pricing_output po ON ((po.run_id = r.id)))
      LEFT JOIN pricing_cached pc ON ((pc.run_id = r.id)))
+     LEFT JOIN public.profiles_runs_connection prc ON (((prc.run_id = r.id) AND (prc.active = true))))
   WHERE (r.group_id IS NOT NULL)
   WITH NO DATA;
 

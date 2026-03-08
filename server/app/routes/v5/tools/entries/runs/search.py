@@ -32,6 +32,7 @@ class RunViewItem(BaseModel):
 
     run_id: UUID
     group_id: UUID | None = None
+    profiles_id: UUID | None = None
     input_tokens: int = 0
     output_tokens: int = 0
     cached_input_tokens: int = 0
@@ -260,6 +261,7 @@ async def get_run_list_entries_internal(
 async def search_runs(
     conn: asyncpg.Connection,
     group_ids: list[UUID] | None = None,
+    profiles_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     sort_order: str = "desc",
@@ -277,7 +279,7 @@ async def search_runs(
 
     rows = await conn.fetch(
         f"""
-        SELECT run_id, group_id,
+        SELECT run_id, group_id, profiles_id,
                input_tokens, output_tokens, cached_input_tokens,
                run_created_at,
                agent_ids, model_ids, provider_ids,
@@ -287,12 +289,14 @@ async def search_runs(
                COUNT(*) OVER() AS total_count
         FROM {source}
         WHERE ($1::uuid[] IS NULL OR group_id = ANY($1))
-          AND ($2::timestamptz IS NULL OR run_created_at >= $2)
-          AND ($3::timestamptz IS NULL OR run_created_at <= $3)
+          AND ($2::uuid[] IS NULL OR profiles_id = ANY($2))
+          AND ($3::timestamptz IS NULL OR run_created_at >= $3)
+          AND ($4::timestamptz IS NULL OR run_created_at <= $4)
         ORDER BY run_created_at {order}
-        LIMIT $4 OFFSET $5
+        LIMIT $5 OFFSET $6
         """,
         group_ids,
+        profiles_ids,
         date_from,
         date_to,
         limit,
@@ -304,6 +308,7 @@ async def search_runs(
         RunViewItem(
             run_id=r["run_id"],
             group_id=r["group_id"],
+            profiles_id=r["profiles_id"],
             input_tokens=r["input_tokens"] or 0,
             output_tokens=r["output_tokens"] or 0,
             cached_input_tokens=r["cached_input_tokens"] or 0,
