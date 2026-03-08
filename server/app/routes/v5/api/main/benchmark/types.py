@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from pydantic import BaseModel, Field
 
 from app.routes.v5.api.main.types import FilterOption
@@ -103,3 +105,16 @@ class BenchmarkResponse(BaseModel):
     date_range_earliest: str | None = None
     date_range_latest: str | None = None
     history: BenchmarkHistoryResponse | None = None
+
+
+# =============================================================================
+# Export Types
+# =============================================================================
+
+
+class ExportBenchmarkApiResponse(BaseModel):
+    """Response model for benchmark export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

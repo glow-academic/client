@@ -167,3 +167,16 @@ class GroupInternalData:
     # Resource maps (from context resolver)
     name_map: dict[UUID, str] = field(default_factory=dict)
     tool_name_map: dict[UUID, str] = field(default_factory=dict)
+
+
+# =============================================================================
+# Export Types
+# =============================================================================
+
+
+class ExportGroupApiResponse(BaseModel):
+    """Response model for group export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

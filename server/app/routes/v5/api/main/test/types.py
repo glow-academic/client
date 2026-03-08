@@ -212,3 +212,16 @@ class ArchiveTestsResponse(BaseModel):
     """Response for archiving/unarchiving benchmark tests."""
 
     updated_count: int = 0
+
+
+# =============================================================================
+# Export Types
+# =============================================================================
+
+
+class ExportTestApiResponse(BaseModel):
+    """Response model for test export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

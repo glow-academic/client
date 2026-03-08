@@ -141,3 +141,16 @@ class SessionInternalData:
     profile_name: str | None = None
     # Resource maps
     name_map: dict[UUID, str] = field(default_factory=dict)
+
+
+# =============================================================================
+# Export Types
+# =============================================================================
+
+
+class ExportSessionApiResponse(BaseModel):
+    """Response model for session export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

@@ -53,3 +53,16 @@ class HealthInternalData:
     resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
     resource_system_ids: dict[str, UUID | None] = field(default_factory=dict)
     group_id: UUID | None = None
+
+
+# =============================================================================
+# Export Types
+# =============================================================================
+
+
+class ExportHealthApiResponse(BaseModel):
+    """Response model for health export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

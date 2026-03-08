@@ -71,3 +71,16 @@ class ListActivityResponse(BaseModel):
     page: int = 0
     page_size: int = 50
     total_pages: int = 0
+
+
+# =============================================================================
+# Export Types
+# =============================================================================
+
+
+class ExportActivityApiResponse(BaseModel):
+    """Response model for activity export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

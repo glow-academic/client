@@ -65,3 +65,16 @@ class ListRecordRequest(BaseModel):
     page_size: int = 20
     simulation_search: str | None = None
     scenario_search: str | None = None
+
+
+# =============================================================================
+# Export endpoint types
+# =============================================================================
+
+
+class ExportRecordApiResponse(BaseModel):
+    """Response model for record export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int

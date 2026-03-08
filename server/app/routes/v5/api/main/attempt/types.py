@@ -747,3 +747,16 @@ class GetAttemptListResponse(BaseModel):
     simulation_options: list[AttemptListFilterOption] | None = None
     scenario_options: list[AttemptListFilterOption] | None = None
     profile_options: list[AttemptListFilterOption] | None = None
+
+
+# =============================================================================
+# Export endpoint types
+# =============================================================================
+
+
+class ExportAttemptApiResponse(BaseModel):
+    """Response model for attempt export."""
+
+    upload_id: UUID
+    file_name: str
+    row_count: int
