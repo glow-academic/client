@@ -1,0 +1,212 @@
+"""Cohort docs logic — composable infra architecture.
+
+Composes existing black-box tool docs:
+  1. resolve_profile_identity_context — profile (role, departments)
+  2. Artifact tool docs — cohort_artifact table + CRUD operations
+  3. Entry tool docs — cohort_drafts MV, tables, operations
+  4. Resource tool docs — all linked resources (names, descriptions, etc.)
+  5. Permission functions — introspected via get_operation_info
+  6. API operations — all public route handlers introspected
+"""
+
+from __future__ import annotations
+
+import asyncio
+from uuid import UUID
+
+import asyncpg
+from redis.asyncio import Redis
+
+from app.infra.docs.get_operation_info import get_operation_info
+from app.infra.docs.types import ComposedDocsResponse
+from app.infra.profile_identity_context import resolve_profile_identity_context
+
+# Artifact tool docs
+from app.routes.v5.tools.artifacts.cohort.docs import get_cohort_docs
+
+# Entry tool docs
+from app.routes.v5.tools.entries.cohort_drafts.docs import get_cohort_drafts_docs
+
+# Resource tool docs
+from app.routes.v5.tools.resources.departments.docs import get_departments_docs
+from app.routes.v5.tools.resources.descriptions.docs import get_descriptions_docs
+from app.routes.v5.tools.resources.flags.docs import get_flags_docs
+from app.routes.v5.tools.resources.names.docs import get_names_docs
+from app.routes.v5.tools.resources.personas.docs import get_personas_docs
+from app.routes.v5.tools.resources.profile_personas.docs import (
+    get_profile_personas_docs,
+)
+from app.routes.v5.tools.resources.profiles.docs import get_profiles_docs
+from app.routes.v5.tools.resources.simulation_availability.docs import (
+    get_simulation_availability_docs,
+)
+from app.routes.v5.tools.resources.simulation_positions.docs import (
+    get_simulation_positions_docs,
+)
+from app.routes.v5.tools.resources.simulations.docs import get_simulations_docs
+
+
+async def docs_cohort_client(
+    conn: asyncpg.Connection,
+    redis: Redis,
+    *,
+    profile_id: UUID,
+) -> ComposedDocsResponse:
+    """Cohort docs using composable infra functions.
+
+    Flow:
+      1. resolve_profile_identity_context → profile check
+      2. Parallel: artifact docs + entry docs + all resource docs
+      3. Assemble ComposedDocsResponse with permissions + API operations
+    """
+    from fastapi import HTTPException
+
+    # ── Step 1: Profile context ────────────────────────────────────────
+
+    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+
+    if profile is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Profile not found. Please sign in again.",
+        )
+
+    # ── Step 2: Parallel docs fetches ──────────────────────────────────
+
+    (
+        artifact,
+        drafts,
+        names,
+        descriptions,
+        departments,
+        flags,
+        personas,
+        profile_personas,
+        profiles,
+        simulations,
+        simulation_availability,
+        simulation_positions,
+    ) = await asyncio.gather(
+        get_cohort_docs(conn),
+        get_cohort_drafts_docs(conn),
+        get_names_docs(conn),
+        get_descriptions_docs(conn),
+        get_departments_docs(conn),
+        get_flags_docs(conn),
+        get_personas_docs(conn),
+        get_profile_personas_docs(conn),
+        get_profiles_docs(conn),
+        get_simulations_docs(conn),
+        get_simulation_availability_docs(conn),
+        get_simulation_positions_docs(conn),
+    )
+
+    # ── Step 3: Assemble response ──────────────────────────────────────
+
+    # Lazy imports to avoid circular dependencies
+    from app.routes.v5.api.main.cohort.create import create_cohort
+    from app.routes.v5.api.main.cohort.delete import delete_cohort
+    from app.routes.v5.api.main.cohort.draft import patch_cohort_draft
+    from app.routes.v5.api.main.cohort.duplicate import duplicate_cohort
+    from app.routes.v5.api.main.cohort.export import export_cohorts
+    from app.routes.v5.api.main.cohort.get import get_cohort
+    from app.routes.v5.api.main.cohort.permissions import (
+        compute_can_create,
+        compute_can_delete,
+        compute_can_draft,
+        compute_can_duplicate,
+        compute_can_edit,
+        has_access,
+    )
+    from app.routes.v5.api.main.cohort.save import save_cohort
+    from app.routes.v5.api.main.cohort.search import search_cohort
+    from app.routes.v5.api.main.cohort.update import update_cohort
+
+    return ComposedDocsResponse(
+        name="cohort",
+        type="artifact",
+        description=(
+            "Cohorts define groups of profiles assigned to simulations. "
+            "Each cohort links to resources (names, descriptions, departments, "
+            "flags, personas, profiles, profile_personas, simulations, "
+            "simulation_availability, simulation_positions) via junction tables."
+        ),
+        artifact=artifact,
+        entries=[drafts],
+        resources=[
+            names,
+            descriptions,
+            departments,
+            flags,
+            personas,
+            profile_personas,
+            profiles,
+            simulations,
+            simulation_availability,
+            simulation_positions,
+        ],
+        permissions=[
+            get_operation_info(
+                has_access,
+                description="View access — user shares ANY department with the cohort.",
+            ),
+            get_operation_info(
+                compute_can_edit,
+                description="Unified edit permission for UI and save enforcement.",
+            ),
+            get_operation_info(
+                compute_can_delete,
+                description="Delete permission — same as edit + usage check.",
+            ),
+            get_operation_info(
+                compute_can_duplicate,
+                description="Duplicate — role-only check.",
+            ),
+            get_operation_info(
+                compute_can_create,
+                description="Create new artifact — role + department check.",
+            ),
+            get_operation_info(
+                compute_can_draft,
+                description="Draft — role-only check.",
+            ),
+        ],
+        api_operations=[
+            get_operation_info(
+                get_cohort,
+                description="POST /get — Get a single cohort by ID with hydrated resources.",
+            ),
+            get_operation_info(
+                search_cohort,
+                description="POST /search — Paginated cohort search with filters.",
+            ),
+            get_operation_info(
+                create_cohort,
+                description="POST /create — Create a new cohort artifact.",
+            ),
+            get_operation_info(
+                update_cohort,
+                description="POST /update — Update an existing cohort's resource links.",
+            ),
+            get_operation_info(
+                save_cohort,
+                description="POST /save — Create or update a cohort (unified save).",
+            ),
+            get_operation_info(
+                duplicate_cohort,
+                description="POST /duplicate — Duplicate an existing cohort.",
+            ),
+            get_operation_info(
+                delete_cohort,
+                description="POST /delete — Delete a cohort.",
+            ),
+            get_operation_info(
+                patch_cohort_draft,
+                description="PATCH /draft — Create or patch a cohort draft (autosave).",
+            ),
+            get_operation_info(
+                export_cohorts,
+                description="POST /export — Export cohorts as denormalized CSV.",
+            ),
+        ],
+    )
