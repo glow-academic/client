@@ -1,11 +1,11 @@
-"""Eval create logic — composable infra architecture.
+"""Tool create logic — composable infra architecture.
 
 Composes existing black-box tools:
-  1. resolve_profile_identity_context — profile (role, departments)
+  1. resolve_profile_identity_context — profile (role)
   2. compute_can_create — permission check
-  3. resolve_eval_values — raw value → ID resolution
-  4. create_eval_artifact — junction writes
-  5. create_denormalized_snapshot — evals_resource snapshot
+  3. resolve_tool_values — raw value → ID resolution
+  4. create_tool_artifact — junction writes
+  5. create_denormalized_snapshot — tools_resource snapshot
 """
 
 from __future__ import annotations
@@ -16,18 +16,18 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
-from app.infra.eval_permissions_context import (
-    create_denormalized_snapshot,
-    resolve_eval_values,
-)
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.eval.create import (
-    create_eval as create_eval_artifact,
+from app.infra.tool_permissions_context import (
+    create_denormalized_snapshot,
+    resolve_tool_values,
+)
+from app.routes.v5.tools.artifacts.tool.create import (
+    create_tool as create_tool_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 
-async def create_eval_client(
+async def create_tool_client(
     conn: asyncpg.Connection,
     redis: Redis,
     *,
@@ -35,19 +35,19 @@ async def create_eval_client(
     items: list,
     group_id: UUID | None = None,
 ) -> dict:
-    """Eval bulk create using composable infra functions.
+    """Tool bulk create using composable infra functions.
 
     Flow:
-      1. resolve_profile_identity_context → role, department_ids
+      1. resolve_profile_identity_context → role
       2. compute_can_create — single check (applies to all items)
       3. Per-item value resolution (raw → ID, required field enforcement)
-      4. Single transaction: create_eval_artifact + denormalized snapshot per item
+      4. Single transaction: create_tool_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.eval.permissions import compute_can_create
-    from app.routes.v5.api.main.eval.types import (
-        CreateEvalApiResponse,
-        EvalResultItem,
+    from app.routes.v5.api.main.tool.permissions import compute_can_create
+    from app.routes.v5.api.main.tool.types import (
+        CreateToolApiResponse,
+        ToolResultItem,
     )
 
     # ── Step 1: Profile context ────────────────────────────────────────
@@ -65,68 +65,71 @@ async def create_eval_client(
     if not compute_can_create(user_role=profile.role):
         raise HTTPException(
             status_code=403,
-            detail="You don't have permission to create evals.",
+            detail="You don't have permission to create tools.",
         )
 
     # ── Step 3: Per-item value resolution ──────────────────────────────
 
     has_errors = False
-    error_results: list[EvalResultItem] = []
+    error_results: list[ToolResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_eval_values(conn, redis, item, is_create=True)
+        item_errors = await resolve_tool_values(conn, redis, item, is_create=True)
         if item_errors:
             has_errors = True
             error_results.append(
-                EvalResultItem(
+                ToolResultItem(
                     success=False,
                     message=f"Item {idx}: Validation errors",
                     errors=item_errors,
                 )
             )
         else:
-            error_results.append(EvalResultItem(success=True, message="Validated"))
+            error_results.append(ToolResultItem(success=True, message="Validated"))
 
     if has_errors:
-        return CreateEvalApiResponse(results=error_results)
+        return CreateToolApiResponse(results=error_results)
 
     # ── Step 4: Single transaction ─────────────────────────────────────
 
-    results: list[EvalResultItem] = []
+    results: list[ToolResultItem] = []
 
     async with conn.transaction():
         for item in items:
             # Create denormalized snapshot
-            evals_resource_id = await create_denormalized_snapshot(
+            tools_resource_id = await create_denormalized_snapshot(
                 conn,
                 redis,
                 name_id=item.name_id,
                 description_id=item.description_id,
             )
 
-            result = await create_eval_artifact(
+            result = await create_tool_artifact(
                 conn,
                 name_id=item.name_id,
                 description_id=item.description_id,
                 department_ids=item.department_ids,
                 flag_ids=item.flag_ids,
-                model_ids=item.model_ids,
-                model_flag_ids=item.model_flag_ids,
-                model_rubric_ids=item.model_rubric_ids,
-                model_position_ids=item.model_position_ids,
-                eval_ids=[evals_resource_id],
+                arg_positions_ids=item.arg_positions_ids,
+                args_ids=item.args_ids,
+                args_outputs_ids=item.args_outputs_ids,
+                artifact_ids=item.artifact_ids,
+                entry_ids=item.entry_ids,
+                operation_ids=item.operation_ids,
+                resource_ids=item.resource_ids,
+                tool_ids=[tools_resource_id],
             )
 
             results.append(
-                EvalResultItem(
+                ToolResultItem(
                     success=True,
-                    eval_id=result.id,
-                    message="Eval created successfully",
+                    tool_id=result.id,
+                    message="Tool created successfully",
                 )
             )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 
-    await invalidate_tags(["evals"], redis=redis)
+    await invalidate_tags(["tools"], redis=redis)
 
-    return CreateEvalApiResponse(results=results)
+    return CreateToolApiResponse(results=results)

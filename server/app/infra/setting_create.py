@@ -16,11 +16,11 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.setting_permissions_context import (
     create_denormalized_snapshot,
     resolve_setting_values,
 )
-from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.artifacts.setting.create import (
     create_setting as create_setting_artifact,
 )

@@ -14,6 +14,7 @@ async def search_attempt_homes(
     conn: asyncpg.Connection,
     attempt_ids: list[UUID] | None = None,
     home_ids: list[UUID] | None = None,
+    session_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -27,11 +28,13 @@ async def search_attempt_homes(
         FROM {source}
         WHERE ($1::uuid[] IS NULL OR attempt_id = ANY($1))
           AND ($2::uuid[] IS NULL OR home_id = ANY($2))
+          AND ($3::uuid[] IS NULL OR session_id = ANY($3))
         ORDER BY created_at DESC
-        LIMIT $3 OFFSET $4
+        LIMIT $4 OFFSET $5
         """,
         attempt_ids,
         home_ids,
+        session_ids,
         limit,
         offset,
     )

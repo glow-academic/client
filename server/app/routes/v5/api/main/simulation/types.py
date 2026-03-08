@@ -536,7 +536,118 @@ class ListSimulationApiResponse(BaseModel):
 
 
 # =============================================================================
-# SAVE Endpoint Types
+# Shared Save/Create/Update Types
+# =============================================================================
+
+
+class SimulationFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SimulationResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    simulation_id: UUID | None = None
+    message: str
+    errors: list[SimulationFieldError] | None = None
+
+
+# =============================================================================
+# Create Endpoint Types
+# =============================================================================
+
+
+class CreateSimulationItem(BaseModel):
+    """Single simulation item for create — no simulation_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # Multi-select IDs
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+    # Value-based fields for CSV import (match-by-name resolution)
+    is_inactive: bool | None = None
+    is_practice: bool | None = None
+    departments: list[str] | None = None
+    scenarios: list[str] | None = None
+
+
+class CreateSimulationApiRequest(BaseModel):
+    """Request model for bulk create simulation endpoint."""
+
+    simulations: list[CreateSimulationItem]
+    group_id: UUID | None = None
+
+
+class CreateSimulationApiResponse(BaseModel):
+    """Response model for bulk create simulation endpoint."""
+
+    results: list[SimulationResultItem]
+
+
+# =============================================================================
+# Update Endpoint Types
+# =============================================================================
+
+
+class UpdateSimulationItem(BaseModel):
+    """Single simulation item for update — simulation_id required, all fields optional.
+
+    Only provided fields are updated (partial update).
+    """
+
+    simulation_id: UUID  # Required — which simulation to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    # Multi-select IDs
+    flag_ids: list[UUID] | None = None
+    department_ids: list[UUID] | None = None
+    scenario_ids: list[UUID] | None = None
+    scenario_flag_ids: list[UUID] | None = None
+    scenario_position_ids: list[UUID] | None = None
+    scenario_rubric_ids: list[UUID] | None = None
+    scenario_time_limit_ids: list[UUID] | None = None
+    # Value-based fields for CSV import (match-by-name resolution)
+    is_inactive: bool | None = None
+    is_practice: bool | None = None
+    departments: list[str] | None = None
+    scenarios: list[str] | None = None
+
+
+class UpdateSimulationApiRequest(BaseModel):
+    """Request model for bulk update simulation endpoint."""
+
+    simulations: list[UpdateSimulationItem]
+    group_id: UUID | None = None
+
+
+class UpdateSimulationApiResponse(BaseModel):
+    """Response model for bulk update simulation endpoint."""
+
+    results: list[SimulationResultItem]
+
+
+# =============================================================================
+# Legacy SAVE Endpoint Types (backwards compat)
 # =============================================================================
 
 

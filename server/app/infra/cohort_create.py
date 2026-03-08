@@ -67,7 +67,13 @@ async def create_cohort_client(
 
     # ── Step 2: Permission check ───────────────────────────────────────
 
-    if not compute_can_create(profile.role, []):
+    # For create, pass department_ids from the first item (or empty)
+    request_department_ids = (
+        [str(d) for d in (items[0].department_ids or [])]
+        if items and items[0].department_ids
+        else []
+    )
+    if not compute_can_create(profile.role, request_department_ids):
         raise HTTPException(
             status_code=403,
             detail="You don't have permission to create cohorts.",

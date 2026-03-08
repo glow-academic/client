@@ -1,11 +1,11 @@
-"""Model update logic — composable infra architecture.
+"""Simulation update logic — composable infra architecture.
 
 Composes existing black-box tools:
   1. resolve_profile_identity_context — profile (role, departments)
-  2. resolve_model_permissions_context — per-item access + edit check
-  3. resolve_model_values — raw value → ID resolution
-  4. update_model_artifact — junction writes (partial update)
-  5. create_denormalized_snapshot — models_resource snapshot
+  2. resolve_simulation_permissions_context — per-item access + edit check
+  3. resolve_simulation_values — raw value → ID resolution
+  4. update_simulation_artifact — junction writes (partial update)
+  5. create_denormalized_snapshot — simulations_resource snapshot
 """
 
 from __future__ import annotations
@@ -16,22 +16,22 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
-from app.infra.model_permissions_context import (
-    create_denormalized_snapshot,
-    resolve_model_permissions_context,
-    resolve_model_values,
-)
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.model.update import (
+from app.infra.simulation_permissions_context import (
+    create_denormalized_snapshot,
+    resolve_simulation_permissions_context,
+    resolve_simulation_values,
+)
+from app.routes.v5.tools.artifacts.simulation.update import (
     _UNSET,
 )
-from app.routes.v5.tools.artifacts.model.update import (
-    update_model as update_model_artifact,
+from app.routes.v5.tools.artifacts.simulation.update import (
+    update_simulation as update_simulation_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 
-async def update_model_client(
+async def update_simulation_client(
     conn: asyncpg.Connection,
     redis: Redis,
     *,
@@ -39,19 +39,19 @@ async def update_model_client(
     items: list,
     group_id: UUID | None = None,
 ) -> dict:
-    """Model bulk update using composable infra functions.
+    """Simulation bulk update using composable infra functions.
 
     Flow:
       1. resolve_profile_identity_context → role, department_ids
-      2. Per-item: resolve_model_permissions_context → exists + compute_can_edit
+      2. Per-item: resolve_simulation_permissions_context → exists + compute_can_edit
       3. Per-item value resolution (raw → ID, no required field enforcement)
-      4. Single transaction: update_model_artifact + denormalized snapshot per item
+      4. Single transaction: update_simulation_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.model.permissions import compute_can_edit
-    from app.routes.v5.api.main.model.types import (
-        ModelResultItem,
-        UpdateModelApiResponse,
+    from app.routes.v5.api.main.simulation.permissions import compute_can_edit
+    from app.routes.v5.api.main.simulation.types import (
+        SimulationResultItem,
+        UpdateSimulationApiResponse,
     )
 
     # ── Step 1: Profile context ────────────────────────────────────────
@@ -67,87 +67,92 @@ async def update_model_client(
     # ── Step 2: Per-item permission check ──────────────────────────────
 
     for idx, item in enumerate(items):
-        perms = await resolve_model_permissions_context(conn, item.model_id)
+        perms = await resolve_simulation_permissions_context(
+            conn, item.simulation_id
+        )
         if not perms.exists:
             raise HTTPException(
                 status_code=404,
-                detail=f"Item {idx}: Model {item.model_id} not found.",
+                detail=f"Item {idx}: Simulation {item.simulation_id} not found.",
             )
         if not compute_can_edit(
             user_role=profile.role,
-            model_department_ids=perms.department_ids,
-            active_agent_count=perms.active_agent_count,
+            simulation_department_ids=perms.department_ids,
+            cohort_usage_count=perms.cohort_usage_count,
             user_department_ids=profile.department_ids,
         ):
             raise HTTPException(
                 status_code=403,
-                detail=f"Item {idx}: You don't have permission to update this model.",
+                detail=f"Item {idx}: You don't have permission to update this simulation.",
             )
 
     # ── Step 3: Per-item value resolution ──────────────────────────────
 
     has_errors = False
-    error_results: list[ModelResultItem] = []
+    error_results: list[SimulationResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_model_values(conn, redis, item, is_create=False)
+        item_errors = await resolve_simulation_values(
+            conn, redis, item, is_create=False
+        )
         if item_errors:
             has_errors = True
             error_results.append(
-                ModelResultItem(
+                SimulationResultItem(
                     success=False,
                     message=f"Item {idx}: Validation errors",
                     errors=item_errors,
                 )
             )
         else:
-            error_results.append(ModelResultItem(success=True, message="Validated"))
+            error_results.append(
+                SimulationResultItem(success=True, message="Validated")
+            )
 
     if has_errors:
-        return UpdateModelApiResponse(results=error_results)
+        return UpdateSimulationApiResponse(results=error_results)
 
     # ── Step 4: Single transaction ─────────────────────────────────────
 
-    results: list[ModelResultItem] = []
+    results: list[SimulationResultItem] = []
 
     async with conn.transaction():
         for item in items:
             # Create denormalized snapshot
-            models_resource_id = await create_denormalized_snapshot(
+            simulations_resource_id = await create_denormalized_snapshot(
                 conn,
                 redis,
                 name_id=item.name_id,
                 description_id=item.description_id,
             )
 
-            await update_model_artifact(
+            await update_simulation_artifact(
                 conn,
-                item.model_id,
+                item.simulation_id,
                 name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id if item.description_id else _UNSET,
+                description_id=item.description_id
+                if item.description_id
+                else _UNSET,
                 department_ids=item.department_ids,
                 flag_ids=item.flag_ids,
-                modality_ids=item.modality_ids,
-                model_ids=[models_resource_id],
-                pricing_ids=item.pricing_ids,
-                provider_ids=item.provider_ids,
-                quality_ids=item.quality_ids,
-                reasoning_level_ids=item.reasoning_level_ids,
-                temperature_level_ids=item.temperature_level_ids,
-                value_ids=item.value_ids,
-                voice_ids=item.voice_ids,
+                scenario_ids=item.scenario_ids,
+                scenario_flag_ids=item.scenario_flag_ids,
+                scenario_position_ids=item.scenario_position_ids,
+                scenario_rubric_ids=item.scenario_rubric_ids,
+                scenario_time_limit_ids=item.scenario_time_limit_ids,
+                simulation_ids=[simulations_resource_id],
             )
 
             results.append(
-                ModelResultItem(
+                SimulationResultItem(
                     success=True,
-                    model_id=item.model_id,
-                    message="Model updated successfully",
+                    simulation_id=item.simulation_id,
+                    message="Simulation updated successfully",
                 )
             )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 
-    await invalidate_tags(["models"], redis=redis)
+    await invalidate_tags(["simulations"], redis=redis)
 
-    return UpdateModelApiResponse(results=results)
+    return UpdateSimulationApiResponse(results=results)

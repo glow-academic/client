@@ -1,11 +1,11 @@
-"""Eval update logic — composable infra architecture.
+"""Tool update logic — composable infra architecture.
 
 Composes existing black-box tools:
-  1. resolve_profile_identity_context — profile (role, departments)
-  2. resolve_eval_permissions_context — per-item access + edit check
-  3. resolve_eval_values — raw value → ID resolution
-  4. update_eval_artifact — junction writes (partial update)
-  5. create_denormalized_snapshot — evals_resource snapshot
+  1. resolve_profile_identity_context — profile (role)
+  2. resolve_tool_permissions_context — per-item access + edit check
+  3. resolve_tool_values — raw value → ID resolution
+  4. update_tool_artifact — junction writes (partial update)
+  5. create_denormalized_snapshot — tools_resource snapshot
 """
 
 from __future__ import annotations
@@ -16,22 +16,22 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
-from app.infra.eval_permissions_context import (
-    create_denormalized_snapshot,
-    resolve_eval_permissions_context,
-    resolve_eval_values,
-)
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.routes.v5.tools.artifacts.eval.update import (
+from app.infra.tool_permissions_context import (
+    create_denormalized_snapshot,
+    resolve_tool_permissions_context,
+    resolve_tool_values,
+)
+from app.routes.v5.tools.artifacts.tool.update import (
     _UNSET,
 )
-from app.routes.v5.tools.artifacts.eval.update import (
-    update_eval as update_eval_artifact,
+from app.routes.v5.tools.artifacts.tool.update import (
+    update_tool as update_tool_artifact,
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 
-async def update_eval_client(
+async def update_tool_client(
     conn: asyncpg.Connection,
     redis: Redis,
     *,
@@ -39,19 +39,19 @@ async def update_eval_client(
     items: list,
     group_id: UUID | None = None,
 ) -> dict:
-    """Eval bulk update using composable infra functions.
+    """Tool bulk update using composable infra functions.
 
     Flow:
-      1. resolve_profile_identity_context → role, department_ids
-      2. Per-item: resolve_eval_permissions_context → exists + compute_can_edit
+      1. resolve_profile_identity_context → role
+      2. Per-item: resolve_tool_permissions_context → exists + compute_can_edit
       3. Per-item value resolution (raw → ID, no required field enforcement)
-      4. Single transaction: update_eval_artifact + denormalized snapshot per item
+      4. Single transaction: update_tool_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.eval.permissions import compute_can_edit
-    from app.routes.v5.api.main.eval.types import (
-        EvalResultItem,
-        UpdateEvalApiResponse,
+    from app.routes.v5.api.main.tool.permissions import compute_can_edit
+    from app.routes.v5.api.main.tool.types import (
+        ToolResultItem,
+        UpdateToolApiResponse,
     )
 
     # ── Step 1: Profile context ────────────────────────────────────────
@@ -67,80 +67,86 @@ async def update_eval_client(
     # ── Step 2: Per-item permission check ──────────────────────────────
 
     for idx, item in enumerate(items):
-        perms = await resolve_eval_permissions_context(conn, item.eval_id)
+        perms = await resolve_tool_permissions_context(conn, item.tool_id)
         if not perms.exists:
             raise HTTPException(
                 status_code=404,
-                detail=f"Item {idx}: Eval {item.eval_id} not found.",
+                detail=f"Item {idx}: Tool {item.tool_id} not found.",
             )
         if not compute_can_edit(
             user_role=profile.role,
+            active_agent_count=perms.active_agent_count,
         ):
             raise HTTPException(
                 status_code=403,
-                detail=f"Item {idx}: You don't have permission to update this eval.",
+                detail=f"Item {idx}: You don't have permission to update this tool.",
             )
 
     # ── Step 3: Per-item value resolution ──────────────────────────────
 
     has_errors = False
-    error_results: list[EvalResultItem] = []
+    error_results: list[ToolResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_eval_values(conn, redis, item, is_create=False)
+        item_errors = await resolve_tool_values(conn, redis, item, is_create=False)
         if item_errors:
             has_errors = True
             error_results.append(
-                EvalResultItem(
+                ToolResultItem(
                     success=False,
                     message=f"Item {idx}: Validation errors",
                     errors=item_errors,
                 )
             )
         else:
-            error_results.append(EvalResultItem(success=True, message="Validated"))
+            error_results.append(ToolResultItem(success=True, message="Validated"))
 
     if has_errors:
-        return UpdateEvalApiResponse(results=error_results)
+        return UpdateToolApiResponse(results=error_results)
 
     # ── Step 4: Single transaction ─────────────────────────────────────
 
-    results: list[EvalResultItem] = []
+    results: list[ToolResultItem] = []
 
     async with conn.transaction():
         for item in items:
             # Create denormalized snapshot
-            evals_resource_id = await create_denormalized_snapshot(
+            tools_resource_id = await create_denormalized_snapshot(
                 conn,
                 redis,
                 name_id=item.name_id,
                 description_id=item.description_id,
             )
 
-            await update_eval_artifact(
+            await update_tool_artifact(
                 conn,
-                item.eval_id,
+                item.tool_id,
                 name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id if item.description_id else _UNSET,
+                description_id=item.description_id
+                if item.description_id
+                else _UNSET,
                 department_ids=item.department_ids,
                 flag_ids=item.flag_ids,
-                model_ids=item.model_ids,
-                model_flag_ids=item.model_flag_ids,
-                model_rubric_ids=item.model_rubric_ids,
-                model_position_ids=item.model_position_ids,
-                eval_ids=[evals_resource_id],
+                arg_positions_ids=item.arg_positions_ids,
+                args_ids=item.args_ids,
+                args_outputs_ids=item.args_outputs_ids,
+                artifact_ids=item.artifact_ids,
+                entry_ids=item.entry_ids,
+                operation_ids=item.operation_ids,
+                resource_ids=item.resource_ids,
+                tool_ids=[tools_resource_id],
             )
 
             results.append(
-                EvalResultItem(
+                ToolResultItem(
                     success=True,
-                    eval_id=item.eval_id,
-                    message="Eval updated successfully",
+                    tool_id=item.tool_id,
+                    message="Tool updated successfully",
                 )
             )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 
-    await invalidate_tags(["evals"], redis=redis)
+    await invalidate_tags(["tools"], redis=redis)
 
-    return UpdateEvalApiResponse(results=results)
+    return UpdateToolApiResponse(results=results)

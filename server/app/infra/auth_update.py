@@ -81,7 +81,7 @@ async def update_auth_client(
             )
         if not compute_can_edit(
             user_role=profile.role,
-            active_settings_count=0,
+            active_settings_count=perms.active_settings_count,
         ):
             raise HTTPException(
                 status_code=403,
@@ -129,9 +129,7 @@ async def update_auth_client(
                 conn,
                 item.auth_id,
                 name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id
-                if item.description_id
-                else _UNSET,
+                description_id=item.description_id if item.description_id else _UNSET,
                 slug_id=item.slug_id if item.slug_id else _UNSET,
                 department_ids=item.department_ids,
                 flag_ids=[item.active_flag_id] if item.active_flag_id else None,

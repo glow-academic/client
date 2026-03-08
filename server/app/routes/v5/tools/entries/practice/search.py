@@ -1,5 +1,7 @@
 """Practice search — filtered/paginated query against practice_mv."""
 
+from uuid import UUID
+
 import asyncpg  # type: ignore
 
 from app.infra.docs.resolve_mv_source import resolve_mv_source
@@ -10,6 +12,7 @@ MV_NAME = "practice_mv"
 
 async def search_practices(
     conn: asyncpg.Connection,
+    session_ids: list[UUID] | None = None,
     limit: int = 20,
     offset: int = 0,
     bypass_mv: bool = False,
@@ -23,9 +26,11 @@ async def search_practices(
                profile_ids, chat_ids, scenario_ids,
                created_at, updated_at, active
         FROM {source}
+        WHERE ($1::uuid[] IS NULL OR session_id = ANY($1))
         ORDER BY created_at DESC
-        LIMIT $1 OFFSET $2
+        LIMIT $2 OFFSET $3
         """,
+        session_ids,
         limit,
         offset,
     )

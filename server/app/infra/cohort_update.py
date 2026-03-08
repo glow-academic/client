@@ -81,9 +81,7 @@ async def update_cohort_client(
                 status_code=404,
                 detail=f"Item {idx}: Cohort {item.cohort_id} not found.",
             )
-        if not has_access(
-            profile.role, profile.department_ids, perms.department_ids
-        ):
+        if not has_access(profile.role, profile.department_ids, perms.department_ids):
             raise HTTPException(
                 status_code=403,
                 detail=f"Item {idx}: You don't have access to this cohort.",
@@ -141,9 +139,7 @@ async def update_cohort_client(
                 conn,
                 item.cohort_id,
                 name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id
-                if item.description_id
-                else _UNSET,
+                description_id=item.description_id if item.description_id else _UNSET,
                 department_ids=item.department_ids,
                 flag_ids=flag_ids,
                 simulation_ids=item.simulation_ids,

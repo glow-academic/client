@@ -124,9 +124,7 @@ async def update_field_client(
                 conn,
                 item.field_id,
                 name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id
-                if item.description_id
-                else _UNSET,
+                description_id=item.description_id if item.description_id else _UNSET,
                 department_ids=item.department_ids,
                 flag_ids=[item.flag_id] if item.flag_id else None,
                 conditional_parameter_ids=item.conditional_parameter_ids,

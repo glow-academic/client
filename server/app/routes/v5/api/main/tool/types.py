@@ -112,6 +112,105 @@ class ToolMultiResourceAction(BaseModel):
     link_tool_id: UUID | None = None
 
 
+class ToolFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class ToolResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    tool_id: UUID | None = None
+    message: str
+    errors: list[ToolFieldError] | None = None
+
+
+# ========== Create Endpoint Types ==========
+
+
+class CreateToolItem(BaseModel):
+    """Single tool item for create — no tool_id.
+
+    Required fields (name): provide ID or value.
+    """
+
+    # Required single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    # Optional single-select — provide ID or value
+    description_id: UUID | None = None
+    description: str | None = None
+    # ID-only fields
+    department_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = None
+    arg_positions_ids: list[UUID] | None = None
+    args_ids: list[UUID] | None = None
+    args_outputs_ids: list[UUID] | None = None
+    artifact_ids: list[UUID] | None = None
+    entry_ids: list[UUID] | None = None
+    operation_ids: list[UUID] | None = None
+    resource_ids: list[UUID] | None = None
+
+
+class CreateToolApiRequest(BaseModel):
+    """Request model for bulk create tool endpoint."""
+
+    tools: list[CreateToolItem]
+    group_id: UUID | None = None
+
+
+class CreateToolApiResponse(BaseModel):
+    """Response model for bulk create tool endpoint."""
+
+    results: list[ToolResultItem]
+
+
+# ========== Update Endpoint Types ==========
+
+
+class UpdateToolItem(BaseModel):
+    """Single tool item for update — tool_id required, all fields optional.
+
+    Only provided fields are updated (partial update).
+    """
+
+    tool_id: UUID  # Required — which tool to update
+    # Optional single-select — provide ID or value
+    name_id: UUID | None = None
+    name: str | None = None
+    description_id: UUID | None = None
+    description: str | None = None
+    # ID-only fields
+    department_ids: list[UUID] | None = None
+    flag_ids: list[UUID] | None = None
+    arg_positions_ids: list[UUID] | None = None
+    args_ids: list[UUID] | None = None
+    args_outputs_ids: list[UUID] | None = None
+    artifact_ids: list[UUID] | None = None
+    entry_ids: list[UUID] | None = None
+    operation_ids: list[UUID] | None = None
+    resource_ids: list[UUID] | None = None
+
+
+class UpdateToolApiRequest(BaseModel):
+    """Request model for bulk update tool endpoint."""
+
+    tools: list[UpdateToolItem]
+    group_id: UUID | None = None
+
+
+class UpdateToolApiResponse(BaseModel):
+    """Response model for bulk update tool endpoint."""
+
+    results: list[ToolResultItem]
+
+
+# ========== Legacy Save Types (backwards compat) ==========
+
+
 class SaveToolFieldError(BaseModel):
     """Per-field error from value resolution."""
 

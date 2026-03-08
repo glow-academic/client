@@ -158,6 +158,6 @@ async def update_department_client(
         try:
             await perform_keycloak_sync(department_id=str(department_id))
         except Exception:
-            pass  # Non-fatal — sync failures should not block save
+            pass  # Non-fatal — sync failures should not block update
 
     return UpdateDepartmentApiResponse(results=results)
