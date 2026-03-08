@@ -2,7 +2,6 @@
 
 from fastapi import APIRouter
 
-from app.routes.v5.api.main.profile.bulk import router as bulk_router
 from app.routes.v5.api.main.profile.create import router as create_router
 from app.routes.v5.api.main.profile.delete import router as delete_router
 from app.routes.v5.api.main.profile.docs import router as docs_router
@@ -25,6 +24,5 @@ router.include_router(save_router)
 router.include_router(duplicate_router)
 router.include_router(draft_router)
 router.include_router(delete_router)
-router.include_router(bulk_router)
 router.include_router(docs_router)
 router.include_router(export_router)
