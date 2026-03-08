@@ -144,6 +144,7 @@ CREATE MATERIALIZED VIEW public.chat_mv AS
         )
  SELECT tbe.id AS chat_entry_id,
     COALESCE(hte.home_id, pte.practice_id) AS parent_id,
+    tbe.session_id,
     ss.scenario_id,
     COALESCE(dep.department_ids, ARRAY[]::uuid[]) AS department_ids,
     COALESCE(doc.document_ids, ARRAY[]::uuid[]) AS document_ids,

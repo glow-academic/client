@@ -74,9 +74,7 @@ async def create_simulation_client(
     error_results: list[SimulationResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_simulation_values(
-            conn, redis, item, is_create=True
-        )
+        item_errors = await resolve_simulation_values(conn, redis, item, is_create=True)
         if item_errors:
             has_errors = True
             error_results.append(

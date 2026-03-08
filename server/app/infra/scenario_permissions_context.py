@@ -406,9 +406,7 @@ async def resolve_scenario_values(
 
     if is_create:
         if item.name_id is None:
-            errors.append(
-                ScenarioFieldError(field="name", message="Name is required")
-            )
+            errors.append(ScenarioFieldError(field="name", message="Name is required"))
 
     return errors
 

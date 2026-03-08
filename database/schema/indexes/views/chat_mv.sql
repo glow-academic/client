@@ -9,3 +9,11 @@ CREATE UNIQUE INDEX idx_chat_mv_chat_entry_id ON public.chat_mv USING btree (cha
 
 
 --
+
+-- Name: idx_chat_mv_session_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_chat_mv_session_id ON public.chat_mv USING btree (session_id);
+
+
+--

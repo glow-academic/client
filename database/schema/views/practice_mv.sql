@@ -45,6 +45,7 @@ CREATE MATERIALIZED VIEW public.practice_mv AS
           GROUP BY pte.practice_id
         )
  SELECT pe.id AS practice_id,
+    pe.session_id,
     COALESCE(sim.simulation_ids, ARRAY[]::uuid[]) AS simulation_ids,
     COALESCE(coh.cohort_ids, ARRAY[]::uuid[]) AS cohort_ids,
     COALESCE(dep.department_ids, ARRAY[]::uuid[]) AS department_ids,

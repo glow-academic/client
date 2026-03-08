@@ -142,9 +142,7 @@ async def resolve_setting_values(
 
     if is_create:
         if item.name_id is None and item.name is None:
-            errors.append(
-                SettingFieldError(field="name", message="Name is required")
-            )
+            errors.append(SettingFieldError(field="name", message="Name is required"))
 
     return errors
 

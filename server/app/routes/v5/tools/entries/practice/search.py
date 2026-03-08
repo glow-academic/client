@@ -22,7 +22,7 @@ async def search_practices(
 
     rows = await conn.fetch(
         f"""
-        SELECT practice_id, simulation_ids, cohort_ids, department_ids,
+        SELECT practice_id, session_id, simulation_ids, cohort_ids, department_ids,
                profile_ids, chat_ids, scenario_ids,
                created_at, updated_at, active
         FROM {source}

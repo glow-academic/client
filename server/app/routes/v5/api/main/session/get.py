@@ -1,20 +1,26 @@
 """Session detail endpoint - POST /artifacts/session/get.
 
-Uses view internals only — no raw SQL in artifact layer.
-Fetches from sessions_mv, groups_mv, runs_mv via view layer,
-then aggregates in Python.
+Three-layer BFF pattern:
+- get_session_internal(): Core data fetcher via context resolver, returns SessionInternalData
+- get_session (HTTP route): HTTP response layer with caching
+- get_session_websocket(): WebSocket response layer
+
+Uses composable context resolver with black-box MV search tools.
+Zero inline SQL — all data from context resolver + resource fetchers.
 """
 
 import asyncio
-from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Annotated, Any
+from typing import Annotated
 from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
+from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.session_context import resolve_session_context
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main._shared.pricing import compute_costs_from_runs
 from app.routes.v5.api.main.session.types import (
     ArtifactSessionGroup,
@@ -27,27 +33,13 @@ from app.routes.v5.api.main.session.types import (
     SessionWebsocketEntries,
     SessionWebsocketResources,
 )
-from app.routes.v5.api.permissions import resolve_agents_for_artifact
-from app.routes.v5.tools.entries.groups.get import get_group_list_view_internal
-from app.routes.v5.tools.entries.runs.search import (
-    GetRunListViewResponse,
-    get_run_list_entries_internal,
-)
-from app.routes.v5.tools.entries.sessions.get import get_session_list_view_internal
-from app.routes.v5.tools.entries.sessions.timeline import (
-    get_session_timeline_view_internal,
-)
+from app.routes.v5.tools.resources.agents.get import get_agents
 from app.routes.v5.tools.resources.args.get import get_args
 from app.routes.v5.tools.resources.args_outputs.get import get_args_outputs
 from app.routes.v5.tools.resources.models.get import get_models
-from app.routes.v5.tools.resources.names.get import get_names
-from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.providers.get import get_providers
-from app.sql.types import (
-    GetGroupListViewSqlRow,
-    GetSessionTimelineViewSqlRow,
-    QGetProfilesV4Item,
-)
+from app.routes.v5.tools.resources.systems.get import get_systems
+from app.routes.v5.tools.resources.tools.get import get_tools
 from app.utils.cache.cache_key import cache_key
 from app.utils.cache.get_cached import get_cached
 from app.utils.cache.set_cached import set_cached
@@ -55,11 +47,12 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
-# Session entry types for agent resolution
+# Session entry types for tool scoring
 SESSION_BUNDLE_ENTRIES: set[str] = {"problems"}
 
+
 # =============================================================================
-# Internal Layer
+# Layer 1: Core data fetcher (context resolver → pure Python assembly)
 # =============================================================================
 
 
@@ -69,165 +62,261 @@ async def get_session_internal(
     session_id: UUID,
     bypass_cache: bool = False,
 ) -> SessionInternalData:
-    """Fetch both domain views and config chain for a session.
+    """Core session detail fetcher.
 
-    Returns a SessionInternalData dataclass consumed by both the HTTP
-    endpoint and the websocket wrapper.
+    Resolves session context (domain data) and common context (config chain)
+    in parallel, then assembles SessionInternalData.
     """
-    # 1. Settings-based agent resolution + config chain
-    from app.routes.auth.settings import get_auth_settings_internal
+    redis = get_redis_client()
 
-    async with pool.acquire() as settings_conn:
-        settings_data = await get_auth_settings_internal(
-            settings_conn, profile_id, bypass_cache
-        )
-    agent_ids, _create_tool_ids, _link_tool_ids = resolve_agents_for_artifact(
-        settings_data.agent_tool_entries, SESSION_BUNDLE_ENTRIES
-    )
-
-    config_agents = list(settings_data.settings_agents)
-    config_tools = list(settings_data.settings_tools)
-
-    config_model_resource_ids = list(
-        dict.fromkeys(a.model_id for a in settings_data.settings_agents if a.model_id)
-    )
-    config_models: list[Any] = []
-    if config_model_resource_ids:
-        async with pool.acquire() as conn:
-            config_models = await get_models(
-                conn, config_model_resource_ids, get_redis_client(), bypass_cache
-            )
-
-    config_provider_resource_ids = list(
-        dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
-    )
-    config_providers: list[Any] = []
-    if config_provider_resource_ids:
-        async with pool.acquire() as conn:
-            config_providers = await get_providers(
-                conn,
-                config_provider_resource_ids,
-                get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-
-    # 2. Resolve actor context
-    from app.routes.auth.profile import get_auth_profile_internal
-
-    async with pool.acquire() as context_conn:
-        profile_ctx = await get_auth_profile_internal(
-            conn=context_conn,
-            profile_id=profile_id,
-            bypass_cache=False,
-        )
-        actor_name = profile_ctx.access.actor_name
-
-    # 3. Verify session exists
-    async with pool.acquire() as conn:
-        session_view = await get_session_list_view_internal(
-            conn=conn,
-            session_ids=[session_id],
+    # Phase 0: Resolve both contexts in parallel
+    async def _resolve_session() -> object:
+        return await resolve_session_context(
+            pool, redis, session_id=session_id, profile_id=profile_id,
             bypass_cache=bypass_cache,
         )
 
-    if not session_view.items:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Session not found: {session_id}",
-        )
-
-    session = session_view.items[0]
-
-    # 4. Parallel fetch: groups, config profile, runs today
-    async def fetch_groups() -> GetGroupListViewSqlRow:
+    async def _resolve_common() -> object:
         async with pool.acquire() as c:
-            return await get_group_list_view_internal(
-                conn=c,
-                session_id_filter=session_id,
-                page_limit=1000,
-                bypass_cache=bypass_cache,
+            return await resolve_common_context(
+                c, redis, profile_id=profile_id, bypass_cache=bypass_cache
             )
 
-    async def fetch_config_profile() -> list[QGetProfilesV4Item]:
-        async with pool.acquire() as c:
-            return await get_profiles(c, [profile_id], get_redis_client(), bypass_cache)
-
-    async def fetch_runs_today() -> GetRunListViewResponse:
-        today_utc = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-        tomorrow_utc = today_utc.replace(hour=23, minute=59, second=59)
-        async with pool.acquire() as c:
-            return await get_run_list_entries_internal(
-                conn=c,
-                profile_id_filter=profile_id,
-                date_from=today_utc,
-                date_to=tomorrow_utc,
-                page_limit=1,
-                bypass_cache=True,
-            )
-
-    async def fetch_timeline() -> GetSessionTimelineViewSqlRow:
-        async with pool.acquire() as c:
-            return await get_session_timeline_view_internal(
-                conn=c,
-                session_id=session_id,
-                bypass_cache=bypass_cache,
-            )
-
-    (
-        groups_result,
-        config_profile_result,
-        runs_today_result,
-        timeline_result,
-    ) = await asyncio.gather(
-        fetch_groups(),
-        fetch_config_profile(),
-        fetch_runs_today(),
-        fetch_timeline(),
+    ctx, common = await asyncio.gather(
+        _resolve_session(),
+        _resolve_common(),
     )
 
-    # 5. Fetch runs for groups (needs group IDs from step 4)
-    group_ids = [g.group_id for g in groups_result.items]
-    async with pool.acquire() as conn:
-        runs_result = await get_run_list_entries_internal(
-            conn=conn,
-            group_ids=group_ids if group_ids else None,
-            page_limit=10000,
-            bypass_cache=bypass_cache,
+    # Extract domain entries from session context
+    session = ctx.entries.get("session")
+    groups = ctx.entries.get("groups", [])
+    runs = ctx.entries.get("runs", [])
+    logins = ctx.entries.get("logins", [])
+    problems = ctx.entries.get("problems", [])
+    chats = ctx.entries.get("chats", [])
+    attempt_homes = ctx.entries.get("attempt_homes", [])
+    practices = ctx.entries.get("practices", [])
+    actor_name_items = ctx.entries.get("actor_name_items", [])
+    actor_name = actor_name_items[0].name if actor_name_items else None
+
+    if not session:
+        return SessionInternalData(
+            session_exists=False,
+            actor_name=actor_name,
         )
 
-    # 6. Get profile name
-    profile_name = None
-    if session.profile_id:
-        async with pool.acquire() as conn:
-            name_items = await get_names(
-                conn,
-                [session.profile_id],
-                get_redis_client(),
-                bypass_cache=bypass_cache,
-            )
-            if name_items:
-                profile_name = name_items[0].name
+    # Extract resource maps from session context
+    names_rp = ctx.resources.get("names")
+    names_list = names_rp.selected if names_rp else []
+    name_map = {item.id: item.name for item in names_list if item.id and item.name}
+
+    # Profile name from name_map
+    profile_name = name_map.get(session.profile_id) if session.profile_id else None
+
+    # Build config chain from common context (if available)
+    config_agents: list = []
+    config_models: list = []
+    config_providers: list = []
+    config_tools: list = []
+    config_systems: list = []
+    config_profile: list = []
+    runs_today = None
+    resource_agent_ids: dict[str, UUID | None] = {}
+    resource_system_ids: dict[str, UUID | None] = {}
+
+    if common:
+        scores = score_tools(common.tool_graph, SESSION_BUNDLE_ENTRIES)
+        resource_agent_ids = {
+            target: (tool.agent_id if tool else None)
+            for target, tool in scores.best.items()
+        }
+        resource_system_ids = {
+            target: (tool.system_id if tool else None)
+            for target, tool in scores.best.items()
+        }
+
+        # Hydrate config chain from tool_graph
+        all_system_ids = list(dict.fromkeys(
+            t.system_id for t in common.tool_graph.tools
+        ))
+        all_agent_ids = list(dict.fromkeys(
+            t.agent_id for t in common.tool_graph.tools
+        ))
+        all_tool_ids = list(dict.fromkeys(
+            t.tool_id for t in common.tool_graph.tools
+        ))
+
+        async def _fetch_systems() -> list:
+            if not all_system_ids:
+                return []
+            async with pool.acquire() as c:
+                return await get_systems(c, all_system_ids, redis, bypass_cache)
+
+        async def _fetch_agents() -> list:
+            if not all_agent_ids:
+                return []
+            async with pool.acquire() as c:
+                return await get_agents(c, all_agent_ids, redis, bypass_cache)
+
+        async def _fetch_tools_config() -> list:
+            if not all_tool_ids:
+                return []
+            async with pool.acquire() as c:
+                return await get_tools(c, all_tool_ids, redis, bypass_cache)
+
+        config_systems, config_agents, config_tools = await asyncio.gather(
+            _fetch_systems(),
+            _fetch_agents(),
+            _fetch_tools_config(),
+        )
+
+        # Walk agent → model → provider chain
+        model_ids = list(dict.fromkeys(
+            a.model_id for a in config_agents if a.model_id
+        ))
+        if model_ids:
+            async with pool.acquire() as c:
+                config_models = await get_models(c, model_ids, redis, bypass_cache)
+
+        provider_ids = list(dict.fromkeys(
+            m.provider_id for m in config_models if m.provider_id
+        ))
+        if provider_ids:
+            async with pool.acquire() as c:
+                config_providers = await get_providers(
+                    c, provider_ids, redis, bypass_cache
+                )
+
+        # Config profile
+        if common.profile:
+            from app.routes.v5.tools.resources.profiles.get import get_profiles
+
+            async with pool.acquire() as c:
+                config_profile = await get_profiles(
+                    c, [common.profile.profiles_id], redis, bypass_cache
+                )
+
+        runs_today = common.runs.runs if common.runs else None
 
     return SessionInternalData(
-        session_view=session_view,
-        groups_result=groups_result,
-        runs_result=runs_result,
+        session_exists=True,
+        session=session,
+        groups=groups,
+        runs=runs,
+        logins=logins,
+        problems=problems,
+        chats=chats,
+        attempt_homes=attempt_homes,
+        practices=practices,
         config_agents=config_agents,
         config_models=config_models,
         config_providers=config_providers,
         config_tools=config_tools,
-        config_profile=config_profile_result,
-        runs_today=runs_today_result,
-        resource_agent_ids=agent_ids,
+        config_systems=config_systems,
+        config_profile=config_profile,
+        runs_today=runs_today,
+        resource_agent_ids=resource_agent_ids,
+        resource_system_ids=resource_system_ids,
         group_id=None,
-        timeline_result=timeline_result,
         actor_name=actor_name,
         profile_name=profile_name,
+        name_map=name_map,
     )
 
 
 # =============================================================================
-# HTTP Endpoint
+# Layer 2b: WebSocket response
+# =============================================================================
+
+
+async def get_session_websocket(
+    pool: asyncpg.Pool,
+    profile_id: UUID,
+    session_id: UUID | None = None,
+    draft_id: UUID | None = None,
+    bypass_cache: bool = False,
+) -> GetSessionWebsocketResponse:
+    """Thin wrapper for websocket consumers — config chain + domain views."""
+    if not session_id:
+        raise HTTPException(
+            status_code=400,
+            detail="session_id is required for websocket.",
+        )
+
+    data = await get_session_internal(
+        pool=pool,
+        profile_id=profile_id,
+        session_id=session_id,
+        bypass_cache=bypass_cache,
+    )
+
+    redis = get_redis_client()
+
+    # Pre-fetch args and args_outputs from tool IDs
+    config_args = None
+    config_args_outputs = None
+    config_tools = data.config_tools
+    if config_tools and pool:
+        all_args_ids: list[UUID] = []
+        all_args_output_ids: list[UUID] = []
+        for tool in config_tools:
+            if tool.args_ids:
+                all_args_ids.extend(tool.args_ids)
+            if tool.args_output_ids:
+                all_args_output_ids.extend(tool.args_output_ids)
+
+        if all_args_ids or all_args_output_ids:
+
+            async def fetch_args():  # noqa: ANN202
+                if not all_args_ids:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_args(
+                        c,
+                        list(set(all_args_ids)),
+                        redis,
+                        bypass_cache=bypass_cache,
+                    )
+
+            async def fetch_args_outputs():  # noqa: ANN202
+                if not all_args_output_ids:
+                    return None
+                async with pool.acquire() as c:
+                    return await get_args_outputs(
+                        c,
+                        list(set(all_args_output_ids)),
+                        redis,
+                        bypass_cache=bypass_cache,
+                    )
+
+            config_args, config_args_outputs = await asyncio.gather(
+                fetch_args(),
+                fetch_args_outputs(),
+            )
+
+    return GetSessionWebsocketResponse(
+        entries=SessionWebsocketEntries(
+            runs=data.runs_today,
+            groups=data.groups or None,
+        ),
+        resources=SessionWebsocketResources(),
+        systems=data.config_systems or None,
+        agents=data.config_agents or None,
+        models=data.config_models or None,
+        providers=data.config_providers or None,
+        tools=config_tools or None,
+        args=config_args,
+        args_outputs=config_args_outputs,
+        profile=data.config_profile or None,
+        params=GetSessionApiRequest(session_id=session_id, draft_id=draft_id),
+        resource_agent_ids=data.resource_agent_ids,
+        resource_system_ids=data.resource_system_ids,
+        group_id=data.group_id,
+    )
+
+
+# =============================================================================
+# Layer 2a: HTTP Endpoint
 # =============================================================================
 
 
@@ -238,10 +327,19 @@ async def get_session(
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSessionDetailResponse:
-    """Get session detail with groups."""
+    """Get session detail with groups and timeline."""
     tags = ["artifacts", "session"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-    cache = None if bypass_cache else (get_cached, set_cached)
+
+    body_dict = request.model_dump(mode="json")
+    cache_key_val = cache_key(http_request.url.path, body_dict)
+
+    if not bypass_cache:
+        cached = await get_cached(cache_key_val, redis=get_redis_client())
+        if cached:
+            response.headers["X-Cache-Tags"] = ",".join(tags)
+            response.headers["X-Cache-Hit"] = "1"
+            return GetSessionDetailResponse.model_validate(cached["data"])
 
     try:
         profile_id = http_request.state.profile_id
@@ -251,36 +349,30 @@ async def get_session(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Check for cached response
-        body_dict = request.model_dump(mode="json")
-        body_dict["profile_id"] = str(profile_id)
-        cache_key_val = cache_key(http_request.url.path, body_dict)
-
-        if not bypass_cache:
-            cached = await get_cached(cache_key_val, redis=get_redis_client())
-            if cached:
-                response.headers["X-Cache-Tags"] = ",".join(tags)
-                response.headers["X-Cache-Hit"] = "1"
-                return GetSessionDetailResponse.model_validate(cached["data"])
-
         pool = get_pool()
         data = await get_session_internal(
             pool=pool,
             profile_id=profile_id,
             session_id=request.session_id,
-            cache=cache,
+            bypass_cache=bypass_cache,
         )
 
-        session = data.session_view.items[0]
+        if not data.session_exists:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Session not found: {request.session_id}",
+            )
+
+        session = data.session
 
         # Compute per-run costs
         run_costs = await compute_costs_from_runs(
-            conn, data.runs_result.items, bypass_cache
+            conn, data.runs, bypass_cache
         )
 
         # Aggregate run stats per group
         group_run_aggs: dict[UUID, dict] = {}
-        for run in data.runs_result.items:
+        for run in data.runs:
             gid = run.group_id
             if not gid:
                 continue
@@ -312,12 +404,12 @@ async def get_session(
 
         # Build groups with run aggregates
         groups = []
-        for g in data.groups_result.items:
-            agg = group_run_aggs.get(g.group_id, {})
+        for g in data.groups:
+            agg = group_run_aggs.get(g.id, {})
             groups.append(
                 ArtifactSessionGroup(
-                    group_id=g.group_id,
-                    group_name=g.group_name,
+                    group_id=g.id,
+                    group_name=g.name,
                     first_run_at=agg.get("first_run_at"),
                     last_run_at=agg.get("last_run_at"),
                     run_count=agg.get("run_count", 0),
@@ -326,34 +418,21 @@ async def get_session(
                 )
             )
 
-        # Build timeline from timeline_result
-        timeline: list[SessionTimelineItem] = []
-        if data.timeline_result and data.timeline_result.items:
-            for t in data.timeline_result.items:
-                timeline.append(
-                    SessionTimelineItem(
-                        event_type=t.event_type,
-                        entity_id=t.entity_id,
-                        entity_name=t.entity_name,
-                        created_at=t.created_at,
-                        extra_1=t.extra_1,
-                        extra_2=t.extra_2,
-                    )
-                )
+        # Build timeline from raw entries (pure Python assembly)
+        timeline = _build_timeline(data)
 
         api_response = GetSessionDetailResponse(
             actor_name=data.actor_name,
             session_exists=True,
-            session_id=session.session_id,
+            session_id=session.id,
             profile_id=session.profile_id,
             profile_name=data.profile_name,
-            session_created_at=session.session_created_at,
+            session_created_at=session.created_at,
             active=session.active,
             groups=groups,
             timeline=timeline,
         )
 
-        # Cache response
         await set_cached(
             cache_key_val,
             {"data": api_response.model_dump(mode="json")},
@@ -380,87 +459,74 @@ async def get_session(
 
 
 # =============================================================================
-# WebSocket Layer
+# Timeline Assembly (pure Python)
 # =============================================================================
 
 
-async def get_session_websocket(
-    pool: asyncpg.Pool,
-    profile_id: UUID,
-    session_id: UUID | None = None,
-    draft_id: UUID | None = None,
-    bypass_cache: bool = False,
-) -> GetSessionWebsocketResponse:
-    """Thin wrapper for websocket consumers — config chain + domain views."""
-    if not session_id:
-        raise HTTPException(
-            status_code=400,
-            detail="session_id is required for websocket.",
-        )
+def _build_timeline(data: SessionInternalData) -> list[SessionTimelineItem]:
+    """Merge all timeline source entries into a sorted list.
 
-    data = await get_session_internal(
-        pool=pool,
-        profile_id=profile_id,
-        session_id=session_id,
-        bypass_cache=bypass_cache,
-    )
+    Sources: groups, logins, problems, chats, attempt_homes, practices.
+    Sorted by created_at ascending to match original SQL UNION ordering.
+    """
+    items: list[SessionTimelineItem] = []
 
-    # Pre-fetch args and args_outputs from tool IDs (both cached via *_internal)
-    config_args = None
-    config_args_outputs = None
-    config_tools = data.config_tools
-    if config_tools and pool:
-        all_args_ids: list[UUID] = []
-        all_args_output_ids: list[UUID] = []
-        for tool in config_tools:
-            if tool.args_ids:
-                all_args_ids.extend(tool.args_ids)
-            if tool.args_output_ids:
-                all_args_output_ids.extend(tool.args_output_ids)
+    # Groups
+    for g in data.groups:
+        items.append(SessionTimelineItem(
+            event_type="group",
+            entity_id=g.id,
+            entity_name=g.name,
+            created_at=g.created_at,
+        ))
 
-        if all_args_ids or all_args_output_ids:
+    # Logins
+    for login in data.logins:
+        items.append(SessionTimelineItem(
+            event_type="login",
+            entity_id=login.id,
+            created_at=login.created_at,
+        ))
 
-            async def fetch_args():
-                if not all_args_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args(
-                        c,
-                        list(set(all_args_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
+    # Problems
+    for p in data.problems:
+        items.append(SessionTimelineItem(
+            event_type="problem",
+            entity_id=p.id,
+            entity_name=p.type,
+            created_at=p.created_at,
+            extra_1=p.message,
+        ))
 
-            async def fetch_args_outputs():
-                if not all_args_output_ids:
-                    return None
-                async with pool.acquire() as c:
-                    return await get_args_outputs(
-                        c,
-                        list(set(all_args_output_ids)),
-                        get_redis_client(),
-                        bypass_cache=bypass_cache,
-                    )
+    # Chats (from chat_mv — returns dicts)
+    for c in data.chats:
+        chat_id = c.get("chat_entry_id") if isinstance(c, dict) else getattr(c, "chat_entry_id", None)
+        chat_name = c.get("name") if isinstance(c, dict) else getattr(c, "name", None)
+        chat_created = c.get("created_at") if isinstance(c, dict) else getattr(c, "created_at", None)
+        items.append(SessionTimelineItem(
+            event_type="chat",
+            entity_id=chat_id,
+            entity_name=chat_name,
+            created_at=chat_created,
+        ))
 
-            config_args, config_args_outputs = await asyncio.gather(
-                fetch_args(),
-                fetch_args_outputs(),
-            )
+    # Attempt homes
+    for ah in data.attempt_homes:
+        items.append(SessionTimelineItem(
+            event_type="attempt",
+            entity_id=ah.attempt_id,
+            created_at=ah.created_at,
+        ))
 
-    return GetSessionWebsocketResponse(
-        entries=SessionWebsocketEntries(
-            runs=data.runs_today,
-            groups=data.groups_result.items if data.groups_result.items else None,
-        ),
-        resources=SessionWebsocketResources(),
-        params=GetSessionApiRequest(session_id=session_id, draft_id=draft_id),
-        agents=data.config_agents or None,
-        models=data.config_models or None,
-        providers=data.config_providers or None,
-        tools=config_tools or None,
-        args=config_args,
-        args_outputs=config_args_outputs,
-        profile=data.config_profile or None,
-        resource_agent_ids=data.resource_agent_ids,
-        group_id=data.group_id,
-    )
+    # Practices
+    for pr in data.practices:
+        items.append(SessionTimelineItem(
+            event_type="practice",
+            entity_id=pr.id,
+            created_at=pr.created_at,
+        ))
+
+    # Sort by created_at ascending
+    items.sort(key=lambda x: x.created_at or x.created_at, reverse=False)
+
+    return items

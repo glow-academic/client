@@ -3,11 +3,12 @@
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.v5.api.main.types import InternalResponseBase
+from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse, RunViewItem
 
 
 class ArtifactSessionGroup(BaseModel):
@@ -124,9 +125,8 @@ class GetSessionApiRequest(BaseModel):
 class SessionWebsocketEntries(BaseModel):
     """Entries data for session websocket response."""
 
-    runs: "GetRunListViewResponse | None" = None
-    # Domain views (from internal layer)
-    groups: "list[QGetGroupListViewV4Item] | None" = None
+    runs: GetRunListViewResponse | None = None
+    groups: list[Any] | None = None
 
 
 class SessionWebsocketResources(BaseModel):
@@ -135,50 +135,56 @@ class SessionWebsocketResources(BaseModel):
     pass
 
 
-class GetSessionWebsocketResponse(InternalResponseBase):
-    """Websocket-facing session response with hydrated resources."""
+class GetSessionWebsocketResponse(BaseModel):
+    """Websocket-facing session response with hydrated resources.
 
+    Uses Any for config chain fields to accept resource fetcher types.
+    """
+
+    systems: list[Any] | None = None
+    agents: list[Any] | None = None
+    models: list[Any] | None = None
+    providers: list[Any] | None = None
+    tools: list[Any] | None = None
+    args: list[Any] | None = None
+    args_outputs: list[Any] | None = None
+    profile: list[Any] | None = None
+    params: BaseModel | None = None
+    resource_system_ids: dict[str, UUID | None] | None = None
+    resource_agent_ids: dict[str, UUID | None] | None = None
+    group_id: UUID | None = None
     entries: SessionWebsocketEntries | None = None
     resources: SessionWebsocketResources
-
-
-from app.routes.v5.tools.entries.runs.search import GetRunListViewResponse
-from app.sql.types import (  # noqa: E402
-    GetGroupListViewSqlRow,
-    GetSessionListViewSqlRow,
-    GetSessionTimelineViewSqlRow,
-    QGetAgentsV4Item,
-    QGetGroupListViewV4Item,
-    QGetModelsV4Item,
-    QGetProfilesV4Item,
-    QGetProvidersV4Item,
-    QGetToolsV4Item,
-)
-
-SessionWebsocketEntries.model_rebuild()
-SessionWebsocketResources.model_rebuild()
-GetSessionWebsocketResponse.model_rebuild()
 
 
 @dataclass
 class SessionInternalData:
     """Internal data from core session fetching (cacheable layer)."""
 
-    # Views
-    session_view: GetSessionListViewSqlRow
-    groups_result: GetGroupListViewSqlRow
-    runs_result: GetRunListViewResponse
-    # Config chain
-    config_agents: list[QGetAgentsV4Item] = field(default_factory=list)
-    config_models: list[QGetModelsV4Item] = field(default_factory=list)
-    config_providers: list[QGetProvidersV4Item] = field(default_factory=list)
-    config_tools: list[QGetToolsV4Item] = field(default_factory=list)
-    config_profile: list[QGetProfilesV4Item] = field(default_factory=list)
+    # Domain entries (from MV search tools)
+    session_exists: bool = False
+    session: Any = None
+    groups: list = field(default_factory=list)
+    runs: list[RunViewItem] = field(default_factory=list)
+    # Timeline source entries
+    logins: list = field(default_factory=list)
+    problems: list = field(default_factory=list)
+    chats: list = field(default_factory=list)
+    attempt_homes: list = field(default_factory=list)
+    practices: list = field(default_factory=list)
+    # Config chain (from resource get tools)
+    config_agents: list = field(default_factory=list)
+    config_models: list = field(default_factory=list)
+    config_providers: list = field(default_factory=list)
+    config_tools: list = field(default_factory=list)
+    config_systems: list = field(default_factory=list)
+    config_profile: list = field(default_factory=list)
     runs_today: GetRunListViewResponse | None = None
     resource_agent_ids: dict[str, UUID | None] = field(default_factory=dict)
+    resource_system_ids: dict[str, UUID | None] = field(default_factory=dict)
     group_id: UUID | None = None
-    # Timeline
-    timeline_result: GetSessionTimelineViewSqlRow | None = None
     # Context
     actor_name: str | None = None
     profile_name: str | None = None
+    # Resource maps
+    name_map: dict[UUID, str] = field(default_factory=dict)

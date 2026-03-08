@@ -10,6 +10,7 @@ Composes existing black-box tools:
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 import asyncpg
@@ -30,8 +31,11 @@ from app.routes.v5.tools.artifacts.scenario.update import (
 )
 from app.utils.cache.invalidate_tags import invalidate_tags
 
+if TYPE_CHECKING:
+    from app.routes.v5.api.main.scenario.types import UpdateScenarioItem
 
-def _collect_flag_ids(item) -> list[UUID] | None:
+
+def _collect_flag_ids(item: UpdateScenarioItem) -> list[UUID] | None:
     """Collect all non-None flag IDs from the item into a single list."""
     flag_ids = []
     for fid in [
@@ -142,9 +146,7 @@ async def update_scenario_client(
                 conn,
                 item.scenario_id,
                 name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id
-                if item.description_id
-                else _UNSET,
+                description_id=item.description_id if item.description_id else _UNSET,
                 department_ids=item.department_ids,
                 flag_ids=flag_ids,
                 document_ids=item.document_ids,

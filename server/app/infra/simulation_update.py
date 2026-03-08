@@ -67,9 +67,7 @@ async def update_simulation_client(
     # ── Step 2: Per-item permission check ──────────────────────────────
 
     for idx, item in enumerate(items):
-        perms = await resolve_simulation_permissions_context(
-            conn, item.simulation_id
-        )
+        perms = await resolve_simulation_permissions_context(conn, item.simulation_id)
         if not perms.exists:
             raise HTTPException(
                 status_code=404,
@@ -130,9 +128,7 @@ async def update_simulation_client(
                 conn,
                 item.simulation_id,
                 name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id
-                if item.description_id
-                else _UNSET,
+                description_id=item.description_id if item.description_id else _UNSET,
                 department_ids=item.department_ids,
                 flag_ids=item.flag_ids,
                 scenario_ids=item.scenario_ids,

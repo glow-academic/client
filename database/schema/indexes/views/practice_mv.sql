@@ -9,3 +9,11 @@ CREATE UNIQUE INDEX idx_practice_mv_practice_id ON public.practice_mv USING btre
 
 
 --
+
+-- Name: idx_practice_mv_session_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_practice_mv_session_id ON public.practice_mv USING btree (session_id);
+
+
+--
