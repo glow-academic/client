@@ -7,8 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.infra.tool_create import CreateToolItem
+from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 
 
 class ToolFlagConfig(BaseModel):
@@ -130,7 +130,6 @@ class ToolResultItem(BaseModel):
 
 
 # ========== Create Endpoint Types ==========
-
 
 
 class CreateToolApiRequest(BaseModel):

@@ -10,9 +10,9 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.infra.cohort_create import CreateCohortItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.resources.personas.types import GetPersonaResponse
-from app.infra.cohort_create import CreateCohortItem
 
 # =============================================================================
 # Resource Types (imported from SQL types for reuse)
@@ -320,7 +320,6 @@ class CohortResultItem(BaseModel):
 # =============================================================================
 # Create Endpoint Types
 # =============================================================================
-
 
 
 class CreateCohortApiRequest(BaseModel):

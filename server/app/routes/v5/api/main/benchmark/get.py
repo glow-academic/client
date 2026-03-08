@@ -17,11 +17,12 @@ from app.infra.benchmark_context import (
     resolve_benchmark_context,
     resolve_benchmark_search_context,
 )
-from app.infra.globals import get_db, get_pool, get_redis_client
-from app.infra.types import ArtifactContext
 from app.infra.benchmark_permissions import (
     compute_benchmark_eval_status,
 )
+from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.test_permissions import compute_test_status
+from app.infra.types import ArtifactContext
 from app.routes.v5.api.main.benchmark.types import (
     BenchmarkDepartmentItem,
     BenchmarkEvalOperational,
@@ -30,7 +31,6 @@ from app.routes.v5.api.main.benchmark.types import (
     BenchmarkRequest,
     BenchmarkResponse,
 )
-from app.infra.test_permissions import compute_test_status
 from app.routes.v5.api.main.types import FilterOption
 from app.utils.error.handle_route_error import handle_route_error
 

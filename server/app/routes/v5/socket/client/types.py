@@ -5,7 +5,7 @@ v5 uses a single GeneratePayload that carries the artifact_type discriminator an
 generic artifact_id field. The registry maps these to the correct fetcher kwarg.
 """
 
-from typing import Any, Literal
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, model_validator
@@ -13,14 +13,25 @@ from pydantic import BaseModel, model_validator
 # Re-exported from infra — canonical location is app.infra.websocket.generation_types
 from app.infra.websocket.generation_types import (
     ArtifactOperation as ArtifactOperation,
+)
+from app.infra.websocket.generation_types import (
     ArtifactTypeItem as ArtifactTypeItem,
+)
+from app.infra.websocket.generation_types import (
     EntryOperation as EntryOperation,
+)
+from app.infra.websocket.generation_types import (
     EntryTypeItem as EntryTypeItem,
+)
+from app.infra.websocket.generation_types import (
     GeneratePayload as GeneratePayload,
+)
+from app.infra.websocket.generation_types import (
     ResourceOperation as ResourceOperation,
+)
+from app.infra.websocket.generation_types import (
     ResourceTypeItem as ResourceTypeItem,
 )
-
 
 # ---------------------------------------------------------------------------
 # Lifecycle

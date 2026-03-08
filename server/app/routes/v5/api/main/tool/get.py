@@ -22,9 +22,6 @@ from app.infra.globals import get_db, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_artifact_context import resolve_tool_artifact_context
 from app.infra.tool_graph import score_tools
-from app.infra.tool_permissions_context import (
-    resolve_tool_permissions_context,
-)
 from app.infra.tool_permissions import (
     TOOL_RESOURCES,
     compute_args_outputs_required,
@@ -41,6 +38,9 @@ from app.infra.tool_permissions import (
     compute_show_flag,
     compute_show_name,
     has_access,
+)
+from app.infra.tool_permissions_context import (
+    resolve_tool_permissions_context,
 )
 from app.routes.v5.api.main.tool.types import (
     GetToolApiRequest,

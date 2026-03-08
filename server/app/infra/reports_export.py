@@ -159,9 +159,7 @@ async def export_reports_client(
         all_voice_ids.update(r.voice_ids or [])
 
     names_data, departments_data, voices_data = await asyncio.gather(
-        get_names(conn, list(all_name_ids), redis)
-        if all_name_ids
-        else _empty_list(),
+        get_names(conn, list(all_name_ids), redis) if all_name_ids else _empty_list(),
         get_departments(conn, list(all_department_ids), redis)
         if all_department_ids
         else _empty_list(),
@@ -182,26 +180,26 @@ async def export_reports_client(
     inv_writer.writerow(INVOCATION_CSV_COLUMNS)
 
     for inv in invocations:
-        agents_str = PIPE.join(
-            name_map.get(aid, "") for aid in (inv.agent_ids or [])
-        )
+        agents_str = PIPE.join(name_map.get(aid, "") for aid in (inv.agent_ids or []))
         departments_str = PIPE.join(
             department_map.get(did, "") for did in (inv.department_ids or [])
         )
 
-        inv_writer.writerow([
-            str(inv.invocation_id),
-            inv.invocation_title,
-            str(inv.position),
-            "Yes" if inv.invocation_completed else "No",
-            str(inv.grade_score) if inv.grade_score is not None else "",
-            "Yes" if inv.grade_passed else "No",
-            str(inv.grade_time_taken) if inv.grade_time_taken is not None else "",
-            agents_str,
-            departments_str,
-            voice_map.get(inv.voice_id, "") if inv.voice_id else "",
-            str(inv.invocation_created_at),
-        ])
+        inv_writer.writerow(
+            [
+                str(inv.invocation_id),
+                inv.invocation_title,
+                str(inv.position),
+                "Yes" if inv.invocation_completed else "No",
+                str(inv.grade_score) if inv.grade_score is not None else "",
+                "Yes" if inv.grade_passed else "No",
+                str(inv.grade_time_taken) if inv.grade_time_taken is not None else "",
+                agents_str,
+                departments_str,
+                voice_map.get(inv.voice_id, "") if inv.voice_id else "",
+                str(inv.invocation_created_at),
+            ]
+        )
 
     # groups.csv
     grp_output = io.StringIO()
@@ -209,17 +207,19 @@ async def export_reports_client(
     grp_writer.writerow(GROUP_CSV_COLUMNS)
 
     for g in groups:
-        grp_writer.writerow([
-            str(g.id),
-            str(g.test_invocation_id),
-            PIPE.join(name_map.get(aid, "") for aid in (g.agent_ids or [])),
-            PIPE.join(voice_map.get(vid, "") for vid in (g.voice_ids or [])),
-            PIPE.join(name_map.get(pid, "") for pid in (g.prompt_ids or [])),
-            PIPE.join(name_map.get(iid, "") for iid in (g.instruction_ids or [])),
-            PIPE.join(name_map.get(tid, "") for tid in (g.tool_ids or [])),
-            str(g.created_at),
-            "Yes" if g.active else "No",
-        ])
+        grp_writer.writerow(
+            [
+                str(g.id),
+                str(g.test_invocation_id),
+                PIPE.join(name_map.get(aid, "") for aid in (g.agent_ids or [])),
+                PIPE.join(voice_map.get(vid, "") for vid in (g.voice_ids or [])),
+                PIPE.join(name_map.get(pid, "") for pid in (g.prompt_ids or [])),
+                PIPE.join(name_map.get(iid, "") for iid in (g.instruction_ids or [])),
+                PIPE.join(name_map.get(tid, "") for tid in (g.tool_ids or [])),
+                str(g.created_at),
+                "Yes" if g.active else "No",
+            ]
+        )
 
     # runs.csv
     run_output = io.StringIO()
@@ -227,17 +227,19 @@ async def export_reports_client(
     run_writer.writerow(RUN_CSV_COLUMNS)
 
     for r in runs:
-        run_writer.writerow([
-            str(r.id),
-            str(r.test_invocation_id),
-            PIPE.join(name_map.get(aid, "") for aid in (r.agent_ids or [])),
-            PIPE.join(voice_map.get(vid, "") for vid in (r.voice_ids or [])),
-            PIPE.join(name_map.get(pid, "") for pid in (r.prompt_ids or [])),
-            PIPE.join(name_map.get(iid, "") for iid in (r.instruction_ids or [])),
-            PIPE.join(name_map.get(tid, "") for tid in (r.tool_ids or [])),
-            str(r.created_at),
-            "Yes" if r.active else "No",
-        ])
+        run_writer.writerow(
+            [
+                str(r.id),
+                str(r.test_invocation_id),
+                PIPE.join(name_map.get(aid, "") for aid in (r.agent_ids or [])),
+                PIPE.join(voice_map.get(vid, "") for vid in (r.voice_ids or [])),
+                PIPE.join(name_map.get(pid, "") for pid in (r.prompt_ids or [])),
+                PIPE.join(name_map.get(iid, "") for iid in (r.instruction_ids or [])),
+                PIPE.join(name_map.get(tid, "") for tid in (r.tool_ids or [])),
+                str(r.created_at),
+                "Yes" if r.active else "No",
+            ]
+        )
 
     # brightspace.csv — per-invocation agent grade summary
     bs_output = io.StringIO()
@@ -249,14 +251,16 @@ async def export_reports_client(
             agent_name = PIPE.join(
                 name_map.get(aid, "") for aid in (inv.agent_ids or [])
             )
-            bs_writer.writerow([
-                agent_name,
-                str(inv.grade_score),
-                "Yes" if inv.grade_passed else "No",
-                str(inv.grade_time_taken)
-                if inv.grade_time_taken is not None
-                else "",
-            ])
+            bs_writer.writerow(
+                [
+                    agent_name,
+                    str(inv.grade_score),
+                    "Yes" if inv.grade_passed else "No",
+                    str(inv.grade_time_taken)
+                    if inv.grade_time_taken is not None
+                    else "",
+                ]
+            )
 
     # -- Step 6: Generate ZIP + upload --
     zip_buffer = io.BytesIO()

@@ -92,12 +92,6 @@ async def docs_eval_client(
     # -- Step 3: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.eval.create import create_eval
-    from app.routes.v5.api.main.eval.delete import delete_eval
-    from app.routes.v5.api.main.eval.draft import patch_eval_draft
-    from app.routes.v5.api.main.eval.duplicate import duplicate_eval
-    from app.routes.v5.api.main.eval.export import export_evals
-    from app.routes.v5.api.main.eval.get import get_eval
     from app.infra.eval_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -106,6 +100,12 @@ async def docs_eval_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.eval.create import create_eval
+    from app.routes.v5.api.main.eval.delete import delete_eval
+    from app.routes.v5.api.main.eval.draft import patch_eval_draft
+    from app.routes.v5.api.main.eval.duplicate import duplicate_eval
+    from app.routes.v5.api.main.eval.export import export_evals
+    from app.routes.v5.api.main.eval.get import get_eval
     from app.routes.v5.api.main.eval.save import save_eval
     from app.routes.v5.api.main.eval.search import search_eval
     from app.routes.v5.api.main.eval.update import update_eval

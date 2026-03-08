@@ -7,9 +7,9 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.infra.field_create import CreateFieldItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.resources.parameters.types import GetParameterResponse
-from app.infra.field_create import CreateFieldItem
 
 
 class FieldFlagConfig(BaseModel):
@@ -126,7 +126,6 @@ class FieldResultItem(BaseModel):
 
 
 # ========== Create Endpoint Types ==========
-
 
 
 class CreateFieldApiRequest(BaseModel):

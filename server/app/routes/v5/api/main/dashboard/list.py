@@ -11,16 +11,16 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.common_context import resolve_common_context
-from app.infra.dashboard_context import resolve_dashboard_search_context
-from app.infra.globals import get_db, get_pool, get_redis_client
-from app.infra.types import ArtifactContext
 from app.infra.chat_permissions import (
     compute_pass_pct,
     compute_score_status,
     compute_show_continue,
     compute_show_view,
 )
+from app.infra.common_context import resolve_common_context
+from app.infra.dashboard_context import resolve_dashboard_search_context
+from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.types import ArtifactContext
 from app.routes.v5.api.main.dashboard.types import (
     ListDashboardRequest,
 )
@@ -71,9 +71,7 @@ def _compute_history_aggregates(chats: list[GetAttemptChatResponse]) -> dict[str
         if chat.grade_time_taken is not None:
             total_time_seconds += chat.grade_time_taken
         if chat.grade_total_points is not None:
-            rubric_total_points = (
-                rubric_total_points or 0
-            ) + chat.grade_total_points
+            rubric_total_points = (rubric_total_points or 0) + chat.grade_total_points
         if chat.grade_pass_points is not None:
             rubric_pass_points = (rubric_pass_points or 0) + chat.grade_pass_points
 

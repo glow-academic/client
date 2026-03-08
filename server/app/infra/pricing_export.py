@@ -22,8 +22,8 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.globals import UPLOAD_FOLDER
-from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.pricing import compute_costs_from_runs
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.groups.get import get_groups
 from app.routes.v5.tools.entries.runs.search import search_runs
 from app.routes.v5.tools.entries.uploads.create import create_upload
@@ -97,12 +97,8 @@ async def export_pricing_client(
             all_group_ids.add(r.group_id)
 
     all_name_ids = list(all_agent_ids | all_model_ids)
-    name_items = (
-        await get_names(conn, all_name_ids, redis) if all_name_ids else []
-    )
-    name_map = {
-        item.id: item.name for item in name_items if item.id and item.name
-    }
+    name_items = await get_names(conn, all_name_ids, redis) if all_name_ids else []
+    name_map = {item.id: item.name for item in name_items if item.id and item.name}
 
     # Hydrate group names
     groups = await get_groups(conn, list(all_group_ids)) if all_group_ids else []
@@ -117,12 +113,8 @@ async def export_pricing_client(
     for r in runs:
         total_tokens = r.input_tokens + r.output_tokens + r.cached_input_tokens
         cost = run_costs.get(r.run_id, 0)
-        agents_str = PIPE.join(
-            name_map.get(aid, "") for aid in (r.agent_ids or [])
-        )
-        models_str = PIPE.join(
-            name_map.get(mid, "") for mid in (r.model_ids or [])
-        )
+        agents_str = PIPE.join(name_map.get(aid, "") for aid in (r.agent_ids or []))
+        models_str = PIPE.join(name_map.get(mid, "") for mid in (r.model_ids or []))
 
         runs_writer.writerow(
             [

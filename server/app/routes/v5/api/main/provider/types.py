@@ -8,8 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.infra.provider_create import CreateProviderItem
+from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 
 
 class ProviderFlagConfig(BaseModel):
@@ -136,7 +136,6 @@ class ProviderResultItem(BaseModel):
 
 
 # ========== Create Endpoint Types ==========
-
 
 
 class CreateProviderApiRequest(BaseModel):

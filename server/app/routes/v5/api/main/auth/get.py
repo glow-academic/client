@@ -18,11 +18,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.auth_context import resolve_auth_context
-from app.infra.auth_permissions_context import resolve_auth_permissions_context
-from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
-from app.infra.helpers import dedupe_by_id
-from app.infra.tool_graph import score_tools
 from app.infra.auth_permissions import (
     AUTH_BASIC_RESOURCES,
     AUTH_RESOURCES,
@@ -39,6 +34,11 @@ from app.infra.auth_permissions import (
     compute_show_slugs,
     compute_slugs_required,
 )
+from app.infra.auth_permissions_context import resolve_auth_permissions_context
+from app.infra.common_context import resolve_common_context
+from app.infra.globals import get_db, get_redis_client
+from app.infra.helpers import dedupe_by_id
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.auth.types import (
     AuthDescriptionSection,
     AuthFlagConfig,

@@ -21,8 +21,6 @@ from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.model_context import resolve_model_context
-from app.infra.model_permissions_context import resolve_model_permissions_context
-from app.infra.tool_graph import score_tools
 from app.infra.model_permissions import (
     MODEL_BASIC_RESOURCES,
     MODEL_FEATURES_RESOURCES,
@@ -57,6 +55,8 @@ from app.infra.model_permissions import (
     derive_flag_key_and_label,
     has_access,
 )
+from app.infra.model_permissions_context import resolve_model_permissions_context
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.model.types import (
     GetModelApiRequest,
     GetModelApiResponse,

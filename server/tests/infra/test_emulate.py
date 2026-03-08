@@ -12,8 +12,8 @@ import pytest
 
 from app.infra.auth.emulate import EmulationResult, resolve_emulation
 from app.infra.profile_identity_context import ProfileIdentityContext
-from app.routes.v5.tools.entries.grants.types import CreateGrantResponse
 from app.routes.v5.tools.entries.emulations.types import CreateEmulationResponse
+from app.routes.v5.tools.entries.grants.types import CreateGrantResponse
 from app.routes.v5.tools.entries.sessions.types import GetSessionResponse
 
 NOW = datetime.now(UTC)
@@ -76,7 +76,9 @@ class TestResolveEmulationSuccess:
         tgt_resource_id = uuid4()
         grant_id = uuid4()
 
-        requester = _identity(profiles_id=req_resource_id, name="Super", role="superadmin")
+        requester = _identity(
+            profiles_id=req_resource_id, name="Super", role="superadmin"
+        )
         target = _identity(profiles_id=tgt_resource_id, name="Member", role="member")
 
         async def _mock_identity(conn, pid, redis, bypass_cache=False):
@@ -87,13 +89,16 @@ class TestResolveEmulationSuccess:
             return None
 
         with (
-            patch(f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity),
+            patch(
+                f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+            ),
             _patch("search_sessions", [_session()]),
             _patch("create_grant", CreateGrantResponse(id=grant_id)),
             _patch("create_emulation", CreateEmulationResponse(id=uuid4())),
         ):
             result = await resolve_emulation(
-                None, None,
+                None,
+                None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
             )
@@ -122,7 +127,8 @@ class TestResolveEmulationSuccess:
             _patch("create_emulation", CreateEmulationResponse(id=uuid4())),
         ):
             result = await resolve_emulation(
-                None, None,
+                None,
+                None,
                 requester_profile_id=profile_id,
                 target_profile_id=profile_id,
             )
@@ -155,13 +161,16 @@ class TestResolveEmulationSuccess:
             return []
 
         with (
-            patch(f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity),
+            patch(
+                f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+            ),
             patch(f"{MODULE}.search_sessions", side_effect=_mock_sessions),
             _patch("create_grant", CreateGrantResponse(id=uuid4())) as mock_grant,
             _patch("create_emulation", CreateEmulationResponse(id=uuid4())),
         ):
             await resolve_emulation(
-                None, None,
+                None,
+                None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
                 ttl_minutes=60,
@@ -199,13 +208,18 @@ class TestResolveEmulationSuccess:
             return []
 
         with (
-            patch(f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity),
+            patch(
+                f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+            ),
             patch(f"{MODULE}.search_sessions", side_effect=_mock_sessions),
             _patch("create_grant", CreateGrantResponse(id=grant_id)),
-            _patch("create_emulation", CreateEmulationResponse(id=uuid4())) as mock_emul,
+            _patch(
+                "create_emulation", CreateEmulationResponse(id=uuid4())
+            ) as mock_emul,
         ):
             await resolve_emulation(
-                None, None,
+                None,
+                None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
             )
@@ -232,13 +246,16 @@ class TestResolveEmulationSuccess:
             return None
 
         with (
-            patch(f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity),
+            patch(
+                f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+            ),
             _patch("search_sessions", [_session()]),
             _patch("create_grant", CreateGrantResponse(id=grant_id)),
             _patch("create_emulation", CreateEmulationResponse(id=uuid4())),
         ):
             result = await resolve_emulation(
-                None, None,
+                None,
+                None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
             )
@@ -258,7 +275,8 @@ class TestResolveEmulationAuth:
     async def test_requester_not_found(self):
         with _patch("resolve_profile_identity_context", None):
             result = await resolve_emulation(
-                None, None,
+                None,
+                None,
                 requester_profile_id=uuid4(),
                 target_profile_id=uuid4(),
             )
@@ -276,9 +294,12 @@ class TestResolveEmulationAuth:
                 return requester
             return None
 
-        with patch(f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity):
+        with patch(
+            f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+        ):
             result = await resolve_emulation(
-                None, None,
+                None,
+                None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
             )
@@ -300,9 +321,12 @@ class TestResolveEmulationAuth:
                 return target
             return None
 
-        with patch(f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity):
+        with patch(
+            f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+        ):
             result = await resolve_emulation(
-                None, None,
+                None,
+                None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
             )
@@ -323,9 +347,12 @@ class TestResolveEmulationAuth:
                 return target
             return None
 
-        with patch(f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity):
+        with patch(
+            f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+        ):
             result = await resolve_emulation(
-                None, None,
+                None,
+                None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
             )
@@ -346,11 +373,14 @@ class TestResolveEmulationAuth:
             return None
 
         with (
-            patch(f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity),
+            patch(
+                f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+            ),
             _patch("search_sessions", []),
         ):
             result = await resolve_emulation(
-                None, None,
+                None,
+                None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
             )
@@ -379,11 +409,14 @@ class TestResolveEmulationAuth:
             return []
 
         with (
-            patch(f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity),
+            patch(
+                f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+            ),
             patch(f"{MODULE}.search_sessions", side_effect=_mock_sessions),
         ):
             result = await resolve_emulation(
-                None, None,
+                None,
+                None,
                 requester_profile_id=requester_id,
                 target_profile_id=target_id,
             )

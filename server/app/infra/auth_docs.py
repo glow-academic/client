@@ -89,12 +89,6 @@ async def docs_auth_client(
     # ── Step 3: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.auth.create import create_auth
-    from app.routes.v5.api.main.auth.delete import delete_auth
-    from app.routes.v5.api.main.auth.draft import patch_auth_draft
-    from app.routes.v5.api.main.auth.duplicate import duplicate_auth
-    from app.routes.v5.api.main.auth.export import export_auths
-    from app.routes.v5.api.main.auth.get import get_auth
     from app.infra.auth_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -103,6 +97,12 @@ async def docs_auth_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.auth.create import create_auth
+    from app.routes.v5.api.main.auth.delete import delete_auth
+    from app.routes.v5.api.main.auth.draft import patch_auth_draft
+    from app.routes.v5.api.main.auth.duplicate import duplicate_auth
+    from app.routes.v5.api.main.auth.export import export_auths
+    from app.routes.v5.api.main.auth.get import get_auth
     from app.routes.v5.api.main.auth.save import save_auth
     from app.routes.v5.api.main.auth.search import search_auth
     from app.routes.v5.api.main.auth.update import update_auth

@@ -12,10 +12,10 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 from uuid import UUID
-from pydantic import BaseModel
 
 import asyncpg
 from fastapi import HTTPException
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.auth.keycloak_sync import perform_keycloak_sync

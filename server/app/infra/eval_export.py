@@ -133,9 +133,7 @@ async def export_eval_client(
         get_departments(conn, all_department_ids, redis)
         if all_department_ids
         else _empty(),
-        get_models_resource(conn, all_model_ids, redis)
-        if all_model_ids
-        else _empty(),
+        get_models_resource(conn, all_model_ids, redis) if all_model_ids else _empty(),
     )
 
     # Build lookup maps
@@ -159,9 +157,7 @@ async def export_eval_client(
         departments_str = PIPE.join(
             department_map.get(did, "") for did in (a.department_ids or [])
         )
-        models_str = PIPE.join(
-            model_map.get(mid, "") for mid in (a.model_ids or [])
-        )
+        models_str = PIPE.join(model_map.get(mid, "") for mid in (a.model_ids or []))
 
         writer.writerow(
             [

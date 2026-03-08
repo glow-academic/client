@@ -85,12 +85,6 @@ async def docs_parameter_client(
     # ── Step 3: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.parameter.create import create_parameter
-    from app.routes.v5.api.main.parameter.delete import delete_parameter
-    from app.routes.v5.api.main.parameter.draft import patch_parameter_draft
-    from app.routes.v5.api.main.parameter.duplicate import duplicate_parameter
-    from app.routes.v5.api.main.parameter.export import export_parameters
-    from app.routes.v5.api.main.parameter.get import get_parameter
     from app.infra.parameter_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -99,6 +93,12 @@ async def docs_parameter_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.parameter.create import create_parameter
+    from app.routes.v5.api.main.parameter.delete import delete_parameter
+    from app.routes.v5.api.main.parameter.draft import patch_parameter_draft
+    from app.routes.v5.api.main.parameter.duplicate import duplicate_parameter
+    from app.routes.v5.api.main.parameter.export import export_parameters
+    from app.routes.v5.api.main.parameter.get import get_parameter
     from app.routes.v5.api.main.parameter.save import save_parameter
     from app.routes.v5.api.main.parameter.search import search_parameter
     from app.routes.v5.api.main.parameter.update import update_parameter

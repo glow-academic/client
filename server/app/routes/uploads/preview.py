@@ -2,25 +2,18 @@
 
 import os
 import uuid as uuid_mod
-from typing import Annotated, Any, cast
+from typing import Annotated
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
-from app.sql.types import (
-    GetUploadFileInfoSqlParams,
-    GetUploadFileInfoSqlRow,
-    load_sql_query,
-)
+from app.routes.v5.tools.entries.uploads.get import get_upload
 from app.utils.document.pdf_first_page_to_image_bytes import (
     pdf_first_page_to_image_bytes,
 )
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.mime.get_content_type import get_content_type
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/uploads/get_upload_file_info_complete.sql"
 
 router = APIRouter()
 
@@ -32,35 +25,12 @@ async def preview_upload(
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> Response:
     """Return a PNG preview of the first page of a PDF upload."""
-    sql_query = load_sql_query(SQL_PATH)
-    sql_params: tuple[Any, ...] | None = None
-
     try:
-        profile_id = (
-            http_request.state.profile_id
-            if hasattr(http_request.state, "profile_id")
-            else None
-        )
-
         upload_id_uuid = uuid_mod.UUID(upload_id)
-        profile_id_uuid = (
-            uuid_mod.UUID(profile_id)
-            if profile_id
-            else uuid_mod.UUID("00000000-0000-0000-0000-000000000000")
-        )
 
-        params = GetUploadFileInfoSqlParams(
-            upload_id=upload_id_uuid,
-            profile_id=profile_id_uuid,
-        )
-        sql_params = params.to_tuple()
+        result = await get_upload(conn, upload_id_uuid)
 
-        result = cast(
-            GetUploadFileInfoSqlRow,
-            await execute_sql_typed(conn, SQL_PATH, params=params),
-        )
-
-        if not result.upload_exists:
+        if result is None:
             raise HTTPException(status_code=404, detail="Upload not found")
 
         stored_path = result.file_path or ""
@@ -99,8 +69,6 @@ async def preview_upload(
             error=e,
             route_path=http_request.url.path,
             operation="preview_upload",
-            sql_query=sql_query,
-            sql_params=sql_params,
             request=http_request,
         )
         raise

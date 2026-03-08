@@ -49,7 +49,9 @@ def _identity(
     )
 
 
-def _email_response(*, email_id=None, email="alice@example.com", is_primary=True) -> GetEmailResponse:
+def _email_response(
+    *, email_id=None, email="alice@example.com", is_primary=True
+) -> GetEmailResponse:
     return GetEmailResponse(
         id=email_id or uuid4(),
         email=email,
@@ -93,9 +95,7 @@ class TestResolveProfileByEmailSuccess:
             _patch("search_profiles", ([profile_id], 1)),
             _patch("resolve_profile_identity_context", identity),
         ):
-            result = await resolve_profile_by_email(
-                None, None, email="bob@example.com"
-            )
+            result = await resolve_profile_by_email(None, None, email="bob@example.com")
 
         assert isinstance(result, ProfileByEmailResult)
         assert result.profile_id == profile_id
@@ -145,7 +145,9 @@ class TestResolveProfileByEmailSuccess:
         with (
             _patch("search_emails", [email_res]),
             _patch("search_profiles", ([target_id], 1)),
-            patch(f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity),
+            patch(
+                f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+            ),
         ):
             result = await resolve_profile_by_email(
                 None, None, email="target@example.com", actor_profile_id=actor_id
@@ -178,13 +180,15 @@ class TestResolveProfileByEmailSuccess:
             _patch("search_emails", []) as mock_search,
         ):
             await resolve_profile_by_email(
-                "fake_conn", "fake_redis",
+                "fake_conn",
+                "fake_redis",
                 email="test@example.com",
                 bypass_cache=True,
             )
 
         mock_search.assert_awaited_once_with(
-            "fake_conn", "fake_redis",
+            "fake_conn",
+            "fake_redis",
             search="test@example.com",
             limit_count=100,
             bypass_cache=True,
@@ -198,9 +202,7 @@ class TestResolveProfileByEmailSuccess:
             _patch("search_emails", [email_res]),
             _patch("search_profiles", ([], 0)) as mock_search,
         ):
-            await resolve_profile_by_email(
-                None, None, email="x@example.com"
-            )
+            await resolve_profile_by_email(None, None, email="x@example.com")
 
         mock_search.assert_awaited_once_with(
             None, email_ids=[email_id], active_only=False, limit_count=1

@@ -98,12 +98,6 @@ async def docs_setting_client(
     # -- Step 3: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.setting.create import create_setting
-    from app.routes.v5.api.main.setting.delete import delete_setting
-    from app.routes.v5.api.main.setting.draft import patch_setting_draft
-    from app.routes.v5.api.main.setting.duplicate import duplicate_setting
-    from app.routes.v5.api.main.setting.export import export_settings
-    from app.routes.v5.api.main.setting.get import get_setting
     from app.infra.setting_permissions import (
         compute_can_delete,
         compute_can_draft,
@@ -111,6 +105,12 @@ async def docs_setting_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.setting.create import create_setting
+    from app.routes.v5.api.main.setting.delete import delete_setting
+    from app.routes.v5.api.main.setting.draft import patch_setting_draft
+    from app.routes.v5.api.main.setting.duplicate import duplicate_setting
+    from app.routes.v5.api.main.setting.export import export_settings
+    from app.routes.v5.api.main.setting.get import get_setting
     from app.routes.v5.api.main.setting.save import save_setting
     from app.routes.v5.api.main.setting.search import search_setting
     from app.routes.v5.api.main.setting.update import update_setting

@@ -187,9 +187,7 @@ async def export_tool_client(
         departments_str = PIPE.join(
             department_map.get(did, "") for did in (a.department_ids or [])
         )
-        args_str = PIPE.join(
-            args_map.get(aid, "") for aid in (a.args_ids or [])
-        )
+        args_str = PIPE.join(args_map.get(aid, "") for aid in (a.args_ids or []))
         arg_positions_str = PIPE.join(
             arg_position_map.get(apid, "") for apid in (a.arg_positions_ids or [])
         )

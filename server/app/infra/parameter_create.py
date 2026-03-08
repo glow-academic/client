@@ -11,10 +11,10 @@ Composes existing black-box tools:
 from __future__ import annotations
 
 from uuid import UUID
-from pydantic import BaseModel
 
 import asyncpg
 from fastapi import HTTPException
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.parameter_permissions_context import (

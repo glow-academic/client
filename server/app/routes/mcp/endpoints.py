@@ -1394,7 +1394,12 @@ def register_endpoints(server: FastMCP) -> None:
                 items = await handler(conn, uuid_ids, redis=redis)
                 return cast(
                     dict[str, Any],
-                    {"items": [i.model_dump(mode="json") if hasattr(i, "model_dump") else i for i in items]},
+                    {
+                        "items": [
+                            i.model_dump(mode="json") if hasattr(i, "model_dump") else i
+                            for i in items
+                        ]
+                    },
                 )
             return {"error": "Database connection not available", "status": "error"}
         except Exception as e:
@@ -1442,7 +1447,12 @@ def register_endpoints(server: FastMCP) -> None:
                 items = await handler(conn, redis=redis, **search_kwargs)
                 return cast(
                     dict[str, Any],
-                    {"items": [i.model_dump(mode="json") if hasattr(i, "model_dump") else i for i in items]},
+                    {
+                        "items": [
+                            i.model_dump(mode="json") if hasattr(i, "model_dump") else i
+                            for i in items
+                        ]
+                    },
                 )
             return {"error": "Database connection not available", "status": "error"}
         except Exception as e:

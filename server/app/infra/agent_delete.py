@@ -16,9 +16,9 @@ import asyncpg
 from fastapi import HTTPException
 from redis.asyncio import Redis
 
+from app.infra.agent_permissions import compute_can_delete
 from app.infra.agent_permissions_context import resolve_agent_permissions_context
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.agent_permissions import compute_can_delete
 from app.routes.v5.api.main.agent.types import (
     DeleteAgentApiResponse,
     DeleteAgentResult,

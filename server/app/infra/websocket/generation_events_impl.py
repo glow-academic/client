@@ -9,20 +9,12 @@ from __future__ import annotations
 
 from typing import Any
 
-import uuid
-
 from app.infra.websocket.attempt_types import (
     AttemptAssistantHintsData,
     AttemptAssistantProgressData,
     AttemptGradeProgressData,
 )
-from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.websocket.generation_types import (
-    GenerateErrorApiRequest,
-    GeneratePayload,
-    GenerationErrorData,
-)
-from app.infra.websocket.session_store import get_session_by_group_id, rotate_run_id
+from app.infra.websocket.generation_types import GenerationErrorData
 from app.infra.websocket.socket_event import EmitFn, internal_event
 from app.utils.logging.db_logger import get_logger
 
@@ -44,21 +36,23 @@ async def generation_error_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
         "message", "An error occurred during generation"
     )
 
-    await emit([
-        internal_event(
-            "generation_channel",
-            GenerationErrorData(
-                sid=sid,
-                artifact_type=data.get("artifact_type", "unknown"),
-                group_id=data.get("group_id"),
-                resource_type=data.get("resource_type"),
-                resource_types=data.get("resource_types"),
-                resource_id=data.get("resource_id"),
-                run_id=data.get("run_id"),
-                message=error_message,
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "generation_channel",
+                GenerationErrorData(
+                    sid=sid,
+                    artifact_type=data.get("artifact_type", "unknown"),
+                    group_id=data.get("group_id"),
+                    resource_type=data.get("resource_type"),
+                    resource_types=data.get("resource_types"),
+                    resource_id=data.get("resource_id"),
+                    run_id=data.get("run_id"),
+                    message=error_message,
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -75,17 +69,19 @@ async def text_progress_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
     if metadata.get("grade_id"):
         return
     chat_id = metadata.get("chat_id", "")
-    await emit([
-        internal_event(
-            "attempt_assistant_progress",
-            AttemptAssistantProgressData(
-                sid=data.get("sid", ""),
-                chat_id=chat_id,
-                content_type="delta",
-                content=data.get("delta", ""),
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "attempt_assistant_progress",
+                AttemptAssistantProgressData(
+                    sid=data.get("sid", ""),
+                    chat_id=chat_id,
+                    content_type="delta",
+                    content=data.get("delta", ""),
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -166,9 +162,7 @@ def _media_progress_payload(
     }
 
 
-def _media_complete_payload(
-    data: dict[str, Any], *, modality: str
-) -> dict[str, Any]:
+def _media_complete_payload(data: dict[str, Any], *, modality: str) -> dict[str, Any]:
     """Build a media_complete payload dict."""
     return {
         "type": "media_complete",
@@ -192,14 +186,19 @@ async def image_start_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
     sid = data.get("sid", "")
     if not sid:
         return
-    await emit([
-        internal_event(
-            "generation_channel",
-            _media_progress_payload(
-                data, modality="image", status="started", message="Image generation started"
-            ),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "generation_channel",
+                _media_progress_payload(
+                    data,
+                    modality="image",
+                    status="started",
+                    message="Image generation started",
+                ),
+            )
+        ]
+    )
 
 
 async def image_complete_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
@@ -207,12 +206,14 @@ async def image_complete_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
     sid = data.get("sid", "")
     if not sid:
         return
-    await emit([
-        internal_event(
-            "generation_channel",
-            _media_complete_payload(data, modality="image"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "generation_channel",
+                _media_complete_payload(data, modality="image"),
+            )
+        ]
+    )
 
 
 async def video_start_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
@@ -220,14 +221,19 @@ async def video_start_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
     sid = data.get("sid", "")
     if not sid:
         return
-    await emit([
-        internal_event(
-            "generation_channel",
-            _media_progress_payload(
-                data, modality="video", status="started", message="Video generation started"
-            ),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "generation_channel",
+                _media_progress_payload(
+                    data,
+                    modality="video",
+                    status="started",
+                    message="Video generation started",
+                ),
+            )
+        ]
+    )
 
 
 async def video_progress_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
@@ -235,17 +241,19 @@ async def video_progress_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
     sid = data.get("sid", "")
     if not sid:
         return
-    await emit([
-        internal_event(
-            "generation_channel",
-            _media_progress_payload(
-                data,
-                modality="video",
-                status="in_progress",
-                message=data.get("message", "Video generation in progress"),
-            ),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "generation_channel",
+                _media_progress_payload(
+                    data,
+                    modality="video",
+                    status="in_progress",
+                    message=data.get("message", "Video generation in progress"),
+                ),
+            )
+        ]
+    )
 
 
 async def video_complete_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
@@ -253,80 +261,11 @@ async def video_complete_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
     sid = data.get("sid", "")
     if not sid:
         return
-    await emit([
-        internal_event(
-            "generation_channel",
-            _media_complete_payload(data, modality="video"),
-        )
-    ])
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# generate (rate limit gate)
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-async def generate_gate_impl(data: dict[str, Any], *, emit: EmitFn) -> None:
-    """Rate limit gate — forwards to generate_prepare.
-
-    For audio continuations (existing session on group_id), rotates run_id
-    on the session without re-entering the full generation pipeline.
-    """
-    sid = data.get("sid", "")
-
-    artifact_types_raw = data.get("artifact_types") or []
-    artifact_type = (
-        artifact_types_raw[0]["name"]
-        if artifact_types_raw and isinstance(artifact_types_raw[0], dict)
-        else "unknown"
+    await emit(
+        [
+            internal_event(
+                "generation_channel",
+                _media_complete_payload(data, modality="video"),
+            )
+        ]
     )
-
-    if not sid:
-        return
-
-    profile_id_str = data.get("profile_id") or await find_profile_by_socket(sid)
-    if not profile_id_str:
-        await emit([
-            internal_event(
-                "generate_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message="Profile not found. Please reconnect.",
-                    artifact_type=artifact_type,
-                ).model_dump(),
-            )
-        ])
-        return
-
-    try:
-        uuid.UUID(profile_id_str)
-        GeneratePayload(**data)
-    except Exception as e:
-        await emit([
-            internal_event(
-                "generate_error",
-                GenerateErrorApiRequest(
-                    sid=sid,
-                    error_message=f"Invalid request: {str(e)}",
-                    artifact_type=artifact_type,
-                ).model_dump(),
-            )
-        ])
-        return
-
-    group_id = data.get("group_id")
-
-    # Check if this is an audio session continuation
-    if group_id:
-        session = get_session_by_group_id(group_id)
-        if session:
-            new_run_id = str(uuid.uuid4())
-            rotate_run_id(session, new_run_id)
-            logger.info(
-                f"Audio session continuation - group_id={group_id}, "
-                f"new_run_id={new_run_id}"
-            )
-            return
-
-    # Normal generation — forward to generate_prepare
-    await emit([internal_event("generate_prepare", data)])

@@ -21,8 +21,6 @@ from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.scenario_context import resolve_scenario_context
-from app.infra.scenario_permissions_context import resolve_scenario_permissions_context
-from app.infra.tool_graph import score_tools
 from app.infra.scenario_permissions import (
     SCENARIO_BASIC_RESOURCES,
     SCENARIO_CONTENT_RESOURCES,
@@ -57,6 +55,8 @@ from app.infra.scenario_permissions import (
     compute_videos_required,
     has_access,
 )
+from app.infra.scenario_permissions_context import resolve_scenario_permissions_context
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.scenario.types import (
     GetScenarioApiRequest,
     GetScenarioApiResponse,

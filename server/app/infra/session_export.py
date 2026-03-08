@@ -25,8 +25,8 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.globals import UPLOAD_FOLDER
-from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.pricing import compute_costs_from_runs
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.groups.search import search_groups
 from app.routes.v5.tools.entries.runs.search import search_runs
 from app.routes.v5.tools.entries.sessions.get import get_sessions
@@ -148,9 +148,7 @@ async def export_session_client(
     )
 
     profile_map = {p.id: p.name or "" for p in profiles_data}
-    name_map = {
-        item.id: item.name for item in name_items if item.id and item.name
-    }
+    name_map = {item.id: item.name for item in name_items if item.id and item.name}
 
     # -- Step 7: Generate ZIP (sessions.csv + groups.csv + runs.csv) + upload --
 
@@ -194,12 +192,8 @@ async def export_session_client(
 
     for r in runs:
         cost = run_costs.get(r.run_id, 0)
-        agents_str = PIPE.join(
-            name_map.get(aid, "") for aid in (r.agent_ids or [])
-        )
-        models_str = PIPE.join(
-            name_map.get(mid, "") for mid in (r.model_ids or [])
-        )
+        agents_str = PIPE.join(name_map.get(aid, "") for aid in (r.agent_ids or []))
+        models_str = PIPE.join(name_map.get(mid, "") for mid in (r.model_ids or []))
 
         runs_writer.writerow(
             [

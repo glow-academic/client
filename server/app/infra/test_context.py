@@ -138,7 +138,8 @@ async def resolve_test_context(
         if not run_ids:
             return []
         async with pool.acquire() as c:
-            return await search_messages(c, run_ids=run_ids, limit=100000)
+            msgs, _ = await search_messages(c, run_ids=run_ids, limit=100000)
+            return msgs
 
     feedback, messages = await asyncio.gather(
         _fetch_feedback(),

@@ -7,8 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.routes.v5.api.types import BaseResourceSection
 from app.infra.setting_create import CreateSettingItem
+from app.routes.v5.api.types import BaseResourceSection
 
 # ========== Flag Enrichment ==========
 
@@ -154,7 +154,6 @@ class SettingResultItem(BaseModel):
 
 
 # ========== Create Endpoint Types ==========
-
 
 
 class CreateSettingApiRequest(BaseModel):

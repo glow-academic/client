@@ -590,4 +590,6 @@ def build_jinja_from_ws_ctx(
 
 
 # Re-export from canonical location
-from app.infra.websocket.pipeline_helpers import aggregate_tool_results as aggregate_tool_results  # noqa: F401
+from app.infra.websocket.pipeline_helpers import (
+    aggregate_tool_results as aggregate_tool_results,
+)  # noqa: F401

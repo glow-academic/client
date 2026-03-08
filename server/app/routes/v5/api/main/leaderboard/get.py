@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from typing import Annotated, Any
-from uuid import UUID
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response

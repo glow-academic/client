@@ -57,9 +57,6 @@ async def docs_home_client(
     # -- Step 3: Assemble response ----------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.home.export import export_home
-    from app.routes.v5.api.main.home.get import home_get
-    from app.routes.v5.api.main.home.list import home_list
     from app.infra.home_permissions import (
         compute_completion_pct,
         compute_mode,
@@ -71,6 +68,9 @@ async def docs_home_client(
         compute_status_instructional,
         format_cohort_names,
     )
+    from app.routes.v5.api.main.home.export import export_home
+    from app.routes.v5.api.main.home.get import home_get
+    from app.routes.v5.api.main.home.list import home_list
 
     return ComposedDocsResponse(
         name="home",

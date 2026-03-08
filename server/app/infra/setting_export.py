@@ -140,9 +140,7 @@ async def export_setting_client(
         if all_department_ids
         else _empty(),
         get_colors(conn, all_color_ids, redis) if all_color_ids else _empty(),
-        get_profiles(conn, all_profile_ids, redis)
-        if all_profile_ids
-        else _empty(),
+        get_profiles(conn, all_profile_ids, redis) if all_profile_ids else _empty(),
     )
 
     # Build lookup maps
@@ -172,9 +170,7 @@ async def export_setting_client(
         departments_str = PIPE.join(
             department_map.get(did, "") for did in (a.department_ids or [])
         )
-        colors_str = PIPE.join(
-            color_map.get(cid, "") for cid in (a.color_ids or [])
-        )
+        colors_str = PIPE.join(color_map.get(cid, "") for cid in (a.color_ids or []))
         profiles_str = PIPE.join(
             profile_map.get(pid, "") or "" for pid in (a.profile_ids or [])
         )

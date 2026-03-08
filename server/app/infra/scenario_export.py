@@ -182,9 +182,7 @@ async def export_scenario_client(
         get_departments(conn, all_department_ids, redis)
         if all_department_ids
         else _empty(),
-        get_documents(conn, all_document_ids, redis)
-        if all_document_ids
-        else _empty(),
+        get_documents(conn, all_document_ids, redis) if all_document_ids else _empty(),
         get_images(conn, all_image_ids, redis) if all_image_ids else _empty(),
         get_objectives(conn, all_objective_ids, redis)
         if all_objective_ids
@@ -193,15 +191,11 @@ async def export_scenario_client(
         get_parameter_fields(conn, all_parameter_field_ids, redis)
         if all_parameter_field_ids
         else _empty(),
-        get_personas(conn, all_persona_ids, redis)
-        if all_persona_ids
-        else _empty(),
+        get_personas(conn, all_persona_ids, redis) if all_persona_ids else _empty(),
         get_problem_statements(conn, all_problem_statement_ids, redis)
         if all_problem_statement_ids
         else _empty(),
-        get_questions(conn, all_question_ids, redis)
-        if all_question_ids
-        else _empty(),
+        get_questions(conn, all_question_ids, redis) if all_question_ids else _empty(),
         get_videos(conn, all_video_ids, redis) if all_video_ids else _empty(),
     )
 
@@ -223,9 +217,7 @@ async def export_scenario_client(
     # Parameter fields: two-hop (parameter_field -> field -> name)
     pf_field_id_map = {pf.id: pf.field_id for pf in parameter_fields_data}
     all_field_ids = list({fid for fid in pf_field_id_map.values() if fid})
-    fields_data = (
-        await get_fields(conn, all_field_ids, redis) if all_field_ids else []
-    )
+    fields_data = await get_fields(conn, all_field_ids, redis) if all_field_ids else []
     field_name_map = {f.id: f.name for f in fields_data}
     pf_name_map = {
         pf_id: field_name_map.get(field_id, "")
@@ -270,18 +262,12 @@ async def export_scenario_client(
         objectives_str = PIPE.join(
             objective_map.get(oid, "") for oid in (a.objective_ids or [])
         )
-        images_str = PIPE.join(
-            image_map.get(iid, "") for iid in (a.image_ids or [])
-        )
-        videos_str = PIPE.join(
-            video_map.get(vid, "") for vid in (a.video_ids or [])
-        )
+        images_str = PIPE.join(image_map.get(iid, "") for iid in (a.image_ids or []))
+        videos_str = PIPE.join(video_map.get(vid, "") for vid in (a.video_ids or []))
         questions_str = PIPE.join(
             question_map.get(qid, "") for qid in (a.question_ids or [])
         )
-        options_str = PIPE.join(
-            option_map.get(oid, "") for oid in (a.option_ids or [])
-        )
+        options_str = PIPE.join(option_map.get(oid, "") for oid in (a.option_ids or []))
 
         writer.writerow(
             [

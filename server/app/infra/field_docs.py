@@ -88,12 +88,6 @@ async def docs_field_client(
     # -- Step 3: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.field.create import create_field
-    from app.routes.v5.api.main.field.delete import delete_field
-    from app.routes.v5.api.main.field.draft import patch_field_draft
-    from app.routes.v5.api.main.field.duplicate import duplicate_field
-    from app.routes.v5.api.main.field.export import export_fields
-    from app.routes.v5.api.main.field.get import get_field
     from app.infra.field_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -102,6 +96,12 @@ async def docs_field_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.field.create import create_field
+    from app.routes.v5.api.main.field.delete import delete_field
+    from app.routes.v5.api.main.field.draft import patch_field_draft
+    from app.routes.v5.api.main.field.duplicate import duplicate_field
+    from app.routes.v5.api.main.field.export import export_fields
+    from app.routes.v5.api.main.field.get import get_field
     from app.routes.v5.api.main.field.save import save_field
     from app.routes.v5.api.main.field.search import search_field
     from app.routes.v5.api.main.field.update import update_field

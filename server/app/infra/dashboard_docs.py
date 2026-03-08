@@ -45,9 +45,6 @@ async def docs_dashboard_client(
     # -- Step 2: Assemble response ----------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.dashboard.export import export_dashboard
-    from app.routes.v5.api.main.dashboard.get import get_dashboard
-    from app.routes.v5.api.main.dashboard.list import list_dashboard
     from app.infra.dashboard_permissions import (
         build_dashboard_bundle,
         compute_footer_metrics,
@@ -55,6 +52,9 @@ async def docs_dashboard_client(
         compute_primary_metrics,
         compute_secondary_metrics,
     )
+    from app.routes.v5.api.main.dashboard.export import export_dashboard
+    from app.routes.v5.api.main.dashboard.get import get_dashboard
+    from app.routes.v5.api.main.dashboard.list import list_dashboard
     from app.routes.v5.api.main.dashboard.refresh import dashboard_refresh
 
     return ComposedDocsResponse(

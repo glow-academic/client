@@ -141,10 +141,12 @@ class TestMakeEmit:
         mock_internal = AsyncMock()
         emit = make_emit(client_sio=mock_client, internal_sio=mock_internal)
 
-        await emit([
-            client_event("started", {"a": 1}, room="r1"),
-            internal_event("dispatch", {"b": 2}),
-        ])
+        await emit(
+            [
+                client_event("started", {"a": 1}, room="r1"),
+                internal_event("dispatch", {"b": 2}),
+            ]
+        )
 
         mock_client.emit.assert_called_once_with("started", {"a": 1}, room="r1")
         mock_internal.emit.assert_called_once_with("dispatch", {"b": 2})
@@ -172,10 +174,12 @@ class TestRecordingEmit:
         emit, events = recording_emit()
 
         await emit([internal_event("generation_started", {"run_id": "r1"})])
-        await emit([
-            internal_event("generate_artifact", {"agent": "a1"}),
-            internal_event("generate_artifact", {"agent": "a2"}),
-        ])
+        await emit(
+            [
+                internal_event("generate_artifact", {"agent": "a1"}),
+                internal_event("generate_artifact", {"agent": "a2"}),
+            ]
+        )
 
         assert len(events) == 3
         assert events[0].event == "generation_started"
@@ -191,10 +195,12 @@ class TestRecordingEmit:
     async def test_records_both_buses(self):
         emit, events = recording_emit()
 
-        await emit([
-            client_event("user_progress", {"pct": 50}, room="r1"),
-            internal_event("generation_channel", {"type": "complete"}),
-        ])
+        await emit(
+            [
+                client_event("user_progress", {"pct": 50}, room="r1"),
+                internal_event("generation_channel", {"type": "complete"}),
+            ]
+        )
 
         assert events[0].bus == "client"
         assert events[0].room == "r1"
@@ -204,7 +210,9 @@ class TestRecordingEmit:
         """Demonstrates the canonical pattern: function accepts emit, test records."""
 
         async def some_business_logic(
-            data: dict, *, emit: ...,  # type: ignore[override]
+            data: dict,
+            *,
+            emit: ...,  # type: ignore[override]
         ) -> str:
             await emit([internal_event("step_1", {"input": data["x"]})])
             result = data["x"] * 2

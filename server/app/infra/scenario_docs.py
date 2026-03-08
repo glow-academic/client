@@ -114,12 +114,6 @@ async def docs_scenario_client(
     # -- Step 3: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.scenario.create import create_scenario
-    from app.routes.v5.api.main.scenario.delete import delete_scenario
-    from app.routes.v5.api.main.scenario.draft import patch_scenario_draft
-    from app.routes.v5.api.main.scenario.duplicate import duplicate_scenario
-    from app.routes.v5.api.main.scenario.export import export_scenarios
-    from app.routes.v5.api.main.scenario.get import get_scenario
     from app.infra.scenario_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -128,6 +122,12 @@ async def docs_scenario_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.scenario.create import create_scenario
+    from app.routes.v5.api.main.scenario.delete import delete_scenario
+    from app.routes.v5.api.main.scenario.draft import patch_scenario_draft
+    from app.routes.v5.api.main.scenario.duplicate import duplicate_scenario
+    from app.routes.v5.api.main.scenario.export import export_scenarios
+    from app.routes.v5.api.main.scenario.get import get_scenario
     from app.routes.v5.api.main.scenario.save import save_scenario
     from app.routes.v5.api.main.scenario.search import search_scenario
     from app.routes.v5.api.main.scenario.update import update_scenario

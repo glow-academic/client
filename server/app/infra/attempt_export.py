@@ -184,20 +184,22 @@ async def export_attempt_client(
             scenario_map.get(sid, "") for sid in (a.scenario_ids or [])
         )
 
-        attempts_writer.writerow([
-            str(a.attempt_id),
-            str(a.attempt_created_at),
-            profile_map.get(a.profile_id, "") if a.profile_id else "",
-            simulation_map.get(a.simulation_id, "") if a.simulation_id else "",
-            scenarios_str,
-            persona_map.get(a.personas_id, "") if a.personas_id else "",
-            "",  # cohort — not hydrated for attempt export
-            "",  # department — not hydrated for attempt export
-            "Yes" if a.practice else "No",
-            "Yes" if a.infinite_mode else "No",
-            str(a.num_chats),
-            "Yes" if a.is_archived else "No",
-        ])
+        attempts_writer.writerow(
+            [
+                str(a.attempt_id),
+                str(a.attempt_created_at),
+                profile_map.get(a.profile_id, "") if a.profile_id else "",
+                simulation_map.get(a.simulation_id, "") if a.simulation_id else "",
+                scenarios_str,
+                persona_map.get(a.personas_id, "") if a.personas_id else "",
+                "",  # cohort — not hydrated for attempt export
+                "",  # department — not hydrated for attempt export
+                "Yes" if a.practice else "No",
+                "Yes" if a.infinite_mode else "No",
+                str(a.num_chats),
+                "Yes" if a.is_archived else "No",
+            ]
+        )
 
     # chats.csv
     chats_output = io.StringIO()
@@ -209,18 +211,20 @@ async def export_attempt_client(
             persona_map.get(pid, "") for pid in (c.persona_ids or [])
         )
 
-        chats_writer.writerow([
-            str(c.chat_id),
-            str(c.attempt_id),
-            scenario_map.get(c.scenario_id, "") if c.scenario_id else "",
-            personas_str,
-            str(c.rubric_id) if c.rubric_id else "",
-            str(c.grade_score) if c.grade_score is not None else "",
-            str(c.grade_total_points) if c.grade_total_points is not None else "",
-            "Yes" if c.grade_passed else "No",
-            "Yes" if c.completed else "No",
-            str(c.chat_created_at) if c.chat_created_at else "",
-        ])
+        chats_writer.writerow(
+            [
+                str(c.chat_id),
+                str(c.attempt_id),
+                scenario_map.get(c.scenario_id, "") if c.scenario_id else "",
+                personas_str,
+                str(c.rubric_id) if c.rubric_id else "",
+                str(c.grade_score) if c.grade_score is not None else "",
+                str(c.grade_total_points) if c.grade_total_points is not None else "",
+                "Yes" if c.grade_passed else "No",
+                "Yes" if c.completed else "No",
+                str(c.chat_created_at) if c.chat_created_at else "",
+            ]
+        )
 
     # messages.csv
     messages_output = io.StringIO()
@@ -228,14 +232,16 @@ async def export_attempt_client(
     messages_writer.writerow(MESSAGE_CSV_COLUMNS)
 
     for m in messages:
-        messages_writer.writerow([
-            str(m.message_id),
-            str(m.chat_id) if m.chat_id else "",
-            str(m.attempt_id) if m.attempt_id else "",
-            m.type or "",
-            str(m.created_at) if m.created_at else "",
-            "Yes" if m.completed else "No",
-        ])
+        messages_writer.writerow(
+            [
+                str(m.message_id),
+                str(m.chat_id) if m.chat_id else "",
+                str(m.attempt_id) if m.attempt_id else "",
+                m.type or "",
+                str(m.created_at) if m.created_at else "",
+                "Yes" if m.completed else "No",
+            ]
+        )
 
     # -- Step 5: Generate ZIP + upload --
 

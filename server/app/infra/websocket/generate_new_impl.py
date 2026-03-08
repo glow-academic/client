@@ -45,11 +45,15 @@ async def generate_new_impl(
     group_id = data.get("group_id")
 
     if not profile_id_str:
-        await _emit_error(emit, sid, "Profile not found. Please reconnect.", artifact_type)
+        await _emit_error(
+            emit, sid, "Profile not found. Please reconnect.", artifact_type
+        )
         return
 
     if not session_id_str:
-        await _emit_error(emit, sid, "Session not found. Please reconnect.", artifact_type)
+        await _emit_error(
+            emit, sid, "Session not found. Please reconnect.", artifact_type
+        )
         return
 
     try:
@@ -79,21 +83,23 @@ async def generate_new_impl(
                 if group_id:
                     session = get_session_by_group_id(group_id)
                     if session:
-                        await emit([
-                            internal_event(
-                                "attempt_error",
-                                {
-                                    "sid": sid,
-                                    "error_type": "rate_limit",
-                                    "message": error_msg,
-                                    "chat_id": session.chat_id,
-                                },
-                            ),
-                            internal_event(
-                                "generate_audio_session_complete",
-                                {"group_id": group_id, "sid": sid},
-                            ),
-                        ])
+                        await emit(
+                            [
+                                internal_event(
+                                    "attempt_error",
+                                    {
+                                        "sid": sid,
+                                        "error_type": "rate_limit",
+                                        "message": error_msg,
+                                        "chat_id": session.chat_id,
+                                    },
+                                ),
+                                internal_event(
+                                    "generate_audio_session_complete",
+                                    {"group_id": group_id, "sid": sid},
+                                ),
+                            ]
+                        )
                         return
 
                 await _emit_error(
@@ -135,14 +141,16 @@ async def _emit_error(
     *,
     group_id: str | None = None,
 ) -> None:
-    await emit([
-        internal_event(
-            "generate_error",
-            GenerateErrorApiRequest(
-                sid=sid,
-                error_message=message,
-                artifact_type=artifact_type,
-                group_id=group_id,
-            ).model_dump(),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "generate_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=message,
+                    artifact_type=artifact_type,
+                    group_id=group_id,
+                ).model_dump(),
+            )
+        ]
+    )

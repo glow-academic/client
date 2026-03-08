@@ -22,8 +22,10 @@ from app.routes.v5.api.main.leaderboard.types import (
     LeaderboardSections,
     LeaderboardSectionStatus,
 )
-from app.routes.v5.tools.entries.attempt_chat.types import ChatItem
-from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
+from app.routes.v5.tools.entries.attempt_chat.types import (
+    ChatItem,
+    GetAttemptChatResponse,
+)
 from app.routes.v5.tools.entries.attempt_message.types import GetAttemptMessageResponse
 
 # Type aliases for deprecated v1 types (modules deleted in DELETE OLD VIEWS)

@@ -86,21 +86,23 @@ async def run_complete_impl(
     # Audio continuation: re-enter rate limit gate
     if modality == "audio":
         if group_id_str:
-            await emit([
-                internal_event(
-                    "generate",
-                    {
-                        "sid": sid,
-                        "profile_id": profile_id_str,
-                        "profiles_id": profiles_id_str,
-                        "session_id": session_id_str,
-                        "artifact_types": data.get("artifact_types")
-                        or [{"name": artifact_type, "operation": "get"}],
-                        "group_id": group_id_str,
-                        "metadata": data.get("metadata", {}),
-                    },
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "generate",
+                        {
+                            "sid": sid,
+                            "profile_id": profile_id_str,
+                            "profiles_id": profiles_id_str,
+                            "session_id": session_id_str,
+                            "artifact_types": data.get("artifact_types")
+                            or [{"name": artifact_type, "operation": "get"}],
+                            "group_id": group_id_str,
+                            "metadata": data.get("metadata", {}),
+                        },
+                    )
+                ]
+            )
         return
 
     if not run_id or not session_id_str:
@@ -205,16 +207,18 @@ async def run_complete_impl(
                 logger.warning(f"Failed to store resolution context: {e}")
 
             # Test already created in generate_prepare — just trigger grading
-            await emit([
-                internal_event(
-                    "test_proceed",
-                    {
-                        "sid": sid,
-                        "test_id": generation_test_id,
-                        "force_proceed": True,
-                    },
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "test_proceed",
+                        {
+                            "sid": sid,
+                            "test_id": generation_test_id,
+                            "force_proceed": True,
+                        },
+                    )
+                ]
+            )
             # Don't cleanup run — generation_ended will do it after resolution.
             return
         else:
@@ -251,20 +255,22 @@ async def run_complete_impl(
         if attempt_chat_id_meta:
             resource_actions["_attempt_chat_id"] = attempt_chat_id_meta
 
-    await emit([
-        internal_event(
-            "generation_channel",
-            GenerationCompleteData(
-                sid=sid,
-                artifact_type=artifact_type,
-                group_id=group_id_str,
-                run_id=run_id,
-                success=True,
-                message=f"{artifact_type.capitalize()} generation completed",
-                resource_actions=resource_actions,
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "generation_channel",
+                GenerationCompleteData(
+                    sid=sid,
+                    artifact_type=artifact_type,
+                    group_id=group_id_str,
+                    run_id=run_id,
+                    success=True,
+                    message=f"{artifact_type.capitalize()} generation completed",
+                    resource_actions=resource_actions,
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
     # Chat special case: MV refresh + cache invalidation
     if artifact_type == "chat":
@@ -276,16 +282,18 @@ async def run_complete_impl(
                 await refresh_attempt_chat(conn)
                 await invalidate_tags(["attempt", "attempts"], redis=redis)
 
-                await emit([
-                    internal_event(
-                        "attempt_chat_started",
-                        AttemptChatStartedData(
-                            sid=sid,
-                            attempt_id=attempt_id_data,
-                            chat_id=attempt_chat_id_data,
-                        ).model_dump(mode="json"),
-                    )
-                ])
+                await emit(
+                    [
+                        internal_event(
+                            "attempt_chat_started",
+                            AttemptChatStartedData(
+                                sid=sid,
+                                attempt_id=attempt_id_data,
+                                chat_id=attempt_chat_id_data,
+                            ).model_dump(mode="json"),
+                        )
+                    ]
+                )
             except Exception as e:
                 logger.exception(f"Failed chat post-save: {e}")
 

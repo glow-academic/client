@@ -106,12 +106,6 @@ async def docs_simulation_client(
     # -- Step 3: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.simulation.create import create_simulation
-    from app.routes.v5.api.main.simulation.delete import delete_simulation
-    from app.routes.v5.api.main.simulation.draft import patch_simulation_draft
-    from app.routes.v5.api.main.simulation.duplicate import duplicate_simulation
-    from app.routes.v5.api.main.simulation.export import export_simulations
-    from app.routes.v5.api.main.simulation.get import get_simulation
     from app.infra.simulation_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -120,6 +114,12 @@ async def docs_simulation_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.simulation.create import create_simulation
+    from app.routes.v5.api.main.simulation.delete import delete_simulation
+    from app.routes.v5.api.main.simulation.draft import patch_simulation_draft
+    from app.routes.v5.api.main.simulation.duplicate import duplicate_simulation
+    from app.routes.v5.api.main.simulation.export import export_simulations
+    from app.routes.v5.api.main.simulation.get import get_simulation
     from app.routes.v5.api.main.simulation.save import save_simulation
     from app.routes.v5.api.main.simulation.search import search_simulation
     from app.routes.v5.api.main.simulation.update import update_simulation

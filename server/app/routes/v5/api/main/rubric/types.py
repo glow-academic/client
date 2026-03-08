@@ -7,8 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.infra.rubric_create import CreateRubricItem
+from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 
 
 class RubricFlagConfig(BaseModel):
@@ -105,7 +105,6 @@ class RubricResultItem(BaseModel):
 
 
 # ========== Create Endpoint Types ==========
-
 
 
 class CreateRubricApiRequest(BaseModel):

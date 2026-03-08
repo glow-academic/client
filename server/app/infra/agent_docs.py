@@ -111,12 +111,6 @@ async def docs_agent_client(
     # ── Step 3: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.agent.create import create_agent
-    from app.routes.v5.api.main.agent.delete import delete_agent
-    from app.routes.v5.api.main.agent.draft import patch_agent_draft
-    from app.routes.v5.api.main.agent.duplicate import duplicate_agent
-    from app.routes.v5.api.main.agent.export import export_agents
-    from app.routes.v5.api.main.agent.get import get_agent
     from app.infra.agent_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -125,6 +119,12 @@ async def docs_agent_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.agent.create import create_agent
+    from app.routes.v5.api.main.agent.delete import delete_agent
+    from app.routes.v5.api.main.agent.draft import patch_agent_draft
+    from app.routes.v5.api.main.agent.duplicate import duplicate_agent
+    from app.routes.v5.api.main.agent.export import export_agents
+    from app.routes.v5.api.main.agent.get import get_agent
     from app.routes.v5.api.main.agent.save import save_agent
     from app.routes.v5.api.main.agent.search import search_agent
     from app.routes.v5.api.main.agent.update import update_agent

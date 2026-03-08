@@ -15,13 +15,10 @@ from pydantic import BaseModel
 # =============================================================================
 # Internal Server-to-Server Events
 # =============================================================================
-
-
 # Re-exported from infra — canonical location is app.infra.websocket.generation_types
 from app.infra.websocket.generation_types import (
     GenerateErrorApiRequest as GenerateErrorApiRequest,
 )
-
 
 # =============================================================================
 # Test domain types

@@ -106,12 +106,6 @@ async def docs_persona_client(
     # ── Step 3: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.persona.create import create_persona
-    from app.routes.v5.api.main.persona.delete import delete_persona
-    from app.routes.v5.api.main.persona.draft import patch_persona_draft
-    from app.routes.v5.api.main.persona.duplicate import duplicate_persona
-    from app.routes.v5.api.main.persona.export import export_personas
-    from app.routes.v5.api.main.persona.get import get_persona
     from app.infra.persona_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -120,6 +114,12 @@ async def docs_persona_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.persona.create import create_persona
+    from app.routes.v5.api.main.persona.delete import delete_persona
+    from app.routes.v5.api.main.persona.draft import patch_persona_draft
+    from app.routes.v5.api.main.persona.duplicate import duplicate_persona
+    from app.routes.v5.api.main.persona.export import export_personas
+    from app.routes.v5.api.main.persona.get import get_persona
     from app.routes.v5.api.main.persona.save import save_persona
     from app.routes.v5.api.main.persona.search import search_persona
     from app.routes.v5.api.main.persona.update import update_persona

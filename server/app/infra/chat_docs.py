@@ -55,9 +55,6 @@ async def docs_chat_client(
     # -- Step 3: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.chat.draft import patch_chat_draft
-    from app.routes.v5.api.main.chat.export import export_chat
-    from app.routes.v5.api.main.chat.get import chat_get
     from app.infra.chat_permissions import (
         compute_bundle_section_show,
         compute_completion_pct,
@@ -70,6 +67,9 @@ async def docs_chat_client(
         compute_status_instructional,
         format_cohort_names,
     )
+    from app.routes.v5.api.main.chat.draft import patch_chat_draft
+    from app.routes.v5.api.main.chat.export import export_chat
+    from app.routes.v5.api.main.chat.get import chat_get
     from app.routes.v5.api.main.chat.refresh import chat_refresh
 
     return ComposedDocsResponse(

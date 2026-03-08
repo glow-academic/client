@@ -12,14 +12,6 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
-from app.infra.dashboard_context import resolve_dashboard_context
-from app.infra.globals import get_db, get_pool, get_redis_client
-from app.infra.dashboard_permissions import (
-    compute_footer_metrics_v2,
-    compute_header_metrics_v2,
-    compute_primary_metrics_v2,
-    compute_secondary_metrics_v2,
-)
 from app.infra.dashboard_builders import (
     build_field_meta,
     build_parameter_meta,
@@ -27,6 +19,14 @@ from app.infra.dashboard_builders import (
     build_scenario_meta,
     build_simulation_meta,
 )
+from app.infra.dashboard_context import resolve_dashboard_context
+from app.infra.dashboard_permissions import (
+    compute_footer_metrics_v2,
+    compute_header_metrics_v2,
+    compute_primary_metrics_v2,
+    compute_secondary_metrics_v2,
+)
+from app.infra.globals import get_db, get_pool, get_redis_client
 from app.routes.v5.api.main.dashboard.types import (
     DashboardBundleResponse,
     DashboardRequest,

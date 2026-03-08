@@ -18,11 +18,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.agent_context import resolve_agent_context
-from app.infra.agent_permissions_context import resolve_agent_permissions_context
-from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
-from app.infra.helpers import dedupe_by_id
-from app.infra.tool_graph import score_tools
 from app.infra.agent_permissions import (
     AGENT_BASIC_RESOURCES,
     AGENT_RESOURCES,
@@ -57,6 +52,11 @@ from app.infra.agent_permissions import (
     get_missing_tools,
     has_access,
 )
+from app.infra.agent_permissions_context import resolve_agent_permissions_context
+from app.infra.common_context import resolve_common_context
+from app.infra.globals import get_db, get_redis_client
+from app.infra.helpers import dedupe_by_id
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.agent.types import (
     AgentDepartmentSection,
     AgentDescriptionSection,

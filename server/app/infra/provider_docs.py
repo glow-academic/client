@@ -89,12 +89,6 @@ async def docs_provider_client(
     # ── Step 3: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.provider.create import create_provider
-    from app.routes.v5.api.main.provider.delete import delete_provider
-    from app.routes.v5.api.main.provider.draft import patch_provider_draft
-    from app.routes.v5.api.main.provider.duplicate import duplicate_provider
-    from app.routes.v5.api.main.provider.export import export_providers
-    from app.routes.v5.api.main.provider.get import get_provider
     from app.infra.provider_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -103,6 +97,12 @@ async def docs_provider_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.provider.create import create_provider
+    from app.routes.v5.api.main.provider.delete import delete_provider
+    from app.routes.v5.api.main.provider.draft import patch_provider_draft
+    from app.routes.v5.api.main.provider.duplicate import duplicate_provider
+    from app.routes.v5.api.main.provider.export import export_providers
+    from app.routes.v5.api.main.provider.get import get_provider
     from app.routes.v5.api.main.provider.save import save_provider
     from app.routes.v5.api.main.provider.search import search_provider
     from app.routes.v5.api.main.provider.update import update_provider

@@ -6,13 +6,10 @@ Uses recording_emit() to capture events — no mocks needed.
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, patch
-
 import pytest
 
 from app.infra.websocket.generation_events_impl import (
     call_complete_impl,
-    generate_gate_impl,
     generation_error_impl,
     image_complete_impl,
     image_start_impl,
@@ -22,7 +19,6 @@ from app.infra.websocket.generation_events_impl import (
     video_start_impl,
 )
 from app.infra.websocket.socket_event import recording_emit
-
 
 # ═══════════════════════════════════════════════════════════════════════════
 # generation_error
@@ -56,9 +52,7 @@ class TestGenerationError:
 
     async def test_falls_back_to_message_field(self):
         emit, events = recording_emit()
-        await generation_error_impl(
-            {"sid": "s1", "message": "fallback msg"}, emit=emit
-        )
+        await generation_error_impl({"sid": "s1", "message": "fallback msg"}, emit=emit)
         assert events[0].data["message"] == "fallback msg"
 
     async def test_default_error_message(self):
@@ -215,9 +209,7 @@ class TestMediaEvents:
 
     async def test_video_progress(self):
         emit, events = recording_emit()
-        await video_progress_impl(
-            {"sid": "s1", "message": "50% done"}, emit=emit
-        )
+        await video_progress_impl({"sid": "s1", "message": "50% done"}, emit=emit)
         assert events[0].data["status"] == "in_progress"
         assert events[0].data["message"] == "50% done"
 
@@ -230,68 +222,3 @@ class TestMediaEvents:
         assert events[0].data["type"] == "media_complete"
         assert events[0].data["modality"] == "video"
         assert events[0].data["file_path"] == "/vid.mp4"
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# generate gate
-# ═══════════════════════════════════════════════════════════════════════════
-
-_P = "app.infra.websocket.generation_events_impl"
-
-
-@pytest.mark.asyncio
-class TestGenerateGate:
-    async def test_no_sid_emits_nothing(self):
-        emit, events = recording_emit()
-        await generate_gate_impl({"sid": ""}, emit=emit)
-        assert events == []
-
-    async def test_no_profile_emits_error(self):
-        emit, events = recording_emit()
-        with patch(f"{_P}.find_profile_by_socket", return_value=None):
-            await generate_gate_impl(
-                {"sid": "s1", "artifact_types": [{"name": "agent", "operation": "get"}]},
-                emit=emit,
-            )
-        assert len(events) == 1
-        assert events[0].event == "generate_error"
-
-    async def test_audio_continuation_no_emit(self):
-        """Audio session exists → rotate run_id, no events emitted."""
-        emit, events = recording_emit()
-        mock_session = object()
-        with (
-            patch(f"{_P}.find_profile_by_socket", return_value="prof-1"),
-            patch(f"{_P}.get_session_by_group_id", return_value=mock_session),
-            patch(f"{_P}.rotate_run_id") as mock_rotate,
-        ):
-            await generate_gate_impl(
-                {
-                    "sid": "s1",
-                    "profile_id": "00000000-0000-0000-0000-000000000001",
-                    "artifact_types": [{"name": "agent", "operation": "get"}],
-                    "resource_types": [],
-                    "group_id": "g1",
-                },
-                emit=emit,
-            )
-        assert events == []
-        mock_rotate.assert_called_once()
-
-    async def test_normal_forwards_to_prepare(self):
-        """Normal generation → emits generate_prepare."""
-        emit, events = recording_emit()
-        data = {
-            "sid": "s1",
-            "profile_id": "00000000-0000-0000-0000-000000000001",
-            "artifact_types": [{"name": "agent", "operation": "get"}],
-            "resource_types": [],
-        }
-        with (
-            patch(f"{_P}.find_profile_by_socket", return_value="prof-1"),
-            patch(f"{_P}.get_session_by_group_id", return_value=None),
-        ):
-            await generate_gate_impl(data, emit=emit)
-        assert len(events) == 1
-        assert events[0].event == "generate_prepare"
-        assert events[0].data == data

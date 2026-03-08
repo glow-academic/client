@@ -39,7 +39,9 @@ def _identity(*, name: str = "Alice") -> ProfileIdentityContext:
     )
 
 
-def _key_response(*, key_id=None, key="encrypted_value", name="My Key") -> GetKeyResponse:
+def _key_response(
+    *, key_id=None, key="encrypted_value", name="My Key"
+) -> GetKeyResponse:
     return GetKeyResponse(
         id=key_id or uuid4(),
         key=key,
@@ -97,7 +99,8 @@ class TestResolveDecryptSuccess:
             patch(f"{MODULE}.decrypt_api_key", return_value="x"),
         ):
             await resolve_decrypt(
-                "fake_conn", "fake_redis",
+                "fake_conn",
+                "fake_redis",
                 profile_id=profile_id,
                 key_id=key_id,
                 bypass_cache=True,
@@ -119,7 +122,8 @@ class TestResolveDecryptSuccess:
             patch(f"{MODULE}.decrypt_api_key", return_value="x"),
         ):
             await resolve_decrypt(
-                "fake_conn", "fake_redis",
+                "fake_conn",
+                "fake_redis",
                 profile_id=profile_id,
                 key_id=key_id,
                 bypass_cache=True,
@@ -138,9 +142,7 @@ class TestResolveDecryptSuccess:
             _patch("get_keys", [key]),
             patch(f"{MODULE}.decrypt_api_key", return_value="plain") as mock_decrypt,
         ):
-            await resolve_decrypt(
-                None, None, profile_id=uuid4(), key_id=uuid4()
-            )
+            await resolve_decrypt(None, None, profile_id=uuid4(), key_id=uuid4())
 
         mock_decrypt.assert_called_once_with("the_encrypted_value")
 
@@ -155,9 +157,7 @@ class TestResolveDecryptErrors:
     async def test_missing_profile_raises_value_error(self):
         with _patch("resolve_profile_identity_context", None):
             with pytest.raises(ValueError, match="Profile not found"):
-                await resolve_decrypt(
-                    None, None, profile_id=uuid4(), key_id=uuid4()
-                )
+                await resolve_decrypt(None, None, profile_id=uuid4(), key_id=uuid4())
 
     async def test_missing_key_raises_value_error(self):
         identity = _identity()
@@ -167,9 +167,7 @@ class TestResolveDecryptErrors:
             _patch("get_keys", []),
         ):
             with pytest.raises(ValueError, match="Key not found"):
-                await resolve_decrypt(
-                    None, None, profile_id=uuid4(), key_id=uuid4()
-                )
+                await resolve_decrypt(None, None, profile_id=uuid4(), key_id=uuid4())
 
     async def test_decrypt_failure_propagates(self):
         identity = _identity()
@@ -181,6 +179,4 @@ class TestResolveDecryptErrors:
             patch(f"{MODULE}.decrypt_api_key", side_effect=ValueError("bad key")),
         ):
             with pytest.raises(ValueError, match="bad key"):
-                await resolve_decrypt(
-                    None, None, profile_id=uuid4(), key_id=uuid4()
-                )
+                await resolve_decrypt(None, None, profile_id=uuid4(), key_id=uuid4())

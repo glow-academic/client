@@ -71,18 +71,20 @@ async def generation_progress_impl(
 
     percentage = round((completed / total) * 100) if total > 0 else 0
 
-    await emit([
-        internal_event(
-            "generation_channel",
-            GenerationProgressData(
-                sid=sid,
-                artifact_type=artifact_type,
-                group_id=group_id_str,
-                run_id=run_id,
-                completed_resources=completed,
-                total_resources=total,
-                percentage=min(percentage, 100),
-                last_completed_resource=target_name,
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "generation_channel",
+                GenerationProgressData(
+                    sid=sid,
+                    artifact_type=artifact_type,
+                    group_id=group_id_str,
+                    run_id=run_id,
+                    completed_resources=completed,
+                    total_resources=total,
+                    percentage=min(percentage, 100),
+                    last_completed_resource=target_name,
+                ).model_dump(mode="json"),
+            )
+        ]
+    )

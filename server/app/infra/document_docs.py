@@ -100,12 +100,6 @@ async def docs_document_client(
     # -- Step 3: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.document.create import create_document
-    from app.routes.v5.api.main.document.delete import delete_document
-    from app.routes.v5.api.main.document.draft import patch_document_draft
-    from app.routes.v5.api.main.document.duplicate import duplicate_document
-    from app.routes.v5.api.main.document.export import export_documents
-    from app.routes.v5.api.main.document.get import get_document
     from app.infra.document_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -114,6 +108,12 @@ async def docs_document_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.document.create import create_document
+    from app.routes.v5.api.main.document.delete import delete_document
+    from app.routes.v5.api.main.document.draft import patch_document_draft
+    from app.routes.v5.api.main.document.duplicate import duplicate_document
+    from app.routes.v5.api.main.document.export import export_documents
+    from app.routes.v5.api.main.document.get import get_document
     from app.routes.v5.api.main.document.save import save_document
     from app.routes.v5.api.main.document.search import search_document
     from app.routes.v5.api.main.document.update import update_document

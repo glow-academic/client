@@ -7,8 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.infra.parameter_create import CreateParameterItem
+from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)
@@ -193,7 +193,6 @@ class ParameterResultItem(BaseModel):
 
 
 # ========== Create Endpoint Types ==========
-
 
 
 class CreateParameterApiRequest(BaseModel):

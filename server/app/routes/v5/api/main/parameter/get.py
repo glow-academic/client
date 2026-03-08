@@ -21,10 +21,6 @@ from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.parameter_context import resolve_parameter_context
-from app.infra.parameter_permissions_context import (
-    resolve_parameter_permissions_context,
-)
-from app.infra.tool_graph import score_tools
 from app.infra.parameter_permissions import (
     PARAMETER_BASIC_RESOURCES,
     PARAMETER_FIELDS_RESOURCES,
@@ -43,6 +39,10 @@ from app.infra.parameter_permissions import (
     compute_show_name,
     has_access,
 )
+from app.infra.parameter_permissions_context import (
+    resolve_parameter_permissions_context,
+)
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.parameter.types import (
     GetParameterApiRequest,
     GetParameterApiResponse,

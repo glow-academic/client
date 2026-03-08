@@ -52,9 +52,7 @@ async def resolve_group_context(
 
     async def _fetch_actor_name() -> list:
         async with pool.acquire() as c:
-            return await get_names(
-                c, [profile_id], redis, bypass_cache=bypass_cache
-            )
+            return await get_names(c, [profile_id], redis, bypass_cache=bypass_cache)
 
     runs, actor_name_items = await asyncio.gather(
         _fetch_runs(),
@@ -69,7 +67,8 @@ async def resolve_group_context(
 
     async def _fetch_messages() -> list:
         async with pool.acquire() as c:
-            return await search_messages(c, run_ids=run_ids, limit=100000)
+            msgs, _ = await search_messages(c, run_ids=run_ids, limit=100000)
+            return msgs
 
     async def _fetch_calls() -> list:
         async with pool.acquire() as c:
@@ -135,9 +134,7 @@ async def resolve_group_context(
     )
 
 
-def _empty_context(
-    profile_id: UUID, actor_name_items: list
-) -> ArtifactContext:
+def _empty_context(profile_id: UUID, actor_name_items: list) -> ArtifactContext:
     """Return an empty ArtifactContext when group has no runs."""
     return ArtifactContext(
         artifact_id=None,

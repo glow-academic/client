@@ -58,9 +58,7 @@ class TestRunCompleteImpl:
         emit, events = recording_emit()
         data = _base_data(modality="audio")
 
-        await run_complete_impl(
-            data, emit=emit, conn=AsyncMock(), redis=AsyncMock()
-        )
+        await run_complete_impl(data, emit=emit, conn=AsyncMock(), redis=AsyncMock())
 
         assert len(events) == 1
         assert events[0].event == "generate"
@@ -84,9 +82,7 @@ class TestRunCompleteImpl:
         result_id = str(uuid.uuid4())
 
         units = {
-            f"{AGENT_A}:resource:names": UnitState(
-                state="soft", result_id=result_id
-            ),
+            f"{AGENT_A}:resource:names": UnitState(state="soft", result_id=result_id),
         }
         uncontested = {
             ("resource", "names"): (AGENT_A, units[f"{AGENT_A}:resource:names"]),

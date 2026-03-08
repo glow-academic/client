@@ -17,8 +17,8 @@ from fastapi import HTTPException
 from redis.asyncio import Redis
 
 from app.infra.profile_identity_context import resolve_profile_identity_context
-from app.infra.scenario_permissions_context import resolve_scenario_permissions_context
 from app.infra.scenario_permissions import compute_can_delete
+from app.infra.scenario_permissions_context import resolve_scenario_permissions_context
 from app.routes.v5.api.main.scenario.types import (
     DeleteScenarioApiResponse,
     DeleteScenarioResult,

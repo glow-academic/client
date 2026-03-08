@@ -20,12 +20,12 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
-from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.persona_permissions import (
     compute_can_delete,
     compute_can_duplicate,
     compute_can_edit,
 )
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.persona.types import (
     ImportField,
     ListPersonaApiPersona,

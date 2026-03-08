@@ -55,9 +55,6 @@ async def docs_attempt_client(
     # -- Step 3: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.attempt.archive import archive_attempts
-    from app.routes.v5.api.main.attempt.export import export_attempt
-    from app.routes.v5.api.main.attempt.get import attempt_get
     from app.infra.attempt_permissions import (
         check_attempt_access,
         compute_achieved_standards,
@@ -71,6 +68,9 @@ async def docs_attempt_client(
         compute_total_possible_points,
         compute_total_time_limit,
     )
+    from app.routes.v5.api.main.attempt.archive import archive_attempts
+    from app.routes.v5.api.main.attempt.export import export_attempt
+    from app.routes.v5.api.main.attempt.get import attempt_get
 
     return ComposedDocsResponse(
         name="attempt",

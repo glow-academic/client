@@ -13,8 +13,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.infra.model_create import CreateModelItem
+from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 
 # =============================================================================
 # Flag Config
@@ -217,7 +217,6 @@ class ModelResultItem(BaseModel):
 # =============================================================================
 # Create Endpoint Types
 # =============================================================================
-
 
 
 class CreateModelApiRequest(BaseModel):

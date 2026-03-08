@@ -11,8 +11,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.infra.document_create import CreateDocumentItem
+from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)
@@ -281,7 +281,6 @@ class DocumentResultItem(BaseModel):
 
 
 # ========== Create Endpoint Types ==========
-
 
 
 class CreateDocumentApiRequest(BaseModel):

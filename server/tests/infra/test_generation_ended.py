@@ -76,9 +76,7 @@ class TestGenerationEndedImpl:
     async def test_no_test_id_emits_nothing(self):
         """Missing test_id → early return, no events."""
         emit, events = recording_emit()
-        await generation_ended_impl(
-            {}, emit=emit, conn=AsyncMock(), redis=AsyncMock()
-        )
+        await generation_ended_impl({}, emit=emit, conn=AsyncMock(), redis=AsyncMock())
         assert events == []
 
     async def test_no_winner_emits_nothing(self):

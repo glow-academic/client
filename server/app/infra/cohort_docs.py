@@ -104,12 +104,6 @@ async def docs_cohort_client(
     # ── Step 3: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.cohort.create import create_cohort
-    from app.routes.v5.api.main.cohort.delete import delete_cohort
-    from app.routes.v5.api.main.cohort.draft import patch_cohort_draft
-    from app.routes.v5.api.main.cohort.duplicate import duplicate_cohort
-    from app.routes.v5.api.main.cohort.export import export_cohorts
-    from app.routes.v5.api.main.cohort.get import get_cohort
     from app.infra.cohort_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -118,6 +112,12 @@ async def docs_cohort_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.cohort.create import create_cohort
+    from app.routes.v5.api.main.cohort.delete import delete_cohort
+    from app.routes.v5.api.main.cohort.draft import patch_cohort_draft
+    from app.routes.v5.api.main.cohort.duplicate import duplicate_cohort
+    from app.routes.v5.api.main.cohort.export import export_cohorts
+    from app.routes.v5.api.main.cohort.get import get_cohort
     from app.routes.v5.api.main.cohort.save import save_cohort
     from app.routes.v5.api.main.cohort.search import search_cohort
     from app.routes.v5.api.main.cohort.update import update_cohort

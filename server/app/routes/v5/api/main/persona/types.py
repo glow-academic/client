@@ -8,10 +8,10 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.infra.persona_create import CreatePersonaItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.resources.fields.types import GetFieldResponse
 from app.routes.v5.tools.resources.parameters.types import GetParameterResponse
-from app.infra.persona_create import CreatePersonaItem
 
 # =============================================================================
 # Resource Types (handcrafted — no dependency on app.sql.types)
@@ -451,7 +451,6 @@ class PersonaResultItem(BaseModel):
 
 
 # ========== Create Endpoint Types ==========
-
 
 
 class CreatePersonaApiRequest(BaseModel):

@@ -6,9 +6,9 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.infra.runs_context import RunsContext
 from app.routes.v5.tools.entries.health.types import GetHealthResponse
 from app.routes.v5.tools.entries.metrics.types import GetMetricsSearchResponse
-from app.infra.runs_context import RunsContext
 
 
 class HealthRequest(BaseModel):

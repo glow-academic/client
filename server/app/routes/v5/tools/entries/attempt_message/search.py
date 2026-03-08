@@ -51,7 +51,9 @@ async def search_attempt_messages(
 
     total_count = rows[0]["total_count"] if rows else 0
     items = [
-        GetAttemptMessageResponse(**{k: v for k, v in dict(r).items() if k != "total_count"})
+        GetAttemptMessageResponse(
+            **{k: v for k, v in dict(r).items() if k != "total_count"}
+        )
         for r in rows
     ]
     return (items, total_count)

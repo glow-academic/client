@@ -172,9 +172,7 @@ async def export_leaderboard_client(
         get_personas(conn, list(all_persona_ids), redis)
         if all_persona_ids
         else _empty(),
-        get_cohorts(conn, list(all_cohort_ids), redis)
-        if all_cohort_ids
-        else _empty(),
+        get_cohorts(conn, list(all_cohort_ids), redis) if all_cohort_ids else _empty(),
         get_departments(conn, list(all_department_ids), redis)
         if all_department_ids
         else _empty(),

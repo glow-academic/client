@@ -25,5 +25,8 @@ async def export_pricing(
     session_id = http_request.state.session_id
 
     return await export_pricing_client(
-        conn, redis, profile_id=profile_id, session_id=session_id,
+        conn,
+        redis,
+        profile_id=profile_id,
+        session_id=session_id,
     )

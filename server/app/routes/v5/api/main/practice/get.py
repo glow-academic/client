@@ -16,9 +16,6 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_pool, get_redis_client
-from app.infra.practice_context import resolve_practice_context
 from app.infra.chat_permissions import (
     compute_completion_pct,
     compute_pass_pct,
@@ -26,6 +23,9 @@ from app.infra.chat_permissions import (
     compute_status_instructional,
     format_cohort_names,
 )
+from app.infra.common_context import resolve_common_context
+from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.practice_context import resolve_practice_context
 from app.routes.v5.api.main.chat.types import (
     ChatSimulationOperational,
     RubricMapping,

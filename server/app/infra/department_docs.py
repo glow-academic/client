@@ -82,12 +82,6 @@ async def docs_department_client(
     # ── Step 3: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.department.create import create_department
-    from app.routes.v5.api.main.department.delete import delete_department
-    from app.routes.v5.api.main.department.draft import patch_department_draft
-    from app.routes.v5.api.main.department.duplicate import duplicate_department
-    from app.routes.v5.api.main.department.export import export_departments
-    from app.routes.v5.api.main.department.get import get_department
     from app.infra.department_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -96,6 +90,12 @@ async def docs_department_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.department.create import create_department
+    from app.routes.v5.api.main.department.delete import delete_department
+    from app.routes.v5.api.main.department.draft import patch_department_draft
+    from app.routes.v5.api.main.department.duplicate import duplicate_department
+    from app.routes.v5.api.main.department.export import export_departments
+    from app.routes.v5.api.main.department.get import get_department
     from app.routes.v5.api.main.department.save import save_department
     from app.routes.v5.api.main.department.search import search_department
     from app.routes.v5.api.main.department.update import update_department

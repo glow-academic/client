@@ -135,20 +135,22 @@ async def generation_ended_impl(
             )
 
     # Step 4: Emit generation_complete
-    await emit([
-        internal_event(
-            "generation_channel",
-            GenerationCompleteData(
-                sid=sid,
-                artifact_type=artifact_type,
-                group_id=group_id_str,
-                run_id=run_id,
-                success=True,
-                message=f"{artifact_type.capitalize()} generation resolved",
-                resource_actions=resource_actions,
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "generation_channel",
+                GenerationCompleteData(
+                    sid=sid,
+                    artifact_type=artifact_type,
+                    group_id=group_id_str,
+                    run_id=run_id,
+                    success=True,
+                    message=f"{artifact_type.capitalize()} generation resolved",
+                    resource_actions=resource_actions,
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
     # Step 5: Cleanup
     await cleanup_run(redis, run_id=run_id)

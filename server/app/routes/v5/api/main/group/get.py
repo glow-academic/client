@@ -20,8 +20,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.infra.group_context import resolve_group_context
-from app.infra.tool_graph import score_tools
 from app.infra.pricing import compute_costs_from_runs
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.group.types import (
     GetGroupDetailRequest,
     GetGroupDetailResponse,
@@ -69,7 +69,10 @@ async def get_group_internal(
     # Phase 0: Resolve both contexts in parallel
     async def _resolve_group() -> object:
         return await resolve_group_context(
-            pool, redis, group_id=group_id, profile_id=profile_id,
+            pool,
+            redis,
+            group_id=group_id,
+            profile_id=profile_id,
             bypass_cache=bypass_cache,
         )
 
@@ -127,15 +130,11 @@ async def get_group_internal(
         }
 
         # Hydrate config chain from tool_graph
-        all_system_ids = list(dict.fromkeys(
-            t.system_id for t in common.tool_graph.tools
-        ))
-        all_agent_ids = list(dict.fromkeys(
-            t.agent_id for t in common.tool_graph.tools
-        ))
-        all_tool_ids = list(dict.fromkeys(
-            t.tool_id for t in common.tool_graph.tools
-        ))
+        all_system_ids = list(
+            dict.fromkeys(t.system_id for t in common.tool_graph.tools)
+        )
+        all_agent_ids = list(dict.fromkeys(t.agent_id for t in common.tool_graph.tools))
+        all_tool_ids = list(dict.fromkeys(t.tool_id for t in common.tool_graph.tools))
 
         async def _fetch_systems() -> list:
             if not all_system_ids:
@@ -162,16 +161,14 @@ async def get_group_internal(
         )
 
         # Walk agent → model → provider chain
-        model_ids = list(dict.fromkeys(
-            a.model_id for a in config_agents if a.model_id
-        ))
+        model_ids = list(dict.fromkeys(a.model_id for a in config_agents if a.model_id))
         if model_ids:
             async with pool.acquire() as c:
                 config_models = await get_models(c, model_ids, redis, bypass_cache)
 
-        provider_ids = list(dict.fromkeys(
-            m.provider_id for m in config_models if m.provider_id
-        ))
+        provider_ids = list(
+            dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
+        )
         if provider_ids:
             async with pool.acquire() as c:
                 config_providers = await get_providers(
@@ -353,21 +350,15 @@ async def get_group(
 
         # Build resource arrays (names from context)
         models_list = [
-            GroupDetailResourceItem(
-                model_id=mid, name=data.name_map.get(mid)
-            )
+            GroupDetailResourceItem(model_id=mid, name=data.name_map.get(mid))
             for mid in all_model_ids
         ]
         agents_list = [
-            GroupDetailResourceItem(
-                agent_id=aid, name=data.name_map.get(aid)
-            )
+            GroupDetailResourceItem(agent_id=aid, name=data.name_map.get(aid))
             for aid in all_agent_ids
         ]
         profiles_list = [
-            GroupDetailResourceItem(
-                profile_id=pid, name=data.name_map.get(pid)
-            )
+            GroupDetailResourceItem(profile_id=pid, name=data.name_map.get(pid))
             for pid in all_profile_ids
         ]
 

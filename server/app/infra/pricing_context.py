@@ -144,7 +144,9 @@ async def resolve_pricing_search_context(
     # Step 2: Fetch runs for groups on current page
     group_ids = [g.id for g in all_groups]
     all_runs = (
-        (await search_runs(conn, group_ids=group_ids, limit=100000))[0] if group_ids else []
+        (await search_runs(conn, group_ids=group_ids, limit=100000))[0]
+        if group_ids
+        else []
     )
 
     # Step 3: Collect resource IDs

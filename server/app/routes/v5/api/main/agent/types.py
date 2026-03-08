@@ -8,8 +8,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.infra.agent_create import CreateAgentItem
+from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 
 
 class AgentFlagConfig(BaseModel):
@@ -162,7 +162,6 @@ class AgentResultItem(BaseModel):
 
 
 # ========== Create Endpoint Types ==========
-
 
 
 class CreateAgentApiRequest(BaseModel):

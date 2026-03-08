@@ -1,4 +1,4 @@
-"""Generate messages endpoint — returns paginated messages for a group."""
+"""Generate messages endpoint — thin route, delegates to infra."""
 
 from __future__ import annotations
 
@@ -9,15 +9,12 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 
+from app.infra.auth.generate import resolve_group_messages
 from app.infra.globals import get_db
 from app.routes.auth.types import GetGroupMessagesApiResponse, GroupMessageItem
-from app.sql.types import GetAuthGroupMessagesSqlParams, GetAuthGroupMessagesSqlRow
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import execute_sql_typed
 
 router = APIRouter()
-
-SQL_PATH = "app/sql/queries/auth/group/get_auth_group_messages_complete.sql"
 
 
 class GetGroupMessagesApiRequest(BaseModel):
@@ -36,28 +33,22 @@ async def get_group_messages(
 ) -> GetGroupMessagesApiResponse:
     """Return paginated messages for a specific group."""
     try:
-        params = GetAuthGroupMessagesSqlParams(
-            group_id_param=request.group_id,
-            page_limit_val=request.page_limit,
-            page_offset_val=request.page_offset,
-        )
-        result: GetAuthGroupMessagesSqlRow = await execute_sql_typed(
-            conn, SQL_PATH, params=params
+        result = await resolve_group_messages(
+            conn,
+            group_id=request.group_id,
+            page_limit=request.page_limit,
+            page_offset=request.page_offset,
         )
 
-        if not result or not result.items:
+        if not result:
             return GetGroupMessagesApiResponse()
-
-        item = result.items[0]
 
         messages = [
             GroupMessageItem(
-                message_id=str(m.message_id) if m.message_id else None,
-                run_id=str(m.run_id) if m.run_id else None,
+                message_id=str(m.message_id),
+                run_id=str(m.run_id),
                 role=m.role,
-                message_created_at=m.message_created_at.isoformat()
-                if m.message_created_at
-                else None,
+                message_created_at=m.message_created_at.isoformat(),
                 text_upload_ids=[str(u) for u in m.text_upload_ids]
                 if m.text_upload_ids
                 else None,
@@ -77,18 +68,16 @@ async def get_group_messages(
                 if m.call_upload_ids
                 else None,
             )
-            for m in (item.messages or [])
+            for m in result.messages
         ]
 
         return GetGroupMessagesApiResponse(
-            group_id=str(item.group_id) if item.group_id else None,
-            group_name=item.group_name,
-            group_created_at=item.group_created_at.isoformat()
-            if item.group_created_at
-            else None,
-            session_id=str(item.session_id) if item.session_id else None,
+            group_id=str(result.group_id),
+            group_name=result.group_name,
+            group_created_at=result.group_created_at.isoformat(),
+            session_id=str(result.session_id),
             messages=messages,
-            total_message_count=item.total_message_count or 0,
+            total_message_count=result.total_message_count,
         )
 
     except HTTPException:

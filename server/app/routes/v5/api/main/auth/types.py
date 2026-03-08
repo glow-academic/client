@@ -6,8 +6,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.infra.auth_create import CreateAuthItem
+from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 
 
 class AuthFlagConfig(BaseModel):
@@ -126,7 +126,6 @@ class AuthResultItem(BaseModel):
 
 
 # ========== Create Endpoint Types ==========
-
 
 
 class CreateAuthApiRequest(BaseModel):

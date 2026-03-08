@@ -181,9 +181,7 @@ async def export_cohort_client(
     description_map = {d.id: d.description for d in descriptions_data}
     department_map = {d.id: d.name for d in departments_data}
     simulation_map = {s.id: s.name for s in simulations_data}
-    simulation_position_map = {
-        sp.id: str(sp.value) for sp in simulation_positions_data
-    }
+    simulation_position_map = {sp.id: str(sp.value) for sp in simulation_positions_data}
     simulation_availability_map = {
         sa.id: f"{sa.type}:{sa.time.isoformat()}" if sa.time else sa.type
         for sa in simulation_availability_data
@@ -228,8 +226,7 @@ async def export_cohort_client(
             profile_map.get(pid, "") for pid in (a.profiles_ids or [])
         )
         profile_personas_str = PIPE.join(
-            profile_persona_map.get(ppid, "")
-            for ppid in (a.profile_persona_ids or [])
+            profile_persona_map.get(ppid, "") for ppid in (a.profile_persona_ids or [])
         )
 
         writer.writerow(

@@ -150,18 +150,14 @@ async def export_rubric_client(
         get_standard_groups(conn, all_standard_group_ids, redis)
         if all_standard_group_ids
         else _empty(),
-        get_standards(conn, all_standard_ids, redis)
-        if all_standard_ids
-        else _empty(),
+        get_standards(conn, all_standard_ids, redis) if all_standard_ids else _empty(),
     )
 
     # Build lookup maps
     name_map = {n.id: n.name for n in names_data}
     description_map = {d.id: d.description for d in descriptions_data}
     department_map = {d.id: d.name for d in departments_data}
-    point_map = {
-        p.id: str(p.value) if p.value is not None else "" for p in points_data
-    }
+    point_map = {p.id: str(p.value) if p.value is not None else "" for p in points_data}
     standard_group_map = {sg.id: sg.name for sg in standard_groups_data}
     standard_map = {s.id: s.name for s in standards_data}
 
@@ -185,9 +181,7 @@ async def export_rubric_client(
         departments_str = PIPE.join(
             department_map.get(did, "") for did in (a.department_ids or [])
         )
-        points_str = PIPE.join(
-            point_map.get(pid, "") for pid in (a.point_ids or [])
-        )
+        points_str = PIPE.join(point_map.get(pid, "") for pid in (a.point_ids or []))
         standard_groups_str = PIPE.join(
             standard_group_map.get(sgid, "") for sgid in (a.standard_group_ids or [])
         )

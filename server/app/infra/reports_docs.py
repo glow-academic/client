@@ -45,7 +45,6 @@ async def docs_reports_client(
     # -- Step 2: Assemble response ----------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.reports.export import export_reports
     from app.infra.reports_permissions import (
         build_reports_sections,
         compute_history_section,
@@ -54,6 +53,7 @@ async def docs_reports_client(
         compute_reports_header_metrics,
         compute_trends_section,
     )
+    from app.routes.v5.api.main.reports.export import export_reports
     from app.routes.v5.api.main.reports.refresh import reports_refresh
     from app.routes.v5.api.main.reports.search import get_reports
 

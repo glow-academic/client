@@ -19,10 +19,6 @@ from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
 from app.infra.eval_context import resolve_eval_context
-from app.infra.eval_permissions_context import resolve_eval_permissions_context
-from app.infra.globals import get_db, get_redis_client
-from app.infra.helpers import dedupe_by_id
-from app.infra.tool_graph import score_tools
 from app.infra.eval_permissions import (
     EVAL_BASIC_RESOURCES,
     EVAL_MODEL_RESOURCES,
@@ -47,6 +43,10 @@ from app.infra.eval_permissions import (
     compute_show_name,
     has_access,
 )
+from app.infra.eval_permissions_context import resolve_eval_permissions_context
+from app.infra.globals import get_db, get_redis_client
+from app.infra.helpers import dedupe_by_id
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.eval.types import (
     EvalDepartmentSection,
     EvalDescriptionSection,

@@ -190,9 +190,7 @@ async def export_persona_client(
     # Parameter fields: two-hop (parameter_field → field → name)
     pf_field_id_map = {pf.id: pf.field_id for pf in parameter_fields_data}
     all_field_ids = list({fid for fid in pf_field_id_map.values() if fid})
-    fields_data = (
-        await get_fields(conn, all_field_ids, redis) if all_field_ids else []
-    )
+    fields_data = await get_fields(conn, all_field_ids, redis) if all_field_ids else []
     field_name_map = {f.id: f.name for f in fields_data}
     # pf_id → human-readable field name
     pf_name_map = {
@@ -232,9 +230,7 @@ async def export_persona_client(
         pf_str = PIPE.join(
             pf_name_map.get(pfid, "") for pfid in (a.parameter_field_ids or [])
         )
-        voices_str = PIPE.join(
-            voice_map.get(vid, "") for vid in (a.voice_ids or [])
-        )
+        voices_str = PIPE.join(voice_map.get(vid, "") for vid in (a.voice_ids or []))
 
         writer.writerow(
             [

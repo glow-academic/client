@@ -86,12 +86,6 @@ async def docs_tool_client(
     # -- Step 3: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.tool.create import create_tool
-    from app.routes.v5.api.main.tool.delete import delete_tool
-    from app.routes.v5.api.main.tool.draft import patch_tool_draft
-    from app.routes.v5.api.main.tool.duplicate import duplicate_tool
-    from app.routes.v5.api.main.tool.export import export_tools
-    from app.routes.v5.api.main.tool.get import get_tool
     from app.infra.tool_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -100,6 +94,12 @@ async def docs_tool_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.tool.create import create_tool
+    from app.routes.v5.api.main.tool.delete import delete_tool
+    from app.routes.v5.api.main.tool.draft import patch_tool_draft
+    from app.routes.v5.api.main.tool.duplicate import duplicate_tool
+    from app.routes.v5.api.main.tool.export import export_tools
+    from app.routes.v5.api.main.tool.get import get_tool
     from app.routes.v5.api.main.tool.save import save_tool
     from app.routes.v5.api.main.tool.search import search_tool
     from app.routes.v5.api.main.tool.update import update_tool

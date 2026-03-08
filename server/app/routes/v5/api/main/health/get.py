@@ -66,7 +66,8 @@ async def get_health_internal(
     # Phase 0: Resolve both contexts in parallel
     async def _resolve_health() -> object:
         return await resolve_health_context(
-            pool, redis,
+            pool,
+            redis,
             service=service,
             date_from=date_from,
             date_to=date_to,
@@ -113,15 +114,11 @@ async def get_health_internal(
         }
 
         # Hydrate config chain from tool_graph
-        all_system_ids = list(dict.fromkeys(
-            t.system_id for t in common.tool_graph.tools
-        ))
-        all_agent_ids = list(dict.fromkeys(
-            t.agent_id for t in common.tool_graph.tools
-        ))
-        all_tool_ids = list(dict.fromkeys(
-            t.tool_id for t in common.tool_graph.tools
-        ))
+        all_system_ids = list(
+            dict.fromkeys(t.system_id for t in common.tool_graph.tools)
+        )
+        all_agent_ids = list(dict.fromkeys(t.agent_id for t in common.tool_graph.tools))
+        all_tool_ids = list(dict.fromkeys(t.tool_id for t in common.tool_graph.tools))
 
         async def _fetch_systems() -> list:
             if not all_system_ids:
@@ -148,16 +145,14 @@ async def get_health_internal(
         )
 
         # Walk agent → model → provider chain
-        model_ids = list(dict.fromkeys(
-            a.model_id for a in config_agents if a.model_id
-        ))
+        model_ids = list(dict.fromkeys(a.model_id for a in config_agents if a.model_id))
         if model_ids:
             async with pool.acquire() as c:
                 config_models = await get_models(c, model_ids, redis, bypass_cache)
 
-        provider_ids = list(dict.fromkeys(
-            m.provider_id for m in config_models if m.provider_id
-        ))
+        provider_ids = list(
+            dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
+        )
         if provider_ids:
             async with pool.acquire() as c:
                 config_providers = await get_providers(

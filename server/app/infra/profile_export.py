@@ -171,9 +171,7 @@ async def export_profile_client(
         departments_str = PIPE.join(
             department_map.get(did, "") for did in (a.department_ids or [])
         )
-        emails_str = PIPE.join(
-            email_map.get(eid, "") for eid in (a.email_ids or [])
-        )
+        emails_str = PIPE.join(email_map.get(eid, "") for eid in (a.email_ids or []))
 
         # Single-select: request limit
         request_limit = (
@@ -183,9 +181,7 @@ async def export_profile_client(
         )
 
         # Multi-select: roles
-        roles_str = PIPE.join(
-            role_map.get(rid, "") for rid in (a.role_ids or [])
-        )
+        roles_str = PIPE.join(role_map.get(rid, "") for rid in (a.role_ids or []))
 
         writer.writerow(
             [

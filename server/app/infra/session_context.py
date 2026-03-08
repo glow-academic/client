@@ -54,21 +54,15 @@ async def resolve_session_context(
     # ── Phase 1: Fetch session + groups + actor name in parallel ───
     async def _fetch_sessions() -> list:
         async with pool.acquire() as c:
-            return await search_sessions(
-                c, profile_ids=[profile_id], limit=10000
-            )
+            return await search_sessions(c, profile_ids=[profile_id], limit=10000)
 
     async def _fetch_groups() -> list:
         async with pool.acquire() as c:
-            return await search_groups(
-                c, session_ids=[session_id], limit=10000
-            )
+            return await search_groups(c, session_ids=[session_id], limit=10000)
 
     async def _fetch_actor_name() -> list:
         async with pool.acquire() as c:
-            return await get_names(
-                c, [profile_id], redis, bypass_cache=bypass_cache
-            )
+            return await get_names(c, [profile_id], redis, bypass_cache=bypass_cache)
 
     sessions, groups, actor_name_items = await asyncio.gather(
         _fetch_sessions(),
@@ -95,15 +89,11 @@ async def resolve_session_context(
 
     async def _fetch_logins() -> list:
         async with pool.acquire() as c:
-            return await search_logins(
-                c, session_ids=[session_id], limit=100000
-            )
+            return await search_logins(c, session_ids=[session_id], limit=100000)
 
     async def _fetch_problems() -> list:
         async with pool.acquire() as c:
-            return await search_problems(
-                c, session_ids=[session_id], limit=100000
-            )
+            return await search_problems(c, session_ids=[session_id], limit=100000)
 
     async def _fetch_chats() -> list:
         async with pool.acquire() as c:
@@ -113,25 +103,19 @@ async def resolve_session_context(
 
     async def _fetch_attempt_homes() -> list:
         async with pool.acquire() as c:
-            return await search_attempt_homes(
-                c, session_ids=[session_id], limit=100000
-            )
+            return await search_attempt_homes(c, session_ids=[session_id], limit=100000)
 
     async def _fetch_practices() -> list:
         async with pool.acquire() as c:
-            return await search_practices(
-                c, session_ids=[session_id], limit=100000
-            )
+            return await search_practices(c, session_ids=[session_id], limit=100000)
 
-    runs, logins, problems, chats, attempt_homes, practices = (
-        await asyncio.gather(
-            _fetch_runs(),
-            _fetch_logins(),
-            _fetch_problems(),
-            _fetch_chats(),
-            _fetch_attempt_homes(),
-            _fetch_practices(),
-        )
+    runs, logins, problems, chats, attempt_homes, practices = await asyncio.gather(
+        _fetch_runs(),
+        _fetch_logins(),
+        _fetch_problems(),
+        _fetch_chats(),
+        _fetch_attempt_homes(),
+        _fetch_practices(),
     )
 
     # ── Phase 3: Collect resource IDs ──────────────────────────────

@@ -110,7 +110,9 @@ class TestGenerationProgressImpl:
                 new_callable=AsyncMock,
                 return_value=(1, 3),
             ),
-            patch(f"{_P}.record_resource_complete", new_callable=AsyncMock) as mock_legacy,
+            patch(
+                f"{_P}.record_resource_complete", new_callable=AsyncMock
+            ) as mock_legacy,
         ):
             await generation_progress_impl(
                 {

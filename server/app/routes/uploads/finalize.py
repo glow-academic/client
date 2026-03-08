@@ -4,10 +4,11 @@ import json
 import os
 import shutil
 import uuid
-from typing import Annotated, Any, cast
+from typing import Annotated
 
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from pydantic import BaseModel
 
 from app.infra.globals import (
     AUDIO_FOLDER,
@@ -15,37 +16,32 @@ from app.infra.globals import (
     UPLOAD_FOLDER,
     VIDEO_FOLDER,
     get_db,
+    get_redis_client,
 )
-from app.sql.types import (
-    FinalizeUploadApiResponse,
-    FinalizeUploadSqlParams,
-    FinalizeUploadSqlRow,
-    load_sql_query,
-)
+from app.routes.v5.tools.entries.uploads.create import create_upload
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.logging.db_logger import get_logger
 from app.utils.mime.get_content_type import get_content_type
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/uploads/finalize_upload_complete.sql"
 
 logger = get_logger(__name__)
 
 router = APIRouter()
 
 
-@router.post("/{upload_id}/finalize", response_model=FinalizeUploadApiResponse)
+class FinalizeUploadResponse(BaseModel):
+    upload_id: uuid.UUID
+
+
+@router.post("/{upload_id}/finalize", response_model=FinalizeUploadResponse)
 async def finalize_upload(
     upload_id: str,
     http_request: Request,
     response: Response,
     conn: Annotated[asyncpg.Connection, Depends(get_db)],
-) -> FinalizeUploadApiResponse:
+) -> FinalizeUploadResponse:
     """Finalize a TUS upload and create upload record."""
     tags = ["uploads"]
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         upload_dir = TUS_UPLOADS_DIR / upload_id
@@ -102,27 +98,20 @@ async def finalize_upload(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        profile_id_uuid = uuid.UUID(profile_id)
-
-        sql_query = load_sql_query(SQL_PATH)
-        params = FinalizeUploadSqlParams(
-            upload_file_path=final_file_path,
-            content_type=content_type,
-            file_size=file_size,
-            profile_id=profile_id_uuid,
-        )
-        sql_params = params.to_tuple()
-
-        sql_result = cast(
-            FinalizeUploadSqlRow,
-            await execute_sql_typed(conn, SQL_PATH, params=params),
-        )
-
-        if not sql_result or not sql_result.upload_id:
+        session_id = http_request.state.session_id
+        if not session_id:
             raise HTTPException(
-                status_code=500,
-                detail="Failed to create upload record",
+                status_code=401,
+                detail="Session ID is required.",
             )
+
+        result = await create_upload(
+            conn,
+            session_id=uuid.UUID(session_id),
+            file_path=final_file_path,
+            mime_type=content_type,
+            size=file_size,
+        )
 
         try:
             shutil.rmtree(str(upload_dir))
@@ -132,8 +121,7 @@ async def finalize_upload(
         await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)
 
-        api_response = FinalizeUploadApiResponse.model_validate(sql_result.model_dump())
-        return api_response
+        return FinalizeUploadResponse(upload_id=result.id)
 
     except HTTPException:
         raise
@@ -142,7 +130,5 @@ async def finalize_upload(
             error=e,
             route_path=http_request.url.path,
             operation="finalize_upload",
-            sql_query=sql_query,
-            sql_params=sql_params,
             request=http_request,
         )

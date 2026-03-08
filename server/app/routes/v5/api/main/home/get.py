@@ -19,12 +19,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.infra.home_context import resolve_home_context
-from app.routes.v5.api.main.chat.types import (
-    ChatSimulationOperational,
-    RubricMapping,
-    StandardGroupMapping,
-    StandardMapping,
-)
 from app.infra.home_permissions import (
     compute_completion_pct,
     compute_mode,
@@ -32,6 +26,12 @@ from app.infra.home_permissions import (
     compute_status,
     compute_status_instructional,
     format_cohort_names,
+)
+from app.routes.v5.api.main.chat.types import (
+    ChatSimulationOperational,
+    RubricMapping,
+    StandardGroupMapping,
+    StandardMapping,
 )
 from app.routes.v5.api.main.home.types import (
     GetHomeRequest,

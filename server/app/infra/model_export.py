@@ -170,21 +170,15 @@ async def export_model_client(
         if all_department_ids
         else _empty(),
         get_values(conn, all_value_ids, redis) if all_value_ids else _empty(),
-        get_providers(conn, all_provider_ids, redis)
-        if all_provider_ids
-        else _empty(),
-        get_modalities(conn, all_modality_ids, redis)
-        if all_modality_ids
-        else _empty(),
+        get_providers(conn, all_provider_ids, redis) if all_provider_ids else _empty(),
+        get_modalities(conn, all_modality_ids, redis) if all_modality_ids else _empty(),
         get_temperature_levels(conn, all_temperature_level_ids, redis)
         if all_temperature_level_ids
         else _empty(),
         get_reasoning_levels(conn, all_reasoning_level_ids, redis)
         if all_reasoning_level_ids
         else _empty(),
-        get_qualities(conn, all_quality_ids, redis)
-        if all_quality_ids
-        else _empty(),
+        get_qualities(conn, all_quality_ids, redis) if all_quality_ids else _empty(),
         get_voices(conn, all_voice_ids, redis) if all_voice_ids else _empty(),
     )
 
@@ -225,15 +219,12 @@ async def export_model_client(
             for tid in (a.temperature_level_ids or [])
         )
         reasoning_levels_str = PIPE.join(
-            reasoning_level_map.get(rid, "")
-            for rid in (a.reasoning_level_ids or [])
+            reasoning_level_map.get(rid, "") for rid in (a.reasoning_level_ids or [])
         )
         qualities_str = PIPE.join(
             quality_map.get(qid, "") for qid in (a.quality_ids or [])
         )
-        voices_str = PIPE.join(
-            voice_map.get(vid, "") for vid in (a.voice_ids or [])
-        )
+        voices_str = PIPE.join(voice_map.get(vid, "") for vid in (a.voice_ids or []))
 
         writer.writerow(
             [

@@ -108,12 +108,6 @@ async def docs_model_client(
     # -- Step 3: Assemble response ---------------------------------------------
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.model.create import create_model
-    from app.routes.v5.api.main.model.delete import delete_model
-    from app.routes.v5.api.main.model.draft import patch_model_draft
-    from app.routes.v5.api.main.model.duplicate import duplicate_model
-    from app.routes.v5.api.main.model.export import export_models
-    from app.routes.v5.api.main.model.get import get_model
     from app.infra.model_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -122,6 +116,12 @@ async def docs_model_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.model.create import create_model
+    from app.routes.v5.api.main.model.delete import delete_model
+    from app.routes.v5.api.main.model.draft import patch_model_draft
+    from app.routes.v5.api.main.model.duplicate import duplicate_model
+    from app.routes.v5.api.main.model.export import export_models
+    from app.routes.v5.api.main.model.get import get_model
     from app.routes.v5.api.main.model.save import save_model
     from app.routes.v5.api.main.model.search import search_model
     from app.routes.v5.api.main.model.update import update_model

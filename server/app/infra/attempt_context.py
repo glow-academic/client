@@ -82,7 +82,9 @@ async def resolve_attempt_context(
     # ── Phase 1: Parallel fetch core entries ────────────────────────
     async def _fetch_attempts() -> list:
         async with pool.acquire() as c:
-            items, _total_count = await search_attempts(c, attempt_ids=[attempt_id], limit=1)
+            items, _total_count = await search_attempts(
+                c, attempt_ids=[attempt_id], limit=1
+            )
             return items
 
     async def _fetch_chats() -> list:

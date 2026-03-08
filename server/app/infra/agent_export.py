@@ -198,9 +198,7 @@ async def export_agent_client(
         departments_str = PIPE.join(
             department_map.get(did, "") for did in (a.department_ids or [])
         )
-        models_str = PIPE.join(
-            model_map.get(mid, "") for mid in (a.model_ids or [])
-        )
+        models_str = PIPE.join(model_map.get(mid, "") for mid in (a.model_ids or []))
         reasoning_levels_str = PIPE.join(
             reasoning_level_map.get(rid, "") for rid in (a.reasoning_level_ids or [])
         )
@@ -208,12 +206,8 @@ async def export_agent_client(
             temperature_level_map.get(tid, "")
             for tid in (a.temperature_level_ids or [])
         )
-        tools_str = PIPE.join(
-            tool_map.get(tid, "") for tid in (a.tool_ids or [])
-        )
-        voices_str = PIPE.join(
-            voice_map.get(vid, "") for vid in (a.voice_ids or [])
-        )
+        tools_str = PIPE.join(tool_map.get(tid, "") for tid in (a.tool_ids or []))
+        voices_str = PIPE.join(voice_map.get(vid, "") for vid in (a.voice_ids or []))
 
         writer.writerow(
             [

@@ -21,7 +21,6 @@ from redis.asyncio import Redis
 
 from app.infra.types import ArtifactContext, ResourcePair
 
-
 # ---------------------------------------------------------------------------
 # Dashboard context types
 # ---------------------------------------------------------------------------
@@ -103,9 +102,11 @@ class MessageStats:
 
 # Entry search tools
 from app.routes.v5.tools.entries.attempt.search import search_attempts
-from app.routes.v5.tools.entries.attempt_chat.types import ChatItem
 from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
-from app.routes.v5.tools.entries.attempt_chat.types import GetAttemptChatResponse
+from app.routes.v5.tools.entries.attempt_chat.types import (
+    ChatItem,
+    GetAttemptChatResponse,
+)
 from app.routes.v5.tools.entries.attempt_feedback.search import (
     search_attempt_feedback_entries,
 )
@@ -185,7 +186,9 @@ async def _compute_message_stats(
 
     # Step 1: Fetch all messages for these chats
     async with pool.acquire() as c:
-        messages, _total_count = await search_attempt_messages(c, chat_ids=chat_ids, limit=500000)
+        messages, _total_count = await search_attempt_messages(
+            c, chat_ids=chat_ids, limit=500000
+        )
 
     if not messages:
         return {}

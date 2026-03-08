@@ -19,10 +19,6 @@ from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
 from app.infra.field_context import resolve_field_context
-from app.infra.field_permissions_context import resolve_field_permissions_context
-from app.infra.globals import get_db, get_redis_client
-from app.infra.helpers import dedupe_by_id
-from app.infra.tool_graph import score_tools
 from app.infra.field_permissions import (
     FIELD_BASIC_RESOURCES,
     FIELD_RESOURCES,
@@ -40,6 +36,10 @@ from app.infra.field_permissions import (
     compute_show_name,
     has_access,
 )
+from app.infra.field_permissions_context import resolve_field_permissions_context
+from app.infra.globals import get_db, get_redis_client
+from app.infra.helpers import dedupe_by_id
+from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.field.types import (
     FieldConditionalParameterSection,
     FieldDepartmentSection,

@@ -11,7 +11,6 @@ from uuid import uuid4
 import pytest
 
 from app.infra.auth.simulatable import (
-    SimulatableProfile,
     SimulatableResult,
     resolve_simulatable_profiles,
 )
@@ -107,7 +106,9 @@ class TestResolveSimulatableSuccess:
             return None
 
         with (
-            patch(f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity),
+            patch(
+                f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+            ),
             _patch("search_roles", roles),
             _patch("search_profiles", ([target_id], 1)),
         ):
@@ -192,7 +193,9 @@ class TestResolveSimulatableSuccess:
             return None
 
         with (
-            patch(f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity),
+            patch(
+                f"{MODULE}.resolve_profile_identity_context", side_effect=_mock_identity
+            ),
             _patch("search_roles", roles),
             _patch("search_profiles", ([aid1, aid2], 2)),
         ):
@@ -215,7 +218,8 @@ class TestResolveSimulatableSuccess:
             _patch("search_profiles", ([], 0)) as mock_search,
         ):
             await resolve_simulatable_profiles(
-                None, None,
+                None,
+                None,
                 profile_id=requester_id,
                 query="bob",
                 limit_count=10,
@@ -238,9 +242,7 @@ class TestResolveSimulatableSuccess:
             _patch("search_roles", roles),
             _patch("search_profiles", ([], 0)) as mock_search,
         ):
-            await resolve_simulatable_profiles(
-                None, None, profile_id=requester_id
-            )
+            await resolve_simulatable_profiles(None, None, profile_id=requester_id)
 
         call_kwargs = mock_search.call_args[1]
         assert call_kwargs["exclude_ids"] == [requester_id]
@@ -256,7 +258,8 @@ class TestResolveSimulatableSuccess:
             _patch("search_profiles", ([], 0)) as mock_search,
         ):
             await resolve_simulatable_profiles(
-                None, None,
+                None,
+                None,
                 profile_id=requester_id,
                 query="   ",
             )
@@ -275,9 +278,7 @@ class TestResolveSimulatableErrors:
     async def test_missing_profile_raises_value_error(self):
         with _patch("resolve_profile_identity_context", None):
             with pytest.raises(ValueError, match="Profile not found"):
-                await resolve_simulatable_profiles(
-                    None, None, profile_id=uuid4()
-                )
+                await resolve_simulatable_profiles(None, None, profile_id=uuid4())
 
     async def test_no_matching_roles_returns_empty(self):
         requester_id = uuid4()

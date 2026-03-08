@@ -18,9 +18,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.pricing import compute_costs_from_runs
 from app.infra.session_context import resolve_session_context
 from app.infra.tool_graph import score_tools
-from app.infra.pricing import compute_costs_from_runs
 from app.routes.v5.api.main.session.types import (
     ArtifactSessionGroup,
     GetSessionDetailRequest,
@@ -65,7 +65,10 @@ async def get_session_internal(
     # Phase 0: Resolve both contexts in parallel
     async def _resolve_session() -> object:
         return await resolve_session_context(
-            pool, redis, session_id=session_id, profile_id=profile_id,
+            pool,
+            redis,
+            session_id=session_id,
+            profile_id=profile_id,
             bypass_cache=bypass_cache,
         )
 
@@ -129,15 +132,11 @@ async def get_session_internal(
         }
 
         # Hydrate config chain from tool_graph
-        all_system_ids = list(dict.fromkeys(
-            t.system_id for t in common.tool_graph.tools
-        ))
-        all_agent_ids = list(dict.fromkeys(
-            t.agent_id for t in common.tool_graph.tools
-        ))
-        all_tool_ids = list(dict.fromkeys(
-            t.tool_id for t in common.tool_graph.tools
-        ))
+        all_system_ids = list(
+            dict.fromkeys(t.system_id for t in common.tool_graph.tools)
+        )
+        all_agent_ids = list(dict.fromkeys(t.agent_id for t in common.tool_graph.tools))
+        all_tool_ids = list(dict.fromkeys(t.tool_id for t in common.tool_graph.tools))
 
         async def _fetch_systems() -> list:
             if not all_system_ids:
@@ -164,16 +163,14 @@ async def get_session_internal(
         )
 
         # Walk agent → model → provider chain
-        model_ids = list(dict.fromkeys(
-            a.model_id for a in config_agents if a.model_id
-        ))
+        model_ids = list(dict.fromkeys(a.model_id for a in config_agents if a.model_id))
         if model_ids:
             async with pool.acquire() as c:
                 config_models = await get_models(c, model_ids, redis, bypass_cache)
 
-        provider_ids = list(dict.fromkeys(
-            m.provider_id for m in config_models if m.provider_id
-        ))
+        provider_ids = list(
+            dict.fromkeys(m.provider_id for m in config_models if m.provider_id)
+        )
         if provider_ids:
             async with pool.acquire() as c:
                 config_providers = await get_providers(
@@ -268,9 +265,7 @@ async def get_session(
         session = data.session
 
         # Compute per-run costs
-        run_costs = await compute_costs_from_runs(
-            conn, data.runs, bypass_cache
-        )
+        run_costs = await compute_costs_from_runs(conn, data.runs, bypass_cache)
 
         # Aggregate run stats per group
         group_run_aggs: dict[UUID, dict] = {}
@@ -375,58 +370,78 @@ def _build_timeline(data: SessionInternalData) -> list[SessionTimelineItem]:
 
     # Groups
     for g in data.groups:
-        items.append(SessionTimelineItem(
-            event_type="group",
-            entity_id=g.id,
-            entity_name=g.name,
-            created_at=g.created_at,
-        ))
+        items.append(
+            SessionTimelineItem(
+                event_type="group",
+                entity_id=g.id,
+                entity_name=g.name,
+                created_at=g.created_at,
+            )
+        )
 
     # Logins
     for login in data.logins:
-        items.append(SessionTimelineItem(
-            event_type="login",
-            entity_id=login.id,
-            created_at=login.created_at,
-        ))
+        items.append(
+            SessionTimelineItem(
+                event_type="login",
+                entity_id=login.id,
+                created_at=login.created_at,
+            )
+        )
 
     # Problems
     for p in data.problems:
-        items.append(SessionTimelineItem(
-            event_type="problem",
-            entity_id=p.id,
-            entity_name=p.type,
-            created_at=p.created_at,
-            extra_1=p.message,
-        ))
+        items.append(
+            SessionTimelineItem(
+                event_type="problem",
+                entity_id=p.id,
+                entity_name=p.type,
+                created_at=p.created_at,
+                extra_1=p.message,
+            )
+        )
 
     # Chats (from chat_mv — returns dicts)
     for c in data.chats:
-        chat_id = c.get("chat_entry_id") if isinstance(c, dict) else getattr(c, "chat_entry_id", None)
+        chat_id = (
+            c.get("chat_entry_id")
+            if isinstance(c, dict)
+            else getattr(c, "chat_entry_id", None)
+        )
         chat_name = c.get("name") if isinstance(c, dict) else getattr(c, "name", None)
-        chat_created = c.get("created_at") if isinstance(c, dict) else getattr(c, "created_at", None)
-        items.append(SessionTimelineItem(
-            event_type="chat",
-            entity_id=chat_id,
-            entity_name=chat_name,
-            created_at=chat_created,
-        ))
+        chat_created = (
+            c.get("created_at")
+            if isinstance(c, dict)
+            else getattr(c, "created_at", None)
+        )
+        items.append(
+            SessionTimelineItem(
+                event_type="chat",
+                entity_id=chat_id,
+                entity_name=chat_name,
+                created_at=chat_created,
+            )
+        )
 
     # Attempt homes
     for ah in data.attempt_homes:
-        items.append(SessionTimelineItem(
-            event_type="attempt",
-            entity_id=ah.attempt_id,
-            created_at=ah.created_at,
-        ))
+        items.append(
+            SessionTimelineItem(
+                event_type="attempt",
+                entity_id=ah.attempt_id,
+                created_at=ah.created_at,
+            )
+        )
 
     # Practices
     for pr in data.practices:
-        items.append(SessionTimelineItem(
-            event_type="practice",
-            entity_id=pr.id,
-            created_at=pr.created_at,
-        ))
+        items.append(
+            SessionTimelineItem(
+                event_type="practice",
+                entity_id=pr.id,
+                created_at=pr.created_at,
+            )
+        )
 
     # Sort by created_at ascending
     items.sort(key=lambda x: x.created_at or x.created_at, reverse=False)

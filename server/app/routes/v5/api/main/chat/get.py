@@ -17,10 +17,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from redis.asyncio import Redis
 
 from app.infra.chat_context import resolve_chat_context
+from app.infra.chat_permissions import CHAT_BUNDLE_RESOURCES
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_db, get_redis_client
 from app.infra.tool_graph import score_tools
-from app.infra.chat_permissions import CHAT_BUNDLE_RESOURCES
 from app.routes.v5.api.main.chat.types import (
     BaseChatSection,
     ChatDepartmentSection,

@@ -156,17 +156,19 @@ async def export_benchmark_client(
             department_map.get(did, str(did)) for did in (b.department_ids or [])
         )
 
-        bench_writer.writerow([
-            str(b.benchmark_id),
-            eval_ids_str,
-            profile_ids_str,
-            department_ids_str,
-            str(b.created_at),
-            str(b.updated_at),
-            "Yes" if b.active else "No",
-            "Yes" if b.use_groups else "No",
-            "Yes" if b.dynamic else "No",
-        ])
+        bench_writer.writerow(
+            [
+                str(b.benchmark_id),
+                eval_ids_str,
+                profile_ids_str,
+                department_ids_str,
+                str(b.created_at),
+                str(b.updated_at),
+                "Yes" if b.active else "No",
+                "Yes" if b.use_groups else "No",
+                "Yes" if b.dynamic else "No",
+            ]
+        )
 
     # test_invocations.csv
     inv_output = io.StringIO()
@@ -179,35 +181,35 @@ async def export_benchmark_client(
             department_map.get(did, str(did)) for did in (inv.department_ids or [])
         )
         run_agent_ids_str = PIPE.join(str(aid) for aid in (inv.run_agent_ids or []))
-        group_agent_ids_str = PIPE.join(
-            str(aid) for aid in (inv.group_agent_ids or [])
-        )
+        group_agent_ids_str = PIPE.join(str(aid) for aid in (inv.group_agent_ids or []))
         modality_ids_str = PIPE.join(str(mid) for mid in (inv.modality_ids or []))
 
-        inv_writer.writerow([
-            str(inv.invocation_id),
-            str(inv.test_id) if inv.test_id else "",
-            str(inv.group_id) if inv.group_id else "",
-            str(inv.invocation_created_at),
-            inv.invocation_title,
-            "Yes" if inv.use_custom else "No",
-            str(inv.position),
-            "Yes" if inv.invocation_completed else "No",
-            str(inv.grade_id) if inv.grade_id else "",
-            str(inv.grade_score) if inv.grade_score is not None else "",
-            "Yes" if inv.grade_passed else "No",
-            str(inv.grade_time_taken) if inv.grade_time_taken is not None else "",
-            str(inv.rubric_id) if inv.rubric_id else "",
-            agents_str,
-            str(inv.quality_id) if inv.quality_id else "",
-            departments_str,
-            run_agent_ids_str,
-            group_agent_ids_str,
-            str(inv.voice_id) if inv.voice_id else "",
-            str(inv.temperature_level_id) if inv.temperature_level_id else "",
-            str(inv.reasoning_level_id) if inv.reasoning_level_id else "",
-            modality_ids_str,
-        ])
+        inv_writer.writerow(
+            [
+                str(inv.invocation_id),
+                str(inv.test_id) if inv.test_id else "",
+                str(inv.group_id) if inv.group_id else "",
+                str(inv.invocation_created_at),
+                inv.invocation_title,
+                "Yes" if inv.use_custom else "No",
+                str(inv.position),
+                "Yes" if inv.invocation_completed else "No",
+                str(inv.grade_id) if inv.grade_id else "",
+                str(inv.grade_score) if inv.grade_score is not None else "",
+                "Yes" if inv.grade_passed else "No",
+                str(inv.grade_time_taken) if inv.grade_time_taken is not None else "",
+                str(inv.rubric_id) if inv.rubric_id else "",
+                agents_str,
+                str(inv.quality_id) if inv.quality_id else "",
+                departments_str,
+                run_agent_ids_str,
+                group_agent_ids_str,
+                str(inv.voice_id) if inv.voice_id else "",
+                str(inv.temperature_level_id) if inv.temperature_level_id else "",
+                str(inv.reasoning_level_id) if inv.reasoning_level_id else "",
+                modality_ids_str,
+            ]
+        )
 
     # -- Step 6: Generate ZIP + upload --
     zip_buffer = io.BytesIO()

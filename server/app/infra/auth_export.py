@@ -146,9 +146,7 @@ async def export_auth_client(
         if all_department_ids
         else _empty(),
         get_items(conn, all_item_ids, redis) if all_item_ids else _empty(),
-        get_protocols(conn, all_protocol_ids, redis)
-        if all_protocol_ids
-        else _empty(),
+        get_protocols(conn, all_protocol_ids, redis) if all_protocol_ids else _empty(),
         get_slugs(conn, all_slug_ids, redis) if all_slug_ids else _empty(),
     )
 
@@ -183,12 +181,8 @@ async def export_auth_client(
         protocols_str = PIPE.join(
             protocol_map.get(pid, "") for pid in (a.protocol_ids or [])
         )
-        slugs_str = PIPE.join(
-            slug_map.get(sid, "") for sid in (a.slug_ids or [])
-        )
-        items_str = PIPE.join(
-            item_map.get(iid, "") for iid in (a.item_ids or [])
-        )
+        slugs_str = PIPE.join(slug_map.get(sid, "") for sid in (a.slug_ids or []))
+        items_str = PIPE.join(item_map.get(iid, "") for iid in (a.item_ids or []))
 
         writer.writerow(
             [

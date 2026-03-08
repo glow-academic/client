@@ -55,41 +55,31 @@ class TestResolveCallbackRedirect:
 
     async def test_missing_identity_returns_home(self):
         with _patch("resolve_profile_identity_context", None):
-            result = await resolve_callback_redirect(
-                None, None, profile_id=uuid4()
-            )
+            result = await resolve_callback_redirect(None, None, profile_id=uuid4())
         assert result == "/home"
 
     async def test_member_redirects_to_home(self):
         identity = _identity(role="member")
         with _patch("resolve_profile_identity_context", identity):
-            result = await resolve_callback_redirect(
-                None, None, profile_id=uuid4()
-            )
+            result = await resolve_callback_redirect(None, None, profile_id=uuid4())
         assert result == "/home"
 
     async def test_superadmin_redirects_to_home(self):
         identity = _identity(role="superadmin")
         with _patch("resolve_profile_identity_context", identity):
-            result = await resolve_callback_redirect(
-                None, None, profile_id=uuid4()
-            )
+            result = await resolve_callback_redirect(None, None, profile_id=uuid4())
         assert result == "/home"
 
     async def test_admin_redirects_to_home(self):
         identity = _identity(role="admin")
         with _patch("resolve_profile_identity_context", identity):
-            result = await resolve_callback_redirect(
-                None, None, profile_id=uuid4()
-            )
+            result = await resolve_callback_redirect(None, None, profile_id=uuid4())
         assert result == "/home"
 
     async def test_guest_redirects_to_home_fallback(self):
         identity = _identity(role="guest")
         with _patch("resolve_profile_identity_context", identity):
-            result = await resolve_callback_redirect(
-                None, None, profile_id=uuid4()
-            )
+            result = await resolve_callback_redirect(None, None, profile_id=uuid4())
         # guest uses first_available_route which is "/home" fallback
         assert result == "/home"
 
@@ -97,7 +87,8 @@ class TestResolveCallbackRedirect:
         identity = _identity(role="member")
         with _patch("resolve_profile_identity_context", identity) as mock_id:
             await resolve_callback_redirect(
-                "fake_conn", "fake_redis",
+                "fake_conn",
+                "fake_redis",
                 profile_id=uuid4(),
                 bypass_cache=True,
             )

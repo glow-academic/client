@@ -38,7 +38,9 @@ async def search_test_invocation_groups(
     )
     total_count = rows[0]["total_count"] if rows else 0
     items = [
-        GetTestInvocationGroupsResponse(**{k: v for k, v in dict(r).items() if k != "total_count"})
+        GetTestInvocationGroupsResponse(
+            **{k: v for k, v in dict(r).items() if k != "total_count"}
+        )
         for r in rows
     ]
     return (items, total_count)

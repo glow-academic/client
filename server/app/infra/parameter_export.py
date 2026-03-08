@@ -163,9 +163,7 @@ async def export_parameter_client(
         departments_str = PIPE.join(
             department_map.get(did, "") for did in (a.department_ids or [])
         )
-        fields_str = PIPE.join(
-            field_map.get(fid, "") for fid in (a.field_ids or [])
-        )
+        fields_str = PIPE.join(field_map.get(fid, "") for fid in (a.field_ids or []))
 
         writer.writerow(
             [

@@ -86,12 +86,6 @@ async def docs_profile_client(
     # ── Step 3: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.profile.create import create_profile
-    from app.routes.v5.api.main.profile.delete import delete_profile
-    from app.routes.v5.api.main.profile.draft import patch_profile_draft
-    from app.routes.v5.api.main.profile.duplicate import duplicate_profile
-    from app.routes.v5.api.main.profile.export import export_profiles
-    from app.routes.v5.api.main.profile.get import get_profile
     from app.infra.profile_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -100,6 +94,12 @@ async def docs_profile_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.profile.create import create_profile
+    from app.routes.v5.api.main.profile.delete import delete_profile
+    from app.routes.v5.api.main.profile.draft import patch_profile_draft
+    from app.routes.v5.api.main.profile.duplicate import duplicate_profile
+    from app.routes.v5.api.main.profile.export import export_profiles
+    from app.routes.v5.api.main.profile.get import get_profile
     from app.routes.v5.api.main.profile.save import save_profile
     from app.routes.v5.api.main.profile.search import search_profile
     from app.routes.v5.api.main.profile.update import update_profile

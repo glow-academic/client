@@ -10,8 +10,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.infra.simulation_create import CreateSimulationItem
+from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 
 # =============================================================================
 # Resource Types (handcrafted — no dependency on app.sql.types)
@@ -529,7 +529,6 @@ class SimulationResultItem(BaseModel):
 # =============================================================================
 # Create Endpoint Types
 # =============================================================================
-
 
 
 class CreateSimulationApiRequest(BaseModel):

@@ -146,9 +146,7 @@ async def export_provider_client(
         get_departments(conn, all_department_ids, redis)
         if all_department_ids
         else _empty(),
-        get_endpoints(conn, all_endpoint_ids, redis)
-        if all_endpoint_ids
-        else _empty(),
+        get_endpoints(conn, all_endpoint_ids, redis) if all_endpoint_ids else _empty(),
         get_keys(conn, all_key_ids, redis) if all_key_ids else _empty(),
         get_values(conn, all_value_ids, redis) if all_value_ids else _empty(),
     )
@@ -184,12 +182,8 @@ async def export_provider_client(
         endpoints_str = PIPE.join(
             endpoint_map.get(eid, "") for eid in (a.endpoint_ids or [])
         )
-        keys_str = PIPE.join(
-            key_map.get(kid, "") for kid in (a.key_ids or [])
-        )
-        values_str = PIPE.join(
-            value_map.get(vid, "") for vid in (a.value_ids or [])
-        )
+        keys_str = PIPE.join(key_map.get(kid, "") for kid in (a.key_ids or []))
+        values_str = PIPE.join(value_map.get(vid, "") for vid in (a.value_ids or []))
 
         writer.writerow(
             [

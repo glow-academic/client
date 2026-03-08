@@ -45,15 +45,15 @@ async def docs_leaderboard_client(
     # ── Step 2: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.leaderboard.export import export_leaderboard
-    from app.routes.v5.api.main.leaderboard.get import get_leaderboard
-    from app.routes.v5.api.main.leaderboard.list import list_leaderboard
     from app.infra.leaderboard_permissions import (
         build_leaderboard_rows,
         build_leaderboard_sections,
         compute_accolade_winners,
         compute_message_stats,
     )
+    from app.routes.v5.api.main.leaderboard.export import export_leaderboard
+    from app.routes.v5.api.main.leaderboard.get import get_leaderboard
+    from app.routes.v5.api.main.leaderboard.list import list_leaderboard
     from app.routes.v5.api.main.leaderboard.refresh import leaderboard_refresh
 
     return ComposedDocsResponse(

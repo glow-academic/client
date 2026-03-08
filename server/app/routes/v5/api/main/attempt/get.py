@@ -15,8 +15,6 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.attempt_context import resolve_attempt_context
-from app.infra.globals import get_db, get_pool, get_redis_client
-from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.attempt_permissions import (
     check_attempt_access,
     compute_achieved_standards,
@@ -28,6 +26,8 @@ from app.infra.attempt_permissions import (
     compute_percentage,
     compute_total_possible_points,
 )
+from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.attempt.types import (
     AggregatedResults,
     AnalysisEntry,

@@ -91,12 +91,6 @@ async def docs_rubric_client(
     # ── Step 3: Assemble response ──────────────────────────────────────
 
     # Lazy imports to avoid circular dependencies
-    from app.routes.v5.api.main.rubric.create import create_rubric
-    from app.routes.v5.api.main.rubric.delete import delete_rubric
-    from app.routes.v5.api.main.rubric.draft import patch_rubric_draft
-    from app.routes.v5.api.main.rubric.duplicate import duplicate_rubric
-    from app.routes.v5.api.main.rubric.export import export_rubrics
-    from app.routes.v5.api.main.rubric.get import get_rubric
     from app.infra.rubric_permissions import (
         compute_can_create,
         compute_can_delete,
@@ -105,6 +99,12 @@ async def docs_rubric_client(
         compute_can_edit,
         has_access,
     )
+    from app.routes.v5.api.main.rubric.create import create_rubric
+    from app.routes.v5.api.main.rubric.delete import delete_rubric
+    from app.routes.v5.api.main.rubric.draft import patch_rubric_draft
+    from app.routes.v5.api.main.rubric.duplicate import duplicate_rubric
+    from app.routes.v5.api.main.rubric.export import export_rubrics
+    from app.routes.v5.api.main.rubric.get import get_rubric
     from app.routes.v5.api.main.rubric.save import save_rubric
     from app.routes.v5.api.main.rubric.search import search_rubric
     from app.routes.v5.api.main.rubric.update import update_rubric

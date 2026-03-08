@@ -7,8 +7,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.infra.profile_create import CreateProfileItem
+from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)
@@ -180,7 +180,6 @@ class ProfileResultItem(BaseModel):
 
 
 # ========== Create Endpoint Types ==========
-
 
 
 class CreateProfileApiRequest(BaseModel):

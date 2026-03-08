@@ -841,6 +841,7 @@ async def _generate_artifact_impl(
                             "resource_type": resource_type,
                             "run_id": data.run_id,
                             "group_id": data.group_id,
+                            "session_id": data.session_id,
                             "type": "complete",
                             "event_type": "text_complete",
                             "text": assistant_output,

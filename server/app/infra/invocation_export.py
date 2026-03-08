@@ -113,7 +113,11 @@ async def export_invocation_client(
     # Multi-select: pipe-delimited display values
     departments_str = PIPE.join(
         getattr(d, "name", "") or ""
-        for d in (resources.get("departments", None) and resources["departments"].selected or [])
+        for d in (
+            resources.get("departments", None)
+            and resources["departments"].selected
+            or []
+        )
     )
     values_str = PIPE.join(
         getattr(v, "value", "") or getattr(v, "name", "") or ""
@@ -125,27 +129,43 @@ async def export_invocation_client(
     )
     endpoints_str = PIPE.join(
         getattr(e, "endpoint", "") or getattr(e, "name", "") or ""
-        for e in (resources.get("endpoints", None) and resources["endpoints"].selected or [])
+        for e in (
+            resources.get("endpoints", None) and resources["endpoints"].selected or []
+        )
     )
     modalities_str = PIPE.join(
         getattr(m, "modality", "") or getattr(m, "name", "") or ""
-        for m in (resources.get("modalities", None) and resources["modalities"].selected or [])
+        for m in (
+            resources.get("modalities", None) and resources["modalities"].selected or []
+        )
     )
     temperature_levels_str = PIPE.join(
         getattr(t, "name", "") or ""
-        for t in (resources.get("temperature_levels", None) and resources["temperature_levels"].selected or [])
+        for t in (
+            resources.get("temperature_levels", None)
+            and resources["temperature_levels"].selected
+            or []
+        )
     )
     pricing_str = PIPE.join(
         getattr(p, "name", "") or ""
-        for p in (resources.get("pricing", None) and resources["pricing"].selected or [])
+        for p in (
+            resources.get("pricing", None) and resources["pricing"].selected or []
+        )
     )
     reasoning_levels_str = PIPE.join(
         getattr(r, "name", "") or ""
-        for r in (resources.get("reasoning_levels", None) and resources["reasoning_levels"].selected or [])
+        for r in (
+            resources.get("reasoning_levels", None)
+            and resources["reasoning_levels"].selected
+            or []
+        )
     )
     qualities_str = PIPE.join(
         getattr(q, "name", "") or ""
-        for q in (resources.get("qualities", None) and resources["qualities"].selected or [])
+        for q in (
+            resources.get("qualities", None) and resources["qualities"].selected or []
+        )
     )
     voices_str = PIPE.join(
         getattr(v, "voice", "") or getattr(v, "name", "") or ""

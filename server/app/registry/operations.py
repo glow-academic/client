@@ -405,13 +405,9 @@ def _res(
     """Helper to generate resource op entries."""
     d: dict[tuple[str, str], tuple[str, str] | None] = {}
     d[(name, "get")] = (f"{_R}.{name}.get", f"get_{name}") if get else None
-    d[(name, "create")] = (
-        (f"{_R}.{name}.create", f"create_{name}") if create else None
-    )
+    d[(name, "create")] = (f"{_R}.{name}.create", f"create_{name}") if create else None
     d[(name, "link")] = (f"{_R}.{name}.link", f"link_{name}") if link else None
-    d[(name, "search")] = (
-        (f"{_R}.{name}.search", f"search_{name}") if search else None
-    )
+    d[(name, "search")] = (f"{_R}.{name}.search", f"search_{name}") if search else None
     d[(name, "docs")] = None
     return d
 
