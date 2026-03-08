@@ -19690,7 +19690,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/BulkArchiveAttemptsApiRequest"
+                "$ref": "#/components/schemas/ArchiveAttemptsRequest"
               }
             }
           }
@@ -19701,7 +19701,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/BulkArchiveAttemptsApiResponse"
+                  "$ref": "#/components/schemas/ArchiveAttemptsResponse"
                 }
               }
             }
@@ -46027,6 +46027,173 @@
         "title": "AnalyticsFilterOption",
         "description": "A single filter option for dropdown selectors."
       },
+      "ArchiveAttemptsRequest": {
+        "properties": {
+          "archived": {
+            "type": "boolean",
+            "title": "Archived"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "attempt_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attempt Ids"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "cohort_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cohort Ids"
+          },
+          "department_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Ids"
+          },
+          "simulation_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Ids"
+          },
+          "scenario_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Ids"
+          },
+          "profile_ids_filter": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids Filter"
+          },
+          "infinite_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Infinite Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "archived",
+          "group_id"
+        ],
+        "title": "ArchiveAttemptsRequest"
+      },
+      "ArchiveAttemptsResponse": {
+        "properties": {
+          "updated_count": {
+            "type": "integer",
+            "title": "Updated Count",
+            "default": 0
+          },
+          "profile_ids_to_invalidate": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Ids To Invalidate"
+          }
+        },
+        "type": "object",
+        "title": "ArchiveAttemptsResponse"
+      },
       "ArchiveTestsRequest": {
         "properties": {
           "test_ids": {
@@ -48095,11 +48262,23 @@
             "type": "string",
             "format": "uuid",
             "title": "Chat Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
           }
         },
         "type": "object",
         "required": [
-          "chat_id"
+          "chat_id",
+          "session_id",
+          "group_id"
         ],
         "title": "AttemptStopPayload",
         "description": "Client-to-server: stop message generation."
@@ -49889,218 +50068,6 @@
           "url"
         ],
         "title": "BreadcrumbItem"
-      },
-      "BulkArchiveAttemptsApiRequest": {
-        "properties": {
-          "archived": {
-            "type": "boolean",
-            "title": "Archived"
-          },
-          "attempt_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Ids"
-          },
-          "start_date": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start Date"
-          },
-          "end_date": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "End Date"
-          },
-          "cohort_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Cohort Ids"
-          },
-          "department_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Department Ids"
-          },
-          "roles": {
-            "anyOf": [
-              {},
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Roles"
-          },
-          "simulation_filters": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Filters"
-          },
-          "search": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Search"
-          },
-          "profile_ids_filter": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Ids Filter"
-          },
-          "simulation_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Simulation Ids"
-          },
-          "scenario_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Scenario Ids"
-          },
-          "infinite_mode": {
-            "anyOf": [
-              {
-                "type": "boolean"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Infinite Mode"
-          }
-        },
-        "type": "object",
-        "required": [
-          "archived"
-        ],
-        "title": "BulkArchiveAttemptsApiRequest"
-      },
-      "BulkArchiveAttemptsApiResponse": {
-        "properties": {
-          "updated_count": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Updated Count"
-          },
-          "actor_name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Actor Name"
-          },
-          "profile_ids_to_invalidate": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Profile Ids To Invalidate"
-          }
-        },
-        "type": "object",
-        "title": "BulkArchiveAttemptsApiResponse"
       },
       "ChatData": {
         "properties": {
@@ -63546,6 +63513,210 @@
         "type": "object",
         "title": "DraftFormState",
         "description": "Full form state after draft patch \u2014 server is source of truth.\n\nClient replaces its local form state with this after every successful patch."
+      },
+      "DraftImageValue": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DraftImageValue",
+        "description": "Value for creating an image via the draft endpoint."
+      },
+      "DraftOptionValue": {
+        "properties": {
+          "option_text": {
+            "type": "string",
+            "title": "Option Text"
+          },
+          "question_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "option_text"
+        ],
+        "title": "DraftOptionValue",
+        "description": "Value for creating an option via the draft endpoint."
+      },
+      "DraftQuestionValue": {
+        "properties": {
+          "question_text": {
+            "type": "string",
+            "title": "Question Text"
+          },
+          "time": {
+            "type": "integer",
+            "title": "Time",
+            "default": 30
+          },
+          "allow_multiple": {
+            "type": "boolean",
+            "title": "Allow Multiple",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "question_text"
+        ],
+        "title": "DraftQuestionValue",
+        "description": "Value for creating a question via the draft endpoint."
+      },
+      "DraftScenarioFlagValue": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Scenario Id"
+          },
+          "flag_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Flag Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "flag_id"
+        ],
+        "title": "DraftScenarioFlagValue",
+        "description": "Value for creating a scenario_flag resource via draft."
+      },
+      "DraftScenarioPositionValue": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Scenario Id"
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "value"
+        ],
+        "title": "DraftScenarioPositionValue",
+        "description": "Value for creating a scenario_position resource via draft."
+      },
+      "DraftScenarioRubricValue": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Scenario Id"
+          },
+          "rubric_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Rubric Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "rubric_id"
+        ],
+        "title": "DraftScenarioRubricValue",
+        "description": "Value for creating a scenario_rubric resource via draft."
+      },
+      "DraftScenarioTimeLimitValue": {
+        "properties": {
+          "scenario_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Scenario Id"
+          },
+          "time_limit_seconds": {
+            "type": "integer",
+            "title": "Time Limit Seconds"
+          },
+          "negative": {
+            "type": "boolean",
+            "title": "Negative",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "scenario_id",
+          "time_limit_seconds"
+        ],
+        "title": "DraftScenarioTimeLimitValue",
+        "description": "Value for creating a scenario_time_limit resource via draft."
+      },
+      "DraftVideoValue": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "upload_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upload Id"
+          },
+          "length_seconds": {
+            "type": "integer",
+            "title": "Length Seconds",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "title": "DraftVideoValue",
+        "description": "Value for creating a video via the draft endpoint."
       },
       "DuplicateAgentApiRequest": {
         "properties": {
@@ -93384,6 +93555,151 @@
             ],
             "title": "Problem Statement Id"
           },
+          "objectives": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objectives"
+          },
+          "objective_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Objective Ids"
+          },
+          "images": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DraftImageValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Images"
+          },
+          "image_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Ids"
+          },
+          "videos": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DraftVideoValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Videos"
+          },
+          "video_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Video Ids"
+          },
+          "questions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DraftQuestionValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questions"
+          },
+          "question_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Ids"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DraftOptionValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Options"
+          },
+          "option_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option Ids"
+          },
           "flag_ids": {
             "anyOf": [
               {
@@ -93458,81 +93774,6 @@
               }
             ],
             "title": "Parameter Field Ids"
-          },
-          "objective_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Objective Ids"
-          },
-          "image_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Image Ids"
-          },
-          "video_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Video Ids"
-          },
-          "question_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Question Ids"
-          },
-          "option_ids": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string",
-                  "format": "uuid"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Option Ids"
           }
         },
         "type": "object",
@@ -93540,7 +93781,7 @@
           "group_id"
         ],
         "title": "PatchScenarioDraftApiRequest",
-        "description": "Request model for new-style scenario draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id, problem_statement/problem_statement_id\nID-only for non-creatable resources:\n  - flag_ids, department_ids, persona_ids, document_ids, parameter_field_ids,\n    objective_ids, image_ids, video_ids, question_ids, option_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
+        "description": "Request model for new-style scenario draft endpoint.\n\nDual-mode for creatable resources:\n  - Single-select: name/name_id, description/description_id,\n    problem_statement/problem_statement_id\n  - Multi-select (merged): objectives/objective_ids, images/image_ids,\n    videos/video_ids, questions/question_ids, options/option_ids\n    (values are created as resources, then IDs are merged with existing IDs)\n\nID-only for non-creatable resources:\n  - flag_ids, department_ids, persona_ids, document_ids, parameter_field_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
       "PatchScenarioDraftApiResponse": {
         "properties": {
@@ -93931,6 +94172,20 @@
             ],
             "title": "Scenario Flag Ids"
           },
+          "scenario_flags": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DraftScenarioFlagValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Flags"
+          },
           "scenario_position_ids": {
             "anyOf": [
               {
@@ -93945,6 +94200,20 @@
               }
             ],
             "title": "Scenario Position Ids"
+          },
+          "scenario_positions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DraftScenarioPositionValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Positions"
           },
           "scenario_rubric_ids": {
             "anyOf": [
@@ -93961,6 +94230,20 @@
             ],
             "title": "Scenario Rubric Ids"
           },
+          "scenario_rubrics": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DraftScenarioRubricValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Rubrics"
+          },
           "scenario_time_limit_ids": {
             "anyOf": [
               {
@@ -93975,6 +94258,20 @@
               }
             ],
             "title": "Scenario Time Limit Ids"
+          },
+          "scenario_time_limits": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DraftScenarioTimeLimitValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scenario Time Limits"
           }
         },
         "type": "object",
@@ -93982,7 +94279,7 @@
           "group_id"
         ],
         "title": "PatchSimulationDraftApiRequest",
-        "description": "Request model for new-style simulation draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\nID-only for non-creatable resources:\n  - flag_ids, department_ids, scenario_ids, scenario_flag_ids,\n    scenario_position_ids, scenario_rubric_ids, scenario_time_limit_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
+        "description": "Request model for new-style simulation draft endpoint.\n\nDual-mode for creatable resources:\n  - Single-select: name/name_id, description/description_id\n  - Multi-select compound: scenario_flags, scenario_positions,\n    scenario_rubrics, scenario_time_limits (values create resources,\n    created IDs merged with existing IDs)\nID-only for non-creatable resources:\n  - flag_ids, department_ids, scenario_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
       "PatchSimulationDraftApiResponse": {
         "properties": {
@@ -94002,6 +94299,16 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "form_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SimulationDraftFormState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -100218,21 +100525,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "model_id",
-          "temperature",
-          "reasoning",
-          "tool_ids",
-          "quality",
-          "voices",
-          "prompt_id",
-          "instruction_ids",
-          "active",
-          "generated"
-        ],
         "title": "QGetAgentsV4Item"
       },
       "QGetProfileContextV4Draft": {
@@ -100369,13 +100661,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "role",
-          "name",
-          "description",
-          "icon_value",
-          "color_hex"
-        ],
         "title": "QGetProfileContextV4RoleResource"
       },
       "QGetProfileContextV4ThemeTokens": {
@@ -100789,45 +101074,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "background",
-          "foreground",
-          "card",
-          "card_foreground",
-          "popover",
-          "popover_foreground",
-          "primary_color",
-          "primary_foreground",
-          "secondary",
-          "secondary_foreground",
-          "muted",
-          "muted_foreground",
-          "accent",
-          "accent_foreground",
-          "destructive",
-          "border",
-          "input",
-          "ring",
-          "success",
-          "success_foreground",
-          "warning",
-          "warning_foreground",
-          "info",
-          "info_foreground",
-          "chart1",
-          "chart2",
-          "chart3",
-          "chart4",
-          "chart5",
-          "sidebar",
-          "sidebar_foreground",
-          "sidebar_primary",
-          "sidebar_primary_foreground",
-          "sidebar_accent",
-          "sidebar_accent_foreground",
-          "sidebar_border",
-          "sidebar_ring"
-        ],
         "title": "QGetProfileContextV4ThemeTokens"
       },
       "QGetSystemsV4Item": {
@@ -100905,14 +101151,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "agent_ids",
-          "active",
-          "generated"
-        ],
         "title": "QGetSystemsV4Item"
       },
       "QGetToolsV4Item": {
@@ -101047,18 +101285,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "description",
-          "generated",
-          "args_ids",
-          "args_output_ids",
-          "operation",
-          "resources",
-          "entries",
-          "artifacts"
-        ],
         "title": "QGetToolsV4Item"
       },
       "QSearchSimulatableProfilesV4Profile": {
@@ -101182,18 +101408,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "profile_id",
-          "name",
-          "emails",
-          "primary_email",
-          "role",
-          "active",
-          "req_per_day",
-          "created_at",
-          "updated_at",
-          "primary_department_id"
-        ],
         "title": "QSearchSimulatableProfilesV4Profile"
       },
       "QualitiesGenerationEvent": {
@@ -119597,6 +119811,100 @@
         },
         "type": "object",
         "title": "SimulationDescriptionSection"
+      },
+      "SimulationDraftFormState": {
+        "properties": {
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids",
+            "default": []
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids",
+            "default": []
+          },
+          "scenario_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Ids",
+            "default": []
+          },
+          "scenario_flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Flag Ids",
+            "default": []
+          },
+          "scenario_position_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Position Ids",
+            "default": []
+          },
+          "scenario_rubric_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Rubric Ids",
+            "default": []
+          },
+          "scenario_time_limit_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Scenario Time Limit Ids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "SimulationDraftFormState",
+        "description": "Full form state after draft patch \u2014 server is source of truth.\n\nClient replaces its local form state with this after every successful patch."
       },
       "SimulationFieldError": {
         "properties": {

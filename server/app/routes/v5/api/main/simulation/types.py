@@ -791,14 +791,45 @@ class DuplicateSimulationApiResponse(BaseModel):
 # =============================================================================
 
 
+class DraftScenarioFlagValue(BaseModel):
+    """Value for creating a scenario_flag resource via draft."""
+
+    scenario_id: UUID
+    flag_id: UUID
+
+
+class DraftScenarioPositionValue(BaseModel):
+    """Value for creating a scenario_position resource via draft."""
+
+    scenario_id: UUID
+    value: int
+
+
+class DraftScenarioRubricValue(BaseModel):
+    """Value for creating a scenario_rubric resource via draft."""
+
+    scenario_id: UUID
+    rubric_id: UUID
+
+
+class DraftScenarioTimeLimitValue(BaseModel):
+    """Value for creating a scenario_time_limit resource via draft."""
+
+    scenario_id: UUID
+    time_limit_seconds: int
+    negative: bool = False
+
+
 class PatchSimulationDraftApiRequest(BaseModel):
     """Request model for new-style simulation draft endpoint.
 
-    Dual-mode for creatable resources only:
-      - name/name_id, description/description_id
+    Dual-mode for creatable resources:
+      - Single-select: name/name_id, description/description_id
+      - Multi-select compound: scenario_flags, scenario_positions,
+        scenario_rubrics, scenario_time_limits (values create resources,
+        created IDs merged with existing IDs)
     ID-only for non-creatable resources:
-      - flag_ids, department_ids, scenario_ids, scenario_flag_ids,
-        scenario_position_ids, scenario_rubric_ids, scenario_time_limit_ids
+      - flag_ids, department_ids, scenario_ids
 
     Client always sends full state (append-only — each write is a new version snapshot).
     """
@@ -817,10 +848,33 @@ class PatchSimulationDraftApiRequest(BaseModel):
     flag_ids: list[UUID] | None = None
     department_ids: list[UUID] | None = None
     scenario_ids: list[UUID] | None = None
+
+    # Creatable multi-select compound — values create resources, IDs merged
     scenario_flag_ids: list[UUID] | None = None
+    scenario_flags: list[DraftScenarioFlagValue] | None = None
     scenario_position_ids: list[UUID] | None = None
+    scenario_positions: list[DraftScenarioPositionValue] | None = None
     scenario_rubric_ids: list[UUID] | None = None
+    scenario_rubrics: list[DraftScenarioRubricValue] | None = None
     scenario_time_limit_ids: list[UUID] | None = None
+    scenario_time_limits: list[DraftScenarioTimeLimitValue] | None = None
+
+
+class SimulationDraftFormState(BaseModel):
+    """Full form state after draft patch — server is source of truth.
+
+    Client replaces its local form state with this after every successful patch.
+    """
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_ids: list[UUID] = []
+    department_ids: list[UUID] = []
+    scenario_ids: list[UUID] = []
+    scenario_flag_ids: list[UUID] = []
+    scenario_position_ids: list[UUID] = []
+    scenario_rubric_ids: list[UUID] = []
+    scenario_time_limit_ids: list[UUID] = []
 
 
 class PatchSimulationDraftApiResponse(BaseModel):
@@ -830,6 +884,7 @@ class PatchSimulationDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+    form_state: SimulationDraftFormState | None = None
 
 
 # =============================================================================

@@ -42,7 +42,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.profiles.docs import get_profiles_docs
 from app.routes.v5.tools.resources.provider_keys.docs import get_provider_keys_docs
 from app.routes.v5.tools.resources.systems.docs import get_systems_docs
-from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Settings",

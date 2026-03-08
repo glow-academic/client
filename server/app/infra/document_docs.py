@@ -46,7 +46,7 @@ from app.routes.v5.tools.resources.parameter_fields.docs import (
 )
 from app.routes.v5.tools.resources.parameters.docs import get_parameters_docs
 from app.routes.v5.tools.resources.texts.docs import get_texts_docs
-from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Documents",

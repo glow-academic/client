@@ -22,7 +22,7 @@ from app.routes.auth.route_permissions import (
     get_entity_name_junction,
 )
 from app.routes.auth.types import GetAuthPageApiResponse
-from app.sql.types import GetProfileContextApiRequest
+from app.routes.shared_types import GetProfileContextApiRequest
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

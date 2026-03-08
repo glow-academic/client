@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.sql.types import (
+from app.routes.shared_types import (
     QGetCohortsV4Item,
     QGetDepartmentsV4Item,
     QGetProfileContextV4Cohort,

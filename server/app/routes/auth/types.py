@@ -14,7 +14,7 @@ from app.routes.auth.route_permissions import (
     SidebarSection,
 )
 from app.infra.auth.settings import SettingsThemeResult
-from app.sql.types import (
+from app.routes.shared_types import (
     QGetAgentsV4Item,
     QGetCohortsV4Item,
     QGetDepartmentsV4Item,

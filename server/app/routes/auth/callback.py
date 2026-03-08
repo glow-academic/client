@@ -16,7 +16,7 @@ from redis.asyncio import Redis
 
 from app.infra.auth.callback import resolve_callback_redirect
 from app.infra.globals import get_db, get_redis_client
-from app.sql.types import GetProfileContextApiRequest
+from app.routes.shared_types import GetProfileContextApiRequest
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

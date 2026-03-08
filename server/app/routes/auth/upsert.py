@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.auth.upsert import resolve_profile_upsert
 from app.infra.globals import get_db, get_redis_client, transaction
-from app.sql.types import (
+from app.routes.shared_types import (
     CreateOrUpdateProfileApiRequest,
     CreateOrUpdateProfileApiResponse,
 )

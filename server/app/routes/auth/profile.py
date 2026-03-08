@@ -26,7 +26,7 @@ from app.routes.v5.tools.artifacts.cohort.search import search_cohorts
 from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.roles.get import get_roles
-from app.sql.types import GetProfileContextApiRequest
+from app.routes.shared_types import GetProfileContextApiRequest
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
-from app.utils.docs_helper import DocsApiResponse
+from app.infra.docs_helper import DocsApiResponse
 
 
 class ColumnInfo(BaseModel):

@@ -41,7 +41,7 @@ from app.routes.v5.tools.resources.standard_groups.docs import (
     get_standard_groups_docs,
 )
 from app.routes.v5.tools.resources.standards.docs import get_standards_docs
-from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Rubrics",

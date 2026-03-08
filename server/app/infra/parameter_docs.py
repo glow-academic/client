@@ -39,7 +39,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.parameter_fields.docs import (
     get_parameter_fields_docs,
 )
-from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Parameters",

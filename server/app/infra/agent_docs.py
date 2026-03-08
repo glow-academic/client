@@ -49,7 +49,7 @@ from app.routes.v5.tools.resources.temperature_levels.docs import (
 )
 from app.routes.v5.tools.resources.tools.docs import get_tools_docs
 from app.routes.v5.tools.resources.voices.docs import get_voices_docs
-from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Agents",

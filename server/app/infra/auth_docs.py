@@ -39,7 +39,7 @@ from app.routes.v5.tools.resources.names.docs import get_names_docs
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.protocols.docs import get_protocols_docs
 from app.routes.v5.tools.resources.slugs.docs import get_slugs_docs
-from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Auth Providers",

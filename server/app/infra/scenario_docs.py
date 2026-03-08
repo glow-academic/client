@@ -50,7 +50,7 @@ from app.routes.v5.tools.resources.problem_statements.docs import (
 )
 from app.routes.v5.tools.resources.questions.docs import get_questions_docs
 from app.routes.v5.tools.resources.videos.docs import get_videos_docs
-from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Scenarios",

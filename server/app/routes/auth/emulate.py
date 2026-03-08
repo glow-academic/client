@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.infra.auth.emulate import resolve_emulation
 from app.infra.globals import get_db, get_redis_client
-from app.sql.types import (
+from app.routes.shared_types import (
     CreateEmulationGrantApiRequest,
     CreateEmulationGrantApiResponse,
 )

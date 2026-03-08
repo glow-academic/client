@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.infra.auth.email import resolve_profile_by_email
 from app.infra.globals import get_db, get_redis_client
-from app.sql.types import (
+from app.routes.shared_types import (
     GetProfileByEmailApiRequest,
     GetProfileByEmailApiResponse,
 )

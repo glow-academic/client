@@ -10,26 +10,12 @@ from __future__ import annotations
 import inspect
 from dataclasses import dataclass, field
 from types import ModuleType
-from typing import Any, cast
+from typing import Any
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from pydantic import BaseModel
 
-from app.sql.types import (
-    GetDocsColumnsSqlParams,
-    GetDocsColumnsSqlRow,
-    GetDocsForeignKeysSqlParams,
-    GetDocsForeignKeysSqlRow,
-    GetDocsJunctionsSqlParams,
-    GetDocsJunctionsSqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
-
-# SQL paths for generic docs queries
-COLUMNS_SQL = "app/sql/queries/docs/get_docs_columns_complete.sql"
-JUNCTIONS_SQL = "app/sql/queries/docs/get_docs_junctions_complete.sql"
-FK_SQL = "app/sql/queries/docs/get_docs_foreign_keys_complete.sql"
 
 # ========== Page Metadata Models ==========
 
@@ -123,21 +109,28 @@ async def get_table_columns(
     conn: asyncpg.Connection, table_name: str
 ) -> list[dict[str, Any]]:
     """Get columns for a table from information_schema."""
-    params = GetDocsColumnsSqlParams(table_name_param=table_name)
-    result = cast(
-        GetDocsColumnsSqlRow,
-        await execute_sql_typed(conn, COLUMNS_SQL, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT
+            c.column_name::text AS name,
+            c.data_type::text AS type,
+            (c.is_nullable = 'YES')::boolean AS nullable,
+            c.column_default::text AS default_value
+        FROM information_schema.columns c
+        WHERE c.table_schema = 'public'
+          AND c.table_name = $1
+        ORDER BY c.ordinal_position
+        """,
+        table_name,
     )
-    if not result.columns:
-        return []
     return [
         {
-            "name": col.name,
-            "type": col.type,
-            "nullable": col.nullable,
-            "default": col.default_value,
+            "name": row["name"],
+            "type": row["type"],
+            "nullable": row["nullable"],
+            "default": row["default_value"],
         }
-        for col in result.columns
+        for row in rows
     ]
 
 
@@ -145,34 +138,57 @@ async def get_junction_tables(
     conn: asyncpg.Connection, prefix: str
 ) -> list[dict[str, Any]]:
     """Get junction tables and their columns for a given prefix."""
-    params = GetDocsJunctionsSqlParams(prefix_param=prefix)
-    result = cast(
-        GetDocsJunctionsSqlRow,
-        await execute_sql_typed(conn, JUNCTIONS_SQL, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT
+            t.table_name::text AS name,
+            array_agg(c.column_name::text ORDER BY c.ordinal_position) AS columns
+        FROM information_schema.tables t
+        JOIN information_schema.columns c
+            ON t.table_name = c.table_name
+            AND t.table_schema = c.table_schema
+        WHERE t.table_schema = 'public'
+          AND (t.table_name LIKE $1 || '_%_junction'
+               OR t.table_name LIKE '%_' || $1 || 's_%')
+        GROUP BY t.table_name
+        ORDER BY t.table_name
+        """,
+        prefix,
     )
-    if not result.junction_tables:
-        return []
-    return [{"name": jt.name, "columns": jt.columns} for jt in result.junction_tables]
+    return [{"name": row["name"], "columns": row["columns"]} for row in rows]
 
 
 async def get_foreign_keys(
     conn: asyncpg.Connection, table_pattern: str
 ) -> list[dict[str, Any]]:
     """Get foreign key relationships for tables matching a pattern."""
-    params = GetDocsForeignKeysSqlParams(table_pattern_param=table_pattern)
-    result = cast(
-        GetDocsForeignKeysSqlRow,
-        await execute_sql_typed(conn, FK_SQL, params=params),
+    rows = await conn.fetch(
+        """
+        SELECT
+            tc.table_name::text AS table_name,
+            kcu.column_name::text AS column_name,
+            ccu.table_name::text AS references_table
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+            ON tc.constraint_name = kcu.constraint_name
+            AND tc.table_schema = kcu.table_schema
+        JOIN information_schema.constraint_column_usage ccu
+            ON tc.constraint_name = ccu.constraint_name
+            AND tc.table_schema = ccu.table_schema
+        WHERE tc.constraint_type = 'FOREIGN KEY'
+          AND tc.table_schema = 'public'
+          AND tc.table_name LIKE $1
+        ORDER BY tc.table_name, kcu.column_name
+        """,
+        table_pattern,
     )
-    if not result.foreign_keys:
-        return []
     return [
         {
-            "table": fk.table_name,
-            "column": fk.column_name,
-            "references": fk.references_table,
+            "table": row["table_name"],
+            "column": row["column_name"],
+            "references": row["references_table"],
         }
-        for fk in result.foreign_keys
+        for row in rows
     ]
 
 

@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
+from uuid import UUID
 
 import pytest
 
@@ -1754,3 +1755,534 @@ class TestAttemptStartImpl:
         assert len(events) == 1
         assert events[0].event == "attempt_error"
         assert events[0].data["error_type"] == "start"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# emit_chat_generate_impl
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.asyncio
+class TestEmitChatGenerateImpl:
+    _GROUPS = "app.routes.v5.tools.entries.groups.create.create_group"
+    _RUNS = "app.routes.v5.tools.entries.runs.create.create_run"
+
+    @patch(_RUNS, new_callable=AsyncMock)
+    @patch(_GROUPS, new_callable=AsyncMock)
+    async def test_emits_generate_event(self, mock_group, mock_run):
+        mock_group.return_value = SimpleNamespace(id=UUID(int=1))
+        mock_run.return_value = SimpleNamespace(id=UUID(int=2))
+
+        emit, events = recording_emit()
+        await _emit_chat_generate_impl(
+            emit=emit,
+            conn=AsyncMock(),
+            sid="s1",
+            profile_id=UUID(int=10),
+            profiles_id=UUID(int=11),
+            session_id=UUID(int=12),
+            attempt_id=UUID(int=20),
+            chat_entry_id=UUID(int=30),
+            department_id=UUID(int=40),
+            attempt_chat_id=UUID(int=50),
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "generate"
+        assert events[0].data["profile_id"] == str(UUID(int=10))
+        assert events[0].data["artifact_id"] == str(UUID(int=30))
+        assert events[0].data["run_id"] == str(UUID(int=2))
+        assert events[0].data["group_id"] == str(UUID(int=1))
+        assert events[0].data["metadata"]["attempt_id"] == str(UUID(int=20))
+
+    @patch(_RUNS, new_callable=AsyncMock)
+    @patch(_GROUPS, new_callable=AsyncMock)
+    async def test_uses_default_resource_types(self, mock_group, mock_run):
+        mock_group.return_value = SimpleNamespace(id=UUID(int=1))
+        mock_run.return_value = SimpleNamespace(id=UUID(int=2))
+
+        emit, events = recording_emit()
+        await _emit_chat_generate_impl(
+            emit=emit,
+            conn=AsyncMock(),
+            sid="s1",
+            profile_id=UUID(int=10),
+            profiles_id=UUID(int=11),
+            session_id=UUID(int=12),
+            attempt_id=UUID(int=20),
+            chat_entry_id=UUID(int=30),
+            department_id=UUID(int=40),
+            attempt_chat_id=None,
+        )
+
+        data = events[0].data
+        assert data["resource_types"] == [
+            "personas", "scenarios", "parameters", "fields"
+        ]
+        assert data["metadata"]["attempt_chat_id"] is None
+
+    @patch(_RUNS, new_callable=AsyncMock)
+    @patch(_GROUPS, new_callable=AsyncMock)
+    async def test_custom_resource_types(self, mock_group, mock_run):
+        mock_group.return_value = SimpleNamespace(id=UUID(int=1))
+        mock_run.return_value = SimpleNamespace(id=UUID(int=2))
+
+        emit, events = recording_emit()
+        await _emit_chat_generate_impl(
+            emit=emit,
+            conn=AsyncMock(),
+            sid="s1",
+            profile_id=UUID(int=10),
+            profiles_id=UUID(int=11),
+            session_id=UUID(int=12),
+            attempt_id=UUID(int=20),
+            chat_entry_id=UUID(int=30),
+            department_id=UUID(int=40),
+            attempt_chat_id=UUID(int=50),
+            resource_types=["personas", "documents"],
+        )
+
+        assert events[0].data["resource_types"] == ["personas", "documents"]
+
+    @patch(_RUNS, new_callable=AsyncMock)
+    @patch(_GROUPS, new_callable=AsyncMock)
+    async def test_passes_draft_id(self, mock_group, mock_run):
+        mock_group.return_value = SimpleNamespace(id=UUID(int=1))
+        mock_run.return_value = SimpleNamespace(id=UUID(int=2))
+
+        emit, events = recording_emit()
+        draft = UUID(int=99)
+        await _emit_chat_generate_impl(
+            emit=emit,
+            conn=AsyncMock(),
+            sid="s1",
+            profile_id=UUID(int=10),
+            profiles_id=UUID(int=11),
+            session_id=UUID(int=12),
+            attempt_id=UUID(int=20),
+            chat_entry_id=UUID(int=30),
+            department_id=UUID(int=40),
+            attempt_chat_id=UUID(int=50),
+            draft_id=draft,
+        )
+
+        assert events[0].data["draft_id"] == str(draft)
+
+    @patch(_RUNS, new_callable=AsyncMock)
+    @patch(_GROUPS, new_callable=AsyncMock)
+    async def test_creates_group_and_run(self, mock_group, mock_run):
+        mock_group.return_value = SimpleNamespace(id=UUID(int=1))
+        mock_run.return_value = SimpleNamespace(id=UUID(int=2))
+
+        emit, events = recording_emit()
+        mock_conn = AsyncMock()
+        session_id = UUID(int=12)
+        profiles_id = UUID(int=11)
+
+        await _emit_chat_generate_impl(
+            emit=emit,
+            conn=mock_conn,
+            sid="s1",
+            profile_id=UUID(int=10),
+            profiles_id=profiles_id,
+            session_id=session_id,
+            attempt_id=UUID(int=20),
+            chat_entry_id=UUID(int=30),
+            department_id=UUID(int=40),
+            attempt_chat_id=UUID(int=50),
+        )
+
+        mock_group.assert_called_once_with(mock_conn, session_id=session_id)
+        mock_run.assert_called_once_with(
+            mock_conn,
+            session_id=session_id,
+            group_id=UUID(int=1),
+            profiles_id=profiles_id,
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# attempt_proceed_impl
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+@pytest.mark.asyncio
+class TestAttemptProceedImpl:
+    _RUNS = "app.routes.v5.tools.entries.runs.create.create_run"
+    _GET_ATTEMPTS = "app.routes.v5.tools.entries.attempt.get.get_attempts"
+    _BRIDGES = "app.routes.v5.tools.entries.attempt_chat_bridge.search.search_attempt_chat_bridges"
+    _SEARCH_CHATS = "app.routes.v5.tools.entries.attempt_chat.search.search_attempt_chats"
+    _PRACTICE_ENTRIES = "app.routes.v5.tools.entries.attempt_practice.search.search_attempt_practice_entries"
+    _HOME_ENTRIES = "app.routes.v5.tools.entries.attempt_home.search.search_attempt_homes"
+    _PRACTICE_CHATS = "app.routes.v5.tools.entries.practice_chat.search.search_practice_chats"
+    _HOME_CHATS = "app.routes.v5.tools.entries.home_chat.search.search_home_chats"
+    _CHAT_ENTRIES = "app.routes.v5.tools.entries.chat.get.get_chat_entries_internal"
+    _CREATE_CALL = "app.routes.v5.tools.entries.calls.create.create_call"
+    _CREATE_CHAT = "app.routes.v5.tools.entries.attempt_chat.create.create_attempt_chat"
+    _CREATE_BRIDGE = "app.routes.v5.tools.entries.attempt_chat_bridge.create.create_attempt_chat_bridge"
+    _REFRESH_ATTEMPT = "app.routes.v5.tools.entries.attempt.refresh.refresh_attempt"
+    _REFRESH_CHAT = "app.routes.v5.tools.entries.attempt_chat.refresh.refresh_attempt_chat"
+    _CHAT_COMPLETION = "app.routes.v5.tools.entries.attempt_chat_completion.create.create_attempt_chat_completion"
+    _EMIT_GENERATE = f"{_P}.emit_chat_generate_impl"
+
+    async def test_no_sid_returns_early(self):
+        emit, events = recording_emit()
+        await _attempt_proceed_impl(
+            {"sid": ""},
+            emit=emit,
+            conn=AsyncMock(),
+            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
+            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+        )
+        assert len(events) == 0
+
+    async def test_invalid_payload_returns_early(self):
+        emit, events = recording_emit()
+        await _attempt_proceed_impl(
+            {"sid": "s1"},  # missing attempt_id, group_id
+            emit=emit,
+            conn=AsyncMock(),
+            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
+            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+        )
+        assert len(events) == 0
+
+    @patch(_CHAT_COMPLETION, new_callable=AsyncMock)
+    @patch(_BRIDGES, new_callable=AsyncMock)
+    @patch(_REFRESH_CHAT, new_callable=AsyncMock)
+    @patch(_REFRESH_ATTEMPT, new_callable=AsyncMock)
+    @patch(_RUNS, new_callable=AsyncMock)
+    async def test_complete_all_emits_ended(
+        self, mock_run, mock_refresh_a, mock_refresh_c, mock_bridges, mock_completion
+    ):
+        mock_run.return_value = SimpleNamespace(id=UUID(int=1))
+        mock_bridges.return_value = [
+            SimpleNamespace(attempt_chat_id=UUID(int=10)),
+            SimpleNamespace(attempt_chat_id=UUID(int=11)),
+        ]
+
+        from contextlib import asynccontextmanager
+        from unittest.mock import MagicMock
+
+        @asynccontextmanager
+        async def fake_txn():
+            yield
+
+        mock_conn = AsyncMock()
+        mock_conn.transaction = MagicMock(side_effect=lambda: fake_txn())
+
+        emit, events = recording_emit()
+        await _attempt_proceed_impl(
+            {
+                "sid": "s1",
+                "attempt_id": "019b3be4-36f0-788c-9df2-481eb5917950",
+                "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
+                "complete_all": True,
+            },
+            emit=emit,
+            conn=mock_conn,
+            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
+            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "attempt_ended"
+        assert events[0].data["all_scenarios_complete"] is True
+        assert mock_completion.call_count == 2
+
+    @patch(_REFRESH_CHAT, new_callable=AsyncMock)
+    @patch(_REFRESH_ATTEMPT, new_callable=AsyncMock)
+    @patch(_CREATE_BRIDGE, new_callable=AsyncMock)
+    @patch(_CREATE_CHAT, new_callable=AsyncMock)
+    @patch(_CREATE_CALL, new_callable=AsyncMock)
+    @patch(_CHAT_ENTRIES, new_callable=AsyncMock)
+    @patch(_PRACTICE_CHATS, new_callable=AsyncMock)
+    @patch(_PRACTICE_ENTRIES, new_callable=AsyncMock)
+    @patch(_SEARCH_CHATS, new_callable=AsyncMock)
+    @patch(_BRIDGES, new_callable=AsyncMock)
+    @patch(_GET_ATTEMPTS, new_callable=AsyncMock)
+    @patch(_RUNS, new_callable=AsyncMock)
+    async def test_all_done_emits_ended(
+        self, mock_run, mock_get_attempt, mock_bridges,
+        mock_search_chats, mock_practice_entries, mock_practice_chats,
+        mock_chat_entries, mock_call, mock_create_chat,
+        mock_create_bridge, mock_refresh_a, mock_refresh_c
+    ):
+        mock_run.return_value = SimpleNamespace(id=UUID(int=1))
+        mock_get_attempt.return_value = [
+            SimpleNamespace(num_chats=1, practice=True, department_id=UUID(int=40))
+        ]
+        # 1 bridge already = completed_count >= num_chats
+        mock_bridges.return_value = [
+            SimpleNamespace(attempt_chat_id=UUID(int=10))
+        ]
+        mock_search_chats.return_value = (
+            [SimpleNamespace(chat_entry_id=UUID(int=30))], 1
+        )
+
+        from contextlib import asynccontextmanager
+        from unittest.mock import MagicMock
+
+        @asynccontextmanager
+        async def fake_txn():
+            yield
+
+        mock_conn = AsyncMock()
+        mock_conn.transaction = MagicMock(side_effect=lambda: fake_txn())
+
+        emit, events = recording_emit()
+        await _attempt_proceed_impl(
+            {
+                "sid": "s1",
+                "attempt_id": "019b3be4-36f0-788c-9df2-481eb5917950",
+                "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
+            },
+            emit=emit,
+            conn=mock_conn,
+            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
+            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "attempt_ended"
+
+    @patch(_REFRESH_CHAT, new_callable=AsyncMock)
+    @patch(_REFRESH_ATTEMPT, new_callable=AsyncMock)
+    @patch(_CREATE_BRIDGE, new_callable=AsyncMock)
+    @patch(_CREATE_CHAT, new_callable=AsyncMock)
+    @patch(_CREATE_CALL, new_callable=AsyncMock)
+    @patch(_CHAT_ENTRIES, new_callable=AsyncMock)
+    @patch(_PRACTICE_CHATS, new_callable=AsyncMock)
+    @patch(_PRACTICE_ENTRIES, new_callable=AsyncMock)
+    @patch(_SEARCH_CHATS, new_callable=AsyncMock)
+    @patch(_BRIDGES, new_callable=AsyncMock)
+    @patch(_GET_ATTEMPTS, new_callable=AsyncMock)
+    @patch(_RUNS, new_callable=AsyncMock)
+    async def test_no_generation_emits_chat_started(
+        self, mock_run, mock_get_attempt, mock_bridges,
+        mock_search_chats, mock_practice_entries, mock_practice_chats,
+        mock_chat_entries, mock_call, mock_create_chat,
+        mock_create_bridge, mock_refresh_a, mock_refresh_c
+    ):
+        chat_entry_id = UUID(int=30)
+        attempt_chat_id = UUID(int=60)
+
+        mock_run.return_value = SimpleNamespace(id=UUID(int=1))
+        mock_get_attempt.return_value = [
+            SimpleNamespace(num_chats=2, practice=True, department_id=UUID(int=40))
+        ]
+        mock_bridges.return_value = []  # no bridges yet
+        mock_search_chats.return_value = ([], 0)
+        mock_practice_entries.return_value = [
+            SimpleNamespace(practice_id=UUID(int=100))
+        ]
+        mock_practice_chats.return_value = [
+            SimpleNamespace(chat_id=chat_entry_id)
+        ]
+        mock_chat_entries.return_value = [
+            {
+                "chat_entry_id": str(chat_entry_id),
+                "name": "Scenario 1",
+                "position": 0,
+                "department_ids": [str(UUID(int=40))],
+                "created_at": "2024-01-01",
+            }
+        ]
+        mock_call.return_value = SimpleNamespace(id=UUID(int=5))
+        mock_create_chat.return_value = SimpleNamespace(id=attempt_chat_id)
+
+        from contextlib import asynccontextmanager
+        from unittest.mock import MagicMock
+
+        @asynccontextmanager
+        async def fake_txn():
+            yield
+
+        mock_conn = AsyncMock()
+        mock_conn.transaction = MagicMock(side_effect=lambda: fake_txn())
+
+        emit, events = recording_emit()
+        await _attempt_proceed_impl(
+            {
+                "sid": "s1",
+                "attempt_id": "019b3be4-36f0-788c-9df2-481eb5917950",
+                "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
+            },
+            emit=emit,
+            conn=mock_conn,
+            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
+            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "attempt_chat_started"
+        assert events[0].data["attempt_id"] == "019b3be4-36f0-788c-9df2-481eb5917950"
+        assert events[0].data["chat_id"] == str(attempt_chat_id)
+
+    @patch(_EMIT_GENERATE, new_callable=AsyncMock)
+    @patch(_CREATE_BRIDGE, new_callable=AsyncMock)
+    @patch(_CREATE_CHAT, new_callable=AsyncMock)
+    @patch(_CREATE_CALL, new_callable=AsyncMock)
+    @patch(_CHAT_ENTRIES, new_callable=AsyncMock)
+    @patch(_PRACTICE_CHATS, new_callable=AsyncMock)
+    @patch(_PRACTICE_ENTRIES, new_callable=AsyncMock)
+    @patch(_SEARCH_CHATS, new_callable=AsyncMock)
+    @patch(_BRIDGES, new_callable=AsyncMock)
+    @patch(_GET_ATTEMPTS, new_callable=AsyncMock)
+    @patch(_RUNS, new_callable=AsyncMock)
+    async def test_with_generation_calls_emit_chat_generate(
+        self, mock_run, mock_get_attempt, mock_bridges,
+        mock_search_chats, mock_practice_entries, mock_practice_chats,
+        mock_chat_entries, mock_call, mock_create_chat,
+        mock_create_bridge, mock_emit_gen
+    ):
+        chat_entry_id = UUID(int=30)
+        attempt_chat_id = UUID(int=60)
+
+        mock_run.return_value = SimpleNamespace(id=UUID(int=1))
+        mock_get_attempt.return_value = [
+            SimpleNamespace(num_chats=2, practice=True, department_id=UUID(int=40))
+        ]
+        mock_bridges.return_value = []
+        mock_search_chats.return_value = ([], 0)
+        mock_practice_entries.return_value = [
+            SimpleNamespace(practice_id=UUID(int=100))
+        ]
+        mock_practice_chats.return_value = [
+            SimpleNamespace(chat_id=chat_entry_id)
+        ]
+        mock_chat_entries.return_value = [
+            {
+                "chat_entry_id": str(chat_entry_id),
+                "name": "Scenario 1",
+                "position": 0,
+                "department_ids": [str(UUID(int=40))],
+                "generate_personas": True,
+                "created_at": "2024-01-01",
+            }
+        ]
+        mock_call.return_value = SimpleNamespace(id=UUID(int=5))
+        mock_create_chat.return_value = SimpleNamespace(id=attempt_chat_id)
+
+        from contextlib import asynccontextmanager
+        from unittest.mock import MagicMock
+
+        @asynccontextmanager
+        async def fake_txn():
+            yield
+
+        mock_conn = AsyncMock()
+        mock_conn.transaction = MagicMock(side_effect=lambda: fake_txn())
+
+        emit, events = recording_emit()
+        await _attempt_proceed_impl(
+            {
+                "sid": "s1",
+                "attempt_id": "019b3be4-36f0-788c-9df2-481eb5917950",
+                "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
+            },
+            emit=emit,
+            conn=mock_conn,
+            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
+            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+        )
+
+        mock_emit_gen.assert_called_once()
+        call_kwargs = mock_emit_gen.call_args.kwargs
+        assert call_kwargs["resource_types"] == ["personas"]
+        assert call_kwargs["attempt_chat_id"] == attempt_chat_id
+
+    @patch(_CHAT_ENTRIES, new_callable=AsyncMock)
+    @patch(_PRACTICE_CHATS, new_callable=AsyncMock)
+    @patch(_PRACTICE_ENTRIES, new_callable=AsyncMock)
+    @patch(_SEARCH_CHATS, new_callable=AsyncMock)
+    @patch(_BRIDGES, new_callable=AsyncMock)
+    @patch(_GET_ATTEMPTS, new_callable=AsyncMock)
+    @patch(_RUNS, new_callable=AsyncMock)
+    async def test_user_choice_emits_started(
+        self, mock_run, mock_get_attempt, mock_bridges,
+        mock_search_chats, mock_practice_entries, mock_practice_chats,
+        mock_chat_entries
+    ):
+        chat_entry_id = UUID(int=30)
+
+        mock_run.return_value = SimpleNamespace(id=UUID(int=1))
+        mock_get_attempt.return_value = [
+            SimpleNamespace(num_chats=2, practice=True, department_id=UUID(int=40))
+        ]
+        mock_bridges.return_value = []
+        mock_search_chats.return_value = ([], 0)
+        mock_practice_entries.return_value = [
+            SimpleNamespace(practice_id=UUID(int=100))
+        ]
+        mock_practice_chats.return_value = [
+            SimpleNamespace(chat_id=chat_entry_id)
+        ]
+        mock_chat_entries.return_value = [
+            {
+                "chat_entry_id": str(chat_entry_id),
+                "name": "Scenario 1",
+                "position": 0,
+                "department_ids": [str(UUID(int=40))],
+                "use_custom": True,
+                "created_at": "2024-01-01",
+            }
+        ]
+
+        from contextlib import asynccontextmanager
+        from unittest.mock import MagicMock
+
+        @asynccontextmanager
+        async def fake_txn():
+            yield
+
+        mock_conn = AsyncMock()
+        mock_conn.transaction = MagicMock(side_effect=lambda: fake_txn())
+
+        emit, events = recording_emit()
+        await _attempt_proceed_impl(
+            {
+                "sid": "s1",
+                "attempt_id": "019b3be4-36f0-788c-9df2-481eb5917950",
+                "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
+            },
+            emit=emit,
+            conn=mock_conn,
+            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
+            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "attempt_started"
+        assert events[0].data["chat_entry_id"] == str(chat_entry_id)
+
+    @patch(_RUNS, new_callable=AsyncMock)
+    async def test_error_emits_attempt_error(self, mock_run):
+        mock_run.side_effect = RuntimeError("db down")
+
+        from contextlib import asynccontextmanager
+        from unittest.mock import MagicMock
+
+        @asynccontextmanager
+        async def fake_txn():
+            yield
+
+        mock_conn = AsyncMock()
+        mock_conn.transaction = MagicMock(side_effect=lambda: fake_txn())
+
+        emit, events = recording_emit()
+        await _attempt_proceed_impl(
+            {
+                "sid": "s1",
+                "attempt_id": "019b3be4-36f0-788c-9df2-481eb5917950",
+                "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
+            },
+            emit=emit,
+            conn=mock_conn,
+            profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
+            session_id="019b3be4-36f0-788c-9df2-481eb5917942",
+        )
+
+        assert len(events) == 1
+        assert events[0].event == "attempt_error"
+        assert events[0].data["error_type"] == "proceed"

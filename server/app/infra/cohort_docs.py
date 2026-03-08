@@ -48,7 +48,7 @@ from app.routes.v5.tools.resources.simulation_positions.docs import (
     get_simulation_positions_docs,
 )
 from app.routes.v5.tools.resources.simulations.docs import get_simulations_docs
-from app.utils.docs_helper import PageMetadataConfig, compute_docs_metadata
+from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Cohorts",

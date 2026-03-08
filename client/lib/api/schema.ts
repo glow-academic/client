@@ -13389,6 +13389,44 @@ export interface components {
             /** Label */
             label: string;
         };
+        /** ArchiveAttemptsRequest */
+        ArchiveAttemptsRequest: {
+            /** Archived */
+            archived: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /** Attempt Ids */
+            attempt_ids?: string[] | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /** Cohort Ids */
+            cohort_ids?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Simulation Ids */
+            simulation_ids?: string[] | null;
+            /** Scenario Ids */
+            scenario_ids?: string[] | null;
+            /** Profile Ids Filter */
+            profile_ids_filter?: string[] | null;
+            /** Infinite Mode */
+            infinite_mode?: boolean | null;
+        };
+        /** ArchiveAttemptsResponse */
+        ArchiveAttemptsResponse: {
+            /**
+             * Updated Count
+             * @default 0
+             */
+            updated_count: number;
+            /** Profile Ids To Invalidate */
+            profile_ids_to_invalidate?: string[] | null;
+        };
         /**
          * ArchiveTestsRequest
          * @description Request for archiving/unarchiving benchmark tests.
@@ -14128,6 +14166,16 @@ export interface components {
              * Format: uuid
              */
             chat_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
         };
         /**
          * AttemptStoppedEvent
@@ -14766,44 +14814,6 @@ export interface components {
             section?: string | null;
             /** Url */
             url: string;
-        };
-        /** BulkArchiveAttemptsApiRequest */
-        BulkArchiveAttemptsApiRequest: {
-            /** Archived */
-            archived: boolean;
-            /** Attempt Ids */
-            attempt_ids?: string[] | null;
-            /** Start Date */
-            start_date?: string | null;
-            /** End Date */
-            end_date?: string | null;
-            /** Cohort Ids */
-            cohort_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Roles */
-            roles?: unknown | null;
-            /** Simulation Filters */
-            simulation_filters?: string[] | null;
-            /** Search */
-            search?: string | null;
-            /** Profile Ids Filter */
-            profile_ids_filter?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Infinite Mode */
-            infinite_mode?: boolean | null;
-        };
-        /** BulkArchiveAttemptsApiResponse */
-        BulkArchiveAttemptsApiResponse: {
-            /** Updated Count */
-            updated_count?: number | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Profile Ids To Invalidate */
-            profile_ids_to_invalidate?: string[] | null;
         };
         /**
          * ChatData
@@ -18612,6 +18622,126 @@ export interface components {
              * @default []
              */
             voice_ids: string[];
+        };
+        /**
+         * DraftImageValue
+         * @description Value for creating an image via the draft endpoint.
+         */
+        DraftImageValue: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Upload Id */
+            upload_id?: string | null;
+        };
+        /**
+         * DraftOptionValue
+         * @description Value for creating an option via the draft endpoint.
+         */
+        DraftOptionValue: {
+            /** Option Text */
+            option_text: string;
+            /** Question Id */
+            question_id?: string | null;
+        };
+        /**
+         * DraftQuestionValue
+         * @description Value for creating a question via the draft endpoint.
+         */
+        DraftQuestionValue: {
+            /** Question Text */
+            question_text: string;
+            /**
+             * Time
+             * @default 30
+             */
+            time: number;
+            /**
+             * Allow Multiple
+             * @default false
+             */
+            allow_multiple: boolean;
+        };
+        /**
+         * DraftScenarioFlagValue
+         * @description Value for creating a scenario_flag resource via draft.
+         */
+        DraftScenarioFlagValue: {
+            /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /**
+             * Flag Id
+             * Format: uuid
+             */
+            flag_id: string;
+        };
+        /**
+         * DraftScenarioPositionValue
+         * @description Value for creating a scenario_position resource via draft.
+         */
+        DraftScenarioPositionValue: {
+            /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /** Value */
+            value: number;
+        };
+        /**
+         * DraftScenarioRubricValue
+         * @description Value for creating a scenario_rubric resource via draft.
+         */
+        DraftScenarioRubricValue: {
+            /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /**
+             * Rubric Id
+             * Format: uuid
+             */
+            rubric_id: string;
+        };
+        /**
+         * DraftScenarioTimeLimitValue
+         * @description Value for creating a scenario_time_limit resource via draft.
+         */
+        DraftScenarioTimeLimitValue: {
+            /**
+             * Scenario Id
+             * Format: uuid
+             */
+            scenario_id: string;
+            /** Time Limit Seconds */
+            time_limit_seconds: number;
+            /**
+             * Negative
+             * @default false
+             */
+            negative: boolean;
+        };
+        /**
+         * DraftVideoValue
+         * @description Value for creating a video via the draft endpoint.
+         */
+        DraftVideoValue: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Upload Id */
+            upload_id?: string | null;
+            /**
+             * Length Seconds
+             * @default 0
+             */
+            length_seconds: number;
         };
         /**
          * DuplicateAgentApiRequest
@@ -27252,11 +27382,15 @@ export interface components {
          * PatchScenarioDraftApiRequest
          * @description Request model for new-style scenario draft endpoint.
          *
-         *     Dual-mode for creatable resources only:
-         *       - name/name_id, description/description_id, problem_statement/problem_statement_id
+         *     Dual-mode for creatable resources:
+         *       - Single-select: name/name_id, description/description_id,
+         *         problem_statement/problem_statement_id
+         *       - Multi-select (merged): objectives/objective_ids, images/image_ids,
+         *         videos/video_ids, questions/question_ids, options/option_ids
+         *         (values are created as resources, then IDs are merged with existing IDs)
+         *
          *     ID-only for non-creatable resources:
-         *       - flag_ids, department_ids, persona_ids, document_ids, parameter_field_ids,
-         *         objective_ids, image_ids, video_ids, question_ids, option_ids
+         *       - flag_ids, department_ids, persona_ids, document_ids, parameter_field_ids
          *
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
@@ -27285,6 +27419,26 @@ export interface components {
             problem_statement?: string | null;
             /** Problem Statement Id */
             problem_statement_id?: string | null;
+            /** Objectives */
+            objectives?: string[] | null;
+            /** Objective Ids */
+            objective_ids?: string[] | null;
+            /** Images */
+            images?: components["schemas"]["DraftImageValue"][] | null;
+            /** Image Ids */
+            image_ids?: string[] | null;
+            /** Videos */
+            videos?: components["schemas"]["DraftVideoValue"][] | null;
+            /** Video Ids */
+            video_ids?: string[] | null;
+            /** Questions */
+            questions?: components["schemas"]["DraftQuestionValue"][] | null;
+            /** Question Ids */
+            question_ids?: string[] | null;
+            /** Options */
+            options?: components["schemas"]["DraftOptionValue"][] | null;
+            /** Option Ids */
+            option_ids?: string[] | null;
             /** Flag Ids */
             flag_ids?: string[] | null;
             /** Department Ids */
@@ -27295,16 +27449,6 @@ export interface components {
             document_ids?: string[] | null;
             /** Parameter Field Ids */
             parameter_field_ids?: string[] | null;
-            /** Objective Ids */
-            objective_ids?: string[] | null;
-            /** Image Ids */
-            image_ids?: string[] | null;
-            /** Video Ids */
-            video_ids?: string[] | null;
-            /** Question Ids */
-            question_ids?: string[] | null;
-            /** Option Ids */
-            option_ids?: string[] | null;
         };
         /**
          * PatchScenarioDraftApiResponse
@@ -27395,11 +27539,13 @@ export interface components {
          * PatchSimulationDraftApiRequest
          * @description Request model for new-style simulation draft endpoint.
          *
-         *     Dual-mode for creatable resources only:
-         *       - name/name_id, description/description_id
+         *     Dual-mode for creatable resources:
+         *       - Single-select: name/name_id, description/description_id
+         *       - Multi-select compound: scenario_flags, scenario_positions,
+         *         scenario_rubrics, scenario_time_limits (values create resources,
+         *         created IDs merged with existing IDs)
          *     ID-only for non-creatable resources:
-         *       - flag_ids, department_ids, scenario_ids, scenario_flag_ids,
-         *         scenario_position_ids, scenario_rubric_ids, scenario_time_limit_ids
+         *       - flag_ids, department_ids, scenario_ids
          *
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
@@ -27432,12 +27578,20 @@ export interface components {
             scenario_ids?: string[] | null;
             /** Scenario Flag Ids */
             scenario_flag_ids?: string[] | null;
+            /** Scenario Flags */
+            scenario_flags?: components["schemas"]["DraftScenarioFlagValue"][] | null;
             /** Scenario Position Ids */
             scenario_position_ids?: string[] | null;
+            /** Scenario Positions */
+            scenario_positions?: components["schemas"]["DraftScenarioPositionValue"][] | null;
             /** Scenario Rubric Ids */
             scenario_rubric_ids?: string[] | null;
+            /** Scenario Rubrics */
+            scenario_rubrics?: components["schemas"]["DraftScenarioRubricValue"][] | null;
             /** Scenario Time Limit Ids */
             scenario_time_limit_ids?: string[] | null;
+            /** Scenario Time Limits */
+            scenario_time_limits?: components["schemas"]["DraftScenarioTimeLimitValue"][] | null;
         };
         /**
          * PatchSimulationDraftApiResponse
@@ -27455,6 +27609,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["SimulationDraftFormState"] | null;
         };
         /**
          * PatchToolDraftApiRequest
@@ -34725,6 +34880,53 @@ export interface components {
             resource?: components["schemas"]["SimulationDescriptionResource"] | null;
             /** Resources */
             resources?: components["schemas"]["SimulationDescriptionResource"][] | null;
+        };
+        /**
+         * SimulationDraftFormState
+         * @description Full form state after draft patch — server is source of truth.
+         *
+         *     Client replaces its local form state with this after every successful patch.
+         */
+        SimulationDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /**
+             * Flag Ids
+             * @default []
+             */
+            flag_ids: string[];
+            /**
+             * Department Ids
+             * @default []
+             */
+            department_ids: string[];
+            /**
+             * Scenario Ids
+             * @default []
+             */
+            scenario_ids: string[];
+            /**
+             * Scenario Flag Ids
+             * @default []
+             */
+            scenario_flag_ids: string[];
+            /**
+             * Scenario Position Ids
+             * @default []
+             */
+            scenario_position_ids: string[];
+            /**
+             * Scenario Rubric Ids
+             * @default []
+             */
+            scenario_rubric_ids: string[];
+            /**
+             * Scenario Time Limit Ids
+             * @default []
+             */
+            scenario_time_limit_ids: string[];
         };
         /**
          * SimulationFieldError
@@ -45151,7 +45353,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BulkArchiveAttemptsApiRequest"];
+                "application/json": components["schemas"]["ArchiveAttemptsRequest"];
             };
         };
         responses: {
@@ -45161,7 +45363,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BulkArchiveAttemptsApiResponse"];
+                    "application/json": components["schemas"]["ArchiveAttemptsResponse"];
                 };
             };
             /** @description Validation Error */
