@@ -6,6 +6,8 @@
  */
 
 import Model from "@/components/artifacts/model/Model";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -156,18 +158,28 @@ export default async function NewModelPage({
   const modelDetailDefault = await getModelDetailDefault(input);
 
   return (
-    <div className="space-y-6">
-      <Model
-        modelDetailDefault={modelDetailDefault}
-        saveModelAction={saveModel}
-        patchModelDraftAction={patchModelDraft}
-        createNamesAction={createDraftNames}
-        createDescriptionsAction={createDraftDescriptions}
-        createValuesAction={createDraftValues}
-        createPricingAction={createDraftPricing}
-        createVoicesAction={createDraftVoices}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+          { title: "Models", section: "models", url: "/intelligence/models" },
+          { title: "New Model" },
+        ]}
+        toolbar={<SaveToolbar artifactType="model" />}
       />
-    </div>
+      <div className="space-y-6 px-4">
+        <Model
+          modelDetailDefault={modelDetailDefault}
+          saveModelAction={saveModel}
+          patchModelDraftAction={patchModelDraft}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+          createValuesAction={createDraftValues}
+          createPricingAction={createDraftPricing}
+          createVoicesAction={createDraftVoices}
+        />
+      </div>
+    </>
   );
 }
 

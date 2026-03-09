@@ -7,6 +7,7 @@
 
 import { getSession } from "@/auth";
 import Group from "@/components/artifacts/group/Group";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -71,9 +72,17 @@ export default async function PricingGroupPage({
   });
 
   return (
-    <div className="space-y-6 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
-      <Group groupDetail={groupDetail} />
-    </div>
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Pricing", section: "analytics", url: "/analytics/pricing" },
+          { title: "Group" },
+        ]}
+      />
+      <div className="space-y-6 px-4 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
+        <Group groupDetail={groupDetail} />
+      </div>
+    </>
   );
 }
 

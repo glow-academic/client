@@ -5,11 +5,9 @@ Thin route handler. Core logic lives in app.infra.profile_search.
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client

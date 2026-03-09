@@ -10,11 +10,10 @@ Uses composable infra layers:
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context

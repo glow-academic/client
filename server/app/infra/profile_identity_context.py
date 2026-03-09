@@ -147,33 +147,35 @@ async def resolve_profile_identity_context(
             async with pool.acquire() as conn:
                 return await get_profiles(conn, profile_ids, redis, bypass_cache)
 
-        names_res, roles_res, depts_res, emails_res, profiles_res = (
-            await asyncio.gather(
-                _get_names(),
-                _get_roles(),
-                _get_departments(),
-                _get_emails(),
-                _get_profiles(),
-            )
+        (
+            names_res,
+            roles_res,
+            depts_res,
+            emails_res,
+            profiles_res,
+        ) = await asyncio.gather(
+            _get_names(),
+            _get_roles(),
+            _get_departments(),
+            _get_emails(),
+            _get_profiles(),
         )
     else:
         conn = conn_or_pool
-        names_res, roles_res, depts_res, emails_res, profiles_res = (
-            await asyncio.gather(
-                get_names(conn, name_ids, redis, bypass_cache)
-                if name_ids
-                else _empty(),
-                get_roles(conn, role_ids, redis, bypass_cache)
-                if role_ids
-                else _empty(),
-                get_departments(conn, department_ids, redis, bypass_cache)
-                if department_ids
-                else _empty(),
-                get_emails(conn, email_ids, redis, bypass_cache)
-                if email_ids
-                else _empty(),
-                get_profiles(conn, profile_ids, redis, bypass_cache),
-            )
+        (
+            names_res,
+            roles_res,
+            depts_res,
+            emails_res,
+            profiles_res,
+        ) = await asyncio.gather(
+            get_names(conn, name_ids, redis, bypass_cache) if name_ids else _empty(),
+            get_roles(conn, role_ids, redis, bypass_cache) if role_ids else _empty(),
+            get_departments(conn, department_ids, redis, bypass_cache)
+            if department_ids
+            else _empty(),
+            get_emails(conn, email_ids, redis, bypass_cache) if email_ids else _empty(),
+            get_profiles(conn, profile_ids, redis, bypass_cache),
         )
 
     # Step 3: extract values

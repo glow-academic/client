@@ -103,6 +103,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
 
         pool = get_pool()
 
+        # Initialize system session (for background tasks like health checks, metrics)
+        if pool:
+            from app.infra.auth.resolve_identity import get_system_session_id
+
+            async with pool.acquire() as conn:
+                system_session_id = await get_system_session_id(conn)
+                logger.info(f"System session initialized: {system_session_id}")
+
         # Initialize metrics collector
         from app.routes.metrics.collector import initialize_metrics
 
@@ -281,19 +289,22 @@ fastapi_app.include_router(socket_v5_router)
 # ---------------------------------------------------------------------------
 # Routers — root-level (version-agnostic)
 # ---------------------------------------------------------------------------
+from app.infra.auth.middleware import require_auth  # noqa: E402
 from app.routes.auth import router as auth_router  # noqa: E402
 from app.utils.mcp.get_mcp import get_mcp  # noqa: E402
-from app.utils.profile.get_profile_id import get_profile_id  # noqa: E402
-from app.utils.session.get_session_id import get_session_id  # noqa: E402
 
 fastapi_app.include_router(
     auth_router,
     dependencies=[
-        Depends(get_profile_id),
-        Depends(get_session_id),
+        Depends(require_auth),
         Depends(get_mcp),
     ],
 )
+
+# Auth config discovery — no auth required (chicken-and-egg: clients need this to know how to auth)
+from app.routes.auth.config import router as auth_config_router  # noqa: E402
+
+fastapi_app.include_router(auth_config_router, prefix="/auth", tags=["auth"])
 
 from app.routes.default_idp import router as default_idp_router  # noqa: E402
 

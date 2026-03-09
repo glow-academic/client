@@ -68,9 +68,7 @@ async def update_provider_client(
 
     async with pool.acquire() as conn:
         for idx, item in enumerate(items):
-            perms = await resolve_provider_permissions_context(
-                conn, item.provider_id
-            )
+            perms = await resolve_provider_permissions_context(conn, item.provider_id)
             if not perms.exists:
                 raise HTTPException(
                     status_code=404,
@@ -138,9 +136,7 @@ async def update_provider_client(
                     else _UNSET,
                     department_ids=item.department_ids,
                     endpoint_ids=item.endpoint_ids,
-                    flag_ids=[item.active_flag_id]
-                    if item.active_flag_id
-                    else None,
+                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
                     key_ids=item.key_ids,
                     provider_ids=[providers_resource_id],
                     value_ids=item.value_ids,

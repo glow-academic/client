@@ -4,6 +4,8 @@
  */
 
 import Setting from "@/components/artifacts/setting/Setting";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -199,39 +201,48 @@ export default async function NewSettingPage({
   const settingDetailDefault = await getSettingDefault(input);
 
   return (
-    <div
-      className="space-y-6"
-      data-page="setting-new"
-      aria-label="Create new settings page"
-    >
-      <Setting
-        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        settingData={settingDetailDefault}
-        saveSettingAction={saveSetting}
-        patchSettingDraftAction={patchSettingDraft}
-        createNamesAction={createDraftNames}
-        createDescriptionsAction={createDraftDescriptions}
-        createColorsAction={createDraftColors}
-        createProviderKeysAction={async (input) => {
-          "use server";
-          return createProviderKeys({ body: { ...input, mcp: false } });
-        }}
-        getProviderKeysAction={async (ids) => {
-          "use server";
-          const result = await getProviderKeys({ body: { ids } });
-          return result.items ?? [];
-        }}
-        createAuthItemKeysAction={async (input) => {
-          "use server";
-          return createAuthItemKeys({ body: { ...input, mcp: false } });
-        }}
-        getAuthItemKeysAction={async (ids) => {
-          "use server";
-          const result = await getAuthItemKeys({ body: { ids } });
-          return result.items ?? [];
-        }}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Settings", section: "settings", url: "/settings" },
+          { title: "New Setting" },
+        ]}
+        toolbar={<SaveToolbar artifactType="setting" />}
       />
-    </div>
+      <div
+        className="space-y-6 px-4"
+        data-page="setting-new"
+        aria-label="Create new settings page"
+      >
+        <Setting
+          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+          settingData={settingDetailDefault}
+          saveSettingAction={saveSetting}
+          patchSettingDraftAction={patchSettingDraft}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+          createColorsAction={createDraftColors}
+          createProviderKeysAction={async (input) => {
+            "use server";
+            return createProviderKeys({ body: { ...input, mcp: false } });
+          }}
+          getProviderKeysAction={async (ids) => {
+            "use server";
+            const result = await getProviderKeys({ body: { ids } });
+            return result.items ?? [];
+          }}
+          createAuthItemKeysAction={async (input) => {
+            "use server";
+            return createAuthItemKeys({ body: { ...input, mcp: false } });
+          }}
+          getAuthItemKeysAction={async (ids) => {
+            "use server";
+            const result = await getAuthItemKeys({ body: { ids } });
+            return result.items ?? [];
+          }}
+        />
+      </div>
+    </>
   );
 }
 

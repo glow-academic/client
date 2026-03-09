@@ -218,9 +218,7 @@ async def save_profile_client(
                         detail=f"Item {idx}: You don't have permission to save this profile.",
                     )
             else:
-                if not compute_can_create(
-                    user_role=profile.role, department_ids=None
-                ):
+                if not compute_can_create(user_role=profile.role, department_ids=None):
                     raise HTTPException(
                         status_code=403,
                         detail=f"Item {idx}: You don't have permission to create a profile.",

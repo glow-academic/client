@@ -3,6 +3,7 @@
  * Settings list page - shows list of settings
  */
 import Settings from "@/components/artifacts/setting/Settings";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -51,9 +52,16 @@ export default async function SettingsPage() {
   const listData = await getSettingsList();
 
   return (
-    <div className="space-y-6" data-page="settings-index">
-      <Settings listData={listData} />
-    </div>
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Settings" },
+        ]}
+      />
+      <div className="space-y-6 px-4" data-page="settings-index">
+        <Settings listData={listData} />
+      </div>
+    </>
   );
 }
 

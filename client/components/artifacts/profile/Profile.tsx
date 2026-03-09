@@ -1088,6 +1088,7 @@ function ProfileComponent({
                   required={currentProfileData?.emails_required ?? false}
 
                   createEmailsAction={createEmailsAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["emails"]}
                 />
 
@@ -1114,6 +1115,7 @@ function ProfileComponent({
                   required={currentProfileData?.request_limit_required ?? false}
 
                   createRequestLimitsAction={createRequestLimitsAction}
+                  isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["request_limits"]}
                 />
 

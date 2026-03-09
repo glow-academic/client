@@ -5,6 +5,7 @@
  * 06/18/2025
  */
 import Logs from "@/components/artifacts/health/Logs";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -65,9 +66,16 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
   });
 
   return (
-    <div className="space-y-6">
-      <Logs bundleData={bundleData} />
-    </div>
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Health" },
+        ]}
+      />
+      <div className="space-y-6 px-4">
+        <Logs bundleData={bundleData} />
+      </div>
+    </>
   );
 }
 

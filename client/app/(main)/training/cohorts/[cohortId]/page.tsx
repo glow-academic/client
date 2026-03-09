@@ -7,6 +7,8 @@
 
 import Cohort from "@/components/artifacts/cohort/Cohort";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -161,7 +163,6 @@ export default async function CohortEditPage({
   const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "cohort" })).group_id;
 
   // Check cohort access by fetching detail (will return 403 if no access)
-  let cohortData: GetCohortOut;
   try {
     const input: GetCohortIn = {
       body: {
@@ -176,7 +177,42 @@ export default async function CohortEditPage({
         mcp: false,
       } as GetCohortIn["body"],
     };
-    cohortData = await getCohort(input);
+    const [cohortData, docs] = await Promise.all([
+      getCohort(input),
+      getDocs({ body: { entity_id: cohortId } }),
+    ]);
+
+    const entityName = docs.detail.title;
+
+    return (
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Training", section: "training", url: "/training" },
+            { title: "Cohorts", section: "cohorts", url: "/training/cohorts" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="cohort" />}
+        />
+        <div
+          className="space-y-6 px-4"
+          data-page="cohort-edit"
+          data-cohort-id={cohortId}
+        >
+          <Cohort
+            key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+            cohortId={cohortId}
+            cohortData={cohortData}
+            updateCohortAction={updateCohort}
+            patchCohortDraftAction={patchCohortDraft}
+            createNamesAction={createDraftNames}
+            createDescriptionsAction={createDraftDescriptions}
+            createSimulationPositionsAction={createDraftSimulationPositions}
+            createProfilePersonasAction={createDraftProfilePersonas}
+          />
+        </div>
+      </>
+    );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)
     if (
@@ -196,26 +232,6 @@ export default async function CohortEditPage({
     // Re-throw other errors
     throw error;
   }
-
-  return (
-    <div
-      className="space-y-6"
-      data-page="cohort-edit"
-      data-cohort-id={cohortId}
-    >
-      <Cohort
-        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        cohortId={cohortId}
-        cohortData={cohortData}
-        updateCohortAction={updateCohort}
-        patchCohortDraftAction={patchCohortDraft}
-        createNamesAction={createDraftNames}
-        createDescriptionsAction={createDraftDescriptions}
-        createSimulationPositionsAction={createDraftSimulationPositions}
-        createProfilePersonasAction={createDraftProfilePersonas}
-      />
-    </div>
-  );
 }
 
 /** ---- Export types for client component (type-only imports) ---- */

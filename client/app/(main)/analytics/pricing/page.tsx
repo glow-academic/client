@@ -7,6 +7,7 @@
 
 import { PricingRunsClient } from "@/components/artifacts/pricing/PricingRunsClient";
 import { PricingSummary } from "@/components/artifacts/pricing/PricingSummary";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -103,10 +104,18 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   };
 
   return (
-    <div className="space-y-6" data-page="pricing-index">
-      <PricingSummary pricingData={pricingData} />
-      <PricingRunsClient runsData={runsData} isLoading={false} initialColumnVisibility={initialColumnVisibility} />
-    </div>
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Analytics", section: "analytics", url: "/analytics" },
+          { title: "Pricing" },
+        ]}
+      />
+      <div className="space-y-6 px-4" data-page="pricing-index">
+        <PricingSummary pricingData={pricingData} />
+        <PricingRunsClient runsData={runsData} isLoading={false} initialColumnVisibility={initialColumnVisibility} />
+      </div>
+    </>
   );
 }
 

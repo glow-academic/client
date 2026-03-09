@@ -72,9 +72,7 @@ async def delete_profile_client(
                 )
 
             # Resolve target's role
-            target_ctx = await resolve_profile_identity_context(
-                pool, target_id, redis
-            )
+            target_ctx = await resolve_profile_identity_context(pool, target_id, redis)
             target_role = target_ctx.role if target_ctx else None
 
             if not compute_can_delete(

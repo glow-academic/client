@@ -5,11 +5,9 @@ Thin route handler. Core logic lives in app.infra.provider_search.
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.infra.globals import get_pool, get_redis_client
@@ -41,7 +39,6 @@ async def search_provider(
     request: SearchProviderApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ListProviderApiResponse:
     """Search providers — composable infra architecture."""
     tags = ["providers"]
@@ -54,9 +51,10 @@ async def search_provider(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
         result = await search_provider_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             search=request.search,

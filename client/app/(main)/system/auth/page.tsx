@@ -3,6 +3,7 @@
  * Auth list page
  */
 import Auths from "@/components/artifacts/auth/Auths";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -72,13 +73,21 @@ export default async function AuthPage() {
   const listData = await getAuthList();
 
   return (
-    <div className="space-y-6" data-page="auth-index">
-      <Auths
-        listData={listData}
-        duplicateAuthAction={duplicateAuth}
-        deleteAuthAction={deleteAuth}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "System", section: "system", url: "/system" },
+          { title: "Auth" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="auth-index">
+        <Auths
+          listData={listData}
+          duplicateAuthAction={duplicateAuth}
+          deleteAuthAction={deleteAuth}
+        />
+      </div>
+    </>
   );
 }
 

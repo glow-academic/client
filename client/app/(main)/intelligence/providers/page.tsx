@@ -3,6 +3,7 @@
  * Providers list page - server-side filtering with nuqs URL-backed state
  */
 import Providers from "@/components/artifacts/provider/Providers";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -115,17 +116,25 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
   const listData = await getProvidersList(body);
 
   return (
-    <div className="space-y-6" data-page="providers-index">
-      <Providers
-        listData={listData}
-        deleteProviderAction={deleteProvider}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        totalCount={listData.total_count ?? 0}
-        departmentSearch={q.departmentSearch ?? ""}
-        modelSearch={q.modelSearch ?? ""}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+          { title: "Providers" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="providers-index">
+        <Providers
+          listData={listData}
+          deleteProviderAction={deleteProvider}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          totalCount={listData.total_count ?? 0}
+          departmentSearch={q.departmentSearch ?? ""}
+          modelSearch={q.modelSearch ?? ""}
+        />
+      </div>
+    </>
   );
 }
 

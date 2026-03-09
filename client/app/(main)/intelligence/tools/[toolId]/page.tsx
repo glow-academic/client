@@ -4,6 +4,8 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Tool from "@/components/artifacts/tool/Tool";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
@@ -148,30 +150,45 @@ export default async function ToolDetailPage({
         group_id: groupId,
       } as GetToolIn["body"],
     };
-    const toolDetail = await getTool(input);
+    const [toolDetail, docs] = await Promise.all([
+      getTool(input),
+      getDocs({ body: { entity_id: toolId } }),
+    ]);
 
     // Check access
     if (!toolDetail.tool_exists) {
       return <UnifiedAccessDenied reason="route-denied" />;
     }
 
+    const entityName = docs.detail.title;
+
     return (
-      <div
-        className="space-y-6"
-        data-page="tool-edit"
-        data-tool-id={toolId}
-        aria-label="Edit tool page"
-      >
-        <Tool
-          toolId={toolId}
-          toolData={toolDetail}
-          saveToolAction={saveTool}
-          patchToolDraftAction={patchToolDraft}
-          createArgsAction={createDraftArgs}
-          createArgPositionsAction={createDraftArgPositions}
-          createArgsOutputsAction={createDraftArgsOutputs}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+            { title: "Tools", section: "tools", url: "/intelligence/tools" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="tool" />}
         />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="tool-edit"
+          data-tool-id={toolId}
+          aria-label="Edit tool page"
+        >
+          <Tool
+            toolId={toolId}
+            toolData={toolDetail}
+            saveToolAction={saveTool}
+            patchToolDraftAction={patchToolDraft}
+            createArgsAction={createDraftArgs}
+            createArgPositionsAction={createDraftArgPositions}
+            createArgsOutputsAction={createDraftArgsOutputs}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check if it's a 404 error (tool not found)

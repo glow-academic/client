@@ -6,6 +6,7 @@
  */
 
 import ChatBundle, { type ChatBundleData } from "@/components/artifacts/chat/ChatBundle";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -81,10 +82,20 @@ export default async function ChatPage({
   const bundleData = await getChatBundle(chatId, attemptId, draftId);
 
   return (
-    <ChatBundle
-      bundleData={bundleData as ChatBundleData}
-      patchChatDraftAction={patchChatDraft}
-      attemptId={attemptId}
-    />
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Attempt" },
+          { title: "Chat" },
+        ]}
+      />
+      <div className="px-4">
+        <ChatBundle
+          bundleData={bundleData as ChatBundleData}
+          patchChatDraftAction={patchChatDraft}
+          attemptId={attemptId}
+        />
+      </div>
+    </>
   );
 }

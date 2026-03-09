@@ -6,6 +6,8 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Department from "@/components/artifacts/department/Department";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
@@ -139,24 +141,39 @@ export default async function DepartmentEditPage({
         group_id: groupId,
       } as GetDepartmentIn["body"],
     };
-    const departmentDetail = await getDepartment(input);
+    const [departmentDetail, docs] = await Promise.all([
+      getDepartment(input),
+      getDocs({ body: { entity_id: departmentId } }),
+    ]);
+
+    const entityName = docs.detail.title;
 
     return (
-      <div
-        className="space-y-6"
-        data-page="department-edit"
-        data-department-id={departmentId}
-      >
-        <Department
-          key={q.draftId || departmentId} // Force remount when draftId changes to ensure clean state reset
-          departmentId={departmentId}
-          departmentData={departmentDetail}
-          saveDepartmentAction={saveDepartment}
-          patchDepartmentDraftAction={patchDepartmentDraft}
-          createNamesAction={createDraftNames}
-          createDescriptionsAction={createDraftDescriptions}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "System", section: "system", url: "/system" },
+            { title: "Departments", section: "departments", url: "/system/departments" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="department" />}
         />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="department-edit"
+          data-department-id={departmentId}
+        >
+          <Department
+            key={q.draftId || departmentId} // Force remount when draftId changes to ensure clean state reset
+            departmentId={departmentId}
+            departmentData={departmentDetail}
+            saveDepartmentAction={saveDepartment}
+            patchDepartmentDraftAction={patchDepartmentDraft}
+            createNamesAction={createDraftNames}
+            createDescriptionsAction={createDraftDescriptions}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

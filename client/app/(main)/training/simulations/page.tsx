@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 import { Simulations } from "@/components/artifacts/simulation/Simulations";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -157,24 +158,32 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
   ]);
 
   return (
-    <div className="space-y-6" data-page="simulations-index">
-      <Simulations
-        listData={listData}
-        initialColumnVisibility={initialColumnVisibility}
-        duplicateSimulationAction={duplicateSimulation}
-        deleteSimulationAction={deleteSimulation}
-        saveSimulationAction={saveSimulation}
-        searchFlagsAction={searchFlags}
-        parseCsvAction={parseCsv}
-        importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        totalCount={listData.total_count ?? 0}
-        scenarioSearch={q.scenarioSearch ?? ""}
-        cohortSearch={q.cohortSearch ?? ""}
-        departmentSearch={q.departmentSearch ?? ""}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Training", section: "training", url: "/training" },
+          { title: "Simulations" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="simulations-index">
+        <Simulations
+          listData={listData}
+          initialColumnVisibility={initialColumnVisibility}
+          duplicateSimulationAction={duplicateSimulation}
+          deleteSimulationAction={deleteSimulation}
+          saveSimulationAction={saveSimulation}
+          searchFlagsAction={searchFlags}
+          parseCsvAction={parseCsv}
+          importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          totalCount={listData.total_count ?? 0}
+          scenarioSearch={q.scenarioSearch ?? ""}
+          cohortSearch={q.cohortSearch ?? ""}
+          departmentSearch={q.departmentSearch ?? ""}
+        />
+      </div>
+    </>
   );
 }
 

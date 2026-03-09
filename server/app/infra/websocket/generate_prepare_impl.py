@@ -68,7 +68,9 @@ async def generate_prepare_impl(
     group_id_str = data.get("group_id")
 
     if not profile_id_str:
-        await _emit_error(emit, sid, "Profile not found. Please reconnect.", artifact_type)
+        await _emit_error(
+            emit, sid, "Profile not found. Please reconnect.", artifact_type
+        )
         return
 
     if not profiles_id_str:
@@ -78,7 +80,9 @@ async def generate_prepare_impl(
         return
 
     if not session_id_str:
-        await _emit_error(emit, sid, "Session not found. Please reconnect.", artifact_type)
+        await _emit_error(
+            emit, sid, "Session not found. Please reconnect.", artifact_type
+        )
         return
 
     if not group_id_str:
@@ -96,7 +100,9 @@ async def generate_prepare_impl(
         return
 
     if not artifact_config:
-        await _emit_error(emit, sid, f"Unknown artifact_type: {artifact_type}", artifact_type)
+        await _emit_error(
+            emit, sid, f"Unknown artifact_type: {artifact_type}", artifact_type
+        )
         return
 
     try:
@@ -287,9 +293,7 @@ async def generate_prepare_impl(
             pid = getattr(agent_resource, "prompt_id", None)
             prompt_obj = prompts_by_id.get(pid) if pid else None
             system_prompt = (
-                (getattr(prompt_obj, "system_prompt", "") or "")
-                if prompt_obj
-                else ""
+                (getattr(prompt_obj, "system_prompt", "") or "") if prompt_obj else ""
             )
 
             iids = getattr(agent_resource, "instruction_ids", None) or []
@@ -416,18 +420,20 @@ async def _emit_error(
     *,
     group_id: str | None = None,
 ) -> None:
-    await emit([
-        internal_event(
-            "generate_call_error",
-            GenerateErrorApiRequest(
-                sid=sid,
-                error_message=message,
-                artifact_type=artifact_type,
-                group_id=group_id,
-                resource_type=artifact_type,
-            ).model_dump(),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "generate_call_error",
+                GenerateErrorApiRequest(
+                    sid=sid,
+                    error_message=message,
+                    artifact_type=artifact_type,
+                    group_id=group_id,
+                    resource_type=artifact_type,
+                ).model_dump(),
+            )
+        ]
+    )
 
 
 async def _fetch_entry_types(

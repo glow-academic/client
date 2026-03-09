@@ -5,8 +5,8 @@ from fastapi import APIRouter
 from app.routes.v5.api.main.practice.docs import router as docs_router
 from app.routes.v5.api.main.practice.export import router as export_router
 from app.routes.v5.api.main.practice.get import router as get_router
-from app.routes.v5.api.main.practice.search import router as search_router
 from app.routes.v5.api.main.practice.refresh import router as refresh_router
+from app.routes.v5.api.main.practice.search import router as search_router
 
 router = APIRouter(prefix="/practice", tags=["artifacts", "practice"])
 

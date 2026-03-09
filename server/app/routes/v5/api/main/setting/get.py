@@ -10,15 +10,14 @@ Uses composable infra layers:
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.setting_context import resolve_setting_context
 from app.infra.setting_permissions import (
@@ -80,7 +79,7 @@ router = APIRouter()
 
 
 async def get_setting_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -104,7 +103,7 @@ async def get_setting_client(
     # -- Step 1: Common context (profile -> tool_graph + runs) ----------------
 
     common = await resolve_common_context(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
         group_id=group_id,
@@ -123,7 +122,8 @@ async def get_setting_client(
 
     perms = None
     if setting_id is not None:
-        perms = await resolve_setting_permissions_context(conn, setting_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_setting_permissions_context(conn, setting_id)
 
         if not perms.exists:
             raise HTTPException(
@@ -140,7 +140,7 @@ async def get_setting_client(
     # -- Step 3: Setting artifact context -------------------------------------
 
     setting = await resolve_setting_context(
-        conn,
+        pool,
         redis,
         setting_id=setting_id,
         group_id=group_id,
@@ -378,7 +378,6 @@ async def get_setting(
     request: GetSettingApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSettingApiResponse:
     """Get setting information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -391,10 +390,11 @@ async def get_setting(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await get_setting_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             setting_id=request.setting_id,

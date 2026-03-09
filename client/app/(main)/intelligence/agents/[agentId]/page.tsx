@@ -6,6 +6,8 @@
  */
 
 import Agent from "@/components/artifacts/agent/Agent";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
@@ -132,19 +134,34 @@ export default async function AgentEditPage({
         group_id: groupId,
       } as GetAgentIn["body"],
     };
-    const agentDetail = agentId ? await getAgent(input) : null;
+    const [agentDetail, docs] = await Promise.all([
+      agentId ? getAgent(input) : Promise.resolve(null),
+      getDocs({ body: { entity_id: agentId } }),
+    ]);
+
+    const entityName = docs.detail.title;
 
     return (
-      <div className="space-y-6" data-page="agent-edit" data-agent-id={agentId}>
-        <Agent
-          agentId={agentId}
-          {...(agentDetail && { agentDetail })}
-          saveAgentAction={saveAgent}
-          patchAgentDraftAction={patchAgentDraft}
-          createVoicesAction={createDraftVoices}
-          createPromptsAction={createDraftPrompts}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+            { title: "Agents", section: "agents", url: "/intelligence/agents" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="agent" />}
         />
-      </div>
+        <div className="space-y-6 px-4" data-page="agent-edit" data-agent-id={agentId}>
+          <Agent
+            agentId={agentId}
+            {...(agentDetail && { agentDetail })}
+            saveAgentAction={saveAgent}
+            patchAgentDraftAction={patchAgentDraft}
+            createVoicesAction={createDraftVoices}
+            createPromptsAction={createDraftPrompts}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

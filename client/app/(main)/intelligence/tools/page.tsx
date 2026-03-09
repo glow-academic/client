@@ -3,6 +3,7 @@
  * Tools list page - server-side filtering with nuqs URL-backed state
  */
 import Tools from "@/components/artifacts/tool/Tools";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -123,18 +124,26 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
   const listData = await getToolsList(body);
 
   return (
-    <div className="space-y-6" data-page="tools-index">
-      <Tools
-        listData={listData}
-        deleteToolAction={deleteTool}
-        duplicateToolAction={duplicateTool}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        totalCount={listData.total_count ?? 0}
-        departmentSearch={q.departmentSearch ?? ""}
-        agentSearch={q.agentSearch ?? ""}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+          { title: "Tools" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="tools-index">
+        <Tools
+          listData={listData}
+          deleteToolAction={deleteTool}
+          duplicateToolAction={duplicateTool}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          totalCount={listData.total_count ?? 0}
+          departmentSearch={q.departmentSearch ?? ""}
+          agentSearch={q.agentSearch ?? ""}
+        />
+      </div>
+    </>
   );
 }
 

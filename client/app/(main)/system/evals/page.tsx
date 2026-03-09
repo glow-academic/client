@@ -5,6 +5,7 @@
  * 01/26/2025
  */
 import Evals from "@/components/artifacts/eval/Evals";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -104,14 +105,24 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
   const listData = await getEvalsList(body);
 
   return (
-    <Evals
-      listData={listData}
-      deleteEvalAction={deleteEval}
-      pageIndex={pageIndex}
-      pageSize={pageSize}
-      totalCount={listData.total_count ?? 0}
-      departmentSearch={q.departmentSearch ?? ""}
-    />
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "System", section: "system", url: "/system" },
+          { title: "Evals" },
+        ]}
+      />
+      <div className="space-y-6 px-4">
+        <Evals
+          listData={listData}
+          deleteEvalAction={deleteEval}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          totalCount={listData.total_count ?? 0}
+          departmentSearch={q.departmentSearch ?? ""}
+        />
+      </div>
+    </>
   );
 }
 

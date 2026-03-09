@@ -6,6 +6,8 @@
  */
 
 import Parameter from "@/components/artifacts/parameter/Parameter";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -122,17 +124,27 @@ export default async function NewParameterPage({
   const parameterDetailDefault = await getParameterDefault(input);
 
   return (
-    <div className="space-y-6" data-page="parameter-new">
-      <Parameter
-        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        mode="create"
-        parameterData={parameterDetailDefault}
-        saveParameterAction={saveParameter}
-        patchParameterDraftAction={patchParameterDraft}
-        createNamesAction={createNames}
-        createDescriptionsAction={createDescriptions}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Management", section: "management", url: "/management" },
+          { title: "Parameters", section: "parameters", url: "/management/parameters" },
+          { title: "New Parameter" },
+        ]}
+        toolbar={<SaveToolbar artifactType="parameter" />}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="parameter-new">
+        <Parameter
+          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+          mode="create"
+          parameterData={parameterDetailDefault}
+          saveParameterAction={saveParameter}
+          patchParameterDraftAction={patchParameterDraft}
+          createNamesAction={createNames}
+          createDescriptionsAction={createDescriptions}
+        />
+      </div>
+    </>
   );
 }
 

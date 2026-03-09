@@ -4,6 +4,8 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Setting from "@/components/artifacts/setting/Setting";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
@@ -204,42 +206,56 @@ export default async function SettingEditPage({
         color_search: q.colorSearch ?? null,
       } as GetSettingIn["body"],
     };
-    const settingDetail = await getSetting(input);
+    const [settingDetail, docs] = await Promise.all([
+      getSetting(input),
+      getDocs({ body: { entity_id: settingId } }),
+    ]);
+
+    const entityName = docs.detail.title;
 
     return (
-      <div
-        className="space-y-6"
-        data-page="setting-edit"
-        data-setting-id={settingId}
-      >
-        <Setting
-          settingId={settingId}
-          settingData={settingDetail}
-          saveSettingAction={saveSetting}
-          patchSettingDraftAction={patchSettingDraft}
-          createNamesAction={createDraftNames}
-          createDescriptionsAction={createDraftDescriptions}
-          createColorsAction={createDraftColors}
-          createProviderKeysAction={async (input) => {
-            "use server";
-            return createProviderKeys({ body: { ...input, mcp: false } });
-          }}
-          getProviderKeysAction={async (ids) => {
-            "use server";
-            const result = await getProviderKeys({ body: { ids } });
-            return result.items ?? [];
-          }}
-          createAuthItemKeysAction={async (input) => {
-            "use server";
-            return createAuthItemKeys({ body: { ...input, mcp: false } });
-          }}
-          getAuthItemKeysAction={async (ids) => {
-            "use server";
-            const result = await getAuthItemKeys({ body: { ids } });
-            return result.items ?? [];
-          }}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Settings", section: "settings", url: "/settings" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="setting" />}
         />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="setting-edit"
+          data-setting-id={settingId}
+        >
+          <Setting
+            settingId={settingId}
+            settingData={settingDetail}
+            saveSettingAction={saveSetting}
+            patchSettingDraftAction={patchSettingDraft}
+            createNamesAction={createDraftNames}
+            createDescriptionsAction={createDraftDescriptions}
+            createColorsAction={createDraftColors}
+            createProviderKeysAction={async (input) => {
+              "use server";
+              return createProviderKeys({ body: { ...input, mcp: false } });
+            }}
+            getProviderKeysAction={async (ids) => {
+              "use server";
+              const result = await getProviderKeys({ body: { ids } });
+              return result.items ?? [];
+            }}
+            createAuthItemKeysAction={async (input) => {
+              "use server";
+              return createAuthItemKeys({ body: { ...input, mcp: false } });
+            }}
+            getAuthItemKeysAction={async (ids) => {
+              "use server";
+              const result = await getAuthItemKeys({ body: { ids } });
+              return result.items ?? [];
+            }}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

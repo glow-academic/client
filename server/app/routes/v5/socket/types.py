@@ -10,8 +10,6 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from pydantic import BaseModel
-
 # =============================================================================
 # Internal Server-to-Server Events
 # =============================================================================
@@ -27,7 +25,6 @@ from app.infra.websocket.generation_types import (
 from app.infra.websocket.test_types import (
     TestAllCompleteEvent as TestAllCompleteEvent,
 )
-
 
 # Entry type constants (predefined per handler, not in payload)
 TEST_GRADE_ENTRY_TYPES = ["grades", "feedbacks"]

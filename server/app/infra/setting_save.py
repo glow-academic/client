@@ -261,71 +261,72 @@ async def save_setting_client(
 
     results: list[SaveSettingResult] = []
 
-    async with conn.transaction():
-        for _idx, item in enumerate(items):
-            is_update = item.input_setting_id is not None
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for _idx, item in enumerate(items):
+                is_update = item.input_setting_id is not None
 
-            # Create denormalized snapshot
-            settings_resource_id = await _create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            if is_update:
-                result = await update_setting_artifact(
+                # Create denormalized snapshot
+                settings_resource_id = await _create_denormalized_snapshot(
                     conn,
-                    item.input_setting_id,
-                    name_id=item.name_id if item.name_id else _UNSET,
-                    description_id=item.description_id
-                    if item.description_id
-                    else _UNSET,
-                    department_ids=item.department_ids,
-                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                    color_ids=item.color_ids,
-                    profile_ids=item.profile_ids,
-                    auth_ids=item.auth_ids,
-                    provider_key_ids=item.provider_key_ids,
-                    auth_item_key_ids=item.auth_item_key_ids,
-                    auth_item_value_ids=item.auth_item_value_ids,
-                    system_ids=item.system_ids,
-                    threshold_ids=item.threshold_ids,
-                    setting_ids=[settings_resource_id]
-                    if settings_resource_id
-                    else item.setting_resource_ids,
-                )
-                setting_id = result.id
-            else:
-                result = await create_setting_artifact(
-                    conn,
+                    redis,
                     name_id=item.name_id,
                     description_id=item.description_id,
-                    department_ids=item.department_ids,
-                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                    color_ids=item.color_ids,
-                    profile_ids=item.profile_ids,
-                    auth_ids=item.auth_ids,
-                    provider_key_ids=item.provider_key_ids,
-                    auth_item_key_ids=item.auth_item_key_ids,
-                    auth_item_value_ids=item.auth_item_value_ids,
-                    system_ids=item.system_ids,
-                    threshold_ids=item.threshold_ids,
-                    setting_ids=[settings_resource_id]
-                    if settings_resource_id
-                    else item.setting_resource_ids,
                 )
-                setting_id = result.id
 
-            results.append(
-                SaveSettingResult(
-                    success=True,
-                    setting_id=setting_id,
-                    message="Setting updated successfully"
-                    if is_update
-                    else "Setting created successfully",
+                if is_update:
+                    result = await update_setting_artifact(
+                        conn,
+                        item.input_setting_id,
+                        name_id=item.name_id if item.name_id else _UNSET,
+                        description_id=item.description_id
+                        if item.description_id
+                        else _UNSET,
+                        department_ids=item.department_ids,
+                        flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                        color_ids=item.color_ids,
+                        profile_ids=item.profile_ids,
+                        auth_ids=item.auth_ids,
+                        provider_key_ids=item.provider_key_ids,
+                        auth_item_key_ids=item.auth_item_key_ids,
+                        auth_item_value_ids=item.auth_item_value_ids,
+                        system_ids=item.system_ids,
+                        threshold_ids=item.threshold_ids,
+                        setting_ids=[settings_resource_id]
+                        if settings_resource_id
+                        else item.setting_resource_ids,
+                    )
+                    setting_id = result.id
+                else:
+                    result = await create_setting_artifact(
+                        conn,
+                        name_id=item.name_id,
+                        description_id=item.description_id,
+                        department_ids=item.department_ids,
+                        flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                        color_ids=item.color_ids,
+                        profile_ids=item.profile_ids,
+                        auth_ids=item.auth_ids,
+                        provider_key_ids=item.provider_key_ids,
+                        auth_item_key_ids=item.auth_item_key_ids,
+                        auth_item_value_ids=item.auth_item_value_ids,
+                        system_ids=item.system_ids,
+                        threshold_ids=item.threshold_ids,
+                        setting_ids=[settings_resource_id]
+                        if settings_resource_id
+                        else item.setting_resource_ids,
+                    )
+                    setting_id = result.id
+
+                results.append(
+                    SaveSettingResult(
+                        success=True,
+                        setting_id=setting_id,
+                        message="Setting updated successfully"
+                        if is_update
+                        else "Setting created successfully",
+                    )
                 )
-            )
 
     # -- Step 5: Invalidate cache ----------------------------------------------
 

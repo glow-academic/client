@@ -54,8 +54,12 @@ async def resolve_problem(
         # Create group → run → call → resolve entry chain
         session_id = http_request.state.session_id
         group_result = await create_group(conn, session_id=session_id)
-        run_result = await create_run(conn, group_id=group_result.id, session_id=session_id)
-        call_result = await create_call(conn, run_id=run_result.id, session_id=session_id)
+        run_result = await create_run(
+            conn, group_id=group_result.id, session_id=session_id
+        )
+        call_result = await create_call(
+            conn, run_id=run_result.id, session_id=session_id
+        )
 
         resolve_result = await create_resolve(
             conn,

@@ -6,6 +6,8 @@
  */
 
 import Persona from "@/components/artifacts/persona/Persona";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -120,17 +122,27 @@ export default async function NewPersonaPage({
   const personaDetailDefault = await getPersonaDefault(input);
 
   return (
-    <div
-      className="space-y-6"
-      data-page="persona-new"
-      aria-label="Create new persona page"
-    >
-      <Persona
-        key={q.draftId || "no-draft"}
-        personaData={personaDetailDefault}
-        createPersonaAction={createPersona}
-        patchPersonaDraftAction={patchPersonaDraft}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Training", section: "training", url: "/training" },
+          { title: "Personas", section: "personas", url: "/training/personas" },
+          { title: "New Persona" },
+        ]}
+        toolbar={<SaveToolbar artifactType="persona" />}
       />
-    </div>
+      <div
+        className="space-y-6 px-4"
+        data-page="persona-new"
+        aria-label="Create new persona page"
+      >
+        <Persona
+          key={q.draftId || "no-draft"}
+          personaData={personaDetailDefault}
+          createPersonaAction={createPersona}
+          patchPersonaDraftAction={patchPersonaDraft}
+        />
+      </div>
+    </>
   );
 }

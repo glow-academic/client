@@ -5,10 +5,7 @@ Thin route handler. Core logic lives in app.infra.profile_draft.
 
 from __future__ import annotations
 
-from typing import Annotated
-
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_draft import patch_profile_draft_client

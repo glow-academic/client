@@ -6,6 +6,7 @@
  */
 
 import Documents from "@/components/artifacts/document/Documents";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -71,9 +72,17 @@ export default async function DocumentsPage() {
   const listData = await getDocumentsList();
 
   return (
-    <div className="space-y-6" data-page="documents-index">
-      <Documents listData={listData} deleteDocumentAction={deleteDocument} />
-    </div>
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Management", section: "management", url: "/management" },
+          { title: "Documents" },
+        ]}
+      />
+      <div className="space-y-6 px-4" data-page="documents-index">
+        <Documents listData={listData} deleteDocumentAction={deleteDocument} />
+      </div>
+    </>
   );
 }
 

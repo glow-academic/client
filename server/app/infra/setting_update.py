@@ -32,7 +32,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def update_setting_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -56,7 +56,7 @@ async def update_setting_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -67,7 +67,8 @@ async def update_setting_client(
     # ── Step 2: Per-item permission check ──────────────────────────────
 
     for idx, item in enumerate(items):
-        perms = await resolve_setting_permissions_context(conn, item.setting_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_setting_permissions_context(conn, item.setting_id)
         if not perms.exists:
             raise HTTPException(
                 status_code=404,
@@ -89,7 +90,10 @@ async def update_setting_client(
     error_results: list[SettingResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_setting_values(conn, redis, item, is_create=False)
+        async with pool.acquire() as conn:
+            item_errors = await resolve_setting_values(
+                conn, redis, item, is_create=False
+            )
         if item_errors:
             has_errors = True
             error_results.append(
@@ -109,43 +113,46 @@ async def update_setting_client(
 
     results: list[SettingResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            settings_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            await update_setting_artifact(
-                conn,
-                item.setting_id,
-                name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id if item.description_id else _UNSET,
-                department_ids=item.department_ids,
-                flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                color_ids=item.color_ids,
-                profile_ids=item.profile_ids,
-                auth_ids=item.auth_ids,
-                provider_key_ids=item.provider_key_ids,
-                auth_item_key_ids=item.auth_item_key_ids,
-                auth_item_value_ids=item.auth_item_value_ids,
-                system_ids=item.system_ids,
-                threshold_ids=item.threshold_ids,
-                setting_ids=[settings_resource_id]
-                if settings_resource_id
-                else item.setting_resource_ids,
-            )
-
-            results.append(
-                SettingResultItem(
-                    success=True,
-                    setting_id=item.setting_id,
-                    message="Setting updated successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                settings_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                await update_setting_artifact(
+                    conn,
+                    item.setting_id,
+                    name_id=item.name_id if item.name_id else _UNSET,
+                    description_id=item.description_id
+                    if item.description_id
+                    else _UNSET,
+                    department_ids=item.department_ids,
+                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                    color_ids=item.color_ids,
+                    profile_ids=item.profile_ids,
+                    auth_ids=item.auth_ids,
+                    provider_key_ids=item.provider_key_ids,
+                    auth_item_key_ids=item.auth_item_key_ids,
+                    auth_item_value_ids=item.auth_item_value_ids,
+                    system_ids=item.system_ids,
+                    threshold_ids=item.threshold_ids,
+                    setting_ids=[settings_resource_id]
+                    if settings_resource_id
+                    else item.setting_resource_ids,
+                )
+
+                results.append(
+                    SettingResultItem(
+                        success=True,
+                        setting_id=item.setting_id,
+                        message="Setting updated successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

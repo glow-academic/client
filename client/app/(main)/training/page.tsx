@@ -6,7 +6,6 @@
  */
 
 import { redirect } from "next/navigation";
-import { PageHeader } from "@/components/common/layout/PageHeader";
 import type { Metadata } from "next";
 
 export async function generateMetadata(): Promise<Metadata> {

@@ -6,6 +6,8 @@
  */
 
 import Agent from "@/components/artifacts/agent/Agent";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -108,19 +110,29 @@ export default async function NewAgentPage({
   const agentDetailDefault = await getAgent(input);
 
   return (
-    <div
-      className="space-y-6"
-      data-page="agent-new"
-      aria-label="Create new agent page"
-    >
-      <Agent
-        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        agentDetailDefault={agentDetailDefault}
-        saveAgentAction={saveAgent}
-        patchAgentDraftAction={patchAgentDraft}
-        createVoicesAction={createDraftVoices}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+          { title: "Agents", section: "agents", url: "/intelligence/agents" },
+          { title: "New Agent" },
+        ]}
+        toolbar={<SaveToolbar artifactType="agent" />}
       />
-    </div>
+      <div
+        className="space-y-6 px-4"
+        data-page="agent-new"
+        aria-label="Create new agent page"
+      >
+        <Agent
+          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+          agentDetailDefault={agentDetailDefault}
+          saveAgentAction={saveAgent}
+          patchAgentDraftAction={patchAgentDraft}
+          createVoicesAction={createDraftVoices}
+        />
+      </div>
+    </>
   );
 }
 

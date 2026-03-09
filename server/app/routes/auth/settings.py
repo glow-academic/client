@@ -19,14 +19,14 @@ from app.routes.auth.types import (
     GetAuthSettingsApiResponse,
     SettingsAgentToolEntry,
 )
-from app.routes.v5.tools.resources.agents.get import get_agents
-from app.routes.v5.tools.resources.settings.get import get_settings
-from app.routes.v5.tools.resources.systems.get import get_systems
-from app.routes.v5.tools.resources.tools.get import get_tools
 from app.routes.shared_types import (
     GetProfileContextApiRequest,
     QGetProfileContextV4ThemeTokens,
 )
+from app.routes.v5.tools.resources.agents.get import get_agents
+from app.routes.v5.tools.resources.settings.get import get_settings
+from app.routes.v5.tools.resources.systems.get import get_systems
+from app.routes.v5.tools.resources.tools.get import get_tools
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()

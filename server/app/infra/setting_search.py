@@ -36,7 +36,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 
 
 async def search_setting_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -54,7 +54,7 @@ async def search_setting_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -68,25 +68,27 @@ async def search_setting_client(
 
     # ── Step 2: Search settings ────────────────────────────────────────
 
-    setting_ids, _total_count = await search_setting_artifacts(
-        conn,
-        limit_count=1000,
-        offset_count=0,
-    )
+    async with pool.acquire() as conn:
+        setting_ids, _total_count = await search_setting_artifacts(
+            conn,
+            limit_count=1000,
+            offset_count=0,
+        )
 
     if not setting_ids:
         return _empty_response(actor_name, user_role)
 
     # ── Step 3: Get setting artifacts with junction IDs ────────────────
 
-    artifacts = await get_settings(
-        conn,
-        setting_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_settings(
+            conn,
+            setting_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+        )
 
     # ── Step 4: Parallel hydration + keys fetch ────────────────────────
 
@@ -97,14 +99,24 @@ async def search_setting_client(
         all_name_ids.extend(a.name_ids or [])
         all_description_ids.extend(a.description_ids or [])
 
+    async def _fetch_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_descriptions() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
     (
         names_data,
         descriptions_data,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty_list(),
+        _fetch_names(),
+        _fetch_descriptions(),
     )
 
     # Build lookup maps

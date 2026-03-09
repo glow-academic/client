@@ -70,7 +70,9 @@ async def update_department_client(
 
     for idx, item in enumerate(items):
         async with pool.acquire() as conn:
-            perms = await resolve_department_permissions_context(conn, item.department_id)
+            perms = await resolve_department_permissions_context(
+                conn, item.department_id
+            )
         if not perms.exists:
             raise HTTPException(
                 status_code=404,

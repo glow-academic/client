@@ -1,15 +1,11 @@
 """Profile docs endpoint — composable infra architecture."""
 
-from typing import Annotated
-
-import asyncpg
-from fastapi import APIRouter, Depends, Request, Response
-from redis.asyncio import Redis
+from fastapi import APIRouter, Request, Response
 
 from app.infra.docs.types import ComposedDocsResponse
+from app.infra.docs_helper import DocsApiRequest
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_docs import docs_profile_client
-from app.infra.docs_helper import DocsApiRequest
 
 router = APIRouter()
 

@@ -7,6 +7,7 @@
  */
 
 import Dashboard from "@/components/artifacts/dashboard/Dashboard";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -132,29 +133,39 @@ export default async function DashboardPage({
   const initialHistoryVisibility = await readViewCookie("history");
 
   return (
-    <Dashboard
-      data={data}
-      initialColumnVisibility={initialHistoryVisibility}
-      rubricIds={rubricIds}
-      rubricSearch={rubricSearch}
-      rubricIndex={rubricIndex}
-      simulationPickerIds={simulationPickerIds}
-      simulationPickerSearch={simulationPickerSearch}
-      simulationIndex={simulationIndex}
-      parameterIds={parameterIds}
-      parameterSearch={parameterSearch}
-      parameterIndex={parameterIndex}
-      scenarioIds={scenarioIds}
-      scenarioSearch={scenarioSearch}
-      scenarioIndex={scenarioIndex}
-      historyPage={historyPage}
-      historyPageSize={historyPageSize}
-      defaultFilters={filters}
-      bulkArchiveAttemptsAction={bulkArchiveAttempts}
-      historyProfileSearch={historyProfileSearch}
-      historySimulationSearch={historySimulationSearch}
-      historyScenarioSearch={historyScenarioSearch}
-    />
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Analytics", section: "analytics", url: "/analytics" },
+          { title: "Dashboard" },
+        ]}
+      />
+      <div className="px-4">
+        <Dashboard
+          data={data}
+          initialColumnVisibility={initialHistoryVisibility}
+          rubricIds={rubricIds}
+          rubricSearch={rubricSearch}
+          rubricIndex={rubricIndex}
+          simulationPickerIds={simulationPickerIds}
+          simulationPickerSearch={simulationPickerSearch}
+          simulationIndex={simulationIndex}
+          parameterIds={parameterIds}
+          parameterSearch={parameterSearch}
+          parameterIndex={parameterIndex}
+          scenarioIds={scenarioIds}
+          scenarioSearch={scenarioSearch}
+          scenarioIndex={scenarioIndex}
+          historyPage={historyPage}
+          historyPageSize={historyPageSize}
+          defaultFilters={filters}
+          bulkArchiveAttemptsAction={bulkArchiveAttempts}
+          historyProfileSearch={historyProfileSearch}
+          historySimulationSearch={historySimulationSearch}
+          historyScenarioSearch={historyScenarioSearch}
+        />
+      </div>
+    </>
   );
 }
 

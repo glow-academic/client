@@ -75,15 +75,9 @@ async def archive_attempts(
 
         # 1. Resolve attempt IDs via search
         date_from = (
-            datetime.fromisoformat(request.start_date)
-            if request.start_date
-            else None
+            datetime.fromisoformat(request.start_date) if request.start_date else None
         )
-        date_to = (
-            datetime.fromisoformat(request.end_date)
-            if request.end_date
-            else None
-        )
+        date_to = datetime.fromisoformat(request.end_date) if request.end_date else None
 
         attempts, _ = await search_attempts(
             conn,

@@ -6,7 +6,6 @@ Uses recording_emit() to capture events.
 
 from __future__ import annotations
 
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -73,9 +72,7 @@ class TestGenerateArtifactImpl:
             file_size=1234,
             upload_id="up-1",
         )
-        await generate_artifact_impl(
-            payload, emit=emit, sid="s1", profile_id=None
-        )
+        await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
         names = [e.event for e in events]
         assert "generate_image_start" in names
         assert "generate_image_complete" in names
@@ -91,9 +88,7 @@ class TestGenerateArtifactImpl:
             file_size=5678,
             upload_id="up-2",
         )
-        await generate_artifact_impl(
-            payload, emit=emit, sid="s1", profile_id=None
-        )
+        await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
         names = [e.event for e in events]
         assert "generate_video_start" in names
         assert "generate_video_complete" in names
@@ -113,9 +108,7 @@ class TestGenerateArtifactImpl:
             "app.infra.websocket.media_lifecycle.get_media_adapter",
             return_value=mock_adapter,
         ):
-            await generate_artifact_impl(
-                payload, emit=emit, sid="s1", profile_id=None
-            )
+            await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
         mock_adapter.generate.assert_called_once()
         # Should still emit start
         assert any(e.event == "generate_image_start" for e in events)
@@ -130,9 +123,7 @@ class TestGenerateArtifactImpl:
             "app.infra.websocket.media_lifecycle.get_media_adapter",
             return_value=mock_adapter,
         ):
-            await generate_artifact_impl(
-                payload, emit=emit, sid="s1", profile_id=None
-            )
+            await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
         error_events = [e for e in events if e.event == "generate_image_error"]
         assert len(error_events) == 1
         assert "GPU OOM" in error_events[0].data["error_message"]
@@ -144,9 +135,7 @@ class TestGenerateArtifactImpl:
     async def test_audio_no_api_key_emits_error(self):
         emit, events = recording_emit()
         payload = _payload(modality="audio", llm_config=_model_config(api_key=None))
-        await generate_artifact_impl(
-            payload, emit=emit, sid="s1", profile_id=None
-        )
+        await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
         error_events = [e for e in events if e.event == "generate_audio_error"]
         assert len(error_events) == 1
         assert "No API key" in error_events[0].data["error_message"]
@@ -174,9 +163,7 @@ class TestGenerateArtifactImpl:
             ),
             patch("app.infra.websocket.session_store.remove_session"),
         ):
-            await generate_artifact_impl(
-                payload, emit=emit, sid="s1", profile_id=None
-            )
+            await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
         error_events = [e for e in events if e.event == "generate_audio_error"]
         assert len(error_events) == 1
         assert "voice service" in error_events[0].data["error_message"]
@@ -203,9 +190,7 @@ class TestGenerateArtifactImpl:
                 return_value=mock_session,
             ),
         ):
-            await generate_artifact_impl(
-                payload, emit=emit, sid="s1", profile_id=None
-            )
+            await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
         session_events = [
             e for e in events if e.event == "generate_audio_session_start"
         ]
@@ -224,9 +209,7 @@ class TestGenerateArtifactImpl:
         # The start event will go to generate_error since "hologram" is not supported
         # Then it will enter the agentic loop and fail (no litellm)
         # We just need to verify the fallback behavior
-        await generate_artifact_impl(
-            payload, emit=emit, sid="s1", profile_id=None
-        )
+        await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
         error_events = [e for e in events if e.event == "generate_error"]
         assert len(error_events) >= 1
 
@@ -264,9 +247,7 @@ class TestGenerateArtifactImpl:
                 return_value=object(),  # stream object
             ),
         ):
-            await generate_artifact_impl(
-                payload, emit=emit, sid="s1", profile_id=None
-            )
+            await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
 
         event_names = [e.event for e in events]
         assert "generate_call_start" in event_names
@@ -275,9 +256,7 @@ class TestGenerateArtifactImpl:
         assert "generate_text_complete" in event_names
         assert "generate_run_complete" in event_names
 
-        run_complete = next(
-            e for e in events if e.event == "generate_run_complete"
-        )
+        run_complete = next(e for e in events if e.event == "generate_run_complete")
         assert run_complete.data["assistant_output"] == "Hello world"
         assert run_complete.data["input_text_tokens"] == 10
         assert run_complete.data["output_text_tokens"] == 5
@@ -295,9 +274,7 @@ class TestGenerateArtifactImpl:
                 side_effect=RuntimeError("API timeout"),
             ),
         ):
-            await generate_artifact_impl(
-                payload, emit=emit, sid="s1", profile_id=None
-            )
+            await generate_artifact_impl(payload, emit=emit, sid="s1", profile_id=None)
 
         error_events = [e for e in events if e.event == "generate_call_error"]
         assert len(error_events) == 1

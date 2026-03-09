@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 import Departments from "@/components/artifacts/department/Departments";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -74,13 +75,21 @@ export default async function DepartmentsPage() {
   const listData = await getDepartmentsList();
 
   return (
-    <div className="space-y-6" data-page="departments-index">
-      <Departments
-        listData={listData}
-        duplicateDepartmentAction={duplicateDepartment}
-        deleteDepartmentAction={deleteDepartment}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "System", section: "system", url: "/system" },
+          { title: "Departments" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="departments-index">
+        <Departments
+          listData={listData}
+          duplicateDepartmentAction={duplicateDepartment}
+          deleteDepartmentAction={deleteDepartment}
+        />
+      </div>
+    </>
   );
 }
 

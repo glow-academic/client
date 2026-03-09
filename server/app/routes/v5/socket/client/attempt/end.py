@@ -72,7 +72,9 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
             session_id = uuid.UUID(session_id_str)
 
             async with get_db_connection() as conn:
-                identity = await resolve_profile_identity_context(conn, profile_id, get_redis_client())
+                identity = await resolve_profile_identity_context(
+                    conn, profile_id, get_redis_client()
+                )
                 profiles_id = identity.profiles_id if identity else None
 
                 group_result = await create_group(

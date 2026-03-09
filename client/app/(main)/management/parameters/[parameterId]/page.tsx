@@ -6,6 +6,8 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Parameter from "@/components/artifacts/parameter/Parameter";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
@@ -130,24 +132,39 @@ export default async function ParameterEditPage({
         group_id: groupId,
       } as ParameterGetIn["body"],
     };
-    const parameterDetail = await getParameter(input);
+    const [parameterDetail, docs] = await Promise.all([
+      getParameter(input),
+      getDocs({ body: { entity_id: parameterId } }),
+    ]);
+
+    const entityName = docs.detail.title;
 
     return (
-      <div
-        className="space-y-6"
-        data-page="parameter-edit"
-        data-parameter-id={parameterId}
-      >
-        <Parameter
-          parameterId={parameterId}
-          mode="edit"
-          parameterData={parameterDetail}
-          saveParameterAction={saveParameter}
-          patchParameterDraftAction={patchParameterDraft}
-          createNamesAction={createNames}
-          createDescriptionsAction={createDescriptions}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Management", section: "management", url: "/management" },
+            { title: "Parameters", section: "parameters", url: "/management/parameters" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="parameter" />}
         />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="parameter-edit"
+          data-parameter-id={parameterId}
+        >
+          <Parameter
+            parameterId={parameterId}
+            mode="edit"
+            parameterData={parameterDetail}
+            saveParameterAction={saveParameter}
+            patchParameterDraftAction={patchParameterDraft}
+            createNamesAction={createNames}
+            createDescriptionsAction={createDescriptions}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

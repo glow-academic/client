@@ -7,13 +7,14 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.infra.auth.settings import SettingsThemeResult
+from app.infra.profile_identity_context import ProfileIdentityContext
 from app.routes.auth.route_permissions import (
     BreadcrumbItem,
     PageAccess,
     PageMetadata,
     SidebarSection,
 )
-from app.infra.auth.settings import SettingsThemeResult
 from app.routes.shared_types import (
     QGetAgentsV4Item,
     QGetCohortsV4Item,
@@ -24,8 +25,6 @@ from app.routes.shared_types import (
     QGetSystemsV4Item,
     QGetToolsV4Item,
 )
-
-from app.infra.profile_identity_context import ProfileIdentityContext
 
 
 class QGetProfileContextV4Draft(BaseModel):
@@ -125,7 +124,6 @@ class GetProfileContextApiResponse(BaseModel):
     breadcrumbs: list[BreadcrumbItem] | None = None
     page_access: PageAccess | None = None
     page_metadata: PageMetadata | None = None
-
 
 
 class GetAuthProfileApiResponse(BaseModel):

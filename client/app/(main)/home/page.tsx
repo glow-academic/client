@@ -7,6 +7,7 @@
 
 import SimulationHistory from "@/components/common/SimulationHistory";
 import Home from "@/components/artifacts/home/Home";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -121,28 +122,35 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   });
 
   return (
-    <div className="space-y-6">
-      <Home homeData={homeData} />
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Home", section: "home", url: "/home" },
+        ]}
+      />
+      <div className="space-y-6 px-4">
+        <Home homeData={homeData} />
 
-      {/* History section — data from embedded home/get response */}
-      <div className="mt-12">
-        <SimulationHistory
-          data={dataArray}
-          totalCount={historyData.total_count || 0}
-          archivedCount={archivedCount}
-          unarchivedCount={unarchivedCount}
-          pageIndex={historyPage}
-          pageSize={historyPageSize}
-          showArchive={false}
-          singleProfile={true}
-          initialFilters={defaultFilters}
-          profileOptions={profileOptions}
-          simulationOptions={simulationOptions}
-          scenarioOptions={scenarioOptions}
-          initialColumnVisibility={await readViewCookie("history")}
-        />
+        {/* History section — data from embedded home/get response */}
+        <div className="mt-12">
+          <SimulationHistory
+            data={dataArray}
+            totalCount={historyData.total_count || 0}
+            archivedCount={archivedCount}
+            unarchivedCount={unarchivedCount}
+            pageIndex={historyPage}
+            pageSize={historyPageSize}
+            showArchive={false}
+            singleProfile={true}
+            initialFilters={defaultFilters}
+            profileOptions={profileOptions}
+            simulationOptions={simulationOptions}
+            scenarioOptions={scenarioOptions}
+            initialColumnVisibility={await readViewCookie("history")}
+          />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

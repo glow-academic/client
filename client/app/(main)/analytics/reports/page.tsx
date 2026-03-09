@@ -6,6 +6,7 @@
  */
 
 import Reports from "@/components/artifacts/reports/Reports";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -134,35 +135,43 @@ export default async function ReportsFullPage({
   } as ReportsOut;
 
   return (
-    <div className="space-y-6" data-page="reports-index">
-      <Suspense
-        key={reportsKey}
-        fallback={
-          <Reports
-            reportsData={emptyReportsData}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Analytics", section: "analytics", url: "/analytics" },
+          { title: "Reports" },
+        ]}
+      />
+      <div className="space-y-6 px-4" data-page="reports-index">
+        <Suspense
+          key={reportsKey}
+          fallback={
+            <Reports
+              reportsData={emptyReportsData}
+              filters={filters}
+              isLoading={true}
+              profileOptions={[]}
+              simulationOptions={[]}
+              scenarioOptions={[]}
+              initialColumnVisibility={initialColumnVisibility}
+            />
+          }
+        >
+          <ReportsSection
             filters={filters}
-            isLoading={true}
-            profileOptions={[]}
-            simulationOptions={[]}
-            scenarioOptions={[]}
+            reportsPage={reportsPage}
+            reportsPageSize={reportsPageSize}
+            reportsSearch={reportsSearch}
+            reportsProfileIds={reportsProfileIds}
+            reportsSimulationIds={reportsSimulationIds}
+            reportsScenarioIds={reportsScenarioIds}
+            reportsSortBy={reportsSortBy}
+            reportsSortOrder={reportsSortOrder}
             initialColumnVisibility={initialColumnVisibility}
           />
-        }
-      >
-        <ReportsSection
-          filters={filters}
-          reportsPage={reportsPage}
-          reportsPageSize={reportsPageSize}
-          reportsSearch={reportsSearch}
-          reportsProfileIds={reportsProfileIds}
-          reportsSimulationIds={reportsSimulationIds}
-          reportsScenarioIds={reportsScenarioIds}
-          reportsSortBy={reportsSortBy}
-          reportsSortOrder={reportsSortOrder}
-          initialColumnVisibility={initialColumnVisibility}
-        />
-      </Suspense>
-    </div>
+        </Suspense>
+      </div>
+    </>
   );
 }
 

@@ -86,9 +86,7 @@ class TestResolveValues:
             icon_id=uuid4(),
             instructions_id=uuid4(),
         )
-        errors = await resolve_persona_values(
-            _mock_pool(), None, item, is_update=False
-        )
+        errors = await resolve_persona_values(_mock_pool(), None, item, is_update=False)
         assert errors == []
 
     async def test_creates_name_from_value(self):
@@ -164,9 +162,7 @@ class TestResolveValues:
         """Missing required fields on create → errors."""
         item = SavePersonaItem()
 
-        errors = await resolve_persona_values(
-            _mock_pool(), None, item, is_update=False
-        )
+        errors = await resolve_persona_values(_mock_pool(), None, item, is_update=False)
 
         field_names = {e.field for e in errors}
         assert "name" in field_names
@@ -178,9 +174,7 @@ class TestResolveValues:
         """Update mode skips required field validation."""
         item = SavePersonaItem()
 
-        errors = await resolve_persona_values(
-            _mock_pool(), None, item, is_update=True
-        )
+        errors = await resolve_persona_values(_mock_pool(), None, item, is_update=True)
 
         assert errors == []
 

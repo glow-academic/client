@@ -5,6 +5,7 @@
  * 12/05/2025
  */
 import Fields from "@/components/artifacts/field/Fields";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -67,13 +68,21 @@ export default async function FieldsPage() {
   const listData = await getFieldsList();
 
   return (
-    <div className="space-y-6" data-page="fields-index">
-      <Fields
-        listData={listData}
-        duplicateFieldAction={duplicateField}
-        deleteFieldAction={deleteField}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Management", section: "management", url: "/management" },
+          { title: "Fields" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="fields-index">
+        <Fields
+          listData={listData}
+          duplicateFieldAction={duplicateField}
+          deleteFieldAction={deleteField}
+        />
+      </div>
+    </>
   );
 }
 

@@ -6,6 +6,7 @@
  */
 
 import Activity from "@/components/artifacts/activity/Activity";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -107,15 +108,23 @@ export default async function ActivityPage({
   };
 
   return (
-    <div className="space-y-6" data-page="activity-index">
-      <Activity
-        activityData={{
-          bundleData,
-          activityData,
-        }}
-        isLoading={false}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Analytics", section: "analytics", url: "/analytics" },
+          { title: "Activity" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="activity-index">
+        <Activity
+          activityData={{
+            bundleData,
+            activityData,
+          }}
+          isLoading={false}
+        />
+      </div>
+    </>
   );
 }
 

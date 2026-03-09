@@ -6,12 +6,10 @@ and emits a translated event. No DB writes, no inline SQL.
 
 from __future__ import annotations
 
+import uuid
 from typing import Any
 
-import uuid
-
 import asyncpg
-
 from redis.asyncio import Redis
 
 from app.infra.websocket.attempt_types import (
@@ -50,18 +48,20 @@ async def user_progress_impl(
     if not sid or not chat_id:
         return
 
-    await emit([
-        internal_event(
-            "attempt_user_progress",
-            AttemptUserProgressData(
-                sid=sid,
-                chat_id=chat_id,
-                item_id=data.get("item_id"),
-                transcript=data.get("transcript", ""),
-                rooms=data.get("rooms"),
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "attempt_user_progress",
+                AttemptUserProgressData(
+                    sid=sid,
+                    chat_id=chat_id,
+                    item_id=data.get("item_id"),
+                    transcript=data.get("transcript", ""),
+                    rooms=data.get("rooms"),
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -81,17 +81,19 @@ async def audio_session_start_impl(
         return
     session = get_session_by_group_id(group_id)
     chat_id = session.chat_id if session else group_id
-    await emit([
-        internal_event(
-            "attempt_audio_ready",
-            AttemptAudioReadyData(
-                sid=sid,
-                chat_id=chat_id,
-                success=True,
-                message="Voice session ready",
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "attempt_audio_ready",
+                AttemptAudioReadyData(
+                    sid=sid,
+                    chat_id=chat_id,
+                    success=True,
+                    message="Voice session ready",
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -114,17 +116,19 @@ async def audio_delta_impl(
     audio_data = data.get("audio")
     if not audio_data:
         return
-    await emit([
-        internal_event(
-            "attempt_assistant_progress",
-            AttemptAssistantProgressData(
-                sid=session.sid,
-                chat_id=session.chat_id,
-                content_type="audio",
-                audio=audio_data,
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "attempt_assistant_progress",
+                AttemptAssistantProgressData(
+                    sid=session.sid,
+                    chat_id=session.chat_id,
+                    content_type="audio",
+                    audio=audio_data,
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -150,18 +154,20 @@ async def audio_speech_start_impl(
 
     profile_id_str = await find_profile_by_socket(session.sid)
 
-    await emit([
-        internal_event(
-            "attempt_user_received_start",
-            AttemptUserReceivedStartData(
-                sid=session.sid,
-                chat_id=session.chat_id,
-                run_id=session.run_id,
-                profile_id=profile_id_str or "",
-                item_id=item_id,
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "attempt_user_received_start",
+                AttemptUserReceivedStartData(
+                    sid=session.sid,
+                    chat_id=session.chat_id,
+                    run_id=session.run_id,
+                    profile_id=profile_id_str or "",
+                    item_id=item_id,
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -185,17 +191,19 @@ async def audio_speech_delta_impl(
     if not item_id:
         return
 
-    await emit([
-        internal_event(
-            "attempt_user_received_progress",
-            AttemptUserReceivedProgressData(
-                sid=session.sid,
-                chat_id=session.chat_id,
-                item_id=item_id,
-                transcript=data.get("transcript", ""),
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "attempt_user_received_progress",
+                AttemptUserReceivedProgressData(
+                    sid=session.sid,
+                    chat_id=session.chat_id,
+                    item_id=item_id,
+                    transcript=data.get("transcript", ""),
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -215,17 +223,19 @@ async def audio_error_impl(
     session = get_session_by_group_id(group_id)
     if not session:
         return
-    await emit([
-        internal_event(
-            "attempt_error",
-            AttemptErrorData(
-                sid=session.sid,
-                error_type="audio",
-                message=data.get("error_message", "Unknown audio error"),
-                chat_id=session.chat_id,
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "attempt_error",
+                AttemptErrorData(
+                    sid=session.sid,
+                    error_type="audio",
+                    message=data.get("error_message", "Unknown audio error"),
+                    chat_id=session.chat_id,
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -247,30 +257,34 @@ async def attempt_next_impl(
         return
 
     try:
-        await emit([
-            internal_event(
-                "attempt_proceed",
-                AttemptProceedData(
-                    sid=sid,
-                    attempt_id=attempt_id,
-                    group_id=group_id,
-                    draft_id=draft_id,
-                    force_proceed=True,
-                ).model_dump(mode="json"),
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "attempt_proceed",
+                    AttemptProceedData(
+                        sid=sid,
+                        attempt_id=attempt_id,
+                        group_id=group_id,
+                        draft_id=draft_id,
+                        force_proceed=True,
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
     except Exception as e:
         logger.exception(f"Error in attempt_next: {e}")
-        await emit([
-            internal_event(
-                "attempt_error",
-                AttemptErrorData(
-                    sid=sid,
-                    error_type="next",
-                    message=f"Failed to continue attempt: {e}",
-                ).model_dump(mode="json"),
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "attempt_error",
+                    AttemptErrorData(
+                        sid=sid,
+                        error_type="next",
+                        message=f"Failed to continue attempt: {e}",
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -308,21 +322,23 @@ async def user_start_impl(
             uuid.UUID(chat_id),
         )
 
-        await emit([
-            internal_event(
-                "attempt_user_start",
-                AttemptUserStartData(
-                    sid=sid,
-                    chat_id=chat_id,
-                    message_id=str(result.id),
-                    created_at=result.created_at.isoformat()
-                    if result.created_at
-                    else "",
-                    item_id=data.get("item_id"),
-                    rooms=data.get("rooms"),
-                ).model_dump(mode="json"),
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "attempt_user_start",
+                    AttemptUserStartData(
+                        sid=sid,
+                        chat_id=chat_id,
+                        message_id=str(result.id),
+                        created_at=result.created_at.isoformat()
+                        if result.created_at
+                        else "",
+                        item_id=data.get("item_id"),
+                        rooms=data.get("rooms"),
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
 
     except Exception as e:
         logger.exception(f"Error in user_received_start: {e}")
@@ -351,17 +367,19 @@ async def audio_stop_impl(
     if session:
         await cleanup_audio_session(session)
 
-    await emit([
-        internal_event(
-            "attempt_audio_ended",
-            AttemptAudioEndedData(
-                sid=sid,
-                chat_id=chat_id,
-                success=True,
-                message="Voice session stopped",
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "attempt_audio_ended",
+                AttemptAudioEndedData(
+                    sid=sid,
+                    chat_id=chat_id,
+                    success=True,
+                    message="Voice session stopped",
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -387,28 +405,30 @@ async def audio_response_cancelled_impl(
 
     logger.info(f"Response cancelled (barge-in) - group_id={group_id}")
 
-    await emit([
-        internal_event(
-            "attempt_stopped",
-            AttemptStoppedData(
-                sid=sid,
-                rooms=[sid, f"attempt_{chat_id}"],
-                chat_id=chat_id,
-                success=True,
-                message=None,
-            ).model_dump(mode="json"),
-        ),
-        internal_event(
-            "generate",
-            {
-                "sid": sid,
-                "artifact_types": data.get("artifact_types")
-                or [{"name": data.get("artifact_type", ""), "operation": "get"}],
-                "group_id": group_id,
-                "metadata": data.get("metadata", {}),
-            },
-        ),
-    ])
+    await emit(
+        [
+            internal_event(
+                "attempt_stopped",
+                AttemptStoppedData(
+                    sid=sid,
+                    rooms=[sid, f"attempt_{chat_id}"],
+                    chat_id=chat_id,
+                    success=True,
+                    message=None,
+                ).model_dump(mode="json"),
+            ),
+            internal_event(
+                "generate",
+                {
+                    "sid": sid,
+                    "artifact_types": data.get("artifact_types")
+                    or [{"name": data.get("artifact_type", ""), "operation": "get"}],
+                    "group_id": group_id,
+                    "metadata": data.get("metadata", {}),
+                },
+            ),
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -455,14 +475,11 @@ async def user_complete_impl(
 
         # Filter: user messages that are not completed, most recent first
         open_user_messages = [
-            m for m in messages
-            if m.type == "user" and not m.completed
+            m for m in messages if m.type == "user" and not m.completed
         ]
 
         if not open_user_messages:
-            logger.warning(
-                f"No open user message found for chat={chat_id}"
-            )
+            logger.warning(f"No open user message found for chat={chat_id}")
             return
 
         message = open_user_messages[0]
@@ -491,20 +508,22 @@ async def user_complete_impl(
             call_id=uuid.UUID("00000000-0000-0000-0000-000000000000"),
         )
 
-        await emit([
-            internal_event(
-                "attempt_user_complete",
-                AttemptUserCompleteData(
-                    sid=sid,
-                    chat_id=chat_id,
-                    message_id=str(message_id),
-                    content=content,
-                    created_at=created_at.isoformat() if created_at else "",
-                    item_id=data.get("item_id"),
-                    rooms=data.get("rooms"),
-                ).model_dump(mode="json"),
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "attempt_user_complete",
+                    AttemptUserCompleteData(
+                        sid=sid,
+                        chat_id=chat_id,
+                        message_id=str(message_id),
+                        content=content,
+                        created_at=created_at.isoformat() if created_at else "",
+                        item_id=data.get("item_id"),
+                        rooms=data.get("rooms"),
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
 
     except Exception as e:
         logger.exception(f"Error in user_received_complete: {e}")
@@ -562,19 +581,21 @@ async def speech_complete_impl(
         except Exception as e:
             logger.exception(f"Failed to save user speech audio: {e}")
 
-    await emit([
-        internal_event(
-            "attempt_user_received_complete",
-            AttemptUserReceivedCompleteData(
-                sid=session.sid,
-                chat_id=session.chat_id,
-                run_id=session.run_id,
-                content=transcript.strip(),
-                item_id=data.get("item_id"),
-                audio_upload_id=audio_upload_id,
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "attempt_user_received_complete",
+                AttemptUserReceivedCompleteData(
+                    sid=session.sid,
+                    chat_id=session.chat_id,
+                    run_id=session.run_id,
+                    content=transcript.strip(),
+                    item_id=data.get("item_id"),
+                    audio_upload_id=audio_upload_id,
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -633,9 +654,7 @@ async def attempt_start_impl(
         )
         profiles_resource_id = identity.profiles_id if identity else None
         if not profiles_resource_id:
-            raise ValueError(
-                f"Profile resource not found for profile_id {profile_id}"
-            )
+            raise ValueError(f"Profile resource not found for profile_id {profile_id}")
 
         # 2. Get parent entry data (persona_ids, simulation_ids)
         parent_id = payload.practice_id if is_practice else payload.home_id
@@ -755,30 +774,34 @@ async def attempt_start_impl(
         await refresh_attempt_chat(conn)
 
         # 9. Delegate to attempt_proceed
-        await emit([
-            internal_event(
-                "attempt_proceed",
-                AttemptProceedData(
-                    sid=sid,
-                    attempt_id=str(attempt_id),
-                    group_id=str(payload.group_id),
-                    force_proceed=False,
-                ).model_dump(mode="json"),
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "attempt_proceed",
+                    AttemptProceedData(
+                        sid=sid,
+                        attempt_id=str(attempt_id),
+                        group_id=str(payload.group_id),
+                        force_proceed=False,
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
 
     except Exception as e:
         logger.exception(f"Error in attempt_start: {e}")
-        await emit([
-            internal_event(
-                "attempt_error",
-                AttemptErrorData(
-                    sid=sid,
-                    error_type="start",
-                    message=f"Failed to start attempt: {e}",
-                ).model_dump(mode="json"),
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "attempt_error",
+                    AttemptErrorData(
+                        sid=sid,
+                        error_type="start",
+                        message=f"Failed to start attempt: {e}",
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -826,29 +849,31 @@ async def emit_chat_generate_impl(
     )
     run_id = run_result.id
 
-    await emit([
-        internal_event(
-            "generate",
-            GenerateRequestData(
-                sid=sid,
-                profile_id=str(profile_id),
-                artifact_types=[{"name": "chat", "operation": "get"}],
-                artifact_id=str(chat_entry_id),
-                draft_id=str(draft_id) if draft_id else None,
-                resource_types=resolved_resource_types,
-                user_instructions=user_instructions,
-                save=save,
-                run_id=str(run_id),
-                group_id=str(group_id),
-                metadata={
-                    "attempt_id": str(attempt_id),
-                    "attempt_chat_id": str(attempt_chat_id)
-                    if attempt_chat_id
-                    else None,
-                },
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "generate",
+                GenerateRequestData(
+                    sid=sid,
+                    profile_id=str(profile_id),
+                    artifact_types=[{"name": "chat", "operation": "get"}],
+                    artifact_id=str(chat_entry_id),
+                    draft_id=str(draft_id) if draft_id else None,
+                    resource_types=resolved_resource_types,
+                    user_instructions=user_instructions,
+                    save=save,
+                    run_id=str(run_id),
+                    group_id=str(group_id),
+                    metadata={
+                        "attempt_id": str(attempt_id),
+                        "attempt_chat_id": str(attempt_chat_id)
+                        if attempt_chat_id
+                        else None,
+                    },
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -991,18 +1016,20 @@ async def attempt_proceed_impl(
             await refresh_attempt(conn)
             await refresh_attempt_chat(conn)
 
-            await emit([
-                internal_event(
-                    "attempt_ended",
-                    AttemptEndedData(
-                        sid=sid,
-                        attempt_id=str(attempt_id),
-                        success=True,
-                        all_scenarios_complete=True,
-                        message="All scenarios completed",
-                    ).model_dump(mode="json"),
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "attempt_ended",
+                        AttemptEndedData(
+                            sid=sid,
+                            attempt_id=str(attempt_id),
+                            success=True,
+                            all_scenarios_complete=True,
+                            message="All scenarios completed",
+                        ).model_dump(mode="json"),
+                    )
+                ]
+            )
             return
 
         # ---- Context Resolution ----
@@ -1089,18 +1116,20 @@ async def attempt_proceed_impl(
 
         # Step 4: Check if all chats are done
         if not remaining or completed_count >= num_chats:
-            await emit([
-                internal_event(
-                    "attempt_ended",
-                    AttemptEndedData(
-                        sid=sid,
-                        attempt_id=str(attempt_id),
-                        success=True,
-                        all_scenarios_complete=True,
-                        message="All scenarios completed",
-                    ).model_dump(mode="json"),
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "attempt_ended",
+                        AttemptEndedData(
+                            sid=sid,
+                            attempt_id=str(attempt_id),
+                            success=True,
+                            all_scenarios_complete=True,
+                            message="All scenarios completed",
+                        ).model_dump(mode="json"),
+                    )
+                ]
+            )
             return
 
         # Next chat to resolve
@@ -1114,16 +1143,18 @@ async def attempt_proceed_impl(
         elif attempt_department_id:
             department_id = uuid.UUID(str(attempt_department_id))
         else:
-            await emit([
-                internal_event(
-                    "attempt_error",
-                    AttemptErrorData(
-                        sid=sid,
-                        error_type="proceed",
-                        message="No department could be resolved for this chat",
-                    ).model_dump(mode="json"),
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "attempt_error",
+                        AttemptErrorData(
+                            sid=sid,
+                            error_type="proceed",
+                            message="No department could be resolved for this chat",
+                        ).model_dump(mode="json"),
+                    )
+                ]
+            )
             return
 
         # Step 6: Determine generation needs and user choices
@@ -1140,16 +1171,18 @@ async def attempt_proceed_impl(
         # Step 7: Branch on state
         if has_user_choice and not force_proceed:
             # Path 4: Show lobby — user needs to choose
-            await emit([
-                internal_event(
-                    "attempt_started",
-                    AttemptStartedData(
-                        sid=sid,
-                        attempt_id=str(attempt_id),
-                        chat_entry_id=str(chat_entry_id),
-                    ).model_dump(mode="json"),
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "attempt_started",
+                        AttemptStartedData(
+                            sid=sid,
+                            attempt_id=str(attempt_id),
+                            chat_entry_id=str(chat_entry_id),
+                        ).model_dump(mode="json"),
+                    )
+                ]
+            )
             return
 
         # ---- Write Phase ----
@@ -1249,9 +1282,7 @@ async def attempt_proceed_impl(
                 copy_paste_allowed=request_dict.get("copy_paste_allowed", True),
                 show_images=request_dict.get("show_images", True),
                 show_objectives=request_dict.get("show_objectives", True),
-                show_problem_statement=request_dict.get(
-                    "show_problem_statement", True
-                ),
+                show_problem_statement=request_dict.get("show_problem_statement", True),
                 analyses_enabled=request_dict.get("analyses_enabled", True),
                 improvements_enabled=request_dict.get("improvements_enabled", True),
                 replacements_enabled=request_dict.get("replacements_enabled", True),
@@ -1308,26 +1339,30 @@ async def attempt_proceed_impl(
             await refresh_attempt(conn)
             await refresh_attempt_chat(conn)
 
-            await emit([
-                internal_event(
-                    "attempt_chat_started",
-                    AttemptChatStartedData(
-                        sid=sid,
-                        attempt_id=str(attempt_id),
-                        chat_id=str(attempt_chat_id),
-                    ).model_dump(mode="json"),
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "attempt_chat_started",
+                        AttemptChatStartedData(
+                            sid=sid,
+                            attempt_id=str(attempt_id),
+                            chat_id=str(attempt_chat_id),
+                        ).model_dump(mode="json"),
+                    )
+                ]
+            )
 
     except Exception as e:
         logger.exception(f"Error in attempt_proceed: {e}")
-        await emit([
-            internal_event(
-                "attempt_error",
-                AttemptErrorData(
-                    sid=sid,
-                    error_type="proceed",
-                    message=f"Failed to proceed: {e}",
-                ).model_dump(mode="json"),
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "attempt_error",
+                    AttemptErrorData(
+                        sid=sid,
+                        error_type="proceed",
+                        message=f"Failed to proceed: {e}",
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )

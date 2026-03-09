@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 import Personas from "@/components/artifacts/persona/Personas";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -175,26 +176,34 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
   ]);
 
   return (
-    <div className="space-y-6" data-page="personas-index">
-      <Personas
-        listData={listData}
-        initialColumnVisibility={initialColumnVisibility}
-        duplicatePersonaAction={duplicatePersona}
-        deletePersonaAction={deletePersona}
-        savePersonaAction={savePersona}
-        searchColorsAction={searchColors}
-        searchIconsAction={searchIcons}
-        searchVoicesAction={searchVoices}
-        parseCsvAction={parseCsv}
-        importFields={listData.import_fields ?? undefined}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        totalCount={listData.total_count ?? 0}
-        scenarioSearch={q.scenarioSearch ?? ""}
-        fieldSearch={q.fieldSearch ?? ""}
-        departmentSearch={q.departmentSearch ?? ""}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Training", section: "training", url: "/training" },
+          { title: "Personas" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="personas-index">
+        <Personas
+          listData={listData}
+          initialColumnVisibility={initialColumnVisibility}
+          duplicatePersonaAction={duplicatePersona}
+          deletePersonaAction={deletePersona}
+          savePersonaAction={savePersona}
+          searchColorsAction={searchColors}
+          searchIconsAction={searchIcons}
+          searchVoicesAction={searchVoices}
+          parseCsvAction={parseCsv}
+          importFields={listData.import_fields ?? undefined}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          totalCount={listData.total_count ?? 0}
+          scenarioSearch={q.scenarioSearch ?? ""}
+          fieldSearch={q.fieldSearch ?? ""}
+          departmentSearch={q.departmentSearch ?? ""}
+        />
+      </div>
+    </>
   );
 }
 

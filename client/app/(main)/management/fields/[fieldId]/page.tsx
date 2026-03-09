@@ -6,6 +6,8 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Field from "@/components/artifacts/field/Field";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
@@ -171,20 +173,35 @@ export default async function FieldEditPage({
           q.conditionalParameterShowSelected ?? null,
       } as GetFieldIn["body"],
     };
-    const fieldData = await getField(input);
+    const [fieldData, docs] = await Promise.all([
+      getField(input),
+      getDocs({ body: { entity_id: fieldId } }),
+    ]);
+
+    const entityName = docs.detail.title;
 
     return (
-      <div className="space-y-6" data-page="field-edit" data-field-id={fieldId}>
-        <Field
-          key={q.draftId || "no-draft"} // Force remount when draftId changes
-          fieldId={fieldId}
-          fieldData={fieldData}
-          saveFieldAction={saveField}
-          patchFieldDraftAction={patchFieldDraft}
-          createNamesAction={createNames}
-          createDescriptionsAction={createDescriptions}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Management", section: "management", url: "/management" },
+            { title: "Fields", section: "fields", url: "/management/fields" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="field" />}
         />
-      </div>
+        <div className="space-y-6 px-4" data-page="field-edit" data-field-id={fieldId}>
+          <Field
+            key={q.draftId || "no-draft"} // Force remount when draftId changes
+            fieldId={fieldId}
+            fieldData={fieldData}
+            saveFieldAction={saveField}
+            patchFieldDraftAction={patchFieldDraft}
+            createNamesAction={createNames}
+            createDescriptionsAction={createDescriptions}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

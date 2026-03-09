@@ -6,6 +6,8 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Persona from "@/components/artifacts/persona/Persona";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
@@ -133,21 +135,36 @@ export default async function PersonaEditPage({
         parameter_ids: q.parameterIds ?? null,
       } as GetPersonaIn["body"],
     };
-    const personaDetail = await getPersona(input);
+    const [personaDetail, docs] = await Promise.all([
+      getPersona(input),
+      getDocs({ body: { entity_id: personaId } }),
+    ]);
+
+    const entityName = docs.detail.title;
 
     return (
-      <div
-        className="space-y-6"
-        data-page="persona-edit"
-        data-persona-id={personaId}
-      >
-        <Persona
-          personaId={personaId}
-          personaData={personaDetail}
-          updatePersonaAction={updatePersona}
-          patchPersonaDraftAction={patchPersonaDraft}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Training", section: "training", url: "/training" },
+            { title: "Personas", section: "personas", url: "/training/personas" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="persona" />}
         />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="persona-edit"
+          data-persona-id={personaId}
+        >
+          <Persona
+            personaId={personaId}
+            personaData={personaDetail}
+            updatePersonaAction={updatePersona}
+            patchPersonaDraftAction={patchPersonaDraft}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

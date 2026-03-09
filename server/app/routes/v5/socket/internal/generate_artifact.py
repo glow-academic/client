@@ -14,13 +14,12 @@ from app.infra.websocket.generation_types import (
     GenerateArtifactPayload,
     GenerateErrorApiRequest,
 )
-from app.infra.websocket.socket_event import make_emit
 
 # Re-exported from infra — canonical location is app.infra.websocket.generation_types
 from app.infra.websocket.generation_types import (
-    GenerateArtifactPayload as GenerateArtifactPayload,
     ModelConfig as ModelConfig,
 )
+from app.infra.websocket.socket_event import make_emit
 
 internal_sio = get_internal_sio()
 

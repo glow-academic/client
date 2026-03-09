@@ -31,8 +31,12 @@ async def archive_test_artifacts(
         # Create group → run → call chain, then archive each test
         session_id = http_request.state.session_id
         group_result = await create_group(conn, session_id=session_id)
-        run_result = await create_run(conn, group_id=group_result.id, session_id=session_id)
-        call_result = await create_call(conn, run_id=run_result.id, session_id=session_id)
+        run_result = await create_run(
+            conn, group_id=group_result.id, session_id=session_id
+        )
+        call_result = await create_call(
+            conn, run_id=run_result.id, session_id=session_id
+        )
 
         updated_count = 0
         for test_id in request.test_ids:

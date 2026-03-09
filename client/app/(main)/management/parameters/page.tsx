@@ -5,6 +5,7 @@
  * 07/21/2025
  */
 import Parameters from "@/components/artifacts/parameter/Parameters";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -76,13 +77,21 @@ export default async function ContextPage() {
   const listData = await getParametersList();
 
   return (
-    <div className="space-y-6" data-page="parameters-index">
-      <Parameters
-        listData={listData}
-        duplicateParameterAction={duplicateParameter}
-        deleteParameterAction={deleteParameter}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Management", section: "management", url: "/management" },
+          { title: "Parameters" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="parameters-index">
+        <Parameters
+          listData={listData}
+          duplicateParameterAction={duplicateParameter}
+          deleteParameterAction={deleteParameter}
+        />
+      </div>
+    </>
   );
 }
 

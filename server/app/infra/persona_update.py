@@ -131,10 +131,14 @@ async def update_persona_client(
                     conn,
                     item.persona_id,
                     name_id=item.name_id if item.name_id else _UNSET,
-                    description_id=item.description_id if item.description_id else _UNSET,
+                    description_id=item.description_id
+                    if item.description_id
+                    else _UNSET,
                     color_id=item.color_id if item.color_id else _UNSET,
                     icon_id=item.icon_id if item.icon_id else _UNSET,
-                    instruction_id=item.instructions_id if item.instructions_id else _UNSET,
+                    instruction_id=item.instructions_id
+                    if item.instructions_id
+                    else _UNSET,
                     department_ids=item.department_ids,
                     example_ids=item.example_ids,
                     flag_ids=[item.active_flag_id] if item.active_flag_id else None,

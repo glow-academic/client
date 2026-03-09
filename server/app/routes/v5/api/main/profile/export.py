@@ -1,12 +1,9 @@
 """Profile export endpoint — composable infra architecture."""
 
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel
-from redis.asyncio import Redis
 
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_export import export_profile_client

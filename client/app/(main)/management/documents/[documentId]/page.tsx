@@ -6,6 +6,8 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Document from "@/components/artifacts/document/Document";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
@@ -167,28 +169,43 @@ export default async function DocumentEditPage({
 
   // Fetch document detail (always fresh - source of truth) with draft_id
   try {
-    const documentDetail = await getDocument(documentId, q.draftId ?? null, groupId);
+    const [documentDetail, docs] = await Promise.all([
+      getDocument(documentId, q.draftId ?? null, groupId),
+      getDocs({ body: { entity_id: documentId } }),
+    ]);
+
+    const entityName = docs.detail.title;
 
     return (
-      <div
-        className="space-y-6"
-        data-page="document-edit"
-        data-document-id={documentId}
-      >
-        <Document
-          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-          documentId={documentId}
-          mode="edit"
-          documentDetail={documentDetail}
-          saveDocumentAction={saveDocument}
-          patchDocumentDraftAction={patchDocumentDraft}
-          createNamesAction={createDraftNames}
-          createDescriptionsAction={createDraftDescriptions}
-          createUploadsAction={createDraftUploads}
-          createImagesAction={createDraftImages}
-          createTextsAction={createDraftTexts}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Management", section: "management", url: "/management" },
+            { title: "Documents", section: "documents", url: "/management/documents" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="document" />}
         />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="document-edit"
+          data-document-id={documentId}
+        >
+          <Document
+            key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+            documentId={documentId}
+            mode="edit"
+            documentDetail={documentDetail}
+            saveDocumentAction={saveDocument}
+            patchDocumentDraftAction={patchDocumentDraft}
+            createNamesAction={createDraftNames}
+            createDescriptionsAction={createDraftDescriptions}
+            createUploadsAction={createDraftUploads}
+            createImagesAction={createDraftImages}
+            createTextsAction={createDraftTexts}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

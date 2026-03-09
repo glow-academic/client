@@ -8,6 +8,7 @@
 import Invocation, {
   type InvocationData,
 } from "@/components/artifacts/invocation/Invocation";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -89,10 +90,19 @@ export default async function InvocationPage({
   const bundleData = await getBenchmarkBundle(invocationId, draftId);
 
   return (
-    <Invocation
-      bundleData={bundleData as InvocationData}
-      testId={testId ?? ""}
-      patchBenchmarkDraftAction={patchBenchmarkDraft}
-    />
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Invocation" },
+        ]}
+      />
+      <div className="px-4">
+        <Invocation
+          bundleData={bundleData as InvocationData}
+          testId={testId ?? ""}
+          patchBenchmarkDraftAction={patchBenchmarkDraft}
+        />
+      </div>
+    </>
   );
 }

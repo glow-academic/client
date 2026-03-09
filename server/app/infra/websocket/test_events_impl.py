@@ -12,7 +12,6 @@ from redis.asyncio import Redis
 
 from app.infra.websocket.socket_event import EmitFn, client_event, internal_event
 
-
 # ---------------------------------------------------------------------------
 # test_progress_update → test_grade_start
 # ---------------------------------------------------------------------------
@@ -34,20 +33,22 @@ async def test_progress_impl(
     invocation_id_str = str(invocation_id)
     rooms = [sid, f"test_{invocation_id_str}"] if sid else []
 
-    await emit([
-        internal_event(
-            "test_grade_start",
-            TestProgressData(
-                sid=sid,
-                rooms=rooms,
-                invocation_id=invocation_id_str,
-                run_id=data.get("run_id"),
-                current_run=data.get("current_run"),
-                total_runs=data.get("total_runs"),
-                message=data.get("message"),
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "test_grade_start",
+                TestProgressData(
+                    sid=sid,
+                    rooms=rooms,
+                    invocation_id=invocation_id_str,
+                    run_id=data.get("run_id"),
+                    current_run=data.get("current_run"),
+                    total_runs=data.get("total_runs"),
+                    message=data.get("message"),
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -74,24 +75,26 @@ async def test_run_done_impl(
     sid = data.get("sid")
     rooms = [sid, f"test_{invocation_id_str}"] if sid else []
 
-    await emit([
-        internal_event(
-            "test_run_complete",
-            TestRunCompleteData(
-                sid=sid,
-                rooms=rooms,
-                invocation_id=invocation_id_str,
-                run_id=str(data.get("run_id")) if data.get("run_id") else None,
-                original_run_resource_id=str(data.get("original_run_resource_id"))
-                if data.get("original_run_resource_id")
-                else None,
-                tool_calls=data.get("tool_calls"),
-                current_run=current_run,
-                total_runs=total_runs,
-                remaining_runs=remaining_runs,
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "test_run_complete",
+                TestRunCompleteData(
+                    sid=sid,
+                    rooms=rooms,
+                    invocation_id=invocation_id_str,
+                    run_id=str(data.get("run_id")) if data.get("run_id") else None,
+                    original_run_resource_id=str(data.get("original_run_resource_id"))
+                    if data.get("original_run_resource_id")
+                    else None,
+                    tool_calls=data.get("tool_calls"),
+                    current_run=current_run,
+                    total_runs=total_runs,
+                    remaining_runs=remaining_runs,
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -117,19 +120,21 @@ async def test_error_impl(
         else ([sid] if sid else [])
     )
 
-    await emit([
-        internal_event(
-            "test_error",
-            TestErrorData(
-                sid=sid,
-                rooms=rooms,
-                invocation_id=invocation_id_str,
-                run_id=str(data.get("run_id")) if data.get("run_id") else None,
-                message=message,
-                error_type=data.get("error_type"),
-            ).model_dump(mode="json"),
-        )
-    ])
+    await emit(
+        [
+            internal_event(
+                "test_error",
+                TestErrorData(
+                    sid=sid,
+                    rooms=rooms,
+                    invocation_id=invocation_id_str,
+                    run_id=str(data.get("run_id")) if data.get("run_id") else None,
+                    message=message,
+                    error_type=data.get("error_type"),
+                ).model_dump(mode="json"),
+            )
+        ]
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -160,13 +165,18 @@ async def test_next_impl(
         test_id = uuid.UUID(str(data["test_id"]))
     except (KeyError, ValueError) as e:
         logger.exception(f"Invalid test_next data: {e}")
-        await emit([
-            client_event(
-                "test_error",
-                {"message": f"Failed to find next run: {e}", "error_type": "internal"},
-                room=sid,
-            )
-        ])
+        await emit(
+            [
+                client_event(
+                    "test_error",
+                    {
+                        "message": f"Failed to find next run: {e}",
+                        "error_type": "internal",
+                    },
+                    room=sid,
+                )
+            ]
+        )
         return
 
     try:
@@ -177,60 +187,71 @@ async def test_next_impl(
         )
     except Exception as e:
         logger.exception(f"Error in test_next: {e}")
-        await emit([
-            client_event(
-                "test_error",
-                {"message": f"Failed to find next run: {e}", "error_type": "internal"},
-                room=sid,
-            )
-        ])
+        await emit(
+            [
+                client_event(
+                    "test_error",
+                    {
+                        "message": f"Failed to find next run: {e}",
+                        "error_type": "internal",
+                    },
+                    room=sid,
+                )
+            ]
+        )
         return
 
     if not result.invocations:
         logger.warning(f"No invocations found for test {test_id}")
-        await emit([
-            client_event(
-                "test_all_complete",
-                TestAllCompleteEvent(
-                    invocation_id="",
-                    total_runs=0,
-                    success=True,
-                ).model_dump(mode="json"),
-                room=sid,
-            )
-        ])
+        await emit(
+            [
+                client_event(
+                    "test_all_complete",
+                    TestAllCompleteEvent(
+                        invocation_id="",
+                        total_runs=0,
+                        success=True,
+                    ).model_dump(mode="json"),
+                    room=sid,
+                )
+            ]
+        )
         return
 
     # Find first incomplete invocation
     for invocation in result.invocations:
         if not invocation.invocation_completed:
             # Found a pending invocation — emit test_run internally
-            await emit([
-                internal_event(
-                    "test_run",
-                    {
-                        "sid": sid,
-                        "invocation_id": str(invocation.invocation_id),
-                        "test_id": str(test_id),
-                    },
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "test_run",
+                        {
+                            "sid": sid,
+                            "invocation_id": str(invocation.invocation_id),
+                            "test_id": str(test_id),
+                        },
+                    )
+                ]
+            )
             return
 
     # All invocations complete — emit test_all_complete
     last_invocation = result.invocations[-1]
     total = len(result.invocations)
-    await emit([
-        client_event(
-            "test_all_complete",
-            TestAllCompleteEvent(
-                invocation_id=str(last_invocation.invocation_id),
-                total_runs=total,
-                success=True,
-            ).model_dump(mode="json"),
-            room=sid,
-        )
-    ])
+    await emit(
+        [
+            client_event(
+                "test_all_complete",
+                TestAllCompleteEvent(
+                    invocation_id=str(last_invocation.invocation_id),
+                    total_runs=total,
+                    success=True,
+                ).model_dump(mode="json"),
+                room=sid,
+            )
+        ]
+    )
     logger.info(f"All test runs complete - test_id={test_id}")
 
 
@@ -318,22 +339,28 @@ async def test_grade_complete_impl(
         # in the prepare step; score/passed need to be set after grading.
 
         invocation_id_str = str(invocation_id) if invocation_id else ""
-        rooms = [data.get("sid"), f"test_{invocation_id_str}"] if invocation_id_str else [data.get("sid")]
+        rooms = (
+            [data.get("sid"), f"test_{invocation_id_str}"]
+            if invocation_id_str
+            else [data.get("sid")]
+        )
 
-        await emit([
-            internal_event(
-                "test_grade_progress",
-                TestGradedData(
-                    sid=data.get("sid"),
-                    rooms=[r for r in rooms if r],
-                    invocation_id=invocation_id_str,
-                    grade_id=str(grade_id) if grade_id else None,
-                    score=score,
-                    passed=passed,
-                    feedback=feedback,
-                ).model_dump(mode="json"),
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "test_grade_progress",
+                    TestGradedData(
+                        sid=data.get("sid"),
+                        rooms=[r for r in rooms if r],
+                        invocation_id=invocation_id_str,
+                        grade_id=str(grade_id) if grade_id else None,
+                        score=score,
+                        passed=passed,
+                        feedback=feedback,
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
 
         logger.info(
             f"Test grading complete - invocation_id={invocation_id}, "
@@ -412,32 +439,36 @@ async def test_group_impl(
         next_run_id = _find_next_run_id(runs, prev_run_id)
 
         if not next_run_id:
-            await emit([
+            await emit(
+                [
+                    internal_event(
+                        "test_group_complete",
+                        {
+                            "sid": sid,
+                            "test_id": str(test_id),
+                            "test_invocation_id": str(test_invocation_id),
+                            "group_id": str(group_id),
+                        },
+                    )
+                ]
+            )
+            return
+
+        await emit(
+            [
                 internal_event(
-                    "test_group_complete",
+                    "test_run",
                     {
                         "sid": sid,
+                        "profile_id": profile_id_str,
                         "test_id": str(test_id),
                         "test_invocation_id": str(test_invocation_id),
+                        "run_id": str(next_run_id),
                         "group_id": str(group_id),
                     },
                 )
-            ])
-            return
-
-        await emit([
-            internal_event(
-                "test_run",
-                {
-                    "sid": sid,
-                    "profile_id": profile_id_str,
-                    "test_id": str(test_id),
-                    "test_invocation_id": str(test_invocation_id),
-                    "run_id": str(next_run_id),
-                    "group_id": str(group_id),
-                },
-            )
-        ])
+            ]
+        )
 
         logger.info(
             f"Test group run - group_id={group_id}, "
@@ -446,16 +477,18 @@ async def test_group_impl(
 
     except Exception as e:
         logger.exception(f"Error in test_group: {e}")
-        await emit([
-            internal_event(
-                "test_error",
-                TestErrorData(
-                    sid=sid,
-                    message=f"Failed to run group: {e}",
-                    error_type="group",
-                ).model_dump(mode="json"),
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "test_error",
+                    TestErrorData(
+                        sid=sid,
+                        message=f"Failed to run group: {e}",
+                        error_type="group",
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -553,28 +586,32 @@ async def test_start_impl(
             await invalidate_tags(["test", "tests", "benchmark"], redis=redis)
 
         # Step 5: Delegate to test_proceed
-        await emit([
-            internal_event(
-                "test_proceed",
-                TestProceedData(
-                    sid=sid,
-                    test_id=str(test_id),
-                ).model_dump(mode="json"),
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "test_proceed",
+                    TestProceedData(
+                        sid=sid,
+                        test_id=str(test_id),
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
 
     except Exception as e:
         logger.exception(f"Error in test_start: {e}")
-        await emit([
-            internal_event(
-                "test_error",
-                TestErrorData(
-                    sid=sid,
-                    message=f"Failed to start test: {e}",
-                    error_type="start",
-                ).model_dump(mode="json"),
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "test_error",
+                    TestErrorData(
+                        sid=sid,
+                        message=f"Failed to start test: {e}",
+                        error_type="start",
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -669,21 +706,21 @@ async def test_proceed_impl(
                         pass
             await refresh_test_invocation(conn)
             if redis:
-                await invalidate_tags(
-                    ["test", "tests", "benchmark"], redis=redis
-                )
+                await invalidate_tags(["test", "tests", "benchmark"], redis=redis)
 
-            await emit([
-                internal_event(
-                    "test_ended",
-                    {
-                        "sid": sid,
-                        "test_id": str(test_id),
-                        "success": True,
-                        "message": "All invocations completed",
-                    },
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "test_ended",
+                        {
+                            "sid": sid,
+                            "test_id": str(test_id),
+                            "success": True,
+                            "message": "All invocations completed",
+                        },
+                    )
+                ]
+            )
             return
 
         # Step 3: Get context — search invocations, find next uncompleted
@@ -706,47 +743,53 @@ async def test_proceed_impl(
         completed_count = len(completed)
 
         if not all_invocations:
-            await emit([
-                internal_event(
-                    "test_error",
-                    TestErrorData(
-                        sid=sid,
-                        message="Failed to resolve test context",
-                        error_type="proceed",
-                    ).model_dump(mode="json"),
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "test_error",
+                        TestErrorData(
+                            sid=sid,
+                            message="Failed to resolve test context",
+                            error_type="proceed",
+                        ).model_dump(mode="json"),
+                    )
+                ]
+            )
             return
 
         # Step 4: Check if all invocations are done
         if not uncompleted or completed_count >= total_invocations:
-            await emit([
-                internal_event(
-                    "test_ended",
-                    {
-                        "sid": sid,
-                        "test_id": str(test_id),
-                        "success": True,
-                        "message": "All invocations completed",
-                    },
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "test_ended",
+                        {
+                            "sid": sid,
+                            "test_id": str(test_id),
+                            "success": True,
+                            "message": "All invocations completed",
+                        },
+                    )
+                ]
+            )
             return
 
         next_invocation = uncompleted[0]
 
         # Step 5: use_custom lobby
         if next_invocation.use_custom and not force_proceed:
-            await emit([
-                internal_event(
-                    "test_started",
-                    {
-                        "sid": sid,
-                        "test_id": str(test_id),
-                        "invocation_entry_id": str(next_invocation.invocation_id),
-                    },
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "test_started",
+                        {
+                            "sid": sid,
+                            "test_id": str(test_id),
+                            "invocation_entry_id": str(next_invocation.invocation_id),
+                        },
+                    )
+                ]
+            )
             return
 
         # Step 6: Resolve invocation — create test_invocation_entry + bridge
@@ -767,30 +810,34 @@ async def test_proceed_impl(
         if redis:
             await invalidate_tags(["test", "tests", "benchmark"], redis=redis)
 
-        await emit([
-            internal_event(
-                "test_invocation_started",
-                {
-                    "sid": sid,
-                    "test_id": str(test_id),
-                    "test_invocation_id": str(test_invocation_id),
-                    "is_dynamic": is_dynamic,
-                },
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "test_invocation_started",
+                    {
+                        "sid": sid,
+                        "test_id": str(test_id),
+                        "test_invocation_id": str(test_invocation_id),
+                        "is_dynamic": is_dynamic,
+                    },
+                )
+            ]
+        )
 
     except Exception as e:
         logger.exception(f"Error in test_proceed: {e}")
-        await emit([
-            internal_event(
-                "test_error",
-                TestErrorData(
-                    sid=sid,
-                    message=f"Failed to proceed: {e}",
-                    error_type="proceed",
-                ).model_dump(mode="json"),
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "test_error",
+                    TestErrorData(
+                        sid=sid,
+                        message=f"Failed to proceed: {e}",
+                        error_type="proceed",
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -842,17 +889,19 @@ async def test_run_impl(
         )
 
         if not invocations:
-            await emit([
-                internal_event(
-                    "test_error",
-                    TestErrorData(
-                        sid=sid,
-                        invocation_id=str(test_invocation_id),
-                        message="No group found for test invocation",
-                        error_type="run",
-                    ).model_dump(mode="json"),
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "test_error",
+                        TestErrorData(
+                            sid=sid,
+                            invocation_id=str(test_invocation_id),
+                            message="No group found for test invocation",
+                            error_type="run",
+                        ).model_dump(mode="json"),
+                    )
+                ]
+            )
             return
 
         group_id = invocations[0].group_id
@@ -883,17 +932,19 @@ async def test_run_impl(
         )
 
         if not original_messages:
-            await emit([
-                internal_event(
-                    "test_error",
-                    TestErrorData(
-                        sid=sid,
-                        invocation_id=str(test_invocation_id),
-                        message="No messages found in original run",
-                        error_type="run",
-                    ).model_dump(mode="json"),
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "test_error",
+                        TestErrorData(
+                            sid=sid,
+                            invocation_id=str(test_invocation_id),
+                            message="No messages found in original run",
+                            error_type="run",
+                        ).model_dump(mode="json"),
+                    )
+                ]
+            )
             return
 
         # Remove the last assistant message
@@ -922,46 +973,50 @@ async def test_run_impl(
         )
 
         # Step 7: Emit test_run_started
-        await emit([
-            internal_event(
-                "test_run_started",
-                {
-                    "sid": sid,
-                    "test_id": str(test_id),
-                    "test_invocation_id": str(test_invocation_id),
-                    "run_id": str(new_run_id),
-                    "original_run_id": str(original_run_id),
-                    "message_id": str(assistant_msg.id),
-                },
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "test_run_started",
+                    {
+                        "sid": sid,
+                        "test_id": str(test_id),
+                        "test_invocation_id": str(test_invocation_id),
+                        "run_id": str(new_run_id),
+                        "original_run_id": str(original_run_id),
+                        "message_id": str(assistant_msg.id),
+                    },
+                )
+            ]
+        )
 
         # Step 8: Emit generate_artifact
         # TODO: resolve message content from uploads for conversation_messages
         # TODO: resolve LLM config (model, provider, prompt, instructions, tools)
         # from the test invocation's connections
-        await emit([
-            internal_event(
-                "generate_artifact",
-                {
-                    "sid": sid,
-                    "artifact_type": "test",
-                    "resource_type": "test",
-                    "modality": "text",
-                    "run_id": str(new_run_id),
-                    "group_id": str(group_id),
-                    "chat_id": str(test_invocation_id),
-                    "messages": [],  # TODO: populate from copied message content
-                    "llm_config": {},  # TODO: resolve from invocation config
-                    "tools": [],  # TODO: resolve from invocation config
-                    "metadata": {
-                        "test_id": str(test_id),
-                        "test_invocation_id": str(test_invocation_id),
-                        "original_run_id": str(original_run_id),
+        await emit(
+            [
+                internal_event(
+                    "generate_artifact",
+                    {
+                        "sid": sid,
+                        "artifact_type": "test",
+                        "resource_type": "test",
+                        "modality": "text",
+                        "run_id": str(new_run_id),
+                        "group_id": str(group_id),
+                        "chat_id": str(test_invocation_id),
+                        "messages": [],  # TODO: populate from copied message content
+                        "llm_config": {},  # TODO: resolve from invocation config
+                        "tools": [],  # TODO: resolve from invocation config
+                        "metadata": {
+                            "test_id": str(test_id),
+                            "test_invocation_id": str(test_invocation_id),
+                            "original_run_id": str(original_run_id),
+                        },
                     },
-                },
-            )
-        ])
+                )
+            ]
+        )
 
         logger.info(
             f"Test run started - test_id={test_id}, "
@@ -971,13 +1026,15 @@ async def test_run_impl(
 
     except Exception as e:
         logger.exception(f"Error in test_run: {e}")
-        await emit([
-            internal_event(
-                "test_error",
-                TestErrorData(
-                    sid=sid,
-                    message=f"Failed to run test: {e}",
-                    error_type="run",
-                ).model_dump(mode="json"),
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "test_error",
+                    TestErrorData(
+                        sid=sid,
+                        message=f"Failed to run test: {e}",
+                        error_type="run",
+                    ).model_dump(mode="json"),
+                )
+            ]
+        )

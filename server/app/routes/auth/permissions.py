@@ -135,5 +135,3 @@ def convert_role(role: Any) -> QGetProfileContextV4RoleResource:
         icon_value=role.icon_value,
         color_hex=role.color_hex,
     )
-
-

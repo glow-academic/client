@@ -6,6 +6,8 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import type { ScenarioFlagsProps } from "@/components/resources/ScenarioFlags";
 import Simulation from "@/components/artifacts/simulation/Simulation";
 import { api } from "@/lib/api/client";
@@ -234,31 +236,46 @@ export default async function EditSimulationPage({
         filter_scenario_ids: null,
       } as GetSimulationIn["body"],
     };
-    const simulationData = await getSimulation(input);
+    const [simulationData, docs] = await Promise.all([
+      getSimulation(input),
+      getDocs({ body: { entity_id: simulationId } }),
+    ]);
+
+    const entityName = docs.detail.title;
 
     return (
-      <div
-        className="space-y-6"
-        data-page="simulation-edit"
-        data-simulation-id={simulationId}
-      >
-        <Simulation
-          simulationId={simulationId}
-          simulationData={simulationData}
-          updateSimulationAction={updateSimulation}
-          patchSimulationDraftAction={patchSimulationDraft}
-          createNamesAction={createDraftNames}
-          createDescriptionsAction={createDraftDescriptions}
-          createScenarioFlagsAction={createDraftScenarioFlags}
-          createScenarioPositionsAction={createDraftScenarioPositions}
-          createScenarioRubricsAction={
-            createDraftScenarioRubrics
-          }
-          createScenarioTimeLimitsAction={
-            createDraftScenarioTimeLimits
-          }
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Training", section: "training", url: "/training" },
+            { title: "Simulations", section: "simulations", url: "/training/simulations" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="simulation" />}
         />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="simulation-edit"
+          data-simulation-id={simulationId}
+        >
+          <Simulation
+            simulationId={simulationId}
+            simulationData={simulationData}
+            updateSimulationAction={updateSimulation}
+            patchSimulationDraftAction={patchSimulationDraft}
+            createNamesAction={createDraftNames}
+            createDescriptionsAction={createDraftDescriptions}
+            createScenarioFlagsAction={createDraftScenarioFlags}
+            createScenarioPositionsAction={createDraftScenarioPositions}
+            createScenarioRubricsAction={
+              createDraftScenarioRubrics
+            }
+            createScenarioTimeLimitsAction={
+              createDraftScenarioTimeLimits
+            }
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check for 403 (access denied) - show UnifiedAccessDenied component

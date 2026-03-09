@@ -5,8 +5,8 @@ from fastapi import APIRouter
 from app.routes.v5.api.main.pricing.docs import router as docs_router
 from app.routes.v5.api.main.pricing.export import router as export_router
 from app.routes.v5.api.main.pricing.get import router as get_router
-from app.routes.v5.api.main.pricing.search import router as search_router
 from app.routes.v5.api.main.pricing.refresh import router as refresh_router
+from app.routes.v5.api.main.pricing.search import router as search_router
 
 router = APIRouter(prefix="/pricing", tags=["pricing"])
 router.include_router(get_router)

@@ -7,6 +7,7 @@
 
 import SimulationHistory from "@/components/common/SimulationHistory";
 import Practice from "@/components/artifacts/practice/Practice";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -133,31 +134,38 @@ export default async function PracticePage({
   });
 
   return (
-    <div className="space-y-6">
-      <Practice practiceData={practiceData} isGuest={isGuest} />
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Practice", section: "practice", url: "/practice" },
+        ]}
+      />
+      <div className="space-y-6 px-4">
+        <Practice practiceData={practiceData} isGuest={isGuest} />
 
-      {/* History section — data from embedded practice/get response, only show for non-guests */}
-      {!isGuest && (
-        <div className="mt-12">
-          <SimulationHistory
-            data={dataArray}
-            totalCount={historyData.total_count || 0}
-            archivedCount={archivedCount}
-            unarchivedCount={unarchivedCount}
-            pageIndex={historyPage}
-            pageSize={historyPageSize}
-            showArchive={false}
-            singleProfile={true}
-            profileOptions={profileOptions}
-            simulationOptions={simulationOptions}
-            scenarioOptions={scenarioOptions}
-            showModeFilter={true}
-            showCustomize={true}
-            initialColumnVisibility={await readViewCookie("history")}
-          />
-        </div>
-      )}
-    </div>
+        {/* History section — data from embedded practice/get response, only show for non-guests */}
+        {!isGuest && (
+          <div className="mt-12">
+            <SimulationHistory
+              data={dataArray}
+              totalCount={historyData.total_count || 0}
+              archivedCount={archivedCount}
+              unarchivedCount={unarchivedCount}
+              pageIndex={historyPage}
+              pageSize={historyPageSize}
+              showArchive={false}
+              singleProfile={true}
+              profileOptions={profileOptions}
+              simulationOptions={simulationOptions}
+              scenarioOptions={scenarioOptions}
+              showModeFilter={true}
+              showCustomize={true}
+              initialColumnVisibility={await readViewCookie("history")}
+            />
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 

@@ -6,6 +6,8 @@
  */
 
 import Cohort from "@/components/artifacts/cohort/Cohort";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -236,31 +238,41 @@ export default async function NewCohortPage({
   const cohortData = await getCohortDefault(input);
 
   return (
-    <div
-      className="space-y-6"
-      data-page="cohort-new"
-      aria-label="Create new cohort page"
-    >
-      <Cohort
-        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        cohortData={cohortData}
-        createCohortAction={createCohort}
-        patchCohortDraftAction={patchCohortDraft}
-        createNamesAction={createDraftNames}
-        createDescriptionsAction={createDraftDescriptions}
-        createSimulationPositionsAction={createDraftSimulationPositions}
-        createProfilePersonasAction={createDraftProfilePersonas}
-        linkNamesAction={linkNames}
-        linkDescriptionsAction={linkDescriptions}
-        linkFlagsAction={linkFlags}
-        linkDepartmentsAction={linkDepartments}
-        linkSimulationsAction={linkSimulations}
-        linkSimulationPositionsAction={linkSimulationPositions}
-        linkSimulationAvailabilityAction={linkSimulationAvailability}
-        linkProfilesAction={linkProfiles}
-        linkProfilePersonasAction={linkProfilePersonas}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Training", section: "training", url: "/training" },
+          { title: "Cohorts", section: "cohorts", url: "/training/cohorts" },
+          { title: "New Cohort" },
+        ]}
+        toolbar={<SaveToolbar artifactType="cohort" />}
       />
-    </div>
+      <div
+        className="space-y-6 px-4"
+        data-page="cohort-new"
+        aria-label="Create new cohort page"
+      >
+        <Cohort
+          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+          cohortData={cohortData}
+          createCohortAction={createCohort}
+          patchCohortDraftAction={patchCohortDraft}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+          createSimulationPositionsAction={createDraftSimulationPositions}
+          createProfilePersonasAction={createDraftProfilePersonas}
+          linkNamesAction={linkNames}
+          linkDescriptionsAction={linkDescriptions}
+          linkFlagsAction={linkFlags}
+          linkDepartmentsAction={linkDepartments}
+          linkSimulationsAction={linkSimulations}
+          linkSimulationPositionsAction={linkSimulationPositions}
+          linkSimulationAvailabilityAction={linkSimulationAvailability}
+          linkProfilesAction={linkProfiles}
+          linkProfilePersonasAction={linkProfilePersonas}
+        />
+      </div>
+    </>
   );
 }
 

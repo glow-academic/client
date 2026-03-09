@@ -593,19 +593,21 @@ async def generate_artifact_impl(
                 return
 
             # Only emit group_id -- domain translators resolve chat_id from session
-            await emit([
-                internal_event(
-                    "generate_audio_session_start",
-                    {
-                        "sid": sid,
-                        "group_id": group_id,
-                        "artifact_type": data.artifact_type,
-                        "type": "start",
-                        "message": "Audio session ready",
-                        "metadata": data.metadata,
-                    },
-                )
-            ])
+            await emit(
+                [
+                    internal_event(
+                        "generate_audio_session_start",
+                        {
+                            "sid": sid,
+                            "group_id": group_id,
+                            "artifact_type": data.artifact_type,
+                            "type": "start",
+                            "message": "Audio session ready",
+                            "metadata": data.metadata,
+                        },
+                    )
+                ]
+            )
             return
 
         # Agentic loop - allows model to see tool results and retry on errors
@@ -1136,30 +1138,32 @@ async def generate_artifact_impl(
                 f"returning partial results"
             )
 
-        await emit([
-            internal_event(
-                "generate_run_complete",
-                {
-                    "modality": data.modality,
-                    "sid": sid,
-                    "artifact_type": data.artifact_type,
-                    "type": "complete",
-                    "event_type": "run_complete",
-                    "resource_type": resource_type,
-                    "run_id": data.run_id,
-                    "group_id": data.group_id,
-                    "agent_id": data.agent_id,
-                    "profile_id": data.profile_id,
-                    "profiles_id": data.profiles_id,
-                    "session_id": data.session_id,
-                    "input_text_tokens": total_input_tokens,
-                    "output_text_tokens": total_output_tokens,
-                    "assistant_output": final_assistant_output,
-                    "tool_results": all_tool_results,
-                    "metadata": data.metadata,
-                },
-            )
-        ])
+        await emit(
+            [
+                internal_event(
+                    "generate_run_complete",
+                    {
+                        "modality": data.modality,
+                        "sid": sid,
+                        "artifact_type": data.artifact_type,
+                        "type": "complete",
+                        "event_type": "run_complete",
+                        "resource_type": resource_type,
+                        "run_id": data.run_id,
+                        "group_id": data.group_id,
+                        "agent_id": data.agent_id,
+                        "profile_id": data.profile_id,
+                        "profiles_id": data.profiles_id,
+                        "session_id": data.session_id,
+                        "input_text_tokens": total_input_tokens,
+                        "output_text_tokens": total_output_tokens,
+                        "assistant_output": final_assistant_output,
+                        "tool_results": all_tool_results,
+                        "metadata": data.metadata,
+                    },
+                )
+            ]
+        )
 
     except Exception as e:
         await _emit_modality_event(

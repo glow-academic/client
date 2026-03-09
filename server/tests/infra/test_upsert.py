@@ -128,10 +128,18 @@ class TestUpsertCreatePath:
     async def test_creates_new_profile(self):
         mocks = _standard_mocks(existing_profile_ids=[])
 
-        with mocks["patches"][0], mocks["patches"][1], mocks["patches"][2], \
-             mocks["patches"][3], mocks["patches"][4], mocks["patches"][5], \
-             mocks["patches"][6], mocks["patches"][7], mocks["patches"][8], \
-             mocks["patches"][9]:
+        with (
+            mocks["patches"][0],
+            mocks["patches"][1],
+            mocks["patches"][2],
+            mocks["patches"][3],
+            mocks["patches"][4],
+            mocks["patches"][5],
+            mocks["patches"][6],
+            mocks["patches"][7],
+            mocks["patches"][8],
+            mocks["patches"][9],
+        ):
             result = await resolve_profile_upsert(
                 None,
                 AsyncMock(),
@@ -149,10 +157,18 @@ class TestUpsertCreatePath:
     async def test_passes_correct_args_to_create_profile(self):
         mocks = _standard_mocks(existing_profile_ids=[])
 
-        with mocks["patches"][0], mocks["patches"][1], mocks["patches"][2], \
-             mocks["patches"][3], mocks["patches"][4], mocks["patches"][5], \
-             mocks["patches"][6], mocks["patches"][7] as mock_create, \
-             mocks["patches"][8], mocks["patches"][9]:
+        with (
+            mocks["patches"][0],
+            mocks["patches"][1],
+            mocks["patches"][2],
+            mocks["patches"][3],
+            mocks["patches"][4],
+            mocks["patches"][5],
+            mocks["patches"][6],
+            mocks["patches"][7] as mock_create,
+            mocks["patches"][8],
+            mocks["patches"][9],
+        ):
             dept_id = uuid4()
             await resolve_profile_upsert(
                 None,
@@ -174,10 +190,18 @@ class TestUpsertCreatePath:
     async def test_creates_session_with_profiles_resource_id(self):
         mocks = _standard_mocks(existing_profile_ids=[])
 
-        with mocks["patches"][0], mocks["patches"][1], mocks["patches"][2], \
-             mocks["patches"][3], mocks["patches"][4], mocks["patches"][5], \
-             mocks["patches"][6], mocks["patches"][7], mocks["patches"][8], \
-             mocks["patches"][9] as mock_session:
+        with (
+            mocks["patches"][0],
+            mocks["patches"][1],
+            mocks["patches"][2],
+            mocks["patches"][3],
+            mocks["patches"][4],
+            mocks["patches"][5],
+            mocks["patches"][6],
+            mocks["patches"][7],
+            mocks["patches"][8],
+            mocks["patches"][9] as mock_session,
+        ):
             await resolve_profile_upsert(
                 None,
                 AsyncMock(),
@@ -201,10 +225,18 @@ class TestUpsertUpdatePath:
         existing_id = uuid4()
         mocks = _standard_mocks(existing_profile_ids=[existing_id])
 
-        with mocks["patches"][0], mocks["patches"][1], mocks["patches"][2], \
-             mocks["patches"][3], mocks["patches"][4], mocks["patches"][5], \
-             mocks["patches"][6], mocks["patches"][7], mocks["patches"][8], \
-             mocks["patches"][9]:
+        with (
+            mocks["patches"][0],
+            mocks["patches"][1],
+            mocks["patches"][2],
+            mocks["patches"][3],
+            mocks["patches"][4],
+            mocks["patches"][5],
+            mocks["patches"][6],
+            mocks["patches"][7],
+            mocks["patches"][8],
+            mocks["patches"][9],
+        ):
             result = await resolve_profile_upsert(
                 None,
                 AsyncMock(),
@@ -221,10 +253,18 @@ class TestUpsertUpdatePath:
         existing_id = uuid4()
         mocks = _standard_mocks(existing_profile_ids=[existing_id])
 
-        with mocks["patches"][0], mocks["patches"][1], mocks["patches"][2], \
-             mocks["patches"][3], mocks["patches"][4], mocks["patches"][5], \
-             mocks["patches"][6], mocks["patches"][7] as mock_create, \
-             mocks["patches"][8] as mock_update, mocks["patches"][9]:
+        with (
+            mocks["patches"][0],
+            mocks["patches"][1],
+            mocks["patches"][2],
+            mocks["patches"][3],
+            mocks["patches"][4],
+            mocks["patches"][5],
+            mocks["patches"][6],
+            mocks["patches"][7] as mock_create,
+            mocks["patches"][8] as mock_update,
+            mocks["patches"][9],
+        ):
             await resolve_profile_upsert(
                 None,
                 AsyncMock(),
@@ -252,10 +292,18 @@ class TestUpsertRoleValidation:
             requester_role="admin",
         )
 
-        with mocks["patches"][0], mocks["patches"][1], mocks["patches"][2], \
-             mocks["patches"][3], mocks["patches"][4], mocks["patches"][5], \
-             mocks["patches"][6], mocks["patches"][7], mocks["patches"][8], \
-             mocks["patches"][9]:
+        with (
+            mocks["patches"][0],
+            mocks["patches"][1],
+            mocks["patches"][2],
+            mocks["patches"][3],
+            mocks["patches"][4],
+            mocks["patches"][5],
+            mocks["patches"][6],
+            mocks["patches"][7],
+            mocks["patches"][8],
+            mocks["patches"][9],
+        ):
             with pytest.raises(ValueError, match="cannot assign role"):
                 await resolve_profile_upsert(
                     None,
@@ -269,10 +317,18 @@ class TestUpsertRoleValidation:
     async def test_no_current_profile_skips_validation(self):
         mocks = _standard_mocks(existing_profile_ids=[])
 
-        with mocks["patches"][0], mocks["patches"][1], mocks["patches"][2], \
-             mocks["patches"][3], mocks["patches"][4], mocks["patches"][5], \
-             mocks["patches"][6], mocks["patches"][7], mocks["patches"][8], \
-             mocks["patches"][9]:
+        with (
+            mocks["patches"][0],
+            mocks["patches"][1],
+            mocks["patches"][2],
+            mocks["patches"][3],
+            mocks["patches"][4],
+            mocks["patches"][5],
+            mocks["patches"][6],
+            mocks["patches"][7],
+            mocks["patches"][8],
+            mocks["patches"][9],
+        ):
             result = await resolve_profile_upsert(
                 None,
                 AsyncMock(),

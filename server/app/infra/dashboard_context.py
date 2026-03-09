@@ -101,6 +101,8 @@ class MessageStats:
 
 
 # Entry search tools
+# Settings
+from app.infra.auth.settings import resolve_thresholds
 from app.routes.v5.tools.entries.attempt.search import search_attempts
 from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 from app.routes.v5.tools.entries.attempt_chat.types import (
@@ -129,9 +131,6 @@ from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 from app.routes.v5.tools.resources.simulations.get import get_simulations
 from app.routes.v5.tools.resources.standard_groups.get import get_standard_groups
 from app.routes.v5.tools.resources.standards.get import get_standards
-
-# Settings
-from app.infra.auth.settings import resolve_thresholds
 
 
 def _to_chat_item(r: GetAttemptChatResponse) -> ChatItem:

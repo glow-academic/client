@@ -5,12 +5,9 @@ Thin route handler. Core logic lives in app.infra.provider_delete.
 
 from __future__ import annotations
 
-from typing import Annotated
+from fastapi import APIRouter, HTTPException, Request, Response
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.provider_delete import delete_provider_client
 from app.routes.v5.api.main.provider.types import (
     DeleteProviderApiRequest,
@@ -26,7 +23,6 @@ async def delete_provider(
     request: DeleteProviderApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteProviderApiResponse:
     """Bulk delete providers — composable infra architecture."""
     tags = ["providers"]
@@ -39,9 +35,10 @@ async def delete_provider(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
         result = await delete_provider_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             provider_ids=request.provider_ids,

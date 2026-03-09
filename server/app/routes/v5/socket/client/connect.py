@@ -41,9 +41,7 @@ async def _mark_profile_inactive(profile_id: str, sid: str) -> None:
         pass
 
 
-async def _mark_profile_active(
-    profile_id: str, session_id: str | None
-) -> None:
+async def _mark_profile_active(profile_id: str, session_id: str | None) -> None:
     """Mark a profile as active by creating an activity entry."""
     if not session_id:
         return
@@ -79,35 +77,70 @@ async def _store_session_id(sid: str, session_id: str) -> None:
 async def connect(
     sid: str,
     environ: dict[str, str],
-    auth: dict[str, str] | None,  # noqa: ARG001
+    auth: dict[str, str] | None,
 ) -> bool:
-    """Handle WebSocket connection with profile-based socket management."""
+    """Handle WebSocket connection with token-based auth.
+
+    Auth flow:
+      1. Client sends auth.token (Bearer JWT) and auth.apiKey (license key)
+      2. Server validates both and resolves profile_id + session_id
+      3. Falls back to query string params for backward compatibility
+      4. Guest connections use guestId query param (no auth required)
+    """
     from urllib.parse import parse_qs
 
-    query_string = environ.get("QUERY_STRING", "")
     profile_id: str | None = None
     guest_id: str | None = None
     session_id: str | None = None
 
-    try:
-        params = parse_qs(query_string)
-        profile_id = params.get("profileId", [None])[0]
-        guest_id = params.get("guestId", [None])[0]
-        session_id = params.get("sessionId", [None])[0]
-    except Exception:
-        pass
+    # Primary: resolve identity from auth token
+    if auth and auth.get("token"):
+        try:
+            from app.infra.auth.license_key import validate_license_key
+            from app.infra.auth.resolve_identity import (
+                extract_bearer_token,
+                resolve_identity,
+            )
 
-    # Validate UUIDs
-    if profile_id:
+            # Validate license key (if provided)
+            api_key = auth.get("apiKey")
+            if api_key:
+                license_info = await validate_license_key(api_key)
+                if not license_info.valid:
+                    return False
+
+            # Resolve identity from JWT
+            token = extract_bearer_token(auth["token"])
+            if token:
+                async with get_db_connection() as conn:
+                    identity = await resolve_identity(token, conn)
+                    profile_id = str(identity.profile_id)
+                    session_id = str(identity.session_id)
+        except Exception:
+            pass
+
+    # Fallback: query string params (backward compatibility)
+    if not profile_id:
+        query_string = environ.get("QUERY_STRING", "")
         try:
-            uuid.UUID(profile_id)
-        except ValueError:
-            profile_id = None
-    if guest_id:
-        try:
-            uuid.UUID(guest_id)
-        except ValueError:
-            guest_id = None
+            params = parse_qs(query_string)
+            profile_id = params.get("profileId", [None])[0]
+            guest_id = params.get("guestId", [None])[0]
+            session_id = params.get("sessionId", [None])[0]
+        except Exception:
+            pass
+
+        # Validate UUIDs
+        if profile_id:
+            try:
+                uuid.UUID(profile_id)
+            except ValueError:
+                profile_id = None
+        if guest_id:
+            try:
+                uuid.UUID(guest_id)
+            except ValueError:
+                guest_id = None
 
     if profile_id:
         # Evict old socket for this profile

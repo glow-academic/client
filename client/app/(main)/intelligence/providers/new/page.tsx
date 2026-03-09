@@ -4,6 +4,8 @@
  */
 
 import Provider from "@/components/artifacts/provider/Provider";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -149,22 +151,32 @@ export default async function NewProviderPage({
   const providerDetailDefault = await getProviderDefault(input);
 
   return (
-    <div
-      className="space-y-6"
-      data-page="provider-new"
-      aria-label="Create new provider page"
-    >
-      <Provider
-        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        providerData={providerDetailDefault}
-        saveProviderAction={saveProvider}
-        patchProviderDraftAction={patchProviderDraft}
-        createNamesAction={createNames}
-        createDescriptionsAction={createDescriptions}
-        createValuesAction={createValues}
-        createEndpointsAction={createEndpoints}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+          { title: "Providers", section: "providers", url: "/intelligence/providers" },
+          { title: "New Provider" },
+        ]}
+        toolbar={<SaveToolbar artifactType="provider" />}
       />
-    </div>
+      <div
+        className="space-y-6 px-4"
+        data-page="provider-new"
+        aria-label="Create new provider page"
+      >
+        <Provider
+          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+          providerData={providerDetailDefault}
+          saveProviderAction={saveProvider}
+          patchProviderDraftAction={patchProviderDraft}
+          createNamesAction={createNames}
+          createDescriptionsAction={createDescriptions}
+          createValuesAction={createValues}
+          createEndpointsAction={createEndpoints}
+        />
+      </div>
+    </>
   );
 }
 

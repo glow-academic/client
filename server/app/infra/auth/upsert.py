@@ -70,9 +70,7 @@ async def resolve_profile_upsert(
         if requester:
             allowed_roles = SIMULATABLE_ROLES.get(requester.role, set())
             if role not in allowed_roles:
-                raise ValueError(
-                    f"Role '{requester.role}' cannot assign role '{role}'"
-                )
+                raise ValueError(f"Role '{requester.role}' cannot assign role '{role}'")
 
     # ── Step 2: Resolve resources ───────────────────────────────────────
     # Name

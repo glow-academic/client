@@ -5,12 +5,9 @@ Thin route handler. Core logic lives in app.infra.setting_update.
 
 from __future__ import annotations
 
-from typing import Annotated
+from fastapi import APIRouter, HTTPException, Request, Response
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.setting_update import update_setting_client
 from app.routes.v5.api.main.setting.types import (
     UpdateSettingApiRequest,

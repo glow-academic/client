@@ -71,9 +71,7 @@ async def resolve_profile_facts_filters(
         if not need_cohorts or not cohort_ids:
             return []
         async with pool.acquire() as c:
-            items = await get_cohorts(
-                c, cohort_ids, redis, bypass_cache=bypass_cache
-            )
+            items = await get_cohorts(c, cohort_ids, redis, bypass_cache=bypass_cache)
             return [
                 FilterOption(value=str(c.id), label=c.name or "")
                 for c in sorted(items, key=lambda c: c.name or "")
@@ -205,15 +203,9 @@ async def resolve_benchmark_filters(
             earliest_items = await search_tests(c, sort_order="asc", limit=1)
             latest_items = await search_tests(c, sort_order="desc", limit=1)
         earliest = (
-            earliest_items[0].test_created_at.isoformat()
-            if earliest_items
-            else None
+            earliest_items[0].test_created_at.isoformat() if earliest_items else None
         )
-        latest = (
-            latest_items[0].test_created_at.isoformat()
-            if latest_items
-            else None
-        )
+        latest = latest_items[0].test_created_at.isoformat() if latest_items else None
         return earliest, latest
 
     dept_opts, (earliest, latest) = await asyncio.gather(
@@ -243,16 +235,8 @@ async def resolve_health_filters(
             search_health(c_latest, sort_order="desc", limit=1),
         )
 
-    earliest = (
-        earliest_items[0].date_hour.isoformat()
-        if earliest_items
-        else None
-    )
-    latest = (
-        latest_items[0].date_hour.isoformat()
-        if latest_items
-        else None
-    )
+    earliest = earliest_items[0].date_hour.isoformat() if earliest_items else None
+    latest = latest_items[0].date_hour.isoformat() if latest_items else None
 
     return AnalyticsFiltersResult(
         date_range_earliest=earliest,

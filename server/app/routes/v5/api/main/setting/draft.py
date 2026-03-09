@@ -5,12 +5,9 @@ Thin route handler. Core logic lives in app.infra.setting_draft.
 
 from __future__ import annotations
 
-from typing import Annotated
+from fastapi import APIRouter, HTTPException, Request, Response
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.setting_draft import patch_setting_draft_client
 from app.routes.v5.api.main.setting.types import (
     PatchSettingDraftApiRequest,
@@ -29,7 +26,6 @@ async def patch_setting_draft(
     request: PatchSettingDraftApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PatchSettingDraftApiResponse:
     """Patch setting draft — composable infra architecture."""
     tags = ["settings", "drafts"]
@@ -49,9 +45,10 @@ async def patch_setting_draft(
                 detail="Session ID is required.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
         result = await patch_setting_draft_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             session_id=session_id,

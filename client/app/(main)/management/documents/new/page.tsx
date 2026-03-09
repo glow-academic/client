@@ -6,6 +6,8 @@
  */
 
 import Document from "@/components/artifacts/document/Document";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -162,24 +164,34 @@ export default async function NewDocumentPage({
   const documentDetailDefault = await getDocumentDefault(input);
 
   return (
-    <div
-      className="space-y-6"
-      data-page="document-new"
-      aria-label="Create new document page"
-    >
-      <Document
-        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        mode="create"
-        documentDetailDefault={documentDetailDefault}
-        saveDocumentAction={saveDocument}
-        patchDocumentDraftAction={patchDocumentDraft}
-        createNamesAction={createDraftNames}
-        createDescriptionsAction={createDraftDescriptions}
-        createUploadsAction={createDraftUploads}
-        createImagesAction={createDraftImages}
-        createTextsAction={createDraftTexts}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Management", section: "management", url: "/management" },
+          { title: "Documents", section: "documents", url: "/management/documents" },
+          { title: "New Document" },
+        ]}
+        toolbar={<SaveToolbar artifactType="document" />}
       />
-    </div>
+      <div
+        className="space-y-6 px-4"
+        data-page="document-new"
+        aria-label="Create new document page"
+      >
+        <Document
+          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+          mode="create"
+          documentDetailDefault={documentDetailDefault}
+          saveDocumentAction={saveDocument}
+          patchDocumentDraftAction={patchDocumentDraft}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+          createUploadsAction={createDraftUploads}
+          createImagesAction={createDraftImages}
+          createTextsAction={createDraftTexts}
+        />
+      </div>
+    </>
   );
 }
 

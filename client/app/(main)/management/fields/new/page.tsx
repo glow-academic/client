@@ -6,6 +6,8 @@
  */
 
 import Field from "@/components/artifacts/field/Field";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -166,16 +168,26 @@ export default async function NewFieldPage({
   const fieldData = await getFieldDefault(input);
 
   return (
-    <div className="space-y-6">
-      <Field
-        key={q.draftId || "no-draft"} // Force remount when draftId changes
-        fieldData={fieldData}
-        saveFieldAction={saveField}
-        patchFieldDraftAction={patchFieldDraft}
-        createNamesAction={createNames}
-        createDescriptionsAction={createDescriptions}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Management", section: "management", url: "/management" },
+          { title: "Fields", section: "fields", url: "/management/fields" },
+          { title: "New Field" },
+        ]}
+        toolbar={<SaveToolbar artifactType="field" />}
       />
-    </div>
+      <div className="space-y-6 px-4">
+        <Field
+          key={q.draftId || "no-draft"} // Force remount when draftId changes
+          fieldData={fieldData}
+          saveFieldAction={saveField}
+          patchFieldDraftAction={patchFieldDraft}
+          createNamesAction={createNames}
+          createDescriptionsAction={createDescriptions}
+        />
+      </div>
+    </>
   );
 }
 

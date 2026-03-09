@@ -126,15 +126,31 @@ async def resolve_setting_context(
 
     async def _search_names() -> list:
         async with pool.acquire() as conn:
-            return await search_names(conn, redis, draft_id=group_id, exclude_ids=merged.name_ids, bypass_cache=bypass_cache, setting=True)
+            return await search_names(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.name_ids,
+                bypass_cache=bypass_cache,
+                setting=True,
+            )
 
     async def _get_descriptions() -> list:
         async with pool.acquire() as conn:
-            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+            return await get_descriptions(
+                conn, merged.description_ids, redis, bypass_cache
+            )
 
     async def _search_descriptions() -> list:
         async with pool.acquire() as conn:
-            return await search_descriptions(conn, redis, draft_id=group_id, exclude_ids=merged.description_ids, bypass_cache=bypass_cache, setting=True)
+            return await search_descriptions(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.description_ids,
+                bypass_cache=bypass_cache,
+                setting=True,
+            )
 
     async def _get_colors() -> list:
         async with pool.acquire() as conn:
@@ -142,7 +158,18 @@ async def resolve_setting_context(
 
     async def _search_colors() -> list:
         async with pool.acquire() as conn:
-            return await search_colors(conn, redis, search=color_search, limit_count=20, offset_count=0, draft_id=group_id, suggest_source="recent" if setting_id else "all", exclude_ids=merged.color_ids, bypass_cache=bypass_cache, setting=True)
+            return await search_colors(
+                conn,
+                redis,
+                search=color_search,
+                limit_count=20,
+                offset_count=0,
+                draft_id=group_id,
+                suggest_source="recent" if setting_id else "all",
+                exclude_ids=merged.color_ids,
+                bypass_cache=bypass_cache,
+                setting=True,
+            )
 
     async def _get_flags() -> list:
         async with pool.acquire() as conn:
@@ -150,15 +177,36 @@ async def resolve_setting_context(
 
     async def _search_flags() -> list:
         async with pool.acquire() as conn:
-            return await search_flags(conn, redis, search=None, limit_count=50, offset_count=0, exclude_ids=merged.flag_ids, bypass_cache=bypass_cache, setting=True)
+            return await search_flags(
+                conn,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=merged.flag_ids,
+                bypass_cache=bypass_cache,
+                setting=True,
+            )
 
     async def _get_departments() -> list:
         async with pool.acquire() as conn:
-            return await get_departments(conn, merged.department_ids, redis, bypass_cache)
+            return await get_departments(
+                conn, merged.department_ids, redis, bypass_cache
+            )
 
     async def _search_departments() -> list:
         async with pool.acquire() as conn:
-            return await search_departments(conn, redis, search=None, limit_count=20, offset_count=0, department_ids=user_dept_ids, suggest_source="all", exclude_ids=merged.department_ids, bypass_cache=bypass_cache)
+            return await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                suggest_source="all",
+                exclude_ids=merged.department_ids,
+                bypass_cache=bypass_cache,
+            )
 
     async def _get_profiles() -> list:
         async with pool.acquire() as conn:
@@ -166,7 +214,16 @@ async def resolve_setting_context(
 
     async def _search_profiles() -> list:
         async with pool.acquire() as conn:
-            return await search_profiles(conn, redis, search=None, limit_count=20, offset_count=0, exclude_ids=merged.profile_ids, bypass_cache=bypass_cache, setting=True)
+            return await search_profiles(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.profile_ids,
+                bypass_cache=bypass_cache,
+                setting=True,
+            )
 
     async def _get_auths() -> list:
         async with pool.acquire() as conn:
@@ -174,23 +231,54 @@ async def resolve_setting_context(
 
     async def _search_auths() -> list:
         async with pool.acquire() as conn:
-            return await search_auths(conn, redis, search=None, limit_count=20, offset_count=0, exclude_ids=merged.auth_ids, bypass_cache=bypass_cache, setting=True)
+            return await search_auths(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.auth_ids,
+                bypass_cache=bypass_cache,
+                setting=True,
+            )
 
     async def _get_provider_keys() -> list:
         async with pool.acquire() as conn:
-            return await get_provider_keys(conn, merged.provider_key_ids, redis, bypass_cache)
+            return await get_provider_keys(
+                conn, merged.provider_key_ids, redis, bypass_cache
+            )
 
     async def _search_provider_keys() -> list:
         async with pool.acquire() as conn:
-            return await search_provider_keys(conn, redis, search=None, limit_count=20, offset_count=0, exclude_ids=merged.provider_key_ids, bypass_cache=bypass_cache, setting=True)
+            return await search_provider_keys(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.provider_key_ids,
+                bypass_cache=bypass_cache,
+                setting=True,
+            )
 
     async def _get_auth_item_keys() -> list:
         async with pool.acquire() as conn:
-            return await get_auth_item_keys(conn, merged.auth_item_key_ids, redis, bypass_cache)
+            return await get_auth_item_keys(
+                conn, merged.auth_item_key_ids, redis, bypass_cache
+            )
 
     async def _search_auth_item_keys() -> list:
         async with pool.acquire() as conn:
-            return await search_auth_item_keys(conn, redis, search=None, limit_count=20, offset_count=0, exclude_ids=merged.auth_item_key_ids, bypass_cache=bypass_cache, setting=True)
+            return await search_auth_item_keys(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.auth_item_key_ids,
+                bypass_cache=bypass_cache,
+                setting=True,
+            )
 
     async def _get_systems() -> list:
         async with pool.acquire() as conn:
@@ -198,7 +286,16 @@ async def resolve_setting_context(
 
     async def _search_systems() -> list:
         async with pool.acquire() as conn:
-            return await search_systems(conn, redis, search=None, limit_count=20, offset_count=0, exclude_ids=merged.systems_ids, bypass_cache=bypass_cache, setting=True)
+            return await search_systems(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.systems_ids,
+                bypass_cache=bypass_cache,
+                setting=True,
+            )
 
     (
         names_selected,

@@ -16,7 +16,9 @@ from app.routes.v5.socket.internal.attempt.audio.events import (
     InternalBusAudioEmitter,
 )
 
-_SESSION_STORE = "app.routes.v5.socket.internal.attempt.audio.events.get_session_by_group_id"
+_SESSION_STORE = (
+    "app.routes.v5.socket.internal.attempt.audio.events.get_session_by_group_id"
+)
 
 
 def _make_session(
@@ -197,7 +199,9 @@ class TestToolCalls:
 
         emit, events = recording_emit()
         emitter = InternalBusAudioEmitter(emit=emit)
-        await emitter.on_tool_call_complete("g1", "call1", "my_tool", '{"name": "test"}')
+        await emitter.on_tool_call_complete(
+            "g1", "call1", "my_tool", '{"name": "test"}'
+        )
 
         assert len(events) == 1
         assert events[0].event == "generate_call_complete"

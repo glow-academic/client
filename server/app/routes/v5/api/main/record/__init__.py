@@ -5,8 +5,8 @@ from fastapi import APIRouter
 from app.routes.v5.api.main.record.docs import router as docs_router
 from app.routes.v5.api.main.record.export import router as export_router
 from app.routes.v5.api.main.record.get import router as get_router
-from app.routes.v5.api.main.record.search import router as search_router
 from app.routes.v5.api.main.record.refresh import router as refresh_router
+from app.routes.v5.api.main.record.search import router as search_router
 
 router = APIRouter(prefix="/record", tags=["record"])
 router.include_router(get_router)

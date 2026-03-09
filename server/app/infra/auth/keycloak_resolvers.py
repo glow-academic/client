@@ -54,16 +54,13 @@ async def resolve_departments_for_sync(
 
     Composes: search_departments → get_departments (resource).
     """
-    dept_ids, _ = await search_departments(
-        conn, active_only=True, limit_count=100000
-    )
+    dept_ids, _ = await search_departments(conn, active_only=True, limit_count=100000)
     if not dept_ids:
         return []
 
     depts = await get_department_resources(conn, dept_ids, redis)
     return [
-        DepartmentForSync(department_id=d.id, department_name=d.name)
-        for d in depts
+        DepartmentForSync(department_id=d.id, department_name=d.name) for d in depts
     ]
 
 
@@ -128,9 +125,7 @@ async def resolve_auths_for_realm(
     to find settings NOT in any department, then resolves their auths.
     """
     # Step 1: Collect ALL setting_ids linked to departments
-    dept_ids, _ = await search_departments(
-        conn, active_only=True, limit_count=100000
-    )
+    dept_ids, _ = await search_departments(conn, active_only=True, limit_count=100000)
     dept_setting_ids: set[UUID] = set()
     if dept_ids:
         depts = await get_department_resources(conn, dept_ids, redis)
@@ -161,9 +156,7 @@ async def resolve_auths_for_realm(
         return []
 
     # Step 4: Get settings resources → auth_ids
-    realm_settings = await get_setting_resources(
-        conn, list(realm_setting_ids), redis
-    )
+    realm_settings = await get_setting_resources(conn, list(realm_setting_ids), redis)
 
     auth_ids: set[UUID] = set()
     for s in realm_settings:
@@ -205,9 +198,7 @@ async def resolve_setting_profiles_for_idp(
     → get_profiles (resource).
     """
     # Step 1: Build dept→setting_ids map and collect all setting resource IDs
-    dept_ids, _ = await search_departments(
-        conn, active_only=True, limit_count=100000
-    )
+    dept_ids, _ = await search_departments(conn, active_only=True, limit_count=100000)
 
     dept_setting_map: dict[UUID, list[UUID]] = {}  # setting_resource_id → dept_ids
     dept_setting_ids: set[UUID] = set()
@@ -443,9 +434,7 @@ async def resolve_auth_items(
 
     # Non-encrypted items: auth_item_values
     non_encrypted_results: dict[str, AuthItem] = {}
-    for aiv in sorted(
-        auth_item_values_list, key=lambda x: x.created_at, reverse=True
-    ):
+    for aiv in sorted(auth_item_values_list, key=lambda x: x.created_at, reverse=True):
         if not aiv.active or aiv.auth_id != auth_id:
             continue
         item = item_map.get(aiv.item_id)

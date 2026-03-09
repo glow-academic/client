@@ -16,7 +16,6 @@ from uuid import UUID
 import asyncpg  # type: ignore
 from pydantic import BaseModel
 
-
 # ========== Page Metadata Models ==========
 
 

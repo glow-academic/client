@@ -17,6 +17,11 @@ See `AGENTS.md` for overall architecture principles.
 from fastapi import APIRouter, Depends
 
 # ============================================================================
+# Resources (removed — resource CRUD flows through draft endpoints)
+# ============================================================================
+from app.infra.auth.middleware import require_auth
+
+# ============================================================================
 # Docs
 # ============================================================================
 from app.routes.v5.api.docs import router as docs_router
@@ -58,25 +63,19 @@ from app.routes.v5.api.main.setting import router as settings_router
 from app.routes.v5.api.main.simulation import router as simulations_router
 from app.routes.v5.api.main.test import router as test_artifact_router
 from app.routes.v5.api.main.tool import router as tools_router
-
-# ============================================================================
-# Resources (removed — resource CRUD flows through draft endpoints)
-# ============================================================================
 from app.utils.mcp.get_mcp import get_mcp
-from app.utils.profile.get_profile_id import get_profile_id
-from app.utils.session.get_session_id import get_session_id
 
 # ============================================================================
 # Main Router Configuration
 # ============================================================================
-# Apply router-level dependencies to automatically parse profile ID headers
-# This makes profile_id available via request.state.profile_id in all endpoints
+# require_auth validates X-Api-Key + Authorization Bearer JWT, then sets
+# request.state.profile_id and request.state.session_id automatically.
+# The client no longer needs to send X-Profile-Id or X-Session-Id headers.
 router: APIRouter = APIRouter(
     prefix="/api/v5",
     tags=["v5"],
     dependencies=[
-        Depends(get_profile_id),
-        Depends(get_session_id),
+        Depends(require_auth),
         Depends(get_mcp),
     ],
 )

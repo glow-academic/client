@@ -7,6 +7,7 @@
 
 import { getSession } from "@/auth";
 import Session from "@/components/artifacts/session/Session";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -74,9 +75,17 @@ export default async function SessionDetailPage({
   });
 
   return (
-    <div className="space-y-6 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
-      <Session sessionDetail={sessionDetail} />
-    </div>
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Activity", section: "analytics", url: "/analytics/activity" },
+          { title: "Session" },
+        ]}
+      />
+      <div className="space-y-6 px-4 max-h-[calc(100vh-4rem)] overflow-hidden flex flex-col">
+        <Session sessionDetail={sessionDetail} />
+      </div>
+    </>
   );
 }
 

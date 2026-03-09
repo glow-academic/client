@@ -7,9 +7,9 @@ from fastapi import APIRouter, Depends, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.docs.types import ComposedDocsResponse
+from app.infra.docs_helper import DocsApiRequest
 from app.infra.globals import get_db, get_redis_client
 from app.infra.health_docs import docs_health_client
-from app.infra.docs_helper import DocsApiRequest
 
 router = APIRouter()
 

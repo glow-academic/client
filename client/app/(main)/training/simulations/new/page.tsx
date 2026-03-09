@@ -6,6 +6,8 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Simulation from "@/components/artifacts/simulation/Simulation";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -232,28 +234,38 @@ export default async function NewSimulationPage({
   }
 
   return (
-    <div
-      className="space-y-6"
-      data-page="simulation-new"
-      aria-label="Create new simulation page"
-    >
-      <Simulation
-        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        simulationData={simulationDataDefault}
-        createSimulationAction={createSimulation}
-        patchSimulationDraftAction={patchSimulationDraft}
-        createNamesAction={createDraftNames}
-        createDescriptionsAction={createDraftDescriptions}
-        createScenarioFlagsAction={createDraftScenarioFlags}
-        createScenarioPositionsAction={createDraftScenarioPositions}
-        createScenarioRubricsAction={
-          createDraftScenarioRubrics
-        }
-        createScenarioTimeLimitsAction={
-          createDraftScenarioTimeLimits
-        }
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Training", section: "training", url: "/training" },
+          { title: "Simulations", section: "simulations", url: "/training/simulations" },
+          { title: "New Simulation" },
+        ]}
+        toolbar={<SaveToolbar artifactType="simulation" />}
       />
-    </div>
+      <div
+        className="space-y-6 px-4"
+        data-page="simulation-new"
+        aria-label="Create new simulation page"
+      >
+        <Simulation
+          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+          simulationData={simulationDataDefault}
+          createSimulationAction={createSimulation}
+          patchSimulationDraftAction={patchSimulationDraft}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+          createScenarioFlagsAction={createDraftScenarioFlags}
+          createScenarioPositionsAction={createDraftScenarioPositions}
+          createScenarioRubricsAction={
+            createDraftScenarioRubrics
+          }
+          createScenarioTimeLimitsAction={
+            createDraftScenarioTimeLimits
+          }
+        />
+      </div>
+    </>
   );
 }
 

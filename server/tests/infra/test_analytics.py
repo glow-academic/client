@@ -12,7 +12,6 @@ import pytest
 
 from app.infra.auth.analytics import (
     AnalyticsFiltersResult,
-    FilterOption,
     resolve_benchmark_filters,
     resolve_health_filters,
     resolve_pricing_filters,

@@ -1,12 +1,8 @@
 """Provider refresh endpoint — composable infra architecture."""
 
-from typing import Annotated
+from fastapi import APIRouter, Request, Response
 
-import asyncpg
-from fastapi import APIRouter, Depends, Request, Response
-from redis.asyncio import Redis
-
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.provider_refresh import refresh_provider_client
 from app.infra.refresh.types import RefreshResponse
 
@@ -17,14 +13,14 @@ router = APIRouter()
 async def provider_refresh(
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> RefreshResponse:
     """Refresh provider materialized views and invalidate caches."""
     profile_id = http_request.state.profile_id
+    pool = get_pool()
+    redis = get_redis_client()
 
     result = await refresh_provider_client(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
     )

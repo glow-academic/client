@@ -5,12 +5,9 @@ Thin route handler. Core logic lives in app.infra.setting_delete.
 
 from __future__ import annotations
 
-from typing import Annotated
+from fastapi import APIRouter, HTTPException, Request, Response
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.setting_delete import delete_setting_client
 from app.routes.v5.api.main.setting.types import (
     DeleteSettingApiRequest,
@@ -26,7 +23,6 @@ async def delete_setting(
     request: DeleteSettingApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DeleteSettingApiResponse:
     """Bulk delete settings — composable infra architecture."""
     tags = ["settings"]
@@ -39,9 +35,10 @@ async def delete_setting(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
         result = await delete_setting_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             setting_ids=request.setting_ids,

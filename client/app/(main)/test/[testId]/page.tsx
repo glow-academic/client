@@ -7,6 +7,7 @@
 
 import TestChat from "@/components/artifacts/test/setups/TestChat";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -63,11 +64,21 @@ export default async function TestPage({
     const testData = await getTestArtifact(testId);
 
     return (
-      <TestChat
-        test_id={testId}
-        test_data={testData}
-        draft_id={draftId ?? null}
-      />
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Benchmark", section: "benchmark", url: "/benchmark" },
+            { title: "Test" },
+          ]}
+        />
+        <div className="px-4">
+          <TestChat
+            test_id={testId}
+            test_data={testData}
+            draft_id={draftId ?? null}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     if (

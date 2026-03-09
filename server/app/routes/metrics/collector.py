@@ -177,9 +177,12 @@ async def log_metrics_snapshot() -> None:
         # Write to database
         async with _db_pool.acquire() as conn:
             async with conn.transaction():
+                from app.infra.auth.resolve_identity import get_system_session_id
                 from app.routes.v5.tools.entries.metrics.create import (
                     create_metrics_entry_internal,
                 )
+
+                session_id = await get_system_session_id(conn)
 
                 await create_metrics_entry_internal(
                     conn,
@@ -189,6 +192,7 @@ async def log_metrics_snapshot() -> None:
                     avg_latency_ms=avg_latency_ms,
                     cpu_percent=cpu_percent,
                     memory_bytes=memory_bytes,
+                    session_id=session_id,
                 )
     except Exception as e:
         # Log error but don't break metrics collection
@@ -222,7 +226,10 @@ async def log_health_checks() -> None:
         # Write to database
         async with _db_pool.acquire() as conn:
             async with conn.transaction():
+                from app.infra.auth.resolve_identity import get_system_session_id
                 from app.routes.v5.tools.entries.health.create import create_health
+
+                session_id = await get_system_session_id(conn)
 
                 for service, result in checks.items():
                     await create_health(
@@ -232,6 +239,7 @@ async def log_health_checks() -> None:
                         latency_ms=result.latency_ms,
                         ts=ts,
                         error=result.error,
+                        session_id=session_id,
                     )
     except Exception as e:
         # Log error but don't break health endpoint

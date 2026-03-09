@@ -118,7 +118,9 @@ async def resolve_department_context(
 
     async def _get_descriptions() -> list:
         async with pool.acquire() as conn:
-            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+            return await get_descriptions(
+                conn, merged.description_ids, redis, bypass_cache
+            )
 
     async def _search_descriptions() -> list:
         async with pool.acquire() as conn:

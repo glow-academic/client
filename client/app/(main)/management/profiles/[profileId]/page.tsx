@@ -6,6 +6,8 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Profile from "@/components/artifacts/profile/Profile";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
@@ -145,25 +147,40 @@ export default async function ProfileEditPage({
         group_id: groupId,
       } as GetProfileIn["body"],
     };
-    const profileDetail = await getProfile(input);
+    const [profileDetail, docs] = await Promise.all([
+      getProfile(input),
+      getDocs({ body: { entity_id: profileId } }),
+    ]);
+
+    const entityName = docs.detail.title;
 
     return (
-      <div
-        className="space-y-6"
-        data-page="profile-edit"
-        data-profile-id={profileId}
-      >
-        <Profile
-          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-          profileId={profileId}
-          profileData={profileDetail}
-          saveProfileAction={saveProfile}
-          patchProfileDraftAction={patchProfileDraft}
-          createNamesAction={createDraftNames}
-          createEmailsAction={createDraftEmails}
-          createRequestLimitsAction={createDraftRequestLimits}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Management", section: "management", url: "/management" },
+            { title: "Profiles", section: "profiles", url: "/management/profiles" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="profile" />}
         />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="profile-edit"
+          data-profile-id={profileId}
+        >
+          <Profile
+            key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+            profileId={profileId}
+            profileData={profileDetail}
+            saveProfileAction={saveProfile}
+            patchProfileDraftAction={patchProfileDraft}
+            createNamesAction={createDraftNames}
+            createEmailsAction={createDraftEmails}
+            createRequestLimitsAction={createDraftRequestLimits}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

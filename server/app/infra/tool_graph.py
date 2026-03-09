@@ -90,7 +90,9 @@ async def resolve_tool_graph(
             return await _resolve_tool_graph_impl(
                 conn, settings_id, redis, bypass_cache
             )
-    return await _resolve_tool_graph_impl(conn_or_pool, settings_id, redis, bypass_cache)
+    return await _resolve_tool_graph_impl(
+        conn_or_pool, settings_id, redis, bypass_cache
+    )
 
 
 async def _resolve_tool_graph_impl(

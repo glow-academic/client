@@ -4,6 +4,8 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Provider from "@/components/artifacts/provider/Provider";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -158,29 +160,44 @@ export default async function EditProviderPage({
         group_id: groupId,
       } as GetProviderIn["body"],
     };
-    const providerDetail = await getProvider(input).catch(() => null);
+    const [providerDetail, docs] = await Promise.all([
+      getProvider(input).catch(() => null),
+      getDocs({ body: { entity_id: providerId } }),
+    ]);
 
     if (!providerDetail) {
       throw new Error("Provider not found");
     }
 
+    const entityName = docs.detail.title;
+
     return (
-      <div
-        className="space-y-6"
-        data-page="provider-edit"
-        data-provider-id={providerId}
-      >
-        <Provider
-          providerId={providerId}
-          providerData={providerDetail}
-          saveProviderAction={saveProvider}
-          patchProviderDraftAction={patchProviderDraft}
-          createNamesAction={createNames}
-          createDescriptionsAction={createDescriptions}
-          createValuesAction={createValues}
-          createEndpointsAction={createEndpoints}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+            { title: "Providers", section: "providers", url: "/intelligence/providers" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="provider" />}
         />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="provider-edit"
+          data-provider-id={providerId}
+        >
+          <Provider
+            providerId={providerId}
+            providerData={providerDetail}
+            saveProviderAction={saveProvider}
+            patchProviderDraftAction={patchProviderDraft}
+            createNamesAction={createNames}
+            createDescriptionsAction={createDescriptions}
+            createValuesAction={createValues}
+            createEndpointsAction={createEndpoints}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

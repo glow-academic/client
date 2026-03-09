@@ -7,6 +7,7 @@
 
 import Benchmark from "@/components/artifacts/benchmark/Benchmark";
 import EvalHistory from "@/components/artifacts/benchmark/EvalHistory";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -297,26 +298,33 @@ export default async function BenchmarkPage({
   const dataArray = historyData?.data || [];
 
   return (
-    <div className="space-y-6">
-      <Benchmark
-        evalsData={evalsData}
-        rubricMappings={rubricMappings}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Benchmark", section: "benchmark", url: "/benchmark" },
+        ]}
       />
+      <div className="space-y-6 px-4">
+        <Benchmark
+          evalsData={evalsData}
+          rubricMappings={rubricMappings}
+        />
 
-      {/* History section — data embedded in benchmark/get response */}
-      <div className="mt-12">
-        <div className="space-y-4">
-          <EvalHistory
-            data={dataArray}
-            totalCount={historyData?.total_count || 0}
-            pageIndex={historyPage}
-            pageSize={historyPageSize}
-            isLoading={false}
-            showCustomize={true}
-          />
+        {/* History section — data embedded in benchmark/get response */}
+        <div className="mt-12">
+          <div className="space-y-4">
+            <EvalHistory
+              data={dataArray}
+              totalCount={historyData?.total_count || 0}
+              pageIndex={historyPage}
+              pageSize={historyPageSize}
+              isLoading={false}
+              showCustomize={true}
+            />
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

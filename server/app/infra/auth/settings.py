@@ -85,9 +85,7 @@ async def resolve_settings_theme(
     )
 
     # Step 3: Check active flag
-    is_active = any(
-        f.name == "setting_active" and f.value is True for f in flags_res
-    )
+    is_active = any(f.name == "setting_active" and f.value is True for f in flags_res)
     if not is_active:
         return SettingsThemeResult(is_active=False)
 

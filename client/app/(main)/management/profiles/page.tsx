@@ -6,6 +6,7 @@
  */
 
 import Profiles from "@/components/artifacts/profile/Profiles";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -121,16 +122,24 @@ export default async function ProfilesPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <Profiles
-        listData={listData}
-        initialCreateProfileData={initialCreateProfileData}
-        deleteProfileAction={deleteProfile}
-        bulkDeleteProfileAction={bulkDeleteProfile}
-        processCSVAction={processCSV}
-        bulkCreateOrUpdateProfileAction={bulkCreateOrUpdateProfile}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Management", section: "management", url: "/management" },
+          { title: "Profiles" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4">
+        <Profiles
+          listData={listData}
+          initialCreateProfileData={initialCreateProfileData}
+          deleteProfileAction={deleteProfile}
+          bulkDeleteProfileAction={bulkDeleteProfile}
+          processCSVAction={processCSV}
+          bulkCreateOrUpdateProfileAction={bulkCreateOrUpdateProfile}
+        />
+      </div>
+    </>
   );
 }
 

@@ -206,9 +206,7 @@ async def search_provider_client(
         _fetch_names() if all_name_ids else _empty_list(),
         _fetch_descriptions() if all_description_ids else _empty_list(),
         _fetch_values() if all_value_ids else _empty_list(),
-        _fetch_providers_resource()
-        if all_provider_resource_ids
-        else _empty_list(),
+        _fetch_providers_resource() if all_provider_resource_ids else _empty_list(),
         # Facets
         _fetch_department_facet(),
         _fetch_model_facet(),

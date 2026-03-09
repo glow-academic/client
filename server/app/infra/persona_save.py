@@ -191,9 +191,7 @@ async def resolve_persona_values(
                 limit_count=1000,
                 persona=True,
             )
-            dept_name_map = {
-                d.name.lower(): d.id for d in all_depts if d.name and d.id
-            }
+            dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
             resolved_ids = []
             for dept_name in item.departments:
                 dept_id = dept_name_map.get(dept_name.lower())
@@ -520,9 +518,7 @@ async def save_persona_client(
                         else _UNSET,
                         department_ids=item.department_ids,
                         example_ids=item.example_ids,
-                        flag_ids=[item.active_flag_id]
-                        if item.active_flag_id
-                        else None,
+                        flag_ids=[item.active_flag_id] if item.active_flag_id else None,
                         parameter_field_ids=item.parameter_field_ids,
                         persona_ids=[personas_resource_id],
                         voice_ids=item.voice_ids,
@@ -538,9 +534,7 @@ async def save_persona_client(
                         instruction_id=item.instructions_id,
                         department_ids=item.department_ids,
                         example_ids=item.example_ids,
-                        flag_ids=[item.active_flag_id]
-                        if item.active_flag_id
-                        else None,
+                        flag_ids=[item.active_flag_id] if item.active_flag_id else None,
                         parameter_field_ids=item.parameter_field_ids,
                         persona_ids=[personas_resource_id],
                         voice_ids=item.voice_ids,

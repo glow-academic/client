@@ -7,6 +7,7 @@
  */
 
 import Record from "@/components/artifacts/record/Record";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -133,27 +134,37 @@ export default async function RecordPage({
   };
 
   return (
-    <Record
-      data={data}
-      profileData={profileData}
-      profileId={recordId}
-      rubricIds={rubricIds}
-      rubricSearch={rubricSearch}
-      rubricIndex={rubricIndex}
-      simulationPickerIds={simulationPickerIds}
-      simulationPickerSearch={simulationPickerSearch}
-      simulationIndex={simulationIndex}
-      parameterIds={parameterIds}
-      parameterSearch={parameterSearch}
-      parameterIndex={parameterIndex}
-      scenarioIds={scenarioIds}
-      scenarioSearch={scenarioSearch}
-      scenarioIndex={scenarioIndex}
-      historyPage={historyPage}
-      historyPageSize={historyPageSize}
-      defaultFilters={filters}
-      initialColumnVisibility={await readViewCookie("history")}
-    />
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Reports", section: "analytics", url: "/analytics/reports" },
+          { title: "Profile" },
+        ]}
+      />
+      <div className="px-4">
+        <Record
+          data={data}
+          profileData={profileData}
+          profileId={recordId}
+          rubricIds={rubricIds}
+          rubricSearch={rubricSearch}
+          rubricIndex={rubricIndex}
+          simulationPickerIds={simulationPickerIds}
+          simulationPickerSearch={simulationPickerSearch}
+          simulationIndex={simulationIndex}
+          parameterIds={parameterIds}
+          parameterSearch={parameterSearch}
+          parameterIndex={parameterIndex}
+          scenarioIds={scenarioIds}
+          scenarioSearch={scenarioSearch}
+          scenarioIndex={scenarioIndex}
+          historyPage={historyPage}
+          historyPageSize={historyPageSize}
+          defaultFilters={filters}
+          initialColumnVisibility={await readViewCookie("history")}
+        />
+      </div>
+    </>
   );
 }
 

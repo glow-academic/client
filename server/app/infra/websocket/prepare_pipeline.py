@@ -25,12 +25,12 @@ from app.infra.generation.media_context import (
     has_media_sentinels,
     post_process_media_sentinels,
 )
-from app.registry.modalities import get_tool_output_modalities
 from app.infra.websocket.prepare_types import (
     AgentDispatch,
     LLMConfig,
     MessageSpec,
 )
+from app.registry.modalities import get_tool_output_modalities
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)

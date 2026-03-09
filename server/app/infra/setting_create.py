@@ -106,7 +106,9 @@ async def create_setting_client(
 
     for idx, item in enumerate(items):
         async with pool.acquire() as conn:
-            item_errors = await resolve_setting_values(conn, redis, item, is_create=True)
+            item_errors = await resolve_setting_values(
+                conn, redis, item, is_create=True
+            )
         if item_errors:
             has_errors = True
             error_results.append(

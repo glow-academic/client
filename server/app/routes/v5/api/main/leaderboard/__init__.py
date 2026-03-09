@@ -5,8 +5,8 @@ from fastapi import APIRouter
 from app.routes.v5.api.main.leaderboard.docs import router as docs_router
 from app.routes.v5.api.main.leaderboard.export import router as export_router
 from app.routes.v5.api.main.leaderboard.get import router as get_router
-from app.routes.v5.api.main.leaderboard.search import router as search_router
 from app.routes.v5.api.main.leaderboard.refresh import router as refresh_router
+from app.routes.v5.api.main.leaderboard.search import router as search_router
 
 router = APIRouter(prefix="/leaderboard", tags=["leaderboard"])
 router.include_router(get_router)

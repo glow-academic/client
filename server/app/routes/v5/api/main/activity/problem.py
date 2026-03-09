@@ -9,7 +9,9 @@ from pydantic import BaseModel
 from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.groups.create import create_group
-from app.routes.v5.tools.entries.problems.create import create_problem as create_problem_entry
+from app.routes.v5.tools.entries.problems.create import (
+    create_problem as create_problem_entry,
+)
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
@@ -68,8 +70,12 @@ async def create_problem(
         # Create group → run → call → problem entry chain
         session_id = http_request.state.session_id
         group_result = await create_group(conn, session_id=session_id)
-        run_result = await create_run(conn, group_id=group_result.id, session_id=session_id)
-        call_result = await create_call(conn, run_id=run_result.id, session_id=session_id)
+        run_result = await create_run(
+            conn, group_id=group_result.id, session_id=session_id
+        )
+        call_result = await create_call(
+            conn, run_id=run_result.id, session_id=session_id
+        )
 
         problem_result = await create_problem_entry(
             conn,

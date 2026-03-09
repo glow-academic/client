@@ -13,6 +13,7 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
+from app.infra.auth.settings import resolve_thresholds
 from app.infra.types import ArtifactContext, ResourcePair
 from app.routes.v5.tools.entries.attempt_chat.search import search_attempt_chats
 from app.routes.v5.tools.entries.attempt_chat.types import (
@@ -23,7 +24,6 @@ from app.routes.v5.tools.resources.cohorts.get import get_cohorts
 from app.routes.v5.tools.resources.profiles.get import get_profiles
 from app.routes.v5.tools.resources.scenarios.get import get_scenarios
 from app.routes.v5.tools.resources.simulations.get import get_simulations
-from app.infra.auth.settings import resolve_thresholds
 
 
 def _to_chat_item(r: GetAttemptChatResponse) -> ChatItem:

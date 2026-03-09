@@ -12,25 +12,8 @@ from uuid import UUID
 
 import pytest
 
-from app.infra.websocket.test_events_impl import (
-    _extract_grade_feedback,
-    _extract_grade_passed,
-    _extract_grade_score,
-    _find_next_run_id,
-    test_error_impl as _test_error_impl,
-    test_grade_complete_impl as _test_grade_complete_impl,
-    test_group_impl as _test_group_impl,
-    test_next_impl as _test_next_impl,
-    test_proceed_impl as _test_proceed_impl,
-    test_progress_impl as _test_progress_impl,
-    test_run_impl as _test_run_impl,
-    test_run_done_impl as _test_run_done_impl,
-    test_start_impl as _test_start_impl,
-)
 from app.infra.websocket.attempt_events_impl import (
     attempt_next_impl,
-    attempt_proceed_impl as _attempt_proceed_impl,
-    attempt_start_impl as _attempt_start_impl,
     audio_delta_impl,
     audio_error_impl,
     audio_response_cancelled_impl,
@@ -38,13 +21,58 @@ from app.infra.websocket.attempt_events_impl import (
     audio_speech_delta_impl,
     audio_speech_start_impl,
     audio_stop_impl,
-    emit_chat_generate_impl as _emit_chat_generate_impl,
-    speech_complete_impl as _speech_complete_impl,
-    user_complete_impl as _user_complete_impl,
     user_progress_impl,
     user_start_impl,
 )
+from app.infra.websocket.attempt_events_impl import (
+    attempt_proceed_impl as _attempt_proceed_impl,
+)
+from app.infra.websocket.attempt_events_impl import (
+    attempt_start_impl as _attempt_start_impl,
+)
+from app.infra.websocket.attempt_events_impl import (
+    emit_chat_generate_impl as _emit_chat_generate_impl,
+)
+from app.infra.websocket.attempt_events_impl import (
+    speech_complete_impl as _speech_complete_impl,
+)
+from app.infra.websocket.attempt_events_impl import (
+    user_complete_impl as _user_complete_impl,
+)
 from app.infra.websocket.socket_event import recording_emit
+from app.infra.websocket.test_events_impl import (
+    _extract_grade_feedback,
+    _extract_grade_passed,
+    _extract_grade_score,
+    _find_next_run_id,
+)
+from app.infra.websocket.test_events_impl import (
+    test_error_impl as _test_error_impl,
+)
+from app.infra.websocket.test_events_impl import (
+    test_grade_complete_impl as _test_grade_complete_impl,
+)
+from app.infra.websocket.test_events_impl import (
+    test_group_impl as _test_group_impl,
+)
+from app.infra.websocket.test_events_impl import (
+    test_next_impl as _test_next_impl,
+)
+from app.infra.websocket.test_events_impl import (
+    test_proceed_impl as _test_proceed_impl,
+)
+from app.infra.websocket.test_events_impl import (
+    test_progress_impl as _test_progress_impl,
+)
+from app.infra.websocket.test_events_impl import (
+    test_run_done_impl as _test_run_done_impl,
+)
+from app.infra.websocket.test_events_impl import (
+    test_run_impl as _test_run_impl,
+)
+from app.infra.websocket.test_events_impl import (
+    test_start_impl as _test_start_impl,
+)
 
 _P = "app.infra.websocket.attempt_events_impl"
 
@@ -99,9 +127,7 @@ class TestAudioSessionStartImpl:
         emit, events = recording_emit()
         session = SimpleNamespace(chat_id="chat-1")
         with patch(f"{_P}.get_session_by_group_id", return_value=session):
-            await audio_session_start_impl(
-                {"sid": "s1", "group_id": "g1"}, emit=emit
-            )
+            await audio_session_start_impl({"sid": "s1", "group_id": "g1"}, emit=emit)
         assert len(events) == 1
         assert events[0].event == "attempt_audio_ready"
         assert events[0].data["chat_id"] == "chat-1"
@@ -109,9 +135,7 @@ class TestAudioSessionStartImpl:
     async def test_no_session_uses_group_id_as_chat_id(self):
         emit, events = recording_emit()
         with patch(f"{_P}.get_session_by_group_id", return_value=None):
-            await audio_session_start_impl(
-                {"sid": "s1", "group_id": "g1"}, emit=emit
-            )
+            await audio_session_start_impl({"sid": "s1", "group_id": "g1"}, emit=emit)
         assert events[0].data["chat_id"] == "g1"
 
 
@@ -144,9 +168,7 @@ class TestAudioDeltaImpl:
         emit, events = recording_emit()
         session = SimpleNamespace(sid="s1", chat_id="c1")
         with patch(f"{_P}.get_session_by_group_id", return_value=session):
-            await audio_delta_impl(
-                {"group_id": "g1", "audio": b"chunk"}, emit=emit
-            )
+            await audio_delta_impl({"group_id": "g1", "audio": b"chunk"}, emit=emit)
         assert len(events) == 1
         assert events[0].event == "attempt_assistant_progress"
         assert events[0].data["content_type"] == "audio"
@@ -408,9 +430,7 @@ class TestAudioStopImpl:
         """Even without a session, emits audio_ended."""
         emit, events = recording_emit()
         with patch(f"{_P}.get_session_by_group_id", return_value=None):
-            await audio_stop_impl(
-                {"sid": "s1", "group_id": "g1"}, emit=emit
-            )
+            await audio_stop_impl({"sid": "s1", "group_id": "g1"}, emit=emit)
         assert len(events) == 1
         assert events[0].event == "attempt_audio_ended"
         assert events[0].data["chat_id"] == "g1"
@@ -425,9 +445,7 @@ class TestAudioStopImpl:
                 new_callable=AsyncMock,
             ) as mock_cleanup,
         ):
-            await audio_stop_impl(
-                {"sid": "s1", "group_id": "g1"}, emit=emit
-            )
+            await audio_stop_impl({"sid": "s1", "group_id": "g1"}, emit=emit)
         mock_cleanup.assert_called_once_with(session)
         assert events[0].data["chat_id"] == "c1"
 
@@ -447,9 +465,7 @@ class TestAudioResponseCancelledImpl:
     async def test_no_session_emits_nothing(self):
         emit, events = recording_emit()
         with patch(f"{_P}.get_session_by_group_id", return_value=None):
-            await audio_response_cancelled_impl(
-                {"group_id": "g1"}, emit=emit
-            )
+            await audio_response_cancelled_impl({"group_id": "g1"}, emit=emit)
         assert events == []
 
     async def test_emits_stopped_and_generate(self):
@@ -494,17 +510,13 @@ class TestTestErrorImpl:
 
     async def test_no_sid_still_emits(self):
         emit, events = recording_emit()
-        await _test_error_impl(
-            {"invocation_id": "inv-1", "message": "oops"}, emit=emit
-        )
+        await _test_error_impl({"invocation_id": "inv-1", "message": "oops"}, emit=emit)
         assert len(events) == 1
         assert events[0].data["rooms"] == []
 
     async def test_fallback_to_chat_id(self):
         emit, events = recording_emit()
-        await _test_error_impl(
-            {"sid": "s1", "chat_id": "chat-1"}, emit=emit
-        )
+        await _test_error_impl({"sid": "s1", "chat_id": "chat-1"}, emit=emit)
         assert events[0].data["invocation_id"] == "chat-1"
 
     async def test_default_message(self):
@@ -596,18 +608,14 @@ class TestRunDoneImpl:
 
     async def test_defaults_current_and_total(self):
         emit, events = recording_emit()
-        await _test_run_done_impl(
-            {"sid": "s1", "invocation_id": "inv-1"}, emit=emit
-        )
+        await _test_run_done_impl({"sid": "s1", "invocation_id": "inv-1"}, emit=emit)
         assert events[0].data["current_run"] == 1
         assert events[0].data["total_runs"] == 1
         assert events[0].data["remaining_runs"] == 0
 
     async def test_no_run_id_is_none(self):
         emit, events = recording_emit()
-        await _test_run_done_impl(
-            {"sid": "s1", "invocation_id": "inv-1"}, emit=emit
-        )
+        await _test_run_done_impl({"sid": "s1", "invocation_id": "inv-1"}, emit=emit)
         assert events[0].data["run_id"] is None
         assert events[0].data["original_run_resource_id"] is None
 
@@ -746,7 +754,9 @@ class TestGradeCompleteImpl:
                 "sid": "s1",
                 "grade_id": "g1",
                 "invocation_id": "inv-1",
-                "tool_results": [{"result": {"score": 85, "passed": True, "feedback": "good"}}],
+                "tool_results": [
+                    {"result": {"score": 85, "passed": True, "feedback": "good"}}
+                ],
             },
             emit=emit,
             conn=AsyncMock(),
@@ -830,7 +840,11 @@ class TestFindNextRunId:
         assert _find_next_run_id(runs, None) == "r1"
 
     def test_next_after_prev(self):
-        runs = [SimpleNamespace(run_id="r1"), SimpleNamespace(run_id="r2"), SimpleNamespace(run_id="r3")]
+        runs = [
+            SimpleNamespace(run_id="r1"),
+            SimpleNamespace(run_id="r2"),
+            SimpleNamespace(run_id="r3"),
+        ]
         assert _find_next_run_id(runs, "r1") == "r2"
         assert _find_next_run_id(runs, "r2") == "r3"
 
@@ -1029,8 +1043,12 @@ class TestProceedImpl:
 
     @patch(f"{_CACHE}.invalidate_tags", new_callable=AsyncMock)
     @patch(f"{_REFRESH}.refresh_test_invocation", new_callable=AsyncMock)
-    @patch(f"{_INV_COMPLETION}.create_test_invocation_completion", new_callable=AsyncMock)
-    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
+    @patch(
+        f"{_INV_COMPLETION}.create_test_invocation_completion", new_callable=AsyncMock
+    )
+    @patch(
+        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
+    )
     async def test_complete_all_marks_all_and_emits_ended(
         self, mock_search, mock_complete, mock_refresh, mock_invalidate
     ):
@@ -1057,7 +1075,9 @@ class TestProceedImpl:
         assert events[0].data["success"] is True
 
     @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
-    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
+    @patch(
+        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
+    )
     async def test_all_completed_emits_ended(self, mock_search, mock_get_tests):
         inv1 = SimpleNamespace(invocation_id="inv-1", invocation_completed=True)
         inv2 = SimpleNamespace(invocation_id="inv-2", invocation_completed=True)
@@ -1078,7 +1098,9 @@ class TestProceedImpl:
         assert events[0].event == "test_ended"
 
     @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
-    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
+    @patch(
+        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
+    )
     async def test_no_invocations_emits_error(self, mock_search, mock_get_tests):
         mock_search.return_value = ([], 0)
         mock_get_tests.return_value = []
@@ -1098,8 +1120,12 @@ class TestProceedImpl:
         assert events[0].data["error_type"] == "proceed"
 
     @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
-    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
-    async def test_use_custom_without_force_emits_started(self, mock_search, mock_get_tests):
+    @patch(
+        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
+    )
+    async def test_use_custom_without_force_emits_started(
+        self, mock_search, mock_get_tests
+    ):
         inv1 = SimpleNamespace(
             invocation_id="inv-1", invocation_completed=False, use_custom=True
         )
@@ -1125,7 +1151,9 @@ class TestProceedImpl:
     @patch(f"{_INV_BRIDGE}.create_test_invocation_bridge", new_callable=AsyncMock)
     @patch(f"{_INV_CREATE}.create_test_invocation", new_callable=AsyncMock)
     @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
-    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
+    @patch(
+        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
+    )
     async def test_next_invocation_creates_and_emits_started(
         self,
         mock_search,
@@ -1160,9 +1188,13 @@ class TestProceedImpl:
         assert events[0].data["is_dynamic"] is False
         assert events[0].data["test_invocation_id"] == "new-inv-id"
 
-    @patch(f"{_INV_COMPLETION}.create_test_invocation_completion", new_callable=AsyncMock)
+    @patch(
+        f"{_INV_COMPLETION}.create_test_invocation_completion", new_callable=AsyncMock
+    )
     @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
-    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
+    @patch(
+        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
+    )
     async def test_completed_invocation_id_creates_completion(
         self, mock_search, mock_get_tests, mock_complete
     ):
@@ -1187,7 +1219,9 @@ class TestProceedImpl:
         assert events[0].event == "test_ended"
 
     @patch(f"{_TEST_GET}.get_tests", new_callable=AsyncMock)
-    @patch(f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock)
+    @patch(
+        f"{_INV_SEARCH}.search_test_invocation_entries_internal", new_callable=AsyncMock
+    )
     async def test_error_emits_test_error(self, mock_search, mock_get_tests):
         mock_search.side_effect = RuntimeError("db down")
 
@@ -1328,7 +1362,9 @@ class TestRunImpl:
             nonlocal call_count
             call_count += 1
             return SimpleNamespace(
-                id=assistant_msg_id if role == "assistant" else UUID(int=10 + call_count),
+                id=assistant_msg_id
+                if role == "assistant"
+                else UUID(int=10 + call_count),
                 created_at=datetime.now(),
             )
 
@@ -1390,7 +1426,9 @@ class TestRunImpl:
 
 _ATTEMPT_MSG_SEARCH = "app.routes.v5.tools.entries.attempt_message.search"
 _ATTEMPT_CONTENT = "app.routes.v5.tools.entries.attempt_content.create"
-_ATTEMPT_MSG_COMPLETION = "app.routes.v5.tools.entries.attempt_message_completion.create"
+_ATTEMPT_MSG_COMPLETION = (
+    "app.routes.v5.tools.entries.attempt_message_completion.create"
+)
 
 
 @pytest.mark.asyncio
@@ -1429,7 +1467,10 @@ class TestUserCompleteImpl:
         )
         assert events == []
 
-    @patch(f"{_ATTEMPT_MSG_COMPLETION}.create_attempt_message_completion", new_callable=AsyncMock)
+    @patch(
+        f"{_ATTEMPT_MSG_COMPLETION}.create_attempt_message_completion",
+        new_callable=AsyncMock,
+    )
     @patch(f"{_ATTEMPT_CONTENT}.create_attempt_content", new_callable=AsyncMock)
     @patch(f"{_ATTEMPT_MSG_SEARCH}.search_attempt_messages", new_callable=AsyncMock)
     async def test_happy_path_emits_user_complete(
@@ -1518,24 +1559,18 @@ _UPLOAD_CREATE = "app.routes.v5.tools.entries.uploads.create"
 class TestSpeechCompleteImpl:
     async def test_no_group_id_emits_nothing(self):
         emit, events = recording_emit()
-        await _speech_complete_impl(
-            {"group_id": ""}, emit=emit, conn=AsyncMock()
-        )
+        await _speech_complete_impl({"group_id": ""}, emit=emit, conn=AsyncMock())
         assert events == []
 
     @patch(f"{_P}.get_session_by_group_id", return_value=None)
     async def test_no_session_emits_nothing(self, _mock):
         emit, events = recording_emit()
-        await _speech_complete_impl(
-            {"group_id": "g1"}, emit=emit, conn=AsyncMock()
-        )
+        await _speech_complete_impl({"group_id": "g1"}, emit=emit, conn=AsyncMock())
         assert events == []
 
     @patch(f"{_P}.get_session_by_group_id")
     async def test_empty_transcript_emits_nothing(self, mock_session):
-        mock_session.return_value = SimpleNamespace(
-            sid="s1", chat_id="c1", run_id="r1"
-        )
+        mock_session.return_value = SimpleNamespace(sid="s1", chat_id="c1", run_id="r1")
         emit, events = recording_emit()
         await _speech_complete_impl(
             {"group_id": "g1", "transcript": ""},
@@ -1546,9 +1581,7 @@ class TestSpeechCompleteImpl:
 
     @patch(f"{_P}.get_session_by_group_id")
     async def test_transcript_only_emits_received_complete(self, mock_session):
-        mock_session.return_value = SimpleNamespace(
-            sid="s1", chat_id="c1", run_id="r1"
-        )
+        mock_session.return_value = SimpleNamespace(sid="s1", chat_id="c1", run_id="r1")
         emit, events = recording_emit()
         await _speech_complete_impl(
             {"group_id": "g1", "transcript": "hello world"},
@@ -1566,9 +1599,7 @@ class TestSpeechCompleteImpl:
     async def test_with_audio_creates_upload(self, mock_session, mock_upload, tmp_path):
         from uuid import UUID
 
-        mock_session.return_value = SimpleNamespace(
-            sid="s1", chat_id="c1", run_id="r1"
-        )
+        mock_session.return_value = SimpleNamespace(sid="s1", chat_id="c1", run_id="r1")
         mock_upload.return_value = SimpleNamespace(
             id=UUID("019b3be4-36f0-788c-9df2-481eb5917960")
         )
@@ -1586,7 +1617,9 @@ class TestSpeechCompleteImpl:
             )
 
         assert len(events) == 1
-        assert events[0].data["audio_upload_id"] == "019b3be4-36f0-788c-9df2-481eb5917960"
+        assert (
+            events[0].data["audio_upload_id"] == "019b3be4-36f0-788c-9df2-481eb5917960"
+        )
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1704,8 +1737,8 @@ class TestAttemptStartImpl:
         mock_create_call.return_value = SimpleNamespace(id=UUID(int=12))
         mock_create_attempt.return_value = SimpleNamespace(id=attempt_id)
 
-        from unittest.mock import MagicMock
         from contextlib import asynccontextmanager
+        from unittest.mock import MagicMock
 
         @asynccontextmanager
         async def fake_txn():
@@ -1817,7 +1850,10 @@ class TestEmitChatGenerateImpl:
 
         data = events[0].data
         assert data["resource_types"] == [
-            "personas", "scenarios", "parameters", "fields"
+            "personas",
+            "scenarios",
+            "parameters",
+            "fields",
         ]
         assert data["metadata"]["attempt_chat_id"] is None
 
@@ -1911,17 +1947,25 @@ class TestAttemptProceedImpl:
     _RUNS = "app.routes.v5.tools.entries.runs.create.create_run"
     _GET_ATTEMPTS = "app.routes.v5.tools.entries.attempt.get.get_attempts"
     _BRIDGES = "app.routes.v5.tools.entries.attempt_chat_bridge.search.search_attempt_chat_bridges"
-    _SEARCH_CHATS = "app.routes.v5.tools.entries.attempt_chat.search.search_attempt_chats"
+    _SEARCH_CHATS = (
+        "app.routes.v5.tools.entries.attempt_chat.search.search_attempt_chats"
+    )
     _PRACTICE_ENTRIES = "app.routes.v5.tools.entries.attempt_practice.search.search_attempt_practice_entries"
-    _HOME_ENTRIES = "app.routes.v5.tools.entries.attempt_home.search.search_attempt_homes"
-    _PRACTICE_CHATS = "app.routes.v5.tools.entries.practice_chat.search.search_practice_chats"
+    _HOME_ENTRIES = (
+        "app.routes.v5.tools.entries.attempt_home.search.search_attempt_homes"
+    )
+    _PRACTICE_CHATS = (
+        "app.routes.v5.tools.entries.practice_chat.search.search_practice_chats"
+    )
     _HOME_CHATS = "app.routes.v5.tools.entries.home_chat.search.search_home_chats"
     _CHAT_ENTRIES = "app.routes.v5.tools.entries.chat.get.get_chat_entries_internal"
     _CREATE_CALL = "app.routes.v5.tools.entries.calls.create.create_call"
     _CREATE_CHAT = "app.routes.v5.tools.entries.attempt_chat.create.create_attempt_chat"
     _CREATE_BRIDGE = "app.routes.v5.tools.entries.attempt_chat_bridge.create.create_attempt_chat_bridge"
     _REFRESH_ATTEMPT = "app.routes.v5.tools.entries.attempt.refresh.refresh_attempt"
-    _REFRESH_CHAT = "app.routes.v5.tools.entries.attempt_chat.refresh.refresh_attempt_chat"
+    _REFRESH_CHAT = (
+        "app.routes.v5.tools.entries.attempt_chat.refresh.refresh_attempt_chat"
+    )
     _CHAT_COMPLETION = "app.routes.v5.tools.entries.attempt_chat_completion.create.create_attempt_chat_completion"
     _EMIT_GENERATE = f"{_P}.emit_chat_generate_impl"
 
@@ -2003,21 +2047,29 @@ class TestAttemptProceedImpl:
     @patch(_GET_ATTEMPTS, new_callable=AsyncMock)
     @patch(_RUNS, new_callable=AsyncMock)
     async def test_all_done_emits_ended(
-        self, mock_run, mock_get_attempt, mock_bridges,
-        mock_search_chats, mock_practice_entries, mock_practice_chats,
-        mock_chat_entries, mock_call, mock_create_chat,
-        mock_create_bridge, mock_refresh_a, mock_refresh_c
+        self,
+        mock_run,
+        mock_get_attempt,
+        mock_bridges,
+        mock_search_chats,
+        mock_practice_entries,
+        mock_practice_chats,
+        mock_chat_entries,
+        mock_call,
+        mock_create_chat,
+        mock_create_bridge,
+        mock_refresh_a,
+        mock_refresh_c,
     ):
         mock_run.return_value = SimpleNamespace(id=UUID(int=1))
         mock_get_attempt.return_value = [
             SimpleNamespace(num_chats=1, practice=True, department_id=UUID(int=40))
         ]
         # 1 bridge already = completed_count >= num_chats
-        mock_bridges.return_value = [
-            SimpleNamespace(attempt_chat_id=UUID(int=10))
-        ]
+        mock_bridges.return_value = [SimpleNamespace(attempt_chat_id=UUID(int=10))]
         mock_search_chats.return_value = (
-            [SimpleNamespace(chat_entry_id=UUID(int=30))], 1
+            [SimpleNamespace(chat_entry_id=UUID(int=30))],
+            1,
         )
 
         from contextlib import asynccontextmanager
@@ -2059,10 +2111,19 @@ class TestAttemptProceedImpl:
     @patch(_GET_ATTEMPTS, new_callable=AsyncMock)
     @patch(_RUNS, new_callable=AsyncMock)
     async def test_no_generation_emits_chat_started(
-        self, mock_run, mock_get_attempt, mock_bridges,
-        mock_search_chats, mock_practice_entries, mock_practice_chats,
-        mock_chat_entries, mock_call, mock_create_chat,
-        mock_create_bridge, mock_refresh_a, mock_refresh_c
+        self,
+        mock_run,
+        mock_get_attempt,
+        mock_bridges,
+        mock_search_chats,
+        mock_practice_entries,
+        mock_practice_chats,
+        mock_chat_entries,
+        mock_call,
+        mock_create_chat,
+        mock_create_bridge,
+        mock_refresh_a,
+        mock_refresh_c,
     ):
         chat_entry_id = UUID(int=30)
         attempt_chat_id = UUID(int=60)
@@ -2076,9 +2137,7 @@ class TestAttemptProceedImpl:
         mock_practice_entries.return_value = [
             SimpleNamespace(practice_id=UUID(int=100))
         ]
-        mock_practice_chats.return_value = [
-            SimpleNamespace(chat_id=chat_entry_id)
-        ]
+        mock_practice_chats.return_value = [SimpleNamespace(chat_id=chat_entry_id)]
         mock_chat_entries.return_value = [
             {
                 "chat_entry_id": str(chat_entry_id),
@@ -2131,10 +2190,18 @@ class TestAttemptProceedImpl:
     @patch(_GET_ATTEMPTS, new_callable=AsyncMock)
     @patch(_RUNS, new_callable=AsyncMock)
     async def test_with_generation_calls_emit_chat_generate(
-        self, mock_run, mock_get_attempt, mock_bridges,
-        mock_search_chats, mock_practice_entries, mock_practice_chats,
-        mock_chat_entries, mock_call, mock_create_chat,
-        mock_create_bridge, mock_emit_gen
+        self,
+        mock_run,
+        mock_get_attempt,
+        mock_bridges,
+        mock_search_chats,
+        mock_practice_entries,
+        mock_practice_chats,
+        mock_chat_entries,
+        mock_call,
+        mock_create_chat,
+        mock_create_bridge,
+        mock_emit_gen,
     ):
         chat_entry_id = UUID(int=30)
         attempt_chat_id = UUID(int=60)
@@ -2148,9 +2215,7 @@ class TestAttemptProceedImpl:
         mock_practice_entries.return_value = [
             SimpleNamespace(practice_id=UUID(int=100))
         ]
-        mock_practice_chats.return_value = [
-            SimpleNamespace(chat_id=chat_entry_id)
-        ]
+        mock_practice_chats.return_value = [SimpleNamespace(chat_id=chat_entry_id)]
         mock_chat_entries.return_value = [
             {
                 "chat_entry_id": str(chat_entry_id),
@@ -2200,9 +2265,14 @@ class TestAttemptProceedImpl:
     @patch(_GET_ATTEMPTS, new_callable=AsyncMock)
     @patch(_RUNS, new_callable=AsyncMock)
     async def test_user_choice_emits_started(
-        self, mock_run, mock_get_attempt, mock_bridges,
-        mock_search_chats, mock_practice_entries, mock_practice_chats,
-        mock_chat_entries
+        self,
+        mock_run,
+        mock_get_attempt,
+        mock_bridges,
+        mock_search_chats,
+        mock_practice_entries,
+        mock_practice_chats,
+        mock_chat_entries,
     ):
         chat_entry_id = UUID(int=30)
 
@@ -2215,9 +2285,7 @@ class TestAttemptProceedImpl:
         mock_practice_entries.return_value = [
             SimpleNamespace(practice_id=UUID(int=100))
         ]
-        mock_practice_chats.return_value = [
-            SimpleNamespace(chat_id=chat_entry_id)
-        ]
+        mock_practice_chats.return_value = [SimpleNamespace(chat_id=chat_entry_id)]
         mock_chat_entries.return_value = [
             {
                 "chat_entry_id": str(chat_entry_id),

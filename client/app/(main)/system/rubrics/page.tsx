@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 import Rubrics from "@/components/artifacts/rubric/Rubrics";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -134,19 +135,27 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
   const listData = await getRubricsList(body);
 
   return (
-    <div className="space-y-6" data-page="rubrics-index">
-      <Rubrics
-        listData={listData}
-        duplicateRubricAction={duplicateRubric}
-        deleteRubricAction={deleteRubric}
-        saveRubricAction={saveRubric}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        totalCount={listData.total_count ?? 0}
-        departmentSearch={q.departmentSearch ?? ""}
-        simulationSearch={q.simulationSearch ?? ""}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "System", section: "system", url: "/system" },
+          { title: "Rubrics" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="rubrics-index">
+        <Rubrics
+          listData={listData}
+          duplicateRubricAction={duplicateRubric}
+          deleteRubricAction={deleteRubric}
+          saveRubricAction={saveRubric}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          totalCount={listData.total_count ?? 0}
+          departmentSearch={q.departmentSearch ?? ""}
+          simulationSearch={q.simulationSearch ?? ""}
+        />
+      </div>
+    </>
   );
 }
 

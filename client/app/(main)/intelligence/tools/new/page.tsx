@@ -4,6 +4,8 @@
  */
 
 import Tool from "@/components/artifacts/tool/Tool";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -142,20 +144,30 @@ export default async function NewToolPage({
   const toolDetailDefault = await getToolDefault(input);
 
   return (
-    <div
-      className="space-y-6"
-      data-page="tool-new"
-      aria-label="Create new tool page"
-    >
-      <Tool
-        toolData={toolDetailDefault}
-        saveToolAction={saveTool}
-        patchToolDraftAction={patchToolDraft}
-        createArgsAction={createDraftArgs}
-        createArgPositionsAction={createDraftArgPositions}
-        createArgsOutputsAction={createDraftArgsOutputs}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+          { title: "Tools", section: "tools", url: "/intelligence/tools" },
+          { title: "New Tool" },
+        ]}
+        toolbar={<SaveToolbar artifactType="tool" />}
       />
-    </div>
+      <div
+        className="space-y-6 px-4"
+        data-page="tool-new"
+        aria-label="Create new tool page"
+      >
+        <Tool
+          toolData={toolDetailDefault}
+          saveToolAction={saveTool}
+          patchToolDraftAction={patchToolDraft}
+          createArgsAction={createDraftArgs}
+          createArgPositionsAction={createDraftArgPositions}
+          createArgsOutputsAction={createDraftArgsOutputs}
+        />
+      </div>
+    </>
   );
 }
 

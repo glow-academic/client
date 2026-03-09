@@ -4,8 +4,8 @@ from fastapi import APIRouter, Request, Response
 
 from app.infra.department_docs import docs_department_client
 from app.infra.docs.types import ComposedDocsResponse
-from app.infra.globals import get_pool, get_redis_client
 from app.infra.docs_helper import DocsApiRequest
+from app.infra.globals import get_pool, get_redis_client
 
 router = APIRouter()
 

@@ -244,9 +244,7 @@ async def save_provider_client(
                         detail=f"Item {idx}: You don't have permission to save this provider.",
                     )
             else:
-                if not compute_can_create(
-                    user_role=profile.role, department_ids=None
-                ):
+                if not compute_can_create(user_role=profile.role, department_ids=None):
                     raise HTTPException(
                         status_code=403,
                         detail=f"Item {idx}: You don't have permission to create a provider.",
@@ -309,9 +307,7 @@ async def save_provider_client(
                         else _UNSET,
                         department_ids=item.department_ids,
                         endpoint_ids=item.endpoint_ids,
-                        flag_ids=[item.active_flag_id]
-                        if item.active_flag_id
-                        else None,
+                        flag_ids=[item.active_flag_id] if item.active_flag_id else None,
                         key_ids=item.key_ids,
                         provider_ids=[providers_resource_id],
                         value_ids=item.value_ids,
@@ -324,9 +320,7 @@ async def save_provider_client(
                         description_id=item.description_id,
                         department_ids=item.department_ids,
                         endpoint_ids=item.endpoint_ids,
-                        flag_ids=[item.active_flag_id]
-                        if item.active_flag_id
-                        else None,
+                        flag_ids=[item.active_flag_id] if item.active_flag_id else None,
                         key_ids=item.key_ids,
                         provider_ids=[providers_resource_id],
                         value_ids=item.value_ids,

@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 import Agents from "@/components/artifacts/agent/Agents";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -125,19 +126,27 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
   const listData = await getAgentsList(body);
 
   return (
-    <div className="space-y-6" data-page="agents-index">
-      <Agents
-        listData={listData}
-        duplicateAgentAction={duplicateAgent}
-        deleteAgentAction={deleteAgent}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        totalCount={listData.total_count ?? 0}
-        departmentSearch={q.departmentSearch ?? ""}
-        modelSearch={q.modelSearch ?? ""}
-        toolSearch={q.toolSearch ?? ""}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+          { title: "Agents" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="agents-index">
+        <Agents
+          listData={listData}
+          duplicateAgentAction={duplicateAgent}
+          deleteAgentAction={deleteAgent}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          totalCount={listData.total_count ?? 0}
+          departmentSearch={q.departmentSearch ?? ""}
+          modelSearch={q.modelSearch ?? ""}
+          toolSearch={q.toolSearch ?? ""}
+        />
+      </div>
+    </>
   );
 }
 

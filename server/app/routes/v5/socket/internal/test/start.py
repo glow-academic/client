@@ -13,4 +13,6 @@ internal_sio = get_internal_sio()
 @internal_sio.on("test_start")  # type: ignore
 async def test_start_handler_new(data: dict[str, Any]) -> None:
     async with get_db_connection() as conn:
-        await test_start_impl(data, emit=make_emit(), conn=conn, redis=get_redis_client())
+        await test_start_impl(
+            data, emit=make_emit(), conn=conn, redis=get_redis_client()
+        )

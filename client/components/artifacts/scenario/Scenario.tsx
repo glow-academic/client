@@ -1676,6 +1676,7 @@ function ScenarioComponent({
                     showAiGenerate={s?.images?.show_ai_generate ?? false}
                     multiSelect={true}
                     maxImages={3}
+                    isAutosaveEnabled={isAutosaveEnabled}
                   />
                 )}
                 {showProblemStatementSection && (
@@ -1715,6 +1716,7 @@ function ScenarioComponent({
                       setFormData({ problemStatementSearch: term || null })
                     }
                     showAiGenerate={s?.problem_statements?.show_ai_generate ?? false}
+                    isAutosaveEnabled={isAutosaveEnabled}
                   />
                 )}
                 {showObjectivesSection && (
@@ -1737,6 +1739,7 @@ function ScenarioComponent({
                     }
                     showAiGenerate={s?.objectives?.show_ai_generate ?? false}
                     onGenerate={generateHandlers["objectives"]}
+                    isAutosaveEnabled={isAutosaveEnabled}
                   />
                 )}
               </div>
@@ -1982,6 +1985,7 @@ function ScenarioComponent({
                     }
                     onGenerate={generateHandlers["videos"]}
                     showAiGenerate={s?.videos?.show_ai_generate ?? false}
+                    isAutosaveEnabled={isAutosaveEnabled}
                   />
                 )}
                 {showQuestionsSection && (
@@ -2007,6 +2011,7 @@ function ScenarioComponent({
                     }
                     onGenerate={generateHandlers["questions"]}
                     showAiGenerate={s?.questions?.show_ai_generate ?? false}
+                    isAutosaveEnabled={isAutosaveEnabled}
                     onInternalQuestionsChange={setInternalQuestions}
                   />
                 )}
@@ -2030,6 +2035,7 @@ function ScenarioComponent({
                       }))
                     }
                     showAiGenerate={s?.options?.show_ai_generate ?? false}
+                    isAutosaveEnabled={isAutosaveEnabled}
                   />
                 )}
               </div>

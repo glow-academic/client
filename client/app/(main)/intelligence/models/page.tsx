@@ -5,6 +5,7 @@
  * 06/18/2025
  */
 import Models from "@/components/artifacts/model/Models";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -125,19 +126,27 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
   const listData = await getModelsList(body);
 
   return (
-    <div className="space-y-6" data-page="models-index">
-      <Models
-        listData={listData}
-        duplicateModelAction={duplicateModel}
-        deleteModelAction={deleteModel}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        totalCount={listData.total_count ?? 0}
-        providerSearch={q.providerSearch ?? ""}
-        departmentSearch={q.departmentSearch ?? ""}
-        agentSearch={q.agentSearch ?? ""}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Intelligence", section: "intelligence", url: "/intelligence" },
+          { title: "Models" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="models-index">
+        <Models
+          listData={listData}
+          duplicateModelAction={duplicateModel}
+          deleteModelAction={deleteModel}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          totalCount={listData.total_count ?? 0}
+          providerSearch={q.providerSearch ?? ""}
+          departmentSearch={q.departmentSearch ?? ""}
+          agentSearch={q.agentSearch ?? ""}
+        />
+      </div>
+    </>
   );
 }
 

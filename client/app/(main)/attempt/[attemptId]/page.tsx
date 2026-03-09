@@ -7,6 +7,7 @@
 
 import { AttemptChat } from "@/components/artifacts/attempt/chat/setups/AttemptChat";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -91,15 +92,22 @@ export default async function AttemptPage({
     }
 
     return (
-      <div className="space-y-6">
-        <AttemptChat
-          attempt_id={attemptId}
-          attempt_data={attemptData}
-          draft_id={draftId}
-          infinite_mode={infiniteMode}
-          user_instructions={userInstructions}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Attempt" },
+          ]}
         />
-      </div>
+        <div className="space-y-6 px-4">
+          <AttemptChat
+            attempt_id={attemptId}
+            attempt_data={attemptData}
+            draft_id={draftId}
+            infinite_mode={infiniteMode}
+            user_instructions={userInstructions}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     if (

@@ -5,6 +5,7 @@
  * 06/18/2025
  */
 import Cohorts from "@/components/artifacts/cohort/Cohorts";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -153,24 +154,32 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
   ]);
 
   return (
-    <div className="space-y-6" data-page="cohorts-index">
-      <Cohorts
-        listData={listData}
-        initialColumnVisibility={initialColumnVisibility}
-        duplicateCohortAction={duplicateCohort}
-        deleteCohortAction={deleteCohort}
-        saveCohortAction={saveCohort}
-        searchFlagsAction={searchFlags}
-        parseCsvAction={parseCsv}
-        importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        totalCount={listData.total_count ?? 0}
-        simulationSearch={q.simulationSearch ?? ""}
-        profileSearch={q.profileSearch ?? ""}
-        departmentSearch={q.departmentSearch ?? ""}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Training", section: "training", url: "/training" },
+          { title: "Cohorts" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="cohorts-index">
+        <Cohorts
+          listData={listData}
+          initialColumnVisibility={initialColumnVisibility}
+          duplicateCohortAction={duplicateCohort}
+          deleteCohortAction={deleteCohort}
+          saveCohortAction={saveCohort}
+          searchFlagsAction={searchFlags}
+          parseCsvAction={parseCsv}
+          importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          totalCount={listData.total_count ?? 0}
+          simulationSearch={q.simulationSearch ?? ""}
+          profileSearch={q.profileSearch ?? ""}
+          departmentSearch={q.departmentSearch ?? ""}
+        />
+      </div>
+    </>
   );
 }
 

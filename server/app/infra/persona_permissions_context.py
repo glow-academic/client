@@ -184,9 +184,7 @@ async def resolve_persona_values(
 
     if item.icon is not None and item.icon_id is None:
         async with pool.acquire() as conn:
-            results = await search_icons(
-                conn, redis, search=item.icon, limit_count=20
-            )
+            results = await search_icons(conn, redis, search=item.icon, limit_count=20)
         match = next(
             (r for r in results if r.name and r.name.lower() == item.icon.lower()),
             None,

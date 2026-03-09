@@ -8,8 +8,8 @@ from redis.asyncio import Redis
 
 from app.infra.chat_docs import docs_chat_client
 from app.infra.docs.types import ComposedDocsResponse
-from app.infra.globals import get_db, get_redis_client
 from app.infra.docs_helper import DocsApiRequest
+from app.infra.globals import get_db, get_redis_client
 
 router = APIRouter()
 

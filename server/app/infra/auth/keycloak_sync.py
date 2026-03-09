@@ -1765,9 +1765,7 @@ async def sync_identity_providers(
             if profile_id in seen_profiles:
                 continue
             seen_profiles.add(profile_id)
-            await sync_default_idp_for_profile(
-                profile_id, sp.profile_name, kc_admin
-            )
+            await sync_default_idp_for_profile(profile_id, sp.profile_name, kc_admin)
 
         # Step 1: Check if departments exist - if they do, skip realm-level IdPs that are also department-scoped
         async with pool.acquire() as conn:
@@ -1898,14 +1896,10 @@ async def sync_identity_providers(
             # Collect expected default-idp aliases (from Step 0 sync)
             expected_default_idp_aliases: set[str] = set()
             for sp in setting_profiles:
-                expected_default_idp_aliases.add(
-                    f"default-idp-profile-{sp.profile_id}"
-                )
+                expected_default_idp_aliases.add(f"default-idp-profile-{sp.profile_id}")
 
             # Get expected realm-level slugs
-            expected_realm_slugs = {
-                p.slug for p in realm_level_providers if p.slug
-            }
+            expected_realm_slugs = {p.slug for p in realm_level_providers if p.slug}
             expected_realm_slugs.update(expected_default_idp_aliases)
 
             # Get expected department-scoped aliases (auth_{slug}_{auth_id} pattern)
