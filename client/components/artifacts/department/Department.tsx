@@ -204,7 +204,6 @@ function DepartmentComponent({
       flushResults?: Record<string, unknown>,
     ): Record<string, unknown> => ({
       input_draft_id: inputDraftId || null,
-      group_id: s?.group_id ?? null,
       ...buildDraftPayload(DEPARTMENT_RESOURCES, {
         formState: formStateRef.current,
         referenceState: lastPatchedFormStateRef.current,

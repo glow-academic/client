@@ -72288,15 +72288,19 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetAgentApiRequest",
         "description": "Request model for get agent endpoint."
       },
@@ -74787,8 +74791,15 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "descriptions_search": {
@@ -74826,9 +74837,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetFieldApiRequest",
         "description": "Request model for get field endpoint."
       },
@@ -90431,6 +90439,129 @@
         "type": "object",
         "title": "ModelDescriptionSection"
       },
+      "ModelDraftFormState": {
+        "properties": {
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "modality_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Modality Ids"
+          },
+          "pricing_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Pricing Ids"
+          },
+          "provider_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Provider Ids"
+          },
+          "quality_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Quality Ids"
+          },
+          "reasoning_level_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Reasoning Level Ids"
+          },
+          "temperature_level_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Temperature Level Ids"
+          },
+          "value_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Value Ids"
+          },
+          "voice_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Voice Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "flag_ids",
+          "department_ids",
+          "modality_ids",
+          "pricing_ids",
+          "provider_ids",
+          "quality_ids",
+          "reasoning_level_ids",
+          "temperature_level_ids",
+          "value_ids",
+          "voice_ids"
+        ],
+        "title": "ModelDraftFormState",
+        "description": "Server-authoritative form state returned after draft save."
+      },
       "ModelFieldError": {
         "properties": {
           "field": {
@@ -93825,8 +93956,15 @@
       "PatchAgentDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -94014,9 +94152,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchAgentDraftApiRequest",
         "description": "Request model for new-style agent draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\nID-only for non-creatable resources:\n  - flag_ids, department_ids, model_ids, tool_ids, reasoning_level_ids,\n    temperature_level_ids, voice_ids, rubric_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -95474,8 +95609,15 @@
       "PatchFieldDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -95585,9 +95727,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchFieldDraftApiRequest",
         "description": "Request model for new-style field draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\nID-only for non-creatable resources:\n  - flag_id, department_ids, conditional_parameter_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -95877,6 +96016,16 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "form_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ModelDraftFormState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

@@ -43,6 +43,7 @@ async def delete_field(
             redis,
             profile_id=profile_id,
             field_ids=request.field_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

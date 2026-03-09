@@ -46,6 +46,7 @@ async def duplicate_persona(
             redis,
             profile_id=profile_id,
             persona_id=request.persona_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

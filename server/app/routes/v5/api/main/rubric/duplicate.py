@@ -46,6 +46,7 @@ async def duplicate_rubric(
             redis,
             profile_id=profile_id,
             rubric_id=request.rubric_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

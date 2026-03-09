@@ -21806,11 +21806,8 @@ export interface components {
             agent_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetAgentApiResponse
@@ -22361,11 +22358,8 @@ export interface components {
             field_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Descriptions Search */
             descriptions_search?: string | null;
             /** Conditional Parameter Search */
@@ -26453,6 +26447,36 @@ export interface components {
             resources?: unknown[] | null;
         };
         /**
+         * ModelDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        ModelDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Modality Ids */
+            modality_ids: string[];
+            /** Pricing Ids */
+            pricing_ids: string[];
+            /** Provider Ids */
+            provider_ids: string[];
+            /** Quality Ids */
+            quality_ids: string[];
+            /** Reasoning Level Ids */
+            reasoning_level_ids: string[];
+            /** Temperature Level Ids */
+            temperature_level_ids: string[];
+            /** Value Ids */
+            value_ids: string[];
+            /** Voice Ids */
+            voice_ids: string[];
+        };
+        /**
          * ModelFieldError
          * @description Per-field error from value resolution.
          */
@@ -27467,11 +27491,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchAgentDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -27942,11 +27963,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchFieldDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28057,6 +28075,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["ModelDraftFormState"] | null;
         };
         /**
          * PatchParameterDraftApiRequest

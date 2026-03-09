@@ -84,10 +84,11 @@ async def generate_new(sid: str, data: dict[str, Any]) -> None:
 
         # Resolve ProfileContext — cached via resource fetchers
         profile_id = uuid.UUID(profile_id_str)
+        session_id = uuid.UUID(session_id_str)
         redis = get_redis_client()
         async with get_db_connection() as conn:
             profile_ctx = await resolve_profile_identity_context(
-                conn, profile_id, redis
+                conn, profile_id, redis, session_id=session_id
             )
 
         if not profile_ctx:

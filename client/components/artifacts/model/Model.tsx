@@ -767,38 +767,61 @@ function ModelComponent({
         throw new Error("Profile not loaded");
       }
 
-      if (!saveModelAction) {
-        toast.error("Save action not available");
-        throw new Error("Save action not available");
-      }
-
       try {
         const efs = effectiveFormState;
-        await saveModelAction({
-          body: {
-            input_model_id: isEditMode && modelId ? modelId : null,
-            name_id: efs.name_id!,
-            description_id: efs.description_id ?? null,
-            provider_id: efs.provider_id ?? null,
-            value_id: valueId || null,
-            flag_ids: [
-              efs.active_flag_id,
-              efs.modalities_enabled_flag_id,
-              efs.temperature_enabled_flag_id,
-              efs.pricing_enabled_flag_id,
-              efs.voices_enabled_flag_id,
-              efs.reasoning_levels_enabled_flag_id,
-              efs.qualities_enabled_flag_id,
-            ].filter((id): id is string => id != null),
-            department_ids: efs.departmentIds?.length ? efs.departmentIds : null,
-            modality_ids: efs.modality_ids?.length ? efs.modality_ids : null,
-            temperature_level_ids: efs.temperature_level_ids?.length ? efs.temperature_level_ids : null,
-            pricing_ids: pricingIds?.length ? pricingIds : null,
-            reasoning_level_ids: efs.reasoning_level_ids?.length ? efs.reasoning_level_ids : null,
-            quality_ids: efs.quality_ids?.length ? efs.quality_ids : null,
-            voice_ids: efs.voice_ids?.length ? efs.voice_ids : null,
-          },
-        });
+        const flagIds = [
+          efs.active_flag_id,
+          efs.modalities_enabled_flag_id,
+          efs.temperature_enabled_flag_id,
+          efs.pricing_enabled_flag_id,
+          efs.voices_enabled_flag_id,
+          efs.reasoning_levels_enabled_flag_id,
+          efs.qualities_enabled_flag_id,
+        ].filter((id): id is string => id != null);
+
+        if (isEditMode && modelId && updateModelAction) {
+          await updateModelAction({
+            body: {
+              models: [{
+                model_id: modelId,
+                name_id: efs.name_id!,
+                description_id: efs.description_id ?? null,
+                provider_ids: efs.provider_id ? [efs.provider_id] : null,
+                value_ids: valueId ? [valueId] : null,
+                flag_ids: flagIds.length ? flagIds : null,
+                department_ids: efs.departmentIds?.length ? efs.departmentIds : null,
+                modality_ids: efs.modality_ids?.length ? efs.modality_ids : null,
+                temperature_level_ids: efs.temperature_level_ids?.length ? efs.temperature_level_ids : null,
+                pricing_ids: pricingIds?.length ? pricingIds : null,
+                reasoning_level_ids: efs.reasoning_level_ids?.length ? efs.reasoning_level_ids : null,
+                quality_ids: efs.quality_ids?.length ? efs.quality_ids : null,
+                voice_ids: efs.voice_ids?.length ? efs.voice_ids : null,
+              }],
+            },
+          });
+        } else if (createModelAction) {
+          await createModelAction({
+            body: {
+              models: [{
+                name_id: efs.name_id!,
+                description_id: efs.description_id ?? null,
+                provider_ids: efs.provider_id ? [efs.provider_id] : null,
+                value_ids: valueId ? [valueId] : null,
+                flag_ids: flagIds.length ? flagIds : null,
+                department_ids: efs.departmentIds?.length ? efs.departmentIds : null,
+                modality_ids: efs.modality_ids?.length ? efs.modality_ids : null,
+                temperature_level_ids: efs.temperature_level_ids?.length ? efs.temperature_level_ids : null,
+                pricing_ids: pricingIds?.length ? pricingIds : null,
+                reasoning_level_ids: efs.reasoning_level_ids?.length ? efs.reasoning_level_ids : null,
+                quality_ids: efs.quality_ids?.length ? efs.quality_ids : null,
+                voice_ids: efs.voice_ids?.length ? efs.voice_ids : null,
+              }],
+            },
+          });
+        } else {
+          toast.error("Save action not available");
+          throw new Error("Save action not available");
+        }
         toast.success(
           `Model ${isEditMode ? "updated" : "created"} successfully!`,
         );
@@ -814,7 +837,8 @@ function ModelComponent({
       isEditMode,
       modelId,
       profile?.id,
-      saveModelAction,
+      createModelAction,
+      updateModelAction,
       router,
       isAutosaveEnabled,
       flushAllResources,
@@ -1147,14 +1171,16 @@ function ModelComponent({
                   names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(id) =>
-                    setFormState((prev) => ({ ...prev, name_id: id }))
+                    setFormState((prev) => ({ ...prev, name_id: id, name: null }))
+                  }
+                  onNameChange={(name) =>
+                    setFormState((prev) => ({ ...prev, name, name_id: null }))
                   }
                   onGenerate={handleGenerateName}
                   placeholder="e.g., GPT-4"
                   defaultName="New Model"
                   required={s?.names?.required ?? true}
                   hideDescription={true}
-                  create_tool_id={s?.names?.create_tool_id ?? null}
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
                   createNamesAction={createNamesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
@@ -1204,12 +1230,14 @@ function ModelComponent({
                   }
                   disabled={disabled}
                   onDescriptionIdChange={(id) =>
-                    setFormState((prev) => ({ ...prev, description_id: id }))
+                    setFormState((prev) => ({ ...prev, description_id: id, description: null }))
+                  }
+                  onDescriptionChange={(description) =>
+                    setFormState((prev) => ({ ...prev, description, description_id: null }))
                   }
                   onGenerate={handleGenerateDescription}
                   placeholder="Enter a brief description"
                   required={s?.descriptions?.required ?? false}
-                  create_tool_id={s?.descriptions?.create_tool_id ?? null}
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
@@ -1251,7 +1279,6 @@ function ModelComponent({
                   placeholder="Select model value identifier (e.g., gpt-4, gemini-pro)"
                   required={s?.values?.required ?? true}
                   description="Unique identifier for this model (used in API calls)"
-                  create_tool_id={s?.values?.create_tool_id ?? null}
                   showAiGenerate={s?.values?.show_ai_generate ?? false}
                   createValuesAction={createValuesAction}
                   isAutosaveEnabled={isAutosaveEnabled}

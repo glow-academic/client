@@ -43,6 +43,7 @@ async def delete_tool(
             redis,
             profile_id=profile_id,
             tool_ids=request.tool_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

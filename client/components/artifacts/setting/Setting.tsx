@@ -631,7 +631,6 @@ function SettingComponent({
         const result = await patchSettingDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
-            group_id: settingData?.group_id ?? null,
             name_id: formState.name_id || null,
             description_id: formState.description_id || null,
             flag_id: formState.active_flag_id || null,

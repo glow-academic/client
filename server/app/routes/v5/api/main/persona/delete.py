@@ -43,6 +43,7 @@ async def delete_persona(
             redis,
             profile_id=profile_id,
             persona_ids=request.persona_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

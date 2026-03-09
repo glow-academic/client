@@ -43,6 +43,7 @@ async def delete_parameter(
             redis,
             profile_id=profile_id,
             parameter_ids=request.parameter_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

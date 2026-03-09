@@ -132,7 +132,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 return
 
             identity = await resolve_profile_identity_context(
-                conn, profile_id, get_redis_client()
+                conn, profile_id, get_redis_client(), session_id=uuid.UUID(session_id_str)
             )
             profiles_id = identity.profiles_id if identity else None
 

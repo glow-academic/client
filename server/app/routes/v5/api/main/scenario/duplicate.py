@@ -46,6 +46,7 @@ async def duplicate_scenario(
             redis,
             profile_id=profile_id,
             scenario_id=request.scenario_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

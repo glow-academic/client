@@ -43,6 +43,7 @@ async def delete_scenario(
             redis,
             profile_id=profile_id,
             scenario_ids=request.scenario_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

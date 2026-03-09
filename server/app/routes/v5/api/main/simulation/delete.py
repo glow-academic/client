@@ -43,6 +43,7 @@ async def delete_simulation(
             redis,
             profile_id=profile_id,
             simulation_ids=request.simulation_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

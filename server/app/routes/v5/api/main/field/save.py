@@ -27,6 +27,7 @@ async def save_field(
     """Save fields using composable infra architecture."""
     try:
         profile_id = http_request.state.profile_id
+        session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
@@ -41,7 +42,7 @@ async def save_field(
             redis,
             profile_id=profile_id,
             items=request.fields,
-            group_id=request.group_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = "fields"

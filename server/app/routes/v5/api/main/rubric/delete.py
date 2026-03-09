@@ -43,6 +43,7 @@ async def delete_rubric(
             redis,
             profile_id=profile_id,
             rubric_ids=request.rubric_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

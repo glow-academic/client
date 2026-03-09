@@ -46,6 +46,7 @@ async def duplicate_profile(
             redis,
             profile_id=profile_id,
             target_profile_id=request.target_profile_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

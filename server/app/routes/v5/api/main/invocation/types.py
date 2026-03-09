@@ -45,7 +45,7 @@ class GetSuiteRequest(BaseModel):
     """Client API request for one benchmark bundle customization payload."""
 
     test_id: UUID
-    group_id: UUID
+    group_id: UUID | None = None
     draft_id: UUID | None = None
     # Search filters
     descriptions_search: str | None = None
@@ -172,7 +172,7 @@ class PatchInvocationDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID
+    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

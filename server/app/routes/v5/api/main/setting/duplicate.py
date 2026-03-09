@@ -46,6 +46,7 @@ async def duplicate_setting(
             redis,
             profile_id=profile_id,
             setting_id=request.setting_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

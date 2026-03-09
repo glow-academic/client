@@ -476,7 +476,6 @@ export default function Agent({
       const currentDraftState = formStateRef.current as unknown as DraftState;
       const base: Record<string, unknown> = {
         input_draft_id: nextDraftId,
-        group_id: sectionData?.group_id ?? null,
         ...buildDraftPayload(AGENT_RESOURCES, {
           formState: computeEffectiveFormState(
             AGENT_RESOURCES,

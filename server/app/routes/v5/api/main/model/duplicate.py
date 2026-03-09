@@ -46,6 +46,7 @@ async def duplicate_model(
             redis,
             profile_id=profile_id,
             model_id=request.model_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

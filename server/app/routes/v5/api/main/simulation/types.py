@@ -371,7 +371,7 @@ class GetSimulationApiRequest(BaseModel):
 
     simulation_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID
+    group_id: UUID | None = None
     scenario_search: str | None = None
     filter_scenario_ids: list[UUID] | None = None
 
@@ -834,7 +834,7 @@ class PatchSimulationDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID
+    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 

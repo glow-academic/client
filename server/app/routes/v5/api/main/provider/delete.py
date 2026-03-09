@@ -43,6 +43,7 @@ async def delete_provider(
             redis,
             profile_id=profile_id,
             provider_ids=request.provider_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

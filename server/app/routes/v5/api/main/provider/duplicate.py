@@ -46,6 +46,7 @@ async def duplicate_provider(
             redis,
             profile_id=profile_id,
             provider_id=request.provider_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

@@ -46,6 +46,7 @@ async def duplicate_field(
             redis,
             profile_id=profile_id,
             field_id=request.field_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

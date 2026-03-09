@@ -46,6 +46,7 @@ async def duplicate_parameter(
             redis,
             profile_id=profile_id,
             parameter_id=request.parameter_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

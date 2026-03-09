@@ -73,7 +73,7 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
 
             async with get_db_connection() as conn:
                 identity = await resolve_profile_identity_context(
-                    conn, profile_id, get_redis_client()
+                    conn, profile_id, get_redis_client(), session_id=session_id
                 )
                 profiles_id = identity.profiles_id if identity else None
 

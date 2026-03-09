@@ -46,6 +46,7 @@ async def duplicate_simulation(
             redis,
             profile_id=profile_id,
             simulation_id=request.simulation_id,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

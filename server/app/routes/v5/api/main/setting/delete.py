@@ -43,6 +43,7 @@ async def delete_setting(
             redis,
             profile_id=profile_id,
             setting_ids=request.setting_ids,
+            session_id=session_id,
         )
 
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

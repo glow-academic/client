@@ -476,7 +476,6 @@ function EvalComponent({
         const result = await patchEvalDraftActionRef.current({
           body: {
             input_draft_id: draftId || null,
-            group_id: s?.group_id ?? null,
             name_id: formState.name_id,
             description_id: formState.description_id,
             flag_ids: flagIds.length > 0 ? flagIds : null,
