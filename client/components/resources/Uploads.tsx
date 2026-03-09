@@ -289,7 +289,6 @@ export function Uploads({
                 const createResult = await createUploadsAction({
                   body: {
                     agent_id: "",
-                    group_id: group_id,
                     upload_id: databaseUploadId,
                     mcp: false,
                     tool_id: create_tool_id ?? undefined,

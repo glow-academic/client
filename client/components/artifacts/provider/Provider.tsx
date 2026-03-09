@@ -33,8 +33,10 @@ import type { ResourceType } from "@/lib/resources/types";
 import type { Parser } from "nuqs";
 import { parseAsString } from "nuqs";
 
-type SaveProviderIn = InputOf<"/api/v5/artifacts/providers/save", "post">;
-type SaveProviderOut = OutputOf<"/api/v5/artifacts/providers/save", "post">;
+type CreateProviderIn = InputOf<"/api/v5/artifacts/providers/create", "post">;
+type CreateProviderOut = OutputOf<"/api/v5/artifacts/providers/create", "post">;
+type UpdateProviderIn = InputOf<"/api/v5/artifacts/providers/update", "post">;
+type UpdateProviderOut = OutputOf<"/api/v5/artifacts/providers/update", "post">;
 type PatchProviderDraftIn = InputOf<"/api/v5/artifacts/providers/draft", "patch">;
 type PatchProviderDraftOut = OutputOf<
   "/api/v5/artifacts/providers/draft",
@@ -57,7 +59,9 @@ type CreateDraftEndpointsOut = OutputOf<"/api/v5/resources/endpoints", "post">;
 type ProviderData = OutputOf<"/api/v5/artifacts/providers/get", "post">;
 
 type ProviderFormState = {
+  name: string | null;
   name_id: string | null;
+  description: string | null;
   description_id: string | null;
   active_flag_id: string | null;
   department_ids: string[];
@@ -98,7 +102,8 @@ const PROVIDER_RESOURCES: ResourceType[] = [
 export interface ProviderProps {
   providerId?: string;
   providerData?: ProviderData;
-  saveProviderAction?: (input: SaveProviderIn) => Promise<SaveProviderOut>;
+  createProviderAction?: (input: CreateProviderIn) => Promise<CreateProviderOut>;
+  updateProviderAction?: (input: UpdateProviderIn) => Promise<UpdateProviderOut>;
   patchProviderDraftAction?: (
     input: PatchProviderDraftIn
   ) => Promise<PatchProviderDraftOut>;
@@ -119,7 +124,8 @@ export interface ProviderProps {
 export default function Provider({
   providerId,
   providerData,
-  saveProviderAction,
+  createProviderAction,
+  updateProviderAction,
   patchProviderDraftAction,
   createNamesAction,
   createDescriptionsAction,
@@ -137,7 +143,9 @@ export default function Provider({
   const getInitialFormState = useCallback((): ProviderFormState => {
     if (!s) {
       return {
+        name: null,
         name_id: null,
+        description: null,
         description_id: null,
         active_flag_id: null,
         department_ids: [],
@@ -147,7 +155,9 @@ export default function Provider({
       };
     }
     return {
+      name: null,
       name_id: (s.names?.resource?.id as string) ?? null,
+      description: null,
       description_id: (s.descriptions?.resource?.id as string) ?? null,
       active_flag_id: (s.flags?.current?.[0]?.flag_option_id as string) ?? null,
       department_ids: (s.departments?.current ?? [])
@@ -180,7 +190,12 @@ export default function Provider({
     () => ({ draftId: parseAsString }),
     []
   );
-  const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
+  const serverSyncPendingRef = React.useRef(false);
+
+  const formStateKey = useMemo(() => {
+    if (serverSyncPendingRef.current) return undefined;
+    return JSON.stringify(formState);
+  }, [formState]);
 
   const patchActionRef = React.useRef<
     | ((
@@ -190,8 +205,24 @@ export default function Provider({
   >(undefined);
   useEffect(() => {
     if (patchProviderDraftAction) {
-      patchActionRef.current = async (payload: Record<string, unknown>) =>
-        patchProviderDraftAction({ body: payload } as PatchProviderDraftIn);
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        const res = await patchProviderDraftAction({ body: payload } as PatchProviderDraftIn);
+        const fs = (res as Record<string, unknown>)?.form_state as Record<string, unknown> | undefined;
+        if (fs) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name_id: (fs.name_id as string) ?? prev.name_id,
+            name: fs.name_id ? null : prev.name,
+            description_id: (fs.description_id as string) ?? prev.description_id,
+            description: fs.description_id ? null : prev.description,
+          }));
+          requestAnimationFrame(() => {
+            serverSyncPendingRef.current = false;
+          });
+        }
+        return res;
+      };
     } else {
       patchActionRef.current = undefined;
     }
@@ -212,7 +243,7 @@ export default function Provider({
         expectedVersion: number,
         flushResults?: Record<string, unknown>
       ) => {
-        return {
+        const payload: Record<string, unknown> = {
           input_draft_id: inputDraftId,
           ...buildDraftPayload(PROVIDER_RESOURCE_CONFIG, {
             formState: computeEffectiveFormState(
@@ -228,6 +259,19 @@ export default function Provider({
           }),
           expected_version: expectedVersion,
         };
+
+        // Value field overlay: send raw value instead of ID when set
+        const currentFs = formStateRef.current;
+        if (currentFs.name) {
+          payload.name = currentFs.name;
+          delete payload.name_id;
+        }
+        if (currentFs.description) {
+          payload.description = currentFs.description;
+          delete payload.description_id;
+        }
+
+        return payload;
       },
       setSelectedDraftId,
       serverDraftVersion: s?.draft_version ?? null,
@@ -295,7 +339,6 @@ export default function Provider({
   );
 
   const handleSubmit = useCallback(async () => {
-    if (!saveProviderAction) return;
     let flushResults: Record<string, unknown> = {};
     if (!isAutosaveEnabled) flushResults = await flushAllResources();
     const effectiveState = computeEffectiveFormState(
@@ -307,25 +350,53 @@ export default function Provider({
     const valueId = effectiveState["value_id"] as string | null;
     if (!nameId) throw new Error("Name is required");
     if (!valueId) throw new Error("Value is required");
-    await saveProviderAction({
-      body: {
-        input_provider_id: providerId ?? null,
-        name_id: nameId,
-        description_id: (effectiveState["description_id"] as string) ?? null,
-        flag_id: (effectiveState["active_flag_id"] as string) ?? null,
-        value_id: valueId,
-        endpoint_id: (effectiveState["endpoint_id"] as string) ?? null,
-        key_id: (effectiveState["key_id"] as string) ?? null,
-        department_ids: (effectiveState["department_ids"] as string[])?.length
-          ? (effectiveState["department_ids"] as string[])
-          : null,
-      },
-    });
+
+    const flagId = (effectiveState["active_flag_id"] as string) ?? null;
+    const deptIds = (effectiveState["department_ids"] as string[])?.length
+      ? (effectiveState["department_ids"] as string[])
+      : null;
+    const endpointId = (effectiveState["endpoint_id"] as string) ?? null;
+    const keyId = (effectiveState["key_id"] as string) ?? null;
+
+    if (isEditMode && providerId && updateProviderAction) {
+      await updateProviderAction({
+        body: {
+          providers: [{
+            provider_id: providerId,
+            name_id: nameId,
+            description_id: (effectiveState["description_id"] as string) ?? null,
+            active_flag_id: flagId,
+            value_ids: valueId ? [valueId] : null,
+            endpoint_ids: endpointId ? [endpointId] : null,
+            key_ids: keyId ? [keyId] : null,
+            department_ids: deptIds,
+          }],
+        },
+      });
+    } else if (createProviderAction) {
+      await createProviderAction({
+        body: {
+          providers: [{
+            name_id: nameId,
+            description_id: (effectiveState["description_id"] as string) ?? null,
+            active_flag_id: flagId,
+            value_ids: valueId ? [valueId] : null,
+            endpoint_ids: endpointId ? [endpointId] : null,
+            key_ids: keyId ? [keyId] : null,
+            department_ids: deptIds,
+          }],
+        },
+      });
+    } else {
+      toast.error("Save action not available");
+      throw new Error("Save action not available");
+    }
     toast.success(isEditMode ? "Provider updated" : "Provider created");
     router.push("/intelligence/providers");
     router.refresh();
   }, [
-    saveProviderAction,
+    createProviderAction,
+    updateProviderAction,
     providerId,
     isEditMode,
     isAutosaveEnabled,
@@ -411,7 +482,6 @@ export default function Provider({
               names={s?.names?.resources ?? undefined}
               required={s?.names?.required}
               disabled={disabled}
-              create_tool_id={s?.names?.create_tool_id}
               showAiGenerate={s?.names?.show_ai_generate}
               createNamesAction={createNamesAction}
               registerFlush={(
@@ -422,7 +492,10 @@ export default function Provider({
               )["names"]}
               isAutosaveEnabled={isAutosaveEnabled}
               onNameIdChange={(id: string | null) =>
-                setFormState((prev) => ({ ...prev, name_id: id }))
+                setFormState((prev) => ({ ...prev, name_id: id, name: null }))
+              }
+              onNameChange={(name: string | null) =>
+                setFormState((prev) => ({ ...prev, name, name_id: null }))
               }
             />
             <DescriptionsAny
@@ -433,7 +506,6 @@ export default function Provider({
               descriptions={s?.descriptions?.resources ?? undefined}
               required={s?.descriptions?.required}
               disabled={disabled}
-              create_tool_id={s?.descriptions?.create_tool_id}
               showAiGenerate={s?.descriptions?.show_ai_generate}
               createDescriptionsAction={createDescriptionsAction}
               registerFlush={(
@@ -444,7 +516,10 @@ export default function Provider({
               )["descriptions"]}
               isAutosaveEnabled={isAutosaveEnabled}
               onDescriptionIdChange={(id: string | null) =>
-                setFormState((prev) => ({ ...prev, description_id: id }))
+                setFormState((prev) => ({ ...prev, description_id: id, description: null }))
+              }
+              onDescriptionChange={(description: string | null) =>
+                setFormState((prev) => ({ ...prev, description, description_id: null }))
               }
             />
             <FlagsAny
@@ -517,7 +592,6 @@ export default function Provider({
             }
             required={s?.values?.required}
             disabled={disabled}
-            create_tool_id={s?.values?.create_tool_id}
             showAiGenerate={s?.values?.show_ai_generate}
             createValuesAction={createValuesAction}
             registerFlush={(
@@ -555,7 +629,6 @@ export default function Provider({
             }
             required={s?.endpoints?.required}
             disabled={disabled}
-            create_tool_id={s?.endpoints?.create_tool_id}
             showAiGenerate={s?.endpoints?.show_ai_generate}
             createEndpointsAction={createEndpointsAction}
             registerFlush={(

@@ -22,6 +22,7 @@ from app.infra.provider_permissions import compute_can_draft
 from app.routes.v5.api.main.provider.types import (
     PatchProviderDraftApiRequest,
     PatchProviderDraftApiResponse,
+    ProviderDraftFormState,
     SaveProviderFieldError,
 )
 from app.routes.v5.tools.entries.provider_drafts.create import create_provider_draft
@@ -136,12 +137,24 @@ async def patch_provider_draft_client(
                 value_ids=request.value_ids,
             )
 
-    # ── Step 5: Refresh MV ─────────────────────────────────────────────
+    # ── Step 5: Build form state (server is source of truth) ────────────
+
+    form_state = ProviderDraftFormState(
+        name_id=request.name_id,
+        description_id=request.description_id,
+        flag_id=request.flag_id,
+        department_ids=request.department_ids or [],
+        endpoint_ids=request.endpoint_ids or [],
+        key_ids=request.key_ids or [],
+        value_ids=request.value_ids or [],
+    )
+
+    # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
     async with pool.acquire() as conn:
         await refresh_provider_drafts(conn)
 
-    # ── Step 6: Invalidate cache ───────────────────────────────────────
+    # ── Step 7: Invalidate cache ───────────────────────────────────────
 
     await invalidate_tags(["providers", "drafts"], redis=redis)
 
@@ -150,4 +163,5 @@ async def patch_provider_draft_client(
         draft_id=result.id,
         new_version=new_version,
         message="Draft created successfully",
+        form_state=form_state,
     )

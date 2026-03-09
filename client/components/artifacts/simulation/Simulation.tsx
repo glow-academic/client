@@ -873,14 +873,12 @@ function SimulationComponent({
           await updateSimulationAction({
             body: {
               simulations: [{ simulation_id: simulationId, ...commonFields }],
-              group_id: simulationData?.group_id ?? undefined,
             },
           } as UpdateSimulationIn);
         } else if (createSimulationAction) {
           await createSimulationAction({
             body: {
               simulations: [commonFields],
-              group_id: simulationData?.group_id ?? undefined,
             },
           } as CreateSimulationIn);
         } else {

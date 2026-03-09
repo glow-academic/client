@@ -305,7 +305,6 @@ export function Options({
             option_text: option.option_text,
             is_correct: option.is_correct,
             question_id: option.question_id || undefined,
-            group_id: group_id,
             mcp: false,
             tool_id: create_tool_id ?? undefined,
           },

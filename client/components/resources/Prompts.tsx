@@ -269,7 +269,6 @@ export function Prompts({
       if (promptContent.trim()) {
         const result = await createPromptsAction({
           body: {
-            group_id: group_id,
             system_prompt: promptContent,
             name: resource?.name || "Untitled Prompt",
             description: resource?.description || "",

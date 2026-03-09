@@ -230,7 +230,6 @@ export function Videos({
             try {
               await createVideosAction({
                 body: {
-                  group_id: group_id,
                   name: selectedVideoItem.name ?? "",
                   length_seconds: selectedVideoItem.length_seconds ?? 0,
                   description: selectedVideoItem.description ?? "",
@@ -275,7 +274,6 @@ export function Videos({
           const videoItem = videoMapping[videoId];
           await createVideosAction({
             body: {
-              group_id: group_id,
               name: videoItem?.name ?? "",
               length_seconds: videoItem?.length_seconds ?? 0,
               description: videoItem?.description ?? "",
@@ -404,7 +402,6 @@ export function Videos({
               // Create video resource entry
               const createResult = await createVideosAction({
                 body: {
-                  group_id: group_id,
                   name: file.name,
                   length_seconds: 0, // Will be updated after processing
                   description: "",

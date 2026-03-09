@@ -271,7 +271,6 @@ export function ProblemStatements({
       if (internalValue.trim()) {
         const result = await createProblemStatementsAction({
           body: {
-            group_id: group_id,
             name: "",
             problem_statement: internalValue,
             mcp: false,
@@ -340,7 +339,6 @@ export function ProblemStatements({
         if (internalValue.trim() && create_tool_id && group_id) {
           const result = await createProblemStatementsAction({
             body: {
-              group_id: group_id,
               name: "",
               problem_statement: internalValue,
               mcp: false,

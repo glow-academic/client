@@ -21975,11 +21975,8 @@ export interface components {
             auth_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetAuthApiResponse
@@ -22095,11 +22092,8 @@ export interface components {
             attempt_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Description Search */
             description_search?: string | null;
             /** Persona Search */
@@ -22175,11 +22169,8 @@ export interface components {
             profile_show_selected?: boolean | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetCohortApiResponse
@@ -22222,11 +22213,8 @@ export interface components {
             department_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /** GetDepartmentApiResponse */
         GetDepartmentApiResponse: {
@@ -22258,11 +22246,8 @@ export interface components {
             document_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetDocumentApiResponse
@@ -22311,11 +22296,8 @@ export interface components {
             eval_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetEvalApiResponse
@@ -22604,11 +22586,8 @@ export interface components {
             model_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetModelApiResponse
@@ -22655,11 +22634,8 @@ export interface components {
             parameter_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetParameterApiResponse
@@ -22752,11 +22728,8 @@ export interface components {
             icon_show_selected?: boolean | null;
             /** Parameter Field Show Selected */
             parameter_field_show_selected?: boolean | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetPersonaApiResponse
@@ -22861,11 +22834,8 @@ export interface components {
             target_profile_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /** GetProfileApiResponse */
         GetProfileApiResponse: {
@@ -22942,11 +22912,8 @@ export interface components {
             provider_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /**
          * GetProviderApiResponse
@@ -22983,11 +22950,8 @@ export interface components {
             rubric_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /** GetRubricApiResponse */
         GetRubricApiResponse: {
@@ -23081,11 +23045,8 @@ export interface components {
             field_show_selected_by_param?: components["schemas"]["ScenarioFieldParamFilter"][] | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /**
              * Mcp
              * @default false
@@ -23184,11 +23145,8 @@ export interface components {
             color_search?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /**
              * Mcp
              * @default false
@@ -23232,11 +23190,8 @@ export interface components {
             simulation_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Scenario Search */
             scenario_search?: string | null;
             /** Filter Scenario Ids */
@@ -23632,11 +23587,8 @@ export interface components {
             tool_id?: string | null;
             /** Draft Id */
             draft_id?: string | null;
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
         };
         /** GetToolApiResponse */
         GetToolApiResponse: {
@@ -27555,11 +27507,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchAuthDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -27616,11 +27565,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchChatDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -27709,11 +27655,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchCohortDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -27780,11 +27723,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchDepartmentDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -27836,11 +27776,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchDocumentDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -27905,11 +27842,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchEvalDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28018,11 +27952,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchModelDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28089,11 +28020,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchParameterDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28146,11 +28074,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchPersonaDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28217,11 +28142,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchProfileDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28278,11 +28200,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchProviderDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28325,6 +28244,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["ProviderDraftFormState"] | null;
         };
         /**
          * PatchRubricDraftApiRequest
@@ -28338,11 +28258,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchRubricDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28403,11 +28320,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchScenarioDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28489,11 +28403,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchSettingDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28558,11 +28469,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchSimulationDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -28632,11 +28540,8 @@ export interface components {
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
         PatchToolDraftApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
+            /** Group Id */
+            group_id?: string | null;
             /** Input Draft Id */
             input_draft_id?: string | null;
             /**
@@ -30156,6 +30061,26 @@ export interface components {
             resource?: unknown | null;
             /** Resources */
             resources?: unknown[] | null;
+        };
+        /**
+         * ProviderDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        ProviderDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids: string[];
+            /** Endpoint Ids */
+            endpoint_ids: string[];
+            /** Key Ids */
+            key_ids: string[];
+            /** Value Ids */
+            value_ids: string[];
         };
         /** ProviderEndpointSection */
         ProviderEndpointSection: {

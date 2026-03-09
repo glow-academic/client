@@ -124,7 +124,7 @@ export function Voices({
       if (newlySelected.length > 0 && linkVoicesAction && group_id && link_tool_id) {
         for (const voiceId of newlySelected) {
           linkVoicesAction({
-            body: { resource_id: voiceId, group_id, tool_id: link_tool_id },
+            body: { resource_id: voiceId, tool_id: link_tool_id },
           }).catch(() => {});
         }
       }

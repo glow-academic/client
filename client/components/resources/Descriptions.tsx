@@ -445,7 +445,7 @@ export function Descriptions({
               // Fire link tracking for selecting an existing resource
               if (linkDescriptionsAction && group_id && link_tool_id) {
                 linkDescriptionsAction({
-                  body: { resource_id: selectedId, group_id, tool_id: link_tool_id },
+                  body: { resource_id: selectedId, tool_id: link_tool_id },
                 }).catch(() => {});
               }
             } else {

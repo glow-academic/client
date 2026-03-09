@@ -147,7 +147,7 @@ export function ParameterFieldsNew({
           // Fire link tracking for selecting an existing resource
           if (linkParameterFieldsAction && group_id && link_tool_id) {
             linkParameterFieldsAction({
-              body: { resource_id: existingResourceId, group_id, tool_id: link_tool_id },
+              body: { resource_id: existingResourceId, tool_id: link_tool_id },
             }).catch(() => {});
           }
         } else {

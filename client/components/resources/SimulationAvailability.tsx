@@ -292,7 +292,6 @@ export function SimulationAvailability({
       try {
         const result = await createSimulationAvailabilityAction({
           body: {
-            group_id: group_id,
             simulation_id: simulationId,
             availability_time: new Date(time).toISOString(),
             type: type,

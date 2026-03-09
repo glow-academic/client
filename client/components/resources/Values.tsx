@@ -125,7 +125,6 @@ export function Values({
       if (internalValue.trim()) {
         const result = await createValuesAction({
           body: {
-            group_id: group_id,
             value: internalValue,
             mcp: false,
             tool_id: create_tool_id ?? undefined,

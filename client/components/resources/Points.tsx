@@ -186,7 +186,6 @@ export function Points({
     try {
       const result = await createPointsAction({
         body: {
-          group_id: group_id,
           value: numericValue,
           mcp: false,
           tool_id: create_tool_id ?? undefined,
@@ -297,7 +296,6 @@ export function Points({
       try {
         const result = await createPointsAction({
           body: {
-            group_id: group_id,
             value: numericValue,
             mcp: false,
             tool_id: create_tool_id ?? undefined,

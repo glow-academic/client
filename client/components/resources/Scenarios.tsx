@@ -152,7 +152,7 @@ export function Scenarios({
       // Fire link tracking when adding a scenario
       if (!alreadySelected && linkScenariosAction && group_id && link_tool_id) {
         linkScenariosAction({
-          body: { resource_id: scenarioId, group_id, tool_id: link_tool_id },
+          body: { resource_id: scenarioId, tool_id: link_tool_id },
         }).catch(() => {});
       }
       void handleSelect(nextSelectedIds);

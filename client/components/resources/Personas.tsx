@@ -176,7 +176,7 @@ export function Personas({
       // Fire link tracking when adding (not removing)
       if (!isCurrentlySelected && linkPersonasAction && group_id && link_tool_id) {
         linkPersonasAction({
-          body: { resource_id: personaId, group_id, tool_id: link_tool_id },
+          body: { resource_id: personaId, tool_id: link_tool_id },
         }).catch(() => {});
       }
 

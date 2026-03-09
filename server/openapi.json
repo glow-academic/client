@@ -73013,15 +73013,19 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetAuthApiRequest",
         "description": "Request model for get auth endpoint."
       },
@@ -73509,8 +73513,15 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "description_search": {
@@ -73626,8 +73637,7 @@
         },
         "type": "object",
         "required": [
-          "chat_entry_id",
-          "group_id"
+          "chat_entry_id"
         ],
         "title": "GetChatRequest",
         "description": "Client API request for one chat bundle customization payload."
@@ -73908,15 +73918,19 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetCohortApiRequest",
         "description": "Request for getting a single cohort."
       },
@@ -74158,15 +74172,19 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetDepartmentApiRequest"
       },
       "GetDepartmentApiResponse": {
@@ -74320,15 +74338,19 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetDocumentApiRequest",
         "description": "Request model for get document endpoint."
       },
@@ -74556,15 +74578,19 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetEvalApiRequest",
         "description": "Request model for get eval endpoint."
       },
@@ -75502,15 +75528,19 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetModelApiRequest",
         "description": "Request model for get model endpoint."
       },
@@ -75768,15 +75798,19 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetParameterApiRequest",
         "description": "Request model for get parameter endpoint."
       },
@@ -76143,15 +76177,19 @@
             "title": "Parameter Field Show Selected"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetPersonaApiRequest",
         "description": "Request model for get persona endpoint."
       },
@@ -76593,15 +76631,19 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetProfileApiRequest"
       },
       "GetProfileApiResponse": {
@@ -76987,15 +77029,19 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetProviderApiRequest",
         "description": "Request model for get provider endpoint."
       },
@@ -77192,15 +77238,19 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetRubricApiRequest"
       },
       "GetRubricApiResponse": {
@@ -77667,8 +77717,15 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "mcp": {
@@ -77700,9 +77757,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetScenarioApiRequest",
         "description": "Request for getting a single scenario."
       },
@@ -78098,8 +78152,15 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "mcp": {
@@ -78116,9 +78177,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetSettingApiRequest",
         "description": "Request model for get setting endpoint."
       },
@@ -78323,8 +78381,15 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "scenario_search": {
@@ -78355,9 +78420,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetSimulationApiRequest",
         "description": "Request for getting a single simulation."
       },
@@ -79399,15 +79461,19 @@
             "title": "Draft Id"
           },
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "GetToolApiRequest"
       },
       "GetToolApiResponse": {
@@ -94198,8 +94264,15 @@
       "PatchAuthDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -94339,9 +94412,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchAuthDraftApiRequest",
         "description": "Request model for new-style auth draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\nID-only for non-creatable resources:\n  - flag_id, department_ids, protocol_ids, slug_ids, item_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -94378,8 +94448,15 @@
       "PatchChatDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -94744,9 +94821,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchChatDraftApiRequest",
         "description": "Request model for new-style chat draft endpoint.\n\nSingle-select creatables: name, description, problem_statement\n  \u2192 value creates resource, ID replaces value (mutually exclusive).\n\nMulti-select creatables: objectives, images, videos, questions, options\n  \u2192 values create resources, created IDs are merged with existing IDs.\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -94793,8 +94867,15 @@
       "PatchCohortDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -95006,9 +95087,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchCohortDraftApiRequest",
         "description": "Request model for new-style cohort draft endpoint.\n\nDual-mode for creatable resources:\n  - Single-select: name/name_id, description/description_id\n  - Multi-select compound: simulation_positions, simulation_availability,\n    profile_personas (values create resources, created IDs merged with existing IDs)\nID-only for non-creatable resources:\n  - flag_id, department_ids, simulation_ids, profile_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -95055,8 +95133,15 @@
       "PatchDepartmentDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -95151,9 +95236,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchDepartmentDraftApiRequest",
         "description": "Request model for new-style department draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\nID-only for non-creatable resources:\n  - flag_id, setting_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -95190,8 +95272,15 @@
       "PatchDocumentDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -95392,9 +95481,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchDocumentDraftApiRequest",
         "description": "Request model for new-style document draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\n  - files (upload_id) / file_ids\n  - texts (content) / text_ids\nID-only for non-creatable resources:\n  - flag_ids, department_ids, image_ids, parameter_field_ids, parameter_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -95441,8 +95527,15 @@
       "PatchEvalDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -95570,9 +95663,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchEvalDraftApiRequest",
         "description": "Request model for new-style eval draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\nID-only for non-creatable resources:\n  - flag_ids, department_ids, model_ids, rubric_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -95773,8 +95863,15 @@
       "PatchModelDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -95992,9 +96089,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchModelDraftApiRequest",
         "description": "Request model for new-style model draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\nID-only for non-creatable resources:\n  - flag_ids, department_ids, modality_ids, pricing_ids, provider_ids,\n    quality_ids, reasoning_level_ids, temperature_level_ids, value_ids, voice_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -96041,8 +96135,15 @@
       "PatchParameterDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -96155,9 +96256,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchParameterDraftApiRequest",
         "description": "Request model for new-style parameter draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\nID-only for non-creatable resources:\n  - flag_ids, department_ids, field_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -96204,8 +96302,15 @@
       "PatchPersonaDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -96406,9 +96511,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchPersonaDraftApiRequest",
         "description": "Request model for new-style persona draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id, instructions/instructions_id, examples/example_ids\nID-only for non-creatable resources:\n  - color_id, icon_id, flag_id, department_ids, parameter_field_ids, voice_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -96449,8 +96551,15 @@
       "PatchProfileDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -96589,9 +96698,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchProfileDraftApiRequest",
         "description": "Request model for new-style profile draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id\nID-only for non-creatable resources:\n  - flag_id, department_ids, email_ids, role_ids, request_limit_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -96638,8 +96744,15 @@
       "PatchProviderDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -96779,9 +96892,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchProviderDraftApiRequest",
         "description": "Request model for new-style provider draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\nID-only for non-creatable resources:\n  - flag_id, department_ids, endpoint_ids, key_ids, value_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -96803,6 +96913,16 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "form_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProviderDraftFormState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -96818,8 +96938,15 @@
       "PatchRubricDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -96959,9 +97086,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchRubricDraftApiRequest",
         "description": "Request model for new-style rubric draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\nID-only for non-creatable resources:\n  - flag_id, department_ids, point_ids, standard_group_ids, standard_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -96998,8 +97122,15 @@
       "PatchScenarioDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -97310,9 +97441,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchScenarioDraftApiRequest",
         "description": "Request model for new-style scenario draft endpoint.\n\nDual-mode for creatable resources:\n  - Single-select: name/name_id, description/description_id,\n    problem_statement/problem_statement_id\n  - Multi-select (merged): objectives/objective_ids, images/image_ids,\n    videos/video_ids, questions/question_ids, options/option_ids\n    (values are created as resources, then IDs are merged with existing IDs)\n\nID-only for non-creatable resources:\n  - flag_ids, department_ids, persona_ids, document_ids, parameter_field_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -97353,8 +97481,15 @@
       "PatchSettingDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -97539,9 +97674,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchSettingDraftApiRequest",
         "description": "Request model for new-style setting draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\nID-only for non-creatable resources:\n  - flag_id, department_ids, color_ids, profile_ids, auth_ids,\n    provider_key_ids, auth_item_key_ids, threshold_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -97578,8 +97710,15 @@
       "PatchSimulationDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -97808,9 +97947,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchSimulationDraftApiRequest",
         "description": "Request model for new-style simulation draft endpoint.\n\nDual-mode for creatable resources:\n  - Single-select: name/name_id, description/description_id\n  - Multi-select compound: scenario_flags, scenario_positions,\n    scenario_rubrics, scenario_time_limits (values create resources,\n    created IDs merged with existing IDs)\nID-only for non-creatable resources:\n  - flag_ids, department_ids, scenario_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -97857,8 +97993,15 @@
       "PatchToolDraftApiRequest": {
         "properties": {
           "group_id": {
-            "type": "string",
-            "format": "uuid",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Group Id"
           },
           "input_draft_id": {
@@ -98031,9 +98174,6 @@
           }
         },
         "type": "object",
-        "required": [
-          "group_id"
-        ],
         "title": "PatchToolDraftApiRequest",
         "description": "Request model for new-style tool draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\nID-only for non-creatable resources:\n  - flag_ids, department_ids, arg_ids, arg_position_ids, args_output_ids,\n    entry_ids, resource_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
@@ -103019,6 +103159,87 @@
         },
         "type": "object",
         "title": "ProviderDescriptionSection"
+      },
+      "ProviderDraftFormState": {
+        "properties": {
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "endpoint_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Endpoint Ids"
+          },
+          "key_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Key Ids"
+          },
+          "value_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Value Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_ids",
+          "endpoint_ids",
+          "key_ids",
+          "value_ids"
+        ],
+        "title": "ProviderDraftFormState",
+        "description": "Server-authoritative form state returned after draft save."
       },
       "ProviderEndpointSection": {
         "properties": {

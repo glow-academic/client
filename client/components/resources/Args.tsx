@@ -160,7 +160,6 @@ export function Args({
         // Create new args resource with updated values (write-only pattern)
         await createArgsAction({
           body: {
-            group_id: group_id,
             name: updates.name ?? field.name,
             description: updates.description ?? field.description,
             field_type: (updates.field_type ?? field.field_type) as

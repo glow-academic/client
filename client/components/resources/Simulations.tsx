@@ -182,7 +182,7 @@ export function Simulations({
       // Fire link tracking when adding (not removing)
       if (!isSelected && linkSimulationsAction && group_id && link_tool_id) {
         linkSimulationsAction({
-          body: { resource_id: simulationId, group_id, tool_id: link_tool_id },
+          body: { resource_id: simulationId, tool_id: link_tool_id },
         }).catch(() => {});
       }
 

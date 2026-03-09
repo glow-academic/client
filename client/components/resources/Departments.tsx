@@ -120,7 +120,6 @@ export function Departments({
       for (const deptId of newIds) {
         await linkDepartmentAction({
           body: {
-            group_id: group_id,
             resource_id: deptId,
             tool_id: link_tool_id,
           },

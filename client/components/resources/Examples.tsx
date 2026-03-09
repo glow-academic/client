@@ -211,7 +211,7 @@ export function Examples({
           // Fire link tracking
           if (linkExamplesAction && group_id && link_tool_id) {
             linkExamplesAction({
-              body: { resource_id: existingId, group_id, tool_id: link_tool_id },
+              body: { resource_id: existingId, tool_id: link_tool_id },
             }).catch(() => {});
           }
         }

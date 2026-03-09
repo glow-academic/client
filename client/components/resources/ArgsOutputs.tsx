@@ -217,7 +217,6 @@ export function ArgsOutputs({
         // Create new args_outputs resource with updated name (write-only pattern)
         await createArgsOutputsAction({
           body: {
-            group_id: group_id,
             args_id: output.args_id,
             name: name,
             template: outputTemplates[outputId] ?? output.template,
@@ -256,7 +255,6 @@ export function ArgsOutputs({
         // Create new args_outputs resource with updated template (write-only pattern)
         await createArgsOutputsAction({
           body: {
-            group_id: group_id,
             args_id: output.args_id,
             name: outputNames[outputId] ?? output.name,
             template: template,

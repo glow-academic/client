@@ -827,14 +827,12 @@ function PersonaComponent({
           await updatePersonaAction({
             body: {
               personas: [{ persona_id: personaId, ...commonFields }],
-              group_id: personaData?.group_id ?? undefined,
             },
           } as UpdatePersonaIn);
         } else if (createPersonaAction) {
           await createPersonaAction({
             body: {
               personas: [commonFields],
-              group_id: personaData?.group_id ?? undefined,
             },
           } as CreatePersonaIn);
         } else {

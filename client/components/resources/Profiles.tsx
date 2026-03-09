@@ -168,7 +168,7 @@ export function Profiles({
       // Fire link tracking when adding (not removing)
       if (!isSelected && linkProfilesAction && group_id && link_tool_id) {
         linkProfilesAction({
-          body: { resource_id: profileId, group_id, tool_id: link_tool_id },
+          body: { resource_id: profileId, tool_id: link_tool_id },
         }).catch(() => {});
       }
 

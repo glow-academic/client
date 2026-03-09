@@ -321,7 +321,6 @@ export function Questions({
       try {
         const result = await createQuestionsAction({
           body: {
-            group_id: group_id,
             question_text: question.question_text,
             allow_multiple: question.allow_multiple,
             time_value: question.times?.[0] ?? 0,

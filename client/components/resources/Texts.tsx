@@ -149,7 +149,6 @@ export function Texts({
         body: {
           content: newTextContent.trim(),
           agent_id: create_tool_id || "00000000-0000-0000-0000-000000000000",
-          group_id: group_id || "00000000-0000-0000-0000-000000000000",
           mcp: false,
           tool_id: create_tool_id ?? undefined,
         },

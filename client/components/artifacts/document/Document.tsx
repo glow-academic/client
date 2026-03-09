@@ -386,7 +386,6 @@ function DocumentComponent({
     ): Record<string, unknown> => {
       const payload: Record<string, unknown> = {
         input_draft_id: inputDraftId || null,
-        group_id: documentDetail?.group_id ?? null,
         ...buildDraftPayload(DOCUMENT_RESOURCES, {
           formState: formStateRef.current,
           referenceState:

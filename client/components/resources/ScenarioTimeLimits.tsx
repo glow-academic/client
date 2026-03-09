@@ -325,7 +325,6 @@ export function ScenarioTimeLimits({
       try {
         const result = await createScenarioTimeLimitsAction({
           body: {
-            group_id: group_id,
             scenario_id: artifactScenarioId,
             time_limit_seconds: value,
             mcp: false,

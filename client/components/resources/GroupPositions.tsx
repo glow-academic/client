@@ -174,7 +174,6 @@ export function GroupPositions({
               try {
                 await createGroupPositionsAction({
                   body: {
-                    group_id: group_id,
                     groups_id: positionItem.groups_id,
                     eval_id: positionItem.eval_id,
                     value: positionItem.value ?? undefined,

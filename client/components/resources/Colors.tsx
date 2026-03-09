@@ -243,7 +243,7 @@ export function Colors({
         // Fire link tracking for selecting an existing resource
         if (linkColorsAction && group_id && link_tool_id) {
           linkColorsAction({
-            body: { resource_id: selectedColor.id, group_id, tool_id: link_tool_id },
+            body: { resource_id: selectedColor.id, tool_id: link_tool_id },
           }).catch(() => {});
         }
         return;
@@ -342,7 +342,7 @@ export function Colors({
       if (newlySelected.length > 0 && linkColorsAction && group_id && link_tool_id) {
         for (const colorId of newlySelected) {
           linkColorsAction({
-            body: { resource_id: colorId, group_id, tool_id: link_tool_id },
+            body: { resource_id: colorId, tool_id: link_tool_id },
           }).catch(() => {});
         }
       }

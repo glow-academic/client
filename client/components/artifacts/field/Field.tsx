@@ -305,7 +305,6 @@ function FieldComponent({
       const currentFormState = formStateRef.current as unknown as FieldFormState;
       const base: Record<string, unknown> = {
         input_draft_id: draftId || null,
-        group_id: stableFieldData?.group_id ?? null,
         ...buildDraftPayload(FIELD_RESOURCES, {
           formState: formStateRef.current,
           referenceState: lastPatchedFormStateRef.current as unknown as Record<

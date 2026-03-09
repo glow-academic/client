@@ -127,7 +127,6 @@ export function Protocols({
       for (const protocolId of uncreatedIds) {
         await createProtocolsAction({
           body: {
-            group_id: group_id,
             protocol_id: protocolId,
             mcp: false,
             tool_id: create_tool_id ?? undefined,
@@ -185,7 +184,6 @@ export function Protocols({
           try {
             await createProtocolsAction({
               body: {
-                group_id: group_id,
                 protocol_id: protocolId,
                 mcp: false,
                 tool_id: create_tool_id ?? undefined,

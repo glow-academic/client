@@ -317,7 +317,6 @@ export function ScenarioRubrics({
       try {
         const result = await createScenarioRubricsAction({
           body: {
-            group_id: group_id,
             scenario_id: artifactScenarioId,
             rubric_id: rubricId,
             mcp: false,

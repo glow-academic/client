@@ -153,7 +153,6 @@ export function useAttemptLifecycle({
     }) => {
       if (!socket || !groupId) return;
       socket.emit("attempt_start", {
-        group_id: groupId,
         ...(opts.homeId && { home_id: opts.homeId }),
         ...(opts.practiceId && { practice_id: opts.practiceId }),
         infinite_mode: opts.infiniteMode ?? false,

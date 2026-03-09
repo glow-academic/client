@@ -126,7 +126,6 @@ export function Slugs({
       for (const slugId of uncreatedIds) {
         await createSlugsAction({
           body: {
-            group_id: group_id,
             slug_id: slugId,
             mcp: false,
             tool_id: create_tool_id ?? undefined,
@@ -184,7 +183,6 @@ export function Slugs({
           try {
             await createSlugsAction({
               body: {
-                group_id: group_id,
                 slug_id: slugId,
                 mcp: false,
                 tool_id: create_tool_id ?? undefined,

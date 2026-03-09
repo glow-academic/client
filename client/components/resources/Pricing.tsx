@@ -131,7 +131,6 @@ export function Pricing({
       try {
         await createPricingAction({
           body: {
-            group_id: group_id,
             pricing_id: pricingId,
             mcp: false,
             tool_id: create_tool_id ?? undefined,

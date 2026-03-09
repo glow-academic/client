@@ -130,7 +130,6 @@ export function Icons({
       if (currentId) {
         await linkIconAction({
           body: {
-            group_id: group_id,
             resource_id: currentId,
             tool_id: link_tool_id,
           },

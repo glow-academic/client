@@ -147,7 +147,6 @@ export function Flags(props: FlagsProps) {
       if (effectiveFlagId) {
         await linkFlagAction({
           body: {
-            group_id: group_id,
             resource_id: effectiveFlagId,
             tool_id: link_tool_id,
           },

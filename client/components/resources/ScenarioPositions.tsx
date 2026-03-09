@@ -361,7 +361,6 @@ export function ScenarioPositions({
         try {
           const result = await createScenarioPositionsAction({
             body: {
-              group_id: group_id,
               simulation_id: simulation_id,
               scenario_id: artifactScenarioId,
               value: newValue,

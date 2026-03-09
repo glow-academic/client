@@ -227,7 +227,6 @@ export function ParameterFields({
             try {
               const result = await createParameterFieldsAction({
                 body: {
-                  group_id: group_id,
                   parameter_id: parameterId,
                   field_id: fieldId,
                   mcp: false,
@@ -375,7 +374,6 @@ export function ParameterFields({
       try {
         const result = await createParameterFieldsAction({
           body: {
-            group_id: group_id,
             parameter_id: parameterId,
             field_id: fieldId,
             mcp: false,

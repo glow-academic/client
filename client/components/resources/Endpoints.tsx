@@ -125,7 +125,6 @@ export function Endpoints({
       if (internalValue.trim()) {
         const result = await createEndpointsAction({
           body: {
-            group_id: group_id,
             base_url: internalValue,
             mcp: false,
             tool_id: create_tool_id ?? undefined,

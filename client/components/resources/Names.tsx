@@ -224,7 +224,7 @@ export function Names({
           // Fire link tracking for selecting an existing resource
           if (linkNamesAction && group_id && link_tool_id) {
             linkNamesAction({
-              body: { resource_id: matchedName.id, group_id, tool_id: link_tool_id },
+              body: { resource_id: matchedName.id, tool_id: link_tool_id },
             }).catch(() => {});
           }
         }

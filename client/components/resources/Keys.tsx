@@ -129,7 +129,6 @@ export function Keys({
       try {
         await createKeysAction({
           body: {
-            group_id: group_id,
             key_id: keyId,
             mcp: false,
             tool_id: create_tool_id ?? undefined,
@@ -214,7 +213,6 @@ export function Keys({
           try {
             await createKeysAction({
               body: {
-                group_id: group_id,
                 key_id: keyId,
                 mcp: false,
                 tool_id: create_tool_id ?? undefined,

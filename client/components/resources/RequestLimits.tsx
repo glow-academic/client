@@ -156,7 +156,6 @@ export function RequestLimits({
       if (requestLimitObj?.requests_per_day !== null && requestLimitObj?.requests_per_day !== undefined) {
         await createRequestLimitsAction({
           body: {
-            group_id: group_id,
             requests_per_day: requestLimitObj.requests_per_day,
             mcp: false,
             tool_id: create_tool_id ?? undefined,
@@ -253,7 +252,6 @@ export function RequestLimits({
           if (requestLimitObj?.requests_per_day !== null) {
             await createRequestLimitsAction({
               body: {
-                group_id: group_id,
                 requests_per_day: requestLimitObj.requests_per_day!,
                 mcp: false,
                 tool_id: create_tool_id ?? undefined,
@@ -292,7 +290,6 @@ export function RequestLimits({
       try {
         const result = await createRequestLimitsAction({
           body: {
-            group_id: group_id,
             requests_per_day: value,
             mcp: false,
             tool_id: create_tool_id ?? undefined,

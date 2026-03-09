@@ -196,7 +196,6 @@ export function Emails({
             if (emailObj?.email) {
               await createEmailsAction({
                 body: {
-                  group_id: group_id,
                   email: emailObj.email,
                   mcp: false,
                   tool_id: create_tool_id ?? undefined,
@@ -256,7 +255,6 @@ export function Emails({
       try {
         const result = await createEmailsAction({
           body: {
-            group_id: group_id,
             email: trimmed,
             mcp: false,
             tool_id: create_tool_id ?? undefined,

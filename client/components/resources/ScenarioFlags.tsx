@@ -315,7 +315,6 @@ export function ScenarioFlags({
       try {
         const result = await createScenarioFlagsAction({
           body: {
-            group_id: group_id,
             scenario_id: artifactScenarioId,
             flag_id: flagId,
             mcp: false,

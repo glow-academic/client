@@ -174,7 +174,6 @@ export function RunPositions({
               try {
                 await createRunPositionsAction({
                   body: {
-                    group_id: group_id,
                     runs_id: positionItem.runs_id,
                     eval_id: positionItem.eval_id,
                     value: positionItem.value ?? undefined,

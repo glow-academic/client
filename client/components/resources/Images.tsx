@@ -258,7 +258,6 @@ export function Images({
             const imageItem = imageMapping[imageId];
             await createImagesAction({
               body: {
-                group_id: group_id,
                 name: imageItem?.name ?? "",
                 description: imageItem?.description ?? "",
                 mcp: false,
@@ -298,7 +297,6 @@ export function Images({
           const imageItem = imageMapping[imageId];
           await createImagesAction({
             body: {
-              group_id: group_id,
               name: imageItem?.name ?? "",
               description: imageItem?.description ?? "",
               mcp: false,
@@ -426,8 +424,7 @@ export function Images({
               // Create image resource entry
               const createResult = await createImagesAction({
                 body: {
-                  group_id: group_id,
-                  name: file.name,
+                    name: file.name,
                   description: "",
                   upload_id: databaseUploadId,
                   mcp: false,

@@ -148,7 +148,6 @@ export function ArgPositions({
       const result = await createArgPositionsAction({
         body: {
           agent_id: create_tool_id,
-          group_id,
           tool_id,
           args_id: argsId,
           value: index,

@@ -15,8 +15,8 @@ import { resolveGroupId } from "@/app/(main)/layout-server";
 /** ---- Strong types from OpenAPI ---- */
 type GetProviderIn = InputOf<"/api/v5/artifacts/providers/get", "post">;
 type GetProviderOut = OutputOf<"/api/v5/artifacts/providers/get", "post">;
-type SaveProviderIn = InputOf<"/api/v5/artifacts/providers/save", "post">;
-type SaveProviderOut = OutputOf<"/api/v5/artifacts/providers/save", "post">;
+type CreateProviderIn = InputOf<"/api/v5/artifacts/providers/create", "post">;
+type CreateProviderOut = OutputOf<"/api/v5/artifacts/providers/create", "post">;
 type PatchProviderDraftIn = InputOf<"/api/v5/artifacts/providers/draft", "patch">;
 type PatchProviderDraftOut = OutputOf<"/api/v5/artifacts/providers/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -50,15 +50,11 @@ const getProviderDefault = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveProvider(
-  input: SaveProviderIn
-): Promise<SaveProviderOut> {
+async function createProvider(
+  input: CreateProviderIn
+): Promise<CreateProviderOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/providers/save", input, {
-    signal: AbortSignal.timeout(30000), // 30 second timeout
-  });
+  return api.post("/artifacts/providers/create", input);
 }
 
 async function patchProviderDraft(
@@ -168,7 +164,7 @@ export default async function NewProviderPage({
         <Provider
           key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
           providerData={providerDetailDefault}
-          saveProviderAction={saveProvider}
+          createProviderAction={createProvider}
           patchProviderDraftAction={patchProviderDraft}
           createNamesAction={createNames}
           createDescriptionsAction={createDescriptions}
@@ -194,6 +190,6 @@ export type {
   CreateDraftValuesOut,
   CreateDraftEndpointsIn,
   CreateDraftEndpointsOut,
-  SaveProviderIn,
-  SaveProviderOut,
+  CreateProviderIn,
+  CreateProviderOut,
 };

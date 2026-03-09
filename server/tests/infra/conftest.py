@@ -158,6 +158,7 @@ async def profile_identity_factory(pool, redis_client):
                 role_ids=role_ids,
                 profile_ids=[profile_res.id],
                 soft=not artifact_active,
+                redis=redis_client,
             )
 
         return ProfileIdentityFixture(

@@ -346,7 +346,6 @@ export function ProfilePersonas({
         try {
           const result = await createProfilePersonasAction({
             body: {
-              group_id: group_id,
               cohort_id: cohort_id,
               profile_id: profileId,
               persona_id: personaId,

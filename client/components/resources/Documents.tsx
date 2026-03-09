@@ -160,7 +160,7 @@ export function Documents({
       // Fire link tracking when adding (not removing)
       if (!isCurrentlySelected && linkDocumentsAction && group_id && link_tool_id) {
         linkDocumentsAction({
-          body: { resource_id: documentId, group_id, tool_id: link_tool_id },
+          body: { resource_id: documentId, tool_id: link_tool_id },
         }).catch(() => {});
       }
 

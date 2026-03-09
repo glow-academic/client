@@ -381,7 +381,6 @@ export function Objectives({
       try {
         const result = await createObjectivesAction({
           body: {
-            group_id: group_id,
             objective: text,
             mcp: false,
             tool_id: create_tool_id ?? undefined,

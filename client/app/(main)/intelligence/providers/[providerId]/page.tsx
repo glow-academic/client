@@ -17,8 +17,10 @@ import { resolveGroupId } from "@/app/(main)/layout-server";
 type GetProviderIn = InputOf<"/api/v5/artifacts/providers/get", "post">;
 type GetProviderOut = OutputOf<"/api/v5/artifacts/providers/get", "post">;
 
-type SaveProviderIn = InputOf<"/api/v5/artifacts/providers/save", "post">;
-type SaveProviderOut = OutputOf<"/api/v5/artifacts/providers/save", "post">;
+type CreateProviderIn = InputOf<"/api/v5/artifacts/providers/create", "post">;
+type CreateProviderOut = OutputOf<"/api/v5/artifacts/providers/create", "post">;
+type UpdateProviderIn = InputOf<"/api/v5/artifacts/providers/update", "post">;
+type UpdateProviderOut = OutputOf<"/api/v5/artifacts/providers/update", "post">;
 type PatchProviderDraftIn = InputOf<"/api/v5/artifacts/providers/draft", "patch">;
 type PatchProviderDraftOut = OutputOf<"/api/v5/artifacts/providers/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -70,15 +72,18 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveProvider(
-  input: SaveProviderIn
-): Promise<SaveProviderOut> {
+async function createProvider(
+  input: CreateProviderIn
+): Promise<CreateProviderOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/providers/save", input, {
-    signal: AbortSignal.timeout(30000), // 30 second timeout
-  });
+  return api.post("/artifacts/providers/create", input);
+}
+
+async function updateProvider(
+  input: UpdateProviderIn
+): Promise<UpdateProviderOut> {
+  "use server";
+  return api.post("/artifacts/providers/update", input);
 }
 
 async function patchProviderDraft(
@@ -189,7 +194,8 @@ export default async function EditProviderPage({
           <Provider
             providerId={providerId}
             providerData={providerDetail}
-            saveProviderAction={saveProvider}
+            createProviderAction={createProvider}
+            updateProviderAction={updateProvider}
             patchProviderDraftAction={patchProviderDraft}
             createNamesAction={createNames}
             createDescriptionsAction={createDescriptions}
@@ -234,6 +240,8 @@ export type {
   CreateDraftValuesOut,
   CreateDraftEndpointsIn,
   CreateDraftEndpointsOut,
-  SaveProviderIn,
-  SaveProviderOut,
+  CreateProviderIn,
+  CreateProviderOut,
+  UpdateProviderIn,
+  UpdateProviderOut,
 };

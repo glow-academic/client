@@ -127,7 +127,6 @@ export function useGenerationPanel({
 
     getGenerateMessagesAction({
       body: {
-        group_id: groupId,
         page_limit: PAGE_SIZE,
         page_offset: 0,
       },
@@ -162,7 +161,6 @@ export function useGenerationPanel({
     setIsLoadingMessages(true);
     getGenerateMessagesAction({
       body: {
-        group_id: groupId,
         page_limit: PAGE_SIZE,
         page_offset: offsetRef.current,
       },

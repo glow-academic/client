@@ -1343,14 +1343,12 @@ function ScenarioComponent({
           await updateScenarioAction({
             body: {
               scenarios: [{ scenario_id: scenarioId, ...commonFields }],
-              group_id: scenarioData?.group_id ?? undefined,
             },
           } as UpdateScenarioIn);
         } else if (createScenarioAction) {
           await createScenarioAction({
             body: {
               scenarios: [commonFields],
-              group_id: scenarioData?.group_id ?? undefined,
             },
           } as CreateScenarioIn);
         } else {
