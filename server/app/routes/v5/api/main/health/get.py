@@ -15,10 +15,17 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.analytics_facets import (
+    HIDDEN,
+    VISIBLE,
+    AnalyticsFacetsConfig,
+    resolve_analytics_facets,
+)
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.health_context import resolve_health_context
 from app.infra.tool_graph import score_tools
+from app.routes.auth.types import AnalyticsFacets, AnalyticsFilterFields
 from app.routes.v5.api.main.health.types import (
     HealthInternalData,
     HealthRequest,
@@ -33,6 +40,21 @@ from app.routes.v5.tools.resources.tools.get import get_tools
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
+
+# ---------------------------------------------------------------------------
+# Health analytics facets config
+# ---------------------------------------------------------------------------
+
+HEALTH_FACETS_CONFIG = AnalyticsFacetsConfig(
+    fields=AnalyticsFilterFields(
+        date_range=VISIBLE,
+        departments=HIDDEN,
+        cohorts=HIDDEN,
+        roles=HIDDEN,
+        attempts=HIDDEN,
+    ),
+    mv_source="health",
+)
 
 # Health entry types for tool scoring
 HEALTH_BUNDLE_ENTRIES: set[str] = {"problems"}
@@ -210,16 +232,47 @@ async def get_health(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        data = await get_health_internal(
-            pool=pool,
-            profile_id=profile_id,
-            service=request.service,
-            date_from=request.date_from,
-            date_to=request.date_to,
-            page_limit=request.page_limit,
-            page_offset=request.page_offset,
-            bypass_cache=bypass_cache,
-        )
+        redis = get_redis_client()
+
+        # Resolve common context first (needed for analytics facets profile)
+        async with pool.acquire() as c:
+            common = await resolve_common_context(
+                c, redis, profile_id=profile_id, bypass_cache=bypass_cache
+            )
+
+        # Resolve health data + analytics facets in parallel
+        analytics_facets: AnalyticsFacets | None = None
+        if common and common.profile:
+            data, analytics_facets = await asyncio.gather(
+                get_health_internal(
+                    pool=pool,
+                    profile_id=profile_id,
+                    service=request.service,
+                    date_from=request.date_from,
+                    date_to=request.date_to,
+                    page_limit=request.page_limit,
+                    page_offset=request.page_offset,
+                    bypass_cache=bypass_cache,
+                ),
+                resolve_analytics_facets(
+                    pool,
+                    redis,
+                    config=HEALTH_FACETS_CONFIG,
+                    profile=common.profile,
+                    bypass_cache=bypass_cache,
+                ),
+            )
+        else:
+            data = await get_health_internal(
+                pool=pool,
+                profile_id=profile_id,
+                service=request.service,
+                date_from=request.date_from,
+                date_to=request.date_to,
+                page_limit=request.page_limit,
+                page_offset=request.page_offset,
+                bypass_cache=bypass_cache,
+            )
 
         views = HealthViews(
             service_hourly=data.health,
@@ -230,6 +283,7 @@ async def get_health(
         return HealthResponse(
             views=views,
             total_count=len(data.health),
+            analytics=analytics_facets,
         )
 
     except HTTPException:

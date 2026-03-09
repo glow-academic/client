@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 import { Scenarios } from "@/components/artifacts/scenario/Scenarios";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -24,8 +25,6 @@ type CreateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/create", "post">;
 type CreateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/create", "post">;
 type UpdateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/update", "post">;
 type UpdateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/update", "post">;
-type SearchFlagsIn = InputOf<"/api/v5/resources/flags/search", "post">;
-type SearchFlagsOut = NonNullable<OutputOf<"/api/v5/resources/flags/search", "post">["items"]>;
 type ParseCsvIn = InputOf<"/uploads/csv", "post">;
 type ParseCsvOut = OutputOf<"/uploads/csv", "post">;
 
@@ -38,6 +37,7 @@ type ScenariosListBody = {
   persona_search?: string | null;
   simulation_search?: string | null;
   department_search?: string | null;
+  flag_search?: string | null;
   page_size: number | null;
   page_offset: number | null;
 };
@@ -87,14 +87,6 @@ async function createScenario(input: CreateScenarioIn): Promise<CreateScenarioOu
 async function updateScenario(input: UpdateScenarioIn): Promise<UpdateScenarioOut> {
   "use server";
   return api.post("/artifacts/scenarios/update", input);
-}
-
-async function searchFlags(): Promise<SearchFlagsOut> {
-  "use server";
-  const res = await api.post("/resources/flags/search", {
-    body: { search: null, limit_count: 100, offset_count: 0, scenario: true },
-  } as SearchFlagsIn);
-  return res.items ?? [];
 }
 
 async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
@@ -152,6 +144,7 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
     persona_search: q.personaSearch || null,
     simulation_search: q.simulationSearch || null,
     department_search: q.departmentSearch || null,
+    flag_search: q.flagSearch || null,
     page_size: pageSize,
     page_offset: offset,
   };
@@ -169,6 +162,7 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
           { title: "Training", section: "training", url: "/training" },
           { title: "Scenarios" },
         ]}
+        toolbar={<NewArtifactButton label="New Scenario" href="/training/scenarios/new" />}
       />
       <div className="space-y-6 px-4" data-page="scenarios-index">
         <Scenarios
@@ -178,7 +172,6 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
           deleteScenarioAction={deleteScenario}
           createScenarioAction={createScenario}
           updateScenarioAction={updateScenario}
-          searchFlagsAction={searchFlags}
           parseCsvAction={parseCsv}
           importFields={listData.import_fields ?? undefined}
           pageIndex={pageIndex}
@@ -187,6 +180,7 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
           personaSearch={q.personaSearch ?? ""}
           simulationSearch={q.simulationSearch ?? ""}
           departmentSearch={q.departmentSearch ?? ""}
+          flagSearch={q.flagSearch ?? ""}
         />
       </div>
     </>
@@ -205,6 +199,5 @@ export type {
   CreateScenarioOut,
   UpdateScenarioIn,
   UpdateScenarioOut,
-  SearchFlagsOut,
   ScenariosListOut,
 };

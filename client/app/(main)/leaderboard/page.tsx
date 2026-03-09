@@ -6,15 +6,13 @@
  */
 
 import Leaderboard from "@/components/artifacts/leaderboard/Leaderboard";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { PageHeader } from "@/components/common/layout/PageHeader";
+import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
-import {
-  computeAnalyticsDefaults,
-  resolveAnalyticsFilters,
-} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { loadLeaderboardSearchParams } from "@/lib/search-params/leaderboard";
 
@@ -65,22 +63,17 @@ export default async function LeaderboardPage({
   // Parse search params via nuqs loader
   const q = loadLeaderboardSearchParams(await searchParams);
 
-  // Compute defaults and resolve filters
-  const { defaults, profileContext } = await computeAnalyticsDefaults();
-  const filters = resolveAnalyticsFilters(q, defaults, profileContext);
-
   // Read view cookie for column visibility
   const initialColumnVisibility = await readViewCookie("leaderboard");
 
-  // Fetch leaderboard data server-side
+  // Fetch leaderboard data server-side (no filter params needed for initial load)
   const leaderboardData = await getLeaderboard({
     body: {
-      start_date: filters.startDate,
-      end_date: filters.endDate,
-      cohort_ids: filters.cohortIds,
-      department_ids: filters.departmentIds,
-      roles: filters.roles,
-      simulation_filters: filters.simulationFilters,
+      start_date: q.startDate ?? undefined,
+      end_date: q.endDate ?? undefined,
+      cohort_ids: q.cohortIds ?? undefined,
+      department_ids: q.departmentIds ?? undefined,
+      simulation_filters: q.simulationFilters ?? undefined,
       sort_by: "highest_score",
       sort_order: "desc",
       page_limit: 50,
@@ -88,12 +81,21 @@ export default async function LeaderboardPage({
     },
   });
 
+  // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
+  const facets = leaderboardData.analytics;
+
   return (
     <>
       <PageHeader
         breadcrumbs={[
           { title: "Leaderboard", section: "leaderboard", url: "/leaderboard" },
         ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshPage={refreshPage}
+            analyticsFilters={facets}
+          />
+        }
       />
       <div className="space-y-6 px-4" data-page="leaderboard-index">
         <Leaderboard leaderboardData={leaderboardData} initialColumnVisibility={initialColumnVisibility} />

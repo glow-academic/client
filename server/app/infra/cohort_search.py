@@ -38,6 +38,7 @@ from app.routes.v5.tools.artifacts.cohort.get import get_cohorts
 from app.routes.v5.tools.artifacts.cohort.search import search_cohorts
 from app.routes.v5.tools.resources.departments.get import get_departments
 from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.profiles.get import (
     get_profiles as get_profiles_resource,

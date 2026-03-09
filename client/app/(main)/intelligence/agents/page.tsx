@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 import Agents from "@/components/artifacts/agent/Agents";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -132,6 +133,7 @@ export default async function AgentsPage({ searchParams }: AgentsPageProps) {
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Agents" },
         ]}
+        toolbar={<NewArtifactButton label="New Agent" href="/intelligence/agents/new" />}
       />
       <div className="space-y-6 px-4" data-page="agents-index">
         <Agents

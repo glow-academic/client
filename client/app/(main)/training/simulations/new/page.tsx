@@ -9,11 +9,12 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Simulation from "@/components/artifacts/simulation/Simulation";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
-import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetSimulationIn = InputOf<"/api/v5/artifacts/simulations/get", "post">;
@@ -216,6 +217,8 @@ export default async function NewSimulationPage({
     } as GetSimulationIn["body"],
   };
 
+  const draftsResult = await getDrafts(); // TODO: fetch only simulation drafts (e.g. getDrafts({ artifact_type: "simulation" }))
+
   let simulationDataDefault: GetSimulationOut | null = null;
   try {
     simulationDataDefault = await getSimulationDefault(input);
@@ -234,7 +237,7 @@ export default async function NewSimulationPage({
   }
 
   return (
-    <>
+    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Training", section: "training", url: "/training" },
@@ -265,7 +268,7 @@ export default async function NewSimulationPage({
           }
         />
       </div>
-    </>
+    </DraftProviderClient>
   );
 }
 

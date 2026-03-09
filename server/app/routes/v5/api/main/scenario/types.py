@@ -573,80 +573,11 @@ class UpdateScenarioApiResponse(BaseModel):
     results: list[ScenarioResultItem]
 
 
-# =============================================================================
-# Legacy SAVE Endpoint Types (backwards compat)
-# =============================================================================
-
-
-class SaveScenarioItem(BaseModel):
-    """Per-item shape for saving a scenario — dual-mode fields (ID or value)."""
-
-    input_scenario_id: UUID | None = None
-    # Dual-mode: provide ID or raw value (value resolved to ID server-side)
-    name_id: UUID | None = None
-    name: str | None = None
-    description_id: UUID | None = None
-    description: str | None = None
-    problem_statement_id: UUID | None = None
-    problem_statement: str | None = None
-    # Flag IDs (individual typed flags)
-    active_flag_id: UUID | None = None
-    objectives_enabled_flag_id: UUID | None = None
-    images_enabled_flag_id: UUID | None = None
-    video_enabled_flag_id: UUID | None = None
-    questions_enabled_flag_id: UUID | None = None
-    problem_statement_enabled_flag_id: UUID | None = None
-    # Multi-select resource IDs
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    option_ids: list[UUID] | None = None
-    # Value-based fields for CSV import (resolved to IDs server-side)
-    active_flag: bool | None = None
-    departments: list[str] | None = None
-    personas: list[str] | None = None
-    documents: list[str] | None = None
-    parameter_fields: list[str] | None = None
-    objectives: list[str] | None = None
-    images: list[str] | None = None
-    videos: list[str] | None = None
-    questions: list[str] | None = None
-    options: list[str] | None = None
-
-
-class SaveScenarioApiRequest(BaseModel):
-    """Bulk save request — wraps list of items."""
-
-    scenarios: list[SaveScenarioItem]
-    group_id: UUID | None = None  # Tool tracking context from GET response
-
-
 class SaveScenarioFieldError(BaseModel):
     """Per-field validation error."""
 
     field: str
     message: str
-
-
-class SaveScenarioResult(BaseModel):
-    """Per-item result from bulk save."""
-
-    success: bool = False
-    scenario_id: UUID | None = None
-    message: str | None = None
-    errors: list[SaveScenarioFieldError] | None = None
-
-
-class SaveScenarioApiResponse(BaseModel):
-    """Bulk save response."""
-
-    results: list[SaveScenarioResult]
 
 
 # =============================================================================
@@ -1102,94 +1033,6 @@ class GetScenariosListApiRequest(BaseModel):
     department_search: str | None = None
     page_size: int | None = 10
     page_offset: int | None = 0
-
-
-class SaveScenarioSqlParams(BaseModel):
-    """SQL parameters for save scenario — flat resource IDs, no composites."""
-
-    profile_id: UUID
-    input_scenario_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    problem_statement_id: UUID | None = None
-    flag_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-    persona_ids: list[UUID] | None = None
-    document_ids: list[UUID] | None = None
-    parameter_ids: list[UUID] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    objective_ids: list[UUID] | None = None
-    video_ids: list[UUID] | None = None
-    question_ids: list[UUID] | None = None
-    option_ids: list[UUID] | None = None
-    scenarios_resource_id: UUID | None = None
-
-    @classmethod
-    def from_request(
-        cls,
-        item: SaveScenarioItem,
-        profile_id: UUID,
-        scenarios_resource_id: UUID | None = None,
-    ) -> "SaveScenarioSqlParams":
-        flag_ids = [
-            fid
-            for fid in [
-                item.active_flag_id,
-                item.objectives_enabled_flag_id,
-                item.images_enabled_flag_id,
-                item.video_enabled_flag_id,
-                item.questions_enabled_flag_id,
-                item.problem_statement_enabled_flag_id,
-            ]
-            if fid is not None
-        ]
-        return cls(
-            profile_id=profile_id,
-            input_scenario_id=item.input_scenario_id,
-            name_id=item.name_id,
-            description_id=item.description_id,
-            problem_statement_id=item.problem_statement_id,
-            flag_ids=flag_ids or None,
-            department_ids=item.department_ids,
-            persona_ids=item.persona_ids,
-            document_ids=item.document_ids,
-            parameter_ids=item.parameter_ids,
-            parameter_field_ids=item.parameter_field_ids,
-            image_ids=item.image_ids,
-            objective_ids=item.objective_ids,
-            video_ids=item.video_ids,
-            question_ids=item.question_ids,
-            option_ids=item.option_ids,
-            scenarios_resource_id=scenarios_resource_id,
-        )
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        return (
-            self.profile_id,
-            self.input_scenario_id,
-            self.name_id,
-            self.description_id,
-            self.problem_statement_id,
-            self.flag_ids,
-            self.department_ids or [],
-            self.persona_ids or [],
-            self.document_ids or [],
-            self.parameter_ids,
-            self.parameter_field_ids or [],
-            self.image_ids or [],
-            self.objective_ids or [],
-            self.video_ids or [],
-            self.question_ids or [],
-            self.option_ids or [],
-            self.scenarios_resource_id,
-        )
-
-
-class SaveScenarioSqlRow(BaseModel):
-    """SQL row for save scenario."""
-
-    scenario_id: UUID | None = None
 
 
 class DuplicateScenarioSqlParams(BaseModel):

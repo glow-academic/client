@@ -9,6 +9,8 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Scenario from "@/components/artifacts/scenario/Scenario";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -18,7 +20,6 @@ import {
   extractParameterItemRanges,
   loadScenarioSearchParams,
 } from "@/lib/search-params/scenarios";
-import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetScenarioIn = InputOf<"/api/v5/artifacts/scenarios/get", "post">;
@@ -301,7 +302,7 @@ export default async function EditScenarioPage({
     const groupId = (await resolveGroupId({ draft_id: filterParams.draftId ?? null, artifact_type: "scenario" })).group_id;
     filterParams.groupId = groupId;
 
-    const [scenarioDetail, docs] = await Promise.all([
+    const [scenarioDetail, docs, draftsResult] = await Promise.all([
       getScenario(
         scenarioId,
         Object.keys(filterParams).length > 0
@@ -309,13 +310,14 @@ export default async function EditScenarioPage({
           : undefined
       ),
       getDocs({ body: { entity_id: scenarioId } }),
+      getDrafts(), // TODO: fetch only scenario drafts (e.g. getDrafts({ artifact_type: "scenario" }))
     ]);
 
     // Entity name from docs (already resolved server-side)
     const entityName = docs.detail.title;
 
     return (
-      <>
+      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Training", section: "training", url: "/training" },
@@ -336,7 +338,7 @@ export default async function EditScenarioPage({
             patchScenarioDraftAction={patchScenarioDraft}
           />
         </div>
-      </>
+      </DraftProviderClient>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

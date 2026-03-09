@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.routes.auth.types import AnalyticsFacets
 from app.routes.v5.api.main.types import FilterOption
 
 
@@ -280,6 +281,8 @@ class ReportsResponse(BaseModel):
     simulation_options: list[FilterOption] = Field(default_factory=list)
     profile_options: list[FilterOption] = Field(default_factory=list)
     scenario_options: list[FilterOption] = Field(default_factory=list)
+
+    analytics: AnalyticsFacets | None = None
 
 
 class ExportReportsApiResponse(BaseModel):

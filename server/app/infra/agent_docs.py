@@ -220,7 +220,7 @@ async def docs_agent_client(
     from app.routes.v5.api.main.agent.duplicate import duplicate_agent
     from app.routes.v5.api.main.agent.export import export_agents
     from app.routes.v5.api.main.agent.get import get_agent
-from app.routes.v5.api.main.agent.search import search_agent
+    from app.routes.v5.api.main.agent.search import search_agent
     from app.routes.v5.api.main.agent.update import update_agent
 
     return ComposedDocsResponse(

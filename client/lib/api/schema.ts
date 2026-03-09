@@ -84,26 +84,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/personas/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Persona
-         * @description Save personas using composable infra architecture.
-         */
-        post: operations["save_persona_api_v5_artifacts_personas_save_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/personas/duplicate": {
         parameters: {
             query?: never;
@@ -298,26 +278,6 @@ export interface paths {
          * @description Update scenarios using composable infra architecture.
          */
         post: operations["update_scenario_api_v5_artifacts_scenarios_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/scenarios/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Scenario
-         * @description Save scenarios using composable infra architecture.
-         */
-        post: operations["save_scenario_api_v5_artifacts_scenarios_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -524,26 +484,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/simulations/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Simulation
-         * @description Save simulations using composable infra architecture.
-         */
-        post: operations["save_simulation_api_v5_artifacts_simulations_save_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/simulations/duplicate": {
         parameters: {
             query?: never;
@@ -738,26 +678,6 @@ export interface paths {
          * @description Update documents using composable infra architecture.
          */
         post: operations["update_document_api_v5_artifacts_documents_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/documents/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Document
-         * @description Save documents using composable infra architecture.
-         */
-        post: operations["save_document_api_v5_artifacts_documents_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -964,26 +884,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/departments/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Department
-         * @description Save departments using composable infra architecture.
-         */
-        post: operations["save_department_api_v5_artifacts_departments_save_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/departments/duplicate": {
         parameters: {
             query?: never;
@@ -1178,26 +1078,6 @@ export interface paths {
          * @description Update cohorts using composable infra architecture.
          */
         post: operations["update_cohort_api_v5_artifacts_cohorts_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/cohorts/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Cohort
-         * @description Save cohorts using composable infra architecture.
-         */
-        post: operations["save_cohort_api_v5_artifacts_cohorts_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1404,26 +1284,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/evals/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Eval
-         * @description Save evals using composable infra architecture.
-         */
-        post: operations["save_eval_api_v5_artifacts_evals_save_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/evals/duplicate": {
         parameters: {
             query?: never;
@@ -1618,26 +1478,6 @@ export interface paths {
          * @description Update rubrics using composable infra architecture.
          */
         post: operations["update_rubric_api_v5_artifacts_rubrics_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/rubrics/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Rubric
-         * @description Save rubrics using composable infra architecture.
-         */
-        post: operations["save_rubric_api_v5_artifacts_rubrics_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1844,26 +1684,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/settings/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Setting
-         * @description Save settings using composable infra architecture.
-         */
-        post: operations["save_setting_api_v5_artifacts_settings_save_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/settings/duplicate": {
         parameters: {
             query?: never;
@@ -2058,26 +1878,6 @@ export interface paths {
          * @description Update agents using composable infra architecture.
          */
         post: operations["update_agent_api_v5_artifacts_agents_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/agents/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Agent
-         * @description Save agents using composable infra architecture.
-         */
-        post: operations["save_agent_api_v5_artifacts_agents_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2284,26 +2084,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/models/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Model
-         * @description Save models using composable infra architecture.
-         */
-        post: operations["save_model_api_v5_artifacts_models_save_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/models/duplicate": {
         parameters: {
             query?: never;
@@ -2498,26 +2278,6 @@ export interface paths {
          * @description Update providers using composable infra architecture.
          */
         post: operations["update_provider_api_v5_artifacts_providers_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/providers/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Provider
-         * @description Save providers using composable infra architecture.
-         */
-        post: operations["save_provider_api_v5_artifacts_providers_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2724,26 +2484,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/parameters/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Parameter
-         * @description Save parameters using composable infra architecture.
-         */
-        post: operations["save_parameter_api_v5_artifacts_parameters_save_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/parameters/duplicate": {
         parameters: {
             query?: never;
@@ -2938,26 +2678,6 @@ export interface paths {
          * @description Update fields using composable infra architecture.
          */
         post: operations["update_field_api_v5_artifacts_fields_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/fields/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Field
-         * @description Save fields using composable infra architecture.
-         */
-        post: operations["save_field_api_v5_artifacts_fields_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3164,26 +2884,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/profiles/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Profile
-         * @description Save profiles using composable infra architecture.
-         */
-        post: operations["save_profile_api_v5_artifacts_profiles_save_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/profiles/duplicate": {
         parameters: {
             query?: never;
@@ -3384,26 +3084,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/auths/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Auth
-         * @description Save auths using composable infra architecture.
-         */
-        post: operations["save_auth_api_v5_artifacts_auths_save_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v5/artifacts/auths/duplicate": {
         parameters: {
             query?: never;
@@ -3598,26 +3278,6 @@ export interface paths {
          * @description Update tools using composable infra architecture.
          */
         post: operations["update_tool_api_v5_artifacts_tools_update_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/tools/save": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Tool
-         * @description Save tools using composable infra architecture.
-         */
-        post: operations["save_tool_api_v5_artifacts_tools_save_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -15367,6 +15027,7 @@ export interface components {
             /** Date Range Latest */
             date_range_latest?: string | null;
             history?: components["schemas"]["BenchmarkHistoryResponse"] | null;
+            analytics?: components["schemas"]["AnalyticsFacets"] | null;
         };
         /** Body_token_default_idp_token_post */
         Body_token_default_idp_token_post: {
@@ -22005,6 +21666,13 @@ export interface components {
             should_show_controls?: boolean | null;
             /** Is Own Attempt */
             is_own_attempt?: boolean | null;
+            /** Current Chat Id */
+            current_chat_id?: string | null;
+            /**
+             * Has Messages
+             * @default false
+             */
+            has_messages: boolean;
             available_continuation_options?: components["schemas"]["AvailableContinuationOptions"] | null;
             rubric_structure?: components["schemas"]["RubricStructureData"] | null;
             /** Training Id */
@@ -22904,6 +22572,7 @@ export interface components {
          * @description Client-facing API response for practice get (operational).
          *
          *     Returns practice simulations user can take, scoped by their cohorts.
+         *     Includes inline analytics facets for SSR filter rendering.
          */
         GetPracticeResponse: {
             /** Actor Name */
@@ -22916,6 +22585,7 @@ export interface components {
             standard_groups?: components["schemas"]["StandardGroupMapping"][] | null;
             /** Standards */
             standards?: components["schemas"]["StandardMapping"][] | null;
+            analytics?: components["schemas"]["AnalyticsFacets"] | null;
         };
         /** GetProfileApiRequest */
         GetProfileApiRequest: {
@@ -23355,6 +23025,18 @@ export interface components {
             /** Runs */
             runs?: components["schemas"]["TestRunItem"][];
             status_summary?: components["schemas"]["TestStatusSummary"] | null;
+            /**
+             * Show Controls
+             * @default false
+             */
+            show_controls: boolean;
+            /** Current Invocation Id */
+            current_invocation_id?: string | null;
+            /**
+             * Has Runs Or Groups
+             * @default false
+             */
+            has_runs_or_groups: boolean;
             entries?: components["schemas"]["TestEntries"] | null;
             resources?: components["schemas"]["TestResources"] | null;
         };
@@ -24126,6 +23808,8 @@ export interface components {
         /**
          * HealthResponse
          * @description Response with health data.
+         *
+         *     Includes inline analytics facets for SSR filter rendering.
          */
         HealthResponse: {
             views?: components["schemas"]["HealthViews"];
@@ -24134,6 +23818,7 @@ export interface components {
              * @default 0
              */
             total_count: number;
+            analytics?: components["schemas"]["AnalyticsFacets"] | null;
         };
         /**
          * HealthViews
@@ -24806,10 +24491,13 @@ export interface components {
         /**
          * LeaderboardResponse
          * @description Response for leaderboard get (top sections only).
+         *
+         *     Includes inline analytics facets for SSR filter rendering.
          */
         LeaderboardResponse: {
             sections?: components["schemas"]["LeaderboardSections"];
             resources?: components["schemas"]["LeaderboardResources"];
+            analytics?: components["schemas"]["AnalyticsFacets"] | null;
         };
         /** LeaderboardScenarioResource */
         LeaderboardScenarioResource: {
@@ -25086,6 +24774,7 @@ export interface components {
             simulation_filter?: components["schemas"]["ListFilterSection"] | null;
             profile_filter?: components["schemas"]["ListFilterSection"] | null;
             department_filter?: components["schemas"]["ListFilterSection"] | null;
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
             /** Import Fields */
@@ -25335,6 +25024,12 @@ export interface components {
             name?: string | null;
             /** Count */
             count?: number | null;
+            /** Hex Code */
+            hex_code?: string | null;
+            /** Value */
+            value?: string | null;
+            /** Type */
+            type?: string | null;
         };
         /**
          * ListFilterSection
@@ -26068,6 +25763,7 @@ export interface components {
             persona_filter?: components["schemas"]["ListFilterSection"] | null;
             simulation_filter?: components["schemas"]["ListFilterSection"] | null;
             department_filter?: components["schemas"]["ListFilterSection"] | null;
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
             /** Import Fields */
@@ -26209,6 +25905,7 @@ export interface components {
             scenario_filter?: components["schemas"]["ListFilterSection"] | null;
             cohort_filter?: components["schemas"]["ListFilterSection"] | null;
             department_filter?: components["schemas"]["ListFilterSection"] | null;
+            flag_filter?: components["schemas"]["ListFilterSection"] | null;
             /** Total Count */
             total_count?: number | null;
             /** Import Fields */
@@ -29494,6 +29191,7 @@ export interface components {
             model_options?: components["schemas"]["FilterOption"][];
             /** Agent Options */
             agent_options?: components["schemas"]["FilterOption"][];
+            analytics?: components["schemas"]["AnalyticsFacets"] | null;
         };
         /** PrimaryPersonaPerformance */
         PrimaryPersonaPerformance: {
@@ -32313,1378 +32011,6 @@ export interface components {
             pricing?: components["schemas"]["RunPricingItem"][];
         };
         /**
-         * SaveAgentApiRequest
-         * @description Request model for bulk save agent endpoint.
-         */
-        SaveAgentApiRequest: {
-            /** Agents */
-            agents: components["schemas"]["SaveAgentItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveAgentApiResponse
-         * @description Response model for bulk save agent endpoint.
-         */
-        SaveAgentApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveAgentResult"][];
-        };
-        /**
-         * SaveAgentFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveAgentFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveAgentItem
-         * @description Single agent item for save — provide ID or value per field (not both).
-         *
-         *     Junctions from get.py: names, descriptions, departments, flags, models,
-         *     reasoning_levels, temperature_levels, tools, voices, qualities, rubrics, agents.
-         *     Dual-mode: name (create), description (create), departments (match by name).
-         *     All others: IDs only.
-         */
-        SaveAgentItem: {
-            /** Input Agent Id */
-            input_agent_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Flag Ids */
-            flag_ids?: string[] | null;
-            /** Model Ids */
-            model_ids?: string[] | null;
-            /** Reasoning Level Ids */
-            reasoning_level_ids?: string[] | null;
-            /** Temperature Level Ids */
-            temperature_level_ids?: string[] | null;
-            /** Tool Ids */
-            tool_ids?: string[] | null;
-            /** Voice Ids */
-            voice_ids?: string[] | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-        };
-        /**
-         * SaveAgentResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveAgentResult: {
-            /** Success */
-            success: boolean;
-            /** Agent Id */
-            agent_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveAgentFieldError"][] | null;
-        };
-        /**
-         * SaveAuthApiRequest
-         * @description Request model for bulk save auth endpoint.
-         */
-        SaveAuthApiRequest: {
-            /** Auths */
-            auths: components["schemas"]["SaveAuthItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveAuthApiResponse
-         * @description Response model for bulk save auth endpoint.
-         */
-        SaveAuthApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveAuthResult"][];
-        };
-        /**
-         * SaveAuthFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveAuthFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveAuthItem
-         * @description Single auth item for save — provide ID or value per field (not both).
-         *
-         *     For required fields (name), exactly one of the *_id or value field must be provided.
-         */
-        SaveAuthItem: {
-            /** Input Auth Id */
-            input_auth_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Slug Id */
-            slug_id?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Active Flag */
-            active_flag?: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Protocol Ids */
-            protocol_ids?: string[] | null;
-            /** Item Ids */
-            item_ids?: string[] | null;
-            /** Auth Resource Ids */
-            auth_resource_ids?: string[] | null;
-        };
-        /**
-         * SaveAuthResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveAuthResult: {
-            /** Success */
-            success: boolean;
-            /** Auth Id */
-            auth_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveAuthFieldError"][] | null;
-        };
-        /**
-         * SaveCohortApiRequest
-         * @description Request model for bulk save cohort endpoint.
-         */
-        SaveCohortApiRequest: {
-            /** Cohorts */
-            cohorts: components["schemas"]["SaveCohortItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveCohortApiResponse
-         * @description Response model for bulk save cohort endpoint.
-         */
-        SaveCohortApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveCohortResult"][];
-        };
-        /**
-         * SaveCohortFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveCohortFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveCohortItem
-         * @description Single cohort item for save — provide ID or value per field (not both).
-         *
-         *     For required fields (name), exactly one of the *_id or value field must
-         *     be provided.
-         */
-        SaveCohortItem: {
-            /** Input Cohort Id */
-            input_cohort_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Flag Id */
-            flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Simulation Ids */
-            simulation_ids?: string[] | null;
-            /** Simulation Position Ids */
-            simulation_position_ids?: string[] | null;
-            /** Simulation Availability Ids */
-            simulation_availability_ids?: string[] | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /** Profile Persona Ids */
-            profile_persona_ids?: string[] | null;
-            /** Is Inactive */
-            is_inactive?: boolean | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Simulations */
-            simulations?: string[] | null;
-            /** Profiles */
-            profiles?: string[] | null;
-        };
-        /**
-         * SaveCohortResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveCohortResult: {
-            /** Success */
-            success: boolean;
-            /** Cohort Id */
-            cohort_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveCohortFieldError"][] | null;
-        };
-        /**
-         * SaveDepartmentApiRequest
-         * @description Request model for bulk save department endpoint.
-         */
-        SaveDepartmentApiRequest: {
-            /** Departments */
-            departments: components["schemas"]["SaveDepartmentItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveDepartmentApiResponse
-         * @description Response model for bulk save department endpoint.
-         */
-        SaveDepartmentApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveDepartmentResult"][];
-        };
-        /**
-         * SaveDepartmentFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveDepartmentFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveDepartmentItem
-         * @description Single department item for save — provide ID or value per field (not both).
-         *
-         *     For required fields (name), exactly one of the *_id or value field must be provided.
-         */
-        SaveDepartmentItem: {
-            /** Input Department Id */
-            input_department_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Active Flag */
-            active_flag?: boolean | null;
-            /** Settings Ids */
-            settings_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-        };
-        /**
-         * SaveDepartmentResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveDepartmentResult: {
-            /** Success */
-            success: boolean;
-            /** Department Id */
-            department_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveDepartmentFieldError"][] | null;
-        };
-        /**
-         * SaveDocumentApiRequest
-         * @description Request model for bulk save document endpoint.
-         */
-        SaveDocumentApiRequest: {
-            /** Documents */
-            documents: components["schemas"]["SaveDocumentItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveDocumentApiResponse
-         * @description Response model for bulk save document endpoint.
-         */
-        SaveDocumentApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveDocumentResult"][];
-        };
-        /**
-         * SaveDocumentFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveDocumentFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveDocumentItem
-         * @description Single document item for save — provide ID or value per field (not both).
-         *
-         *     For required fields (name), exactly one of the *_id or value field
-         *     must be provided.
-         */
-        SaveDocumentItem: {
-            /** Input Document Id */
-            input_document_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Flag Id */
-            flag_id?: string | null;
-            /** Is Inactive */
-            is_inactive?: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Upload Ids */
-            upload_ids?: string[] | null;
-            /** Image Ids */
-            image_ids?: string[] | null;
-            /** Text Ids */
-            text_ids?: string[] | null;
-        };
-        /**
-         * SaveDocumentResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveDocumentResult: {
-            /** Success */
-            success: boolean;
-            /** Document Id */
-            document_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveDocumentFieldError"][] | null;
-        };
-        /**
-         * SaveEvalApiRequest
-         * @description Request model for bulk save eval endpoint.
-         */
-        SaveEvalApiRequest: {
-            /** Evals */
-            evals: components["schemas"]["SaveEvalItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveEvalApiResponse
-         * @description Response model for bulk save eval endpoint.
-         */
-        SaveEvalApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveEvalResult"][];
-        };
-        /**
-         * SaveEvalFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveEvalFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveEvalItem
-         * @description Single eval item for save — provide ID or value per field (not both).
-         *
-         *     For required fields (name), exactly one of the *_id or value field
-         *     must be provided.
-         */
-        SaveEvalItem: {
-            /** Input Eval Id */
-            input_eval_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Flag Ids */
-            flag_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Model Ids */
-            model_ids?: string[] | null;
-            /** Model Flag Ids */
-            model_flag_ids?: string[] | null;
-            /** Model Rubric Ids */
-            model_rubric_ids?: string[] | null;
-            /** Model Position Ids */
-            model_position_ids?: string[] | null;
-        };
-        /**
-         * SaveEvalResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveEvalResult: {
-            /** Success */
-            success: boolean;
-            /** Eval Id */
-            eval_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveEvalFieldError"][] | null;
-        };
-        /**
-         * SaveFieldApiRequest
-         * @description Request model for bulk save field endpoint.
-         */
-        SaveFieldApiRequest: {
-            /** Fields */
-            fields: components["schemas"]["SaveFieldItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveFieldApiResponse
-         * @description Response model for bulk save field endpoint.
-         */
-        SaveFieldApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveFieldResult"][];
-        };
-        /**
-         * SaveFieldFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveFieldFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveFieldItem
-         * @description Single field item for save — provide ID or value per field (not both).
-         *
-         *     For required fields (name), exactly one of the *_id or value field must be provided.
-         */
-        SaveFieldItem: {
-            /** Input Field Id */
-            input_field_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Flag Id */
-            flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Conditional Parameter Ids */
-            conditional_parameter_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-        };
-        /**
-         * SaveFieldResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveFieldResult: {
-            /** Success */
-            success: boolean;
-            /** Field Id */
-            field_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveFieldFieldError"][] | null;
-        };
-        /**
-         * SaveModelApiRequest
-         * @description Request model for bulk save model endpoint.
-         */
-        SaveModelApiRequest: {
-            /** Models */
-            models: components["schemas"]["SaveModelItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveModelApiResponse
-         * @description Response model for bulk save model endpoint.
-         */
-        SaveModelApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveModelResult"][];
-        };
-        /**
-         * SaveModelFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveModelFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveModelItem
-         * @description Single model item for save — provide ID or value per field (not both).
-         *
-         *     Junctions from get.py: names, descriptions, departments, flags, modalities,
-         *     pricing, providers, qualities, reasoning_levels, temperature_levels, values,
-         *     voices, models.
-         *     Dual-mode: name (create), description (create), departments (match by name).
-         *     All others: IDs only.
-         */
-        SaveModelItem: {
-            /** Input Model Id */
-            input_model_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Flag Ids */
-            flag_ids?: string[] | null;
-            /** Modality Ids */
-            modality_ids?: string[] | null;
-            /** Pricing Ids */
-            pricing_ids?: string[] | null;
-            /** Provider Ids */
-            provider_ids?: string[] | null;
-            /** Quality Ids */
-            quality_ids?: string[] | null;
-            /** Reasoning Level Ids */
-            reasoning_level_ids?: string[] | null;
-            /** Temperature Level Ids */
-            temperature_level_ids?: string[] | null;
-            /** Value Ids */
-            value_ids?: string[] | null;
-            /** Voice Ids */
-            voice_ids?: string[] | null;
-            /** Model Ids */
-            model_ids?: string[] | null;
-        };
-        /**
-         * SaveModelResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveModelResult: {
-            /** Success */
-            success: boolean;
-            /** Model Id */
-            model_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveModelFieldError"][] | null;
-        };
-        /**
-         * SaveParameterApiRequest
-         * @description Request model for bulk save parameter endpoint.
-         */
-        SaveParameterApiRequest: {
-            /** Parameters */
-            parameters: components["schemas"]["SaveParameterItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveParameterApiResponse
-         * @description Response model for bulk save parameter endpoint.
-         */
-        SaveParameterApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveParameterResult"][];
-        };
-        /**
-         * SaveParameterFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveParameterFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveParameterItem
-         * @description Single parameter item for save — provide ID or value per field (not both).
-         *
-         *     For required fields (name), exactly one of the *_id or value field must be provided.
-         */
-        SaveParameterItem: {
-            /** Input Parameter Id */
-            input_parameter_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Flag Ids */
-            flag_ids?: string[] | null;
-            /** Field Ids */
-            field_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-        };
-        /**
-         * SaveParameterResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveParameterResult: {
-            /** Success */
-            success: boolean;
-            /** Parameter Id */
-            parameter_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveParameterFieldError"][] | null;
-        };
-        /**
-         * SavePersonaApiRequest
-         * @description Request model for bulk save persona endpoint.
-         */
-        SavePersonaApiRequest: {
-            /** Personas */
-            personas: components["schemas"]["SavePersonaItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SavePersonaApiResponse
-         * @description Response model for bulk save persona endpoint.
-         */
-        SavePersonaApiResponse: {
-            /** Results */
-            results: components["schemas"]["SavePersonaResult"][];
-        };
-        /**
-         * SavePersonaFieldError
-         * @description Per-field error from value resolution.
-         */
-        SavePersonaFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SavePersonaItem
-         * @description Single persona item for save — provide ID or value per field (not both).
-         *
-         *     For required fields (name, color, icon, instructions), exactly one of
-         *     the *_id or value field must be provided.
-         */
-        SavePersonaItem: {
-            /** Input Persona Id */
-            input_persona_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Color Id */
-            color_id?: string | null;
-            /** Color */
-            color?: string | null;
-            /** Icon Id */
-            icon_id?: string | null;
-            /** Icon */
-            icon?: string | null;
-            /** Instructions Id */
-            instructions_id?: string | null;
-            /** Instructions */
-            instructions?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Active Flag */
-            active_flag?: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Parameter Field Ids */
-            parameter_field_ids?: string[] | null;
-            /** Parameter Fields */
-            parameter_fields?: string[] | null;
-            /** Example Ids */
-            example_ids?: string[] | null;
-            /** Examples */
-            examples?: string[] | null;
-            /** Voice Ids */
-            voice_ids?: string[] | null;
-            /** Voices */
-            voices?: string[] | null;
-        };
-        /**
-         * SavePersonaResult
-         * @description Per-item result within a bulk save response.
-         */
-        SavePersonaResult: {
-            /** Success */
-            success: boolean;
-            /** Persona Id */
-            persona_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SavePersonaFieldError"][] | null;
-        };
-        /**
-         * SaveProfileApiRequest
-         * @description Request model for bulk save profile endpoint.
-         */
-        SaveProfileApiRequest: {
-            /** Profiles */
-            profiles: components["schemas"]["SaveProfileItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveProfileApiResponse
-         * @description Response model for bulk save profile endpoint.
-         */
-        SaveProfileApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveProfileResult"][];
-        };
-        /**
-         * SaveProfileFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveProfileFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveProfileItem
-         * @description Single profile item for save — provide ID or value per field (not both).
-         *
-         *     For required fields (name), exactly one of the *_id or value field must be provided.
-         */
-        SaveProfileItem: {
-            /** Input Profile Id */
-            input_profile_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Request Limit Id */
-            request_limit_id?: string | null;
-            /** Flag Id */
-            flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Email Ids */
-            email_ids?: string[] | null;
-            /** Role Ids */
-            role_ids?: string[] | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-        };
-        /**
-         * SaveProfileResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveProfileResult: {
-            /** Success */
-            success: boolean;
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveProfileFieldError"][] | null;
-        };
-        /**
-         * SaveProviderApiRequest
-         * @description Request model for bulk save provider endpoint.
-         */
-        SaveProviderApiRequest: {
-            /** Providers */
-            providers: components["schemas"]["SaveProviderItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveProviderApiResponse
-         * @description Response model for bulk save provider endpoint.
-         */
-        SaveProviderApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveProviderResult"][];
-        };
-        /**
-         * SaveProviderFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveProviderFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveProviderItem
-         * @description Single provider item for save — provide ID or value per field (not both).
-         *
-         *     For required fields (name), exactly one of the *_id or value field must be provided.
-         */
-        SaveProviderItem: {
-            /** Input Provider Id */
-            input_provider_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Active Flag */
-            active_flag?: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Endpoint Ids */
-            endpoint_ids?: string[] | null;
-            /** Key Ids */
-            key_ids?: string[] | null;
-            /** Value Ids */
-            value_ids?: string[] | null;
-            /** Provider Ids */
-            provider_ids?: string[] | null;
-        };
-        /**
-         * SaveProviderResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveProviderResult: {
-            /** Success */
-            success: boolean;
-            /** Provider Id */
-            provider_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveProviderFieldError"][] | null;
-        };
-        /**
-         * SaveRubricApiRequest
-         * @description Request model for bulk save rubric endpoint.
-         */
-        SaveRubricApiRequest: {
-            /** Rubrics */
-            rubrics: components["schemas"]["SaveRubricItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveRubricApiResponse
-         * @description Response model for bulk save rubric endpoint.
-         */
-        SaveRubricApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveRubricResult"][];
-        };
-        /**
-         * SaveRubricFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveRubricFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveRubricItem
-         * @description Single rubric item for save — provide ID or value per field (not both).
-         *
-         *     For required fields (name), exactly one of the *_id or value field must be provided.
-         */
-        SaveRubricItem: {
-            /** Input Rubric Id */
-            input_rubric_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Active Flag */
-            active_flag?: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Point Ids */
-            point_ids?: string[] | null;
-            /** Standard Group Ids */
-            standard_group_ids?: string[] | null;
-            /** Standard Ids */
-            standard_ids?: string[] | null;
-            /** Rubric Ids */
-            rubric_ids?: string[] | null;
-        };
-        /**
-         * SaveRubricResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveRubricResult: {
-            /** Success */
-            success: boolean;
-            /** Rubric Id */
-            rubric_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveRubricFieldError"][] | null;
-        };
-        /**
-         * SaveScenarioApiRequest
-         * @description Bulk save request — wraps list of items.
-         */
-        SaveScenarioApiRequest: {
-            /** Scenarios */
-            scenarios: components["schemas"]["SaveScenarioItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveScenarioApiResponse
-         * @description Bulk save response.
-         */
-        SaveScenarioApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveScenarioResult"][];
-        };
-        /**
-         * SaveScenarioFieldError
-         * @description Per-field validation error.
-         */
-        SaveScenarioFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveScenarioItem
-         * @description Per-item shape for saving a scenario — dual-mode fields (ID or value).
-         */
-        SaveScenarioItem: {
-            /** Input Scenario Id */
-            input_scenario_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Problem Statement Id */
-            problem_statement_id?: string | null;
-            /** Problem Statement */
-            problem_statement?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Objectives Enabled Flag Id */
-            objectives_enabled_flag_id?: string | null;
-            /** Images Enabled Flag Id */
-            images_enabled_flag_id?: string | null;
-            /** Video Enabled Flag Id */
-            video_enabled_flag_id?: string | null;
-            /** Questions Enabled Flag Id */
-            questions_enabled_flag_id?: string | null;
-            /** Problem Statement Enabled Flag Id */
-            problem_statement_enabled_flag_id?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Persona Ids */
-            persona_ids?: string[] | null;
-            /** Document Ids */
-            document_ids?: string[] | null;
-            /** Parameter Ids */
-            parameter_ids?: string[] | null;
-            /** Parameter Field Ids */
-            parameter_field_ids?: string[] | null;
-            /** Image Ids */
-            image_ids?: string[] | null;
-            /** Objective Ids */
-            objective_ids?: string[] | null;
-            /** Video Ids */
-            video_ids?: string[] | null;
-            /** Question Ids */
-            question_ids?: string[] | null;
-            /** Option Ids */
-            option_ids?: string[] | null;
-            /** Active Flag */
-            active_flag?: boolean | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Personas */
-            personas?: string[] | null;
-            /** Documents */
-            documents?: string[] | null;
-            /** Parameter Fields */
-            parameter_fields?: string[] | null;
-            /** Objectives */
-            objectives?: string[] | null;
-            /** Images */
-            images?: string[] | null;
-            /** Videos */
-            videos?: string[] | null;
-            /** Questions */
-            questions?: string[] | null;
-            /** Options */
-            options?: string[] | null;
-        };
-        /**
-         * SaveScenarioResult
-         * @description Per-item result from bulk save.
-         */
-        SaveScenarioResult: {
-            /**
-             * Success
-             * @default false
-             */
-            success: boolean;
-            /** Scenario Id */
-            scenario_id?: string | null;
-            /** Message */
-            message?: string | null;
-            /** Errors */
-            errors?: components["schemas"]["SaveScenarioFieldError"][] | null;
-        };
-        /**
-         * SaveSettingApiRequest
-         * @description Request model for bulk save setting endpoint.
-         */
-        SaveSettingApiRequest: {
-            /** Settings */
-            settings: components["schemas"]["SaveSettingItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveSettingApiResponse
-         * @description Response model for bulk save setting endpoint.
-         */
-        SaveSettingApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveSettingResult"][];
-        };
-        /**
-         * SaveSettingFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveSettingFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveSettingItem
-         * @description Single setting item for save — provide ID or value per field (not both).
-         *
-         *     For required fields (name), exactly one of the *_id or value field must be provided.
-         */
-        SaveSettingItem: {
-            /** Input Setting Id */
-            input_setting_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Active Flag Id */
-            active_flag_id?: string | null;
-            /** Active Flag */
-            active_flag?: boolean | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Color Ids */
-            color_ids?: string[] | null;
-            /** Profile Ids */
-            profile_ids?: string[] | null;
-            /** Auth Ids */
-            auth_ids?: string[] | null;
-            /** Provider Key Ids */
-            provider_key_ids?: string[] | null;
-            /** Auth Item Key Ids */
-            auth_item_key_ids?: string[] | null;
-            /** Auth Item Value Ids */
-            auth_item_value_ids?: string[] | null;
-            /** System Ids */
-            system_ids?: string[] | null;
-            /** Threshold Ids */
-            threshold_ids?: string[] | null;
-            /** Setting Resource Ids */
-            setting_resource_ids?: string[] | null;
-        };
-        /**
-         * SaveSettingResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveSettingResult: {
-            /** Success */
-            success: boolean;
-            /** Setting Id */
-            setting_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveSettingFieldError"][] | null;
-        };
-        /**
-         * SaveSimulationApiRequest
-         * @description Request model for bulk save simulation endpoint.
-         */
-        SaveSimulationApiRequest: {
-            /** Simulations */
-            simulations: components["schemas"]["SaveSimulationItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveSimulationApiResponse
-         * @description Response model for bulk save simulation endpoint.
-         */
-        SaveSimulationApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveSimulationResult"][];
-        };
-        /**
-         * SaveSimulationFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveSimulationFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveSimulationItem
-         * @description Single simulation item for save — provide ID or value per field (not both).
-         *
-         *     For required fields (name), exactly one of the *_id or value field must
-         *     be provided.
-         */
-        SaveSimulationItem: {
-            /** Input Simulation Id */
-            input_simulation_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Flag Ids */
-            flag_ids?: string[] | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Scenario Ids */
-            scenario_ids?: string[] | null;
-            /** Scenario Flag Ids */
-            scenario_flag_ids?: string[] | null;
-            /** Scenario Position Ids */
-            scenario_position_ids?: string[] | null;
-            /** Scenario Rubric Ids */
-            scenario_rubric_ids?: string[] | null;
-            /** Scenario Time Limit Ids */
-            scenario_time_limit_ids?: string[] | null;
-            /** Is Inactive */
-            is_inactive?: boolean | null;
-            /** Is Practice */
-            is_practice?: boolean | null;
-            /** Departments */
-            departments?: string[] | null;
-            /** Scenarios */
-            scenarios?: string[] | null;
-        };
-        /**
-         * SaveSimulationResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveSimulationResult: {
-            /** Success */
-            success: boolean;
-            /** Simulation Id */
-            simulation_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveSimulationFieldError"][] | null;
-        };
-        /**
-         * SaveToolApiRequest
-         * @description Request model for bulk save tool endpoint.
-         */
-        SaveToolApiRequest: {
-            /** Tools */
-            tools: components["schemas"]["SaveToolItem"][];
-            /** Group Id */
-            group_id?: string | null;
-        };
-        /**
-         * SaveToolApiResponse
-         * @description Response model for bulk save tool endpoint.
-         */
-        SaveToolApiResponse: {
-            /** Results */
-            results: components["schemas"]["SaveToolResult"][];
-        };
-        /**
-         * SaveToolFieldError
-         * @description Per-field error from value resolution.
-         */
-        SaveToolFieldError: {
-            /** Field */
-            field: string;
-            /** Message */
-            message: string;
-        };
-        /**
-         * SaveToolItem
-         * @description Single tool item for save — provide ID or value per field (not both).
-         *
-         *     Junctions from get.py: names, descriptions, departments, flags, args,
-         *     args_outputs, arg_positions, artifacts, entries, operations, resources, tools.
-         *     Dual-mode: name (create), description (create).
-         *     All others: IDs only.
-         */
-        SaveToolItem: {
-            /** Input Tool Id */
-            input_tool_id?: string | null;
-            /** Name Id */
-            name_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description Id */
-            description_id?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Department Ids */
-            department_ids?: string[] | null;
-            /** Flag Ids */
-            flag_ids?: string[] | null;
-            /** Arg Positions Ids */
-            arg_positions_ids?: string[] | null;
-            /** Args Ids */
-            args_ids?: string[] | null;
-            /** Args Outputs Ids */
-            args_outputs_ids?: string[] | null;
-            /** Artifact Ids */
-            artifact_ids?: string[] | null;
-            /** Entry Ids */
-            entry_ids?: string[] | null;
-            /** Operation Ids */
-            operation_ids?: string[] | null;
-            /** Resource Ids */
-            resource_ids?: string[] | null;
-            /** Tool Ids */
-            tool_ids?: string[] | null;
-        };
-        /**
-         * SaveToolResult
-         * @description Per-item result within a bulk save response.
-         */
-        SaveToolResult: {
-            /** Success */
-            success: boolean;
-            /** Tool Id */
-            tool_id?: string | null;
-            /** Message */
-            message: string;
-            /** Errors */
-            errors?: components["schemas"]["SaveToolFieldError"][] | null;
-        };
-        /**
          * ScenarioDepartment
          * @description Department for scenario.
          */
@@ -34778,6 +33104,8 @@ export interface components {
             simulation_search?: string | null;
             /** Department Search */
             department_search?: string | null;
+            /** Flag Search */
+            flag_search?: string | null;
             /**
              * Page Size
              * @default 10
@@ -35122,6 +33450,8 @@ export interface components {
             simulation_search?: string | null;
             /** Department Search */
             department_search?: string | null;
+            /** Flag Search */
+            flag_search?: string | null;
             /**
              * Page Size
              * @default 10
@@ -35171,6 +33501,8 @@ export interface components {
             cohort_search?: string | null;
             /** Department Search */
             department_search?: string | null;
+            /** Flag Search */
+            flag_search?: string | null;
             /**
              * Page Size
              * @default 10
@@ -39078,43 +37410,6 @@ export interface operations {
             };
         };
     };
-    save_persona_api_v5_artifacts_personas_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SavePersonaApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SavePersonaApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     duplicate_persona_api_v5_artifacts_personas_duplicate_post: {
         parameters: {
             query?: never;
@@ -39468,43 +37763,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateScenarioApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_scenario_api_v5_artifacts_scenarios_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveScenarioApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveScenarioApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -39884,43 +38142,6 @@ export interface operations {
             };
         };
     };
-    save_simulation_api_v5_artifacts_simulations_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveSimulationApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveSimulationApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     duplicate_simulation_api_v5_artifacts_simulations_duplicate_post: {
         parameters: {
             query?: never;
@@ -40274,43 +38495,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateDocumentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_document_api_v5_artifacts_documents_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveDocumentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveDocumentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -40690,43 +38874,6 @@ export interface operations {
             };
         };
     };
-    save_department_api_v5_artifacts_departments_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveDepartmentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveDepartmentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     duplicate_department_api_v5_artifacts_departments_duplicate_post: {
         parameters: {
             query?: never;
@@ -41080,43 +39227,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateCohortApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_cohort_api_v5_artifacts_cohorts_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveCohortApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveCohortApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -41496,43 +39606,6 @@ export interface operations {
             };
         };
     };
-    save_eval_api_v5_artifacts_evals_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveEvalApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveEvalApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     duplicate_eval_api_v5_artifacts_evals_duplicate_post: {
         parameters: {
             query?: never;
@@ -41886,43 +39959,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateRubricApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_rubric_api_v5_artifacts_rubrics_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveRubricApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveRubricApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -42302,43 +40338,6 @@ export interface operations {
             };
         };
     };
-    save_setting_api_v5_artifacts_settings_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveSettingApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveSettingApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     duplicate_setting_api_v5_artifacts_settings_duplicate_post: {
         parameters: {
             query?: never;
@@ -42692,43 +40691,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateAgentApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_agent_api_v5_artifacts_agents_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveAgentApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveAgentApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43108,43 +41070,6 @@ export interface operations {
             };
         };
     };
-    save_model_api_v5_artifacts_models_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveModelApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveModelApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     duplicate_model_api_v5_artifacts_models_duplicate_post: {
         parameters: {
             query?: never;
@@ -43498,43 +41423,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateProviderApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_provider_api_v5_artifacts_providers_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveProviderApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveProviderApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -43914,43 +41802,6 @@ export interface operations {
             };
         };
     };
-    save_parameter_api_v5_artifacts_parameters_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveParameterApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveParameterApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     duplicate_parameter_api_v5_artifacts_parameters_duplicate_post: {
         parameters: {
             query?: never;
@@ -44304,43 +42155,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateFieldApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_field_api_v5_artifacts_fields_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveFieldApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveFieldApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -44720,43 +42534,6 @@ export interface operations {
             };
         };
     };
-    save_profile_api_v5_artifacts_profiles_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveProfileApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveProfileApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     duplicate_profile_api_v5_artifacts_profiles_duplicate_post: {
         parameters: {
             query?: never;
@@ -45123,43 +42900,6 @@ export interface operations {
             };
         };
     };
-    save_auth_api_v5_artifacts_auths_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveAuthApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveAuthApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     duplicate_auth_api_v5_artifacts_auths_duplicate_post: {
         parameters: {
             query?: never;
@@ -45513,43 +43253,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UpdateToolApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_tool_api_v5_artifacts_tools_save_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SaveToolApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SaveToolApiResponse"];
                 };
             };
             /** @description Validation Error */

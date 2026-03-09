@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.routes.auth.types import AnalyticsFacets
 from app.routes.v5.api.main.session.types import SessionListItem
 
 
@@ -61,6 +62,8 @@ class ActivityResponse(BaseModel):
     profile_summary: list[ProfileSummaryItem] = Field(default_factory=list)
     # Resources
     resources: ActivityResources = Field(default_factory=ActivityResources)
+    # Inline analytics facets
+    analytics: AnalyticsFacets | None = None
 
 
 class ListActivityResponse(BaseModel):

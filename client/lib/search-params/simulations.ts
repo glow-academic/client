@@ -19,6 +19,7 @@ export const simulationsListSearchParams = {
   scenarioSearch: parseAsString,
   cohortSearch: parseAsString,
   departmentSearch: parseAsString,
+  flagSearch: parseAsString,
   page: parseAsInteger,
   pageSize: parseAsInteger,
 };

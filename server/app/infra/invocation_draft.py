@@ -94,13 +94,12 @@ async def patch_invocation_draft_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    async with pool.acquire() as conn:
-        profile = await resolve_profile_identity_context(
-            conn,
-            profile_id,
-            redis,
-            session_id=session_id,
-        )
+    profile = await resolve_profile_identity_context(
+        pool,
+        profile_id,
+        redis,
+        session_id=session_id,
+    )
 
     if profile is None:
         raise HTTPException(

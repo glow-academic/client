@@ -7,15 +7,13 @@
 
 import { PricingRunsClient } from "@/components/artifacts/pricing/PricingRunsClient";
 import { PricingSummary } from "@/components/artifacts/pricing/PricingSummary";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { PageHeader } from "@/components/common/layout/PageHeader";
+import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
-import {
-  computeAnalyticsDefaults,
-  resolveAnalyticsFilters,
-} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { loadPricingSearchParams } from "@/lib/search-params/pricing";
 
@@ -59,10 +57,6 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   // Parse search params via nuqs loader
   const q = loadPricingSearchParams(await searchParams);
 
-  // Compute defaults and resolve filters
-  const { defaults, profileContext } = await computeAnalyticsDefaults();
-  const filters = resolveAnalyticsFilters(q, defaults, profileContext);
-
   // Pricing-specific params with defaults
   const pricingPage = q.pricingPage ?? 0;
   const pricingPageSize = q.pricingPageSize ?? 10;
@@ -82,10 +76,10 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
   // Fetch summary + embedded group history in a single API call
   const pricingData = await getPricingAnalytics({
     body: {
-      start_date: filters.startDate,
-      end_date: filters.endDate,
-      department_ids: filters.departmentIds,
-      roles: filters.roles,
+      start_date: q.startDate ?? undefined,
+      end_date: q.endDate ?? undefined,
+      department_ids: q.departmentIds ?? [],
+      roles: q.roles ?? [],
       page_limit: 100,
       page_offset: 0,
       // Embedded group history params
@@ -96,6 +90,9 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
       history_model_id: modelId,
     },
   });
+
+  // Extract inline analytics facets
+  const facets = pricingData.analytics;
 
   // Extract embedded history or use empty fallback
   const runsData: PricingRunsOut = pricingData.history ?? {
@@ -110,6 +107,12 @@ export default async function PricingPage({ searchParams }: PricingPageProps) {
           { title: "Analytics", section: "analytics", url: "/analytics" },
           { title: "Pricing" },
         ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshPage={refreshPage}
+            analyticsFilters={facets}
+          />
+        }
       />
       <div className="space-y-6 px-4" data-page="pricing-index">
         <PricingSummary pricingData={pricingData} />

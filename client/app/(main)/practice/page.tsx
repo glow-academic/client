@@ -7,15 +7,13 @@
 
 import SimulationHistory from "@/components/common/SimulationHistory";
 import Practice from "@/components/artifacts/practice/Practice";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { PageHeader } from "@/components/common/layout/PageHeader";
+import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
-import {
-  computeAnalyticsDefaults,
-  resolveAnalyticsFilters,
-} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { loadPracticeSearchParams } from "@/lib/search-params/practice";
 
@@ -56,10 +54,6 @@ export default async function PracticePage({
   // Parse search params via nuqs loader
   const q = loadPracticeSearchParams(await searchParams);
 
-  // Compute defaults and resolve filters (same as home page)
-  const { defaults, profileContext } = await computeAnalyticsDefaults();
-  const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
-
   // History params with defaults
   const historyPage = q.historyPage ?? 0;
   const historyPageSize = q.historyPageSize ?? 10;
@@ -69,9 +63,6 @@ export default async function PracticePage({
   const historyInfiniteMode = q.historyInfiniteMode ?? undefined;
   const historySortBy = q.historySortBy ?? "date";
   const historySortOrder = q.historySortOrder ?? "desc";
-
-  // Check if user is a guest
-  const isGuest = !profileContext.id || profileContext.role === "guest";
 
   // Single fetch: cards + embedded history
   const practiceData = await getPracticeData({
@@ -90,6 +81,37 @@ export default async function PracticePage({
       }),
     },
   });
+
+  // Check if user is a guest (no items means no access / guest)
+  const isGuest = !practiceData.items || practiceData.items.length === 0;
+
+  // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
+  const facets = practiceData.analytics;
+  const defaultStartDate = (() => {
+    if (q.startDate) return q.startDate;
+    if (facets?.date_range_earliest) {
+      const d = new Date(facets.date_range_earliest);
+      d.setHours(0, 0, 0, 0);
+      return d.toISOString();
+    }
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  })();
+  const defaultEndDate = (() => {
+    if (q.endDate) return q.endDate;
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  })();
+  const initialFilters = {
+    startDate: defaultStartDate,
+    endDate: defaultEndDate,
+    cohortIds: q.cohortIds ?? [],
+    departmentIds: q.departmentIds ?? [],
+    roles: q.roles ?? [],
+  };
 
   // Extract history from embedded response
   const historyData: PracticeHistoryOut = practiceData.history || {
@@ -139,6 +161,12 @@ export default async function PracticePage({
         breadcrumbs={[
           { title: "Practice", section: "practice", url: "/practice" },
         ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshPage={refreshPage}
+            analyticsFilters={facets}
+          />
+        }
       />
       <div className="space-y-6 px-4">
         <Practice practiceData={practiceData} isGuest={isGuest} />
@@ -155,6 +183,7 @@ export default async function PracticePage({
               pageSize={historyPageSize}
               showArchive={false}
               singleProfile={true}
+              initialFilters={initialFilters}
               profileOptions={profileOptions}
               simulationOptions={simulationOptions}
               scenarioOptions={scenarioOptions}

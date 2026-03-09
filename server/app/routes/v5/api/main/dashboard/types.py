@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.routes.auth.types import AnalyticsFacets
 from app.routes.v5.api.main.types import (
     FilterOption,
     HistoryResponse,
@@ -553,6 +554,9 @@ class DashboardBundleResponse(BaseModel):
     profile_emails: list[str] | None = None
     profile_primary_email: str | None = None
     profile_role: str | None = None
+
+    # Inline analytics facets
+    analytics: AnalyticsFacets | None = None
 
     # Attempt history
     history: HistoryResponse | None = None

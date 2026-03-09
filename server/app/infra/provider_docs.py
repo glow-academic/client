@@ -176,7 +176,7 @@ async def docs_provider_client(
     from app.routes.v5.api.main.provider.duplicate import duplicate_provider
     from app.routes.v5.api.main.provider.export import export_providers
     from app.routes.v5.api.main.provider.get import get_provider
-from app.routes.v5.api.main.provider.search import search_provider
+    from app.routes.v5.api.main.provider.search import search_provider
     from app.routes.v5.api.main.provider.update import update_provider
 
     return ComposedDocsResponse(

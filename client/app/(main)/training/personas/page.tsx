@@ -25,12 +25,6 @@ type CreatePersonaIn = InputOf<"/api/v5/artifacts/personas/create", "post">;
 type CreatePersonaOut = OutputOf<"/api/v5/artifacts/personas/create", "post">;
 type UpdatePersonaIn = InputOf<"/api/v5/artifacts/personas/update", "post">;
 type UpdatePersonaOut = OutputOf<"/api/v5/artifacts/personas/update", "post">;
-type SearchColorsIn = InputOf<"/api/v5/resources/colors/search", "post">;
-type SearchColorsOut = NonNullable<OutputOf<"/api/v5/resources/colors/search", "post">["items"]>;
-type SearchIconsIn = InputOf<"/api/v5/resources/icons/search", "post">;
-type SearchIconsOut = NonNullable<OutputOf<"/api/v5/resources/icons/search", "post">["items"]>;
-type SearchVoicesIn = InputOf<"/api/v5/resources/voices/search", "post">;
-type SearchVoicesOut = NonNullable<OutputOf<"/api/v5/resources/voices/search", "post">["items"]>;
 type ParseCsvIn = InputOf<"/uploads/csv", "post">;
 type ParseCsvOut = OutputOf<"/uploads/csv", "post">;
 
@@ -43,6 +37,9 @@ type PersonasListBody = {
   scenario_search?: string | null;
   field_search?: string | null;
   department_search?: string | null;
+  color_search?: string | null;
+  icon_search?: string | null;
+  voice_search?: string | null;
   page_size: number | null;
   page_offset: number | null;
 };
@@ -90,30 +87,6 @@ async function createPersona(input: CreatePersonaIn): Promise<CreatePersonaOut> 
 async function updatePersona(input: UpdatePersonaIn): Promise<UpdatePersonaOut> {
   "use server";
   return api.post("/artifacts/personas/update", input);
-}
-
-async function searchColors(): Promise<SearchColorsOut> {
-  "use server";
-  const res = await api.post("/resources/colors/search", {
-    body: { search: null, limit_count: 100, offset_count: 0, persona: true, setting: false },
-  } as SearchColorsIn);
-  return res.items ?? [];
-}
-
-async function searchIcons(): Promise<SearchIconsOut> {
-  "use server";
-  const res = await api.post("/resources/icons/search", {
-    body: { search: null, limit_count: 100, offset_count: 0, persona: true },
-  } as SearchIconsIn);
-  return res.items ?? [];
-}
-
-async function searchVoices(): Promise<SearchVoicesOut> {
-  "use server";
-  const res = await api.post("/resources/voices/search", {
-    body: { search: null, limit_count: 100, offset_count: 0, persona: true, agent: false, model: false },
-  } as SearchVoicesIn);
-  return res.items ?? [];
 }
 
 async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
@@ -171,6 +144,9 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
     scenario_search: q.scenarioSearch || null,
     field_search: q.fieldSearch || null,
     department_search: q.departmentSearch || null,
+    color_search: q.colorSearch || null,
+    icon_search: q.iconSearch || null,
+    voice_search: q.voiceSearch || null,
     page_size: pageSize,
     page_offset: offset,
   };
@@ -198,9 +174,6 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
           deletePersonaAction={deletePersona}
           createPersonaAction={createPersona}
           updatePersonaAction={updatePersona}
-          searchColorsAction={searchColors}
-          searchIconsAction={searchIcons}
-          searchVoicesAction={searchVoices}
           parseCsvAction={parseCsv}
           importFields={listData.import_fields ?? undefined}
           pageIndex={pageIndex}
@@ -209,6 +182,9 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
           scenarioSearch={q.scenarioSearch ?? ""}
           fieldSearch={q.fieldSearch ?? ""}
           departmentSearch={q.departmentSearch ?? ""}
+          colorSearch={q.colorSearch ?? ""}
+          iconSearch={q.iconSearch ?? ""}
+          voiceSearch={q.voiceSearch ?? ""}
         />
       </div>
     </>
@@ -228,7 +204,4 @@ export type {
   CreatePersonaOut,
   UpdatePersonaIn,
   UpdatePersonaOut,
-  SearchColorsOut,
-  SearchIconsOut,
-  SearchVoicesOut,
 };

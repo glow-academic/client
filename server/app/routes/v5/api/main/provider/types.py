@@ -187,61 +187,11 @@ class UpdateProviderApiResponse(BaseModel):
     results: list[ProviderResultItem]
 
 
-# ========== Legacy Save Types (backwards compat) ==========
-
-
 class SaveProviderFieldError(BaseModel):
     """Per-field error from value resolution."""
 
     field: str
     message: str
-
-
-class SaveProviderItem(BaseModel):
-    """Single provider item for save — provide ID or value per field (not both).
-
-    For required fields (name), exactly one of the *_id or value field must be provided.
-    """
-
-    input_provider_id: UUID | None = None
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    active_flag_id: UUID | None = None
-    active_flag: bool | None = None
-    # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    # ID-only fields
-    endpoint_ids: list[UUID] | None = None
-    key_ids: list[UUID] | None = None
-    value_ids: list[UUID] | None = None
-    provider_ids: list[UUID] | None = None
-
-
-class SaveProviderApiRequest(BaseModel):
-    """Request model for bulk save provider endpoint."""
-
-    providers: list[SaveProviderItem]
-    group_id: UUID | None = None
-
-
-class SaveProviderResult(BaseModel):
-    """Per-item result within a bulk save response."""
-
-    success: bool
-    provider_id: UUID | None = None
-    message: str
-    errors: list[SaveProviderFieldError] | None = None
-
-
-class SaveProviderApiResponse(BaseModel):
-    """Response model for bulk save provider endpoint."""
-
-    results: list[SaveProviderResult]
 
 
 class DeleteProviderApiRequest(BaseModel):

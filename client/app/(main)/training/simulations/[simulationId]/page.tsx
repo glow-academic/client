@@ -10,11 +10,12 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import type { ScenarioFlagsProps } from "@/components/resources/ScenarioFlags";
 import Simulation from "@/components/artifacts/simulation/Simulation";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
-import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetSimulationIn = InputOf<"/api/v5/artifacts/simulations/get", "post">;
@@ -236,15 +237,16 @@ export default async function EditSimulationPage({
         filter_scenario_ids: null,
       } as GetSimulationIn["body"],
     };
-    const [simulationData, docs] = await Promise.all([
+    const [simulationData, docs, draftsResult] = await Promise.all([
       getSimulation(input),
       getDocs({ body: { entity_id: simulationId } }),
+      getDrafts(), // TODO: fetch only simulation drafts (e.g. getDrafts({ artifact_type: "simulation" }))
     ]);
 
     const entityName = docs.detail.title;
 
     return (
-      <>
+      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Training", section: "training", url: "/training" },
@@ -275,7 +277,7 @@ export default async function EditSimulationPage({
             }
           />
         </div>
-      </>
+      </DraftProviderClient>
     );
   } catch (error: unknown) {
     // Check for 403 (access denied) - show UnifiedAccessDenied component

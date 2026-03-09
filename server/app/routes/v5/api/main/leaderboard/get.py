@@ -1,16 +1,24 @@
 """Get endpoint for leaderboard artifact — top sections (header metrics + accolades)."""
 
+import asyncio
 from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.analytics_facets import (
+    HIDDEN,
+    VISIBLE,
+    AnalyticsFacetsConfig,
+    resolve_analytics_facets,
+)
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.leaderboard_context import resolve_leaderboard_context
 from app.infra.leaderboard_permissions import (
     build_leaderboard_sections_v3,
 )
+from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.api.main.leaderboard.types import (
     LeaderboardProfileResource,
     LeaderboardRequest,
@@ -23,6 +31,22 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
+
+# ---------------------------------------------------------------------------
+# Leaderboard analytics facets config
+# ---------------------------------------------------------------------------
+
+LEADERBOARD_FACETS_CONFIG = AnalyticsFacetsConfig(
+    fields=AnalyticsFilterFields(
+        date_range=VISIBLE,
+        departments=VISIBLE,
+        cohorts=VISIBLE,
+        roles=HIDDEN,
+        attempts=VISIBLE,
+    ),
+    mv_source="profile_facts",
+    attempt_options=["general", "practice", "archived"],
+)
 
 
 # ---------------------------------------------------------------------------
@@ -121,18 +145,29 @@ async def get_leaderboard(
         # --- Phase 1: Parse filters ---
         filters = _parse_filters(request)
 
-        # --- Phase 2: Resolve leaderboard context ---
-        ctx = await resolve_leaderboard_context(
-            pool,
-            redis,
-            target_profile_id=request.target_profile_id,
-            cohort_ids=filters["cohort_ids"],
-            department_ids=filters["department_ids"],
-            attempt_type=filters["attempt_type"],
-            is_archived=filters["is_archived"],
-            date_from=filters["date_from"],
-            date_to=filters["date_to"],
-            bypass_cache=bypass_cache,
+        profile = common.profile
+
+        # --- Phase 2: Resolve leaderboard context + analytics facets in parallel ---
+        ctx, analytics_facets = await asyncio.gather(
+            resolve_leaderboard_context(
+                pool,
+                redis,
+                target_profile_id=request.target_profile_id,
+                cohort_ids=filters["cohort_ids"],
+                department_ids=filters["department_ids"],
+                attempt_type=filters["attempt_type"],
+                is_archived=filters["is_archived"],
+                date_from=filters["date_from"],
+                date_to=filters["date_to"],
+                bypass_cache=bypass_cache,
+            ),
+            resolve_analytics_facets(
+                pool,
+                redis,
+                config=LEADERBOARD_FACETS_CONFIG,
+                profile=profile,
+                bypass_cache=bypass_cache,
+            ),
         )
 
         # --- Phase 3: Extract data ---
@@ -166,6 +201,7 @@ async def get_leaderboard(
         api_response = LeaderboardResponse(
             sections=sections,
             resources=resources,
+            analytics=analytics_facets,
         )
 
         await set_cached(

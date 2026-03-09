@@ -199,7 +199,7 @@ async def docs_document_client(
     from app.routes.v5.api.main.document.duplicate import duplicate_document
     from app.routes.v5.api.main.document.export import export_documents
     from app.routes.v5.api.main.document.get import get_document
-from app.routes.v5.api.main.document.search import search_document
+    from app.routes.v5.api.main.document.search import search_document
     from app.routes.v5.api.main.document.update import update_document
 
     return ComposedDocsResponse(

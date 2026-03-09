@@ -167,7 +167,7 @@ async def docs_tool_client(
     from app.routes.v5.api.main.tool.duplicate import duplicate_tool
     from app.routes.v5.api.main.tool.export import export_tools
     from app.routes.v5.api.main.tool.get import get_tool
-from app.routes.v5.api.main.tool.search import search_tool
+    from app.routes.v5.api.main.tool.search import search_tool
     from app.routes.v5.api.main.tool.update import update_tool
 
     return ComposedDocsResponse(

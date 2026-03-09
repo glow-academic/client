@@ -19,6 +19,7 @@ export const cohortsListSearchParams = {
   simulationSearch: parseAsString,
   profileSearch: parseAsString,
   departmentSearch: parseAsString,
+  flagSearch: parseAsString,
   page: parseAsInteger,
   pageSize: parseAsInteger,
 };

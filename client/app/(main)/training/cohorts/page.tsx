@@ -5,6 +5,7 @@
  * 06/18/2025
  */
 import Cohorts from "@/components/artifacts/cohort/Cohorts";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -24,8 +25,6 @@ type CreateCohortIn = InputOf<"/api/v5/artifacts/cohorts/create", "post">;
 type CreateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/create", "post">;
 type UpdateCohortIn = InputOf<"/api/v5/artifacts/cohorts/update", "post">;
 type UpdateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/update", "post">;
-type SearchFlagsIn = InputOf<"/api/v5/resources/flags/search", "post">;
-type SearchFlagsOut = NonNullable<OutputOf<"/api/v5/resources/flags/search", "post">["items"]>;
 type ParseCsvIn = InputOf<"/uploads/csv", "post">;
 type ParseCsvOut = OutputOf<"/uploads/csv", "post">;
 
@@ -38,6 +37,7 @@ type CohortsListBody = {
   simulation_search?: string | null;
   profile_search?: string | null;
   department_search?: string | null;
+  flag_search?: string | null;
   page_size: number | null;
   page_offset: number | null;
 };
@@ -85,14 +85,6 @@ async function createCohort(input: CreateCohortIn): Promise<CreateCohortOut> {
 async function updateCohort(input: UpdateCohortIn): Promise<UpdateCohortOut> {
   "use server";
   return api.post("/artifacts/cohorts/update", input);
-}
-
-async function searchFlags(): Promise<SearchFlagsOut> {
-  "use server";
-  const res = await api.post("/resources/flags/search", {
-    body: { search: null, limit_count: 100, offset_count: 0, cohort: true },
-  } as SearchFlagsIn);
-  return res.items ?? [];
 }
 
 async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
@@ -150,6 +142,7 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
     simulation_search: q.simulationSearch || null,
     profile_search: q.profileSearch || null,
     department_search: q.departmentSearch || null,
+    flag_search: q.flagSearch || null,
     page_size: pageSize,
     page_offset: offset,
   };
@@ -167,6 +160,7 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
           { title: "Training", section: "training", url: "/training" },
           { title: "Cohorts" },
         ]}
+        toolbar={<NewArtifactButton label="New Cohort" href="/training/cohorts/new" />}
       />
       <div className="space-y-6 px-4" data-page="cohorts-index">
         <Cohorts
@@ -176,7 +170,6 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
           deleteCohortAction={deleteCohort}
           createCohortAction={createCohort}
           updateCohortAction={updateCohort}
-          searchFlagsAction={searchFlags}
           parseCsvAction={parseCsv}
           importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
           pageIndex={pageIndex}
@@ -185,6 +178,7 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
           simulationSearch={q.simulationSearch ?? ""}
           profileSearch={q.profileSearch ?? ""}
           departmentSearch={q.departmentSearch ?? ""}
+          flagSearch={q.flagSearch ?? ""}
         />
       </div>
     </>
@@ -204,5 +198,4 @@ export type {
   CreateCohortOut,
   UpdateCohortIn,
   UpdateCohortOut,
-  SearchFlagsOut,
 };

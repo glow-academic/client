@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 import { Simulations } from "@/components/artifacts/simulation/Simulations";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -24,8 +25,6 @@ type CreateSimulationIn = InputOf<"/api/v5/artifacts/simulations/create", "post"
 type CreateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/create", "post">;
 type UpdateSimulationIn = InputOf<"/api/v5/artifacts/simulations/update", "post">;
 type UpdateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/update", "post">;
-type SearchFlagsIn = InputOf<"/api/v5/resources/flags/search", "post">;
-type SearchFlagsOut = NonNullable<OutputOf<"/api/v5/resources/flags/search", "post">["items"]>;
 type ParseCsvIn = InputOf<"/uploads/csv", "post">;
 type ParseCsvOut = OutputOf<"/uploads/csv", "post">;
 
@@ -38,6 +37,7 @@ type SimulationsListBody = {
   scenario_search?: string | null;
   cohort_search?: string | null;
   department_search?: string | null;
+  flag_search?: string | null;
   page_size: number | null;
   page_offset: number | null;
 };
@@ -87,14 +87,6 @@ async function createSimulation(input: CreateSimulationIn): Promise<CreateSimula
 async function updateSimulation(input: UpdateSimulationIn): Promise<UpdateSimulationOut> {
   "use server";
   return api.post("/artifacts/simulations/update", input);
-}
-
-async function searchFlags(): Promise<SearchFlagsOut> {
-  "use server";
-  const res = await api.post("/resources/flags/search", {
-    body: { search: null, limit_count: 100, offset_count: 0, simulation: true },
-  } as SearchFlagsIn);
-  return res.items ?? [];
 }
 
 async function parseCsv(input: ParseCsvIn): Promise<ParseCsvOut> {
@@ -152,6 +144,7 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
     scenario_search: q.scenarioSearch || null,
     cohort_search: q.cohortSearch || null,
     department_search: q.departmentSearch || null,
+    flag_search: q.flagSearch || null,
     page_size: pageSize,
     page_offset: offset,
   };
@@ -169,6 +162,7 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
           { title: "Training", section: "training", url: "/training" },
           { title: "Simulations" },
         ]}
+        toolbar={<NewArtifactButton label="New Simulation" href="/training/simulations/new" />}
       />
       <div className="space-y-6 px-4" data-page="simulations-index">
         <Simulations
@@ -178,7 +172,6 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
           deleteSimulationAction={deleteSimulation}
           createSimulationAction={createSimulation}
           updateSimulationAction={updateSimulation}
-          searchFlagsAction={searchFlags}
           parseCsvAction={parseCsv}
           importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
           pageIndex={pageIndex}
@@ -187,6 +180,7 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
           scenarioSearch={q.scenarioSearch ?? ""}
           cohortSearch={q.cohortSearch ?? ""}
           departmentSearch={q.departmentSearch ?? ""}
+          flagSearch={q.flagSearch ?? ""}
         />
       </div>
     </>
@@ -205,6 +199,5 @@ export type {
   CreateSimulationOut,
   UpdateSimulationIn,
   UpdateSimulationOut,
-  SearchFlagsOut,
   SimulationsListOut,
 };

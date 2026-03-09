@@ -177,6 +177,7 @@ async def get_benchmark(
             date_range_earliest=date_range_earliest,
             date_range_latest=date_range_latest,
             history=history,
+            analytics=analytics_facets,
         )
 
     except HTTPException:

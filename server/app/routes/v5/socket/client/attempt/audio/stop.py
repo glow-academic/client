@@ -7,9 +7,11 @@ to the internal layer. Cleanup is handled by the internal handler.
 import uuid as uuid_mod
 from typing import Any
 
-from app.infra.globals import get_internal_sio, sio
-from app.infra.websocket.get_db_connection import get_db_connection
+from app.infra.globals import get_internal_sio, get_pool, sio
 from app.infra.websocket.session_store import get_session_by_chat_id
+from app.routes.v5.tools.entries.attempt_conversation_completion.create import (
+    create_attempt_conversation_completion,
+)
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -32,12 +34,14 @@ async def attempt_audio_stop(sid: str, data: dict[str, Any]) -> None:
     # Record conversation completion in DB
     if session.conversation_id:
         try:
-            async with get_db_connection() as conn:
-                await conn.execute(
-                    """INSERT INTO attempt_conversation_completions_entry (conversation_id, end_reason)
-                    VALUES ($1, $2)""",
-                    uuid_mod.UUID(session.conversation_id),
-                    data.get("end_reason", "user_stopped"),
+            pool = get_pool()
+            async with pool.acquire() as conn:
+                # TODO: wire up real call_id from audio session context
+                await create_attempt_conversation_completion(
+                    conn,
+                    conversation_id=uuid_mod.UUID(session.conversation_id),
+                    call_id=uuid_mod.uuid4(),
+                    stop=True,
                 )
         except Exception as e:
             logger.warning(f"Failed to record conversation completion: {e}")

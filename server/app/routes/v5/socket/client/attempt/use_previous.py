@@ -7,13 +7,16 @@ attempt into the current attempt, then delegate to attempt_proceed.
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, get_pool, sio
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.websocket.get_db_connection import get_db_connection
+from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.routes.v5.socket.client.types import AttemptUsePreviousPayload
 from app.routes.v5.socket.internal.attempt.types import (
     AttemptErrorData,
     AttemptProceedData,
+)
+from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
+    create_attempt_chat_bridge,
 )
 from app.utils.logging.db_logger import get_logger
 
@@ -22,12 +25,15 @@ logger = get_logger(__name__)
 internal_sio = get_internal_sio()
 
 
-async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) -> None:
+async def _attempt_use_previous_impl(
+    sid: str, data: AttemptUsePreviousPayload, session_id: uuid.UUID
+) -> None:
     """Handle attempt_use_previous — bridge previous attempt_chats, then proceed."""
     try:
         attempt_id = uuid.UUID(str(data.attempt_id))
 
-        async with get_db_connection() as conn:
+        pool = get_pool()
+        async with pool.acquire() as conn:
             for (
                 _chat_entry_id_str,
                 attempt_chat_id_str,
@@ -36,15 +42,11 @@ async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) 
                     continue
                 try:
                     attempt_chat_id = uuid.UUID(attempt_chat_id_str)
-
-                    await conn.execute(
-                        """
-                        INSERT INTO attempt_chat_bridge_entry (attempt_id, attempt_chat_id)
-                        VALUES ($1, $2)
-                        ON CONFLICT DO NOTHING
-                        """,
-                        attempt_id,
-                        attempt_chat_id,
+                    await create_attempt_chat_bridge(
+                        conn,
+                        attempt_id=attempt_id,
+                        attempt_chat_id=attempt_chat_id,
+                        session_id=session_id,
                     )
                 except Exception as e:
                     logger.warning(
@@ -62,12 +64,6 @@ async def _attempt_use_previous_impl(sid: str, data: AttemptUsePreviousPayload) 
                 force_proceed=False,
             ).model_dump(mode="json"),
         )
-
-        # Log activity
-        try:
-            pass
-        except Exception:
-            pass
 
     except Exception as e:
         logger.exception(f"Error in attempt_use_previous: {e}")
@@ -99,7 +95,19 @@ async def attempt_use_previous(sid: str, data: dict[str, Any]) -> None:
             )
             return
 
-        await _attempt_use_previous_impl(sid, payload)
+        session_id_str = await find_session_by_socket(sid)
+        if not session_id_str:
+            await internal_sio.emit(
+                "attempt_error",
+                AttemptErrorData(
+                    sid=sid,
+                    error_type="end",
+                    message="Session not found. Please reconnect.",
+                ).model_dump(mode="json"),
+            )
+            return
+
+        await _attempt_use_previous_impl(sid, payload, uuid.UUID(session_id_str))
 
     except Exception as e:
         logger.exception(f"Invalid request in attempt_use_previous: {e}")

@@ -19,6 +19,9 @@ export const personasSearchParams = {
   scenarioSearch: parseAsString,
   fieldSearch: parseAsString,
   departmentSearch: parseAsString,
+  colorSearch: parseAsString,
+  iconSearch: parseAsString,
+  voiceSearch: parseAsString,
   page: parseAsInteger,
   pageSize: parseAsInteger,
 };

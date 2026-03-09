@@ -513,69 +513,11 @@ class UpdatePersonaApiResponse(BaseModel):
     results: list[PersonaResultItem]
 
 
-# ========== Legacy Save Types (backwards compat) ==========
-
-
 class SavePersonaFieldError(BaseModel):
     """Per-field error from value resolution."""
 
     field: str
     message: str
-
-
-class SavePersonaItem(BaseModel):
-    """Single persona item for save — provide ID or value per field (not both).
-
-    For required fields (name, color, icon, instructions), exactly one of
-    the *_id or value field must be provided.
-    """
-
-    input_persona_id: UUID | None = None
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    color_id: UUID | None = None
-    color: str | None = None
-    icon_id: UUID | None = None
-    icon: str | None = None
-    instructions_id: UUID | None = None
-    instructions: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    active_flag_id: UUID | None = None
-    active_flag: bool | None = None
-    # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    parameter_field_ids: list[UUID] | None = None
-    parameter_fields: list[str] | None = None
-    example_ids: list[UUID] | None = None
-    examples: list[str] | None = None
-    voice_ids: list[UUID] | None = None
-    voices: list[str] | None = None
-
-
-class SavePersonaApiRequest(BaseModel):
-    """Request model for bulk save persona endpoint."""
-
-    personas: list[SavePersonaItem]
-    group_id: UUID | None = None  # Tool tracking context from GET response
-
-
-class SavePersonaResult(BaseModel):
-    """Per-item result within a bulk save response."""
-
-    success: bool
-    persona_id: UUID | None = None
-    message: str
-    errors: list[SavePersonaFieldError] | None = None
-
-
-class SavePersonaApiResponse(BaseModel):
-    """Response model for bulk save persona endpoint."""
-
-    results: list[SavePersonaResult]
 
 
 # ========== Delete Endpoint Types ==========

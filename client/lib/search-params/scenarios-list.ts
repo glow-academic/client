@@ -19,6 +19,7 @@ export const scenariosListSearchParams = {
   personaSearch: parseAsString,
   simulationSearch: parseAsString,
   departmentSearch: parseAsString,
+  flagSearch: parseAsString,
   page: parseAsInteger,
   pageSize: parseAsInteger,
 };

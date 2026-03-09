@@ -38,6 +38,7 @@ from app.routes.v5.tools.entries.attempt_message_tree.create import (
 from app.routes.v5.tools.entries.attempt_message_tree.refresh import (
     refresh_attempt_message_tree,
 )
+from app.routes.v5.tools.entries.attempt_message.create import create_attempt_message
 from app.routes.v5.tools.entries.messages.create import create_message
 from app.routes.v5.tools.entries.messages.search import search_messages
 from app.routes.v5.tools.entries.runs.create import create_run
@@ -180,13 +181,12 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 role="assistant",
             )
             if chat_id is not None:
-                await conn.execute(
-                    """
-                    INSERT INTO attempt_message_entry (id, chat_id)
-                    VALUES ($1, $2)
-                """,
-                    assistant_result.id,
-                    chat_id,
+                # TODO: wire up real call_id from generation context
+                await create_attempt_message(
+                    conn,
+                    chat_id=chat_id,
+                    message_id=assistant_result.id,
+                    call_id=uuid.uuid4(),
                 )
             assistant_message_id = assistant_result.id
             created_at = assistant_result.created_at

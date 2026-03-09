@@ -5,14 +5,12 @@
  * 06/18/2025
  */
 import Logs from "@/components/artifacts/health/Logs";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { PageHeader } from "@/components/common/layout/PageHeader";
+import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import {
-  computeAnalyticsDefaults,
-  resolveAnalyticsFilters,
-} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { cache } from "react";
 import { loadHealthSearchParams } from "@/lib/search-params/health";
@@ -53,17 +51,16 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
   // Parse search params via nuqs loader
   const q = loadHealthSearchParams(await searchParams);
 
-  // Compute defaults and resolve filters (only startDate/endDate used for health)
-  const { defaults, profileContext } = await computeAnalyticsDefaults();
-  const filters = resolveAnalyticsFilters(q, defaults, profileContext);
-
   // Fetch bundle data server-side (for KPIs and metrics)
   const bundleData = await getHealthBundle({
     body: {
-      date_from: filters.startDate,
-      date_to: filters.endDate,
+      date_from: q.startDate ?? undefined,
+      date_to: q.endDate ?? undefined,
     },
   });
+
+  // Extract inline analytics facets
+  const facets = bundleData.analytics;
 
   return (
     <>
@@ -71,6 +68,12 @@ export default async function HealthPage({ searchParams }: HealthPageProps) {
         breadcrumbs={[
           { title: "Health" },
         ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshPage={refreshPage}
+            analyticsFilters={facets}
+          />
+        }
       />
       <div className="space-y-6 px-4">
         <Logs bundleData={bundleData} />

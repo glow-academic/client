@@ -175,7 +175,7 @@ async def docs_auth_client(
     from app.routes.v5.api.main.auth.duplicate import duplicate_auth
     from app.routes.v5.api.main.auth.export import export_auths
     from app.routes.v5.api.main.auth.get import get_auth
-from app.routes.v5.api.main.auth.search import search_auth
+    from app.routes.v5.api.main.auth.search import search_auth
     from app.routes.v5.api.main.auth.update import update_auth
 
     return ComposedDocsResponse(

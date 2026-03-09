@@ -201,7 +201,7 @@ async def docs_cohort_client(
     from app.routes.v5.api.main.cohort.duplicate import duplicate_cohort
     from app.routes.v5.api.main.cohort.export import export_cohorts
     from app.routes.v5.api.main.cohort.get import get_cohort
-from app.routes.v5.api.main.cohort.search import search_cohort
+    from app.routes.v5.api.main.cohort.search import search_cohort
     from app.routes.v5.api.main.cohort.update import update_cohort
 
     return ComposedDocsResponse(

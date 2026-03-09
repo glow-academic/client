@@ -7,14 +7,12 @@
 
 import Benchmark from "@/components/artifacts/benchmark/Benchmark";
 import EvalHistory from "@/components/artifacts/benchmark/EvalHistory";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { PageHeader } from "@/components/common/layout/PageHeader";
+import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import {
-  computeAnalyticsDefaults,
-  resolveAnalyticsFilters,
-} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { loadBenchmarkSearchParams } from "@/lib/search-params/benchmark";
 
@@ -83,10 +81,6 @@ export default async function BenchmarkPage({
   // Parse search params via nuqs loader
   const q = loadBenchmarkSearchParams(await searchParams);
 
-  // Compute defaults and resolve filters (departments, date range)
-  const { defaults, profileContext } = await computeAnalyticsDefaults();
-  const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
-
   // History params with defaults
   const historyPage = q.historyPage ?? 0;
   const historyPageSize = q.historyPageSize ?? 10;
@@ -100,9 +94,9 @@ export default async function BenchmarkPage({
   // Build benchmark overview filters with embedded history
   const overviewFilters: BenchmarkOverviewIn = {
     body: {
-      start_date: defaultFilters.startDate,
-      end_date: defaultFilters.endDate,
-      department_ids: defaultFilters.departmentIds,
+      start_date: q.startDate ?? undefined,
+      end_date: q.endDate ?? undefined,
+      department_ids: q.departmentIds ?? [],
       history_page: historyPage,
       history_page_size: historyPageSize,
       ...(historySearch && { history_search: historySearch }),
@@ -119,6 +113,9 @@ export default async function BenchmarkPage({
 
   // Fetch benchmark overview server-side (includes embedded history)
   const overviewData = await getBenchmarkOverview(overviewFilters);
+
+  // Extract inline analytics facets
+  const facets = overviewData.analytics;
 
   // Convert arrays to dicts for backward compatibility with Benchmark component
   const rubricMapping: Record<string, Record<string, unknown>> = {};
@@ -303,6 +300,12 @@ export default async function BenchmarkPage({
         breadcrumbs={[
           { title: "Benchmark", section: "benchmark", url: "/benchmark" },
         ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshPage={refreshPage}
+            analyticsFilters={facets}
+          />
+        }
       />
       <div className="space-y-6 px-4">
         <Benchmark

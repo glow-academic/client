@@ -156,61 +156,11 @@ class UpdateRubricApiResponse(BaseModel):
     results: list[RubricResultItem]
 
 
-# ========== Legacy Save Types (backwards compat) ==========
-
-
 class SaveRubricFieldError(BaseModel):
     """Per-field error from value resolution."""
 
     field: str
     message: str
-
-
-class SaveRubricItem(BaseModel):
-    """Single rubric item for save — provide ID or value per field (not both).
-
-    For required fields (name), exactly one of the *_id or value field must be provided.
-    """
-
-    input_rubric_id: UUID | None = None
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    active_flag_id: UUID | None = None
-    active_flag: bool | None = None
-    # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    # ID-only fields
-    point_ids: list[UUID] | None = None
-    standard_group_ids: list[UUID] | None = None
-    standard_ids: list[UUID] | None = None
-    rubric_ids: list[UUID] | None = None
-
-
-class SaveRubricApiRequest(BaseModel):
-    """Request model for bulk save rubric endpoint."""
-
-    rubrics: list[SaveRubricItem]
-    group_id: UUID | None = None
-
-
-class SaveRubricResult(BaseModel):
-    """Per-item result within a bulk save response."""
-
-    success: bool
-    rubric_id: UUID | None = None
-    message: str
-    errors: list[SaveRubricFieldError] | None = None
-
-
-class SaveRubricApiResponse(BaseModel):
-    """Response model for bulk save rubric endpoint."""
-
-    results: list[SaveRubricResult]
 
 
 class DeleteRubricApiRequest(BaseModel):

@@ -229,7 +229,7 @@ async def docs_scenario_client(
     from app.routes.v5.api.main.scenario.duplicate import duplicate_scenario
     from app.routes.v5.api.main.scenario.export import export_scenarios
     from app.routes.v5.api.main.scenario.get import get_scenario
-from app.routes.v5.api.main.scenario.search import search_scenario
+    from app.routes.v5.api.main.scenario.search import search_scenario
     from app.routes.v5.api.main.scenario.update import update_scenario
 
     return ComposedDocsResponse(

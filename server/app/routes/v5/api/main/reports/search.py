@@ -1,12 +1,20 @@
 """Search endpoint for reports artifact — composable infra pattern."""
 
+import asyncio
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.analytics_facets import (
+    VISIBLE,
+    AnalyticsFacetsConfig,
+    resolve_analytics_facets,
+)
+from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.reports_context import resolve_reports_context
 from app.infra.reports_permissions import build_reports_sections_v2
+from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.api.main.reports.types import (
     ReportsCohortResource,
     ReportsProfileResource,
@@ -23,6 +31,22 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+# ---------------------------------------------------------------------------
+# Reports analytics facets config
+# ---------------------------------------------------------------------------
+
+REPORTS_FACETS_CONFIG = AnalyticsFacetsConfig(
+    fields=AnalyticsFilterFields(
+        date_range=VISIBLE,
+        departments=VISIBLE,
+        cohorts=VISIBLE,
+        roles=VISIBLE,
+        attempts=VISIBLE,
+    ),
+    mv_source="profile_facts",
+    attempt_options=["general", "practice", "archived"],
+)
+
 
 @router.post("/search", response_model=ReportsResponse)
 async def get_reports(
@@ -38,6 +62,22 @@ async def get_reports(
         pool = get_pool()
         if not pool:
             raise RuntimeError("Database pool not initialized")
+
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
+        redis = get_redis_client()
+
+        # --- Phase 0: Resolve common context (profile identity) ---
+        common = await resolve_common_context(
+            pool, redis, profile_id=profile_id, bypass_cache=bypass_cache
+        )
+        if not common:
+            raise HTTPException(status_code=401, detail="Profile not found")
 
         # ── Parse filters ─────────────────────────────────────────────
         parsed_start_date = (
@@ -63,20 +103,29 @@ async def get_reports(
         else:
             attempt_type = None
 
-        # ── Resolve context (entries + resources) ─────────────────────
-        ctx = await resolve_reports_context(
-            pool,
-            get_redis_client(),
-            target_profile_id=request.target_profile_id,
-            actor_profile_id=request.actor_profile_id,
-            cohort_ids=request.cohort_ids,
-            department_ids=request.department_ids,
-            simulation_ids=request.simulation_ids,
-            attempt_type=attempt_type,
-            is_archived=is_archived,
-            date_from=parsed_start_day,
-            date_to=parsed_end_day,
-            bypass_cache=bypass_cache,
+        # ── Resolve context + analytics facets in parallel ─────────────
+        ctx, analytics_facets = await asyncio.gather(
+            resolve_reports_context(
+                pool,
+                redis,
+                target_profile_id=request.target_profile_id,
+                actor_profile_id=request.actor_profile_id,
+                cohort_ids=request.cohort_ids,
+                department_ids=request.department_ids,
+                simulation_ids=request.simulation_ids,
+                attempt_type=attempt_type,
+                is_archived=is_archived,
+                date_from=parsed_start_day,
+                date_to=parsed_end_day,
+                bypass_cache=bypass_cache,
+            ),
+            resolve_analytics_facets(
+                pool,
+                redis,
+                config=REPORTS_FACETS_CONFIG,
+                profile=common.profile,
+                bypass_cache=bypass_cache,
+            ),
         )
 
         # ── Extract entries ───────────────────────────────────────────
@@ -173,6 +222,7 @@ async def get_reports(
             simulation_options=simulation_options,
             profile_options=profile_options,
             scenario_options=scenario_options,
+            analytics=analytics_facets,
         )
 
     except HTTPException:

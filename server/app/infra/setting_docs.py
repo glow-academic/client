@@ -196,7 +196,7 @@ async def docs_setting_client(
     from app.routes.v5.api.main.setting.duplicate import duplicate_setting
     from app.routes.v5.api.main.setting.export import export_settings
     from app.routes.v5.api.main.setting.get import get_setting
-from app.routes.v5.api.main.setting.search import search_setting
+    from app.routes.v5.api.main.setting.search import search_setting
     from app.routes.v5.api.main.setting.update import update_setting
 
     return ComposedDocsResponse(

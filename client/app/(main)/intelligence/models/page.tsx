@@ -5,6 +5,7 @@
  * 06/18/2025
  */
 import Models from "@/components/artifacts/model/Models";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -132,6 +133,7 @@ export default async function ModelsPage({ searchParams }: ModelsPageProps) {
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Models" },
         ]}
+        toolbar={<NewArtifactButton label="New Model" href="/intelligence/models/new" />}
       />
       <div className="space-y-6 px-4" data-page="models-index">
         <Models

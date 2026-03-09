@@ -4,11 +4,18 @@ Composable pattern: resolve_common_context → resolve_dashboard_context → Pyt
 Zero extra queries in this file — all data comes from the context resolver.
 """
 
+import asyncio
 from datetime import datetime
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.analytics_facets import (
+    HIDDEN,
+    VISIBLE,
+    AnalyticsFacetsConfig,
+    resolve_analytics_facets,
+)
 from app.infra.common_context import resolve_common_context
 from app.infra.dashboard_builders import (
     build_field_meta,
@@ -25,6 +32,7 @@ from app.infra.dashboard_permissions import (
     compute_secondary_metrics_v2,
 )
 from app.infra.globals import get_pool, get_redis_client
+from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.api.main.dashboard.types import (
     DashboardBundleResponse,
     DashboardRequest,
@@ -36,6 +44,22 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
+
+# ---------------------------------------------------------------------------
+# Dashboard analytics facets config
+# ---------------------------------------------------------------------------
+
+DASHBOARD_FACETS_CONFIG = AnalyticsFacetsConfig(
+    fields=AnalyticsFilterFields(
+        date_range=VISIBLE,
+        departments=VISIBLE,
+        cohorts=VISIBLE,
+        roles=VISIBLE,
+        attempts=VISIBLE,
+    ),
+    mv_source="profile_facts",
+    attempt_options=["general", "practice", "archived"],
+)
 
 
 # ---------------------------------------------------------------------------
@@ -107,20 +131,29 @@ async def get_dashboard(
         else:
             attempt_type = None
 
-        # --- Phase 2: Resolve dashboard context ---
-        ctx = await resolve_dashboard_context(
-            pool,
-            redis,
-            target_profile_id=request.target_profile_id,
-            actor_profile_id=request.actor_profile_id,
-            cohort_ids=request.cohort_ids,
-            department_ids=request.department_ids,
-            simulation_ids=request.simulation_ids,
-            attempt_type=attempt_type,
-            is_archived=is_archived,
-            date_from=parsed_start_date.date() if parsed_start_date else None,
-            date_to=parsed_end_date.date() if parsed_end_date else None,
-            bypass_cache=bypass_cache,
+        # --- Phase 2: Resolve dashboard context + analytics facets in parallel ---
+        ctx, analytics_facets = await asyncio.gather(
+            resolve_dashboard_context(
+                pool,
+                redis,
+                target_profile_id=request.target_profile_id,
+                actor_profile_id=request.actor_profile_id,
+                cohort_ids=request.cohort_ids,
+                department_ids=request.department_ids,
+                simulation_ids=request.simulation_ids,
+                attempt_type=attempt_type,
+                is_archived=is_archived,
+                date_from=parsed_start_date.date() if parsed_start_date else None,
+                date_to=parsed_end_date.date() if parsed_end_date else None,
+                bypass_cache=bypass_cache,
+            ),
+            resolve_analytics_facets(
+                pool,
+                redis,
+                config=DASHBOARD_FACETS_CONFIG,
+                profile=common.profile,
+                bypass_cache=bypass_cache,
+            ),
         )
 
         # --- Phase 3: Extract data from context ---
@@ -348,6 +381,7 @@ async def get_dashboard(
             fields=fields_meta,
             thresholds=thresholds_dict,
             simulation_options=simulation_options,
+            analytics=analytics_facets,
         )
 
         # Attach profile metadata if target_profile_id is provided

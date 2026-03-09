@@ -164,7 +164,7 @@ async def docs_parameter_client(
     from app.routes.v5.api.main.parameter.duplicate import duplicate_parameter
     from app.routes.v5.api.main.parameter.export import export_parameters
     from app.routes.v5.api.main.parameter.get import get_parameter
-from app.routes.v5.api.main.parameter.search import search_parameter
+    from app.routes.v5.api.main.parameter.search import search_parameter
     from app.routes.v5.api.main.parameter.update import update_parameter
 
     return ComposedDocsResponse(

@@ -207,10 +207,9 @@ async def get_analytics_filters(
     if not pool:
         raise HTTPException(status_code=500, detail="Database pool not available")
 
-    async with pool.acquire() as conn:
-        identity = await resolve_profile_identity_context(
-            conn, profile_id, redis, bypass_cache=bypass_cache
-        )
+    identity = await resolve_profile_identity_context(
+        pool, profile_id, redis, bypass_cache=bypass_cache
+    )
     if not identity:
         return None
 

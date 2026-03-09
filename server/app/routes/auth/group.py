@@ -34,15 +34,14 @@ async def resolve_group(
 
         profiles_id: UUID | None = None
         if profile_id:
-            async with pool.acquire() as conn:
-                bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
-                identity = await resolve_profile_identity_context(
-                    conn,
-                    UUID(profile_id) if isinstance(profile_id, str) else profile_id,
-                    get_redis_client(),
-                    bypass_cache=bypass_cache,
-                )
-                profiles_id = identity.profiles_id if identity else None
+            bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+            identity = await resolve_profile_identity_context(
+                pool,
+                UUID(profile_id) if isinstance(profile_id, str) else profile_id,
+                get_redis_client(),
+                bypass_cache=bypass_cache,
+            )
+            profiles_id = identity.profiles_id if identity else None
 
         # Delegate to infra
         async with pool.acquire() as conn:

@@ -216,7 +216,7 @@ async def docs_persona_client(
     from app.routes.v5.api.main.persona.duplicate import duplicate_persona
     from app.routes.v5.api.main.persona.export import export_personas
     from app.routes.v5.api.main.persona.get import get_persona
-from app.routes.v5.api.main.persona.search import search_persona
+    from app.routes.v5.api.main.persona.search import search_persona
     from app.routes.v5.api.main.persona.update import update_persona
 
     return ComposedDocsResponse(

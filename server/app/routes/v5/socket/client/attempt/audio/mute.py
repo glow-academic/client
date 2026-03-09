@@ -7,9 +7,9 @@ and records the mute event in the database.
 import uuid as uuid_mod
 from typing import Any
 
-from app.infra.globals import sio
-from app.infra.websocket.get_db_connection import get_db_connection
+from app.infra.globals import get_pool, sio
 from app.infra.websocket.session_store import get_session_by_chat_id
+from app.routes.v5.tools.entries.attempt_mutes.create import create_attempt_mutes
 from app.utils.logging.db_logger import get_logger
 
 logger = get_logger(__name__)
@@ -30,12 +30,14 @@ async def attempt_audio_mute(sid: str, data: dict[str, Any]) -> None:
     # Record mute event in DB
     if session.conversation_id:
         try:
-            async with get_db_connection() as conn:
-                await conn.execute(
-                    """INSERT INTO attempt_mutes_entry (conversation_id, muted)
-                    VALUES ($1, $2)""",
-                    uuid_mod.UUID(session.conversation_id),
-                    muted,
+            pool = get_pool()
+            async with pool.acquire() as conn:
+                # TODO: wire up real call_id from audio session context
+                await create_attempt_mutes(
+                    conn,
+                    conversation_id=uuid_mod.UUID(session.conversation_id),
+                    call_id=uuid_mod.uuid4(),
+                    muted=muted,
                 )
         except Exception as e:
             logger.warning(f"Failed to record mute event: {e}")

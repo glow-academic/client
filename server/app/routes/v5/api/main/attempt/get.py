@@ -131,10 +131,9 @@ async def get_attempt_internal(
         redis = get_redis_client()
 
         # Resolve profile identity (canonical pattern — no inline SQL)
-        async with pool.acquire() as conn:
-            requester = await resolve_profile_identity_context(
-                conn, profile_id, redis, bypass_cache
-            )
+        requester = await resolve_profile_identity_context(
+            pool, profile_id, redis, bypass_cache
+        )
         profiles_id = requester.profiles_id if requester else None
         requester_role: str | None = requester.role if requester else None
 

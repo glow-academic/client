@@ -45,10 +45,9 @@ async def get_auth_profile_internal(
     if not pool:
         raise HTTPException(status_code=500, detail="Database pool not available")
 
-    async with pool.acquire() as conn:
-        identity = await resolve_profile_identity_context(
-            conn, profile_id, redis, bypass_cache=bypass_cache
-        )
+    identity = await resolve_profile_identity_context(
+        pool, profile_id, redis, bypass_cache=bypass_cache
+    )
     if not identity:
         raise HTTPException(status_code=404, detail="Profile not found")
 

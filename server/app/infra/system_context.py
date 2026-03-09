@@ -44,7 +44,7 @@ class SystemContext:
 
 
 async def resolve_system_context(
-    conn_or_pool: asyncpg.Connection | asyncpg.Pool,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     system_id: UUID,
@@ -52,20 +52,16 @@ async def resolve_system_context(
 ) -> SystemContext | None:
     """Resolve a system into fully hydrated resources.
 
+    Each parallel batch acquires its own connection from the pool.
+
     Steps:
       1. Fetch system → agent_ids
       2. Fetch agents → collect model_ids + tool_ids
-      3. Parallel: models + tools → collect provider_ids + args_ids + args_output_ids
+      3. Parallel: models + tools + prompts + instructions + rubrics
       4. Parallel: providers + args + args_outputs
     """
-    use_pool = isinstance(conn_or_pool, asyncpg.Pool)
-
     # Step 1: fetch system
-    if use_pool:
-        async with conn_or_pool.acquire() as conn:
-            systems = await get_systems(conn, [system_id], redis, bypass_cache)
-    else:
-        conn = conn_or_pool
+    async with pool.acquire() as conn:
         systems = await get_systems(conn, [system_id], redis, bypass_cache)
     if not systems:
         return None
@@ -88,10 +84,7 @@ async def resolve_system_context(
         )
 
     # Step 2: fetch agents
-    if use_pool:
-        async with conn_or_pool.acquire() as conn:
-            agents = await get_agents(conn, agent_ids, redis, bypass_cache)
-    else:
+    async with pool.acquire() as conn:
         agents = await get_agents(conn, agent_ids, redis, bypass_cache)
 
     # Collect IDs for next level
@@ -102,74 +95,52 @@ async def resolve_system_context(
     rubric_ids = list({a.rubric_id for a in agents if a.rubric_id})
 
     # Step 3: parallel fetch models + tools + prompts + instructions + rubrics
-    if use_pool:
-        pool = conn_or_pool
 
-        async def _get_models() -> list:
-            if not model_ids:
-                return []
-            async with pool.acquire() as conn:
-                return await get_models(conn, model_ids, redis, bypass_cache)
+    async def _get_models() -> list:
+        if not model_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_models(conn, model_ids, redis, bypass_cache)
 
-        async def _get_tools() -> list:
-            if not tool_ids:
-                return []
-            async with pool.acquire() as conn:
-                return await get_tools(conn, tool_ids, redis, bypass_cache)
+    async def _get_tools() -> list:
+        if not tool_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_tools(conn, tool_ids, redis, bypass_cache)
 
-        async def _get_prompts() -> list:
-            if not prompt_ids:
-                return []
-            async with pool.acquire() as conn:
-                return await get_prompts(conn, prompt_ids, redis, bypass_cache)
+    async def _get_prompts() -> list:
+        if not prompt_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_prompts(conn, prompt_ids, redis, bypass_cache)
 
-        async def _get_instructions() -> list:
-            if not instruction_ids:
-                return []
-            async with pool.acquire() as conn:
-                return await get_instructions(
-                    conn, instruction_ids, redis, bypass_cache
-                )
+    async def _get_instructions() -> list:
+        if not instruction_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_instructions(
+                conn, instruction_ids, redis, bypass_cache
+            )
 
-        async def _get_rubrics() -> list:
-            if not rubric_ids:
-                return []
-            async with pool.acquire() as conn:
-                return await get_rubrics(conn, rubric_ids, redis, bypass_cache)
+    async def _get_rubrics() -> list:
+        if not rubric_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_rubrics(conn, rubric_ids, redis, bypass_cache)
 
-        (
-            models,
-            tools,
-            prompts_list,
-            instructions_list,
-            rubrics_list,
-        ) = await asyncio.gather(
-            _get_models(),
-            _get_tools(),
-            _get_prompts(),
-            _get_instructions(),
-            _get_rubrics(),
-        )
-    else:
-        models = (
-            await get_models(conn, model_ids, redis, bypass_cache) if model_ids else []
-        )
-        tools = await get_tools(conn, tool_ids, redis, bypass_cache) if tool_ids else []
-        prompts_list = (
-            await get_prompts(conn, prompt_ids, redis, bypass_cache)
-            if prompt_ids
-            else []
-        )
-        instructions_list = (
-            await get_instructions(conn, instruction_ids, redis, bypass_cache)
-            if instruction_ids
-            else []
-        )
-        rubrics_list = (
-            await get_rubrics(conn, rubric_ids, redis, bypass_cache)
-            if rubric_ids
-            else []
-        )
+    (
+        models,
+        tools,
+        prompts_list,
+        instructions_list,
+        rubrics_list,
+    ) = await asyncio.gather(
+        _get_models(),
+        _get_tools(),
+        _get_prompts(),
+        _get_instructions(),
+        _get_rubrics(),
+    )
 
     # Collect IDs for final level
     provider_ids = list({m.provider_id for m in models if m.provider_id})
@@ -177,48 +148,32 @@ async def resolve_system_context(
     args_output_ids = list({aoid for t in tools for aoid in (t.args_output_ids or [])})
 
     # Step 4: parallel fetch providers + args + args_outputs
-    if use_pool:
-        pool = conn_or_pool
 
-        async def _get_providers() -> list:
-            if not provider_ids:
-                return []
-            async with pool.acquire() as conn:
-                return await get_providers(conn, provider_ids, redis, bypass_cache)
+    async def _get_providers() -> list:
+        if not provider_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_providers(conn, provider_ids, redis, bypass_cache)
 
-        async def _get_args() -> list:
-            if not args_ids:
-                return []
-            async with pool.acquire() as conn:
-                return await get_args(conn, args_ids, redis, bypass_cache)
+    async def _get_args() -> list:
+        if not args_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_args(conn, args_ids, redis, bypass_cache)
 
-        async def _get_args_outputs() -> list:
-            if not args_output_ids:
-                return []
-            async with pool.acquire() as conn:
-                return await get_args_outputs(
-                    conn, args_output_ids, redis, bypass_cache
-                )
+    async def _get_args_outputs() -> list:
+        if not args_output_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_args_outputs(
+                conn, args_output_ids, redis, bypass_cache
+            )
 
-        providers, args_list, args_outputs_list = await asyncio.gather(
-            _get_providers(),
-            _get_args(),
-            _get_args_outputs(),
-        )
-    else:
-        providers = (
-            await get_providers(conn, provider_ids, redis, bypass_cache)
-            if provider_ids
-            else []
-        )
-        args_list = (
-            await get_args(conn, args_ids, redis, bypass_cache) if args_ids else []
-        )
-        args_outputs_list = (
-            await get_args_outputs(conn, args_output_ids, redis, bypass_cache)
-            if args_output_ids
-            else []
-        )
+    providers, args_list, args_outputs_list = await asyncio.gather(
+        _get_providers(),
+        _get_args(),
+        _get_args_outputs(),
+    )
 
     return SystemContext(
         system_id=system_id,
@@ -232,7 +187,3 @@ async def resolve_system_context(
         instructions=instructions_list,
         rubrics=rubrics_list,
     )
-
-
-async def _empty() -> list:
-    return []

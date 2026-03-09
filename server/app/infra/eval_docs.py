@@ -181,7 +181,7 @@ async def docs_eval_client(
     from app.routes.v5.api.main.eval.duplicate import duplicate_eval
     from app.routes.v5.api.main.eval.export import export_evals
     from app.routes.v5.api.main.eval.get import get_eval
-from app.routes.v5.api.main.eval.search import search_eval
+    from app.routes.v5.api.main.eval.search import search_eval
     from app.routes.v5.api.main.eval.update import update_eval
 
     return ComposedDocsResponse(

@@ -169,7 +169,7 @@ async def docs_field_client(
     from app.routes.v5.api.main.field.duplicate import duplicate_field
     from app.routes.v5.api.main.field.export import export_fields
     from app.routes.v5.api.main.field.get import get_field
-from app.routes.v5.api.main.field.search import search_field
+    from app.routes.v5.api.main.field.search import search_field
     from app.routes.v5.api.main.field.update import update_field
 
     return ComposedDocsResponse(

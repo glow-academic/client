@@ -3,6 +3,7 @@
  * Providers list page - server-side filtering with nuqs URL-backed state
  */
 import Providers from "@/components/artifacts/provider/Providers";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -122,6 +123,7 @@ export default async function ProvidersPage({ searchParams }: ProvidersPageProps
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Providers" },
         ]}
+        toolbar={<NewArtifactButton label="New Provider" href="/intelligence/providers/new" />}
       />
       <div className="space-y-6 px-4" data-page="providers-index">
         <Providers

@@ -173,27 +173,6 @@ class ListModelApiResponse(BaseModel):
 
 
 # =============================================================================
-# Resource Action Types (for tool call tracking)
-# =============================================================================
-
-
-class ModelResourceAction(BaseModel):
-    """Single-select resource action with tool call tracking."""
-
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
-class ModelMultiResourceAction(BaseModel):
-    """Multi-select resource action with tool call tracking."""
-
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
-# =============================================================================
 # Shared Create/Update Types
 # =============================================================================
 
@@ -279,156 +258,11 @@ class UpdateModelApiResponse(BaseModel):
     results: list[ModelResultItem]
 
 
-# =============================================================================
-# Legacy Save Endpoint Types (backwards compat)
-# =============================================================================
-
-
 class SaveModelFieldError(BaseModel):
     """Per-field error from value resolution."""
 
     field: str
     message: str
-
-
-class SaveModelItem(BaseModel):
-    """Single model item for save — provide ID or value per field (not both).
-
-    Junctions from get.py: names, descriptions, departments, flags, modalities,
-    pricing, providers, qualities, reasoning_levels, temperature_levels, values,
-    voices, models.
-    Dual-mode: name (create), description (create), departments (match by name).
-    All others: IDs only.
-    """
-
-    input_model_id: UUID | None = None
-    # Dual-mode: name
-    name_id: UUID | None = None
-    name: str | None = None
-    # Dual-mode: description
-    description_id: UUID | None = None
-    description: str | None = None
-    # Dual-mode: departments (match by name)
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    # ID-only fields
-    flag_ids: list[UUID] | None = None
-    modality_ids: list[UUID] | None = None
-    pricing_ids: list[UUID] | None = None
-    provider_ids: list[UUID] | None = None
-    quality_ids: list[UUID] | None = None
-    reasoning_level_ids: list[UUID] | None = None
-    temperature_level_ids: list[UUID] | None = None
-    value_ids: list[UUID] | None = None
-    voice_ids: list[UUID] | None = None
-    model_ids: list[UUID] | None = None
-
-
-class SaveModelApiRequest(BaseModel):
-    """Request model for bulk save model endpoint."""
-
-    models: list[SaveModelItem]
-    group_id: UUID | None = None
-
-
-class SaveModelResult(BaseModel):
-    """Per-item result within a bulk save response."""
-
-    success: bool
-    model_id: UUID | None = None
-    message: str
-    errors: list[SaveModelFieldError] | None = None
-
-
-class SaveModelApiResponse(BaseModel):
-    """Response model for bulk save model endpoint."""
-
-    results: list[SaveModelResult]
-
-
-class SaveModelSqlParams(BaseModel):
-    """SQL parameters for save model."""
-
-    profile_id: UUID
-    input_model_id: UUID | None = None
-    group_id: UUID
-    names: ModelResourceAction
-    descriptions: ModelResourceAction
-    values: ModelResourceAction
-    providers: ModelResourceAction
-    flags: ModelMultiResourceAction
-    departments: ModelMultiResourceAction
-    modalities: ModelMultiResourceAction
-    temperature_levels: ModelMultiResourceAction
-    pricing: ModelMultiResourceAction
-    reasoning_levels: ModelMultiResourceAction
-    qualities: ModelMultiResourceAction
-    voices: ModelMultiResourceAction
-
-    @classmethod
-    def from_request(
-        cls,
-        request: SaveModelApiRequest,
-        profile_id: UUID,
-        group_id: UUID,
-    ) -> SaveModelSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_model_id=request.input_model_id,
-            group_id=group_id,
-            names=ModelResourceAction(resource_id=request.name_id),
-            descriptions=ModelResourceAction(resource_id=request.description_id),
-            values=ModelResourceAction(resource_id=request.value_id),
-            providers=ModelResourceAction(resource_id=request.provider_id),
-            flags=ModelMultiResourceAction(resource_ids=request.flag_ids),
-            departments=ModelMultiResourceAction(resource_ids=request.department_ids),
-            modalities=ModelMultiResourceAction(resource_ids=request.modality_ids),
-            temperature_levels=ModelMultiResourceAction(
-                resource_ids=request.temperature_level_ids
-            ),
-            pricing=ModelMultiResourceAction(resource_ids=request.pricing_ids),
-            reasoning_levels=ModelMultiResourceAction(
-                resource_ids=request.reasoning_level_ids
-            ),
-            qualities=ModelMultiResourceAction(resource_ids=request.quality_ids),
-            voices=ModelMultiResourceAction(resource_ids=request.voice_ids),
-        )
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        def single(
-            a: ModelResourceAction,
-        ) -> tuple[UUID | None, UUID | None, UUID | None]:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(
-            a: ModelMultiResourceAction,
-        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.input_model_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.values),
-            single(self.providers),
-            multi(self.flags),
-            multi(self.departments),
-            multi(self.modalities),
-            multi(self.temperature_levels),
-            multi(self.pricing),
-            multi(self.reasoning_levels),
-            multi(self.qualities),
-            multi(self.voices),
-        )
-
-
-class SaveModelSqlRow(BaseModel):
-    """SQL row for save model."""
-
-    model_id: UUID | None = None
-    actor_name: str | None = None
 
 
 # =============================================================================

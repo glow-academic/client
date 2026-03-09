@@ -214,66 +214,11 @@ class UpdateSettingApiResponse(BaseModel):
     results: list[SettingResultItem]
 
 
-# ========== Legacy Save Endpoint Types (backwards compat) ==========
-
-
 class SaveSettingFieldError(BaseModel):
     """Per-field error from value resolution."""
 
     field: str
     message: str
-
-
-class SaveSettingItem(BaseModel):
-    """Single setting item for save — provide ID or value per field (not both).
-
-    For required fields (name), exactly one of the *_id or value field must be provided.
-    """
-
-    input_setting_id: UUID | None = None
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    # Optional flag
-    active_flag_id: UUID | None = None
-    active_flag: bool | None = None
-    # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    color_ids: list[UUID] | None = None
-    profile_ids: list[UUID] | None = None
-    auth_ids: list[UUID] | None = None
-    provider_key_ids: list[UUID] | None = None
-    auth_item_key_ids: list[UUID] | None = None
-    auth_item_value_ids: list[UUID] | None = None
-    system_ids: list[UUID] | None = None
-    threshold_ids: list[UUID] | None = None
-    setting_resource_ids: list[UUID] | None = None
-
-
-class SaveSettingApiRequest(BaseModel):
-    """Request model for bulk save setting endpoint."""
-
-    settings: list[SaveSettingItem]
-    group_id: UUID | None = None
-
-
-class SaveSettingResult(BaseModel):
-    """Per-item result within a bulk save response."""
-
-    success: bool
-    setting_id: UUID | None = None
-    message: str
-    errors: list[SaveSettingFieldError] | None = None
-
-
-class SaveSettingApiResponse(BaseModel):
-    """Response model for bulk save setting endpoint."""
-
-    results: list[SaveSettingResult]
 
 
 # ========== Draft Endpoint Types (composable infra) ==========

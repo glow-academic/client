@@ -3,6 +3,7 @@
  * Tools list page - server-side filtering with nuqs URL-backed state
  */
 import Tools from "@/components/artifacts/tool/Tools";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -130,6 +131,7 @@ export default async function ToolsPage({ searchParams }: ToolsPageProps) {
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Tools" },
         ]}
+        toolbar={<NewArtifactButton label="New Tool" href="/intelligence/tools/new" />}
       />
       <div className="space-y-6 px-4" data-page="tools-index">
         <Tools

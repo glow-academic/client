@@ -1,13 +1,21 @@
 """Get endpoint for activity artifact — top cards (header metrics + profile summary)."""
 
+import asyncio
 from collections import defaultdict
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.activity_context import resolve_activity_context
+from app.infra.analytics_facets import (
+    HIDDEN,
+    VISIBLE,
+    AnalyticsFacetsConfig,
+    resolve_analytics_facets,
+)
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_pool, get_redis_client
+from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.api.main.activity.types import (
     ActivityRequest,
     ActivityResources,

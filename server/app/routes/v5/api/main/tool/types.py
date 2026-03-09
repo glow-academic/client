@@ -101,18 +101,6 @@ class ListToolApiResponse(BaseModel):
     total_count: int | None = None
 
 
-class ToolResourceAction(BaseModel):
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
-class ToolMultiResourceAction(BaseModel):
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
 class ToolFieldError(BaseModel):
     """Per-field error from value resolution."""
 
@@ -187,123 +175,11 @@ class UpdateToolApiResponse(BaseModel):
     results: list[ToolResultItem]
 
 
-# ========== Legacy Save Types (backwards compat) ==========
-
-
 class SaveToolFieldError(BaseModel):
     """Per-field error from value resolution."""
 
     field: str
     message: str
-
-
-class SaveToolItem(BaseModel):
-    """Single tool item for save — provide ID or value per field (not both).
-
-    Junctions from get.py: names, descriptions, departments, flags, args,
-    args_outputs, arg_positions, artifacts, entries, operations, resources, tools.
-    Dual-mode: name (create), description (create).
-    All others: IDs only.
-    """
-
-    input_tool_id: UUID | None = None
-    # Dual-mode: name
-    name_id: UUID | None = None
-    name: str | None = None
-    # Dual-mode: description
-    description_id: UUID | None = None
-    description: str | None = None
-    # ID-only fields
-    department_ids: list[UUID] | None = None
-    flag_ids: list[UUID] | None = None
-    arg_positions_ids: list[UUID] | None = None
-    args_ids: list[UUID] | None = None
-    args_outputs_ids: list[UUID] | None = None
-    artifact_ids: list[UUID] | None = None
-    entry_ids: list[UUID] | None = None
-    operation_ids: list[UUID] | None = None
-    resource_ids: list[UUID] | None = None
-    tool_ids: list[UUID] | None = None
-
-
-class SaveToolApiRequest(BaseModel):
-    """Request model for bulk save tool endpoint."""
-
-    tools: list[SaveToolItem]
-    group_id: UUID | None = None
-
-
-class SaveToolResult(BaseModel):
-    """Per-item result within a bulk save response."""
-
-    success: bool
-    tool_id: UUID | None = None
-    message: str
-    errors: list[SaveToolFieldError] | None = None
-
-
-class SaveToolApiResponse(BaseModel):
-    """Response model for bulk save tool endpoint."""
-
-    results: list[SaveToolResult]
-
-
-class SaveToolSqlParams(BaseModel):
-    profile_id: UUID
-    group_id: UUID
-    input_tool_id: UUID | None = None
-
-    names: ToolResourceAction
-    descriptions: ToolResourceAction
-    flags: ToolResourceAction
-    args: ToolMultiResourceAction
-    arg_positions: ToolMultiResourceAction
-    args_outputs: ToolMultiResourceAction
-
-    @classmethod
-    def from_request(
-        cls,
-        request: SaveToolApiRequest,
-        profile_id: UUID,
-        group_id: UUID | None = None,
-    ) -> SaveToolSqlParams:
-        return cls(
-            profile_id=profile_id,
-            group_id=group_id,
-            input_tool_id=request.input_tool_id,
-            names=ToolResourceAction(resource_id=request.name_id),
-            descriptions=ToolResourceAction(resource_id=request.description_id),
-            flags=ToolResourceAction(resource_id=request.flag_id),
-            args=ToolMultiResourceAction(resource_ids=request.arg_ids),
-            arg_positions=ToolMultiResourceAction(
-                resource_ids=request.arg_position_ids
-            ),
-            args_outputs=ToolMultiResourceAction(resource_ids=request.args_output_ids),
-        )
-
-    def to_tuple(self) -> tuple:
-        def single(a: ToolResourceAction) -> tuple:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(a: ToolMultiResourceAction) -> tuple:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.group_id,
-            self.input_tool_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.flags),
-            multi(self.args),
-            multi(self.arg_positions),
-            multi(self.args_outputs),
-        )
-
-
-class SaveToolSqlRow(BaseModel):
-    tool_id: UUID | None = None
-    actor_name: str | None = None
 
 
 class DeleteToolApiRequest(BaseModel):

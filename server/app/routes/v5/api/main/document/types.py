@@ -242,9 +242,6 @@ class ListDocumentApiResponse(BaseModel):
     total_count: int | None = None
 
 
-# ========== Resource Action Types (for tool call tracking) ==========
-
-
 # ========== Shared Create/Update Types ==========
 
 

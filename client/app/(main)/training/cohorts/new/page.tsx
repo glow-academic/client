@@ -8,7 +8,8 @@
 import Cohort from "@/components/artifacts/cohort/Cohort";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -235,10 +236,13 @@ export default async function NewCohortPage({
       mcp: false,
     } as GetCohortIn["body"],
   };
-  const cohortData = await getCohortDefault(input);
+  const [cohortData, draftsResult] = await Promise.all([
+    getCohortDefault(input),
+    getDrafts(), // TODO: fetch only cohort drafts (e.g. getDrafts({ artifact_type: "cohort" }))
+  ]);
 
   return (
-    <>
+    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Training", section: "training", url: "/training" },
@@ -272,7 +276,7 @@ export default async function NewCohortPage({
           linkProfilePersonasAction={linkProfilePersonas}
         />
       </div>
-    </>
+    </DraftProviderClient>
   );
 }
 

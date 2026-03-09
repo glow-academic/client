@@ -9,7 +9,8 @@ import Agent from "@/components/artifacts/agent/Agent";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -137,15 +138,16 @@ export default async function AgentEditPage({
         group_id: groupId,
       } as GetAgentIn["body"],
     };
-    const [agentDetail, docs] = await Promise.all([
+    const [agentDetail, docs, draftsResult] = await Promise.all([
       agentId ? getAgent(input) : Promise.resolve(null),
       getDocs({ body: { entity_id: agentId } }),
+      getDrafts(), // TODO: fetch only agent drafts (e.g. getDrafts({ artifact_type: "agent" }))
     ]);
 
     const entityName = docs.detail.title;
 
     return (
-      <>
+      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -165,7 +167,7 @@ export default async function AgentEditPage({
             createPromptsAction={createDraftPrompts}
           />
         </div>
-      </>
+      </DraftProviderClient>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

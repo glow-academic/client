@@ -7,7 +7,7 @@ Uses recording_emit() to capture events.
 from __future__ import annotations
 
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
 import pytest
@@ -75,6 +75,17 @@ from app.infra.websocket.test_events_impl import (
 )
 
 _P = "app.infra.websocket.attempt_events_impl"
+
+
+def _mock_pool(mock_conn: AsyncMock | None = None) -> MagicMock:
+    """Create a mock pool whose acquire() yields mock_conn."""
+    if mock_conn is None:
+        mock_conn = AsyncMock()
+    pool = MagicMock()
+    cm = AsyncMock()
+    cm.__aenter__.return_value = mock_conn
+    pool.acquire.return_value = cm
+    return pool
 
 
 # ═══════════════════════════════════════════════════════════════════════════

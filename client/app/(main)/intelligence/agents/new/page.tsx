@@ -8,7 +8,8 @@
 import Agent from "@/components/artifacts/agent/Agent";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -105,10 +106,13 @@ export default async function NewAgentPage({
       group_id: groupId,
     } as GetAgentIn["body"],
   };
-  const agentDetailDefault = await getAgent(input);
+  const [agentDetailDefault, draftsResult] = await Promise.all([
+    getAgent(input),
+    getDrafts(), // TODO: fetch only agent drafts (e.g. getDrafts({ artifact_type: "agent" }))
+  ]);
 
   return (
-    <>
+    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -130,7 +134,7 @@ export default async function NewAgentPage({
           createVoicesAction={createDraftVoices}
         />
       </div>
-    </>
+    </DraftProviderClient>
   );
 }
 

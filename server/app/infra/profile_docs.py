@@ -169,7 +169,7 @@ async def docs_profile_client(
     from app.routes.v5.api.main.profile.duplicate import duplicate_profile
     from app.routes.v5.api.main.profile.export import export_profiles
     from app.routes.v5.api.main.profile.get import get_profile
-from app.routes.v5.api.main.profile.search import search_profile
+    from app.routes.v5.api.main.profile.search import search_profile
     from app.routes.v5.api.main.profile.update import update_profile
 
     return ComposedDocsResponse(
