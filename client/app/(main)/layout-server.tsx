@@ -14,8 +14,6 @@ type AuthProfileIn = InputOf<"/auth/profile", "post">;
 type AuthProfileOut = OutputOf<"/auth/profile", "post">;
 type AuthSettingsIn = InputOf<"/auth/settings", "post">;
 type AuthSettingsOut = OutputOf<"/auth/settings", "post">;
-type AuthPageIn = InputOf<"/auth/page", "post">;
-type AuthPageOut = OutputOf<"/auth/page", "post">;
 type DraftsIn = InputOf<"/auth/drafts", "post">;
 type DraftsOut = OutputOf<"/auth/drafts", "post">;
 type AnalyticsFiltersOut = OutputOf<"/auth/analytics", "post">;
@@ -44,7 +42,6 @@ type SearchSimulatableProfilesOut = OutputOf<
 /** ---- Auth response type aliases ---- */
 export type AuthProfileResponse = AuthProfileOut;
 export type AuthSettingsResponse = AuthSettingsOut;
-export type AuthPageResponse = AuthPageOut;
 
 /** ---- Shared header builder for auth endpoints ---- */
 async function buildAuthHeaders(): Promise<Record<string, string>> {
@@ -68,13 +65,6 @@ export const getAuthSettings = cache(
   async (): Promise<AuthSettingsOut> => {
     const extraHeaders = await buildAuthHeaders();
     return api.post("/auth/settings", { body: {} } as AuthSettingsIn, { headers: extraHeaders });
-  }
-);
-
-export const getAuthPage = cache(
-  async (): Promise<AuthPageOut> => {
-    const extraHeaders = await buildAuthHeaders();
-    return api.post("/auth/page", { body: {} } as AuthPageIn, { headers: extraHeaders });
   }
 );
 
@@ -171,6 +161,7 @@ export type ProfileItem = Pick<
 export type SafeSessionSnapshot = {
   profileId: string | null;
   isAuthenticated: boolean; // true if user has real NextAuth session
+  idToken: string | null; // JWT for API auth (server resolves identity from this)
 };
 
 /**
@@ -195,25 +186,23 @@ export async function getLayoutContextData(session?: Session | null) {
     // Only authenticated users have id_token (from Keycloak)
     // Sessions without id_token still render a layout context
     isAuthenticated: !!resolvedSession?.id_token,
+    idToken: resolvedSession?.id_token ?? null,
   };
 
   let profileData: AuthProfileOut | null = null;
   let settingsData: AuthSettingsOut | null = null;
-  let pageData: AuthPageOut | null = null;
   let draftsResult: DraftsOut | null = null;
   let analyticsFilters: AnalyticsFiltersOut | null = null;
 
   try {
-    const [profileRes, settingsRes, pageRes, draftsRes, filtersRes] = await Promise.all([
+    const [profileRes, settingsRes, draftsRes, filtersRes] = await Promise.all([
       getAuthProfile(),
       getAuthSettings(),
-      getAuthPage(),
       getDrafts(),
       getAnalyticsFilters(),
     ]);
     profileData = profileRes;
     settingsData = settingsRes;
-    pageData = pageRes;
     draftsResult = draftsRes;
     analyticsFilters = filtersRes;
   } catch {
@@ -221,7 +210,6 @@ export async function getLayoutContextData(session?: Session | null) {
     return {
       profileData: null,
       settingsData: null,
-      pageData: null,
       snapshot,
       drafts: [],
       analyticsFilters: null,
@@ -233,7 +221,6 @@ export async function getLayoutContextData(session?: Session | null) {
     return {
       profileData: null,
       settingsData: null,
-      pageData: null,
       snapshot,
       drafts: [],
       analyticsFilters: null,
@@ -243,7 +230,6 @@ export async function getLayoutContextData(session?: Session | null) {
   return {
     profileData,
     settingsData,
-    pageData,
     snapshot,
     drafts: draftsResult?.drafts ?? [],
     analyticsFilters,

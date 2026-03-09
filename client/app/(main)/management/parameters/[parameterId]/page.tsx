@@ -19,8 +19,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 type ParameterGetIn = InputOf<"/api/v5/artifacts/parameters/get", "post">;
 type ParameterGetOut = OutputOf<"/api/v5/artifacts/parameters/get", "post">;
 
-type SaveParameterIn = InputOf<"/api/v5/artifacts/parameters/save", "post">;
-type SaveParameterOut = OutputOf<"/api/v5/artifacts/parameters/save", "post">;
+type UpdateParameterIn = InputOf<"/api/v5/artifacts/parameters/update", "post">;
+type UpdateParameterOut = OutputOf<"/api/v5/artifacts/parameters/update", "post">;
 
 type PatchParameterDraftIn = InputOf<"/api/v5/artifacts/parameters/draft", "patch">;
 type PatchParameterDraftOut = OutputOf<"/api/v5/artifacts/parameters/draft", "patch">;
@@ -62,11 +62,11 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveParameter(
-  input: SaveParameterIn
-): Promise<SaveParameterOut> {
+async function updateParameter(
+  input: UpdateParameterIn
+): Promise<UpdateParameterOut> {
   "use server";
-  return api.post("/artifacts/parameters/save", input);
+  return api.post("/artifacts/parameters/update", input);
 }
 
 async function patchParameterDraft(input: PatchParameterDraftIn): Promise<PatchParameterDraftOut> {
@@ -158,7 +158,7 @@ export default async function ParameterEditPage({
             parameterId={parameterId}
             mode="edit"
             parameterData={parameterDetail}
-            saveParameterAction={saveParameter}
+            updateParameterAction={updateParameter}
             patchParameterDraftAction={patchParameterDraft}
             createNamesAction={createNames}
             createDescriptionsAction={createDescriptions}
@@ -193,6 +193,6 @@ export type {
   PatchParameterDraftOut,
   ParameterGetIn,
   ParameterGetOut,
-  SaveParameterIn,
-  SaveParameterOut,
+  UpdateParameterIn,
+  UpdateParameterOut,
 };

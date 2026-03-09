@@ -2,45 +2,27 @@
  * Client component for main layout (uses hooks)
  */
 "use client";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { PanelRight, Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useMemo } from "react";
 
-import { InvocationControls } from "@/components/common/InvocationControls";
-import { SimulationControls } from "@/components/common/SimulationControls";
-
-import { GenerationPanel } from "@/components/common/ai/GenerationPanel";
-import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
-import { ExportButton } from "@/components/common/layout/ExportButton";
-import { NavigationBreadcrumbs } from "@/components/common/layout/NavigationBreadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
 import { DraftProviderClient, type DraftItem } from "@/contexts/draft-context";
-import { GroupProviderClient, useGroupId } from "@/contexts/group-context";
+import { GroupProviderClient } from "@/contexts/group-context";
 import { ProfileProviderClient } from "@/contexts/profile-context";
 import { SettingsProviderClient } from "@/contexts/settings-context";
 import { SocketProviderClient } from "@/contexts/socket-context";
-import { useGenerationPanel } from "@/hooks/use-generation-panel";
+import { SIDEBAR_SECTIONS } from "@/lib/sidebar-config";
 import type {
   AnalyticsFiltersResponse,
-  AuthPageResponse,
   AuthProfileResponse,
   AuthSettingsResponse,
   CreateFeedbackIn,
   CreateFeedbackOut,
-  ExportPageFn,
-  GenerateMessagesIn,
-  GenerateMessagesOut,
-  RefreshPageFn,
-  ResolveGroupResponse,
   SafeSessionSnapshot,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
@@ -48,54 +30,28 @@ import type {
   SwitchEffectiveProfileResult,
 } from "./layout-server";
 
-// Routes where pages render their own <PageHeader> instead of the global header.
-// As pages are migrated, add their prefix here. Once all are migrated, remove
-// the global header entirely.
-const PAGE_HEADER_ROUTES = ["/training/scenarios"];
-
-function hasPageHeader(pathname: string): boolean {
-  return PAGE_HEADER_ROUTES.some((prefix) => pathname.startsWith(prefix));
-}
-
 // Inner component that uses the role context
 function MainLayoutContent({
   children,
-  pageData,
-  attemptControls,
   initialSidebarOpen,
-  initialPanelOpen,
   switchEffectiveProfileAction,
   createFeedbackAction,
-  refreshPageAction,
-  exportPageAction,
   searchSimulatableProfilesAction,
-  getGenerateMessagesAction,
 }: {
   children: React.ReactNode;
-  pageData: AuthPageResponse | null;
-  attemptControls: ResolveGroupResponse | null;
   initialSidebarOpen?: boolean;
-  initialPanelOpen?: boolean;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
-  refreshPageAction: RefreshPageFn;
-  exportPageAction: ExportPageFn;
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
-  getGenerateMessagesAction: (
-    input: GenerateMessagesIn
-  ) => Promise<GenerateMessagesOut>;
 }) {
   const pathname = usePathname() || "/";
-
   const router = useRouter();
 
   // Force layout server component to re-render when pathname changes.
-  // Without this, pageData (breadcrumbs, action buttons, drafts) goes stale
-  // on soft navigation because Next.js reuses cached layout RSC payloads.
   const prevPathnameRef = React.useRef(pathname);
   useEffect(() => {
     if (prevPathnameRef.current !== pathname) {
@@ -104,39 +60,16 @@ function MainLayoutContent({
     }
   }, [pathname, router]);
 
-  // Check if this page renders its own header
-  const pageOwnsHeader = hasPageHeader(pathname);
-
-  const serverBreadcrumbs = pageData?.breadcrumbs ?? null;
-  const pageMetadata = pageData?.page_metadata ?? null;
-  // Use server-driven breadcrumbs, falling back to empty array
-  const breadcrumbs = useMemo(() => {
-    return serverBreadcrumbs ?? [];
-  }, [serverBreadcrumbs]);
-
-  // Derive active section from server breadcrumbs
-  // Use the last breadcrumb with a section (most specific match, e.g. "cohorts" not "training")
+  // Derive active section from pathname
   const activeSection = useMemo(() => {
-    if (breadcrumbs.length > 0) {
-      for (let i = breadcrumbs.length - 1; i >= 0; i--) {
-        if (breadcrumbs[i]?.section) {
-          return breadcrumbs[i].section!;
-        }
-      }
-    }
-    // Fallback: derive from pathname
     const segments = pathname.split("/").filter(Boolean);
     return segments[0] || "home";
-  }, [breadcrumbs, pathname]);
-
-  // Page metadata from server controls analytics filter visibility
-  const canShowAnalyticsFilters = pageMetadata?.show_analytics_filters ?? false;
+  }, [pathname]);
 
   const handleSectionChange = (section: string) => {
-    // Look up the correct URL from sidebar routes (handles nested routes like /training/cohorts)
-    const sidebarRoutes = pageData?.sidebar_routes ?? [];
+    // Look up the correct URL from client-side sidebar config
     let targetUrl = `/${section}`;
-    for (const route of sidebarRoutes) {
+    for (const route of SIDEBAR_SECTIONS) {
       if (route.section === section) {
         targetUrl = route.url;
         break;
@@ -153,42 +86,10 @@ function MainLayoutContent({
     router.refresh();
   };
 
-  // Use server-driven page metadata for create/edit detection
-  const showDrafts = pageMetadata?.show_drafts ?? false;
-  const artifactType = pageMetadata?.artifact_type ?? null;
-
-  // Server-driven valid types for AI generation panel
-  const validArtifactTypes = pageMetadata?.valid_artifact_types ?? [];
-  const validResourceTypes = pageMetadata?.valid_resource_types ?? [];
-  const validEntryTypes = pageMetadata?.valid_entry_types ?? [];
-
-  // Server-driven action button from pageMetadata
-  const actionButton = useMemo(() => {
-    if (!pageMetadata?.create_url || !pageMetadata?.create_label) return null;
-    return (
-      <Button onClick={() => router.push(pageMetadata.create_url!)} size="sm">
-        <Plus className="h-4 w-4 mr-2" />
-        {pageMetadata.create_label}
-      </Button>
-    );
-  }, [pageMetadata, router]);
-
-  // AI generation panel state — group_id from context (resolved at layout level)
-  const groupContext = useGroupId();
-  const panel = useGenerationPanel({
-    groupId: groupContext.groupId,
-    getGenerateMessagesAction,
-    initialPanelOpen,
-    validArtifactTypes,
-    validResourceTypes,
-    validEntryTypes,
-  });
-
   return (
     <div className="flex min-h-svh w-full">
       <SidebarProvider defaultOpen={initialSidebarOpen ?? true}>
         <UnifiedSidebar
-          sidebarRoutes={pageData?.sidebar_routes ?? null}
           activeSection={activeSection}
           onSectionChange={handleSectionChange}
           switchEffectiveProfile={switchEffectiveProfileAction}
@@ -196,71 +97,9 @@ function MainLayoutContent({
           searchSimulatableProfiles={searchSimulatableProfilesAction}
         />
         <SidebarInset>
-          {/* Pages in PAGE_HEADER_ROUTES render their own <PageHeader>. */}
-          {/* All other pages use the global header until migrated. */}
-          {!pageOwnsHeader && (
-            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-              <div className="flex items-center gap-2 px-4 flex-1">
-                <SidebarTrigger className="-ml-1" />
-                <Separator orientation="vertical" className="mr-2 h-4" />
-                <NavigationBreadcrumbs
-                  breadcrumbs={breadcrumbs}
-                  onSectionChange={handleSectionChange}
-                />
-              </div>
-
-              {attemptControls?.show_controls && attemptControls.attempt_id && (
-                <div className="pr-0">
-                  <SimulationControls
-                    attemptId={attemptControls.attempt_id}
-                    currentChatId={attemptControls.current_chat_id!}
-                    hasMessages={attemptControls.has_messages ?? false}
-                  />
-                </div>
-              )}
-              {attemptControls?.show_controls && attemptControls.test_id && (
-                <div className="pr-0">
-                  <InvocationControls
-                    testId={attemptControls.test_id}
-                    currentInvocationId={attemptControls.current_invocation_id!}
-                    hasRunsOrGroups={attemptControls.has_runs_or_groups ?? false}
-                  />
-                </div>
-              )}
-              {canShowAnalyticsFilters && (
-                <AnalyticsFilters refreshPage={refreshPageAction} />
-              )}
-              {!attemptControls?.show_controls &&
-                (showDrafts && artifactType ? (
-                  <SaveToolbar artifactType={artifactType} />
-                ) : (
-                  actionButton && <div className="pr-0">{actionButton}</div>
-                ))}
-              <ExportButton exportPage={exportPageAction} />
-              <div className="pr-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="size-7"
-                  onClick={panel.togglePanel}
-                >
-                  <PanelRight className="h-4 w-4" />
-                  <span className="sr-only">Toggle right panel</span>
-                </Button>
-              </div>
-            </header>
-          )}
-
-          <div className={pageOwnsHeader ? "flex flex-1 flex-col gap-4" : "flex flex-1 flex-col gap-4 p-4 pt-0"}>{children}</div>
+          <div className="flex flex-1 flex-col gap-4">{children}</div>
         </SidebarInset>
       </SidebarProvider>
-      <GenerationPanel
-        panel={panel}
-        artifactType={artifactType}
-        validArtifactTypes={validArtifactTypes}
-        validResourceTypes={validResourceTypes}
-        validEntryTypes={validEntryTypes}
-      />
     </div>
   );
 }
@@ -269,49 +108,33 @@ export function MainLayoutClient({
   children,
   profileData,
   settingsData,
-  pageData,
   sessionSnapshot,
-  attemptControls,
   drafts,
-  insights,
   analyticsFilters,
   initialSidebarOpen,
   initialAutosave,
-  initialPanelOpen,
   switchEffectiveProfileAction,
   createFeedbackAction,
-  refreshPageAction,
-  exportPageAction,
   searchSimulatableProfilesAction,
-  getGenerateMessagesAction,
   groupId,
 }: {
   children: React.ReactNode;
   profileData: AuthProfileResponse | null;
   settingsData: AuthSettingsResponse | null;
-  pageData: AuthPageResponse | null;
   sessionSnapshot: SafeSessionSnapshot;
-  attemptControls: ResolveGroupResponse | null;
   drafts: DraftItem[];
   analyticsFilters: AnalyticsFiltersResponse | null;
   /** Initial sidebar open state from SSR cookie */
   initialSidebarOpen?: boolean;
   /** Initial autosave preference from SSR cookie */
   initialAutosave?: boolean;
-  /** Initial AI panel open state from SSR cookie */
-  initialPanelOpen?: boolean;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
-  refreshPageAction: RefreshPageFn;
-  exportPageAction: ExportPageFn;
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
-  getGenerateMessagesAction: (
-    input: GenerateMessagesIn
-  ) => Promise<GenerateMessagesOut>;
   /** Resolved group_id from layout (null for non-artifact pages) */
   groupId: string | null;
 }) {
@@ -349,7 +172,7 @@ export function MainLayoutClient({
       <ThemeHydrator tokens={settingsData?.tokens ?? null} />
       <SocketProviderClient
         profileId={profileData?.id ?? null}
-        sessionId={profileData?.session_id ?? null}
+        idToken={sessionSnapshot?.idToken ?? null}
       >
         <DraftProviderClient drafts={drafts} initialAutosave={initialAutosave}>
           <GroupProviderClient initialGroupId={groupId}>
@@ -360,18 +183,12 @@ export function MainLayoutClient({
             >
               <SettingsProviderClient settings={settingsData}>
                 <MainLayoutContent
-                  pageData={pageData}
-                  attemptControls={attemptControls}
                   initialSidebarOpen={initialSidebarOpen}
-                  initialPanelOpen={initialPanelOpen}
                   switchEffectiveProfileAction={switchEffectiveProfileAction}
                   createFeedbackAction={createFeedbackAction}
-                  refreshPageAction={refreshPageAction}
-                  exportPageAction={exportPageAction}
                   searchSimulatableProfilesAction={
                     searchSimulatableProfilesAction
                   }
-                  getGenerateMessagesAction={getGenerateMessagesAction}
                 >
                   {children}
                 </MainLayoutContent>

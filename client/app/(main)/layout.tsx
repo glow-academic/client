@@ -1,6 +1,7 @@
 /**
  * app/(main)/layout.tsx
- * Layout for the main section.
+ * Layout for the main section — provides sidebar, providers, and theme.
+ * Pages render their own headers via <PageHeader>.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
@@ -12,10 +13,7 @@ import { Suspense } from "react";
 import { MainLayoutClient } from "./layout-client";
 import {
   createFeedback,
-  exportPage,
-  getGenerateMessages,
   getLayoutContextData,
-  refreshPage,
   resolveGroupId,
   searchSimulatableProfiles,
   switchEffectiveProfile,
@@ -24,7 +22,6 @@ import { LogoutGuard } from "./logout-guard";
 
 const SIDEBAR_COOKIE = "glow_sidebar";
 const AUTOSAVE_COOKIE = "glow_autosave";
-const AI_PANEL_COOKIE = "glow_ai_panel";
 
 // Force dynamic rendering to ensure layout re-renders on route changes
 // This fixes the issue where children don't update on client-side navigation
@@ -52,11 +49,6 @@ export default async function MainLayout({
     ? autosaveCookie.value === "true"
     : undefined;
 
-  const aiPanelCookie = cookieStore.get(AI_PANEL_COOKIE);
-  const initialPanelOpen = aiPanelCookie
-    ? aiPanelCookie.value === "true"
-    : undefined;
-
   // No session → full-width access denied (no sidebar)
   if (!session?.user?.profileId) {
     return (
@@ -71,7 +63,7 @@ export default async function MainLayout({
   }
 
   // Fetch all layout data in parallel
-  const { profileData, settingsData, pageData, snapshot, drafts, analyticsFilters } =
+  const { profileData, settingsData, snapshot, drafts, analyticsFilters } =
     await getLayoutContextData(session);
 
   // Profile resolution failed → full-width access denied
@@ -87,9 +79,12 @@ export default async function MainLayout({
     );
   }
 
-  // Resolve group_id: unified resolution from attempt, test, draft, or fresh
-  const artifactType = pageData?.page_metadata?.artifact_type ?? null;
-  const currentDraft = drafts.find((d) => d.artifact_type === artifactType);
+  // Resolve group_id from drafts
+  const currentDraft = drafts.find((d) => {
+    // Match draft to current page by checking pathname for the artifact type
+    const type = d.artifact_type;
+    return type && pathname.includes(type);
+  });
   const draftGroupId = currentDraft?.group_id ?? null;
   const draftId = currentDraft?.id ? String(currentDraft.id) : null;
 
@@ -101,69 +96,46 @@ export default async function MainLayout({
 
   // Resolve group_id — handles attempt, test, draft, or creates fresh
   let groupId: string | null = null;
-  let attemptControls: Awaited<ReturnType<typeof resolveGroupId>> | null = null;
-  const needsGroup = attemptId || testId || (artifactType && pageData?.page_metadata?.show_drafts);
+  const needsGroup = attemptId || testId || draftId;
   if (needsGroup) {
-    // Skip API call if draft already has a group_id and no attempt/test context
     if (draftGroupId && !attemptId && !testId) {
       groupId = draftGroupId;
     } else {
       const groupResult = await resolveGroupId({
         draft_id: draftId,
-        artifact_type: artifactType,
+        artifact_type: currentDraft?.artifact_type ?? null,
         attempt_id: attemptId,
         test_id: testId,
       });
       groupId = groupResult.group_id;
-      if (groupResult.show_controls) {
-        attemptControls = groupResult;
-      }
     }
   }
-
-  // Determine page content: access denied (inside sidebar) or normal page
-  const pageAccessDenied = pageData?.page_access && !pageData.page_access.authorized;
 
   return (
     <div
       key={`layout-wrapper-${pathname}`}
       data-route-pathname={pathname}
-      data-access-state={pageAccessDenied ? "denied" : "allowed"}
     >
       <MainLayoutClient
         key={`layout-${pathname}`}
         profileData={profileData}
         settingsData={settingsData}
-        pageData={pageData}
         sessionSnapshot={snapshot}
-        attemptControls={attemptControls}
         drafts={drafts}
         analyticsFilters={analyticsFilters}
         initialSidebarOpen={initialSidebarOpen}
         initialAutosave={initialAutosave}
-        initialPanelOpen={initialPanelOpen}
         switchEffectiveProfileAction={switchEffectiveProfile}
         createFeedbackAction={createFeedback}
-        refreshPageAction={refreshPage}
-        exportPageAction={exportPage}
         searchSimulatableProfilesAction={searchSimulatableProfiles}
-        getGenerateMessagesAction={getGenerateMessages}
         groupId={groupId}
       >
-        {pageAccessDenied ? (
-          <UnifiedAccessDenied
-            reason="route-denied"
-            pathname={pathname}
-            role={profileData.role ?? undefined}
-          />
-        ) : (
-          <Suspense
-            key={`suspense-${pathname}`}
-            fallback={<AppShell.ContentSkeleton />}
-          >
-            {children}
-          </Suspense>
-        )}
+        <Suspense
+          key={`suspense-${pathname}`}
+          fallback={<AppShell.ContentSkeleton />}
+        >
+          {children}
+        </Suspense>
       </MainLayoutClient>
     </div>
   );

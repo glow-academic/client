@@ -6,6 +6,8 @@
  */
 
 import Rubric from "@/components/artifacts/rubric/Rubric";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -169,18 +171,28 @@ export default async function NewRubricPage({
   );
 
   return (
-    <div className="space-y-6" data-page="rubric-new">
-      <Rubric
-        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        rubricData={rubricData}
-        saveRubricAction={saveRubric}
-        patchRubricDraftAction={patchRubricDraft}
-        createNamesAction={createDraftNames}
-        createDescriptionsAction={createDraftDescriptions}
-        createPointsAction={createDraftPoints}
-        createStandardGroupsAction={createDraftStandardGroups}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "System", section: "system", url: "/system" },
+          { title: "Rubrics", section: "rubrics", url: "/system/rubrics" },
+          { title: "New Rubric" },
+        ]}
+        toolbar={<SaveToolbar artifactType="rubric" />}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="rubric-new">
+        <Rubric
+          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+          rubricData={rubricData}
+          saveRubricAction={saveRubric}
+          patchRubricDraftAction={patchRubricDraft}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+          createPointsAction={createDraftPoints}
+          createStandardGroupsAction={createDraftStandardGroups}
+        />
+      </div>
+    </>
   );
 }
 

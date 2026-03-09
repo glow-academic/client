@@ -20,6 +20,7 @@ from redis.asyncio import Redis
 from app.infra.parameter_permissions import compute_can_draft
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.parameter.types import (
+    ParameterDraftFormState,
     PatchParameterDraftApiRequest,
     PatchParameterDraftApiResponse,
     SaveParameterFieldError,
@@ -133,12 +134,22 @@ async def patch_parameter_draft_client(
                 field_ids=request.field_ids,
             )
 
-    # -- Step 5: Refresh MV -----------------------------------------------------
+    # -- Step 5: Build form state (server is source of truth) -------------------
+
+    form_state = ParameterDraftFormState(
+        name_id=request.name_id,
+        description_id=request.description_id,
+        flag_ids=request.flag_ids or [],
+        department_ids=request.department_ids or [],
+        field_ids=request.field_ids or [],
+    )
+
+    # -- Step 6: Refresh MV -----------------------------------------------------
 
     async with pool.acquire() as conn:
         await refresh_parameter_drafts(conn)
 
-    # -- Step 6: Invalidate cache -----------------------------------------------
+    # -- Step 7: Invalidate cache -----------------------------------------------
 
     await invalidate_tags(["parameters", "drafts"], redis=redis)
 
@@ -147,4 +158,5 @@ async def patch_parameter_draft_client(
         draft_id=result.id,
         new_version=new_version,
         message="Draft created successfully",
+        form_state=form_state,
     )

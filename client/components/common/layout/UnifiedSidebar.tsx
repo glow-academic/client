@@ -5,7 +5,6 @@
  * 05/20/2025
  */
 import type {
-  AuthPageResponse,
   CreateFeedbackIn,
   CreateFeedbackOut,
   SearchSimulatableProfilesIn,
@@ -13,6 +12,7 @@ import type {
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
+import { getSidebarSections } from "@/lib/sidebar-config";
 import ReportProblem from "@/components/common/layout/ReportProblem";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -58,7 +58,7 @@ import {
   Search,
   Sparkles,
 } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import * as React from "react";
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -67,7 +67,6 @@ import { SidebarSkeleton } from "./SidebarSkeleton";
 
 export interface UnifiedSidebarProps
   extends React.ComponentProps<typeof Sidebar> {
-  sidebarRoutes: AuthPageResponse["sidebar_routes"];
   activeSection: string;
   onSectionChange?: (section: string) => void;
   switchEffectiveProfile: (
@@ -95,9 +94,10 @@ interface MenuItem {
 interface NavSection {
   title: string;
   url: string;
-  icon: React.ComponentType<{ className?: string }>;
-  items?: MenuItem[];
-  section?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  icon: React.ComponentType<any>;
+  items?: MenuItem[] | undefined;
+  section?: string | undefined;
 }
 
 // Helper function to get initials from name
@@ -112,7 +112,6 @@ const getInitials = (name?: string): string => {
 };
 
 export function UnifiedSidebar({
-  sidebarRoutes,
   activeSection,
   onSectionChange,
   switchEffectiveProfile,
@@ -122,7 +121,6 @@ export function UnifiedSidebar({
 }: UnifiedSidebarProps) {
   const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
-  const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [isEmulateModalOpen, setIsEmulateModalOpen] = useState(false);
@@ -142,14 +140,13 @@ export function UnifiedSidebar({
   const { isMobile, setOpenMobile } = useSidebar();
 
   // Use the profile context
-  const { profile, isAuthenticated } =
+  const { profile, isAuthenticated, availableSections } =
     useProfile();
-
-  // Convert server-driven sidebar routes into NavSection format with search filtering
   const navMain = useMemo(() => {
-    if (!profile || !sidebarRoutes) return [];
+    if (!profile) return [];
 
-    const menu: NavSection[] = sidebarRoutes.map((section) => {
+    const sections = getSidebarSections(availableSections);
+    const menu: NavSection[] = sections.map((section) => {
       const IconComponent = getIconComponent(section.icon) || Home;
       const items: MenuItem[] | undefined = section.items
         ? section.items.map((item) => ({
@@ -162,7 +159,7 @@ export function UnifiedSidebar({
       return {
         title: section.title,
         url: section.url,
-        icon: IconComponent,
+        icon: IconComponent as NavSection["icon"],
         section: section.section,
         items,
       };
@@ -197,7 +194,7 @@ export function UnifiedSidebar({
     }
 
     return menu;
-  }, [profile, searchTerm, sidebarRoutes]);
+  }, [profile, searchTerm, availableSections]);
 
   // Resolve the href for any menu item (for use with <Link>)
   const getItemHref = useCallback(

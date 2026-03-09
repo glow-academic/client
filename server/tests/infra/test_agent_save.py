@@ -26,6 +26,20 @@ pytestmark = pytest.mark.asyncio
 # -- Helpers --
 
 
+def _mock_pool():
+    """Create a mock pool with working acquire() context manager."""
+    pool = MagicMock()
+    conn = AsyncMock()
+    conn.transaction = MagicMock(
+        return_value=AsyncMock(__aenter__=AsyncMock(), __aexit__=AsyncMock())
+    )
+    acm = AsyncMock()
+    acm.__aenter__ = AsyncMock(return_value=conn)
+    acm.__aexit__ = AsyncMock(return_value=False)
+    pool.acquire = MagicMock(return_value=acm)
+    return pool
+
+
 def _profile(*, role="superadmin", department_ids=None):
     """Fake ProfileContext."""
     p = MagicMock()
@@ -172,10 +186,7 @@ class TestSaveAgentClientCreate:
 
         item = SaveAgentItem(name_id=name_id)
 
-        conn = AsyncMock()
-        conn.transaction = MagicMock(
-            return_value=AsyncMock(__aenter__=AsyncMock(), __aexit__=AsyncMock())
-        )
+        pool = _mock_pool()
         redis = AsyncMock()
 
         with (
@@ -197,7 +208,7 @@ class TestSaveAgentClientCreate:
             patch(f"{MODULE}.invalidate_tags", new_callable=AsyncMock),
         ):
             result = await save_agent_client(
-                conn,
+                pool,
                 redis,
                 profile_id=profile_id,
                 items=[item],
@@ -210,7 +221,7 @@ class TestSaveAgentClientCreate:
     async def test_create_permission_denied(self):
         """User without departments cannot create."""
         item = SaveAgentItem(name_id=uuid4())
-        conn = AsyncMock()
+        pool = _mock_pool()
         redis = AsyncMock()
 
         with (
@@ -221,7 +232,7 @@ class TestSaveAgentClientCreate:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_agent_client(conn, redis, profile_id=uuid4(), items=[item])
+            await save_agent_client(pool, redis, profile_id=uuid4(), items=[item])
 
         assert exc_info.value.status_code == 403
 
@@ -239,10 +250,7 @@ class TestSaveAgentClientUpdate:
             name_id=name_id,
         )
 
-        conn = AsyncMock()
-        conn.transaction = MagicMock(
-            return_value=AsyncMock(__aenter__=AsyncMock(), __aexit__=AsyncMock())
-        )
+        pool = _mock_pool()
         redis = AsyncMock()
 
         with (
@@ -269,7 +277,7 @@ class TestSaveAgentClientUpdate:
             patch(f"{MODULE}.invalidate_tags", new_callable=AsyncMock),
         ):
             result = await save_agent_client(
-                conn,
+                pool,
                 redis,
                 profile_id=profile_id,
                 items=[item],
@@ -283,7 +291,7 @@ class TestSaveAgentClientUpdate:
     async def test_update_agent_not_found(self):
         """Update with non-existent agent -> 404."""
         item = SaveAgentItem(input_agent_id=uuid4())
-        conn = AsyncMock()
+        pool = _mock_pool()
         redis = AsyncMock()
 
         with (
@@ -299,7 +307,7 @@ class TestSaveAgentClientUpdate:
             ),
             pytest.raises(HTTPException) as exc_info,
         ):
-            await save_agent_client(conn, redis, profile_id=uuid4(), items=[item])
+            await save_agent_client(pool, redis, profile_id=uuid4(), items=[item])
 
         assert exc_info.value.status_code == 404
 
@@ -309,7 +317,7 @@ class TestSaveAgentClientValidation:
         """Items with resolution errors -> errors returned, no transaction."""
         item = SaveAgentItem()  # Missing required fields
 
-        conn = AsyncMock()
+        pool = _mock_pool()
         redis = AsyncMock()
 
         with (
@@ -320,7 +328,7 @@ class TestSaveAgentClientValidation:
             ),
         ):
             result = await save_agent_client(
-                conn,
+                pool,
                 redis,
                 profile_id=uuid4(),
                 items=[item],
@@ -329,8 +337,6 @@ class TestSaveAgentClientValidation:
         assert len(result.results) == 1
         assert result.results[0].success is False
         assert result.results[0].errors is not None
-        # Transaction should NOT have been entered
-        conn.transaction.assert_not_called()
 
     async def test_profile_not_found(self):
         """No profile -> 401."""

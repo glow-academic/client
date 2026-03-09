@@ -6,6 +6,8 @@
  */
 
 import Department from "@/components/artifacts/department/Department";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -133,20 +135,30 @@ export default async function NewDepartmentPage({
   const departmentDetailDefault = await getDepartmentDefault(input);
 
   return (
-    <div
-      className="space-y-6"
-      data-page="department-new"
-      aria-label="Create new department page"
-    >
-      <Department
-        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        departmentData={departmentDetailDefault}
-        saveDepartmentAction={saveDepartment}
-        patchDepartmentDraftAction={patchDepartmentDraft}
-        createNamesAction={createDraftNames}
-        createDescriptionsAction={createDraftDescriptions}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "System", section: "system", url: "/system" },
+          { title: "Departments", section: "departments", url: "/system/departments" },
+          { title: "New Department" },
+        ]}
+        toolbar={<SaveToolbar artifactType="department" />}
       />
-    </div>
+      <div
+        className="space-y-6 px-4"
+        data-page="department-new"
+        aria-label="Create new department page"
+      >
+        <Department
+          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+          departmentData={departmentDetailDefault}
+          saveDepartmentAction={saveDepartment}
+          patchDepartmentDraftAction={patchDepartmentDraft}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+        />
+      </div>
+    </>
   );
 }
 

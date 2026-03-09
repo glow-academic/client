@@ -23,7 +23,6 @@ async def update_setting(
     request: UpdateSettingApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateSettingApiResponse:
     """Update settings using composable infra architecture."""
     try:
@@ -34,10 +33,11 @@ async def update_setting(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await update_setting_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             items=request.settings,

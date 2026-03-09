@@ -36,13 +36,16 @@ export function useSocket(): SocketContextType {
 interface SocketProviderClientProps {
   children: React.ReactNode;
   profileId: string | null;
-  sessionId: string | null;
+  idToken: string | null;
 }
+
+// Hardcoded for development — in production this would come from env
+const API_KEY = "glw_dev_test_key_123";
 
 export function SocketProviderClient({
   children,
   profileId,
-  sessionId,
+  idToken,
 }: SocketProviderClientProps) {
   const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<AppSocket | null>(null);
@@ -62,14 +65,13 @@ export function SocketProviderClient({
         timestamp: Date.now(),
         EIO: "4",
       };
-      if (profileId) {
-        query["profileId"] = profileId;
-      }
-      if (sessionId) {
-        query["sessionId"] = sessionId;
-      }
 
-      const socket = await createSocketClient(query);
+      // Auth is handled via the auth object, not query params.
+      // Server resolves profile_id + session_id from the JWT.
+      const socket = await createSocketClient(query, {
+        token: idToken ? `Bearer ${idToken}` : undefined,
+        apiKey: API_KEY,
+      });
 
       socketRef.current = socket;
 

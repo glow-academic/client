@@ -9,7 +9,9 @@ The client no longer needs to send X-Profile-Id or X-Session-Id headers.
 from __future__ import annotations
 
 import logging
+from typing import Annotated
 
+import asyncpg
 from fastapi import Depends, Header, HTTPException, Request
 
 from app.infra.auth.license_key import validate_license_key
@@ -28,7 +30,7 @@ async def require_auth(
     request: Request,
     x_api_key: str | None = Header(default=None, alias="X-Api-Key"),
     authorization: str | None = Header(default=None),
-    conn=Depends(get_db),
+    conn: Annotated[asyncpg.Connection, Depends(get_db)] = None,
 ) -> Identity:
     """FastAPI dependency that validates auth and resolves identity.
 
@@ -70,7 +72,7 @@ async def require_auth(
     try:
         identity = await resolve_identity(token, conn)
     except ValueError as e:
-        raise HTTPException(status_code=401, detail=str(e))
+        raise HTTPException(status_code=401, detail=str(e)) from e
 
     # 3. Set on request.state (backward-compatible with existing code)
     request.state.profile_id = str(identity.profile_id)

@@ -4,10 +4,12 @@ import { ClientToServerEvents, ServerToClientEvents } from "./types";
 
 type QueryValue = string | number | boolean | undefined;
 export type SocketQuery = Record<string, QueryValue>;
+export type SocketAuth = { token?: string | undefined; apiKey?: string | undefined };
 
 /** Browser sockets typically go direct to backend; swap to BFF if you proxy WS. */
 export async function createSocketClient(
   query: SocketQuery,
+  auth?: SocketAuth,
 ): Promise<Socket<ServerToClientEvents, ClientToServerEvents>> {
   // Dynamic import to prevent socket.io-client from being loaded during SSR
   // socket.io-client accesses localStorage which fails on Node.js 22+
@@ -20,6 +22,7 @@ export async function createSocketClient(
     upgrade: false,
     withCredentials: true,
     query,
+    ...(auth ? { auth } : {}),
     timeout: 30000,
     reconnection: true,
     reconnectionAttempts: 3,

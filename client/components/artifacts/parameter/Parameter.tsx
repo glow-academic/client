@@ -34,8 +34,10 @@ import {
 import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-type SaveParameterIn = InputOf<"/api/v5/artifacts/parameters/save", "post">;
-type SaveParameterOut = OutputOf<"/api/v5/artifacts/parameters/save", "post">;
+type CreateParameterIn = InputOf<"/api/v5/artifacts/parameters/create", "post">;
+type CreateParameterOut = OutputOf<"/api/v5/artifacts/parameters/create", "post">;
+type UpdateParameterIn = InputOf<"/api/v5/artifacts/parameters/update", "post">;
+type UpdateParameterOut = OutputOf<"/api/v5/artifacts/parameters/update", "post">;
 type PatchParameterDraftIn = InputOf<
   "/api/v5/artifacts/parameters/draft",
   "patch"
@@ -59,7 +61,9 @@ type ParameterData = OutputOf<"/api/v5/artifacts/parameters/get", "post">;
 
 type ParameterFormState = {
   name_id: string | null;
+  name: string | null;
   description_id: string | null;
+  description: string | null;
   active_flag_id: string | null;
   flag_ids: string[];
   department_ids: string[];
@@ -92,7 +96,7 @@ type ParameterSectionData = {
     show?: boolean | null;
     required?: boolean | null;
     show_ai_generate?: boolean | null;
-    create_tool_id?: string | null;
+
   } | null;
   descriptions?: {
     resource?: { id?: string | null; description?: string | null; generated?: boolean | null } | null;
@@ -101,7 +105,7 @@ type ParameterSectionData = {
     show?: boolean | null;
     required?: boolean | null;
     show_ai_generate?: boolean | null;
-    create_tool_id?: string | null;
+
   } | null;
   flags?: {
     current?: Array<{
@@ -122,7 +126,7 @@ type ParameterSectionData = {
     show?: boolean | null;
     required?: boolean | null;
     show_ai_generate?: boolean | null;
-    create_tool_id?: string | null;
+
   } | null;
   departments?: {
     current?: Array<{ department_id?: string | null; name?: string | null; description?: string | null; generated?: boolean | null }> | null;
@@ -172,7 +176,8 @@ export interface ParameterProps {
   parameterId?: string;
   mode?: "create" | "edit";
   parameterData?: ParameterData;
-  saveParameterAction?: (input: SaveParameterIn) => Promise<SaveParameterOut>;
+  createParameterAction?: (input: CreateParameterIn) => Promise<CreateParameterOut>;
+  updateParameterAction?: (input: UpdateParameterIn) => Promise<UpdateParameterOut>;
   patchParameterDraftAction?: (
     input: PatchParameterDraftIn
   ) => Promise<PatchParameterDraftOut>;
@@ -188,7 +193,8 @@ function ParameterComponent({
   parameterId,
   mode = parameterId ? "edit" : "create",
   parameterData,
-  saveParameterAction,
+  createParameterAction,
+  updateParameterAction,
   patchParameterDraftAction,
   createNamesAction,
   createDescriptionsAction,
@@ -224,7 +230,9 @@ function ParameterComponent({
     if (!s) {
       return {
         name_id: null,
+        name: null,
         description_id: null,
+        description: null,
         active_flag_id: null,
         flag_ids: [],
         department_ids: [],
@@ -247,7 +255,9 @@ function ParameterComponent({
 
     return {
       name_id: s.names?.resource?.id ?? null,
+      name: null,
       description_id: s.descriptions?.resource?.id ?? null,
+      description: null,
       active_flag_id: activeFlagId,
       flag_ids: flagIds,
       department_ids:
@@ -303,6 +313,8 @@ function ParameterComponent({
     [flagIdByKey]
   );
 
+  const serverSyncPendingRef = React.useRef(false);
+
   const patchActionRef = React.useRef<
     ((
       payload: Record<string, unknown>
@@ -311,14 +323,37 @@ function ParameterComponent({
 
   useEffect(() => {
     if (patchParameterDraftAction) {
-      patchActionRef.current = async (payload: Record<string, unknown>) =>
-        patchParameterDraftAction({ body: payload } as PatchParameterDraftIn);
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        const result = await patchParameterDraftAction({ body: payload } as PatchParameterDraftIn);
+        const fs = result?.form_state;
+        if (fs) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name_id: fs.name_id ?? prev.name_id,
+            name: fs.name_id ? null : prev.name,
+            description_id: fs.description_id ?? prev.description_id,
+            description: fs.description_id ? null : prev.description,
+            active_flag_id: fs.flag_ids?.[0] ?? prev.active_flag_id,
+            flag_ids: fs.flag_ids ?? prev.flag_ids,
+            department_ids: fs.department_ids ?? prev.department_ids,
+            field_ids: fs.field_ids ?? prev.field_ids,
+          }));
+          requestAnimationFrame(() => {
+            serverSyncPendingRef.current = false;
+          });
+        }
+        return result;
+      };
     } else {
       patchActionRef.current = undefined;
     }
   }, [patchParameterDraftAction]);
 
-  const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
+  const formStateKey = useMemo(() => {
+    if (serverSyncPendingRef.current) return undefined;
+    return JSON.stringify(formState);
+  }, [formState]);
 
   const hasResourceIds =
     checkHasResourceIds(
@@ -336,6 +371,7 @@ function ParameterComponent({
       expectedVersion: number,
       flushResults?: Record<string, unknown>
     ): Record<string, unknown> => {
+      const currentFormState = formStateRef.current as unknown as ParameterFormState;
       const effective = computeEffectiveFormState(
         PARAMETER_RESOURCES,
         formStateRef.current,
@@ -349,7 +385,7 @@ function ParameterComponent({
       const flagsChanged =
         JSON.stringify(effectiveFlags) !== JSON.stringify(refFlags);
 
-      return {
+      const base: Record<string, unknown> = {
         input_draft_id: inputDraftId || null,
         ...buildDraftPayload(PARAMETER_RESOURCES, {
           formState: effective as unknown as Record<string, unknown>,
@@ -364,6 +400,18 @@ function ParameterComponent({
           : {}),
         expected_version: expectedVersion,
       };
+
+      // Overlay value fields (single-select values clear the corresponding ID)
+      if (currentFormState.name != null) {
+        base.name = currentFormState.name;
+        delete base.name_id;
+      }
+      if (currentFormState.description != null) {
+        base.description = currentFormState.description;
+        delete base.description_id;
+      }
+
+      return base;
     },
     [deriveFlagIds, s]
   );
@@ -501,23 +549,52 @@ function ParameterComponent({
         throw new Error("Profile not loaded");
       }
 
-      if (!saveParameterAction) {
-        toast.error("Save action not available");
-        throw new Error("Save action not available");
+      if (isEditMode && parameterId) {
+        if (!updateParameterAction) {
+          toast.error("Update action not available");
+          throw new Error("Update action not available");
+        }
+        await updateParameterAction({
+          body: {
+            parameters: [
+              {
+                parameter_id: parameterId,
+                name_id: effective.name_id ?? undefined,
+                name: effective.name ?? undefined,
+                description_id: effective.description_id ?? undefined,
+                description: effective.description ?? undefined,
+                flag_ids: effectiveFlags.length > 0 ? effectiveFlags : undefined,
+                department_ids: effective.department_ids?.length
+                  ? effective.department_ids
+                  : undefined,
+                field_ids: effective.field_ids?.length ? effective.field_ids : undefined,
+              },
+            ],
+          },
+        });
+      } else {
+        if (!createParameterAction) {
+          toast.error("Create action not available");
+          throw new Error("Create action not available");
+        }
+        await createParameterAction({
+          body: {
+            parameters: [
+              {
+                name_id: effective.name_id ?? undefined,
+                name: effective.name ?? undefined,
+                description_id: effective.description_id ?? undefined,
+                description: effective.description ?? undefined,
+                flag_ids: effectiveFlags.length > 0 ? effectiveFlags : undefined,
+                department_ids: effective.department_ids?.length
+                  ? effective.department_ids
+                  : undefined,
+                field_ids: effective.field_ids?.length ? effective.field_ids : undefined,
+              },
+            ],
+          },
+        });
       }
-
-      await saveParameterAction({
-        body: {
-          input_parameter_id: isEditMode && parameterId ? parameterId : null,
-          name_id: effective.name_id!,
-          description_id: effective.description_id ?? null,
-          flag_ids: effectiveFlags.length > 0 ? effectiveFlags : null,
-          department_ids: effective.department_ids?.length
-            ? effective.department_ids
-            : null,
-          field_ids: effective.field_ids?.length ? effective.field_ids : null,
-        },
-      });
 
       toast.success(
         `Parameter ${isEditMode ? "updated" : "created"} successfully!`
@@ -530,7 +607,8 @@ function ParameterComponent({
       deriveFlagIds,
       s,
       profile?.id,
-      saveParameterAction,
+      createParameterAction,
+      updateParameterAction,
       isEditMode,
       parameterId,
       router,
@@ -720,7 +798,10 @@ function ParameterComponent({
                   names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId }))
+                    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
+                  }
+                  onNameChange={(name) =>
+                    setFormState((prev) => ({ ...prev, name, name_id: null }))
                   }
                   onGenerate={() => handleGenerateResources(["names"])}
                   placeholder="e.g., Student Age"
@@ -729,7 +810,6 @@ function ParameterComponent({
                   hideDescription={true}
 
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
-                  create_tool_id={s?.names?.create_tool_id ?? null}
                   createNamesAction={createNamesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
@@ -760,7 +840,10 @@ function ParameterComponent({
                   descriptions={s?.descriptions?.resources ?? []}
                   disabled={disabled}
                   onDescriptionIdChange={(descriptionId) =>
-                    setFormState((prev) => ({ ...prev, description_id: descriptionId }))
+                    setFormState((prev) => ({ ...prev, description_id: descriptionId, description: null }))
+                  }
+                  onDescriptionChange={(description) =>
+                    setFormState((prev) => ({ ...prev, description, description_id: null }))
                   }
                   onGenerate={() => handleGenerateResources(["descriptions"])}
                   label="Description"
@@ -769,7 +852,6 @@ function ParameterComponent({
                   rows={3}
 
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
-                  create_tool_id={s?.descriptions?.create_tool_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}

@@ -5,6 +5,8 @@
 
 import Auth from "@/components/artifacts/auth/Auth";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -153,22 +155,37 @@ export default async function AuthEditPage({
         group_id: groupId,
       } as GetAuthIn["body"],
     };
-    const authData = await getAuth(input);
+    const [authData, docs] = await Promise.all([
+      getAuth(input),
+      getDocs({ body: { entity_id: authId } }),
+    ]);
+
+    const entityName = docs.detail.title;
 
     return (
-      <div className="space-y-6" data-page="auth-edit" data-auth-id={authId}>
-        <Auth
-          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-          authId={authId}
-          authData={authData}
-          saveAuthAction={saveAuth}
-          patchAuthDraftAction={patchAuthDraft}
-          createNamesAction={createDraftNames}
-          createDescriptionsAction={createDraftDescriptions}
-          createProtocolsAction={createDraftProtocols}
-          createSlugsAction={createDraftSlugs}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "System", section: "system", url: "/system" },
+            { title: "Auth", section: "auth", url: "/system/auth" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="auth" />}
         />
-      </div>
+        <div className="space-y-6 px-4" data-page="auth-edit" data-auth-id={authId}>
+          <Auth
+            key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+            authId={authId}
+            authData={authData}
+            saveAuthAction={saveAuth}
+            patchAuthDraftAction={patchAuthDraft}
+            createNamesAction={createDraftNames}
+            createDescriptionsAction={createDraftDescriptions}
+            createProtocolsAction={createDraftProtocols}
+            createSlugsAction={createDraftSlugs}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

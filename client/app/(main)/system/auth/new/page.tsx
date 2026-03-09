@@ -3,6 +3,8 @@
  * Auth create page - uses unified get/save endpoints and NewAuth component
  */
 import Auth from "@/components/artifacts/auth/Auth";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -145,18 +147,28 @@ export default async function AuthCreatePage({
   const authData = await getAuthDefault(input);
 
   return (
-    <div className="space-y-6" data-page="auth-create">
-      <Auth
-        key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
-        authData={authData}
-        saveAuthAction={saveAuth}
-        patchAuthDraftAction={patchAuthDraft}
-        createNamesAction={createDraftNames}
-        createDescriptionsAction={createDraftDescriptions}
-        createProtocolsAction={createDraftProtocols}
-        createSlugsAction={createDraftSlugs}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "System", section: "system", url: "/system" },
+          { title: "Auth", section: "auth", url: "/system/auth" },
+          { title: "New Auth" },
+        ]}
+        toolbar={<SaveToolbar artifactType="auth" />}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="auth-create">
+        <Auth
+          key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
+          authData={authData}
+          saveAuthAction={saveAuth}
+          patchAuthDraftAction={patchAuthDraft}
+          createNamesAction={createDraftNames}
+          createDescriptionsAction={createDraftDescriptions}
+          createProtocolsAction={createDraftProtocols}
+          createSlugsAction={createDraftSlugs}
+        />
+      </div>
+    </>
   );
 }
 

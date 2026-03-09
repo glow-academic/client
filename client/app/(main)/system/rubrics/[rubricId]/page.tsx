@@ -6,6 +6,8 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Rubric from "@/components/artifacts/rubric/Rubric";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -127,31 +129,46 @@ export default async function EditRubricPage({
 
   // Fetch data using unified get endpoint
   try {
-    const rubricData = await getRubric(
-      rubricId,
-      q.draftId ?? null,
-      q.descriptionSearch ?? null,
-      q.standardGroupSearch ?? null,
-      groupId,
-    );
+    const [rubricData, docs] = await Promise.all([
+      getRubric(
+        rubricId,
+        q.draftId ?? null,
+        q.descriptionSearch ?? null,
+        q.standardGroupSearch ?? null,
+        groupId,
+      ),
+      getDocs({ body: { entity_id: rubricId } }),
+    ]);
+
+    const entityName = docs.detail.title;
 
     return (
-      <div
-        className="space-y-6"
-        data-page="rubric-edit"
-        data-rubric-id={rubricId}
-      >
-        <Rubric
-          rubricId={rubricId}
-          rubricData={rubricData}
-          saveRubricAction={saveRubric}
-          patchRubricDraftAction={patchRubricDraft}
-          createNamesAction={createDraftNames}
-          createDescriptionsAction={createDraftDescriptions}
-          createPointsAction={createDraftPoints}
-          createStandardGroupsAction={createDraftStandardGroups}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "System", section: "system", url: "/system" },
+            { title: "Rubrics", section: "rubrics", url: "/system/rubrics" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="rubric" />}
         />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="rubric-edit"
+          data-rubric-id={rubricId}
+        >
+          <Rubric
+            rubricId={rubricId}
+            rubricData={rubricData}
+            saveRubricAction={saveRubric}
+            patchRubricDraftAction={patchRubricDraft}
+            createNamesAction={createDraftNames}
+            createDescriptionsAction={createDraftDescriptions}
+            createPointsAction={createDraftPoints}
+            createStandardGroupsAction={createDraftStandardGroups}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

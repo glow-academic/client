@@ -1,5 +1,5 @@
 // lib/api/request-core.ts
-import { getValidatedProfileId } from "@/app/(main)/layout-server";
+import { getAuthHeaders } from "@/lib/api/auth-headers";
 
 function encodePath(
   path: string,
@@ -47,20 +47,14 @@ export async function doRequest<T>(
   let body: BodyInit | null = null;
   let headers: HeadersInit = init?.headers ?? {};
 
-  // Automatically inject X-Profile-Id header when running server-side
-  // This header is read by the backend instead of requiring profile IDs in request body
+  // Inject auth headers (X-Api-Key + Authorization Bearer JWT)
+  // Server resolves profile_id and session_id from the JWT — no X-Profile-Id needed
   if (typeof window === "undefined") {
     try {
-      const { profileId } = await getValidatedProfileId();
-      if (profileId) {
-        headers = {
-          ...headers,
-          "X-Profile-Id": profileId,
-        };
-      }
+      const authHeaders = await getAuthHeaders();
+      headers = { ...headers, ...authHeaders };
     } catch {
-      // If profile ID resolution fails, continue without header
-      // Endpoints can handle missing profile IDs appropriately (cookie-based auth)
+      // If auth header resolution fails, continue without headers
     }
   }
 

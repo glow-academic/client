@@ -17,8 +17,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type ParameterGetIn = InputOf<"/api/v5/artifacts/parameters/get", "post">;
 type ParameterGetOut = OutputOf<"/api/v5/artifacts/parameters/get", "post">;
-type SaveParameterIn = InputOf<"/api/v5/artifacts/parameters/save", "post">;
-type SaveParameterOut = OutputOf<"/api/v5/artifacts/parameters/save", "post">;
+type CreateParameterIn = InputOf<"/api/v5/artifacts/parameters/create", "post">;
+type CreateParameterOut = OutputOf<"/api/v5/artifacts/parameters/create", "post">;
 type PatchParameterDraftIn = InputOf<"/api/v5/artifacts/parameters/draft", "patch">;
 type PatchParameterDraftOut = OutputOf<"/api/v5/artifacts/parameters/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -41,12 +41,11 @@ const getParameterDefault = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveParameter(
-  input: SaveParameterIn,
-): Promise<SaveParameterOut> {
+async function createParameter(
+  input: CreateParameterIn,
+): Promise<CreateParameterOut> {
   "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/parameters/save", input);
+  return api.post("/artifacts/parameters/create", input);
 }
 
 
@@ -138,7 +137,7 @@ export default async function NewParameterPage({
           key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
           mode="create"
           parameterData={parameterDetailDefault}
-          saveParameterAction={saveParameter}
+          createParameterAction={createParameter}
           patchParameterDraftAction={patchParameterDraft}
           createNamesAction={createNames}
           createDescriptionsAction={createDescriptions}
@@ -154,6 +153,6 @@ export type {
   PatchParameterDraftOut,
   ParameterGetIn,
   ParameterGetOut,
-  SaveParameterIn,
-  SaveParameterOut,
+  CreateParameterIn,
+  CreateParameterOut,
 };

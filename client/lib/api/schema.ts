@@ -4533,7 +4533,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v5/artifacts/attempt/audio/start": {
+    "/api/v5/artifacts/attempt/audio": {
         parameters: {
             query?: never;
             header?: never;
@@ -4543,50 +4543,10 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * Attempt Audio Start
-         * @description Start a voice session. Returns an audio_session_id for subsequent calls.
+         * Attempt Audio
+         * @description Submit audio for an attempt via upload_id. Returns transcription and assistant response.
          */
-        post: operations["attempt_audio_start_api_v5_artifacts_attempt_audio_start_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/attempt/audio/chunk": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Audio Chunk
-         * @description Send an audio chunk. Returns current offset and transcription progress.
-         */
-        post: operations["attempt_audio_chunk_api_v5_artifacts_attempt_audio_chunk_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v5/artifacts/attempt/audio/end": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Attempt Audio End
-         * @description End a voice session. Returns final transcription and assistant response.
-         */
-        post: operations["attempt_audio_end_api_v5_artifacts_attempt_audio_end_post"];
+        post: operations["attempt_audio_api_v5_artifacts_attempt_audio_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12794,6 +12754,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Auth Config
+         * @description Auth discovery — returns OIDC URLs for client configuration.
+         *
+         *     No authentication required. Any client can call this to discover
+         *     where to send users for login.
+         *
+         *     Usage:
+         *         GET /auth/config
+         *         → Use the returned URLs with any OAuth2/OIDC library
+         */
+        get: operations["get_auth_config_auth_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/default-idp/.well-known/openid-configuration": {
         parameters: {
             query?: never;
@@ -14778,24 +14765,8 @@ export interface components {
             /** Item Id */
             item_id?: string | null;
         };
-        /** AudioChunkApiResponse */
-        AudioChunkApiResponse: {
-            /** Offset */
-            offset: number;
-            /** Transcription Delta */
-            transcription_delta?: string | null;
-        };
-        /** AudioChunkPayload */
-        AudioChunkPayload: {
-            /** Audio Session Id */
-            audio_session_id: string;
-            /** Data */
-            data: string;
-            /** Mime Type */
-            mime_type?: string | null;
-        };
-        /** AudioEndApiResponse */
-        AudioEndApiResponse: {
+        /** AudioApiResponse */
+        AudioApiResponse: {
             /** Transcription */
             transcription: string;
             /** Assistant Message Id */
@@ -14803,23 +14774,18 @@ export interface components {
             /** Assistant Content */
             assistant_content?: string | null;
         };
-        /** AudioEndPayload */
-        AudioEndPayload: {
-            /** Audio Session Id */
-            audio_session_id: string;
-        };
-        /** AudioStartApiResponse */
-        AudioStartApiResponse: {
-            /** Audio Session Id */
-            audio_session_id: string;
-        };
-        /** AudioStartPayload */
-        AudioStartPayload: {
+        /** AudioPayload */
+        AudioPayload: {
             /**
              * Chat Id
              * Format: uuid
              */
             chat_id: string;
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
         };
         /** AuthDescriptionSection */
         AuthDescriptionSection: {
@@ -15469,10 +15435,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -15497,10 +15459,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -15525,10 +15483,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -15639,10 +15593,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -15667,10 +15617,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -15695,10 +15641,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -15723,10 +15665,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -15751,10 +15689,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -15779,10 +15713,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -15807,10 +15737,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -15835,10 +15761,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -15863,10 +15785,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -15891,10 +15809,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -15919,10 +15833,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -16007,10 +15917,6 @@ export interface components {
              * @default false
              */
             show_ai_generate: boolean;
-            /** Create Tool Id */
-            create_tool_id?: string | null;
-            /** Link Tool Id */
-            link_tool_id?: string | null;
             /** Current */
             current?: unknown[] | null;
             /** Resources */
@@ -19316,6 +19222,20 @@ export interface components {
             parameter_field_ids?: unknown[] | null;
         };
         /**
+         * DraftFileValue
+         * @description Value for creating a file via the draft endpoint.
+         *
+         *     Client provides the upload_id from a finalized TUS upload.
+         *     Server creates the full chain: files_resource → files_entry → file_uploads_entry.
+         */
+        DraftFileValue: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+        };
+        /**
          * DraftFormState
          * @description Full form state after draft patch — server is source of truth.
          *
@@ -19506,21 +19426,15 @@ export interface components {
             value: number;
         };
         /**
-         * DraftVideoValue
-         * @description Value for creating a video via the draft endpoint.
+         * DraftTextValue
+         * @description Value for creating a text via the draft endpoint.
+         *
+         *     Client provides text content.
+         *     Server creates the full chain: uploads_entry → texts_resource → texts_entry → text_uploads_entry.
          */
-        DraftVideoValue: {
-            /** Name */
-            name: string;
-            /** Description */
-            description: string;
-            /** Upload Id */
-            upload_id?: string | null;
-            /**
-             * Length Seconds
-             * @default 0
-             */
-            length_seconds: number;
+        DraftTextValue: {
+            /** Content */
+            content: string;
         };
         /**
          * DuplicateAgentApiRequest
@@ -22107,6 +22021,29 @@ export interface components {
         GetAuthCallbackApiResponse: {
             /** Redirect Path */
             redirect_path: string;
+        };
+        /** GetAuthConfigApiResponse */
+        GetAuthConfigApiResponse: {
+            /** Issuer */
+            issuer: string;
+            /** Authorization Endpoint */
+            authorization_endpoint: string;
+            /** Token Endpoint */
+            token_endpoint: string;
+            /** Jwks Uri */
+            jwks_uri: string;
+            /** Userinfo Endpoint */
+            userinfo_endpoint: string;
+            /** Openid Configuration */
+            openid_configuration: string;
+            /** Default Idp */
+            default_idp: {
+                [key: string]: string;
+            };
+            /** Grant Types Supported */
+            grant_types_supported: string[];
+            /** Code Challenge Methods Supported */
+            code_challenge_methods_supported: string[];
         };
         /**
          * GetAuthPageApiResponse
@@ -27308,6 +27245,22 @@ export interface components {
             resources?: components["schemas"]["ParameterDescriptionResource"][] | null;
         };
         /**
+         * ParameterDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        ParameterDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Field Ids */
+            field_ids: string[];
+        };
+        /**
          * ParameterFieldError
          * @description Per-field error from value resolution.
          */
@@ -27722,8 +27675,11 @@ export interface components {
          * PatchChatDraftApiRequest
          * @description Request model for new-style chat draft endpoint.
          *
-         *     Single-select creatables: name, description
+         *     Single-select creatables: name, description, problem_statement
          *       → value creates resource, ID replaces value (mutually exclusive).
+         *
+         *     Multi-select creatables: objectives, images, videos, questions, options
+         *       → values create resources, created IDs are merged with existing IDs.
          *
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
@@ -27744,6 +27700,18 @@ export interface components {
             name?: string | null;
             /** Description */
             description?: string | null;
+            /** Problem Statement */
+            problem_statement?: string | null;
+            /** Objectives */
+            objectives?: string[] | null;
+            /** Images */
+            images?: components["schemas"]["DraftImageValue"][] | null;
+            /** Videos */
+            videos?: components["schemas"]["app__routes__v5__api__main__chat__types__DraftVideoValue"][] | null;
+            /** Questions */
+            questions?: components["schemas"]["DraftQuestionValue"][] | null;
+            /** Options */
+            options?: components["schemas"]["DraftOptionValue"][] | null;
             /** Name Ids */
             name_ids?: string[] | null;
             /** Description Ids */
@@ -27928,9 +27896,10 @@ export interface components {
          *
          *     Dual-mode for creatable resources only:
          *       - name/name_id, description/description_id
+         *       - files (upload_id) / file_ids
+         *       - texts (content) / text_ids
          *     ID-only for non-creatable resources:
-         *       - flag_ids, department_ids, file_ids, image_ids, text_ids,
-         *         parameter_field_ids, parameter_ids
+         *       - flag_ids, department_ids, image_ids, parameter_field_ids, parameter_ids
          *
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
@@ -27955,16 +27924,20 @@ export interface components {
             description?: string | null;
             /** Description Id */
             description_id?: string | null;
+            /** Files */
+            files?: components["schemas"]["DraftFileValue"][] | null;
+            /** File Ids */
+            file_ids?: string[] | null;
+            /** Texts */
+            texts?: components["schemas"]["DraftTextValue"][] | null;
+            /** Text Ids */
+            text_ids?: string[] | null;
             /** Flag Ids */
             flag_ids?: string[] | null;
             /** Department Ids */
             department_ids?: string[] | null;
-            /** File Ids */
-            file_ids?: string[] | null;
             /** Image Ids */
             image_ids?: string[] | null;
-            /** Text Ids */
-            text_ids?: string[] | null;
             /** Parameter Field Ids */
             parameter_field_ids?: string[] | null;
             /** Parameter Ids */
@@ -28228,6 +28201,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["ParameterDraftFormState"] | null;
         };
         /**
          * PatchPersonaDraftApiRequest
@@ -28328,6 +28302,10 @@ export interface components {
             name?: string | null;
             /** Name Id */
             name_id?: string | null;
+            /** Email */
+            email?: string | null;
+            /** Request Limit */
+            request_limit?: number | null;
             /** Flag Id */
             flag_id?: string | null;
             /** Department Ids */
@@ -28355,6 +28333,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["ProfileDraftFormState"] | null;
         };
         /**
          * PatchProviderDraftApiRequest
@@ -28526,7 +28505,7 @@ export interface components {
             /** Image Ids */
             image_ids?: string[] | null;
             /** Videos */
-            videos?: components["schemas"]["DraftVideoValue"][] | null;
+            videos?: components["schemas"]["app__routes__v5__api__main__scenario__types__DraftVideoValue"][] | null;
             /** Video Ids */
             video_ids?: string[] | null;
             /** Questions */
@@ -29724,6 +29703,24 @@ export interface components {
             current?: components["schemas"]["ProfileDepartmentResource"][] | null;
             /** Resources */
             resources?: components["schemas"]["ProfileDepartmentResource"][] | null;
+        };
+        /**
+         * ProfileDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        ProfileDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids: string[];
+            /** Email Ids */
+            email_ids: string[];
+            /** Role Ids */
+            role_ids: string[];
+            /** Request Limit Ids */
+            request_limit_ids: string[];
         };
         /**
          * ProfileEmailResource
@@ -38906,6 +38903,35 @@ export interface components {
             /** Voice */
             voice?: string | null;
         };
+        /**
+         * DraftVideoValue
+         * @description Value for creating a video via the draft endpoint.
+         */
+        app__routes__v5__api__main__chat__types__DraftVideoValue: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Upload Id */
+            upload_id?: string | null;
+        };
+        /**
+         * DraftVideoValue
+         * @description Value for creating a video via the draft endpoint.
+         */
+        app__routes__v5__api__main__scenario__types__DraftVideoValue: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /** Upload Id */
+            upload_id?: string | null;
+            /**
+             * Length Seconds
+             * @default 0
+             */
+            length_seconds: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -38919,8 +38945,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -38956,8 +38982,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -38993,8 +39019,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39030,8 +39056,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39067,8 +39093,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39104,8 +39130,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39141,8 +39167,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39178,8 +39204,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39215,8 +39241,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39252,8 +39278,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39289,8 +39315,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39322,8 +39348,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39359,8 +39385,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39396,8 +39422,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39433,8 +39459,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39470,8 +39496,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39507,8 +39533,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39544,8 +39570,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39581,8 +39607,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39618,8 +39644,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39655,8 +39681,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39692,8 +39718,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39725,8 +39751,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39762,8 +39788,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39799,8 +39825,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39836,8 +39862,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39873,8 +39899,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39910,8 +39936,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39947,8 +39973,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -39984,8 +40010,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40021,8 +40047,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40058,8 +40084,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40095,8 +40121,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40128,8 +40154,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40165,8 +40191,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40202,8 +40228,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40239,8 +40265,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40276,8 +40302,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40313,8 +40339,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40350,8 +40376,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40387,8 +40413,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40424,8 +40450,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40461,8 +40487,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40494,8 +40520,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40531,8 +40557,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40568,8 +40594,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40605,8 +40631,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40642,8 +40668,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40679,8 +40705,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40716,8 +40742,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40753,8 +40779,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40790,8 +40816,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40827,8 +40853,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40864,8 +40890,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40901,8 +40927,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40934,8 +40960,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -40971,8 +40997,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41008,8 +41034,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41045,8 +41071,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41082,8 +41108,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41119,8 +41145,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41156,8 +41182,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41193,8 +41219,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41230,8 +41256,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41267,8 +41293,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41304,8 +41330,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41337,8 +41363,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41374,8 +41400,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41411,8 +41437,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41448,8 +41474,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41485,8 +41511,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41522,8 +41548,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41559,8 +41585,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41596,8 +41622,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41633,8 +41659,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41670,8 +41696,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41703,8 +41729,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41740,8 +41766,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41777,8 +41803,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41814,8 +41840,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41851,8 +41877,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41888,8 +41914,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41925,8 +41951,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41962,8 +41988,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -41999,8 +42025,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42036,8 +42062,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42073,8 +42099,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42110,8 +42136,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42143,8 +42169,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42180,8 +42206,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42217,8 +42243,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42254,8 +42280,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42291,8 +42317,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42328,8 +42354,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42365,8 +42391,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42402,8 +42428,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42439,8 +42465,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42476,8 +42502,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42513,8 +42539,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42546,8 +42572,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42583,8 +42609,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42620,8 +42646,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42657,8 +42683,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42694,8 +42720,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42731,8 +42757,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42768,8 +42794,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42805,8 +42831,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42842,8 +42868,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42879,8 +42905,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42916,8 +42942,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42949,8 +42975,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -42986,8 +43012,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43023,8 +43049,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43060,8 +43086,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43097,8 +43123,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43134,8 +43160,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43171,8 +43197,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43208,8 +43234,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43245,8 +43271,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43282,8 +43308,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43319,8 +43345,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43352,8 +43378,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43389,8 +43415,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43426,8 +43452,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43463,8 +43489,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43500,8 +43526,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43537,8 +43563,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43574,8 +43600,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43611,8 +43637,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43648,8 +43674,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43685,8 +43711,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43722,8 +43748,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43755,8 +43781,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43792,8 +43818,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43829,8 +43855,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43866,8 +43892,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43903,8 +43929,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43940,8 +43966,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -43977,8 +44003,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44014,8 +44040,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44051,8 +44077,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44088,8 +44114,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44125,8 +44151,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44158,8 +44184,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44195,8 +44221,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44232,8 +44258,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44269,8 +44295,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44306,8 +44332,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44343,8 +44369,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44380,8 +44406,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44417,8 +44443,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44454,8 +44480,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44491,8 +44517,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44528,8 +44554,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44561,8 +44587,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44598,8 +44624,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44635,8 +44661,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44672,8 +44698,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44709,8 +44735,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44746,8 +44772,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44783,8 +44809,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44820,8 +44846,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44857,8 +44883,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44894,8 +44920,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44931,8 +44957,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -44964,8 +44990,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45001,8 +45027,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45038,8 +45064,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45075,8 +45101,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45112,8 +45138,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45149,8 +45175,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45186,8 +45212,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45223,8 +45249,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45260,8 +45286,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45297,8 +45323,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45334,8 +45360,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45367,8 +45393,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45404,8 +45430,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45441,8 +45467,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45478,8 +45504,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45515,8 +45541,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45552,8 +45578,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45589,8 +45615,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45626,8 +45652,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45663,8 +45689,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45700,8 +45726,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45737,8 +45763,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45770,8 +45796,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45807,8 +45833,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45840,8 +45866,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45877,8 +45903,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45914,8 +45940,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45951,8 +45977,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -45988,8 +46014,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46025,8 +46051,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46058,8 +46084,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46095,8 +46121,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46132,8 +46158,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46169,8 +46195,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46206,8 +46232,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46243,8 +46269,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46276,8 +46302,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46313,8 +46339,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46350,8 +46376,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46387,8 +46413,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46420,8 +46446,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46453,8 +46479,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46490,8 +46516,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46527,8 +46553,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46564,8 +46590,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46597,8 +46623,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46630,8 +46656,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46667,8 +46693,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46704,8 +46730,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46741,8 +46767,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46774,8 +46800,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46811,8 +46837,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46848,8 +46874,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46885,8 +46911,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46922,8 +46948,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46959,8 +46985,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -46996,8 +47022,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47033,8 +47059,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47070,8 +47096,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47107,8 +47133,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47144,8 +47170,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47177,12 +47203,12 @@ export interface operations {
             };
         };
     };
-    attempt_audio_start_api_v5_artifacts_attempt_audio_start_post: {
+    attempt_audio_api_v5_artifacts_attempt_audio_post: {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47190,7 +47216,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AudioStartPayload"];
+                "application/json": components["schemas"]["AudioPayload"];
             };
         };
         responses: {
@@ -47200,81 +47226,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AudioStartApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_audio_chunk_api_v5_artifacts_attempt_audio_chunk_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AudioChunkPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AudioChunkApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    attempt_audio_end_api_v5_artifacts_attempt_audio_end_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AudioEndPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AudioEndApiResponse"];
+                    "application/json": components["schemas"]["AudioApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -47292,8 +47244,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47329,8 +47281,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47366,8 +47318,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47403,8 +47355,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47440,8 +47392,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47473,8 +47425,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47510,8 +47462,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47547,8 +47499,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47584,8 +47536,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47621,8 +47573,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47654,8 +47606,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47687,8 +47639,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47724,8 +47676,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47757,8 +47709,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47794,8 +47746,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47827,8 +47779,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47864,8 +47816,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47901,8 +47853,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47938,8 +47890,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -47971,8 +47923,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48004,8 +47956,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48041,8 +47993,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48078,8 +48030,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48115,8 +48067,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48148,8 +48100,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48181,8 +48133,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48218,8 +48170,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48255,8 +48207,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48292,8 +48244,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48329,8 +48281,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48362,8 +48314,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48399,8 +48351,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48432,8 +48384,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48469,8 +48421,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48506,8 +48458,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48539,8 +48491,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48572,8 +48524,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48609,8 +48561,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48646,8 +48598,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48683,8 +48635,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48716,8 +48668,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48749,8 +48701,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48786,8 +48738,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48823,8 +48775,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48860,8 +48812,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48893,8 +48845,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48930,8 +48882,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -48967,8 +48919,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -49004,8 +48956,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -49041,8 +48993,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -49078,8 +49030,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -49115,8 +49067,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -49152,8 +49104,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -49189,8 +49141,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -62955,8 +62907,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -62992,8 +62944,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -63029,8 +62981,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -63066,8 +63018,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -63099,8 +63051,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -63132,8 +63084,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -63169,8 +63121,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -63206,8 +63158,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -63243,8 +63195,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -63280,8 +63232,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -63317,8 +63269,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -63354,8 +63306,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -63391,8 +63343,8 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
-                "X-Profile-Id"?: string | null;
-                "X-Session-Id"?: string | null;
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
                 "X-MCP"?: string | null;
             };
             path?: never;
@@ -63420,6 +63372,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_auth_config_auth_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetAuthConfigApiResponse"];
                 };
             };
         };

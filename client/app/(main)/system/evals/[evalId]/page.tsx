@@ -6,6 +6,8 @@
  */
 
 import Eval from "@/components/artifacts/eval/Eval";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -116,21 +118,36 @@ export default async function EvalDetailPage({
       available_model_runs_search: q.modelRunSearch ?? null,
     } as GetEvalIn["body"],
   };
-  const evalDetail = await getEvalDetail(input);
+  const [evalDetail, docs] = await Promise.all([
+    getEvalDetail(input),
+    getDocs({ body: { entity_id: evalId } }),
+  ]);
+
+  const entityName = docs.detail.title;
 
   return (
-    <div
-      className="space-y-6"
-      data-page="eval-edit"
-      aria-label="Edit eval page"
-    >
-      <Eval
-        evalId={evalId}
-        evalDetail={evalDetail}
-        updateEvalAction={saveEval}
-        patchEvalDraftAction={patchEvalDraft}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "System", section: "system", url: "/system" },
+          { title: "Evals", section: "evals", url: "/system/evals" },
+          { title: entityName },
+        ]}
+        toolbar={<SaveToolbar artifactType="eval" />}
       />
-    </div>
+      <div
+        className="space-y-6 px-4"
+        data-page="eval-edit"
+        aria-label="Edit eval page"
+      >
+        <Eval
+          evalId={evalId}
+          evalDetail={evalDetail}
+          updateEvalAction={saveEval}
+          patchEvalDraftAction={patchEvalDraft}
+        />
+      </div>
+    </>
   );
 }
 

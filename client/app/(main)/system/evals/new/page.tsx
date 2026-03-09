@@ -5,6 +5,8 @@
  * 01/26/2025
  */
 import Eval from "@/components/artifacts/eval/Eval";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -114,17 +116,27 @@ export default async function NewEvalPage({
   const evalDetailDefault = await getEvalDefault(input);
 
   return (
-    <div
-      className="space-y-6"
-      data-page="eval-new"
-      aria-label="Create new eval page"
-    >
-      <Eval
-        evalDetailDefault={evalDetailDefault}
-        createEvalAction={saveEval}
-        patchEvalDraftAction={patchEvalDraft}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "System", section: "system", url: "/system" },
+          { title: "Evals", section: "evals", url: "/system/evals" },
+          { title: "New Eval" },
+        ]}
+        toolbar={<SaveToolbar artifactType="eval" />}
       />
-    </div>
+      <div
+        className="space-y-6 px-4"
+        data-page="eval-new"
+        aria-label="Create new eval page"
+      >
+        <Eval
+          evalDetailDefault={evalDetailDefault}
+          createEvalAction={saveEval}
+          patchEvalDraftAction={patchEvalDraft}
+        />
+      </div>
+    </>
   );
 }
 
