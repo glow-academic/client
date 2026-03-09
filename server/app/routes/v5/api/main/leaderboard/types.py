@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.routes.auth.types import AnalyticsFacets
 from app.routes.v5.api.main.types import FilterOption
 
 
@@ -174,10 +175,14 @@ class LeaderboardResources(BaseModel):
 
 
 class LeaderboardResponse(BaseModel):
-    """Response for leaderboard get (top sections only)."""
+    """Response for leaderboard get (top sections only).
+
+    Includes inline analytics facets for SSR filter rendering.
+    """
 
     sections: LeaderboardSections = Field(default_factory=LeaderboardSections)
     resources: LeaderboardResources = Field(default_factory=LeaderboardResources)
+    analytics: AnalyticsFacets | None = None
 
 
 class ListLeaderboardResponse(BaseModel):

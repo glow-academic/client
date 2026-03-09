@@ -287,6 +287,7 @@ class ListCohortApiResponse(BaseModel):
     simulation_filter: "ListFilterSection | None" = None
     profile_filter: "ListFilterSection | None" = None
     department_filter: "ListFilterSection | None" = None
+    flag_filter: "ListFilterSection | None" = None
     total_count: int | None = None
     import_fields: list[Any] | None = None
 
@@ -378,134 +379,11 @@ class UpdateCohortApiResponse(BaseModel):
     results: list[CohortResultItem]
 
 
-# =============================================================================
-# Legacy Save Types (backwards compat)
-# =============================================================================
-
-
 class SaveCohortFieldError(BaseModel):
     """Per-field error from value resolution."""
 
     field: str
     message: str
-
-
-class SaveCohortItem(BaseModel):
-    """Single cohort item for save — provide ID or value per field (not both).
-
-    For required fields (name), exactly one of the *_id or value field must
-    be provided.
-    """
-
-    input_cohort_id: UUID | None = None
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    # Single-select flag
-    flag_id: UUID | None = None
-    # Multi-select IDs
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    simulation_position_ids: list[UUID] | None = None
-    simulation_availability_ids: list[UUID] | None = None
-    profile_ids: list[UUID] | None = None
-    profile_persona_ids: list[UUID] | None = None
-    # Value-based fields (for CSV import — resolved to IDs by _resolve_cohort_values)
-    is_inactive: bool | None = None
-    departments: list[str] | None = None
-    simulations: list[str] | None = None
-    profiles: list[str] | None = None
-
-
-class SaveCohortApiRequest(BaseModel):
-    """Request model for bulk save cohort endpoint."""
-
-    cohorts: list[SaveCohortItem]
-    group_id: UUID | None = None  # Tool tracking context from GET response
-
-
-class SaveCohortResult(BaseModel):
-    """Per-item result within a bulk save response."""
-
-    success: bool
-    cohort_id: UUID | None = None
-    message: str
-    errors: list[SaveCohortFieldError] | None = None
-
-
-class SaveCohortApiResponse(BaseModel):
-    """Response model for bulk save cohort endpoint."""
-
-    results: list[SaveCohortResult]
-
-
-class SaveCohortSqlParams(BaseModel):
-    """SQL parameters for save cohort - flat resource IDs."""
-
-    profile_id: UUID
-    input_cohort_id: UUID | None = None
-    name_id: UUID | None = None
-    description_id: UUID | None = None
-    active_flag_id: UUID | None = None
-    department_ids: list[UUID] | None = None
-    simulation_ids: list[UUID] | None = None
-    simulation_position_ids: list[UUID] | None = None
-    simulation_availability_ids: list[UUID] | None = None
-    profile_ids: list[UUID] | None = None
-    profile_persona_ids: list[UUID] | None = None
-    cohorts_resource_id: UUID | None = None
-
-    @classmethod
-    def from_request(
-        cls,
-        request: SaveCohortItem,
-        profile_id: UUID,
-        cohorts_resource_id: UUID | None = None,
-    ) -> "SaveCohortSqlParams":
-        return cls(
-            profile_id=profile_id,
-            input_cohort_id=request.input_cohort_id,
-            name_id=request.name_id,
-            description_id=request.description_id,
-            active_flag_id=request.flag_id,
-            department_ids=request.department_ids,
-            simulation_ids=request.simulation_ids,
-            simulation_position_ids=request.simulation_position_ids,
-            simulation_availability_ids=request.simulation_availability_ids,
-            profile_ids=request.profile_ids,
-            profile_persona_ids=request.profile_persona_ids,
-            cohorts_resource_id=cohorts_resource_id,
-        )
-
-    def to_tuple(self) -> tuple:
-        """Convert to tuple for SQL execution.
-
-        Arrays are passed as-is (None preserved) so SQL COALESCE can
-        distinguish 'not provided' (NULL) from 'explicitly empty' ([]).
-        """
-        return (
-            self.profile_id,
-            self.input_cohort_id,
-            self.name_id,
-            self.description_id,
-            self.active_flag_id,
-            self.department_ids,
-            self.simulation_ids,
-            self.simulation_position_ids,
-            self.simulation_availability_ids,
-            self.profile_ids,
-            self.profile_persona_ids,
-            self.cohorts_resource_id,
-        )
-
-
-class SaveCohortSqlRow(BaseModel):
-    """SQL row for save cohort."""
-
-    cohort_id: UUID | None = None
 
 
 # =============================================================================

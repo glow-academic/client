@@ -1,13 +1,21 @@
 """Get endpoint for pricing artifact — top chart (daily cost aggregation)."""
 
+import asyncio
 from decimal import Decimal
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.analytics_facets import (
+    HIDDEN,
+    VISIBLE,
+    AnalyticsFacetsConfig,
+    resolve_analytics_facets,
+)
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.pricing_context import resolve_pricing_context
+from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.api.main.pricing.types import (
     PricingDailyItem,
     PricingRequest,
@@ -21,6 +29,21 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
+
+# ---------------------------------------------------------------------------
+# Pricing analytics facets config
+# ---------------------------------------------------------------------------
+
+PRICING_FACETS_CONFIG = AnalyticsFacetsConfig(
+    fields=AnalyticsFilterFields(
+        date_range=VISIBLE,
+        departments=VISIBLE,
+        cohorts=HIDDEN,
+        roles=HIDDEN,
+        attempts=HIDDEN,
+    ),
+    mv_source="pricing",
+)
 
 
 # ---------------------------------------------------------------------------
@@ -99,13 +122,24 @@ async def get_pricing(
         if not common:
             raise HTTPException(status_code=401, detail="Profile not found")
 
-        # --- Phase 1: Resolve pricing context ---
-        ctx = await resolve_pricing_context(
-            pool,
-            redis,
-            date_from=request.effective_date_from,
-            date_to=request.effective_date_to,
-            bypass_cache=bypass_cache,
+        profile = common.profile
+
+        # --- Phase 1: Resolve pricing context + analytics facets in parallel ---
+        ctx, analytics_facets = await asyncio.gather(
+            resolve_pricing_context(
+                pool,
+                redis,
+                date_from=request.effective_date_from,
+                date_to=request.effective_date_to,
+                bypass_cache=bypass_cache,
+            ),
+            resolve_analytics_facets(
+                pool,
+                redis,
+                config=PRICING_FACETS_CONFIG,
+                profile=profile,
+                bypass_cache=bypass_cache,
+            ),
         )
 
         # --- Phase 2: Extract data ---
@@ -180,6 +214,7 @@ async def get_pricing(
             total_count=len(runs),
             model_options=model_options,
             agent_options=agent_options,
+            analytics=analytics_facets,
         )
 
         await set_cached(

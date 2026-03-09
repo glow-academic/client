@@ -39,6 +39,7 @@ from app.routes.v5.api.types import ListFilterOption, ListFilterSection
 from app.routes.v5.tools.artifacts.scenario.get import get_scenarios
 from app.routes.v5.tools.artifacts.scenario.search import search_scenarios
 from app.routes.v5.tools.resources.departments.get import get_departments
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.departments.search import (
     search_departments,
 )
@@ -168,6 +169,7 @@ async def search_scenario_client(
     persona_search: str | None = None,
     simulation_search: str | None = None,
     department_search: str | None = None,
+    flag_search: str | None = None,
     # Pagination
     page_size: int = 10,
     page_offset: int = 0,
@@ -324,6 +326,12 @@ async def search_scenario_client(
                 conn, redis, search=department_search, scenario=True, limit_count=100
             )
 
+    async def _get_flag_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn, redis, search=flag_search, scenario=True, limit_count=100
+            )
+
     (
         names_data,
         personas_data,
@@ -334,6 +342,7 @@ async def search_scenario_client(
         persona_facet,
         simulation_facet,
         department_facet,
+        flag_facet,
     ) = await asyncio.gather(
         _get_names(),
         _get_personas(),
@@ -344,6 +353,7 @@ async def search_scenario_client(
         _get_persona_facet(),
         _get_simulation_facet(),
         _get_department_facet(),
+        _get_flag_facet(),
     )
 
     # Build lookup maps
@@ -500,6 +510,16 @@ async def search_scenario_client(
         search=department_search,
     )
 
+    flag_filter = ListFilterSection(
+        options=[
+            ListFilterOption(
+                id=str(f.id), name=f.name, type=f.type, count=0
+            )
+            for f in flag_facet
+        ],
+        search=flag_search,
+    )
+
     return ListScenarioApiResponse(
         actor_name=actor_name,
         scenarios=api_scenarios,
@@ -512,6 +532,7 @@ async def search_scenario_client(
         persona_filter=persona_filter,
         simulation_filter=simulation_filter,
         department_filter=department_filter,
+        flag_filter=flag_filter,
         total_count=total_count,
         import_fields=SCENARIO_IMPORT_FIELDS,
     )

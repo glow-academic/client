@@ -95,17 +95,6 @@ class GetAuthApiResponse(BaseModel):
     items: AuthItemSection | None = None
 
 
-class SaveAuthItemInput(BaseModel):
-    """Auth item input for save/draft endpoints."""
-
-    name: str
-    description: str | None = None
-    encrypted: bool = True
-    position: int | None = None
-    active: bool = True
-    key_id: UUID | None = None
-
-
 # ========== Shared Create/Update Types ==========
 
 
@@ -178,61 +167,11 @@ class UpdateAuthApiResponse(BaseModel):
     results: list[AuthResultItem]
 
 
-# ========== Legacy Save Types (backwards compat) ==========
-
-
 class SaveAuthFieldError(BaseModel):
     """Per-field error from value resolution."""
 
     field: str
     message: str
-
-
-class SaveAuthItem(BaseModel):
-    """Single auth item for save — provide ID or value per field (not both).
-
-    For required fields (name), exactly one of the *_id or value field must be provided.
-    """
-
-    input_auth_id: UUID | None = None
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    slug_id: UUID | None = None
-    # Optional flag
-    active_flag_id: UUID | None = None
-    active_flag: bool | None = None
-    # Optional multi-select — provide IDs or values
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    protocol_ids: list[UUID] | None = None
-    item_ids: list[UUID] | None = None
-    auth_resource_ids: list[UUID] | None = None
-
-
-class SaveAuthApiRequest(BaseModel):
-    """Request model for bulk save auth endpoint."""
-
-    auths: list[SaveAuthItem]
-    group_id: UUID | None = None
-
-
-class SaveAuthResult(BaseModel):
-    """Per-item result within a bulk save response."""
-
-    success: bool
-    auth_id: UUID | None = None
-    message: str
-    errors: list[SaveAuthFieldError] | None = None
-
-
-class SaveAuthApiResponse(BaseModel):
-    """Response model for bulk save auth endpoint."""
-
-    results: list[SaveAuthResult]
 
 
 class DeleteAuthApiRequest(BaseModel):

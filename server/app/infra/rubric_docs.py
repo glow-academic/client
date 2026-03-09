@@ -178,8 +178,7 @@ async def docs_rubric_client(
     from app.routes.v5.api.main.rubric.duplicate import duplicate_rubric
     from app.routes.v5.api.main.rubric.export import export_rubrics
     from app.routes.v5.api.main.rubric.get import get_rubric
-    from app.routes.v5.api.main.rubric.save import save_rubric
-    from app.routes.v5.api.main.rubric.search import search_rubric
+from app.routes.v5.api.main.rubric.search import search_rubric
     from app.routes.v5.api.main.rubric.update import update_rubric
 
     return ComposedDocsResponse(
@@ -243,10 +242,6 @@ async def docs_rubric_client(
             get_operation_info(
                 update_rubric,
                 description="POST /update — Update an existing rubric's resource links.",
-            ),
-            get_operation_info(
-                save_rubric,
-                description="POST /save — Create or update a rubric (unified save).",
             ),
             get_operation_info(
                 duplicate_rubric,

@@ -12,6 +12,12 @@ import asyncpg
 from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 
+from app.infra.analytics_facets import (
+    HIDDEN,
+    VISIBLE,
+    AnalyticsFacetsConfig,
+    resolve_analytics_facets,
+)
 from app.infra.benchmark_context import (
     resolve_benchmark_context,
     resolve_benchmark_search_context,
@@ -19,9 +25,11 @@ from app.infra.benchmark_context import (
 from app.infra.benchmark_permissions import (
     compute_benchmark_eval_status,
 )
+from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.test_permissions import compute_test_status
 from app.infra.types import ArtifactContext
+from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.api.main.benchmark.types import (
     BenchmarkDepartmentItem,
     BenchmarkEvalOperational,
@@ -34,6 +42,22 @@ from app.routes.v5.api.main.types import FilterOption
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
+
+# ---------------------------------------------------------------------------
+# Benchmark analytics facets config
+# ---------------------------------------------------------------------------
+
+BENCHMARK_FACETS_CONFIG = AnalyticsFacetsConfig(
+    fields=AnalyticsFilterFields(
+        date_range=VISIBLE,
+        departments=VISIBLE,
+        cohorts=HIDDEN,
+        roles=HIDDEN,
+        attempts=VISIBLE,
+    ),
+    mv_source="benchmark",
+    attempt_options=["general", "archived"],
+)
 
 
 @router.post("/get", response_model=BenchmarkResponse)
@@ -48,6 +72,15 @@ async def get_benchmark(
     pool = get_pool()
 
     try:
+        profile_id = http_request.state.profile_id
+        if not profile_id:
+            raise HTTPException(
+                status_code=401,
+                detail="Profile ID is required. Please sign in again.",
+            )
+
+        redis = get_redis_client()
+
         department_uuids = (
             [UUID(d) for d in request.department_ids]
             if request.department_ids
@@ -60,15 +93,34 @@ async def get_benchmark(
         if request.end_date:
             date_to = datetime.fromisoformat(request.end_date)
 
-        # ── Resolve contexts in parallel ──────────────────────────────
-        cards_ctx, history_ctx = await _resolve_both(
-            pool,
-            get_redis_client(),
-            request=request,
-            department_ids=department_uuids,
-            date_from=date_from,
-            date_to=date_to,
-            bypass_cache=bypass_cache,
+        # ── Phase 0: Resolve common context (profile identity) ────────
+        async with pool.acquire() as c:
+            common = await resolve_common_context(
+                c, redis, profile_id=profile_id, bypass_cache=bypass_cache
+            )
+        if not common:
+            raise HTTPException(status_code=401, detail="Profile not found")
+
+        profile = common.profile
+
+        # ── Resolve contexts + analytics facets in parallel ───────────
+        (cards_ctx, history_ctx), analytics_facets = await asyncio.gather(
+            _resolve_both(
+                pool,
+                redis,
+                request=request,
+                department_ids=department_uuids,
+                date_from=date_from,
+                date_to=date_to,
+                bypass_cache=bypass_cache,
+            ),
+            resolve_analytics_facets(
+                pool,
+                redis,
+                config=BENCHMARK_FACETS_CONFIG,
+                profile=profile,
+                bypass_cache=bypass_cache,
+            ),
         )
 
         # ── Build eval cards from cards context ───────────────────────

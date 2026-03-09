@@ -205,8 +205,7 @@ async def docs_simulation_client(
     from app.routes.v5.api.main.simulation.duplicate import duplicate_simulation
     from app.routes.v5.api.main.simulation.export import export_simulations
     from app.routes.v5.api.main.simulation.get import get_simulation
-    from app.routes.v5.api.main.simulation.save import save_simulation
-    from app.routes.v5.api.main.simulation.search import search_simulation
+from app.routes.v5.api.main.simulation.search import search_simulation
     from app.routes.v5.api.main.simulation.update import update_simulation
 
     return ComposedDocsResponse(
@@ -274,10 +273,6 @@ async def docs_simulation_client(
             get_operation_info(
                 update_simulation,
                 description="POST /update — Update an existing simulation's resource links.",
-            ),
-            get_operation_info(
-                save_simulation,
-                description="POST /save — Create or update a simulation (unified save).",
             ),
             get_operation_info(
                 duplicate_simulation,

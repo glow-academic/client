@@ -25,7 +25,7 @@ class RunsContext:
 
 
 async def resolve_runs_context(
-    conn_or_pool: asyncpg.Connection | asyncpg.Pool,
+    pool: asyncpg.Pool,
     *,
     profile_id: UUID,
     group_id: UUID | None = None,
@@ -34,25 +34,15 @@ async def resolve_runs_context(
 ) -> RunsContext:
     """Resolve today's runs for a profile.
 
-    Accepts either a Connection (legacy) or Pool (preferred).
     Defaults date_from and date_to to today if not provided.
     """
     now = datetime.now(UTC)
     start = date_from or now.replace(hour=0, minute=0, second=0, microsecond=0)
     end = date_to or now
 
-    if isinstance(conn_or_pool, asyncpg.Pool):
-        async with conn_or_pool.acquire() as conn:
-            items, total_count = await search_runs(
-                conn,
-                group_ids=[group_id] if group_id else None,
-                profiles_ids=[profile_id],
-                date_from=start,
-                date_to=end,
-            )
-    else:
+    async with pool.acquire() as conn:
         items, total_count = await search_runs(
-            conn_or_pool,
+            conn,
             group_ids=[group_id] if group_id else None,
             profiles_ids=[profile_id],
             date_from=start,

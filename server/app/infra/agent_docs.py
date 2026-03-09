@@ -220,8 +220,7 @@ async def docs_agent_client(
     from app.routes.v5.api.main.agent.duplicate import duplicate_agent
     from app.routes.v5.api.main.agent.export import export_agents
     from app.routes.v5.api.main.agent.get import get_agent
-    from app.routes.v5.api.main.agent.save import save_agent
-    from app.routes.v5.api.main.agent.search import search_agent
+from app.routes.v5.api.main.agent.search import search_agent
     from app.routes.v5.api.main.agent.update import update_agent
 
     return ComposedDocsResponse(
@@ -292,10 +291,6 @@ async def docs_agent_client(
             get_operation_info(
                 update_agent,
                 description="POST /update — Update an existing agent's resource links.",
-            ),
-            get_operation_info(
-                save_agent,
-                description="POST /save — Create or update an agent (unified save).",
             ),
             get_operation_info(
                 duplicate_agent,

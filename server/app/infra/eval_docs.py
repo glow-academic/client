@@ -181,8 +181,7 @@ async def docs_eval_client(
     from app.routes.v5.api.main.eval.duplicate import duplicate_eval
     from app.routes.v5.api.main.eval.export import export_evals
     from app.routes.v5.api.main.eval.get import get_eval
-    from app.routes.v5.api.main.eval.save import save_eval
-    from app.routes.v5.api.main.eval.search import search_eval
+from app.routes.v5.api.main.eval.search import search_eval
     from app.routes.v5.api.main.eval.update import update_eval
 
     return ComposedDocsResponse(
@@ -248,10 +247,6 @@ async def docs_eval_client(
             get_operation_info(
                 update_eval,
                 description="POST /update — Update an existing eval's resource links.",
-            ),
-            get_operation_info(
-                save_eval,
-                description="POST /save — Create or update an eval (unified save).",
             ),
             get_operation_info(
                 duplicate_eval,

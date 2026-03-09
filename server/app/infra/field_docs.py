@@ -169,8 +169,7 @@ async def docs_field_client(
     from app.routes.v5.api.main.field.duplicate import duplicate_field
     from app.routes.v5.api.main.field.export import export_fields
     from app.routes.v5.api.main.field.get import get_field
-    from app.routes.v5.api.main.field.save import save_field
-    from app.routes.v5.api.main.field.search import search_field
+from app.routes.v5.api.main.field.search import search_field
     from app.routes.v5.api.main.field.update import update_field
 
     return ComposedDocsResponse(
@@ -234,10 +233,6 @@ async def docs_field_client(
             get_operation_info(
                 update_field,
                 description="POST /update — Update an existing field's resource links.",
-            ),
-            get_operation_info(
-                save_field,
-                description="POST /save — Create or update a field (unified save).",
             ),
             get_operation_info(
                 duplicate_field,

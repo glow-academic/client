@@ -167,8 +167,7 @@ async def docs_tool_client(
     from app.routes.v5.api.main.tool.duplicate import duplicate_tool
     from app.routes.v5.api.main.tool.export import export_tools
     from app.routes.v5.api.main.tool.get import get_tool
-    from app.routes.v5.api.main.tool.save import save_tool
-    from app.routes.v5.api.main.tool.search import search_tool
+from app.routes.v5.api.main.tool.search import search_tool
     from app.routes.v5.api.main.tool.update import update_tool
 
     return ComposedDocsResponse(
@@ -231,10 +230,6 @@ async def docs_tool_client(
             get_operation_info(
                 update_tool,
                 description="POST /update — Update an existing tool's resource links.",
-            ),
-            get_operation_info(
-                save_tool,
-                description="POST /save — Create or update a tool (unified save).",
             ),
             get_operation_info(
                 duplicate_tool,

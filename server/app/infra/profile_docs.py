@@ -169,8 +169,7 @@ async def docs_profile_client(
     from app.routes.v5.api.main.profile.duplicate import duplicate_profile
     from app.routes.v5.api.main.profile.export import export_profiles
     from app.routes.v5.api.main.profile.get import get_profile
-    from app.routes.v5.api.main.profile.save import save_profile
-    from app.routes.v5.api.main.profile.search import search_profile
+from app.routes.v5.api.main.profile.search import search_profile
     from app.routes.v5.api.main.profile.update import update_profile
 
     return ComposedDocsResponse(
@@ -233,10 +232,6 @@ async def docs_profile_client(
             get_operation_info(
                 update_profile,
                 description="POST /update — Update an existing profile's resource links.",
-            ),
-            get_operation_info(
-                save_profile,
-                description="POST /save — Create or update a profile (unified save).",
             ),
             get_operation_info(
                 duplicate_profile,

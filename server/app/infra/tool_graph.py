@@ -74,25 +74,19 @@ class ArtifactToolScores:
 
 
 async def resolve_tool_graph(
-    conn_or_pool: asyncpg.Connection | asyncpg.Pool,
+    pool: asyncpg.Pool,
     settings_id: UUID,
     redis: Redis,
     bypass_cache: bool = False,
 ) -> SettingsToolGraph:
     """Walk settings → systems → agents → tools and return the flat graph.
 
-    Accepts either a Connection (legacy) or Pool (preferred).
-    Each step depends on the previous, so the chain is sequential.
-    When given a Pool, acquires a single connection for the entire chain.
+    Acquires a single connection for the entire sequential chain.
     """
-    if isinstance(conn_or_pool, asyncpg.Pool):
-        async with conn_or_pool.acquire() as conn:
-            return await _resolve_tool_graph_impl(
-                conn, settings_id, redis, bypass_cache
-            )
-    return await _resolve_tool_graph_impl(
-        conn_or_pool, settings_id, redis, bypass_cache
-    )
+    async with pool.acquire() as conn:
+        return await _resolve_tool_graph_impl(
+            conn, settings_id, redis, bypass_cache
+        )
 
 
 async def _resolve_tool_graph_impl(

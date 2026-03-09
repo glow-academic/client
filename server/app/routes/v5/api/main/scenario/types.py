@@ -466,6 +466,7 @@ class ListScenarioApiResponse(BaseModel):
     persona_filter: "ListFilterSection | None" = None
     simulation_filter: "ListFilterSection | None" = None
     department_filter: "ListFilterSection | None" = None
+    flag_filter: "ListFilterSection | None" = None
     total_count: int | None = None
     import_fields: list[ImportField] | None = None
 

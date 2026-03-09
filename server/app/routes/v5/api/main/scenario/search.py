@@ -30,6 +30,7 @@ class SearchScenarioApiRequest(BaseModel):
     persona_search: str | None = None
     simulation_search: str | None = None
     department_search: str | None = None
+    flag_search: str | None = None
     # Pagination
     page_size: int | None = 10
     page_offset: int | None = 0
@@ -65,6 +66,7 @@ async def search_scenario(
             persona_search=request.persona_search,
             simulation_search=request.simulation_search,
             department_search=request.department_search,
+            flag_search=request.flag_search,
             page_size=request.page_size or 10,
             page_offset=request.page_offset or 0,
         )

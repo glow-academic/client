@@ -175,8 +175,7 @@ async def docs_auth_client(
     from app.routes.v5.api.main.auth.duplicate import duplicate_auth
     from app.routes.v5.api.main.auth.export import export_auths
     from app.routes.v5.api.main.auth.get import get_auth
-    from app.routes.v5.api.main.auth.save import save_auth
-    from app.routes.v5.api.main.auth.search import search_auth
+from app.routes.v5.api.main.auth.search import search_auth
     from app.routes.v5.api.main.auth.update import update_auth
 
     return ComposedDocsResponse(
@@ -240,10 +239,6 @@ async def docs_auth_client(
             get_operation_info(
                 update_auth,
                 description="POST /update — Update an existing auth's resource links.",
-            ),
-            get_operation_info(
-                save_auth,
-                description="POST /save — Create or update an auth (unified save).",
             ),
             get_operation_info(
                 duplicate_auth,

@@ -9,6 +9,7 @@ Data sources:
   - attempt_chat_mv: grades/stats (profile-scoped)
 """
 
+import asyncio
 from collections import defaultdict
 from typing import Any
 from uuid import UUID
@@ -16,6 +17,12 @@ from uuid import UUID
 import asyncpg
 from fastapi import APIRouter, HTTPException, Request, Response
 
+from app.infra.analytics_facets import (
+    HIDDEN,
+    VISIBLE,
+    AnalyticsFacetsConfig,
+    resolve_analytics_facets,
+)
 from app.infra.chat_permissions import (
     compute_completion_pct,
     compute_pass_pct,
@@ -26,6 +33,7 @@ from app.infra.chat_permissions import (
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_pool, get_redis_client
 from app.infra.practice_context import resolve_practice_context
+from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.api.main.chat.types import (
     ChatSimulationOperational,
     RubricMapping,
@@ -43,6 +51,21 @@ from app.utils.cache.set_cached import set_cached
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
+
+# ---------------------------------------------------------------------------
+# Practice analytics facets config
+# ---------------------------------------------------------------------------
+
+PRACTICE_FACETS_CONFIG = AnalyticsFacetsConfig(
+    fields=AnalyticsFilterFields(
+        date_range=VISIBLE,
+        departments=VISIBLE,
+        cohorts=VISIBLE,
+        roles=HIDDEN,
+        attempts=HIDDEN,
+    ),
+    mv_source="profile_facts",
+)
 
 # =============================================================================
 # Helpers
@@ -166,12 +189,21 @@ async def get_practice_internal(
     user_role = profile.role
     is_instructional = user_role in ("instructional", "admin", "superadmin")
 
-    # --- Phase 1: Resolve practice context ---
-    ctx = await resolve_practice_context(
-        pool,
-        redis,
-        profiles_resource_id=profiles_resource_id,
-        bypass_cache=bypass_cache,
+    # --- Phase 1: Resolve practice context + analytics facets in parallel ---
+    ctx, analytics_facets = await asyncio.gather(
+        resolve_practice_context(
+            pool,
+            redis,
+            profiles_resource_id=profiles_resource_id,
+            bypass_cache=bypass_cache,
+        ),
+        resolve_analytics_facets(
+            pool,
+            redis,
+            config=PRACTICE_FACETS_CONFIG,
+            profile=profile,
+            bypass_cache=bypass_cache,
+        ),
     )
 
     # --- Phase 2: Extract data from ArtifactContext ---
@@ -418,6 +450,7 @@ async def get_practice_internal(
         rubrics=rubrics,
         standard_groups=standard_groups,
         standards=standards,
+        analytics=analytics_facets,
     )
 
 

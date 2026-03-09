@@ -196,8 +196,7 @@ async def docs_setting_client(
     from app.routes.v5.api.main.setting.duplicate import duplicate_setting
     from app.routes.v5.api.main.setting.export import export_settings
     from app.routes.v5.api.main.setting.get import get_setting
-    from app.routes.v5.api.main.setting.save import save_setting
-    from app.routes.v5.api.main.setting.search import search_setting
+from app.routes.v5.api.main.setting.search import search_setting
     from app.routes.v5.api.main.setting.update import update_setting
 
     return ComposedDocsResponse(
@@ -261,10 +260,6 @@ async def docs_setting_client(
             get_operation_info(
                 update_setting,
                 description="POST /update — Update an existing setting's resource links.",
-            ),
-            get_operation_info(
-                save_setting,
-                description="POST /save — Create or update a setting (unified save).",
             ),
             get_operation_info(
                 duplicate_setting,

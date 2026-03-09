@@ -157,8 +157,7 @@ async def docs_department_client(
     from app.routes.v5.api.main.department.duplicate import duplicate_department
     from app.routes.v5.api.main.department.export import export_departments
     from app.routes.v5.api.main.department.get import get_department
-    from app.routes.v5.api.main.department.save import save_department
-    from app.routes.v5.api.main.department.search import search_department
+from app.routes.v5.api.main.department.search import search_department
     from app.routes.v5.api.main.department.update import update_department
 
     return ComposedDocsResponse(
@@ -219,10 +218,6 @@ async def docs_department_client(
             get_operation_info(
                 update_department,
                 description="POST /update — Update an existing department's resource links.",
-            ),
-            get_operation_info(
-                save_department,
-                description="POST /save — Create or update a department (unified save).",
             ),
             get_operation_info(
                 duplicate_department,

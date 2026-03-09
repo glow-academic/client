@@ -216,8 +216,7 @@ async def docs_persona_client(
     from app.routes.v5.api.main.persona.duplicate import duplicate_persona
     from app.routes.v5.api.main.persona.export import export_personas
     from app.routes.v5.api.main.persona.get import get_persona
-    from app.routes.v5.api.main.persona.save import save_persona
-    from app.routes.v5.api.main.persona.search import search_persona
+from app.routes.v5.api.main.persona.search import search_persona
     from app.routes.v5.api.main.persona.update import update_persona
 
     return ComposedDocsResponse(
@@ -287,10 +286,6 @@ async def docs_persona_client(
             get_operation_info(
                 update_persona,
                 description="POST /update — Update an existing persona's resource links.",
-            ),
-            get_operation_info(
-                save_persona,
-                description="POST /save — Create or update a persona (unified save).",
             ),
             get_operation_info(
                 duplicate_persona,

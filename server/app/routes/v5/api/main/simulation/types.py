@@ -496,6 +496,7 @@ class ListSimulationApiResponse(BaseModel):
     scenario_filter: "ListFilterSection | None" = None
     cohort_filter: "ListFilterSection | None" = None
     department_filter: "ListFilterSection | None" = None
+    flag_filter: "ListFilterSection | None" = None
     total_count: int | None = None
     import_fields: list[Any] | None = None
 

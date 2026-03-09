@@ -19,11 +19,6 @@ type DeleteProfileIn = InputOf<"/api/v5/artifacts/profiles/delete", "post">;
 type DeleteProfileOut = OutputOf<"/api/v5/artifacts/profiles/delete", "post">;
 type BulkDeleteProfileIn = InputOf<"/api/v5/artifacts/profiles/bulk/delete", "post">;
 type BulkDeleteProfileOut = OutputOf<"/api/v5/artifacts/profiles/bulk/delete", "post">;
-// profile/update doesn't exist - use profiles/save instead
-// type UpdateStaffIn = InputOf<"/api/v5/profile/update", "post">;
-// type UpdateStaffOut = OutputOf<"/api/v5/profile/update", "post">;
-type BulkUpdateProfileIn = InputOf<"/api/v5/artifacts/profiles/bulk/save", "post">;
-type BulkUpdateProfileOut = OutputOf<"/api/v5/artifacts/profiles/bulk/save", "post">;
 type SearchProfileIn = InputOf<"/api/v5/artifacts/profiles/bulk/search", "post">;
 type SearchProfileOut = OutputOf<"/api/v5/artifacts/profiles/bulk/search", "post">;
 // Use profiles/get with null target_profile_id to get create profile data
@@ -31,8 +26,6 @@ type GetProfileIn = InputOf<"/api/v5/artifacts/profiles/get", "post">;
 type GetProfileOut = OutputOf<"/api/v5/artifacts/profiles/get", "post">;
 type ProcessCSVIn = InputOf<"/api/v5/artifacts/profiles/bulk/process", "post">;
 type ProcessCSVOut = OutputOf<"/api/v5/artifacts/profiles/bulk/process", "post">;
-type BulkCreateOrUpdateProfileIn = InputOf<"/api/v5/artifacts/profiles/bulk/save", "post">;
-type BulkCreateOrUpdateProfileOut = OutputOf<"/api/v5/artifacts/profiles/bulk/save", "post">;
 /** ---- Derived types from server responses ---- */
 type ProfileListItem = NonNullable<ProfilesListOut["profiles"]>[number];
 type SearchProfileItem = NonNullable<SearchProfileOut["profiles"]>[number];
@@ -89,14 +82,6 @@ async function processCSV(input: ProcessCSVIn): Promise<ProcessCSVOut> {
   return api.post("/artifacts/profiles/bulk/process", input);
 }
 
-async function bulkCreateOrUpdateProfile(
-  input: BulkCreateOrUpdateProfileIn
-): Promise<BulkCreateOrUpdateProfileOut> {
-  "use server";
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/profiles/bulk/save", input);
-}
-
 /** ---- Docs types for page metadata ---- */
 type DocsIn = InputOf<"/api/v5/artifacts/profiles/docs", "post">;
 type DocsOut = OutputOf<"/api/v5/artifacts/profiles/docs", "post">;
@@ -136,7 +121,6 @@ export default async function ProfilesPage() {
           deleteProfileAction={deleteProfile}
           bulkDeleteProfileAction={bulkDeleteProfile}
           processCSVAction={processCSV}
-          bulkCreateOrUpdateProfileAction={bulkCreateOrUpdateProfile}
         />
       </div>
     </>
@@ -145,12 +129,8 @@ export default async function ProfilesPage() {
 
 /** ---- Export types for client component (type-only imports) ---- */
 export type {
-  BulkCreateOrUpdateProfileIn,
-  BulkCreateOrUpdateProfileOut,
   BulkDeleteProfileIn,
   BulkDeleteProfileOut,
-  BulkUpdateProfileIn,
-  BulkUpdateProfileOut,
   CSVColumnMapping,
   DeleteProfileIn,
   DeleteProfileOut,

@@ -245,22 +245,6 @@ class ListDocumentApiResponse(BaseModel):
 # ========== Resource Action Types (for tool call tracking) ==========
 
 
-class DocumentResourceAction(BaseModel):
-    """Single-select resource action with tool call tracking."""
-
-    resource_id: UUID | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
-class DocumentMultiResourceAction(BaseModel):
-    """Multi-select resource action with tool call tracking."""
-
-    resource_ids: list[UUID] | None = None
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
-
-
 # ========== Shared Create/Update Types ==========
 
 
@@ -337,134 +321,11 @@ class UpdateDocumentApiResponse(BaseModel):
     results: list[DocumentResultItem]
 
 
-# ========== Legacy Save Types (backwards compat) ==========
-
-
 class SaveDocumentFieldError(BaseModel):
     """Per-field error from value resolution."""
 
     field: str
     message: str
-
-
-class SaveDocumentItem(BaseModel):
-    """Single document item for save — provide ID or value per field (not both).
-
-    For required fields (name), exactly one of the *_id or value field
-    must be provided.
-    """
-
-    input_document_id: UUID | None = None
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    # Flag — provide ID or boolean
-    flag_id: UUID | None = None
-    is_inactive: bool | None = None
-    # Multi-select — provide IDs or names
-    department_ids: list[UUID] | None = None
-    departments: list[str] | None = None
-    # Multi-select — IDs only
-    field_ids: list[UUID] | None = None
-    upload_ids: list[UUID] | None = None
-    image_ids: list[UUID] | None = None
-    text_ids: list[UUID] | None = None
-
-
-class SaveDocumentApiRequest(BaseModel):
-    """Request model for bulk save document endpoint."""
-
-    documents: list[SaveDocumentItem]
-    group_id: UUID | None = None
-
-
-class SaveDocumentResult(BaseModel):
-    """Per-item result within a bulk save response."""
-
-    success: bool
-    document_id: UUID | None = None
-    message: str
-    errors: list[SaveDocumentFieldError] | None = None
-
-
-class SaveDocumentApiResponse(BaseModel):
-    """Response model for bulk save document endpoint."""
-
-    results: list[SaveDocumentResult]
-
-
-class SaveDocumentSqlParams(BaseModel):
-    """SQL parameters for save document."""
-
-    profile_id: UUID
-    input_document_id: UUID | None = None
-    group_id: UUID
-    names: DocumentResourceAction
-    descriptions: DocumentResourceAction
-    flags: DocumentResourceAction
-    departments: DocumentMultiResourceAction
-    fields: DocumentMultiResourceAction
-    uploads: DocumentMultiResourceAction
-    images: DocumentMultiResourceAction
-    texts: DocumentMultiResourceAction
-
-    @classmethod
-    def from_request(
-        cls,
-        request: SaveDocumentApiRequest,
-        profile_id: UUID,
-        group_id: UUID | None,
-    ) -> SaveDocumentSqlParams:
-        return cls(
-            profile_id=profile_id,
-            input_document_id=request.input_document_id,
-            group_id=group_id,
-            names=DocumentResourceAction(resource_id=request.name_id),
-            descriptions=DocumentResourceAction(resource_id=request.description_id),
-            flags=DocumentResourceAction(resource_id=request.flag_id),
-            departments=DocumentMultiResourceAction(
-                resource_ids=request.department_ids
-            ),
-            fields=DocumentMultiResourceAction(resource_ids=request.field_ids),
-            uploads=DocumentMultiResourceAction(resource_ids=request.upload_ids),
-            images=DocumentMultiResourceAction(resource_ids=request.image_ids),
-            texts=DocumentMultiResourceAction(resource_ids=request.text_ids),
-        )
-
-    def to_tuple(self) -> tuple[Any, ...]:
-        def single(
-            a: DocumentResourceAction,
-        ) -> tuple[UUID | None, UUID | None, UUID | None]:
-            return (a.resource_id, a.create_tool_id, a.link_tool_id)
-
-        def multi(
-            a: DocumentMultiResourceAction,
-        ) -> tuple[list[UUID] | None, UUID | None, UUID | None]:
-            return (a.resource_ids, a.create_tool_id, a.link_tool_id)
-
-        return (
-            self.profile_id,
-            self.input_document_id,
-            self.group_id,
-            single(self.names),
-            single(self.descriptions),
-            single(self.flags),
-            multi(self.departments),
-            multi(self.fields),
-            multi(self.uploads),
-            multi(self.images),
-            multi(self.texts),
-        )
-
-
-class SaveDocumentSqlRow(BaseModel):
-    """SQL row for save document."""
-
-    document_id: UUID | None = None
-    actor_name: str | None = None
 
 
 # ========== Delete Endpoint Types ==========

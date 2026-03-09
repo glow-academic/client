@@ -437,14 +437,16 @@ async def search_persona_client(
 
     color_filter = ListFilterSection(
         options=[
-            ListFilterOption(id=str(c.id), name=c.name, count=0) for c in color_facet
+            ListFilterOption(id=str(c.id), name=c.name, hex_code=c.hex_code, count=0)
+            for c in color_facet
         ],
         search=color_search,
     )
 
     icon_filter = ListFilterSection(
         options=[
-            ListFilterOption(id=str(i.id), name=i.name, count=0) for i in icon_facet
+            ListFilterOption(id=str(i.id), name=i.name, value=i.value, count=0)
+            for i in icon_facet
         ],
         search=icon_search,
     )

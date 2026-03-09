@@ -34,7 +34,7 @@ class CommonContext:
 
 
 async def resolve_common_context(
-    conn_or_pool: asyncpg.Connection | asyncpg.Pool,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -44,8 +44,7 @@ async def resolve_common_context(
 ) -> CommonContext | None:
     """Resolve common context for any artifact GET.
 
-    Accepts either a Connection (legacy) or Pool (preferred).
-    When given a Pool, each parallel branch acquires its own connection.
+    Each parallel branch acquires its own connection from the pool.
 
     Steps:
       1. resolve_profile_identity_context — sequential (need settings_id for step 2)
@@ -59,17 +58,17 @@ async def resolve_common_context(
     # Step 1: profile (skip if pre-resolved)
     if profile is None:
         profile = await resolve_profile_identity_context(
-            conn_or_pool, profile_id, redis, bypass_cache
+            pool, profile_id, redis, bypass_cache
         )
     if profile is None:
         return None
 
     # Step 2: tool graph + runs in parallel
     tool_graph, runs = await asyncio.gather(
-        resolve_tool_graph(conn_or_pool, profile.settings_id, redis, bypass_cache)
+        resolve_tool_graph(pool, profile.settings_id, redis, bypass_cache)
         if profile.settings_id
         else _empty_tool_graph(),
-        resolve_runs_context(conn_or_pool, profile_id=profile_id, group_id=group_id),
+        resolve_runs_context(pool, profile_id=profile_id, group_id=group_id),
     )
 
     return CommonContext(

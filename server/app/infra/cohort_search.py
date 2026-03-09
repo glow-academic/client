@@ -111,6 +111,7 @@ async def search_cohort_client(
     profile_search: str | None = None,
     simulation_search: str | None = None,
     department_search: str | None = None,
+    flag_search: str | None = None,
     # Pagination
     page_size: int = 10,
     page_offset: int = 0,
@@ -223,6 +224,12 @@ async def search_cohort_client(
                 conn, redis, search=department_search, cohort=True, limit_count=100
             )
 
+    async def _fetch_flag_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn, redis, search=flag_search, cohort=True, limit_count=100
+            )
+
     (
         names_data,
         profiles_data,
@@ -231,6 +238,7 @@ async def search_cohort_client(
         profile_facet,
         simulation_facet,
         department_facet,
+        flag_facet,
     ) = await asyncio.gather(
         _fetch_names(),
         _fetch_profiles(),
@@ -239,6 +247,7 @@ async def search_cohort_client(
         _fetch_profile_facet(),
         _fetch_simulation_facet(),
         _fetch_department_facet(),
+        _fetch_flag_facet(),
     )
 
     # Build lookup maps
@@ -354,6 +363,16 @@ async def search_cohort_client(
         search=department_search,
     )
 
+    flag_filter = ListFilterSection(
+        options=[
+            ListFilterOption(
+                id=str(f.id), name=f.name, type=f.type, count=0
+            )
+            for f in flag_facet
+        ],
+        search=flag_search,
+    )
+
     return ListCohortApiResponse(
         actor_name=actor_name,
         user_role=user_role,
@@ -364,6 +383,7 @@ async def search_cohort_client(
         simulation_filter=simulation_filter,
         profile_filter=profile_filter,
         department_filter=department_filter,
+        flag_filter=flag_filter,
         total_count=total_count,
         import_fields=COHORT_IMPORT_FIELDS,
     )

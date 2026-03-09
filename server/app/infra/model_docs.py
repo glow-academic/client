@@ -213,8 +213,7 @@ async def docs_model_client(
     from app.routes.v5.api.main.model.duplicate import duplicate_model
     from app.routes.v5.api.main.model.export import export_models
     from app.routes.v5.api.main.model.get import get_model
-    from app.routes.v5.api.main.model.save import save_model
-    from app.routes.v5.api.main.model.search import search_model
+from app.routes.v5.api.main.model.search import search_model
     from app.routes.v5.api.main.model.update import update_model
 
     return ComposedDocsResponse(
@@ -285,10 +284,6 @@ async def docs_model_client(
             get_operation_info(
                 update_model,
                 description="POST /update — Update an existing model's resource links.",
-            ),
-            get_operation_info(
-                save_model,
-                description="POST /save — Create or update a model (unified save).",
             ),
             get_operation_info(
                 duplicate_model,

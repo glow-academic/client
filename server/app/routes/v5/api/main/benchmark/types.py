@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.routes.auth.types import AnalyticsFacets
 from app.routes.v5.api.main.types import FilterOption
 
 
@@ -105,6 +106,7 @@ class BenchmarkResponse(BaseModel):
     date_range_earliest: str | None = None
     date_range_latest: str | None = None
     history: BenchmarkHistoryResponse | None = None
+    analytics: AnalyticsFacets | None = None
 
 
 # =============================================================================

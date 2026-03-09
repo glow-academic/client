@@ -32,6 +32,9 @@ class ListFilterOption(BaseModel):
     id: str | None = None
     name: str | None = None
     count: int | None = None
+    hex_code: str | None = None
+    value: str | None = None
+    type: str | None = None
 
 
 class ListFilterSection(BaseModel):

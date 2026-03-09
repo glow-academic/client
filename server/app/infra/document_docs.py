@@ -199,8 +199,7 @@ async def docs_document_client(
     from app.routes.v5.api.main.document.duplicate import duplicate_document
     from app.routes.v5.api.main.document.export import export_documents
     from app.routes.v5.api.main.document.get import get_document
-    from app.routes.v5.api.main.document.save import save_document
-    from app.routes.v5.api.main.document.search import search_document
+from app.routes.v5.api.main.document.search import search_document
     from app.routes.v5.api.main.document.update import update_document
 
     return ComposedDocsResponse(
@@ -268,10 +267,6 @@ async def docs_document_client(
             get_operation_info(
                 update_document,
                 description="POST /update — Update an existing document's resource links.",
-            ),
-            get_operation_info(
-                save_document,
-                description="POST /save — Create or update a document (unified save).",
             ),
             get_operation_info(
                 duplicate_document,

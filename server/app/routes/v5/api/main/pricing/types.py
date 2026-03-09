@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
+from app.routes.auth.types import AnalyticsFacets
 from app.routes.v5.api.main.types import FilterOption
 
 
@@ -78,6 +79,7 @@ class PricingResponse(BaseModel):
 
     model_options: list[FilterOption] = Field(default_factory=list)
     agent_options: list[FilterOption] = Field(default_factory=list)
+    analytics: AnalyticsFacets | None = None
 
 
 class PricingGroupItem(BaseModel):

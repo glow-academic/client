@@ -38,6 +38,7 @@ from app.routes.v5.tools.resources.cohorts.search import (
     search_cohorts as search_cohorts_resource,
 )
 from app.routes.v5.tools.resources.departments.search import search_departments
+from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.personas.get import (
     get_personas as get_personas_resource,
@@ -108,6 +109,7 @@ async def search_simulation_client(
     scenario_search: str | None = None,
     cohort_search: str | None = None,
     department_search: str | None = None,
+    flag_search: str | None = None,
     # Pagination
     page_size: int = 10,
     page_offset: int = 0,
@@ -207,18 +209,26 @@ async def search_simulation_client(
                 conn, redis, search=department_search, simulation=True, limit_count=100
             )
 
+    async def _fetch_flag_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn, redis, search=flag_search, simulation=True, limit_count=100
+            )
+
     (
         names_data,
         scenarios_data,
         scenario_facet,
         cohort_facet,
         department_facet,
+        flag_facet,
     ) = await asyncio.gather(
         _fetch_names(),
         _fetch_scenarios(),
         _fetch_scenario_facet(),
         _fetch_cohort_facet(),
         _fetch_department_facet(),
+        _fetch_flag_facet(),
     )
 
     # Build lookup maps
@@ -352,6 +362,16 @@ async def search_simulation_client(
         search=department_search,
     )
 
+    flag_filter = ListFilterSection(
+        options=[
+            ListFilterOption(
+                id=str(f.id), name=f.name, type=f.type, count=0
+            )
+            for f in flag_facet
+        ],
+        search=flag_search,
+    )
+
     return ListSimulationApiResponse(
         actor_name=actor_name,
         simulations=api_simulations,
@@ -359,6 +379,7 @@ async def search_simulation_client(
         scenario_filter=scenario_filter,
         cohort_filter=cohort_filter,
         department_filter=department_filter,
+        flag_filter=flag_filter,
         total_count=total_count,
         import_fields=SIMULATION_IMPORT_FIELDS,
     )

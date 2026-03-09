@@ -133,56 +133,11 @@ class UpdateDepartmentApiResponse(BaseModel):
     results: list[DepartmentResultItem]
 
 
-# ========== Legacy Save Types (backwards compat) ==========
-
-
 class SaveDepartmentFieldError(BaseModel):
     """Per-field error from value resolution."""
 
     field: str
     message: str
-
-
-class SaveDepartmentItem(BaseModel):
-    """Single department item for save — provide ID or value per field (not both).
-
-    For required fields (name), exactly one of the *_id or value field must be provided.
-    """
-
-    input_department_id: UUID | None = None
-    # Required single-select — provide ID or value
-    name_id: UUID | None = None
-    name: str | None = None
-    # Optional single-select — provide ID or value
-    description_id: UUID | None = None
-    description: str | None = None
-    active_flag_id: UUID | None = None
-    active_flag: bool | None = None
-    # ID-only fields
-    settings_ids: list[UUID] | None = None
-    department_ids: list[UUID] | None = None
-
-
-class SaveDepartmentApiRequest(BaseModel):
-    """Request model for bulk save department endpoint."""
-
-    departments: list[SaveDepartmentItem]
-    group_id: UUID | None = None
-
-
-class SaveDepartmentResult(BaseModel):
-    """Per-item result within a bulk save response."""
-
-    success: bool
-    department_id: UUID | None = None
-    message: str
-    errors: list[SaveDepartmentFieldError] | None = None
-
-
-class SaveDepartmentApiResponse(BaseModel):
-    """Response model for bulk save department endpoint."""
-
-    results: list[SaveDepartmentResult]
 
 
 class DeleteDepartmentApiRequest(BaseModel):

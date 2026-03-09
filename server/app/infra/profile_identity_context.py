@@ -59,7 +59,7 @@ class ProfileIdentityContext:
 
 
 async def resolve_profile_identity_context(
-    conn_or_pool: asyncpg.Connection | asyncpg.Pool,
+    pool: asyncpg.Pool,
     profile_id: UUID,
     redis: Redis,
     bypass_cache: bool = False,
@@ -73,8 +73,7 @@ async def resolve_profile_identity_context(
 ) -> ProfileIdentityContext | None:
     """Resolve a profile artifact ID into a hydrated ProfileIdentityContext.
 
-    Accepts either a Connection (legacy) or Pool (preferred).
-    When given a Pool, each parallel branch acquires its own connection.
+    Each parallel branch acquires its own connection from the pool.
 
     Steps:
       1. get_profile_artifacts — fetches junction IDs
@@ -82,24 +81,10 @@ async def resolve_profile_identity_context(
       3. Pure Python assembly
       4. (Optional) resolve group_id from hints or create fresh group
     """
-    use_pool = isinstance(conn_or_pool, asyncpg.Pool)
-
     # Step 1: fetch profile artifact with all needed junctions
-    if use_pool:
-        async with conn_or_pool.acquire() as conn:
-            artifacts = await get_profile_artifacts(
-                conn,
-                [profile_id],
-                names=True,
-                roles=True,
-                departments=True,
-                emails=True,
-                profiles=True,
-                flags=True,
-            )
-    else:
+    async with pool.acquire() as conn:
         artifacts = await get_profile_artifacts(
-            conn_or_pool,
+            conn,
             [profile_id],
             names=True,
             roles=True,
@@ -127,67 +112,48 @@ async def resolve_profile_identity_context(
     profiles_id = profile_ids[0]
 
     # Step 2: hydrate all resources in parallel
-    if use_pool:
-        pool = conn_or_pool
 
-        async def _get_names() -> list:
-            if not name_ids:
-                return []
-            async with pool.acquire() as conn:
-                return await get_names(conn, name_ids, redis, bypass_cache)
+    async def _get_names() -> list:
+        if not name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, name_ids, redis, bypass_cache)
 
-        async def _get_roles() -> list:
-            if not role_ids:
-                return []
-            async with pool.acquire() as conn:
-                return await get_roles(conn, role_ids, redis, bypass_cache)
+    async def _get_roles() -> list:
+        if not role_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_roles(conn, role_ids, redis, bypass_cache)
 
-        async def _get_departments() -> list:
-            if not department_ids:
-                return []
-            async with pool.acquire() as conn:
-                return await get_departments(conn, department_ids, redis, bypass_cache)
+    async def _get_departments() -> list:
+        if not department_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_departments(conn, department_ids, redis, bypass_cache)
 
-        async def _get_emails() -> list:
-            if not email_ids:
-                return []
-            async with pool.acquire() as conn:
-                return await get_emails(conn, email_ids, redis, bypass_cache)
+    async def _get_emails() -> list:
+        if not email_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_emails(conn, email_ids, redis, bypass_cache)
 
-        async def _get_profiles() -> list:
-            async with pool.acquire() as conn:
-                return await get_profiles(conn, profile_ids, redis, bypass_cache)
+    async def _get_profiles() -> list:
+        async with pool.acquire() as conn:
+            return await get_profiles(conn, profile_ids, redis, bypass_cache)
 
-        (
-            names_res,
-            roles_res,
-            depts_res,
-            emails_res,
-            profiles_res,
-        ) = await asyncio.gather(
-            _get_names(),
-            _get_roles(),
-            _get_departments(),
-            _get_emails(),
-            _get_profiles(),
-        )
-    else:
-        conn = conn_or_pool
-        (
-            names_res,
-            roles_res,
-            depts_res,
-            emails_res,
-            profiles_res,
-        ) = await asyncio.gather(
-            get_names(conn, name_ids, redis, bypass_cache) if name_ids else _empty(),
-            get_roles(conn, role_ids, redis, bypass_cache) if role_ids else _empty(),
-            get_departments(conn, department_ids, redis, bypass_cache)
-            if department_ids
-            else _empty(),
-            get_emails(conn, email_ids, redis, bypass_cache) if email_ids else _empty(),
-            get_profiles(conn, profile_ids, redis, bypass_cache),
-        )
+    (
+        names_res,
+        roles_res,
+        depts_res,
+        emails_res,
+        profiles_res,
+    ) = await asyncio.gather(
+        _get_names(),
+        _get_roles(),
+        _get_departments(),
+        _get_emails(),
+        _get_profiles(),
+    )
 
     # Step 3: extract values
     name = names_res[0].name if names_res else ""
@@ -234,7 +200,7 @@ async def resolve_profile_identity_context(
     resolved_group_id: UUID | None = None
     if draft_id or attempt_id or test_id or session_id:
         resolved_group_id = await _resolve_group_id(
-            conn_or_pool,
+            pool,
             profiles_id=profile_id,
             session_id=session_id,
             draft_id=draft_id,
@@ -268,7 +234,7 @@ async def resolve_profile_identity_context(
 
 
 async def _resolve_group_id(
-    conn_or_pool: asyncpg.Connection | asyncpg.Pool,
+    pool: asyncpg.Pool,
     *,
     profiles_id: UUID,
     session_id: UUID | None = None,
@@ -287,21 +253,9 @@ async def _resolve_group_id(
     """
     from app.infra.auth.group import resolve_group
 
-    use_pool = isinstance(conn_or_pool, asyncpg.Pool)
-
-    if use_pool:
-        async with conn_or_pool.acquire() as conn:
-            result = await resolve_group(
-                conn,
-                profiles_id=profiles_id,
-                attempt_id=attempt_id,
-                test_id=test_id,
-                draft_id=draft_id,
-                artifact_type=artifact_type,
-            )
-    else:
+    async with pool.acquire() as conn:
         result = await resolve_group(
-            conn_or_pool,
+            conn,
             profiles_id=profiles_id,
             attempt_id=attempt_id,
             test_id=test_id,
@@ -312,7 +266,3 @@ async def _resolve_group_id(
     if result and result.group_id:
         return UUID(result.group_id)
     return None
-
-
-async def _empty() -> list:
-    return []
