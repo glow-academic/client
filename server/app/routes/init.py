@@ -1,21 +1,9 @@
-"""System initialization endpoint — SQL compilation + Keycloak sync."""
+"""System initialization endpoint — Keycloak sync."""
 
 from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
-from app.infra.globals import expire_all_connections
-
 router = APIRouter()
-
-
-async def _compile_sql_types() -> tuple[bool, str]:
-    try:
-        from app.sql.compile_types import compile_sql_types
-
-        success, message = await compile_sql_types()
-        return success, message
-    except Exception as e:
-        return False, f"Error running SQL compilation: {str(e)}"
 
 
 @router.post("/init")
@@ -29,15 +17,6 @@ async def init_system() -> JSONResponse:
     init_errors: list[str] = []
 
     try:
-        sql_success, sql_message = await _compile_sql_types()
-        if sql_success:
-            init_messages.append(sql_message)
-            logger.info(f"SQL compilation: {sql_message}")
-            await expire_all_connections()
-        else:
-            init_errors.append(sql_message)
-            logger.warning(f"SQL compilation: {sql_message}")
-
         result = await perform_keycloak_sync(department_id=None)
 
         if result.success:

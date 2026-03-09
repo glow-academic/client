@@ -5,13 +5,14 @@ from typing import Annotated
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
 from app.routes.v5.api.main.test.types import ArchiveTestsRequest, ArchiveTestsResponse
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.runs.create import create_run
+from app.routes.v5.tools.entries.test_archive.create import create_test_archive
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
-
-SQL_PATH = "app/sql/queries/benchmark/archive_test.sql"
 
 router = APIRouter()
 
@@ -27,12 +28,21 @@ async def archive_test_artifacts(
     tags = ["benchmark", "test", "artifacts"]
 
     try:
-        sql = load_sql(SQL_PATH)
-        row = await conn.fetchrow(sql, request.test_ids, request.archived)
-        if row is None:
-            raise HTTPException(status_code=500, detail="Failed to archive tests")
+        # Create group → run → call chain, then archive each test
+        session_id = http_request.state.session_id
+        group_result = await create_group(conn, session_id=session_id)
+        run_result = await create_run(conn, group_id=group_result.id, session_id=session_id)
+        call_result = await create_call(conn, run_id=run_result.id, session_id=session_id)
 
-        updated_count = int(row["updated_count"] or 0)
+        updated_count = 0
+        for test_id in request.test_ids:
+            await create_test_archive(
+                conn,
+                test_id=test_id,
+                call_id=call_result.id,
+                archived=request.archived,
+            )
+            updated_count += 1
 
         await invalidate_tags(tags, redis=get_redis_client())
         response.headers["X-Invalidate-Tags"] = ",".join(tags)

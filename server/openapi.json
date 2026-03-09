@@ -52233,6 +52233,103 @@
         "type": "object",
         "title": "CohortDescriptionSection"
       },
+      "CohortDraftFormState": {
+        "properties": {
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids",
+            "default": []
+          },
+          "simulation_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Simulation Ids",
+            "default": []
+          },
+          "simulation_position_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Simulation Position Ids",
+            "default": []
+          },
+          "simulation_availability_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Simulation Availability Ids",
+            "default": []
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids",
+            "default": []
+          },
+          "profile_persona_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Persona Ids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "title": "CohortDraftFormState",
+        "description": "Full form state after draft patch \u2014 server is source of truth.\n\nClient replaces its local form state with this after every successful patch."
+      },
       "CohortFieldError": {
         "properties": {
           "field": {
@@ -63571,6 +63668,27 @@
         "title": "DraftOptionValue",
         "description": "Value for creating an option via the draft endpoint."
       },
+      "DraftProfilePersonaValue": {
+        "properties": {
+          "profile_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Profile Id"
+          },
+          "persona_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Persona Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "persona_id"
+        ],
+        "title": "DraftProfilePersonaValue",
+        "description": "Value for creating a profile_persona resource via draft."
+      },
       "DraftQuestionValue": {
         "properties": {
           "question_text": {
@@ -63681,6 +63799,52 @@
         ],
         "title": "DraftScenarioTimeLimitValue",
         "description": "Value for creating a scenario_time_limit resource via draft."
+      },
+      "DraftSimulationAvailabilityValue": {
+        "properties": {
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Time"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "time",
+          "type"
+        ],
+        "title": "DraftSimulationAvailabilityValue",
+        "description": "Value for creating a simulation_availability resource via draft."
+      },
+      "DraftSimulationPositionValue": {
+        "properties": {
+          "simulation_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Simulation Id"
+          },
+          "value": {
+            "type": "integer",
+            "title": "Value"
+          }
+        },
+        "type": "object",
+        "required": [
+          "simulation_id",
+          "value"
+        ],
+        "title": "DraftSimulationPositionValue",
+        "description": "Value for creating a simulation_position resource via draft."
       },
       "DraftVideoValue": {
         "properties": {
@@ -91540,7 +91704,7 @@
             ],
             "title": "Profile Ids"
           },
-          "profile_persona_ids": {
+          "simulation_position_ids": {
             "anyOf": [
               {
                 "items": {
@@ -91553,7 +91717,21 @@
                 "type": "null"
               }
             ],
-            "title": "Profile Persona Ids"
+            "title": "Simulation Position Ids"
+          },
+          "simulation_positions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DraftSimulationPositionValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Positions"
           },
           "simulation_availability_ids": {
             "anyOf": [
@@ -91570,7 +91748,21 @@
             ],
             "title": "Simulation Availability Ids"
           },
-          "simulation_position_ids": {
+          "simulation_availability": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DraftSimulationAvailabilityValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Simulation Availability"
+          },
+          "profile_persona_ids": {
             "anyOf": [
               {
                 "items": {
@@ -91583,7 +91775,21 @@
                 "type": "null"
               }
             ],
-            "title": "Simulation Position Ids"
+            "title": "Profile Persona Ids"
+          },
+          "profile_personas": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DraftProfilePersonaValue"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Personas"
           }
         },
         "type": "object",
@@ -91591,7 +91797,7 @@
           "group_id"
         ],
         "title": "PatchCohortDraftApiRequest",
-        "description": "Request model for new-style cohort draft endpoint.\n\nDual-mode for creatable resources only:\n  - name/name_id, description/description_id\nID-only for non-creatable resources:\n  - flag_id, department_ids, simulation_ids, profile_ids,\n    profile_persona_ids, simulation_availability_ids, simulation_position_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
+        "description": "Request model for new-style cohort draft endpoint.\n\nDual-mode for creatable resources:\n  - Single-select: name/name_id, description/description_id\n  - Multi-select compound: simulation_positions, simulation_availability,\n    profile_personas (values create resources, created IDs merged with existing IDs)\nID-only for non-creatable resources:\n  - flag_id, department_ids, simulation_ids, profile_ids\n\nClient always sends full state (append-only \u2014 each write is a new version snapshot)."
       },
       "PatchCohortDraftApiResponse": {
         "properties": {
@@ -91611,6 +91817,16 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "form_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CohortDraftFormState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",

@@ -1,4 +1,4 @@
-.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop stop-keycloak install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys build-test-seed typecheck-client build-client openapi-gen gen-client-types sql-compile sql-format watch-sql-types configure deploy deploy-clean
+.PHONY: help setup install clean format lint typecheck run test test-cov cleanup generate-tests stop stop-keycloak install-client restore-db migrate-db migrate-db-only migrate-db-all connect-db fresh-db bootstrap-keys build-test-seed typecheck-client build-client openapi-gen gen-client-typesconfigure deploy deploy-clean
 
 # Default Python interpreter
 PYTHON := python3.11
@@ -330,19 +330,6 @@ concat-schema:
 	@bash database/scripts/concat_schema.sh
 	@echo "✅ Schema concatenated"
 
-# Compile SQL files and generate types
-sql-compile: check-venv
-	@echo "Compiling SQL files and generating types..."
-	@if [ -z "$$DB_USER" ] || [ -z "$$DB_PASSWORD" ] || [ -z "$$DB_NAME" ]; then \
-		echo "⚠️  Warning: DB_USER, DB_PASSWORD, or DB_NAME not set. Using defaults."; \
-	fi
-	@PYTHONPATH=server DB_USER="$${DB_USER:-myuser}" \
-	 DB_PASSWORD="$${DB_PASSWORD:-mypassword}" \
-	 DB_NAME="$${DB_NAME:-mydb}" \
-	 DB_HOST="$${DB_HOST:-localhost}" \
-	 DB_PORT="$${DB_PORT:-5432}" \
-	 $(VENV_PYTHON) -c "import asyncio; from app.sql.compile_types import compile_sql_types; exit(0 if asyncio.run(compile_sql_types())[0] else 1)"
-	@echo "✅ SQL compilation complete"
 
 # Generate registry files from DB introspection + filesystem scanning
 registry: check-venv
@@ -366,39 +353,6 @@ registry-validate: check-venv
 	 $(VENV_PYTHON) server/scripts/generate_registry.py validate
 	@echo "✅ Registry validation complete"
 
-# Compile specific SQL files incrementally (for watch mode)
-sql-compile-incremental: check-venv
-	@if [ -z "$(FILE)" ]; then \
-		echo "❌ FILE variable required for incremental compilation"; \
-		echo "Usage: make sql-compile-incremental FILE=app/sql/queries/personas/patch_persona_draft_complete.sql"; \
-		exit 1; \
-	fi
-	@echo "Compiling SQL file incrementally: $(FILE)..."
-	@if [ -z "$$DB_USER" ] || [ -z "$$DB_PASSWORD" ] || [ -z "$$DB_NAME" ]; then \
-		echo "⚠️  Warning: DB_USER, DB_PASSWORD, or DB_NAME not set. Using defaults."; \
-	fi
-	@PYTHONPATH=server DB_USER="$${DB_USER:-myuser}" \
-	 DB_PASSWORD="$${DB_PASSWORD:-mypassword}" \
-	 DB_NAME="$${DB_NAME:-mydb}" \
-	 DB_HOST="$${DB_HOST:-localhost}" \
-	 DB_PORT="$${DB_PORT:-5432}" \
-	 $(VENV_PYTHON) -c "import asyncio, sys; from app.sql.compile_types import compile_sql_types; exit(0 if asyncio.run(compile_sql_types(sql_files=[sys.argv[1]]))[0] else 1)" "$(FILE)"
-	@curl -sfX POST http://localhost:$(SERVER_PORT)/schema-changed >/dev/null 2>&1 || true
-
-# Watch SQL files and regenerate types on change
-watch-sql-types:
-	@cd client && yarn watch:sql-types
-
-# Check for unused SQL files and inline SQL violations
-sql-format: check-venv
-	@echo "Checking for unused SQL files..."
-	@$(VENV_PYTHON) server/scripts/check_unused_sql.py
-	@echo ""
-	@echo "Checking for inline SQL violations..."
-	@$(VENV_PYTHON) server/scripts/check_inline_sql.py
-	@echo ""
-	@echo "Checking for weak enum comparisons..."
-	@$(VENV_PYTHON) server/scripts/check_enum_comparisons.py
 
 # Connect to database
 connect-db:
@@ -478,8 +432,6 @@ help:
 	@echo "  restore-db       - Restore database from latest backup"
 	@echo "  migrate-db       - Run most recent database migration"
 	@echo "  migrate-db-all   - Run all database migrations"
-	@echo "  sql-compile      - Compile SQL files and generate types (migration safety gate)"
-	@echo "  sql-format       - Check for unused SQL files"
 	@echo "  connect-db       - Connect to database"
 	@echo "  fresh-db         - Build fresh DB from schema + modules + keys"
 	@echo "  bootstrap-keys   - Encrypt and inject API keys from config.yaml"

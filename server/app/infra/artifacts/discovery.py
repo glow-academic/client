@@ -14,8 +14,6 @@ from typing import Any
 
 import asyncpg
 
-from app.utils.sql_helper import _detect_function_in_sql, load_sql
-
 
 async def get_resource_sql_function_name(
     conn: asyncpg.Connection, resource_type: str
@@ -26,8 +24,6 @@ async def get_resource_sql_function_name(
     - api_create_{resource_type}_v4
     - api_create_{resource_type}s_v4 (pluralized)
 
-    Also validates that the resource exists in resource_tools_relation table.
-
     Args:
         conn: Database connection
         resource_type: Resource type name (e.g., "personas", "names")
@@ -35,18 +31,44 @@ async def get_resource_sql_function_name(
     Returns:
         Function name if found, None otherwise
     """
-    sql_path = "app/sql/queries/infra/artifacts/discovery/get_resource_sql_function_name_complete.sql"
+    # Check resource exists in tool_resources_junction
+    exists = await conn.fetchval(
+        """
+        SELECT 1 FROM tool_resources_junction tdj
+        JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
+        WHERE dr.resource = $1::resource_type
+        LIMIT 1
+        """,
+        resource_type,
+    )
+    if not exists:
+        return None
 
-    # Load SQL and detect if it's a function
-    sql_text = load_sql(sql_path)
-    is_function, function_name, schema = _detect_function_in_sql(sql_text)
+    # Try singular form first
+    singular = f"api_create_{resource_type}_v4"
+    found = await conn.fetchval(
+        """
+        SELECT 1 FROM pg_proc p
+        JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'public' AND p.proname = $1
+        """,
+        singular,
+    )
+    if found:
+        return singular
 
-    if is_function and function_name:
-        # Call function and get first row (function returns single row or empty)
-        function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"($1::text)'
-        row = await conn.fetchrow(function_call_sql, resource_type)
-        if row and row.get("function_name"):
-            return str(row["function_name"])
+    # Try plural form
+    plural = f"api_create_{resource_type}s_v4"
+    found = await conn.fetchval(
+        """
+        SELECT 1 FROM pg_proc p
+        JOIN pg_namespace n ON n.oid = p.pronamespace
+        WHERE n.nspname = 'public' AND p.proname = $1
+        """,
+        plural,
+    )
+    if found:
+        return plural
 
     return None
 
@@ -57,7 +79,7 @@ async def get_resource_table_columns(
     """Discover table columns for a resource type.
 
     Queries information_schema.columns to get all columns for the resource table.
-    Filters out system columns (id, created_at, updated_at) as these are handled
+    Filters out system columns (id, created_at) as these are handled
     automatically by the database.
 
     Args:
@@ -65,25 +87,23 @@ async def get_resource_table_columns(
         resource_type: Resource type name (e.g., "personas", "names")
 
     Returns:
-        List of column metadata dictionaries with keys:
-        - name: Column name
-        - data_type: PostgreSQL data type
-        - is_nullable: Whether column allows NULL
-        - column_default: Default value if any
+        List of column metadata dictionaries
     """
-    sql_path = "app/sql/queries/infra/artifacts/discovery/get_resource_table_columns_complete.sql"
-
-    # Load SQL and detect if it's a function
-    sql_text = load_sql(sql_path)
-    is_function, function_name, schema = _detect_function_in_sql(sql_text)
-
-    if is_function and function_name:
-        # Call function and fetch all rows
-        function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"($1::text)'
-        rows = await conn.fetch(function_call_sql, resource_type)
-    else:
-        # Raw SQL - execute directly
-        rows = await conn.fetch(sql_text, resource_type)
+    rows = await conn.fetch(
+        """
+        SELECT
+            column_name::text as name,
+            data_type::text as data_type,
+            (is_nullable = 'YES') as is_nullable,
+            column_default::text as column_default
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name = $1 || '_resource'
+          AND column_name NOT IN ('id', 'created_at')
+        ORDER BY ordinal_position
+        """,
+        resource_type,
+    )
 
     return [
         {
@@ -104,23 +124,18 @@ async def get_entry_table_columns(
     """Discover table columns for an entry type.
 
     Queries information_schema.columns to get all columns for the entry table.
-    Filters out system columns (id, created_at, updated_at) as these are handled
-    automatically by the database.
+    Filters out system columns (id, created_at, updated_at).
 
     Args:
         conn: Database connection
         entry_type: Entry type name (e.g., "contents", "hints")
 
     Returns:
-        List of column metadata dictionaries with keys:
-        - name: Column name
-        - data_type: PostgreSQL data type
-        - is_nullable: Whether column allows NULL
-        - column_default: Default value if any
+        List of column metadata dictionaries
     """
-    # Query information_schema directly for entry tables
     table_name = f"{entry_type}_entry"
-    query = """
+    rows = await conn.fetch(
+        """
         SELECT
             column_name::text as name,
             data_type::text as data_type,
@@ -130,9 +145,10 @@ async def get_entry_table_columns(
         WHERE table_schema = 'public'
           AND table_name = $1
           AND column_name NOT IN ('id', 'created_at', 'updated_at')
-        ORDER BY ordinal_position;
-    """
-    rows = await conn.fetch(query, table_name)
+        ORDER BY ordinal_position
+        """,
+        table_name,
+    )
 
     return [
         {
@@ -148,22 +164,7 @@ async def get_entry_table_columns(
 
 
 def get_resource_schema_fields(resource_type: str) -> list[dict[str, Any]]:
-    """Get output schema fields for a resource type from the registry.
-
-    Returns simplified output field schemas (string/number/boolean) that define
-    the tool-facing output contract.
-
-    Args:
-        resource_type: Resource type name (e.g., "personas", "names")
-
-    Returns:
-        List of schema field metadata dictionaries with keys:
-        - name: Field name
-        - field_type: Field type (string, number, boolean)
-        - required: Always False (outputs don't have required field)
-        - position: Always 0 (outputs don't have position field)
-        - template: Always empty string (templates are handled by args_outputs)
-    """
+    """Get output schema fields for a resource type from the registry."""
     from app.registry.resource_output_schemas import RESOURCE_OUTPUT_SCHEMAS
 
     return [
@@ -181,35 +182,31 @@ def get_resource_schema_fields(resource_type: str) -> list[dict[str, Any]]:
 async def get_resource_output_schema_fields(
     conn: asyncpg.Connection, tool_id: str
 ) -> list[dict[str, Any]]:
-    """Get output schema fields for a tool via tool_templates → schema_templates.
+    """Get output schema fields for a tool via tools_resource → args_outputs_resource.
 
-    This is used to map template_values (which use output schema field names)
+    Used to map template_values (which use output schema field names)
     to table column names.
-
-    Args:
-        conn: Database connection
-        tool_id: Tool UUID as string
-
-    Returns:
-        List of schema field metadata dictionaries
     """
-    sql_path = "app/sql/queries/infra/artifacts/discovery/get_resource_output_schema_fields_complete.sql"
-
     import uuid
 
-    # Load SQL and detect if it's a function
-    sql_text = load_sql(sql_path)
-    is_function, function_name, schema = _detect_function_in_sql(sql_text)
-
     tool_uuid = uuid.UUID(tool_id)
-
-    if is_function and function_name:
-        # Call function and fetch all rows
-        function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"($1::uuid)'
-        rows = await conn.fetch(function_call_sql, tool_uuid)
-    else:
-        # Raw SQL - execute directly
-        rows = await conn.fetch(sql_text, tool_uuid)
+    rows = await conn.fetch(
+        """
+        SELECT
+            ao.name::text as name,
+            'string'::text as field_type,
+            false as required,
+            0 as position,
+            COALESCE(ao.template, '')::text as template
+        FROM tools_resource tr
+        JOIN LATERAL unnest(tr.args_output_ids) AS aoid(id) ON true
+        JOIN args_outputs_resource ao ON ao.id = aoid.id AND ao.active = true
+        WHERE tr.id = $1
+          AND tr.active = true
+        ORDER BY ao.created_at
+        """,
+        tool_uuid,
+    )
 
     return [
         {
@@ -230,17 +227,10 @@ def extract_template_variable_name(template: str) -> str | None:
     - {{ message }} -> "message"
     - {{ variable.property }} -> "variable"
     - {{ variable|filter }} -> "variable"
-
-    Args:
-        template: Jinja template string
-
-    Returns:
-        Variable name if found, None otherwise
     """
     if not template or not template.strip():
         return None
 
-    # Pattern to match {{ variable }} or {{ variable.property }} or {{ variable|filter }}
     match = re.search(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)", template)
     if match:
         return match.group(1)
@@ -255,24 +245,7 @@ async def map_template_values_to_table_columns(
     tool_id: str | None = None,
     is_entry: bool = False,
 ) -> dict[str, Any]:
-    """Map template values (using schema field names) to table column names.
-
-    Template values use output schema field names, but table columns may have
-    different names. This function maps them by:
-    1. Direct match: schema field name = table column name
-    2. Template extraction: Extract variable names from Jinja templates
-    3. Fallback: Use schema field name if no match found
-
-    Args:
-        conn: Database connection
-        resource_type: Resource type name (or entry_type if is_entry=True)
-        template_values: Dictionary of template values keyed by schema field name
-        tool_id: Optional tool ID to get output schema fields
-        is_entry: If True, look up {type}_entry table instead of {type}_resource
-
-    Returns:
-        Dictionary mapped to table column names ready for INSERT
-    """
+    """Map template values (using schema field names) to table column names."""
     # Get table columns (handle both resource and entry tables)
     if is_entry:
         table_columns = await get_entry_table_columns(conn, resource_type)
@@ -318,25 +291,20 @@ async def get_agent_end_event_name(conn: asyncpg.Connection, artifact_type: str)
 
     Checks if artifact_type is a valid value in the artifacts enum.
     If found, returns {artifact_type}_end. Otherwise returns "text_end" as default.
-
-    Args:
-        conn: Database connection
-        artifact_type: Artifact type name (from artifacts enum, e.g., "persona", "scenario", "rubric")
-
-    Returns:
-        Event name string (e.g., "persona_end", "scenario_end", "text_end")
     """
-    sql_path = "app/sql/queries/infra/artifacts/discovery/get_agent_end_event_name_complete.sql"
+    # Check if artifact_type is a valid enum value
+    found = await conn.fetchval(
+        """
+        SELECT 1 FROM unnest(enum_range(NULL::artifact_type)) AS e
+        WHERE e::text = $1
+        """,
+        artifact_type,
+    )
+    if found:
+        return f"{artifact_type}_end"
 
-    # Load SQL and detect if it's a function
-    sql_text = load_sql(sql_path)
-    is_function, function_name, schema = _detect_function_in_sql(sql_text)
-
-    if is_function and function_name:
-        # Call function and get first row (function returns single row)
-        function_call_sql = f'SELECT * FROM "{schema}"."{function_name}"($1::text)'
-        row = await conn.fetchrow(function_call_sql, artifact_type)
-        if row and row.get("event_name"):
-            return str(row["event_name"])
+    # Special case: audio maps to voice
+    if artifact_type == "audio":
+        return "voice_end"
 
     return "text_end"

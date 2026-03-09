@@ -15444,6 +15444,50 @@ export interface components {
             resources?: components["schemas"]["CohortDescriptionResource"][] | null;
         };
         /**
+         * CohortDraftFormState
+         * @description Full form state after draft patch — server is source of truth.
+         *
+         *     Client replaces its local form state with this after every successful patch.
+         */
+        CohortDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /**
+             * Department Ids
+             * @default []
+             */
+            department_ids: string[];
+            /**
+             * Simulation Ids
+             * @default []
+             */
+            simulation_ids: string[];
+            /**
+             * Simulation Position Ids
+             * @default []
+             */
+            simulation_position_ids: string[];
+            /**
+             * Simulation Availability Ids
+             * @default []
+             */
+            simulation_availability_ids: string[];
+            /**
+             * Profile Ids
+             * @default []
+             */
+            profile_ids: string[];
+            /**
+             * Profile Persona Ids
+             * @default []
+             */
+            profile_persona_ids: string[];
+        };
+        /**
          * CohortFieldError
          * @description Per-field error from value resolution.
          */
@@ -18646,6 +18690,22 @@ export interface components {
             question_id?: string | null;
         };
         /**
+         * DraftProfilePersonaValue
+         * @description Value for creating a profile_persona resource via draft.
+         */
+        DraftProfilePersonaValue: {
+            /**
+             * Profile Id
+             * Format: uuid
+             */
+            profile_id: string;
+            /**
+             * Persona Id
+             * Format: uuid
+             */
+            persona_id: string;
+        };
+        /**
          * DraftQuestionValue
          * @description Value for creating a question via the draft endpoint.
          */
@@ -18725,6 +18785,37 @@ export interface components {
              * @default false
              */
             negative: boolean;
+        };
+        /**
+         * DraftSimulationAvailabilityValue
+         * @description Value for creating a simulation_availability resource via draft.
+         */
+        DraftSimulationAvailabilityValue: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /**
+             * Time
+             * Format: date-time
+             */
+            time: string;
+            /** Type */
+            type: string;
+        };
+        /**
+         * DraftSimulationPositionValue
+         * @description Value for creating a simulation_position resource via draft.
+         */
+        DraftSimulationPositionValue: {
+            /**
+             * Simulation Id
+             * Format: uuid
+             */
+            simulation_id: string;
+            /** Value */
+            value: number;
         };
         /**
          * DraftVideoValue
@@ -26710,11 +26801,12 @@ export interface components {
          * PatchCohortDraftApiRequest
          * @description Request model for new-style cohort draft endpoint.
          *
-         *     Dual-mode for creatable resources only:
-         *       - name/name_id, description/description_id
+         *     Dual-mode for creatable resources:
+         *       - Single-select: name/name_id, description/description_id
+         *       - Multi-select compound: simulation_positions, simulation_availability,
+         *         profile_personas (values create resources, created IDs merged with existing IDs)
          *     ID-only for non-creatable resources:
-         *       - flag_id, department_ids, simulation_ids, profile_ids,
-         *         profile_persona_ids, simulation_availability_ids, simulation_position_ids
+         *       - flag_id, department_ids, simulation_ids, profile_ids
          *
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
@@ -26747,12 +26839,18 @@ export interface components {
             simulation_ids?: string[] | null;
             /** Profile Ids */
             profile_ids?: string[] | null;
-            /** Profile Persona Ids */
-            profile_persona_ids?: string[] | null;
-            /** Simulation Availability Ids */
-            simulation_availability_ids?: string[] | null;
             /** Simulation Position Ids */
             simulation_position_ids?: string[] | null;
+            /** Simulation Positions */
+            simulation_positions?: components["schemas"]["DraftSimulationPositionValue"][] | null;
+            /** Simulation Availability Ids */
+            simulation_availability_ids?: string[] | null;
+            /** Simulation Availability */
+            simulation_availability?: components["schemas"]["DraftSimulationAvailabilityValue"][] | null;
+            /** Profile Persona Ids */
+            profile_persona_ids?: string[] | null;
+            /** Profile Personas */
+            profile_personas?: components["schemas"]["DraftProfilePersonaValue"][] | null;
         };
         /**
          * PatchCohortDraftApiResponse
@@ -26770,6 +26868,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["CohortDraftFormState"] | null;
         };
         /**
          * PatchDepartmentDraftApiRequest
@@ -29418,31 +29517,31 @@ export interface components {
         /** QGetAgentsV4Item */
         QGetAgentsV4Item: {
             /** Id */
-            id: string | null;
+            id?: string | null;
             /** Name */
-            name: string | null;
+            name?: string | null;
             /** Description */
-            description: string | null;
+            description?: string | null;
             /** Model Id */
-            model_id: string | null;
+            model_id?: string | null;
             /** Temperature */
-            temperature: number | null;
+            temperature?: number | null;
             /** Reasoning */
-            reasoning: string | null;
+            reasoning?: string | null;
             /** Tool Ids */
-            tool_ids: string[] | null;
+            tool_ids?: string[] | null;
             /** Quality */
-            quality: string | null;
+            quality?: string | null;
             /** Voices */
-            voices: string[] | null;
+            voices?: string[] | null;
             /** Prompt Id */
-            prompt_id: string | null;
+            prompt_id?: string | null;
             /** Instruction Ids */
-            instruction_ids: string[] | null;
+            instruction_ids?: string[] | null;
             /** Active */
-            active: boolean | null;
+            active?: boolean | null;
             /** Generated */
-            generated: boolean | null;
+            generated?: boolean | null;
         };
         /**
          * QGetProfileContextV4Draft
@@ -29467,153 +29566,153 @@ export interface components {
         /** QGetProfileContextV4RoleResource */
         QGetProfileContextV4RoleResource: {
             /** Role */
-            role: string | null;
+            role?: string | null;
             /** Name */
-            name: string | null;
+            name?: string | null;
             /** Description */
-            description: string | null;
+            description?: string | null;
             /** Icon Value */
-            icon_value: string | null;
+            icon_value?: string | null;
             /** Color Hex */
-            color_hex: string | null;
+            color_hex?: string | null;
         };
         /** QGetProfileContextV4ThemeTokens */
         QGetProfileContextV4ThemeTokens: {
             /** Background */
-            background: string | null;
+            background?: string | null;
             /** Foreground */
-            foreground: string | null;
+            foreground?: string | null;
             /** Card */
-            card: string | null;
+            card?: string | null;
             /** Card Foreground */
-            card_foreground: string | null;
+            card_foreground?: string | null;
             /** Popover */
-            popover: string | null;
+            popover?: string | null;
             /** Popover Foreground */
-            popover_foreground: string | null;
+            popover_foreground?: string | null;
             /** Primary Color */
-            primary_color: string | null;
+            primary_color?: string | null;
             /** Primary Foreground */
-            primary_foreground: string | null;
+            primary_foreground?: string | null;
             /** Secondary */
-            secondary: string | null;
+            secondary?: string | null;
             /** Secondary Foreground */
-            secondary_foreground: string | null;
+            secondary_foreground?: string | null;
             /** Muted */
-            muted: string | null;
+            muted?: string | null;
             /** Muted Foreground */
-            muted_foreground: string | null;
+            muted_foreground?: string | null;
             /** Accent */
-            accent: string | null;
+            accent?: string | null;
             /** Accent Foreground */
-            accent_foreground: string | null;
+            accent_foreground?: string | null;
             /** Destructive */
-            destructive: string | null;
+            destructive?: string | null;
             /** Border */
-            border: string | null;
+            border?: string | null;
             /** Input */
-            input: string | null;
+            input?: string | null;
             /** Ring */
-            ring: string | null;
+            ring?: string | null;
             /** Success */
-            success: string | null;
+            success?: string | null;
             /** Success Foreground */
-            success_foreground: string | null;
+            success_foreground?: string | null;
             /** Warning */
-            warning: string | null;
+            warning?: string | null;
             /** Warning Foreground */
-            warning_foreground: string | null;
+            warning_foreground?: string | null;
             /** Info */
-            info: string | null;
+            info?: string | null;
             /** Info Foreground */
-            info_foreground: string | null;
+            info_foreground?: string | null;
             /** Chart1 */
-            chart1: string | null;
+            chart1?: string | null;
             /** Chart2 */
-            chart2: string | null;
+            chart2?: string | null;
             /** Chart3 */
-            chart3: string | null;
+            chart3?: string | null;
             /** Chart4 */
-            chart4: string | null;
+            chart4?: string | null;
             /** Chart5 */
-            chart5: string | null;
+            chart5?: string | null;
             /** Sidebar */
-            sidebar: string | null;
+            sidebar?: string | null;
             /** Sidebar Foreground */
-            sidebar_foreground: string | null;
+            sidebar_foreground?: string | null;
             /** Sidebar Primary */
-            sidebar_primary: string | null;
+            sidebar_primary?: string | null;
             /** Sidebar Primary Foreground */
-            sidebar_primary_foreground: string | null;
+            sidebar_primary_foreground?: string | null;
             /** Sidebar Accent */
-            sidebar_accent: string | null;
+            sidebar_accent?: string | null;
             /** Sidebar Accent Foreground */
-            sidebar_accent_foreground: string | null;
+            sidebar_accent_foreground?: string | null;
             /** Sidebar Border */
-            sidebar_border: string | null;
+            sidebar_border?: string | null;
             /** Sidebar Ring */
-            sidebar_ring: string | null;
+            sidebar_ring?: string | null;
         };
         /** QGetSystemsV4Item */
         QGetSystemsV4Item: {
             /** Id */
-            id: string | null;
+            id?: string | null;
             /** Name */
-            name: string | null;
+            name?: string | null;
             /** Description */
-            description: string | null;
+            description?: string | null;
             /** Agent Ids */
-            agent_ids: string[] | null;
+            agent_ids?: string[] | null;
             /** Active */
-            active: boolean | null;
+            active?: boolean | null;
             /** Generated */
-            generated: boolean | null;
+            generated?: boolean | null;
         };
         /** QGetToolsV4Item */
         QGetToolsV4Item: {
             /** Id */
-            id: string | null;
+            id?: string | null;
             /** Name */
-            name: string | null;
+            name?: string | null;
             /** Description */
-            description: string | null;
+            description?: string | null;
             /** Generated */
-            generated: boolean | null;
+            generated?: boolean | null;
             /** Args Ids */
-            args_ids: string[] | null;
+            args_ids?: string[] | null;
             /** Args Output Ids */
-            args_output_ids: string[] | null;
+            args_output_ids?: string[] | null;
             /** Operation */
-            operation: string | null;
+            operation?: string | null;
             /** Resources */
-            resources: string[] | null;
+            resources?: string[] | null;
             /** Entries */
-            entries: string[] | null;
+            entries?: string[] | null;
             /** Artifacts */
-            artifacts: string[] | null;
+            artifacts?: string[] | null;
         };
         /** QSearchSimulatableProfilesV4Profile */
         QSearchSimulatableProfilesV4Profile: {
             /** Profile Id */
-            profile_id: string | null;
+            profile_id?: string | null;
             /** Name */
-            name: string | null;
+            name?: string | null;
             /** Emails */
-            emails: string[] | null;
+            emails?: string[] | null;
             /** Primary Email */
-            primary_email: string | null;
+            primary_email?: string | null;
             /** Role */
-            role: string | null;
+            role?: string | null;
             /** Active */
-            active: boolean | null;
+            active?: boolean | null;
             /** Req Per Day */
-            req_per_day: number | null;
+            req_per_day?: number | null;
             /** Created At */
-            created_at: string | null;
+            created_at?: string | null;
             /** Updated At */
-            updated_at: string | null;
+            updated_at?: string | null;
             /** Primary Department Id */
-            primary_department_id: string | null;
+            primary_department_id?: string | null;
         };
         /** QualitiesGenerationEvent */
         QualitiesGenerationEvent: {

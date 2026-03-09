@@ -7,8 +7,9 @@ from typing import Any
 
 from app.infra.globals import IMAGE_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER
 from app.infra.websocket.adapters.media.base import BaseMediaAdapter, MediaResult
+from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.get_db_connection import get_db_connection
-from app.utils.sql_helper import load_sql
+from app.routes.v5.tools.entries.uploads.create import create_upload
 
 try:
     import litellm  # type: ignore
@@ -316,26 +317,25 @@ class LitellmMediaAdapter(BaseMediaAdapter):
 
         file_size = len(media_bytes)
 
-        # Create upload record
-        sql_insert_upload = load_sql(
-            "app/sql/queries/uploads/insert_upload_complete.sql"
-        )
-
         # Relative path from UPLOAD_FOLDER for storage
         relative_path = str(full_path.relative_to(UPLOAD_FOLDER))
 
+        # Resolve session from socket context
+        sid = context.get("sid", "")
+        session_id_str = await find_session_by_socket(sid) if sid else None
+        if not session_id_str:
+            raise RuntimeError("Session not found for socket — cannot create upload")
+
         async with get_db_connection() as conn:
-            upload_row = await conn.fetchrow(
-                sql_insert_upload,
-                relative_path,
-                mime_type,
-                file_size,
+            upload_result = await create_upload(
+                conn,
+                session_id=uuid.UUID(session_id_str),
+                file_path=relative_path,
+                mime_type=mime_type,
+                size=file_size,
             )
 
-        if not upload_row:
-            raise RuntimeError("Failed to create upload record")
-
-        upload_id = str(upload_row["id"])
+        upload_id = str(upload_result.id)
 
         result = MediaResult(
             file_path=relative_path,

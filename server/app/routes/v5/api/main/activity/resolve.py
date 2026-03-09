@@ -1,17 +1,20 @@
 """Problem resolve endpoint."""
 
 from datetime import datetime
-from typing import Annotated, Any
+from typing import Annotated
 from uuid import UUID
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.resolves.create import create_resolve
+from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -38,8 +41,6 @@ async def resolve_problem(
 ) -> ResolveProblemResponse:
     """Resolve or unresolve a problem entry."""
     tags = ["problems", "views", "activity", "summary"]
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         # Get profile_id from header (set by router-level dependency)
@@ -50,25 +51,23 @@ async def resolve_problem(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Execute update query
-        sql_query = load_sql("app/sql/queries/activity/resolve_problem_complete.sql")
-        sql_params = (str(request.problem_id), request.resolved, profile_id)
-        result = await conn.fetchrow(
-            sql_query, request.problem_id, request.resolved, profile_id
+        # Create group → run → call → resolve entry chain
+        session_id = http_request.state.session_id
+        group_result = await create_group(conn, session_id=session_id)
+        run_result = await create_run(conn, group_id=group_result.id, session_id=session_id)
+        call_result = await create_call(conn, run_id=run_result.id, session_id=session_id)
+
+        resolve_result = await create_resolve(
+            conn,
+            problem_id=request.problem_id,
+            resolved=request.resolved,
+            call_id=call_result.id,
         )
 
-        if not result:
-            raise HTTPException(
-                status_code=404,
-                detail="Problem not found or you don't have permission to resolve it",
-            )
-
-        actor_name = result.get("actor_name")
-
         result_data = ResolveProblemResponse(
-            problem_id=result["problem_id"],
-            resolved=result["resolved"],
-            updated_at=result["updated_at"],
+            problem_id=request.problem_id,
+            resolved=request.resolved,
+            updated_at=datetime.now(),
         )
 
         # Invalidate cache after mutation
@@ -83,7 +82,5 @@ async def resolve_problem(
             error=e,
             route_path=http_request.url.path,
             operation="resolve_problem",
-            sql_query=sql_query,
-            sql_params=sql_params,
             request=http_request,
         )

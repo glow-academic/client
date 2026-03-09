@@ -557,14 +557,37 @@ class DuplicateCohortApiResponse(BaseModel):
 # =============================================================================
 
 
+class DraftSimulationPositionValue(BaseModel):
+    """Value for creating a simulation_position resource via draft."""
+
+    simulation_id: UUID
+    value: int
+
+
+class DraftSimulationAvailabilityValue(BaseModel):
+    """Value for creating a simulation_availability resource via draft."""
+
+    simulation_id: UUID
+    time: datetime
+    type: str
+
+
+class DraftProfilePersonaValue(BaseModel):
+    """Value for creating a profile_persona resource via draft."""
+
+    profile_id: UUID
+    persona_id: UUID
+
+
 class PatchCohortDraftApiRequest(BaseModel):
     """Request model for new-style cohort draft endpoint.
 
-    Dual-mode for creatable resources only:
-      - name/name_id, description/description_id
+    Dual-mode for creatable resources:
+      - Single-select: name/name_id, description/description_id
+      - Multi-select compound: simulation_positions, simulation_availability,
+        profile_personas (values create resources, created IDs merged with existing IDs)
     ID-only for non-creatable resources:
-      - flag_id, department_ids, simulation_ids, profile_ids,
-        profile_persona_ids, simulation_availability_ids, simulation_position_ids
+      - flag_id, department_ids, simulation_ids, profile_ids
 
     Client always sends full state (append-only — each write is a new version snapshot).
     """
@@ -584,9 +607,31 @@ class PatchCohortDraftApiRequest(BaseModel):
     department_ids: list[UUID] | None = None
     simulation_ids: list[UUID] | None = None
     profile_ids: list[UUID] | None = None
-    profile_persona_ids: list[UUID] | None = None
-    simulation_availability_ids: list[UUID] | None = None
+
+    # Creatable multi-select compound — values create resources, IDs merged
     simulation_position_ids: list[UUID] | None = None
+    simulation_positions: list[DraftSimulationPositionValue] | None = None
+    simulation_availability_ids: list[UUID] | None = None
+    simulation_availability: list[DraftSimulationAvailabilityValue] | None = None
+    profile_persona_ids: list[UUID] | None = None
+    profile_personas: list[DraftProfilePersonaValue] | None = None
+
+
+class CohortDraftFormState(BaseModel):
+    """Full form state after draft patch — server is source of truth.
+
+    Client replaces its local form state with this after every successful patch.
+    """
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID] = []
+    simulation_ids: list[UUID] = []
+    simulation_position_ids: list[UUID] = []
+    simulation_availability_ids: list[UUID] = []
+    profile_ids: list[UUID] = []
+    profile_persona_ids: list[UUID] = []
 
 
 class PatchCohortDraftApiResponse(BaseModel):
@@ -596,6 +641,7 @@ class PatchCohortDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+    form_state: CohortDraftFormState | None = None
 
 
 # =============================================================================

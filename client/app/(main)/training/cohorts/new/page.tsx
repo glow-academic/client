@@ -15,8 +15,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type GetCohortIn = InputOf<"/api/v5/artifacts/cohorts/get", "post">;
 type GetCohortOut = OutputOf<"/api/v5/artifacts/cohorts/get", "post">;
-type SaveCohortIn = InputOf<"/api/v5/artifacts/cohorts/save", "post">;
-type SaveCohortOut = OutputOf<"/api/v5/artifacts/cohorts/save", "post">;
+type CreateCohortIn = InputOf<"/api/v5/artifacts/cohorts/create", "post">;
+type CreateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/create", "post">;
 type PatchCohortDraftIn = InputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
 type PatchCohortDraftOut = OutputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -79,11 +79,9 @@ const getCohortDefault = async (input: GetCohortIn): Promise<GetCohortOut> => {
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveCohort(input: SaveCohortIn): Promise<SaveCohortOut> {
+async function createCohort(input: CreateCohortIn): Promise<CreateCohortOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/cohorts/save", input);
+  return api.post("/artifacts/cohorts/create", input);
 }
 
 async function patchCohortDraft(
@@ -246,7 +244,7 @@ export default async function NewCohortPage({
       <Cohort
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         cohortData={cohortData}
-        saveCohortAction={saveCohort}
+        createCohortAction={createCohort}
         patchCohortDraftAction={patchCohortDraft}
         createNamesAction={createDraftNames}
         createDescriptionsAction={createDraftDescriptions}
@@ -272,6 +270,6 @@ export type {
   GetCohortOut,
   PatchCohortDraftIn,
   PatchCohortDraftOut,
-  SaveCohortIn,
-  SaveCohortOut,
+  CreateCohortIn,
+  CreateCohortOut,
 };

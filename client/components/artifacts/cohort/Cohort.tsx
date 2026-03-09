@@ -52,8 +52,10 @@ import type { ResourceType } from "@/lib/resources/types";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveCohortIn = InputOf<"/api/v5/artifacts/cohorts/save", "post">;
-type SaveCohortOut = OutputOf<"/api/v5/artifacts/cohorts/save", "post">;
+type CreateCohortIn = InputOf<"/api/v5/artifacts/cohorts/create", "post">;
+type CreateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/create", "post">;
+type UpdateCohortIn = InputOf<"/api/v5/artifacts/cohorts/update", "post">;
+type UpdateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/update", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -113,6 +115,12 @@ type CohortFormState = {
   simulation_positions: SimulationPositionItem[];
   profile_ids: string[];
   profile_persona_ids: string[];
+  // Value fields for unified draft (creatable resources)
+  name: string | null;
+  description: string | null;
+  simulation_position_values: Array<{ simulation_id: string; value: number }> | null;
+  simulation_availability_values: Array<{ simulation_id: string; time: string; type: string }> | null;
+  profile_persona_values: Array<{ profile_id: string; persona_id: string }> | null;
 };
 
 export interface CohortProps {
@@ -120,7 +128,8 @@ export interface CohortProps {
   // Server-provided data (for server-side rendering)
   cohortData?: CohortData;
   // Server actions (replaces useMutation)
-  saveCohortAction?: (input: SaveCohortIn) => Promise<SaveCohortOut>;
+  createCohortAction?: (input: CreateCohortIn) => Promise<CreateCohortOut>;
+  updateCohortAction?: (input: UpdateCohortIn) => Promise<UpdateCohortOut>;
   patchCohortDraftAction?: (
     input: PatchCohortDraftIn,
   ) => Promise<PatchCohortDraftOut>;
@@ -206,7 +215,8 @@ const COHORT_RESOURCES: ResourceConfig[] = [
 function CohortComponent({
   cohortId,
   cohortData,
-  saveCohortAction,
+  createCohortAction,
+  updateCohortAction,
   patchCohortDraftAction,
   createNamesAction,
   createDescriptionsAction,
@@ -365,6 +375,11 @@ function CohortComponent({
         simulation_positions: [] as SimulationPositionItem[],
         profile_ids: [] as string[],
         profile_persona_ids: [] as string[],
+        name: null as string | null,
+        description: null as string | null,
+        simulation_position_values: null as Array<{ simulation_id: string; value: number }> | null,
+        simulation_availability_values: null as Array<{ simulation_id: string; time: string; type: string }> | null,
+        profile_persona_values: null as Array<{ profile_id: string; persona_id: string }> | null,
       };
     }
     // Extract resource IDs from server data
@@ -397,6 +412,11 @@ function CohortComponent({
           mcp: p.mcp ?? false,
         }),
       ),
+      name: null,
+      description: null,
+      simulation_position_values: null,
+      simulation_availability_values: null,
+      profile_persona_values: null,
     };
     // Remove cohortData from dependencies - use ref instead to prevent callback recreation
   }, []);
@@ -525,9 +545,33 @@ function CohortComponent({
   React.useEffect(() => {
     if (patchCohortDraftAction) {
       patchActionRef.current = async (payload: Record<string, unknown>) => {
-        return await patchCohortDraftAction({
+        const result = await patchCohortDraftAction({
           body: payload,
         } as PatchCohortDraftIn);
+        // Sync form_state from server response (server is source of truth)
+        if (result && typeof result === "object" && "form_state" in result && result.form_state) {
+          const fs = result.form_state as Record<string, unknown>;
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name_id: (fs.name_id as string) ?? prev.name_id,
+            description_id: (fs.description_id as string) ?? prev.description_id,
+            active_flag_id: (fs.flag_id as string) ?? prev.active_flag_id,
+            department_ids: (fs.department_ids as string[]) ?? prev.department_ids,
+            simulation_ids: (fs.simulation_ids as string[]) ?? prev.simulation_ids,
+            simulation_position_ids: (fs.simulation_position_ids as string[]) ?? prev.simulation_position_ids,
+            simulation_availability_ids: (fs.simulation_availability_ids as string[]) ?? prev.simulation_availability_ids,
+            profile_ids: (fs.profile_ids as string[]) ?? prev.profile_ids,
+            profile_persona_ids: (fs.profile_persona_ids as string[]) ?? prev.profile_persona_ids,
+            // Clear value fields after server has resolved them to IDs
+            name: null,
+            description: null,
+            simulation_position_values: null,
+            simulation_availability_values: null,
+            profile_persona_values: null,
+          }));
+        }
+        return result;
       };
     } else {
       patchActionRef.current = undefined;
@@ -560,6 +604,20 @@ function CohortComponent({
     [formState.profile_persona_ids],
   );
 
+  // Memoize stringified value fields
+  const formStateSimulationPositionValuesStr = React.useMemo(
+    () => JSON.stringify(formState.simulation_position_values),
+    [formState.simulation_position_values],
+  );
+  const formStateSimulationAvailabilityValuesStr = React.useMemo(
+    () => JSON.stringify(formState.simulation_availability_values),
+    [formState.simulation_availability_values],
+  );
+  const formStateProfilePersonaValuesStr = React.useMemo(
+    () => JSON.stringify(formState.profile_persona_values),
+    [formState.profile_persona_values],
+  );
+
   // formStateKey excludes draftId -- the hook prepends it
   const formStateKey = React.useMemo(
     () =>
@@ -574,6 +632,11 @@ function CohortComponent({
         simulation_positions: formState.simulation_positions,
         profile_ids: formState.profile_ids,
         profile_persona_ids: formState.profile_persona_ids,
+        name: formState.name,
+        description: formState.description,
+        simulation_position_values: formState.simulation_position_values,
+        simulation_availability_values: formState.simulation_availability_values,
+        profile_persona_values: formState.profile_persona_values,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -586,6 +649,11 @@ function CohortComponent({
       formStateSimulationAvailabilityIdsStr,
       formStateProfileIdsStr,
       formStateProfilePersonaIdsStr,
+      formState.name,
+      formState.description,
+      formStateSimulationPositionValuesStr,
+      formStateSimulationAvailabilityValuesStr,
+      formStateProfilePersonaValuesStr,
     ],
   );
 
@@ -599,7 +667,7 @@ function CohortComponent({
     ): Record<string, unknown> => {
       const currentFormState =
         formStateRef.current as unknown as CohortFormState;
-      return {
+      const base = {
         input_draft_id: draftId || null,
         ...buildDraftPayload(COHORT_RESOURCES, {
           formState: currentFormState as unknown as Record<string, unknown>,
@@ -611,6 +679,28 @@ function CohortComponent({
         }),
         expected_version: expectedVersion,
       };
+
+      // Overlay value fields (single-select values clear the corresponding ID)
+      if (currentFormState.name != null) {
+        base.name = currentFormState.name;
+        delete base.name_id;
+      }
+      if (currentFormState.description != null) {
+        base.description = currentFormState.description;
+        delete base.description_id;
+      }
+      // Multi-select compound values are sent alongside IDs
+      if (currentFormState.simulation_position_values?.length) {
+        base.simulation_positions = currentFormState.simulation_position_values;
+      }
+      if (currentFormState.simulation_availability_values?.length) {
+        base.simulation_availability = currentFormState.simulation_availability_values;
+      }
+      if (currentFormState.profile_persona_values?.length) {
+        base.profile_personas = currentFormState.profile_persona_values;
+      }
+
+      return base;
     },
     [stableCohortDataFields],
   );
@@ -789,34 +879,41 @@ function CohortComponent({
         throw new Error("Profile not loaded");
       }
 
-      if (!saveCohortAction) {
-        toast.error("Save action not available");
-        throw new Error("Save action not available");
-      }
-
-      // Ensure required fields are present (TypeScript guard)
-      if (!effectiveFormState.name_id) {
-        toast.error("Required fields are missing");
-        throw new Error("Required fields are missing");
-      }
+      // Build common fields shared between create and update
+      const commonFields = {
+        name_id: effectiveFormState.name_id || null,
+        name: (effectiveFormState as CohortFormState).name || null,
+        description_id: effectiveFormState.description_id || null,
+        description: (effectiveFormState as CohortFormState).description || null,
+        flag_id: effectiveFormState.active_flag_id || null,
+        department_ids: effectiveFormState.department_ids.length > 0 ? effectiveFormState.department_ids : null,
+        simulation_ids: effectiveFormState.simulation_ids.length > 0 ? effectiveFormState.simulation_ids : null,
+        simulation_position_ids: effectiveFormState.simulation_position_ids?.length > 0 ? effectiveFormState.simulation_position_ids : null,
+        simulation_availability_ids: effectiveFormState.simulation_availability_ids?.length > 0 ? effectiveFormState.simulation_availability_ids : null,
+        profile_ids: effectiveFormState.profile_ids?.length > 0 ? effectiveFormState.profile_ids : null,
+        profile_persona_ids: effectiveFormState.profile_persona_ids?.length > 0 ? effectiveFormState.profile_persona_ids : null,
+      };
 
       try {
-        await saveCohortAction({
-          body: {
-            cohorts: [{
-              input_cohort_id: isEditMode && cohortId ? cohortId : null,
-              name_id: effectiveFormState.name_id!,
-              description_id: effectiveFormState.description_id || null,
-              flag_id: effectiveFormState.active_flag_id || null,
-              department_ids: effectiveFormState.department_ids.length > 0 ? effectiveFormState.department_ids : null,
-              simulation_ids: effectiveFormState.simulation_ids.length > 0 ? effectiveFormState.simulation_ids : null,
-              simulation_position_ids: effectiveFormState.simulation_position_ids?.length > 0 ? effectiveFormState.simulation_position_ids : null,
-              simulation_availability_ids: effectiveFormState.simulation_availability_ids?.length > 0 ? effectiveFormState.simulation_availability_ids : null,
-              profile_ids: effectiveFormState.profile_ids?.length > 0 ? effectiveFormState.profile_ids : null,
-              profile_persona_ids: effectiveFormState.profile_persona_ids?.length > 0 ? effectiveFormState.profile_persona_ids : null,
-            }],
-          },
-        });
+        if (isEditMode && cohortId && updateCohortAction) {
+          await updateCohortAction({
+            body: {
+              cohorts: [{
+                cohort_id: cohortId,
+                ...commonFields,
+              }],
+            },
+          } as UpdateCohortIn);
+        } else if (createCohortAction) {
+          await createCohortAction({
+            body: {
+              cohorts: [commonFields],
+            },
+          } as CreateCohortIn);
+        } else {
+          toast.error("Save action not available");
+          throw new Error("Save action not available");
+        }
         toast.success(
           `Cohort ${isEditMode ? "updated" : "created"} successfully!`,
         );
@@ -835,7 +932,8 @@ function CohortComponent({
       cohortId,
       cohortData,
       profile?.id,
-      saveCohortAction,
+      createCohortAction,
+      updateCohortAction,
       router,
     ],
   );
@@ -844,8 +942,8 @@ function CohortComponent({
   const getStepStatus = useCallback(
     (stepId: string, _formData: Record<string, unknown>): StepStatus => {
       // Check resource IDs from formState (components manage their own display state)
-      const hasName = !!formState.name_id;
-      const hasDescription = !!formState.description_id;
+      const hasName = !!formState.name_id || !!formState.name;
+      const hasDescription = !!formState.description_id || !!formState.description;
       const hasSimulations = formState.simulation_ids.length > 0;
 
       const hasProfiles = formState.profile_ids.length > 0;
@@ -932,6 +1030,8 @@ function CohortComponent({
             description_id: null,
             active_flag_id: null,
             department_ids: [],
+            name: null,
+            description: null,
           };
         case "simulations":
           return {
@@ -940,12 +1040,15 @@ function CohortComponent({
             simulation_position_ids: [],
             simulation_availability_ids: [],
             simulation_positions: [],
+            simulation_position_values: null,
+            simulation_availability_values: null,
           };
         case "profiles":
           return {
             ...prev,
             profile_ids: [],
             profile_persona_ids: [],
+            profile_persona_values: null,
           };
         default:
           return prev;
@@ -1013,7 +1116,10 @@ function CohortComponent({
                   names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId }))
+                    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
+                  }
+                  onNameChange={(name) =>
+                    setFormState((prev) => ({ ...prev, name, name_id: null }))
                   }
                   onGenerate={handleGenerateName}
                   placeholder="e.g., Spring 2024 Cohort"
@@ -1065,6 +1171,14 @@ function CohortComponent({
                     setFormState((prev) => ({
                       ...prev,
                       description_id: descriptionId,
+                      description: null,
+                    }))
+                  }
+                  onDescriptionChange={(description) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      description,
+                      description_id: null,
                     }))
                   }
                   searchTerm={
@@ -1267,7 +1381,12 @@ function CohortComponent({
                   createSimulationPositionsAction={simulationPositionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["simulation_positions"]}
-
+                  onSimulationPositionValues={(positions) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      simulation_position_values: positions.length > 0 ? positions : null,
+                    }))
+                  }
                 />
                 <SimulationAvailability
                   simulation_availability_ids={formState.simulation_availability_ids ?? []}
@@ -1301,7 +1420,12 @@ function CohortComponent({
                   }
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["simulation_availability"]}
-
+                  onSimulationAvailabilityValues={(values) =>
+                    setFormState((prev) => ({
+                      ...prev,
+                      simulation_availability_values: values.length > 0 ? values : null,
+                    }))
+                  }
                 />
               </div>
             </StepCard>
@@ -1441,7 +1565,12 @@ function CohortComponent({
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["profile_personas"]}
                 aiProfilePersonaResources={[]}
-
+                onProfilePersonaValues={(values) =>
+                  setFormState((prev) => ({
+                    ...prev,
+                    profile_persona_values: values.length > 0 ? values : null,
+                  }))
+                }
               />
               </div>
             </StepCard>
@@ -1574,7 +1703,8 @@ export default React.memo(CohortComponent, (prevProps, nextProps) => {
 
   // Compare function props by reference (should be stable from server actions)
   if (
-    prevProps.saveCohortAction !== nextProps.saveCohortAction ||
+    prevProps.createCohortAction !== nextProps.createCohortAction ||
+    prevProps.updateCohortAction !== nextProps.updateCohortAction ||
     prevProps.patchCohortDraftAction !== nextProps.patchCohortDraftAction ||
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||

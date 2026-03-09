@@ -86,6 +86,8 @@ export interface SimulationPositionsProps {
   aiSimulationPositionResources?:
     | Pick<SimulationPositionResourceItem, "id" | "simulation_id" | "value">[]
     | null;
+  /** Callback to emit position values for unified draft */
+  onSimulationPositionValues?: (positions: Array<{ simulation_id: string; value: number }>) => void;
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created positions */
@@ -115,6 +117,7 @@ export function SimulationPositions({
   showAiGenerate = false,
   createSimulationPositionsAction,
   aiSimulationPositionResources,
+  onSimulationPositionValues,
   isAutosaveEnabled = true,
   registerFlush,
   link_tool_id: _link_tool_id,
@@ -228,6 +231,18 @@ export function SimulationPositions({
     });
     setLocalPositions(newMap);
   }, [selectedSimulationIds, positionMap]);
+
+  // Emit position values for unified draft
+  const onSimulationPositionValuesRef = useRef(onSimulationPositionValues);
+  onSimulationPositionValuesRef.current = onSimulationPositionValues;
+  useEffect(() => {
+    if (!onSimulationPositionValuesRef.current) return;
+    const values: Array<{ simulation_id: string; value: number }> = [];
+    localPositions.forEach((value, simulationId) => {
+      values.push({ simulation_id: simulationId, value });
+    });
+    onSimulationPositionValuesRef.current(values);
+  }, [localPositions]);
 
   // Update flush function when dependencies change
   flushRef.current = async (): Promise<{

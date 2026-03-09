@@ -1,15 +1,18 @@
 """Problem create endpoint."""
 
-from typing import Annotated, Any
+from typing import Annotated
 
 import asyncpg  # type: ignore
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.globals import get_db
+from app.infra.globals import get_db, get_redis_client
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.problems.create import create_problem as create_problem_entry
+from app.routes.v5.tools.entries.runs.create import create_run
 from app.utils.cache.invalidate_tags import invalidate_tags
 from app.utils.error.handle_route_error import handle_route_error
-from app.utils.sql_helper import load_sql
 
 
 # Inline request/response schemas
@@ -36,8 +39,6 @@ async def create_problem(
 ) -> CreateProblemResponse:
     """Create new problem entry."""
     tags = ["problems", "views", "activity"]
-    sql_query: str | None = None
-    sql_params: tuple[Any, ...] | None = None
 
     try:
         # Validate problem type
@@ -64,20 +65,23 @@ async def create_problem(
                 detail="Profile ID is required. Please sign in again.",
             )
 
-        # Execute insert query
-        sql_query = load_sql("app/sql/queries/activity/create_problem_complete.sql")
-        sql_params = (request.type, request.message, profile_id)
-        result = await conn.fetchrow(
-            sql_query, request.type, request.message, profile_id
+        # Create group → run → call → problem entry chain
+        session_id = http_request.state.session_id
+        group_result = await create_group(conn, session_id=session_id)
+        run_result = await create_run(conn, group_id=group_result.id, session_id=session_id)
+        call_result = await create_call(conn, run_id=run_result.id, session_id=session_id)
+
+        problem_result = await create_problem_entry(
+            conn,
+            session_id=session_id,
+            call_id=call_result.id,
+            type=request.type,
+            message=request.message,
+            profile_id=profile_id,
         )
 
-        if not result:
-            raise HTTPException(status_code=500, detail="Failed to create problem")
-
-        actor_name = result.get("actor_name")
-
         result_data = CreateProblemResponse(
-            problem_id=str(result["problem_id"]),
+            problem_id=str(problem_result.id),
             success=True,
             message="Problem created successfully",
         )
@@ -94,7 +98,5 @@ async def create_problem(
             error=e,
             route_path=http_request.url.path,
             operation="create_problem",
-            sql_query=sql_query,
-            sql_params=sql_params,
             request=http_request,
         )

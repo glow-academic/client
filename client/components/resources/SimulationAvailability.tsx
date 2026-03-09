@@ -74,6 +74,8 @@ export interface SimulationAvailabilityProps {
       ) => Promise<CreateDraftSimulationAvailabilityOut>)
     | undefined;
   onAvailabilityIdsChange?: (ids: string[]) => void;
+  /** Callback to emit availability values for unified draft */
+  onSimulationAvailabilityValues?: (values: Array<{ simulation_id: string; time: string; type: string }>) => void;
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean;
   isGenerating?: boolean;
@@ -109,6 +111,7 @@ export function SimulationAvailability({
   create_tool_id,
   createSimulationAvailabilityAction,
   onAvailabilityIdsChange,
+  onSimulationAvailabilityValues,
   onGenerate,
   showAiGenerate = false,
   isAutosaveEnabled = true,
@@ -241,6 +244,23 @@ export function SimulationAvailability({
       onAvailabilityIdsChangeRef.current(ids);
     }
   }, [availabilityIds]);
+
+  // Emit availability values for unified draft
+  const onSimulationAvailabilityValuesRef = useRef(onSimulationAvailabilityValues);
+  onSimulationAvailabilityValuesRef.current = onSimulationAvailabilityValues;
+  useEffect(() => {
+    if (!onSimulationAvailabilityValuesRef.current) return;
+    const values: Array<{ simulation_id: string; time: string; type: string }> = [];
+    availabilityBySimulation.forEach((availability, simulationId) => {
+      if (availability.start) {
+        values.push({ simulation_id: simulationId, time: new Date(availability.start).toISOString(), type: "start" });
+      }
+      if (availability.end) {
+        values.push({ simulation_id: simulationId, time: new Date(availability.end).toISOString(), type: "end" });
+      }
+    });
+    onSimulationAvailabilityValuesRef.current(values);
+  }, [availabilityBySimulation]);
 
   // Flush function for manual save mode
   flushRef.current = async (): Promise<{

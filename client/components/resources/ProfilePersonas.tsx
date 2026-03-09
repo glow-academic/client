@@ -87,6 +87,8 @@ export interface ProfilePersonasProps {
   }>;
   disabled?: boolean;
   onChange: (personas: ProfilePersonaItem[]) => void;
+  /** Callback to emit persona values for unified draft */
+  onProfilePersonaValues?: (values: Array<{ profile_id: string; persona_id: string }>) => void;
   cohort_id?: string | null;
   profile_ids?: string[];
   label?: string;
@@ -124,6 +126,7 @@ export function ProfilePersonas({
   personas,
   disabled = false,
   onChange,
+  onProfilePersonaValues,
   cohort_id,
   profile_ids = [],
   label = "Profile Personas",
@@ -272,6 +275,20 @@ export function ProfilePersonas({
       return prevKey === nextKey ? prev : nextPersonas;
     });
   }, [currentPersonas]);
+
+  // Emit persona values for unified draft
+  const onProfilePersonaValuesRef = useRef(onProfilePersonaValues);
+  onProfilePersonaValuesRef.current = onProfilePersonaValues;
+  useEffect(() => {
+    if (!onProfilePersonaValuesRef.current) return;
+    const values: Array<{ profile_id: string; persona_id: string }> = [];
+    selectedPersonaByProfile.forEach((personaId, profileId) => {
+      if (personaId) {
+        values.push({ profile_id: profileId, persona_id: personaId });
+      }
+    });
+    onProfilePersonaValuesRef.current(values);
+  }, [selectedPersonaByProfile]);
 
   // Update flush function
   flushRef.current = async (): Promise<{

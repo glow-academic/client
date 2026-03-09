@@ -364,9 +364,6 @@ async def get_db() -> AsyncGenerator[asyncpg.Connection, None]:
 async def expire_all_connections() -> None:
     if _db_pool:
         await _db_pool.expire_connections()
-        from app.utils.sql_helper import _jit_created_functions
-
-        _jit_created_functions.clear()
         print("🔄 All pooled connections expired (schema change detected)")
 
 

@@ -16,8 +16,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type GetCohortIn = InputOf<"/api/v5/artifacts/cohorts/get", "post">;
 type GetCohortOut = OutputOf<"/api/v5/artifacts/cohorts/get", "post">;
-type SaveCohortIn = InputOf<"/api/v5/artifacts/cohorts/save", "post">;
-type SaveCohortOut = OutputOf<"/api/v5/artifacts/cohorts/save", "post">;
+type UpdateCohortIn = InputOf<"/api/v5/artifacts/cohorts/update", "post">;
+type UpdateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/update", "post">;
 type PatchCohortDraftIn = InputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
 type PatchCohortDraftOut = OutputOf<"/api/v5/artifacts/cohorts/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -78,11 +78,9 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveCohort(input: SaveCohortIn): Promise<SaveCohortOut> {
+async function updateCohort(input: UpdateCohortIn): Promise<UpdateCohortOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/cohorts/save", input);
+  return api.post("/artifacts/cohorts/update", input);
 }
 
 async function patchCohortDraft(
@@ -209,7 +207,7 @@ export default async function CohortEditPage({
         key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
         cohortId={cohortId}
         cohortData={cohortData}
-        saveCohortAction={saveCohort}
+        updateCohortAction={updateCohort}
         patchCohortDraftAction={patchCohortDraft}
         createNamesAction={createDraftNames}
         createDescriptionsAction={createDraftDescriptions}
@@ -226,6 +224,6 @@ export type {
   GetCohortOut,
   PatchCohortDraftIn,
   PatchCohortDraftOut,
-  SaveCohortIn,
-  SaveCohortOut,
+  UpdateCohortIn,
+  UpdateCohortOut,
 };
