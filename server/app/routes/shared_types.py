@@ -277,31 +277,6 @@ class GetKeyForDecryptApiResponse(BaseModel):
     actor_name: str | None = None
 
 
-class CreateEmulationGrantApiRequest(BaseModel):
-    requester_profile_id: UUID
-    target_profile_id: UUID
-    ttl_minutes: int | None = 120
-    signin_base_url: str | None = None
-    callback_url: str | None = None
-    idp_alias: str | None = None
-    return_url: str | None = None
-    keycloak_public_url: str | None = None
-    keycloak_client_id: str | None = None
-    origin: str | None = None
-    prefix: str | None = None
-
-
-class CreateEmulationGrantApiResponse(BaseModel):
-    allowed: bool | None = None
-    reason: str | None = None
-    actor_name: str | None = None
-    grant_id: UUID | None = None
-    expires_at: datetime | None = None
-    target_profile_id: UUID | None = None
-    redirect_url: str | None = None
-    logout_url: str | None = None
-    emulate_page_url: str | None = None
-
 
 class SearchSimulatableProfilesApiRequest(BaseModel):
     limit_count: int

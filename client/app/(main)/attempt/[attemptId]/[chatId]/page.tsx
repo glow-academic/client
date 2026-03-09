@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import ChatBundle, { type ChatBundleData } from "@/components/artifacts/chat/ChatBundle";
+import Chat, { type ChatData } from "@/components/artifacts/chat/Chat";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -90,8 +90,8 @@ export default async function ChatPage({
         ]}
       />
       <div className="px-4">
-        <ChatBundle
-          bundleData={bundleData as ChatBundleData}
+        <Chat
+          bundleData={bundleData as ChatData}
           patchChatDraftAction={patchChatDraft}
           attemptId={attemptId}
         />

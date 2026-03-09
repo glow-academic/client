@@ -1,7 +1,6 @@
 "use client";
 
 import { Loader2, Search, User } from "lucide-react";
-import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -52,11 +51,6 @@ export function EmulateProfileModal({
   searchSimulatableProfiles,
   switchEffectiveProfile,
 }: EmulateProfileModalProps) {
-  const appPrefix = process.env["NEXT_PUBLIC_APP_PREFIX"] || "";
-  const normalizedPrefix = appPrefix
-    ? `/${appPrefix.replace(/^\/+|\/+$/g, "")}`
-    : "";
-  const { data: session } = useSession();
   const { profile, roleResources } = useProfile();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
@@ -199,51 +193,27 @@ export function EmulateProfileModal({
 
     setIsEmulating(true);
     try {
-      // Pass current URL as returnUrl so server can construct proper redirect URLs
       const result = await switchEffectiveProfile({
         targetProfileId: selectedProfileId,
-        fullEmulation: true,
-        returnUrl: window.location.href,
       });
 
-      if (!result.ok || !result.grantId) {
+      if (!result.ok) {
         toast.error(result.reason || "Failed to emulate profile");
         return;
       }
 
-      toast.success("Emulation enabled. Redirecting...");
-
+      toast.success("Emulation enabled. Reloading...");
       onOpenChange(false);
 
-      // Redirect to server-provided logout URL which handles the full flow:
-      // 1. Keycloak logout (clears session)
-      // 2. Redirect to emulate page (via post_logout_redirect_uri)
-      // 3. Emulate page calls signIn with grant ID
-      if (result.logoutUrl) {
-        // Append id_token_hint so Keycloak skips the "Do you want to log out?" confirmation
-        const logoutUrl = session?.id_token
-          ? `${result.logoutUrl}&id_token_hint=${session.id_token}`
-          : result.logoutUrl;
-        window.location.href = logoutUrl;
-      } else {
-        // Fallback to emulate page URL if logout URL not available
-        window.location.href =
-          result.emulatePageUrl ||
-          `${window.location.origin}${normalizedPrefix}/emulate?grant=${result.grantId}&returnUrl=${encodeURIComponent(window.location.href)}`;
-      }
+      // Reload page — resolve_identity() picks up the active grant
+      // and swaps the effective profile_id on the next request
+      window.location.reload();
     } catch {
       toast.error("Failed to emulate profile");
     } finally {
       setIsEmulating(false);
     }
-  }, [
-    selectedProfileId,
-    profile?.id,
-    switchEffectiveProfile,
-    onOpenChange,
-    normalizedPrefix,
-    session,
-  ]);
+  }, [selectedProfileId, profile?.id, switchEffectiveProfile, onOpenChange]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

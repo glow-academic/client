@@ -376,7 +376,7 @@ async def _resolve_emulation_override(
       - search_grants(profiles_ids=...) → active grants for requester
       - search_grant_consumptions → filter out consumed grants
       - search_emulations(grant_ids=...) → target profiles_resource.id
-      - reverse junction lookup → target profile_artifact.id
+      - search_profiles(profile_ids=...) → target profile_artifact.id
 
     Returns None if no active emulation.
     """
@@ -384,6 +384,7 @@ async def _resolve_emulation_override(
 
     from app.infra.globals import get_redis_client
     from app.infra.profile_identity_context import resolve_profile_identity_context
+    from app.routes.v5.tools.artifacts.profile.search import search_profiles
     from app.routes.v5.tools.entries.emulations.search import search_emulations
     from app.routes.v5.tools.entries.grant_consumptions.search import (
         search_grant_consumptions,
@@ -439,18 +440,16 @@ async def _resolve_emulation_override(
 
             # Step 5: Map target profiles_resource.id → profile_artifact.id
             async with pool.acquire() as conn:
-                target_row = await conn.fetchrow(
-                    """
-                    SELECT profile_id FROM profile_profiles_junction
-                    WHERE profiles_id = $1 LIMIT 1
-                    """,
-                    target_profiles_resource_id,
+                artifact_ids, _ = await search_profiles(
+                    conn,
+                    profile_ids=[target_profiles_resource_id],
+                    limit_count=1,
                 )
-            if target_row:
+            if artifact_ids:
                 logger.info(
-                    f"Emulation active: {profile_id} → {target_row['profile_id']}"
+                    f"Emulation active: {profile_id} → {artifact_ids[0]}"
                 )
-                return target_row["profile_id"]
+                return artifact_ids[0]
 
         return None
     except Exception as e:

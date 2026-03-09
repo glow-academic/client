@@ -15,8 +15,8 @@ type AuthProfileOut = OutputOf<"/auth/profile", "post">;
 type AuthSettingsIn = InputOf<"/auth/settings", "post">;
 type AuthSettingsOut = OutputOf<"/auth/settings", "post">;
 
-type CreateEmulationGrantIn = InputOf<"/auth/emulate", "post">;
-type CreateEmulationGrantOut = OutputOf<"/auth/emulate", "post">;
+type EmulateProfileIn = InputOf<"/api/v5/artifacts/profiles/emulate", "post">;
+type EmulateProfileOut = OutputOf<"/api/v5/artifacts/profiles/emulate", "post">;
 type CreateFeedbackIn = InputOf<"/api/v5/artifacts/activity/problem", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v5/artifacts/activity/problem", "post">;
 /** Page-specific refresh endpoint mapping */
@@ -174,68 +174,33 @@ export async function getLayoutContextData(session?: Session | null) {
 /** ---- Strongly-typed server actions for Session Management (single source of truth) ---- */
 type SwitchEffectiveProfileParams = {
   targetProfileId: string;
-  returnUrl?: string;
 };
 
 type SwitchEffectiveProfileResult = {
   ok: boolean;
   reason?: string;
-  grantId?: string;
-  redirectUrl?: string;
-  logoutUrl?: string;
-  emulatePageUrl?: string;
 };
 
-async function createEmulationGrant(
-  input: CreateEmulationGrantIn
-): Promise<CreateEmulationGrantOut> {
-  return api.post("/auth/emulate", input);
-}
-
 /**
- * Server action to start emulation via default-idp.
- * Returns a redirect URL to complete sign-in as the target profile.
+ * Server action to start emulation.
+ * Creates a grant in the DB — resolve_identity() picks it up on next request.
+ * Client just needs to reload the page after this succeeds.
  */
 export async function switchEffectiveProfile(
   input: SwitchEffectiveProfileParams
 ): Promise<SwitchEffectiveProfileResult> {
   try {
-    // Get profileId from server (resolved from JWT by middleware)
-    const profile = await getAuthProfile();
-    if (!profile?.id) {
-      return { ok: false, reason: "Unauthorized" };
-    }
-
-    const isSelf = input.targetProfileId === profile.id;
-    if (isSelf) {
-      return { ok: false, reason: "Already using this profile" };
-    }
-
-    const res = await createEmulationGrant({
+    const res = await api.post("/artifacts/profiles/emulate", {
       body: {
-        requester_profile_id: profile.id,
         target_profile_id: input.targetProfileId,
-        ttl_minutes: null, // Use server default (120 minutes)
-        return_url: input.returnUrl ?? null,
       },
-    });
+    } as EmulateProfileIn);
 
     if (!res.allowed) {
       return { ok: false, reason: res.reason ?? "Emulation not allowed" };
     }
-    if (!res.grant_id) {
-      return { ok: false, reason: "Missing emulation grant" };
-    }
 
-    const result: SwitchEffectiveProfileResult = {
-      ok: true,
-      grantId: res.grant_id,
-    };
-    if (res.redirect_url) result.redirectUrl = res.redirect_url;
-    if (res.logout_url) result.logoutUrl = res.logout_url;
-    if (res.emulate_page_url) result.emulatePageUrl = res.emulate_page_url;
-
-    return result;
+    return { ok: true };
   } catch (error) {
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";

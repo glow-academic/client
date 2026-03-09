@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Optional
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -336,6 +337,25 @@ class ExportProfileApiResponse(BaseModel):
     upload_id: UUID
     file_name: str
     row_count: int
+
+
+# ========== Emulate Endpoint Types ==========
+
+
+class EmulateProfileApiRequest(BaseModel):
+    """Request model for profile emulation."""
+
+    target_profile_id: UUID
+    ttl_minutes: Optional[int] = 120
+
+
+class EmulateProfileApiResponse(BaseModel):
+    """Response model for profile emulation."""
+
+    allowed: bool
+    reason: str | None = None
+    grant_id: UUID | None = None
+    expires_at: datetime | None = None
 
 
 class ListProfilesApiProfile(BaseModel):

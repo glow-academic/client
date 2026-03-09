@@ -30,7 +30,7 @@ import { Flags } from "@/components/resources/Flags";
 import { Images } from "@/components/resources/Images";
 import { Names } from "@/components/resources/Names";
 import { Objectives } from "@/components/resources/Objectives";
-import { ParameterFieldsNew } from "@/components/resources/ParameterFieldsNew";
+import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Personas } from "@/components/resources/Personas";
 import { ProblemStatements } from "@/components/resources/ProblemStatements";
 import { Options } from "@/components/resources/Options";
@@ -1908,7 +1908,7 @@ function ScenarioComponent({
               {...resetProps}
             >
               <div className="space-y-6">
-                <ParameterFieldsNew
+                <ParameterFields
                   parameterIds={urlParameterIds}
                   parameterFieldIds={formState.parameter_field_ids}
                   parameterFieldResources={s?.parameter_fields?.current ?? []}

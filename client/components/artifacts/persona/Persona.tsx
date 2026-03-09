@@ -32,7 +32,7 @@ import { Flags } from "@/components/resources/Flags";
 import { Icons } from "@/components/resources/Icons";
 import { Instructions } from "@/components/resources/Instructions";
 import { Names } from "@/components/resources/Names";
-import { ParameterFieldsNew } from "@/components/resources/ParameterFieldsNew";
+import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Voices } from "@/components/resources/Voices";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
@@ -1175,7 +1175,7 @@ function PersonaComponent({
                 ) : undefined
               }
             >
-              <ParameterFieldsNew
+              <ParameterFields
                 parameterIds={urlParameterIds}
                 parameterFieldIds={formState.parameter_field_ids}
                 parameterFieldResources={s?.parameter_fields?.current ?? []}

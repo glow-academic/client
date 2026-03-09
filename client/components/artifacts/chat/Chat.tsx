@@ -8,9 +8,8 @@ import { Departments } from "@/components/resources/Departments";
 import { Personas } from "@/components/resources/Personas";
 import { Documents } from "@/components/resources/Documents";
 import { ParameterFields } from "@/components/resources/ParameterFields";
-import { Scenarios } from "@/components/resources/Scenarios";
-import { Parameters } from "@/components/resources/Parameters";
-import { Fields } from "@/components/resources/Fields";
+import { Names } from "@/components/resources/Names";
+import { Options } from "@/components/resources/Options";
 import { Questions } from "@/components/resources/Questions";
 import { Videos } from "@/components/resources/Videos";
 import { Images } from "@/components/resources/Images";
@@ -29,28 +28,25 @@ import { parseAsBoolean, parseAsString, useQueryStates } from "nuqs";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-type GetChatBundleOut = OutputOf<
+type GetChatOut = OutputOf<
   "/api/v5/artifacts/chat/get",
   "post"
 >;
-export type ChatBundleData = GetChatBundleOut;
-type PatchChatBundleDraftIn = InputOf<
+export type ChatData = GetChatOut;
+type PatchChatDraftIn = InputOf<
   "/api/v5/artifacts/chat/draft",
   "patch"
 >;
-type PatchChatBundleDraftOut = OutputOf<
+type PatchChatDraftOut = OutputOf<
   "/api/v5/artifacts/chat/draft",
   "patch"
 >;
 
-type ChatBundleFormState = {
+type ChatFormState = {
   department_ids: string[];
   persona_ids: string[];
   document_ids: string[];
   parameter_field_ids: string[];
-  scenario_ids: string[];
-  parameter_ids: string[];
-  field_ids: string[];
   question_ids: string[];
   option_ids: string[];
   video_ids: string[];
@@ -62,11 +58,11 @@ type ChatBundleFormState = {
   description: string | null;
 };
 
-interface ChatBundleProps {
-  bundleData: GetChatBundleOut;
+interface ChatProps {
+  bundleData: GetChatOut;
   patchChatDraftAction: (
-    input: PatchChatBundleDraftIn,
-  ) => Promise<PatchChatBundleDraftOut>;
+    input: PatchChatDraftIn,
+  ) => Promise<PatchChatDraftOut>;
   attemptId: string;
 }
 
@@ -80,17 +76,17 @@ function extractIds<T>(
     .filter((id): id is string => !!id);
 }
 
-export default function ChatBundle({
+export default function Chat({
   bundleData,
   patchChatDraftAction,
   attemptId,
-}: ChatBundleProps) {
+}: ChatProps) {
   const router = useRouter();
   const { socket, isConnected } = useSocket();
   const s = bundleData;
   const isStartingRef = useRef(false);
 
-  const initialFormState = useMemo<ChatBundleFormState>(
+  const initialFormState = useMemo<ChatFormState>(
     () => ({
       department_ids: extractIds(s.departments?.current, "department_id"),
       persona_ids: extractIds(s.personas?.current, "persona_id"),
@@ -99,9 +95,6 @@ export default function ChatBundle({
         s.parameter_fields?.current,
         "field_id",
       ),
-      scenario_ids: extractIds(s.scenarios?.current, "scenario_id"),
-      parameter_ids: extractIds(s.parameters?.current, "parameter_id"),
-      field_ids: extractIds(s.fields?.current, "field_id"),
       question_ids: extractIds(s.questions?.current, "question_id"),
       option_ids: extractIds(s.options?.current, "option_id"),
       video_ids: extractIds(s.videos?.current, "video_id"),
@@ -119,7 +112,7 @@ export default function ChatBundle({
   );
 
   const [formState, setFormState] =
-    useState<ChatBundleFormState>(initialFormState);
+    useState<ChatFormState>(initialFormState);
 
   const [urlParams, setUrlParams] = useQueryStates(
     {
@@ -204,9 +197,6 @@ export default function ChatBundle({
         persona_ids: formState.persona_ids,
         document_ids: formState.document_ids,
         parameter_field_ids: formState.parameter_field_ids,
-        scenario_ids: formState.scenario_ids,
-        parameter_ids: formState.parameter_ids,
-        field_ids: formState.field_ids,
         question_ids: formState.question_ids,
         option_ids: formState.option_ids,
         video_ids: formState.video_ids,
@@ -227,7 +217,7 @@ export default function ChatBundle({
 
       const result = await patchChatDraftAction({
         body: payload,
-      } as PatchChatBundleDraftIn);
+      } as PatchChatDraftIn);
 
       if (result.draft_id) {
         setDraftId(result.draft_id);
@@ -243,9 +233,6 @@ export default function ChatBundle({
         persona_ids?: string[];
         document_ids?: string[];
         parameter_field_ids?: string[];
-        scenario_ids?: string[];
-        parameter_ids?: string[];
-        field_ids?: string[];
         question_ids?: string[];
         option_ids?: string[];
         video_ids?: string[];
@@ -261,9 +248,6 @@ export default function ChatBundle({
           persona_ids: formStateData.persona_ids ?? prev.persona_ids,
           document_ids: formStateData.document_ids ?? prev.document_ids,
           parameter_field_ids: formStateData.parameter_field_ids ?? prev.parameter_field_ids,
-          scenario_ids: formStateData.scenario_ids ?? prev.scenario_ids,
-          parameter_ids: formStateData.parameter_ids ?? prev.parameter_ids,
-          field_ids: formStateData.field_ids ?? prev.field_ids,
           question_ids: formStateData.question_ids ?? prev.question_ids,
           option_ids: formStateData.option_ids ?? prev.option_ids,
           video_ids: formStateData.video_ids ?? prev.video_ids,
@@ -335,6 +319,23 @@ export default function ChatBundle({
         </p>
       </div>
 
+      {s.names?.show && (
+        <Names
+          name_id={s.names.current?.[0]?.name_id ?? null}
+          name_resource={s.names.current?.[0] ?? null}
+          show_name={s.names.show}
+          names={s.names.resources ?? []}
+          disabled={false}
+          onNameIdChange={(nameId) =>
+            setFormState((prev) => ({ ...prev, name: null, name_id: nameId }))
+          }
+          onNameChange={(name) =>
+            setFormState((prev) => ({ ...prev, name: name || null }))
+          }
+          placeholder="Enter name"
+        />
+      )}
+
       {s.departments?.show && (
         <Departments
           department_ids={formState.department_ids}
@@ -391,48 +392,6 @@ export default function ChatBundle({
         />
       )}
 
-      {s.scenarios?.show && (
-        <Scenarios
-          scenario_ids={formState.scenario_ids}
-          scenario_resources={s.scenarios.current ?? []}
-          show_scenarios={s.scenarios.show}
-          scenarios={s.scenarios.resources ?? []}
-          onChange={(ids) =>
-            setFormState((prev) => ({ ...prev, scenario_ids: ids }))
-          }
-          disabled={false}
-          label="Scenarios"
-        />
-      )}
-
-      {s.parameters?.show && (
-        <Parameters
-          parameter_ids={formState.parameter_ids}
-          parameter_resources={s.parameters.current ?? []}
-          show_parameters={s.parameters.show}
-          parameters={s.parameters.resources ?? []}
-          onChange={(ids) =>
-            setFormState((prev) => ({ ...prev, parameter_ids: ids }))
-          }
-          disabled={false}
-          label="Parameters"
-        />
-      )}
-
-      {s.fields?.show && (
-        <Fields
-          field_ids={formState.field_ids}
-          field_resources={s.fields.current ?? []}
-          show_fields={s.fields.show}
-          fields={s.fields.resources ?? []}
-          onChange={(ids) =>
-            setFormState((prev) => ({ ...prev, field_ids: ids }))
-          }
-          disabled={false}
-          label="Fields"
-        />
-      )}
-
       {s.questions?.show && (
         <Questions
           question_ids={formState.question_ids}
@@ -444,6 +403,21 @@ export default function ChatBundle({
           }
           disabled={false}
           label="Questions"
+        />
+      )}
+
+      {s.options?.show && (
+        <Options
+          option_ids={formState.option_ids}
+          option_resources={s.options.current ?? []}
+          show_options={s.options.show}
+          options={s.options.resources ?? []}
+          question_ids={formState.question_ids}
+          question_resources={s.questions?.current ?? []}
+          disabled={false}
+          onChange={(ids) =>
+            setFormState((prev) => ({ ...prev, option_ids: ids }))
+          }
         />
       )}
 

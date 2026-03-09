@@ -20,7 +20,7 @@ import { StepCard } from "@/components/common/forms/StepCard";
 import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { Departments } from "@/components/resources/Departments";
 import { Descriptions } from "@/components/resources/Descriptions";
-import { Fields } from "@/components/resources/Fields";
+import { ParameterFields } from "@/components/resources/ParameterFields";
 import { Flags } from "@/components/resources/Flags";
 import { Names } from "@/components/resources/Names";
 import { Images } from "@/components/resources/Images";
@@ -40,7 +40,7 @@ import {
   type ResourceConfig,
 } from "@/lib/resources/action-builders";
 import type { ResourceType } from "@/lib/resources/types";
-import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
+import { parseAsArrayOf, parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 const VALID_RESOURCE_TYPES = [
   "names",
@@ -189,6 +189,8 @@ function DocumentComponent({
       uploadSearch: parseAsString,
       // Filter params (URL-backed)
       fieldShowSelected: parseAsBoolean,
+      // Parameter group expansion state (URL-backed)
+      parameterIds: parseAsArrayOf(parseAsString),
     }),
     [],
   );
@@ -501,6 +503,11 @@ function DocumentComponent({
     [handleGenerateResources],
   );
 
+  const handleGenerateFields = useCallback(
+    async () => handleGenerateResources(["fields"]),
+    [handleGenerateResources],
+  );
+
   // Helper to check if a resource type can be regenerated
   const canRegenerate = useCallback(
     (resourceType: ResourceType): boolean => {
@@ -755,7 +762,7 @@ function DocumentComponent({
         id: "fields",
         title: "Fields",
         description: "Select fields (parameter items) for this document.",
-        resetFields: ["field_ids"],
+        resetFields: ["field_ids", "parameterIds"],
       },
       {
         id: "uploads",
@@ -1049,12 +1056,10 @@ function DocumentComponent({
             </StepCard>
           );
 
-        case "fields":
-          const fieldSearchTerm =
-            (stepFormData["fieldSearch"] as string | null | undefined) || "";
-          const fieldShowSelected =
-            (stepFormData["fieldShowSelected"] as boolean | null | undefined) ??
-            false;
+        case "fields": {
+          const urlParameterIds =
+            ((stepFormData["parameterIds"] as string[] | null | undefined) ??
+              []);
           return (
             <StepCard
               stepStatus={stepStatus}
@@ -1063,22 +1068,10 @@ function DocumentComponent({
               stepDescription={stepDescription}
               isReadonly={disabled}
               isEditMode={isEditMode}
-              searchTerm={fieldSearchTerm}
-              onSearchChange={(term: string) =>
-                setStepFormData({ fieldSearch: term || null })
-              }
-              searchPlaceholder="Search fields..."
-              debounceMs={300}
-              filters={[
-                {
-                  key: "showSelected",
-                  label: "Show selected",
-                  value: fieldShowSelected,
-                  onChange: (value: boolean) =>
-                    setStepFormData({ fieldShowSelected: value || null }),
-                },
+              resetFields={[
+                "field_ids",
+                "parameterIds",
               ]}
-              resetFields={["field_ids", "fieldSearch", "fieldShowSelected"]}
               {...(onReset ? { onReset } : {})}
               resetLabel="Reset"
               actions={
@@ -1096,29 +1089,41 @@ function DocumentComponent({
                 ) : undefined
               }
             >
-              <Fields
-                field_ids={formState.field_ids ?? []}
-                field_resources={
-                  documentDetail?.fields?.current ?? []
-                }
-                show_fields={documentDetail?.fields?.show ?? false}
-                field_suggestions={documentDetail?.fields?.suggestions ?? []}
-                fields={documentDetail?.fields?.resources ?? []}
-                disabled={disabled}
+              <ParameterFields
+                parameterIds={urlParameterIds}
+                parameterFieldIds={formState.field_ids ?? []}
+                parameterFieldResources={documentDetail?.fields?.current ?? []}
+                allParameters={[]} // TODO: Server needs to expose parameters section in GetDocumentApiResponse (data is resolved in document_context but not returned)
+                availableFields={documentDetail?.fields?.resources ?? []}
+                onToggleParameter={(parameterId, open) => {
+                  const current = urlParameterIds;
+                  if (open) {
+                    setStepFormData({
+                      parameterIds: [...current, parameterId],
+                    });
+                  } else {
+                    setStepFormData({
+                      parameterIds: current.filter(
+                        (id: string) => id !== parameterId
+                      ),
+                    });
+                  }
+                }}
                 onChange={(ids) =>
                   setFormState((prev) => ({ ...prev, field_ids: ids }))
                 }
-                label="Fields"
-                required={documentDetail?.fields?.required ?? false}
-    
+                disabled={disabled}
+                group_id={documentDetail?.group_id ?? null}
                 showAiGenerate={
                   documentDetail?.fields?.show_ai_generate ?? false
                 }
-                searchTerm={fieldSearchTerm}
-                showSelectedFilter={fieldShowSelected}
+                required={documentDetail?.fields?.required ?? false}
+                onGenerate={handleGenerateFields}
+                isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>
           );
+        }
 
         case "uploads":
           const uploadSearchTerm =
@@ -1303,6 +1308,7 @@ function DocumentComponent({
       handleGenerateDescription,
       handleGenerateDepartments,
       handleGenerateFlags,
+      handleGenerateFields,
       isGenerating,
       stepResources,
       formState.name_id,
