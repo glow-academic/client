@@ -30,6 +30,7 @@ interface ProfileContextType {
   // Profile data
   profile: ProfileItem | null;
   isAuthenticated: boolean; // true if user has real NextAuth session
+  isEmulation: boolean; // true if viewing as another profile
 
   // Permissions data (from server)
   availableSections: string[];
@@ -73,6 +74,7 @@ export function ProfileProviderClient({
     // Profile data
     profile,
     isAuthenticated: sessionSnapshot.isAuthenticated,
+    isEmulation: !!initial?.is_emulation,
 
     // Permissions data (from server)
     availableSections: initial?.available_sections ?? [],

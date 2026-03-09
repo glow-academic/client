@@ -53,14 +53,14 @@ export default function TestChat({
   // Resource panel form state (placeholder — no autosave wiring yet)
   const [formState, setFormState] = useState<BenchmarkBundleFormState>({
     department_ids: [],
-    model_ids: [],
+    modality_ids: [],
     prompt_ids: [],
     instruction_ids: [],
     voice_ids: [],
     temperature_level_ids: [],
     reasoning_level_ids: [],
     tool_ids: [],
-    key_ids: [],
+    quality_ids: [],
   });
 
   // Derive invocation ID from first run

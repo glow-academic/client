@@ -21,11 +21,9 @@ async def create_tool_draft(
     args_output_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
     description_ids: list[UUID] | None = None,
-    entry_ids: list[UUID] | None = None,
     flag_ids: list[UUID] | None = None,
     name_ids: list[UUID] | None = None,
     profile_ids: list[UUID] | None = None,
-    resource_ids: list[UUID] | None = None,
 ) -> CreateToolDraftResponse:
     """Create a tool_drafts entry with optional connection table links."""
     draft_id = await conn.fetchval(
@@ -63,11 +61,9 @@ async def create_tool_draft(
             "descriptions_id",
             description_ids or [],
         ),
-        ("tool_drafts_entries_connection", "entries_id", entry_ids or []),
         ("tool_drafts_flags_connection", "flags_id", flag_ids or []),
         ("tool_drafts_names_connection", "names_id", name_ids or []),
         ("tool_drafts_profiles_connection", "profiles_id", profile_ids or []),
-        ("tool_drafts_resources_connection", "resources_id", resource_ids or []),
     ]
 
     for table, col, ids in connections:

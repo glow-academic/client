@@ -369,21 +369,6 @@ def gen_view_resources() -> list[tuple[str, str]]:
     return [("view_resources.py", content)]
 
 
-def gen_tool_entry_types() -> list[tuple[str, str]]:
-    """Generate tool_entry_types.py (re-export from manual.py)."""
-    content = "\n".join(
-        [
-            '"""entry_tools_relation (tool_id → entry_type).',
-            "",
-            "Hardcoded UUIDs — not derivable.",
-            "Maintained in manual.py.",
-            '"""',
-            "",
-            "from app.v5.registry.manual import TOOL_ENTRY_TYPES as TOOL_ENTRY_TYPES",
-        ]
-    )
-    return [("tool_entry_types.py", content)]
-
 
 def gen_artifact_entries() -> list[tuple[str, str]]:
     """Generate artifact_entries.py (computed from ARTIFACT_VIEWS × VIEW_ENTRIES)."""
@@ -614,7 +599,6 @@ FILE_GENERATORS: dict[str, callable] = {
     "artifact_views": gen_artifact_views,
     "view_entries": gen_view_entries,
     "view_resources": gen_view_resources,
-    "tool_entry_types": gen_tool_entry_types,
     "artifact_entries": gen_artifact_entries,
     "artifacts": gen_artifacts,
     "artifact_routes": gen_artifact_routes,

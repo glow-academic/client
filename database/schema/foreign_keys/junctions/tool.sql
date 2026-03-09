@@ -110,24 +110,6 @@ ALTER TABLE ONLY public.tool_descriptions_junction
 
 --
 
--- Name: tool_entries_junction tool_entries_junction_entry_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tool_entries_junction
-    ADD CONSTRAINT tool_entries_junction_entry_id_fkey FOREIGN KEY (entries_id) REFERENCES public.entries_resource(id) ON DELETE CASCADE;
-
-
---
-
--- Name: tool_entries_junction tool_entries_junction_tool_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tool_entries_junction
-    ADD CONSTRAINT tool_entries_junction_tool_id_fkey FOREIGN KEY (tool_id) REFERENCES public.tool_artifact(id) ON DELETE CASCADE;
-
-
---
-
 -- Name: tool_flags_junction tool_flags_flag_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -178,24 +160,6 @@ ALTER TABLE ONLY public.tool_operations_junction
 
 ALTER TABLE ONLY public.tool_operations_junction
     ADD CONSTRAINT tool_operations_tool_id_fkey FOREIGN KEY (tool_id) REFERENCES public.tool_artifact(id);
-
-
---
-
--- Name: tool_resources_junction tool_resources_resource_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tool_resources_junction
-    ADD CONSTRAINT tool_resources_resource_id_fkey FOREIGN KEY (resources_id) REFERENCES public.resources_resource(id) ON DELETE CASCADE;
-
-
---
-
--- Name: tool_resources_junction tool_resources_tool_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tool_resources_junction
-    ADD CONSTRAINT tool_resources_tool_id_fkey FOREIGN KEY (tool_id) REFERENCES public.tool_artifact(id) ON DELETE CASCADE;
 
 
 --

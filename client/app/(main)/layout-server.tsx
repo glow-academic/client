@@ -17,6 +17,7 @@ type AuthSettingsOut = OutputOf<"/auth/settings", "post">;
 
 type EmulateProfileIn = InputOf<"/api/v5/artifacts/profiles/emulate", "post">;
 type EmulateProfileOut = OutputOf<"/api/v5/artifacts/profiles/emulate", "post">;
+type UnemulateProfileOut = OutputOf<"/api/v5/artifacts/profiles/unemulate", "post">;
 type CreateFeedbackIn = InputOf<"/api/v5/artifacts/activity/problem", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v5/artifacts/activity/problem", "post">;
 /** Page-specific refresh endpoint mapping */
@@ -208,6 +209,34 @@ export async function switchEffectiveProfile(
   }
 }
 
+type ExitEmulationResult = {
+  ok: boolean;
+  reason?: string;
+};
+
+/**
+ * Server action to exit the innermost emulation layer.
+ * Consumes the innermost grant — resolve_identity() peels one layer on next request.
+ * Client just needs to reload the page after this succeeds.
+ */
+export async function exitEmulation(): Promise<ExitEmulationResult> {
+  try {
+    const res = await api.post("/artifacts/profiles/unemulate", {
+      body: {},
+    });
+
+    if (!res.ok) {
+      return { ok: false, reason: res.reason ?? "Failed to exit emulation" };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    return { ok: false, reason: errorMessage };
+  }
+}
+
 /** Server action to clear session state. */
 export async function clearSessionCookies(): Promise<void> {
   "use server";
@@ -272,6 +301,7 @@ export type {
   AttemptFullOut,
   CreateFeedbackIn,
   CreateFeedbackOut,
+  ExitEmulationResult,
   GenerateMessagesIn,
   GenerateMessagesOut,
   SearchSimulatableProfilesIn,

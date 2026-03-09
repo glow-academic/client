@@ -7,12 +7,21 @@
 
 CREATE TABLE public.operations_resource (
     id uuid DEFAULT uuidv7() CONSTRAINT operations_id_not_null NOT NULL,
-    operation text CONSTRAINT operations_operation_not_null NOT NULL,
+    operation public.operation_type CONSTRAINT operations_operation_not_null NOT NULL,
     created_at timestamp with time zone DEFAULT now() CONSTRAINT operations_created_at_not_null NOT NULL,
     active boolean DEFAULT true CONSTRAINT operations_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT operations_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT operations_mcp_not_null NOT NULL
 );
+
+
+--
+
+-- Name: operations_resource operations_resource_operation_key; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.operations_resource
+    ADD CONSTRAINT operations_resource_operation_key UNIQUE (operation);
 
 
 --

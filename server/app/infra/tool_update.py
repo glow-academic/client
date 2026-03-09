@@ -129,8 +129,6 @@ async def update_tool_client(
                     description_id=item.description_id,
                     department_ids=item.department_ids,
                     operation_ids=item.operation_ids,
-                    resource_ids=item.resource_ids,
-                    entry_ids=item.entry_ids,
                     artifact_ids=item.artifact_ids,
                 )
 
@@ -147,9 +145,7 @@ async def update_tool_client(
                     args_ids=item.args_ids,
                     args_outputs_ids=item.args_outputs_ids,
                     artifact_ids=item.artifact_ids,
-                    entry_ids=item.entry_ids,
                     operation_ids=item.operation_ids,
-                    resource_ids=item.resource_ids,
                     tool_ids=[tools_resource_id],
                 )
 

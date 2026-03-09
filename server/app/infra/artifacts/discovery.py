@@ -31,19 +31,6 @@ async def get_resource_sql_function_name(
     Returns:
         Function name if found, None otherwise
     """
-    # Check resource exists in tool_resources_junction
-    exists = await conn.fetchval(
-        """
-        SELECT 1 FROM tool_resources_junction tdj
-        JOIN resources_resource dr ON dr.id = tdj.resources_id AND dr.active = true
-        WHERE dr.resource = $1::resource_type
-        LIMIT 1
-        """,
-        resource_type,
-    )
-    if not exists:
-        return None
-
     # Try singular form first
     singular = f"api_create_{resource_type}_v4"
     found = await conn.fetchval(

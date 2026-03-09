@@ -29,13 +29,9 @@ async def get_tool_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
     descriptions_connection = await get_table_info(
         conn, "tool_drafts_descriptions_connection"
     )
-    entries_connection = await get_table_info(conn, "tool_drafts_entries_connection")
     flags_connection = await get_table_info(conn, "tool_drafts_flags_connection")
     names_connection = await get_table_info(conn, "tool_drafts_names_connection")
     profiles_connection = await get_table_info(conn, "tool_drafts_profiles_connection")
-    resources_connection = await get_table_info(
-        conn, "tool_drafts_resources_connection"
-    )
 
     tables = [
         t
@@ -46,11 +42,9 @@ async def get_tool_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
             args_outputs_connection,
             departments_connection,
             descriptions_connection,
-            entries_connection,
             flags_connection,
             names_connection,
             profiles_connection,
-            resources_connection,
         ]
         if t is not None
     ]
@@ -60,8 +54,8 @@ async def get_tool_drafts_docs(conn: asyncpg.Connection) -> DocsResponse:
         type="entry",
         description=(
             "Tool draft artifacts with support for multiple resource connections. "
-            "Each draft links to arg positions, args, args outputs, departments, descriptions, entries, "
-            "flags, names, profiles, and resources via connection tables. "
+            "Each draft links to arg positions, args, args outputs, departments, descriptions, "
+            "flags, names, and profiles via connection tables. "
             "Reads are served from the tool_drafts_mv materialized view."
         ),
         materialized_view=mv_info,

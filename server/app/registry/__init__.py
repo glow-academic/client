@@ -30,7 +30,6 @@ from app.registry.resource_events import RESOURCE_EVENTS, ResourceGenerationBase
 from app.registry.resource_output_schemas import RESOURCE_OUTPUT_SCHEMAS
 from app.registry.resource_schemas import RESOURCE_SCHEMAS
 from app.registry.role_artifacts import ROLE_ARTIFACTS
-from app.registry.tool_entry_types import TOOL_ENTRY_TYPES
 from app.registry.view_entries import VIEW_ENTRIES
 from app.registry.view_resources import VIEW_RESOURCES
 
@@ -63,7 +62,6 @@ __all__ = [
     "RESOURCE_SCHEMAS",
     "ResourceGenerationBase",
     "ROLE_ARTIFACTS",
-    "TOOL_ENTRY_TYPES",
     "VIEW_ENTRIES",
     "VIEW_RESOURCES",
     "get_tool_output_modalities",

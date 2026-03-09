@@ -17,8 +17,6 @@ CREATE TABLE public.tools_resource (
     args_ids uuid[] DEFAULT ARRAY[]::uuid[],
     args_output_ids uuid[] DEFAULT ARRAY[]::uuid[],
     operation text,
-    resources text[] DEFAULT ARRAY[]::text[],
-    entries text[] DEFAULT ARRAY[]::text[],
     artifacts text[] DEFAULT ARRAY[]::text[]
 );
 

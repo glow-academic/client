@@ -14,8 +14,6 @@ class GetToolResponse(BaseModel):
     department_ids: list[UUID]
     args_ids: list[UUID]
     args_output_ids: list[UUID]
-    resources: list[str]
-    entries: list[str]
     artifacts: list[str]
     created_at: datetime
     active: bool

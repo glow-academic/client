@@ -42,14 +42,6 @@ CREATE INDEX idx_tool_drafts_descriptions_resource_id ON public.tool_drafts_desc
 
 --
 
--- Name: idx_tool_drafts_entries_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_tool_drafts_entries_resource_id ON public.tool_drafts_entries_connection USING btree (entries_id);
-
-
---
-
 -- Name: idx_tool_drafts_flags_resource_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -70,14 +62,6 @@ CREATE INDEX idx_tool_drafts_names_resource_id ON public.tool_drafts_names_conne
 --
 
 CREATE INDEX idx_tool_drafts_profiles_resource_id ON public.tool_drafts_profiles_connection USING btree (profiles_id);
-
-
---
-
--- Name: idx_tool_drafts_resources_resource_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_tool_drafts_resources_resource_id ON public.tool_drafts_resources_connection USING btree (resources_id);
 
 
 --

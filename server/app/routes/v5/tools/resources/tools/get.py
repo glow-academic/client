@@ -35,7 +35,7 @@ async def get_tools(
         """
         SELECT id, name, description, operation,
                department_ids, args_ids, args_output_ids,
-               resources, entries, artifacts,
+               artifacts,
                created_at, active, mcp, generated
         FROM tools_resource
         WHERE id = ANY($1)
@@ -53,8 +53,6 @@ async def get_tools(
             department_ids=r["department_ids"] or [],
             args_ids=r["args_ids"] or [],
             args_output_ids=r["args_output_ids"] or [],
-            resources=r["resources"] or [],
-            entries=r["entries"] or [],
             artifacts=r["artifacts"] or [],
             created_at=r["created_at"],
             active=r["active"],

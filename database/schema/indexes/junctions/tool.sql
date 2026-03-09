@@ -50,38 +50,6 @@ CREATE INDEX idx_tool_departments_mcp ON public.tool_departments_junction USING 
 
 --
 
--- Name: idx_tool_entries_entry_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_tool_entries_entry_id ON public.tool_entries_junction USING btree (entries_id);
-
-
---
-
--- Name: idx_tool_entries_generated; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_tool_entries_generated ON public.tool_entries_junction USING btree (generated);
-
-
---
-
--- Name: idx_tool_entries_mcp; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_tool_entries_mcp ON public.tool_entries_junction USING btree (mcp);
-
-
---
-
--- Name: idx_tool_entries_tool_id; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_tool_entries_tool_id ON public.tool_entries_junction USING btree (tool_id);
-
-
---
-
 -- Name: idx_tool_operations_operation_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -94,22 +62,6 @@ CREATE INDEX idx_tool_operations_operation_id ON public.tool_operations_junction
 --
 
 CREATE INDEX idx_tool_operations_tool_id ON public.tool_operations_junction USING btree (tool_id);
-
-
---
-
--- Name: idx_tool_resources_generated; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_tool_resources_generated ON public.tool_resources_junction USING btree (generated);
-
-
---
-
--- Name: idx_tool_resources_mcp; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_tool_resources_mcp ON public.tool_resources_junction USING btree (mcp);
 
 
 --
@@ -230,22 +182,6 @@ CREATE INDEX tool_names_name_id_idx ON public.tool_names_junction USING btree (n
 --
 
 CREATE INDEX tool_names_tool_id_idx ON public.tool_names_junction USING btree (tool_id);
-
-
---
-
--- Name: tool_resources_resource_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX tool_resources_resource_id_idx ON public.tool_resources_junction USING btree (resources_id);
-
-
---
-
--- Name: tool_resources_tool_id_idx; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX tool_resources_tool_id_idx ON public.tool_resources_junction USING btree (tool_id);
 
 
 --

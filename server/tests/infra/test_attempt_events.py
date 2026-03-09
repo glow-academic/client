@@ -81,8 +81,26 @@ from app.infra.websocket.test_events_impl import (
 from app.infra.websocket.test_events_impl import (
     test_start_impl as _test_start_impl,
 )
+from app.routes.v5.tools.entries.attempt.create import create_attempt
+from app.routes.v5.tools.entries.attempt_chat.create import create_attempt_chat
+from app.routes.v5.tools.entries.attempt_chat_bridge.create import (
+    create_attempt_chat_bridge,
+)
+from app.routes.v5.tools.entries.attempt_content.search import search_attempt_contents
+from app.routes.v5.tools.entries.attempt_message.create import create_attempt_message
+from app.routes.v5.tools.entries.attempt_message.search import search_attempt_messages
+from app.routes.v5.tools.entries.attempt_message_completion.create import (
+    create_attempt_message_completion,
+)
+from app.routes.v5.tools.entries.attempt_message_completion.search import (
+    search_attempt_message_completions,
+)
 from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.chat.create import create_chat
 from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.messages.create import create_message
+from app.routes.v5.tools.entries.messages.get import get_message
+from app.routes.v5.tools.entries.persona.create import create_persona
 from app.routes.v5.tools.entries.runs.create import create_run
 from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.test.create import create_test
@@ -161,6 +179,47 @@ async def audio_session_factory(redis_client):
         _session_store.clear()
         globals_mod.get_socket_owner_dict().clear()
         globals_mod.redis_client = previous_redis
+
+
+@pytest_asyncio.fixture
+async def attempt_chat_factory(conn, profile_id):
+    """Create a minimal real attempt chat graph for attempt message tests."""
+
+    async def _create():
+        session = await create_session(conn, profile_id=profile_id)
+        group = await create_group(conn, session_id=session.id)
+        run = await create_run(conn, group_id=group.id, session_id=session.id)
+        call = await create_call(conn, run_id=run.id, session_id=session.id)
+        persona = await create_persona(conn, session_id=session.id)
+        attempt = await create_attempt(
+            conn,
+            call_id=call.id,
+            user_persona_id=persona.id,
+            profiles_id=profile_id,
+        )
+        chat = await create_chat(conn, session_id=session.id)
+        call2 = await create_call(conn, run_id=run.id, session_id=session.id)
+        attempt_chat = await create_attempt_chat(
+            conn,
+            call_id=call2.id,
+            group_id=group.id,
+            chat_id=chat.id,
+        )
+        await create_attempt_chat_bridge(
+            conn,
+            attempt_id=attempt.id,
+            attempt_chat_id=attempt_chat.id,
+            session_id=session.id,
+        )
+        return SimpleNamespace(
+            session=session,
+            group=group,
+            run=run,
+            attempt=attempt,
+            attempt_chat=attempt_chat,
+        )
+
+    return _create
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -454,46 +513,42 @@ class TestUserStartImpl:
         )
         assert events == []
 
-    async def test_creates_message_and_emits_user_start(self):
+    async def test_creates_message_and_emits_user_start(
+        self,
+        pool,
+        attempt_chat_factory,
+    ):
         emit, events = recording_emit()
-        mock_conn = AsyncMock()
-        mock_result = SimpleNamespace(
-            id="00000000-0000-0000-0000-000000000099",
-            created_at=SimpleNamespace(isoformat=lambda: "2025-01-01T00:00:00"),
+        graph = await attempt_chat_factory()
+        await user_start_impl(
+            {
+                "sid": "s1",
+                "chat_id": str(graph.attempt_chat.id),
+                "run_id": str(graph.run.id),
+                "session_id": str(graph.session.id),
+            },
+            emit=emit,
+            pool=pool,
         )
-        mock_attempt_msg = SimpleNamespace(
-            id="00000000-0000-0000-0000-000000000088",
-        )
-        mock_call = SimpleNamespace(id=UUID(int=77))
-        with (
-            patch(
-                "app.routes.v5.tools.entries.messages.create.create_message",
-                new_callable=AsyncMock,
-                return_value=mock_result,
-            ),
-            patch(
-                "app.routes.v5.tools.entries.attempt_message.create.create_attempt_message",
-                new_callable=AsyncMock,
-                return_value=mock_attempt_msg,
-            ),
-            patch(
-                "app.routes.v5.tools.entries.calls.create.create_call",
-                new_callable=AsyncMock,
-                return_value=mock_call,
-            ),
-        ):
-            await user_start_impl(
-                {
-                    "sid": "s1",
-                    "chat_id": "00000000-0000-0000-0000-000000000001",
-                    "run_id": "00000000-0000-0000-0000-000000000002",
-                },
-                emit=emit,
-                pool=_mock_pool(mock_conn),
-            )
         assert len(events) == 1
         assert events[0].event == "attempt_user_start"
-        assert events[0].data["message_id"] == "00000000-0000-0000-0000-000000000099"
+        message_id = UUID(events[0].data["message_id"])
+        async with pool.acquire() as conn:
+            message = await get_message(conn, message_id)
+            attempt_messages, total_count = await search_attempt_messages(
+                conn,
+                chat_ids=[graph.attempt_chat.id],
+                bypass_mv=True,
+                limit=100,
+            )
+        assert message is not None
+        assert message.run_id == graph.run.id
+        assert message.role == "user"
+        assert total_count == 1
+        assert len(attempt_messages) == 1
+        assert attempt_messages[0].message_id == message_id
+        assert attempt_messages[0].chat_id == graph.attempt_chat.id
+        assert attempt_messages[0].completed is False
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1552,12 +1607,6 @@ class TestRunImpl:
 # user_complete_impl
 # ═══════════════════════════════════════════════════════════════════════════
 
-_ATTEMPT_MSG_SEARCH = "app.routes.v5.tools.entries.attempt_message.search"
-_ATTEMPT_CONTENT = "app.routes.v5.tools.entries.attempt_content.create"
-_ATTEMPT_MSG_COMPLETION = (
-    "app.routes.v5.tools.entries.attempt_message_completion.create"
-)
-
 
 @pytest.mark.asyncio
 class TestUserCompleteImpl:
@@ -1579,104 +1628,139 @@ class TestUserCompleteImpl:
         )
         assert events == []
 
-    @patch(f"{_ATTEMPT_MSG_SEARCH}.search_attempt_messages", new_callable=AsyncMock)
-    async def test_no_open_message_emits_nothing(self, mock_search):
-        mock_search.return_value = ([], 0)
+    async def test_no_open_message_emits_nothing(self, pool, attempt_chat_factory):
+        graph = await attempt_chat_factory()
         emit, events = recording_emit()
         await _user_complete_impl(
             {
                 "sid": "s1",
-                "chat_id": "019b3be4-36f0-788c-9df2-481eb5917940",
-                "run_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "chat_id": str(graph.attempt_chat.id),
+                "run_id": str(graph.run.id),
                 "content": "hello",
+                "session_id": str(graph.session.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
         assert events == []
 
-    @patch(
-        "app.routes.v5.tools.entries.calls.create.create_call",
-        new_callable=AsyncMock,
-        return_value=SimpleNamespace(id=UUID(int=77)),
-    )
-    @patch(
-        f"{_ATTEMPT_MSG_COMPLETION}.create_attempt_message_completion",
-        new_callable=AsyncMock,
-    )
-    @patch(f"{_ATTEMPT_CONTENT}.create_attempt_content", new_callable=AsyncMock)
-    @patch(f"{_ATTEMPT_MSG_SEARCH}.search_attempt_messages", new_callable=AsyncMock)
-    async def test_happy_path_emits_user_complete(
-        self, mock_search, mock_content, mock_completion, mock_call
-    ):
-        from datetime import datetime
-        from uuid import UUID
-
-        msg_id = UUID("019b3be4-36f0-788c-9df2-481eb5917950")
-        mock_search.return_value = (
-            [
-                SimpleNamespace(
-                    message_id=msg_id,
-                    type="user",
-                    completed=False,
-                    created_at=datetime(2026, 1, 1),
-                ),
-            ],
-            1,
-        )
-
+    async def test_happy_path_emits_user_complete(self, pool, attempt_chat_factory):
+        graph = await attempt_chat_factory()
+        async with pool.acquire() as conn:
+            open_message = await create_message(conn, run_id=graph.run.id, role="user")
+            open_call = await create_call(
+                conn,
+                run_id=graph.run.id,
+                session_id=graph.session.id,
+            )
+            await create_attempt_message(
+                conn,
+                chat_id=graph.attempt_chat.id,
+                message_id=open_message.id,
+                call_id=open_call.id,
+            )
         emit, events = recording_emit()
         await _user_complete_impl(
             {
                 "sid": "s1",
-                "chat_id": "019b3be4-36f0-788c-9df2-481eb5917940",
-                "run_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "chat_id": str(graph.attempt_chat.id),
+                "run_id": str(graph.run.id),
                 "content": "hello world",
+                "session_id": str(graph.session.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
 
-        assert mock_content.called
-        assert mock_completion.called
         assert len(events) == 1
         assert events[0].event == "attempt_user_complete"
-        assert events[0].data["message_id"] == str(msg_id)
+        assert events[0].data["message_id"] == str(open_message.id)
         assert events[0].data["content"] == "hello world"
-
-    @patch(f"{_ATTEMPT_MSG_SEARCH}.search_attempt_messages", new_callable=AsyncMock)
-    async def test_filters_completed_messages(self, mock_search):
-        from datetime import datetime
-        from uuid import UUID
-
-        mock_search.return_value = (
-            [
-                SimpleNamespace(
-                    message_id=UUID(int=1),
-                    type="user",
-                    completed=True,
-                    created_at=datetime(2026, 1, 1),
-                ),
-                SimpleNamespace(
-                    message_id=UUID(int=2),
-                    type="assistant",
-                    completed=False,
-                    created_at=datetime(2026, 1, 1),
-                ),
-            ],
-            2,
+        async with pool.acquire() as conn:
+            contents = await search_attempt_contents(
+                conn,
+                message_ids=[open_message.id],
+                bypass_mv=True,
+                limit=100,
+            )
+            completions = await search_attempt_message_completions(
+                conn,
+                attempt_message_ids=[open_message.id],
+                bypass_mv=True,
+                limit=100,
+            )
+            attempt_messages, _ = await search_attempt_messages(
+                conn,
+                chat_ids=[graph.attempt_chat.id],
+                bypass_mv=True,
+                limit=100,
+            )
+        assert len(contents) == 1
+        assert contents[0].message_id == open_message.id
+        assert contents[0].content == "hello world"
+        assert len(completions) == 1
+        assert completions[0].attempt_message_id == open_message.id
+        matching_message = next(
+            item for item in attempt_messages if item.message_id == open_message.id
         )
+        assert matching_message.completed is True
 
+    async def test_filters_completed_messages(self, pool, attempt_chat_factory):
+        graph = await attempt_chat_factory()
+        async with pool.acquire() as conn:
+            completed_message = await create_message(
+                conn,
+                run_id=graph.run.id,
+                role="user",
+            )
+            completed_call = await create_call(
+                conn,
+                run_id=graph.run.id,
+                session_id=graph.session.id,
+            )
+            await create_attempt_message(
+                conn,
+                chat_id=graph.attempt_chat.id,
+                message_id=completed_message.id,
+                call_id=completed_call.id,
+            )
+            completion_call = await create_call(
+                conn,
+                run_id=graph.run.id,
+                session_id=graph.session.id,
+            )
+            await create_attempt_message_completion(
+                conn,
+                attempt_message_id=completed_message.id,
+                call_id=completion_call.id,
+            )
+            assistant_message = await create_message(
+                conn,
+                run_id=graph.run.id,
+                role="assistant",
+            )
+            assistant_call = await create_call(
+                conn,
+                run_id=graph.run.id,
+                session_id=graph.session.id,
+            )
+            await create_attempt_message(
+                conn,
+                chat_id=graph.attempt_chat.id,
+                message_id=assistant_message.id,
+                call_id=assistant_call.id,
+            )
         emit, events = recording_emit()
         await _user_complete_impl(
             {
                 "sid": "s1",
-                "chat_id": "019b3be4-36f0-788c-9df2-481eb5917940",
-                "run_id": "019b3be4-36f0-788c-9df2-481eb5917941",
+                "chat_id": str(graph.attempt_chat.id),
+                "run_id": str(graph.run.id),
                 "content": "hello",
+                "session_id": str(graph.session.id),
             },
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
         assert events == []
 

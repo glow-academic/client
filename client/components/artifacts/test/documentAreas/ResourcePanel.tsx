@@ -1,26 +1,18 @@
 /**
  * ResourcePanel.tsx
- * Editable agent resource selectors — plugs into the document_area slot of GenericChatInterface.
- * Wraps resource components from @/components/resources/ in a scrollable resizable panel.
+ * Compact resource selectors for test runs — plugs into the document_area slot of GenericChatInterface.
+ * Uses GenericPicker directly for lightweight selection without AI/draft/suggestion machinery.
  */
 "use client";
 
 import { ResizablePanel } from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Modalities } from "@/components/resources/Modalities";
-import { Prompts } from "@/components/resources/Prompts";
-import { Instructions } from "@/components/resources/Instructions";
-import { Voices } from "@/components/resources/Voices";
-import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
-import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
-import { Tools } from "@/components/resources/Tools";
-import { Qualities } from "@/components/resources/Qualities";
+import { Label } from "@/components/ui/label";
+import { GenericPicker } from "@/components/common/forms/GenericPicker";
 
-// Bundle data shape — matches the invocation/get response.
-// Typed as a scaffold interface since the invocation OpenAPI route
-// isn't fully typed yet. Each resource section has { show, current, resources }.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface ResourceSection { show?: boolean; current?: any[]; resources?: any[] }
+
 interface BundleData {
   modalities?: ResourceSection;
   prompts?: ResourceSection;
@@ -62,6 +54,41 @@ export function extractIds<T>(
     .filter((id): id is string => !!id);
 }
 
+// Minimal item shape for GenericPicker
+interface PickerItem { id: string; label: string }
+
+// Convert resource arrays to picker items using field mappings
+function toItems(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  resources: any[] | undefined,
+  idField: string,
+  labelField: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  labelTransform?: (val: any) => string,
+): PickerItem[] {
+  if (!resources) return [];
+  return resources
+    .filter((r) => r[idField] && r[labelField] != null)
+    .map((r) => ({
+      id: r[idField] as string,
+      label: labelTransform ? labelTransform(r[labelField]) : String(r[labelField]),
+    }));
+}
+
+// Resource configuration — defines how each section maps to picker items
+const RESOURCE_CONFIG = {
+  modalities: { idField: "modality_id", labelField: "name", multi: true, label: "Modalities", formKey: "modality_ids" },
+  prompts: { idField: "id", labelField: "name", multi: false, label: "Prompt", formKey: "prompt_ids" },
+  instructions: { idField: "id", labelField: "template", multi: false, label: "Instructions", formKey: "instruction_ids" },
+  voices: { idField: "id", labelField: "voice", multi: true, label: "Voices", formKey: "voice_ids" },
+  temperature_levels: { idField: "id", labelField: "temperature", multi: false, label: "Temperature", formKey: "temperature_level_ids", labelTransform: String },
+  reasoning_levels: { idField: "id", labelField: "reasoning_level", multi: false, label: "Reasoning", formKey: "reasoning_level_ids", labelTransform: (v: string) => v.charAt(0).toUpperCase() + v.slice(1) },
+  tools: { idField: "id", labelField: "name", multi: true, label: "Tools", formKey: "tool_ids" },
+  qualities: { idField: "id", labelField: "quality", multi: true, label: "Qualities", formKey: "quality_ids" },
+} as const;
+
+type ConfigKey = keyof typeof RESOURCE_CONFIG;
+
 export function ResourcePanel({
   visible,
   bundle_data,
@@ -71,7 +98,9 @@ export function ResourcePanel({
 }: ResourcePanelProps) {
   if (!visible || !bundle_data) return null;
 
-  const s = bundle_data;
+  const sections = (Object.keys(RESOURCE_CONFIG) as ConfigKey[]).filter(
+    (key) => bundle_data[key]?.show,
+  );
 
   return (
     <ResizablePanel
@@ -81,132 +110,36 @@ export function ResourcePanel({
       className="hidden md:block"
     >
       <ScrollArea className="h-full">
-        <div className="space-y-4 p-4">
+        <div className="space-y-3 p-4">
           <h3 className="text-sm font-semibold">Agent Resources</h3>
 
-          {s.modalities?.show && (
-            <Modalities
-              modality_ids={form_state.modality_ids}
-              modality_resources={s.modalities.current ?? []}
-              show_modalities={s.modalities.show}
-              modalities={s.modalities.resources ?? []}
-              disabled={disabled ?? false}
-              onChange={(ids) =>
-                on_form_change((prev) => ({ ...prev, modality_ids: ids }))
-              }
-              label="Modalities"
-            />
-          )}
+          {sections.map((key) => {
+            const cfg = RESOURCE_CONFIG[key];
+            const section = bundle_data[key]!;
+            const items = toItems(section.resources, cfg.idField, cfg.labelField, cfg.labelTransform);
+            const formKey = cfg.formKey as keyof BenchmarkBundleFormState;
+            const selectedIds = form_state[formKey];
 
-          {s.prompts?.show && (
-            <Prompts
-              prompt_id={form_state.prompt_ids[0] ?? null}
-              prompt_resource={s.prompts.current?.[0] ?? null}
-              show_prompts={s.prompts.show}
-              prompts={s.prompts.resources ?? []}
-              disabled={disabled ?? false}
-              onPromptIdChange={(id: string | null) =>
-                on_form_change((prev) => ({
-                  ...prev,
-                  prompt_ids: id ? [id] : [],
-                }))
-              }
-              label="Prompt"
-            />
-          )}
-
-          {s.instructions?.show && (
-            <Instructions
-              instructions_id={form_state.instruction_ids[0] ?? null}
-              show_instructions={s.instructions.show}
-              instructions={s.instructions.resources ?? []}
-              disabled={disabled ?? false}
-              onInstructionsIdChange={(id: string | null) =>
-                on_form_change((prev) => ({
-                  ...prev,
-                  instruction_ids: id ? [id] : [],
-                }))
-              }
-              label="Instructions"
-            />
-          )}
-
-          {s.voices?.show && (
-            <Voices
-              voice_ids={form_state.voice_ids}
-              voice_resources={s.voices.current ?? []}
-              show_voices={s.voices.show}
-              voices={s.voices.resources ?? []}
-              disabled={disabled ?? false}
-              onVoiceIdsChange={(ids) =>
-                on_form_change((prev) => ({ ...prev, voice_ids: ids }))
-              }
-              label="Voices"
-            />
-          )}
-
-          {s.temperature_levels?.show && (
-            <TemperatureLevels
-              temperature_level_id={form_state.temperature_level_ids[0] ?? null}
-              temperature_level_resource={
-                s.temperature_levels.current?.[0] ?? null
-              }
-              show_temperature_levels={s.temperature_levels.show}
-              temperature_levels={s.temperature_levels.resources ?? []}
-              disabled={disabled ?? false}
-              onTemperatureLevelIdChange={(id: string | null) =>
-                on_form_change((prev) => ({
-                  ...prev,
-                  temperature_level_ids: id ? [id] : [],
-                }))
-              }
-            />
-          )}
-
-          {s.reasoning_levels?.show && (
-            <ReasoningLevels
-              reasoning_level_id={form_state.reasoning_level_ids[0] ?? null}
-              reasoning_level_resource={
-                s.reasoning_levels.current?.[0] ?? null
-              }
-              show_reasoning_levels={s.reasoning_levels.show}
-              reasoning_levels={s.reasoning_levels.resources ?? []}
-              disabled={disabled ?? false}
-              onReasoningLevelIdChange={(id: string | null) =>
-                on_form_change((prev) => ({
-                  ...prev,
-                  reasoning_level_ids: id ? [id] : [],
-                }))
-              }
-            />
-          )}
-
-          {s.tools?.show && (
-            <Tools
-              tool_ids={form_state.tool_ids}
-              tool_resources={s.tools.current ?? []}
-              show_tools={s.tools.show}
-              tools={s.tools.resources ?? []}
-              disabled={disabled ?? false}
-              onChange={(ids) =>
-                on_form_change((prev) => ({ ...prev, tool_ids: ids }))
-              }
-            />
-          )}
-
-          {s.qualities?.show && (
-            <Qualities
-              quality_ids={form_state.quality_ids}
-              quality_resources={s.qualities.current ?? []}
-              show_qualities={s.qualities.show}
-              qualities={s.qualities.resources ?? []}
-              disabled={disabled ?? false}
-              onChange={(ids) =>
-                on_form_change((prev) => ({ ...prev, quality_ids: ids }))
-              }
-              label="Qualities"
-            />
-          )}
+            return (
+              <div key={key} className="space-y-1">
+                <Label className="text-xs">{cfg.label}</Label>
+                <GenericPicker<PickerItem>
+                  items={items}
+                  selectedIds={selectedIds}
+                  onSelect={(ids) =>
+                    on_form_change((prev) => ({ ...prev, [formKey]: ids }))
+                  }
+                  multiSelect={cfg.multi}
+                  getId={(item) => item.id}
+                  getLabel={(item) => item.label}
+                  placeholder={`Select ${cfg.label.toLowerCase()}...`}
+                  disabled={disabled ?? false}
+                  showLabel={false}
+                  compact={true}
+                />
+              </div>
+            );
+          })}
         </div>
       </ScrollArea>
     </ResizablePanel>

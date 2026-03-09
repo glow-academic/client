@@ -338,7 +338,7 @@ export function EmulateProfileModal({
             <div className="p-4 border border-yellow-500/50 rounded-md bg-yellow-50 dark:bg-yellow-950/20">
               <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
                 Emulation can be destructive if you take actions on behalf of
-                this user. The only way to exit emulation is to log out.
+                this user. You can exit emulation from the profile menu.
               </p>
             </div>
           )}

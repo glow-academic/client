@@ -24,10 +24,8 @@ async def search_tools(
     arg_ids: list[UUID] | None = None,
     args_output_ids: list[UUID] | None = None,
     artifact_ids: list[UUID] | None = None,
-    entry_ids: list[UUID] | None = None,
     flag_ids: list[UUID] | None = None,
     operation_ids: list[UUID] | None = None,
-    resource_ids: list[UUID] | None = None,
     tool_ids: list[UUID] | None = None,
     exclude_ids: list[UUID] | None = None,
     active_only: bool = True,
@@ -141,17 +139,6 @@ async def search_tools(
             ids=artifact_ids,
         )
 
-    if entry_ids:
-        idx = add_junction_filter(
-            conditions,
-            params,
-            idx,
-            junction_table="tool_entries_junction",
-            owner_col=OWNER_COL,
-            resource_col="entries_id",
-            ids=entry_ids,
-        )
-
     if flag_ids:
         idx = add_junction_filter(
             conditions,
@@ -172,17 +159,6 @@ async def search_tools(
             owner_col=OWNER_COL,
             resource_col="operations_id",
             ids=operation_ids,
-        )
-
-    if resource_ids:
-        idx = add_junction_filter(
-            conditions,
-            params,
-            idx,
-            junction_table="tool_resources_junction",
-            owner_col=OWNER_COL,
-            resource_col="resources_id",
-            ids=resource_ids,
         )
 
     if tool_ids:

@@ -75,7 +75,7 @@ No previous insights have been generated yet.
 
 Analyze this benchmark data and generate focused insights about cross-model performance, rubric evaluation quality, and scoring patterns. Call **create_benchmark_insights** once per discrete finding.', true, '2026-02-22T00:20:46.593734+00:00', false, false) ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voices, model_id, prompt_id, instruction_ids) VALUES ('2026-02-11T20:37:27.875564+00:00', true, false, false, 'aa000003-0000-0000-0000-000000000003', 'Benchmark', 'AI agent for generating analytical insights about benchmark evaluation results including cross-model performance and scoring quality', '{}', 0, 'none', '{018f0002-0001-7000-8000-000000000004}', NULL, '{}', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5dab-7e44-b183-540aef3f32c9', '{019c82b8-5dac-71a9-892c-60b882fe931f}') ON CONFLICT (id) DO NOTHING;
+INSERT INTO public.agents_resource (created_at, active, generated, mcp, id, name, description, department_ids, temperature, reasoning, tool_ids, quality, voices, model_id, prompt_id, instruction_ids) VALUES ('2026-02-11T20:37:27.875564+00:00', true, false, false, 'aa000003-0000-0000-0000-000000000003', 'Benchmark', 'AI agent for generating analytical insights about benchmark evaluation results including cross-model performance and scoring quality', '{}', 0, 'none', '{}', NULL, '{}', '019bb25e-e5ff-76f6-90d4-830670bb5d82', '019c82b8-5dab-7e44-b183-540aef3f32c9', '{019c82b8-5dac-71a9-892c-60b882fe931f}') ON CONFLICT (id) DO NOTHING;
 INSERT INTO public.names_resource (id, name, created_at, active, generated, mcp) VALUES ('aa000001-0000-0000-0000-000000000001', 'Benchmark', '2026-02-11T20:37:27.875564+00:00', true, false, false) ON CONFLICT (id) DO NOTHING;
 
 -- Artifact
@@ -129,5 +129,3 @@ INSERT INTO public.agent_descriptions_junction (agent_id, descriptions_id, creat
 INSERT INTO public.agent_flags_junction (agent_id, flags_id, created_at, generated, mcp, active) VALUES ('aabbccdd-aabb-ccdd-aabb-ccddaabbccdd', '019be334-bfc4-76ac-80d3-c8ba7618bc7a', '2026-02-11T20:37:27.875564+00:00', false, false, true) ON CONFLICT (agent_id, flags_id) DO NOTHING;
 -- agent_names_junction
 INSERT INTO public.agent_names_junction (agent_id, names_id, created_at, generated, mcp, active) VALUES ('aabbccdd-aabb-ccdd-aabb-ccddaabbccdd', 'aa000001-0000-0000-0000-000000000001', '2026-02-11T20:37:27.875564+00:00', false, false, true) ON CONFLICT (agent_id, names_id) DO NOTHING;
--- agent_tools_junction
-INSERT INTO public.agent_tools_junction (agent_id, tools_id, active, created_at, generated, mcp) VALUES ('aabbccdd-aabb-ccdd-aabb-ccddaabbccdd', '018f0002-0001-7000-8000-000000000004', true, '2026-02-26T00:00:00.000000+00:00', false, false) ON CONFLICT (agent_id, tools_id) DO NOTHING;

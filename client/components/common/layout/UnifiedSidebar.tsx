@@ -7,6 +7,7 @@
 import type {
   CreateFeedbackIn,
   CreateFeedbackOut,
+  ExitEmulationResult,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
   SwitchEffectiveProfileParams,
@@ -57,6 +58,7 @@ import {
   LogOut,
   Search,
   Sparkles,
+  UserX,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
@@ -72,6 +74,7 @@ export interface UnifiedSidebarProps
   switchEffectiveProfile: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
+  exitEmulation: () => Promise<ExitEmulationResult>;
   createFeedback: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   searchSimulatableProfiles: (
     input: SearchSimulatableProfilesIn
@@ -115,6 +118,7 @@ export function UnifiedSidebar({
   activeSection,
   onSectionChange,
   switchEffectiveProfile,
+  exitEmulation,
   createFeedback,
   searchSimulatableProfiles,
   ...props
@@ -140,8 +144,9 @@ export function UnifiedSidebar({
   const { isMobile, setOpenMobile } = useSidebar();
 
   // Use the profile context
-  const { profile, isAuthenticated, availableSections } =
+  const { profile, isAuthenticated, isEmulation, availableSections } =
     useProfile();
+  const [isExitingEmulation, setIsExitingEmulation] = useState(false);
   const navMain = useMemo(() => {
     if (!profile) return [];
 
@@ -256,6 +261,23 @@ export function UnifiedSidebar({
   // Guest/default account users can't emulate even if they have the right role
   const canEmulate = isAuthenticated && !!profile;
 
+  const handleExitEmulation = useCallback(async () => {
+    setIsExitingEmulation(true);
+    try {
+      const result = await exitEmulation();
+      if (!result.ok) {
+        toast.error(result.reason || "Failed to exit emulation");
+        return;
+      }
+      toast.success("Exiting emulation...");
+      window.location.reload();
+    } catch {
+      toast.error("Failed to exit emulation");
+    } finally {
+      setIsExitingEmulation(false);
+    }
+  }, [exitEmulation]);
+
   // Restore scroll position synchronously before paint to prevent flash
   useLayoutEffect(() => {
     const savedScrollFromStorage = sessionStorage.getItem(
@@ -358,6 +380,21 @@ export function UnifiedSidebar({
                       >
                         <Sparkles className="h-4 w-4 mr-2" />
                         Emulate
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  ) : null}
+                  {isEmulation ? (
+                    <>
+                      <DropdownMenuItem
+                        onClick={handleExitEmulation}
+                        disabled={isExitingEmulation}
+                        className={
+                          isExitingEmulation ? "opacity-70 cursor-not-allowed" : ""
+                        }
+                      >
+                        <UserX className="h-4 w-4 mr-2" />
+                        {isExitingEmulation ? "Exiting..." : "Exit Emulation"}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>

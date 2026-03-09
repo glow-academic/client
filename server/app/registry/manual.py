@@ -3,7 +3,6 @@
 Contains data that cannot be introspected from the database or filesystem:
 - RESOURCE_OUTPUT_SCHEMAS: curated tool output contracts
 - ARTIFACT_ROLES: which roles can edit each artifact
-- TOOL_ENTRY_TYPES: hardcoded UUID → entry_type mappings
 - VIEW_ENTRIES: view → entry_type mappings
 - ARTIFACT_VIEWS: complex artifact → view mappings
 - VIEW_RESOURCES: view → resource mappings
@@ -83,16 +82,6 @@ ARTIFACT_ROLES: dict[str, frozenset[str]] = {
     "setting": frozenset({"admin", "superadmin"}),
     "simulation": frozenset({"admin", "instructional", "superadmin"}),
     "tool": frozenset({"admin", "superadmin"}),
-}
-
-# ---------------------------------------------------------------------------
-# entry_tools_relation (tool_id → entry_type)
-# Hardcoded UUIDs — not derivable
-# ---------------------------------------------------------------------------
-TOOL_ENTRY_TYPES: dict[str, str] = {
-    "019c16d8-a128-7352-b010-39432de8e0dc": "highlights",
-    "019c16d8-a128-7f6f-a6f8-c9c5aa236504": "replacements",
-    "019b916f-f5c8-7e4e-8412-3e3fb1a9ce5c": "attempt_responses",
 }
 
 # ---------------------------------------------------------------------------

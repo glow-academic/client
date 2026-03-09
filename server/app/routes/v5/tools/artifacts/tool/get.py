@@ -34,9 +34,7 @@ JUNCTIONS: list[tuple[str, str, str, str]] = [
         "arg_positions_ids",
     ),
     ("artifacts", "tool_artifacts_junction", "artifacts_id", "artifact_ids"),
-    ("entries", "tool_entries_junction", "entries_id", "entry_ids"),
     ("operations", "tool_operations_junction", "operations_id", "operation_ids"),
-    ("resources", "tool_resources_junction", "resources_id", "resource_ids"),
     ("tools", "tool_tools_junction", "tools_id", "tool_ids"),
 ]
 
@@ -54,9 +52,7 @@ async def get_tools(
     args_outputs: bool = False,
     arg_positions: bool = False,
     artifacts: bool = False,
-    entries: bool = False,
     operations: bool = False,
-    resources: bool = False,
     tools: bool = False,
 ) -> list[GetToolsResponse]:
     """Get tool artifacts by IDs with optional junction ID fetching."""
@@ -72,9 +68,7 @@ async def get_tools(
         "args_outputs": args_outputs,
         "arg_positions": arg_positions,
         "artifacts": artifacts,
-        "entries": entries,
         "operations": operations,
-        "resources": resources,
         "tools": tools,
     }
 

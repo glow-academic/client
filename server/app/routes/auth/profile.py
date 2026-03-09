@@ -154,6 +154,15 @@ async def get_auth_profile(
         user_artifacts = identity.role_artifacts or []
         available_sections = compute_available_sections(user_artifacts)
 
+        # Surface emulation state from middleware identity
+        req_identity = getattr(http_request.state, "identity", None)
+        is_emulation = (
+            getattr(req_identity, "is_emulation", False) if req_identity else False
+        )
+        emulation_depth = (
+            getattr(req_identity, "emulation_depth", 0) if req_identity else 0
+        )
+
         return GetAuthProfileApiResponse(
             is_authorized=True,
             id=data.profile_id,
@@ -165,6 +174,8 @@ async def get_auth_profile(
             role_resources=data.role_resources,
             session_id=data.session_id,
             actor_name=identity.name,
+            is_emulation=is_emulation or None,
+            emulation_depth=emulation_depth or None,
         )
 
     except HTTPException:

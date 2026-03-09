@@ -157,9 +157,7 @@ class UpdateToolItem(BaseModel):
     args_ids: list[UUID] | None = None
     args_outputs_ids: list[UUID] | None = None
     artifact_ids: list[UUID] | None = None
-    entry_ids: list[UUID] | None = None
     operation_ids: list[UUID] | None = None
-    resource_ids: list[UUID] | None = None
     tool_ids: list[UUID] | None = None
 
 
@@ -219,8 +217,7 @@ class PatchToolDraftApiRequest(BaseModel):
     Dual-mode for creatable resources only:
       - name/name_id, description/description_id
     ID-only for non-creatable resources:
-      - flag_ids, department_ids, arg_ids, arg_position_ids, args_output_ids,
-        entry_ids, resource_ids
+      - flag_ids, department_ids, arg_ids, arg_position_ids, args_output_ids
 
     Client always sends full state (append-only — each write is a new version snapshot).
     """
@@ -241,8 +238,6 @@ class PatchToolDraftApiRequest(BaseModel):
     arg_ids: list[UUID] | None = None
     arg_position_ids: list[UUID] | None = None
     args_output_ids: list[UUID] | None = None
-    entry_ids: list[UUID] | None = None
-    resource_ids: list[UUID] | None = None
 
 
 class ToolDraftFormState(BaseModel):
@@ -255,8 +250,6 @@ class ToolDraftFormState(BaseModel):
     arg_ids: list[UUID]
     arg_position_ids: list[UUID]
     args_output_ids: list[UUID]
-    entry_ids: list[UUID]
-    resource_ids: list[UUID]
 
 
 class PatchToolDraftApiResponse(BaseModel):

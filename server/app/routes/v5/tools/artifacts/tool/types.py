@@ -22,9 +22,7 @@ class GetToolsResponse(BaseModel):
     args_outputs_ids: list[UUID] | None = None
     arg_positions_ids: list[UUID] | None = None
     artifact_ids: list[UUID] | None = None
-    entry_ids: list[UUID] | None = None
     operation_ids: list[UUID] | None = None
-    resource_ids: list[UUID] | None = None
     tool_ids: list[UUID] | None = None
 
 

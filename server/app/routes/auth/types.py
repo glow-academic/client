@@ -115,6 +115,8 @@ class GetAuthProfileApiResponse(BaseModel):
     role_resources: list[QGetProfileContextV4RoleResource] | None = None
     session_id: UUID | None = None
     actor_name: str | None = None
+    is_emulation: bool | None = None
+    emulation_depth: int | None = None
 
 
 class GetAuthSettingsApiResponse(BaseModel):

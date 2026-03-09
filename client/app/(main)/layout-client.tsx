@@ -24,6 +24,7 @@ import type {
   AuthSettingsResponse,
   CreateFeedbackIn,
   CreateFeedbackOut,
+  ExitEmulationResult,
   SafeSessionSnapshot,
   SearchSimulatableProfilesIn,
   SearchSimulatableProfilesOut,
@@ -36,6 +37,7 @@ function MainLayoutContent({
   children,
   initialSidebarOpen,
   switchEffectiveProfileAction,
+  exitEmulationAction,
   createFeedbackAction,
   searchSimulatableProfilesAction,
 }: {
@@ -44,6 +46,7 @@ function MainLayoutContent({
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
+  exitEmulationAction: () => Promise<ExitEmulationResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
@@ -94,6 +97,7 @@ function MainLayoutContent({
           activeSection={activeSection}
           onSectionChange={handleSectionChange}
           switchEffectiveProfile={switchEffectiveProfileAction}
+          exitEmulation={exitEmulationAction}
           createFeedback={createFeedbackAction}
           searchSimulatableProfiles={searchSimulatableProfilesAction}
         />
@@ -112,6 +116,7 @@ export function MainLayoutClient({
   sessionSnapshot,
   initialSidebarOpen,
   switchEffectiveProfileAction,
+  exitEmulationAction,
   createFeedbackAction,
   searchSimulatableProfilesAction,
 }: {
@@ -124,6 +129,7 @@ export function MainLayoutClient({
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
+  exitEmulationAction: () => Promise<ExitEmulationResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
@@ -173,6 +179,7 @@ export function MainLayoutClient({
             <MainLayoutContent
               initialSidebarOpen={initialSidebarOpen}
               switchEffectiveProfileAction={switchEffectiveProfileAction}
+              exitEmulationAction={exitEmulationAction}
               createFeedbackAction={createFeedbackAction}
               searchSimulatableProfilesAction={
                 searchSimulatableProfilesAction

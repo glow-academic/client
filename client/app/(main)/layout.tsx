@@ -14,6 +14,7 @@ import { Suspense } from "react";
 import { MainLayoutClient } from "./layout-client";
 import {
   createFeedback,
+  exitEmulation,
   getLayoutContextData,
   searchSimulatableProfiles,
   switchEffectiveProfile,
@@ -85,6 +86,7 @@ export default async function MainLayout({
         sessionSnapshot={snapshot}
         initialSidebarOpen={initialSidebarOpen}
         switchEffectiveProfileAction={switchEffectiveProfile}
+        exitEmulationAction={exitEmulation}
         createFeedbackAction={createFeedback}
         searchSimulatableProfilesAction={searchSimulatableProfiles}
       >

@@ -86,21 +86,35 @@ async def search_profile_client(
     user_department_ids = actor_profile.department_ids
     actor_name = actor_profile.name
 
-    # -- Step 2: Resolve role_filter string to role_ids --
+    # -- Step 2: Scope by role hierarchy + optional role_filter --
+    # Visible roles: roles at or below the requester's level
+    VISIBLE_ROLES: dict[str, set[str]] = {
+        "superadmin": {"superadmin", "admin", "instructional", "member", "guest"},
+        "admin": {"admin", "instructional", "member", "guest"},
+        "instructional": {"instructional", "member", "guest"},
+        "member": {"member", "guest"},
+        "guest": {"guest"},
+    }
+    visible = VISIBLE_ROLES.get(user_role, set())
 
     async with pool.acquire() as conn:
-        role_ids_filter: list[UUID] | None = None
+        all_roles = await get_roles(conn, None, redis)
+
+        # Start with hierarchy-scoped roles
+        allowed_roles = {r.role for r in all_roles if r.role in visible}
+
+        # Intersect with explicit role_filter if provided
         if role_filter:
-            # Search roles to find the matching role resource ID
-            all_roles = await get_roles(conn, None, redis)
-            matching = [r for r in all_roles if r.role == role_filter]
-            if matching:
-                role_ids_filter = [r.id for r in matching]
+            if role_filter in allowed_roles:
+                allowed_roles = {role_filter}
             else:
-                # No matching role — empty result
                 return _empty_response(actor_name, total_count=0)
 
-        # -- Step 3: Search profiles --
+        role_ids_filter = [r.id for r in all_roles if r.role in allowed_roles]
+        if not role_ids_filter:
+            return _empty_response(actor_name, total_count=0)
+
+        # -- Step 3: Search profiles (always exclude self) --
 
         profile_ids, total_count = await search_profiles(
             conn,
@@ -108,6 +122,7 @@ async def search_profile_client(
             department_ids=filter_department_ids,
             cohort_ids=cohort_ids,
             role_ids=role_ids_filter,
+            exclude_ids=[profile_id],
             limit_count=page_size,
             offset_count=page_offset,
         )

@@ -92,21 +92,6 @@ CREATE TABLE public.tool_descriptions_junction (
 
 --
 
--- Name: tool_entries_junction; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.tool_entries_junction (
-    tool_id uuid CONSTRAINT tool_bindings_junction_tool_id_not_null NOT NULL,
-    entries_id uuid CONSTRAINT tool_bindings_junction_binding_id_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT tool_bindings_junction_active_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT tool_bindings_junction_created_at_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT tool_bindings_junction_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT tool_bindings_junction_mcp_not_null NOT NULL
-);
-
-
---
-
 -- Name: tool_flags_junction; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -147,21 +132,6 @@ CREATE TABLE public.tool_operations_junction (
     active boolean DEFAULT true CONSTRAINT tool_operations_active_not_null NOT NULL,
     generated boolean DEFAULT false CONSTRAINT tool_operations_generated_not_null NOT NULL,
     mcp boolean DEFAULT false CONSTRAINT tool_operations_mcp_not_null NOT NULL
-);
-
-
---
-
--- Name: tool_resources_junction; Type: TABLE; Schema: public; Owner: -
---
-
-CREATE TABLE public.tool_resources_junction (
-    tool_id uuid CONSTRAINT tool_resources_tool_id_not_null NOT NULL,
-    resources_id uuid CONSTRAINT tool_resources_resource_id_not_null NOT NULL,
-    active boolean DEFAULT true CONSTRAINT tool_resources_active_not_null NOT NULL,
-    created_at timestamp with time zone DEFAULT now() CONSTRAINT tool_resources_created_at_not_null NOT NULL,
-    generated boolean DEFAULT false CONSTRAINT tool_resources_generated_not_null NOT NULL,
-    mcp boolean DEFAULT false CONSTRAINT tool_resources_mcp_not_null NOT NULL
 );
 
 
@@ -236,15 +206,6 @@ ALTER TABLE ONLY public.tool_descriptions_junction
 
 --
 
--- Name: tool_entries_junction tool_entries_junction_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tool_entries_junction
-    ADD CONSTRAINT tool_entries_junction_pkey PRIMARY KEY (tool_id, entries_id);
-
-
---
-
 -- Name: tool_flags_junction tool_flags_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -268,15 +229,6 @@ ALTER TABLE ONLY public.tool_names_junction
 
 ALTER TABLE ONLY public.tool_operations_junction
     ADD CONSTRAINT tool_operations_pkey PRIMARY KEY (tool_id, operations_id);
-
-
---
-
--- Name: tool_resources_junction tool_resources_pkey; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.tool_resources_junction
-    ADD CONSTRAINT tool_resources_pkey PRIMARY KEY (tool_id, resources_id);
 
 
 --
