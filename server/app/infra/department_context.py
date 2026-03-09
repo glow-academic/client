@@ -52,7 +52,7 @@ DEPARTMENT_FLAG_NAMES = {"department_active"}
 
 
 async def resolve_department_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     department_id: UUID | None,
@@ -69,21 +69,27 @@ async def resolve_department_context(
     """
 
     # Step 1: fetch artifact + draft in parallel
-    artifact_task = (
-        get_department_artifacts(
-            conn,
-            [department_id],
-            names=True,
-            descriptions=True,
-            flags=True,
-            settings=True,
-        )
-        if department_id
-        else _empty()
-    )
-    draft_task = get_department_drafts(conn, [draft_id]) if draft_id else _empty()
 
-    artifacts, drafts = await asyncio.gather(artifact_task, draft_task)
+    async def _fetch_artifacts() -> list:
+        if not department_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_department_artifacts(
+                conn,
+                [department_id],
+                names=True,
+                descriptions=True,
+                flags=True,
+                settings=True,
+            )
+
+    async def _fetch_drafts() -> list:
+        if not draft_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_department_drafts(conn, [draft_id])
+
+    artifacts, drafts = await asyncio.gather(_fetch_artifacts(), _fetch_drafts())
 
     artifact = artifacts[0] if artifacts else None
     draft = drafts[0] if drafts else None
@@ -94,6 +100,58 @@ async def resolve_department_context(
     active = artifact.active if artifact else True
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
+
+    async def _get_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, merged.name_ids, redis, bypass_cache)
+
+    async def _search_names() -> list:
+        async with pool.acquire() as conn:
+            return await search_names(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.name_ids,
+                bypass_cache=bypass_cache,
+                department=True,
+            )
+
+    async def _get_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+
+    async def _search_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await search_descriptions(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.description_ids,
+                bypass_cache=bypass_cache,
+                department=True,
+            )
+
+    async def _get_flags() -> list:
+        async with pool.acquire() as conn:
+            return await get_flags(conn, merged.flag_ids, redis, bypass_cache)
+
+    async def _search_flags() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=merged.flag_ids,
+                bypass_cache=bypass_cache,
+                department=True,
+            )
+
+    async def _get_settings() -> list:
+        async with pool.acquire() as conn:
+            return await get_settings(conn, merged.settings_ids, redis, bypass_cache)
+
     (
         names_selected,
         names_suggestions,
@@ -103,40 +161,13 @@ async def resolve_department_context(
         flags_suggestions,
         settings_selected,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, merged.name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.name_ids,
-            bypass_cache=bypass_cache,
-            department=True,
-        ),
-        # Descriptions
-        get_descriptions(conn, merged.description_ids, redis, bypass_cache),
-        search_descriptions(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.description_ids,
-            bypass_cache=bypass_cache,
-            department=True,
-        ),
-        # Flags
-        get_flags(conn, merged.flag_ids, redis, bypass_cache),
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=merged.flag_ids,
-            bypass_cache=bypass_cache,
-            department=True,
-        ),
-        # Settings (fetched by ID only, no search/suggestions)
-        get_settings(conn, merged.settings_ids, redis, bypass_cache),
+        _get_names(),
+        _search_names(),
+        _get_descriptions(),
+        _search_descriptions(),
+        _get_flags(),
+        _search_flags(),
+        _get_settings(),
     )
 
     # Filter flags to department-specific types

@@ -51,20 +51,21 @@ _PAGE_METADATA = PageMetadataConfig(
 
 
 async def _resolve_entity_name(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     entity_id: UUID,
 ) -> str | None:
     """Get display name for a profile by ID using black-box tools."""
-    artifacts = await get_profile_artifacts(conn, [entity_id], names=True)
-    if not artifacts or not artifacts[0].name_ids:
-        return None
-    names_data = await get_names(conn, artifacts[0].name_ids, redis)
-    return names_data[0].name if names_data else None
+    async with pool.acquire() as conn:
+        artifacts = await get_profile_artifacts(conn, [entity_id], names=True)
+        if not artifacts or not artifacts[0].name_ids:
+            return None
+        names_data = await get_names(conn, artifacts[0].name_ids, redis)
+        return names_data[0].name if names_data else None
 
 
 async def docs_profile_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -81,7 +82,7 @@ async def docs_profile_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -90,6 +91,38 @@ async def docs_profile_client(
         )
 
     # ── Step 2: Parallel docs fetches ──────────────────────────────────
+
+    async def _get_profile_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_profile_docs(conn)
+
+    async def _get_profile_drafts_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_profile_drafts_docs(conn)
+
+    async def _get_names_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_names_docs(conn)
+
+    async def _get_emails_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_emails_docs(conn)
+
+    async def _get_flags_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_flags_docs(conn)
+
+    async def _get_departments_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_departments_docs(conn)
+
+    async def _get_request_limits_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_request_limits_docs(conn)
+
+    async def _get_roles_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_roles_docs(conn)
 
     (
         artifact,
@@ -101,21 +134,21 @@ async def docs_profile_client(
         request_limits,
         roles,
     ) = await asyncio.gather(
-        get_profile_docs(conn),
-        get_profile_drafts_docs(conn),
-        get_names_docs(conn),
-        get_emails_docs(conn),
-        get_flags_docs(conn),
-        get_departments_docs(conn),
-        get_request_limits_docs(conn),
-        get_roles_docs(conn),
+        _get_profile_docs(),
+        _get_profile_drafts_docs(),
+        _get_names_docs(),
+        _get_emails_docs(),
+        _get_flags_docs(),
+        _get_departments_docs(),
+        _get_request_limits_docs(),
+        _get_roles_docs(),
     )
 
     # ── Step 3: Page metadata ───────────────────────────────────────────
 
     entity_name = None
     if entity_id is not None:
-        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+        entity_name = await _resolve_entity_name(pool, redis, entity_id)
 
     page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
 

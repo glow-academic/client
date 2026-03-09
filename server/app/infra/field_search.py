@@ -43,7 +43,7 @@ from app.routes.v5.tools.resources.personas.search import (
 
 
 async def search_field_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -72,7 +72,7 @@ async def search_field_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -87,31 +87,33 @@ async def search_field_client(
     # -- Step 2: Search fields --
     # The artifact search tool handles parameter_ids and persona_ids filters internally
 
-    field_ids, total_count = await search_fields(
-        conn,
-        search=search,
-        department_ids=filter_department_ids,
-        parameter_ids=parameter_ids,
-        persona_ids=persona_ids,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+    async with pool.acquire() as conn:
+        field_ids, total_count = await search_fields(
+            conn,
+            search=search,
+            department_ids=filter_department_ids,
+            parameter_ids=parameter_ids,
+            persona_ids=persona_ids,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
     if not field_ids:
         return _empty_response(actor_name, total_count=0)
 
     # -- Step 3: Get field artifacts with junction IDs --
 
-    artifacts = await get_fields(
-        conn,
-        field_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        conditional_parameters=True,
-        fields=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_fields(
+            conn,
+            field_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            conditional_parameters=True,
+            fields=True,
+        )
 
     # -- Step 4: Parallel hydration + facets --
 
@@ -122,8 +124,42 @@ async def search_field_client(
         all_name_ids.extend(a.name_ids or [])
         all_description_ids.extend(a.description_ids or [])
 
+    async def _fetch_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_descriptions() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _fetch_parameter_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_parameters_resource(
+                conn, redis, search=parameter_search, parameter=True, limit_count=100
+            )
+
+    async def _fetch_persona_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_personas_resource(
+                conn, redis, search=persona_search, persona=True, limit_count=100
+            )
+
+    async def _fetch_department_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn, redis, search=department_search, field=True, limit_count=100
+            )
+
     # Per-field permissions context (gives us active_parameter_count)
-    perm_tasks = [resolve_field_permissions_context(conn, a.id) for a in artifacts]
+    async def _fetch_perm(artifact_id: UUID) -> object:
+        async with pool.acquire() as conn:
+            return await resolve_field_permissions_context(conn, artifact_id)
+
+    perm_tasks = [_fetch_perm(a.id) for a in artifacts]
 
     (
         names_data,
@@ -133,19 +169,11 @@ async def search_field_client(
         department_facet,
         *perm_results,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty_list(),
-        search_parameters_resource(
-            conn, redis, search=parameter_search, parameter=True, limit_count=100
-        ),
-        search_personas_resource(
-            conn, redis, search=persona_search, persona=True, limit_count=100
-        ),
-        search_departments(
-            conn, redis, search=department_search, field=True, limit_count=100
-        ),
+        _fetch_names(),
+        _fetch_descriptions(),
+        _fetch_parameter_facet(),
+        _fetch_persona_facet(),
+        _fetch_department_facet(),
         *perm_tasks,
     )
 

@@ -5,13 +5,10 @@ Thin route handler. Core logic lives in app.infra.eval_draft.
 
 from __future__ import annotations
 
-from typing import Annotated
-
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.eval_draft import patch_eval_draft_client
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.eval.types import (
     PatchEvalDraftApiRequest,
     PatchEvalDraftApiResponse,
@@ -29,7 +26,6 @@ async def patch_eval_draft(
     request: PatchEvalDraftApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PatchEvalDraftApiResponse:
     """Patch eval draft — composable infra architecture."""
     tags = ["evals", "drafts"]
@@ -49,9 +45,10 @@ async def patch_eval_draft(
                 detail="Session ID is required.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
         result = await patch_eval_draft_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             session_id=session_id,

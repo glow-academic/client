@@ -10,15 +10,14 @@ Uses composable infra layers:
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.rubric_context import resolve_rubric_context
 from app.infra.rubric_permissions import (
@@ -77,7 +76,7 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
 
 
 async def get_rubric_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -99,7 +98,7 @@ async def get_rubric_client(
     # -- Step 1: Common context (profile -> tool_graph + runs) ----------------
 
     common = await resolve_common_context(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
         group_id=group_id,
@@ -118,7 +117,8 @@ async def get_rubric_client(
 
     perms = None
     if rubric_id is not None:
-        perms = await resolve_rubric_permissions_context(conn, rubric_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_rubric_permissions_context(conn, rubric_id)
 
         if not perms.exists:
             raise HTTPException(
@@ -135,7 +135,7 @@ async def get_rubric_client(
     # -- Step 3: Rubric artifact context --------------------------------------
 
     rubric_ctx = await resolve_rubric_context(
-        conn,
+        pool,
         redis,
         rubric_id=rubric_id,
         group_id=group_id,
@@ -368,7 +368,6 @@ async def get_rubric(
     request: GetRubricApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetRubricApiResponse:
     """Get rubric information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -381,10 +380,11 @@ async def get_rubric(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await get_rubric_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             rubric_id=request.rubric_id,

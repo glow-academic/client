@@ -40,7 +40,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def _resolve_creatable_values(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     request: PatchDepartmentDraftApiRequest,
 ) -> list[SaveDepartmentFieldError]:
@@ -51,13 +51,14 @@ async def _resolve_creatable_values(
     """
     errors: list[SaveDepartmentFieldError] = []
 
-    if request.name is not None and request.name_id is None:
-        result = await create_name(conn, request.name, redis)
-        request.name_id = result.id
+    async with pool.acquire() as conn:
+        if request.name is not None and request.name_id is None:
+            result = await create_name(conn, request.name, redis)
+            request.name_id = result.id
 
-    if request.description is not None and request.description_id is None:
-        result = await create_description(conn, request.description, redis)
-        request.description_id = result.id
+        if request.description is not None and request.description_id is None:
+            result = await create_description(conn, request.description, redis)
+            request.description_id = result.id
 
     return errors
 
@@ -68,7 +69,7 @@ async def _resolve_creatable_values(
 
 
 async def patch_department_draft_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -88,7 +89,7 @@ async def patch_department_draft_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(

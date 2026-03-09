@@ -101,17 +101,17 @@ async def create_eval_client(
     async with pool.acquire() as conn:
         for idx, item in enumerate(items):
             item_errors = await resolve_eval_values(conn, redis, item, is_create=True)
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                EvalResultItem(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    EvalResultItem(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
                 )
-            )
-        else:
-            error_results.append(EvalResultItem(success=True, message="Validated"))
+            else:
+                error_results.append(EvalResultItem(success=True, message="Validated"))
 
     if has_errors:
         return CreateEvalApiResponse(results=error_results)
@@ -120,38 +120,39 @@ async def create_eval_client(
 
     results: list[EvalResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            evals_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            result = await create_eval_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=item.department_ids,
-                flag_ids=item.flag_ids,
-                model_ids=item.model_ids,
-                model_flag_ids=item.model_flag_ids,
-                model_rubric_ids=item.model_rubric_ids,
-                model_position_ids=item.model_position_ids,
-                eval_ids=[evals_resource_id],
-            )
-
-            results.append(
-                EvalResultItem(
-                    success=True,
-                    eval_id=result.id,
-                    message="Eval created successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                evals_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                result = await create_eval_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    flag_ids=item.flag_ids,
+                    model_ids=item.model_ids,
+                    model_flag_ids=item.model_flag_ids,
+                    model_rubric_ids=item.model_rubric_ids,
+                    model_position_ids=item.model_position_ids,
+                    eval_ids=[evals_resource_id],
+                )
+
+                results.append(
+                    EvalResultItem(
+                        success=True,
+                        eval_id=result.id,
+                        message="Eval created successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

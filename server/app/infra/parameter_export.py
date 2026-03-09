@@ -43,7 +43,7 @@ CSV_COLUMNS = [
 
 
 async def export_parameter_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -65,7 +65,7 @@ async def export_parameter_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -78,12 +78,13 @@ async def export_parameter_client(
     if parameter_id:
         parameter_ids = [parameter_id]
     else:
-        parameter_ids, _total_count = await search_parameters(
-            conn,
-            active_only=False,
-            limit_count=100000,
-            offset_count=0,
-        )
+        async with pool.acquire() as conn:
+            parameter_ids, _total_count = await search_parameters(
+                conn,
+                active_only=False,
+                limit_count=100000,
+                offset_count=0,
+            )
 
         if not parameter_ids:
             return ExportParameterApiResponse(
@@ -94,15 +95,16 @@ async def export_parameter_client(
 
     # ── Step 3: Get parameter artifacts with all junction IDs ────────
 
-    artifacts = await get_parameters(
-        conn,
-        parameter_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        fields=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_parameters(
+            conn,
+            parameter_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            fields=True,
+        )
 
     # ── Step 4: Parallel resource hydration ────────────────────────────
 
@@ -121,20 +123,40 @@ async def export_parameter_client(
     async def _empty() -> list:
         return []
 
+    async def _get_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _get_descriptions() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _get_departments() -> list:
+        if not all_department_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_departments(conn, all_department_ids, redis)
+
+    async def _get_fields() -> list:
+        if not all_field_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_fields(conn, all_field_ids, redis)
+
     (
         names_data,
         descriptions_data,
         departments_data,
         fields_data,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty(),
-        get_departments(conn, all_department_ids, redis)
-        if all_department_ids
-        else _empty(),
-        get_fields(conn, all_field_ids, redis) if all_field_ids else _empty(),
+        _get_names(),
+        _get_descriptions(),
+        _get_departments(),
+        _get_fields(),
     )
 
     # Build lookup maps
@@ -190,13 +212,14 @@ async def export_parameter_client(
 
     # Create upload entry via black-box tool
     file_size = len(csv_content.encode("utf-8"))
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="text/csv",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="text/csv",
+            size=file_size,
+        )
 
     return ExportParameterApiResponse(
         upload_id=upload_result.id,

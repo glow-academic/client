@@ -42,7 +42,6 @@ from app.routes.v5.tools.resources.standard_groups.search import search_standard
 from app.routes.v5.tools.resources.standards.get import get_standards
 from app.routes.v5.tools.resources.standards.search import search_standards
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -127,7 +126,9 @@ async def resolve_rubric_context(
 
     async def _get_descriptions() -> list:
         async with pool.acquire() as conn:
-            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+            return await get_descriptions(
+                conn, merged.description_ids, redis, bypass_cache
+            )
 
     async def _search_descriptions() -> list:
         async with pool.acquire() as conn:
@@ -159,7 +160,9 @@ async def resolve_rubric_context(
 
     async def _get_departments() -> list:
         async with pool.acquire() as conn:
-            return await get_departments(conn, merged.department_ids, redis, bypass_cache)
+            return await get_departments(
+                conn, merged.department_ids, redis, bypass_cache
+            )
 
     async def _search_departments() -> list:
         async with pool.acquire() as conn:
@@ -343,7 +346,3 @@ def _merge_junction_ids(artifact, draft) -> _MergedIds:
         standard_group_ids=standard_group_ids,
         standard_ids=standard_ids,
     )
-
-
-async def _empty() -> list:
-    return []

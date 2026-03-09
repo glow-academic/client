@@ -19,6 +19,7 @@ from redis.asyncio import Redis
 
 from app.infra.docs.get_operation_info import get_operation_info
 from app.infra.docs.types import ComposedDocsResponse
+from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
 # Artifact tool docs
@@ -41,7 +42,6 @@ from app.routes.v5.tools.resources.standard_groups.docs import (
     get_standard_groups_docs,
 )
 from app.routes.v5.tools.resources.standards.docs import get_standards_docs
-from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 
 _PAGE_METADATA = PageMetadataConfig(
     list_title="Rubrics",
@@ -54,20 +54,21 @@ _PAGE_METADATA = PageMetadataConfig(
 
 
 async def _resolve_entity_name(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     entity_id: UUID,
 ) -> str | None:
     """Get display name for a rubric by ID using black-box tools."""
-    artifacts = await get_rubric_artifacts(conn, [entity_id], names=True)
-    if not artifacts or not artifacts[0].name_ids:
-        return None
-    names_data = await get_names(conn, artifacts[0].name_ids, redis)
-    return names_data[0].name if names_data else None
+    async with pool.acquire() as conn:
+        artifacts = await get_rubric_artifacts(conn, [entity_id], names=True)
+        if not artifacts or not artifacts[0].name_ids:
+            return None
+        names_data = await get_names(conn, artifacts[0].name_ids, redis)
+        return names_data[0].name if names_data else None
 
 
 async def docs_rubric_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -84,7 +85,7 @@ async def docs_rubric_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -93,6 +94,42 @@ async def docs_rubric_client(
         )
 
     # ── Step 2: Parallel docs fetches ──────────────────────────────────
+
+    async def _get_rubric_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_rubric_docs(conn)
+
+    async def _get_rubric_drafts_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_rubric_drafts_docs(conn)
+
+    async def _get_names_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_names_docs(conn)
+
+    async def _get_descriptions_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_descriptions_docs(conn)
+
+    async def _get_flags_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_flags_docs(conn)
+
+    async def _get_departments_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_departments_docs(conn)
+
+    async def _get_points_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_points_docs(conn)
+
+    async def _get_standard_groups_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_standard_groups_docs(conn)
+
+    async def _get_standards_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_standards_docs(conn)
 
     (
         artifact,
@@ -105,22 +142,22 @@ async def docs_rubric_client(
         standard_groups,
         standards,
     ) = await asyncio.gather(
-        get_rubric_docs(conn),
-        get_rubric_drafts_docs(conn),
-        get_names_docs(conn),
-        get_descriptions_docs(conn),
-        get_flags_docs(conn),
-        get_departments_docs(conn),
-        get_points_docs(conn),
-        get_standard_groups_docs(conn),
-        get_standards_docs(conn),
+        _get_rubric_docs(),
+        _get_rubric_drafts_docs(),
+        _get_names_docs(),
+        _get_descriptions_docs(),
+        _get_flags_docs(),
+        _get_departments_docs(),
+        _get_points_docs(),
+        _get_standard_groups_docs(),
+        _get_standards_docs(),
     )
 
     # ── Step 3: Page metadata ───────────────────────────────────────────
 
     entity_name = None
     if entity_id is not None:
-        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+        entity_name = await _resolve_entity_name(pool, redis, entity_id)
 
     page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
 

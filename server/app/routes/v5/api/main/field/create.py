@@ -5,13 +5,10 @@ Thin route handler. Core logic lives in app.infra.field_create.
 
 from __future__ import annotations
 
-from typing import Annotated
-
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.field_create import create_field_client
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.field.types import (
     CreateFieldApiRequest,
     CreateFieldApiResponse,
@@ -26,7 +23,6 @@ async def create_field(
     request: CreateFieldApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateFieldApiResponse:
     """Create fields using composable infra architecture."""
     try:
@@ -37,10 +33,11 @@ async def create_field(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await create_field_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             items=request.fields,

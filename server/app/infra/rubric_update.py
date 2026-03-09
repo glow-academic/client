@@ -32,7 +32,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def update_rubric_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -56,7 +56,7 @@ async def update_rubric_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -66,41 +66,47 @@ async def update_rubric_client(
 
     # ── Step 2: Per-item permission check ──────────────────────────────
 
-    for idx, item in enumerate(items):
-        perms = await resolve_rubric_permissions_context(conn, item.rubric_id)
-        if not perms.exists:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Item {idx}: Rubric {item.rubric_id} not found.",
-            )
-        if not compute_can_edit(
-            user_role=profile.role,
-            rubric_department_ids=perms.department_ids,
-            active_simulation_count=perms.active_simulation_count,
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Item {idx}: You don't have permission to update this rubric.",
-            )
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            perms = await resolve_rubric_permissions_context(conn, item.rubric_id)
+            if not perms.exists:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Item {idx}: Rubric {item.rubric_id} not found.",
+                )
+            if not compute_can_edit(
+                user_role=profile.role,
+                rubric_department_ids=perms.department_ids,
+                active_simulation_count=perms.active_simulation_count,
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have permission to update this rubric.",
+                )
 
     # ── Step 3: Per-item value resolution ──────────────────────────────
 
     has_errors = False
     error_results: list[RubricResultItem] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_rubric_values(conn, redis, item, is_create=False)
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                RubricResultItem(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
-                )
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_rubric_values(
+                conn, redis, item, is_create=False
             )
-        else:
-            error_results.append(RubricResultItem(success=True, message="Validated"))
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    RubricResultItem(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
+                )
+            else:
+                error_results.append(
+                    RubricResultItem(success=True, message="Validated")
+                )
 
     if has_errors:
         return UpdateRubricApiResponse(results=error_results)
@@ -109,36 +115,39 @@ async def update_rubric_client(
 
     results: list[RubricResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            rubrics_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            await update_rubric_artifact(
-                conn,
-                item.rubric_id,
-                name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id if item.description_id else _UNSET,
-                department_ids=item.department_ids,
-                flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                point_ids=item.point_ids,
-                standard_group_ids=item.standard_group_ids,
-                standard_ids=item.standard_ids,
-                rubric_ids=[rubrics_resource_id],
-            )
-
-            results.append(
-                RubricResultItem(
-                    success=True,
-                    rubric_id=item.rubric_id,
-                    message="Rubric updated successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                rubrics_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                await update_rubric_artifact(
+                    conn,
+                    item.rubric_id,
+                    name_id=item.name_id if item.name_id else _UNSET,
+                    description_id=item.description_id
+                    if item.description_id
+                    else _UNSET,
+                    department_ids=item.department_ids,
+                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                    point_ids=item.point_ids,
+                    standard_group_ids=item.standard_group_ids,
+                    standard_ids=item.standard_ids,
+                    rubric_ids=[rubrics_resource_id],
+                )
+
+                results.append(
+                    RubricResultItem(
+                        success=True,
+                        rubric_id=item.rubric_id,
+                        message="Rubric updated successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

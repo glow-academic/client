@@ -10,11 +10,10 @@ Uses composable infra layers:
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
@@ -37,7 +36,7 @@ from app.infra.field_permissions import (
     has_access,
 )
 from app.infra.field_permissions_context import resolve_field_permissions_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.field.types import (
@@ -68,7 +67,7 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
 
 
 async def get_field_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -93,7 +92,7 @@ async def get_field_client(
     # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
     common = await resolve_common_context(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
         group_id=group_id,
@@ -112,7 +111,8 @@ async def get_field_client(
 
     perms = None
     if field_id is not None:
-        perms = await resolve_field_permissions_context(conn, field_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_field_permissions_context(conn, field_id)
 
         if not perms.exists:
             raise HTTPException(
@@ -130,7 +130,7 @@ async def get_field_client(
     # ── Step 3: Field artifact context ─────────────────────────────────
 
     field = await resolve_field_context(
-        conn,
+        pool,
         redis,
         field_id=field_id,
         group_id=group_id,
@@ -318,7 +318,6 @@ async def get_field(
     request: GetFieldApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetFieldApiResponse:
     """Get field information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -331,10 +330,11 @@ async def get_field(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await get_field_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             field_id=request.field_id,

@@ -34,7 +34,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def duplicate_parameter_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -53,7 +53,7 @@ async def duplicate_parameter_client(
 
     # -- Step 1: Profile context ------------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -71,15 +71,16 @@ async def duplicate_parameter_client(
 
     # -- Step 3: Fetch original parameter with all junctions --------------------
 
-    originals = await get_parameters(
-        conn,
-        [parameter_id],
-        names=True,
-        descriptions=True,
-        departments=True,
-        fields=True,
-        parameters=True,
-    )
+    async with pool.acquire() as conn:
+        originals = await get_parameters(
+            conn,
+            [parameter_id],
+            names=True,
+            descriptions=True,
+            departments=True,
+            fields=True,
+            parameters=True,
+        )
 
     if not originals:
         raise HTTPException(
@@ -91,28 +92,30 @@ async def duplicate_parameter_client(
 
     # -- Step 4: Create new name resource ---------------------------------------
 
-    original_name = "Unknown"
-    if original.name_ids:
-        name_resources = await get_names(conn, original.name_ids, redis)
-        if name_resources:
-            original_name = name_resources[0].name or "Unknown"
+    async with pool.acquire() as conn:
+        original_name = "Unknown"
+        if original.name_ids:
+            name_resources = await get_names(conn, original.name_ids, redis)
+            if name_resources:
+                original_name = name_resources[0].name or "Unknown"
 
-    new_name_resource = await create_name(conn, f"{original_name} Copy", redis)
+        new_name_resource = await create_name(conn, f"{original_name} Copy", redis)
 
     # -- Step 5: Create new parameter artifact (no flag — no parameter_active) --
 
-    async with conn.transaction():
-        result = await create_parameter_artifact(
-            conn,
-            name_id=new_name_resource.id,
-            description_id=original.description_ids[0]
-            if original.description_ids
-            else None,
-            department_ids=original.department_ids,
-            field_ids=original.field_ids,
-            parameter_ids=original.parameter_ids,
-            flag_ids=None,
-        )
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await create_parameter_artifact(
+                conn,
+                name_id=new_name_resource.id,
+                description_id=original.description_ids[0]
+                if original.description_ids
+                else None,
+                department_ids=original.department_ids,
+                field_ids=original.field_ids,
+                parameter_ids=original.parameter_ids,
+                flag_ids=None,
+            )
 
     # -- Step 6: Invalidate cache -----------------------------------------------
 

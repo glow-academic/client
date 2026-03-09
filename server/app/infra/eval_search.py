@@ -39,7 +39,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 
 
 async def search_eval_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -65,7 +65,7 @@ async def search_eval_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -78,19 +78,21 @@ async def search_eval_client(
 
     # ── Step 2: Search evals ──────────────────────────────────────────
 
-    eval_ids, total_count = await search_eval_artifacts(
-        conn,
-        search=search,
-        department_ids=filter_department_ids,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+    async with pool.acquire() as conn:
+        eval_ids, total_count = await search_eval_artifacts(
+            conn,
+            search=search,
+            department_ids=filter_department_ids,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
     if not eval_ids:
         # Still fetch facets for empty results
-        department_facet = await search_departments(
-            conn, redis, search=department_search, eval=True, limit_count=100
-        )
+        async with pool.acquire() as conn:
+            department_facet = await search_departments(
+                conn, redis, search=department_search, eval=True, limit_count=100
+            )
 
         department_filter = ListFilterSection(
             options=[
@@ -113,14 +115,15 @@ async def search_eval_client(
 
     # ── Step 3: Get eval artifacts with junction IDs ──────────────────
 
-    artifacts = await get_evals(
-        conn,
-        eval_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_evals(
+            conn,
+            eval_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+        )
 
     # ── Step 4: Parallel hydration + facets ────────────────────────────
 
@@ -133,20 +136,40 @@ async def search_eval_client(
         all_description_ids.extend(a.description_ids or [])
         all_flag_ids.extend(a.flag_ids or [])
 
+    async def _fetch_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_descriptions() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _fetch_flags() -> list:
+        if not all_flag_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_flags(conn, all_flag_ids, redis)
+
+    async def _fetch_department_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn, redis, search=department_search, eval=True, limit_count=100
+            )
+
     (
         names_data,
         descriptions_data,
         flags_data,
         department_facet,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty_list(),
-        get_flags(conn, all_flag_ids, redis) if all_flag_ids else _empty_list(),
-        search_departments(
-            conn, redis, search=department_search, eval=True, limit_count=100
-        ),
+        _fetch_names(),
+        _fetch_descriptions(),
+        _fetch_flags(),
+        _fetch_department_facet(),
     )
 
     flag_map = {f.id: f for f in flags_data}

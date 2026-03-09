@@ -47,7 +47,7 @@ class CreateProfileItem(BaseModel):
 
 
 async def create_profile_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -71,7 +71,7 @@ async def create_profile_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -92,19 +92,24 @@ async def create_profile_client(
     has_errors = False
     error_results: list[ProfileResultItem] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_profile_values(conn, redis, item, is_create=True)
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                ProfileResultItem(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
-                )
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_profile_values(
+                conn, redis, item, is_create=True
             )
-        else:
-            error_results.append(ProfileResultItem(success=True, message="Validated"))
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    ProfileResultItem(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
+                )
+            else:
+                error_results.append(
+                    ProfileResultItem(success=True, message="Validated")
+                )
 
     if has_errors:
         return CreateProfileApiResponse(results=error_results)
@@ -113,35 +118,36 @@ async def create_profile_client(
 
     results: list[ProfileResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            profiles_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-            )
-
-            result = await create_profile_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                request_limit_id=item.request_limit_id,
-                department_ids=item.department_ids,
-                flag_ids=[item.flag_id] if item.flag_id else None,
-                email_ids=item.email_ids,
-                role_ids=item.role_ids,
-                profile_ids=[profiles_resource_id],
-            )
-
-            results.append(
-                ProfileResultItem(
-                    success=True,
-                    profile_id=result.id,
-                    message="Profile created successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                profiles_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    id=item.id,
+                    name_id=item.name_id,
                 )
-            )
+
+                result = await create_profile_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    request_limit_id=item.request_limit_id,
+                    department_ids=item.department_ids,
+                    flag_ids=[item.flag_id] if item.flag_id else None,
+                    email_ids=item.email_ids,
+                    role_ids=item.role_ids,
+                    profile_ids=[profiles_resource_id],
+                )
+
+                results.append(
+                    ProfileResultItem(
+                        success=True,
+                        profile_id=result.id,
+                        message="Profile created successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

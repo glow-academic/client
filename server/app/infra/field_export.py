@@ -46,7 +46,7 @@ CSV_COLUMNS = [
 
 
 async def export_field_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -68,7 +68,7 @@ async def export_field_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -81,12 +81,13 @@ async def export_field_client(
     if field_id:
         field_ids = [field_id]
     else:
-        field_ids, _total_count = await search_fields(
-            conn,
-            active_only=False,
-            limit_count=100000,
-            offset_count=0,
-        )
+        async with pool.acquire() as conn:
+            field_ids, _total_count = await search_fields(
+                conn,
+                active_only=False,
+                limit_count=100000,
+                offset_count=0,
+            )
 
         if not field_ids:
             return ExportFieldApiResponse(
@@ -97,15 +98,16 @@ async def export_field_client(
 
     # ── Step 3: Get field artifacts with all junction IDs ────────────
 
-    artifacts = await get_fields(
-        conn,
-        field_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        conditional_parameters=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_fields(
+            conn,
+            field_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            conditional_parameters=True,
+        )
 
     # ── Step 4: Parallel resource hydration ────────────────────────────
 
@@ -120,8 +122,31 @@ async def export_field_client(
         all_department_ids.extend(a.department_ids or [])
         all_conditional_parameter_ids.extend(a.conditional_parameter_ids or [])
 
-    async def _empty() -> list:
-        return []
+    async def _fetch_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_descriptions() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _fetch_departments() -> list:
+        if not all_department_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_departments(conn, all_department_ids, redis)
+
+    async def _fetch_conditional_parameters() -> list:
+        if not all_conditional_parameter_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_conditional_parameters(
+                conn, all_conditional_parameter_ids, redis
+            )
 
     (
         names_data,
@@ -129,16 +154,10 @@ async def export_field_client(
         departments_data,
         conditional_parameters_data,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty(),
-        get_departments(conn, all_department_ids, redis)
-        if all_department_ids
-        else _empty(),
-        get_conditional_parameters(conn, all_conditional_parameter_ids, redis)
-        if all_conditional_parameter_ids
-        else _empty(),
+        _fetch_names(),
+        _fetch_descriptions(),
+        _fetch_departments(),
+        _fetch_conditional_parameters(),
     )
 
     # Build lookup maps
@@ -149,9 +168,11 @@ async def export_field_client(
     # Conditional parameters: two-hop (conditional_parameter → parameter → name)
     cp_param_id_map = {cp.id: cp.parameter_id for cp in conditional_parameters_data}
     all_param_ids = list({pid for pid in cp_param_id_map.values() if pid})
-    params_data = (
-        await get_parameters(conn, all_param_ids, redis) if all_param_ids else []
-    )
+    if all_param_ids:
+        async with pool.acquire() as conn:
+            params_data = await get_parameters(conn, all_param_ids, redis)
+    else:
+        params_data = []
     param_name_map = {p.id: p.name for p in params_data}
     cp_name_map = {
         cp_id: param_name_map.get(param_id, "")
@@ -203,13 +224,14 @@ async def export_field_client(
 
     # Create upload entry via black-box tool
     file_size = len(csv_content.encode("utf-8"))
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="text/csv",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="text/csv",
+            size=file_size,
+        )
 
     return ExportFieldApiResponse(
         upload_id=upload_result.id,

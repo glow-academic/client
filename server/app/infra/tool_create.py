@@ -56,7 +56,7 @@ class CreateToolItem(BaseModel):
 
 
 async def create_tool_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -80,7 +80,7 @@ async def create_tool_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -101,19 +101,20 @@ async def create_tool_client(
     has_errors = False
     error_results: list[ToolResultItem] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_tool_values(conn, redis, item, is_create=True)
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                ToolResultItem(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_tool_values(conn, redis, item, is_create=True)
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    ToolResultItem(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
                 )
-            )
-        else:
-            error_results.append(ToolResultItem(success=True, message="Validated"))
+            else:
+                error_results.append(ToolResultItem(success=True, message="Validated"))
 
     if has_errors:
         return CreateToolApiResponse(results=error_results)
@@ -122,41 +123,42 @@ async def create_tool_client(
 
     results: list[ToolResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            tools_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            result = await create_tool_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=item.department_ids,
-                flag_ids=item.flag_ids,
-                arg_positions_ids=item.arg_positions_ids,
-                args_ids=item.args_ids,
-                args_outputs_ids=item.args_outputs_ids,
-                artifact_ids=item.artifact_ids,
-                entry_ids=item.entry_ids,
-                operation_ids=item.operation_ids,
-                resource_ids=item.resource_ids,
-                tool_ids=[tools_resource_id],
-            )
-
-            results.append(
-                ToolResultItem(
-                    success=True,
-                    tool_id=result.id,
-                    message="Tool created successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                tools_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                result = await create_tool_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    flag_ids=item.flag_ids,
+                    arg_positions_ids=item.arg_positions_ids,
+                    args_ids=item.args_ids,
+                    args_outputs_ids=item.args_outputs_ids,
+                    artifact_ids=item.artifact_ids,
+                    entry_ids=item.entry_ids,
+                    operation_ids=item.operation_ids,
+                    resource_ids=item.resource_ids,
+                    tool_ids=[tools_resource_id],
+                )
+
+                results.append(
+                    ToolResultItem(
+                        success=True,
+                        tool_id=result.id,
+                        message="Tool created successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

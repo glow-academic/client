@@ -10,15 +10,14 @@ Uses composable infra layers:
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.parameter_context import resolve_parameter_context
 from app.infra.parameter_permissions import (
@@ -73,7 +72,7 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
 
 
 async def get_parameter_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -95,7 +94,7 @@ async def get_parameter_client(
     # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
     common = await resolve_common_context(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
         group_id=group_id,
@@ -114,7 +113,8 @@ async def get_parameter_client(
 
     perms = None
     if parameter_id is not None:
-        perms = await resolve_parameter_permissions_context(conn, parameter_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_parameter_permissions_context(conn, parameter_id)
 
         if not perms.exists:
             raise HTTPException(
@@ -131,7 +131,7 @@ async def get_parameter_client(
     # ── Step 3: Parameter artifact context ─────────────────────────────────
 
     param_ctx = await resolve_parameter_context(
-        conn,
+        pool,
         redis,
         parameter_id=parameter_id,
         group_id=group_id,
@@ -336,7 +336,6 @@ async def get_parameter(
     request: GetParameterApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetParameterApiResponse:
     """Get parameter information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -349,10 +348,11 @@ async def get_parameter(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await get_parameter_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             parameter_id=request.parameter_id,

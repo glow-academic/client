@@ -10,11 +10,10 @@ Uses composable infra layers:
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
@@ -44,7 +43,7 @@ from app.infra.eval_permissions import (
     has_access,
 )
 from app.infra.eval_permissions_context import resolve_eval_permissions_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.eval.types import (
@@ -80,7 +79,7 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
 
 
 async def get_eval_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -102,7 +101,7 @@ async def get_eval_client(
     # -- Step 1: Common context (profile -> tool_graph + runs) --
 
     common = await resolve_common_context(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
         group_id=group_id,
@@ -121,7 +120,8 @@ async def get_eval_client(
 
     perms = None
     if eval_id is not None:
-        perms = await resolve_eval_permissions_context(conn, eval_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_eval_permissions_context(conn, eval_id)
 
         if not perms.exists:
             raise HTTPException(
@@ -138,7 +138,7 @@ async def get_eval_client(
     # -- Step 3: Eval artifact context --
 
     eval_ctx = await resolve_eval_context(
-        conn,
+        pool,
         redis,
         eval_id=eval_id,
         group_id=group_id,
@@ -404,7 +404,6 @@ async def get_eval(
     request: GetEvalApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetEvalApiResponse:
     """Get eval information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -417,10 +416,11 @@ async def get_eval(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await get_eval_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             eval_id=request.eval_id,

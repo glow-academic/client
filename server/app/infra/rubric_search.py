@@ -45,7 +45,7 @@ from app.routes.v5.tools.resources.standards.get import get_standards
 
 
 async def search_rubric_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -65,7 +65,7 @@ async def search_rubric_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -83,31 +83,33 @@ async def search_rubric_client(
 
     # ── Step 3: Search rubrics ────────────────────────────────────────
 
-    rubric_ids_list, total_count = await search_rubrics(
-        conn,
-        search=search,
-        department_ids=filter_department_ids,
-        simulation_ids=filter_simulation_ids,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+    async with pool.acquire() as conn:
+        rubric_ids_list, total_count = await search_rubrics(
+            conn,
+            search=search,
+            department_ids=filter_department_ids,
+            simulation_ids=filter_simulation_ids,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
     if not rubric_ids_list:
         return _empty_response(actor_name, total_count=0)
 
     # ── Step 4: Get rubric artifacts with junction IDs ────────────────
 
-    artifacts = await get_rubrics(
-        conn,
-        rubric_ids_list,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        points=True,
-        standard_groups=True,
-        standards=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_rubrics(
+            conn,
+            rubric_ids_list,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            points=True,
+            standard_groups=True,
+            standards=True,
+        )
 
     # ── Step 5: Parallel hydration + facets ────────────────────────────
 
@@ -124,6 +126,38 @@ async def search_rubric_client(
         all_standard_group_ids.extend(a.standard_group_ids or [])
         all_standard_ids.extend(a.standard_ids or [])
 
+    async def _get_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _get_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _get_points() -> list:
+        async with pool.acquire() as conn:
+            return await get_points(conn, all_point_ids, redis)
+
+    async def _get_standard_groups() -> list:
+        async with pool.acquire() as conn:
+            return await get_standard_groups(conn, all_standard_group_ids, redis)
+
+    async def _get_standards() -> list:
+        async with pool.acquire() as conn:
+            return await get_standards(conn, all_standard_ids, redis)
+
+    async def _search_departments() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn, redis, search=department_search, rubric=True, limit_count=100
+            )
+
+    async def _search_simulations() -> list:
+        async with pool.acquire() as conn:
+            return await search_simulations_resource(
+                conn, redis, search=simulation_search, simulation=True, limit_count=100
+            )
+
     (
         names_data,
         descriptions_data,
@@ -133,24 +167,13 @@ async def search_rubric_client(
         department_facet,
         simulation_facet,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty_list(),
-        get_points(conn, all_point_ids, redis) if all_point_ids else _empty_list(),
-        get_standard_groups(conn, all_standard_group_ids, redis)
-        if all_standard_group_ids
-        else _empty_list(),
-        get_standards(conn, all_standard_ids, redis)
-        if all_standard_ids
-        else _empty_list(),
-        # Facets
-        search_departments(
-            conn, redis, search=department_search, rubric=True, limit_count=100
-        ),
-        search_simulations_resource(
-            conn, redis, search=simulation_search, simulation=True, limit_count=100
-        ),
+        _get_names() if all_name_ids else _empty_list(),
+        _get_descriptions() if all_description_ids else _empty_list(),
+        _get_points() if all_point_ids else _empty_list(),
+        _get_standard_groups() if all_standard_group_ids else _empty_list(),
+        _get_standards() if all_standard_ids else _empty_list(),
+        _search_departments(),
+        _search_simulations(),
     )
 
     # Build lookup maps

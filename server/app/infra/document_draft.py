@@ -144,7 +144,7 @@ async def _resolve_creatable_values(
 
 
 async def patch_document_draft_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -164,7 +164,7 @@ async def patch_document_draft_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -182,7 +182,8 @@ async def patch_document_draft_client(
 
     # ── Step 3: Value resolution (creatable only) ──────────────────────
 
-    errors = await _resolve_creatable_values(conn, redis, request, session_id)
+    async with pool.acquire() as conn:
+        errors = await _resolve_creatable_values(conn, redis, request, session_id)
     if errors:
         raise HTTPException(
             status_code=400,
@@ -194,24 +195,25 @@ async def patch_document_draft_client(
     # Compute new version
     new_version = request.expected_version + 1
 
-    async with conn.transaction():
-        result = await create_document_draft(
-            conn,
-            group_id=request.group_id,
-            session_id=session_id,
-            version=new_version,
-            name_ids=[request.name_id] if request.name_id else None,
-            description_ids=[request.description_id]
-            if request.description_id
-            else None,
-            flag_ids=request.flag_ids,
-            department_ids=request.department_ids,
-            file_ids=request.file_ids,
-            image_ids=request.image_ids,
-            text_ids=request.text_ids,
-            parameter_field_ids=request.parameter_field_ids,
-            parameter_ids=request.parameter_ids,
-        )
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await create_document_draft(
+                conn,
+                group_id=request.group_id,
+                session_id=session_id,
+                version=new_version,
+                name_ids=[request.name_id] if request.name_id else None,
+                description_ids=[request.description_id]
+                if request.description_id
+                else None,
+                flag_ids=request.flag_ids,
+                department_ids=request.department_ids,
+                file_ids=request.file_ids,
+                image_ids=request.image_ids,
+                text_ids=request.text_ids,
+                parameter_field_ids=request.parameter_field_ids,
+                parameter_ids=request.parameter_ids,
+            )
 
     # ── Step 5: Build form state (server is source of truth) ──────────
 
@@ -229,7 +231,8 @@ async def patch_document_draft_client(
 
     # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
-    await refresh_document_drafts(conn)
+    async with pool.acquire() as conn:
+        await refresh_document_drafts(conn)
 
     # ── Step 7: Invalidate cache ───────────────────────────────────────
 

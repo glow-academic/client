@@ -51,7 +51,7 @@ class CreateDepartmentItem(BaseModel):
 
 
 async def create_department_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -76,7 +76,7 @@ async def create_department_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -98,7 +98,8 @@ async def create_department_client(
     error_results: list[DepartmentResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_department_values(conn, redis, item, is_create=True)
+        async with pool.acquire() as conn:
+            item_errors = await resolve_department_values(conn, redis, item, is_create=True)
         if item_errors:
             has_errors = True
             error_results.append(
@@ -121,35 +122,36 @@ async def create_department_client(
     results: list[DepartmentResultItem] = []
     saved_department_ids: list[UUID] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            departments_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            result = await create_department_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=[departments_resource_id],
-                flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                settings_ids=item.settings_ids,
-            )
-
-            saved_department_ids.append(result.id)
-            results.append(
-                DepartmentResultItem(
-                    success=True,
-                    department_id=result.id,
-                    message="Department created successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                departments_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                result = await create_department_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=[departments_resource_id],
+                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                    settings_ids=item.settings_ids,
+                )
+
+                saved_department_ids.append(result.id)
+                results.append(
+                    DepartmentResultItem(
+                        success=True,
+                        department_id=result.id,
+                        message="Department created successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

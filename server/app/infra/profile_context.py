@@ -55,7 +55,7 @@ PROFILE_FLAG_TYPES = {
 
 
 async def resolve_profile_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID | None,
@@ -74,23 +74,29 @@ async def resolve_profile_context(
     user_dept_ids = user_department_ids or []
 
     # Step 1: fetch artifact + draft in parallel
-    artifact_task = (
-        get_profile_artifacts(
-            conn,
-            [profile_id],
-            names=True,
-            departments=True,
-            flags=True,
-            emails=True,
-            request_limits=True,
-            roles=True,
-        )
-        if profile_id
-        else _empty()
-    )
-    draft_task = get_profile_drafts(conn, [draft_id]) if draft_id else _empty()
 
-    artifacts, drafts = await asyncio.gather(artifact_task, draft_task)
+    async def _fetch_artifacts() -> list:
+        if not profile_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_profile_artifacts(
+                conn,
+                [profile_id],
+                names=True,
+                departments=True,
+                flags=True,
+                emails=True,
+                request_limits=True,
+                roles=True,
+            )
+
+    async def _fetch_drafts() -> list:
+        if not draft_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_profile_drafts(conn, [draft_id])
+
+    artifacts, drafts = await asyncio.gather(_fetch_artifacts(), _fetch_drafts())
 
     artifact = artifacts[0] if artifacts else None
     draft = drafts[0] if drafts else None
@@ -101,6 +107,110 @@ async def resolve_profile_context(
     active = artifact.active if artifact else True
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
+
+    async def _get_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, merged.name_ids, redis, bypass_cache)
+
+    async def _search_names() -> list:
+        async with pool.acquire() as conn:
+            return await search_names(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.name_ids,
+                bypass_cache=bypass_cache,
+                profile=True,
+            )
+
+    async def _get_emails() -> list:
+        async with pool.acquire() as conn:
+            return await get_emails(conn, merged.email_ids, redis, bypass_cache)
+
+    async def _search_emails() -> list:
+        async with pool.acquire() as conn:
+            return await search_emails(
+                conn,
+                redis,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.email_ids,
+                bypass_cache=bypass_cache,
+                profile=True,
+            )
+
+    async def _get_request_limits() -> list:
+        async with pool.acquire() as conn:
+            return await get_request_limits(
+                conn, merged.request_limit_ids, redis, bypass_cache
+            )
+
+    async def _search_request_limits() -> list:
+        async with pool.acquire() as conn:
+            return await search_request_limits(
+                conn,
+                redis,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.request_limit_ids,
+                bypass_cache=bypass_cache,
+                profile=True,
+            )
+
+    async def _get_flags() -> list:
+        async with pool.acquire() as conn:
+            return await get_flags(conn, merged.flag_ids, redis, bypass_cache)
+
+    async def _search_flags() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=merged.flag_ids,
+                bypass_cache=bypass_cache,
+                profile=True,
+            )
+
+    async def _get_departments() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(
+                conn, merged.department_ids, redis, bypass_cache
+            )
+
+    async def _search_departments() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                suggest_source="all" if profile_id is None else "recent",
+                exclude_ids=merged.department_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_roles() -> list:
+        async with pool.acquire() as conn:
+            return await get_roles(conn, merged.role_ids, redis, bypass_cache)
+
+    async def _search_roles() -> list:
+        async with pool.acquire() as conn:
+            return await search_roles(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.role_ids,
+                bypass_cache=bypass_cache,
+                profile=True,
+            )
+
     (
         names_selected,
         names_suggestions,
@@ -115,75 +225,18 @@ async def resolve_profile_context(
         roles_selected,
         roles_suggestions,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, merged.name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.name_ids,
-            bypass_cache=bypass_cache,
-            profile=True,
-        ),
-        # Emails
-        get_emails(conn, merged.email_ids, redis, bypass_cache),
-        search_emails(
-            conn,
-            redis,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.email_ids,
-            bypass_cache=bypass_cache,
-            profile=True,
-        ),
-        # Request limits
-        get_request_limits(conn, merged.request_limit_ids, redis, bypass_cache),
-        search_request_limits(
-            conn,
-            redis,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.request_limit_ids,
-            bypass_cache=bypass_cache,
-            profile=True,
-        ),
-        # Flags
-        get_flags(conn, merged.flag_ids, redis, bypass_cache),
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=merged.flag_ids,
-            bypass_cache=bypass_cache,
-            profile=True,
-        ),
-        # Departments
-        get_departments(conn, merged.department_ids, redis, bypass_cache),
-        search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            suggest_source="all" if profile_id is None else "recent",
-            exclude_ids=merged.department_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Roles
-        get_roles(conn, merged.role_ids, redis, bypass_cache),
-        search_roles(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.role_ids,
-            bypass_cache=bypass_cache,
-            profile=True,
-        ),
+        _get_names(),
+        _search_names(),
+        _get_emails(),
+        _search_emails(),
+        _get_request_limits(),
+        _search_request_limits(),
+        _get_flags(),
+        _search_flags(),
+        _get_departments(),
+        _search_departments(),
+        _get_roles(),
+        _search_roles(),
     )
 
     # Filter flags to profile-specific types

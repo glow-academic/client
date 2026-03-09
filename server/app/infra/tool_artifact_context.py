@@ -55,7 +55,7 @@ TOOL_FLAG_NAMES = {
 
 
 async def resolve_tool_artifact_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     tool_id: UUID | None,
@@ -72,23 +72,29 @@ async def resolve_tool_artifact_context(
     """
 
     # Step 1: fetch artifact + draft in parallel
-    artifact_task = (
-        get_tool_artifacts(
-            conn,
-            [tool_id],
-            names=True,
-            descriptions=True,
-            flags=True,
-            args=True,
-            arg_positions=True,
-            args_outputs=True,
-        )
-        if tool_id
-        else _empty()
-    )
-    draft_task = get_tool_drafts(conn, [draft_id]) if draft_id else _empty()
 
-    artifacts, drafts = await asyncio.gather(artifact_task, draft_task)
+    async def _fetch_artifact() -> list:
+        if not tool_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_tool_artifacts(
+                conn,
+                [tool_id],
+                names=True,
+                descriptions=True,
+                flags=True,
+                args=True,
+                arg_positions=True,
+                args_outputs=True,
+            )
+
+    async def _fetch_draft() -> list:
+        if not draft_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_tool_drafts(conn, [draft_id])
+
+    artifacts, drafts = await asyncio.gather(_fetch_artifact(), _fetch_draft())
 
     artifact = artifacts[0] if artifacts else None
     draft = drafts[0] if drafts else None
@@ -99,6 +105,105 @@ async def resolve_tool_artifact_context(
     active = artifact.active if artifact else True
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
+
+    async def _get_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, merged.name_ids, redis, bypass_cache)
+
+    async def _search_names() -> list:
+        async with pool.acquire() as conn:
+            return await search_names(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.name_ids,
+                bypass_cache=bypass_cache,
+                tool=True,
+            )
+
+    async def _get_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+
+    async def _search_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await search_descriptions(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.description_ids,
+                bypass_cache=bypass_cache,
+                tool=True,
+            )
+
+    async def _get_flags() -> list:
+        async with pool.acquire() as conn:
+            return await get_flags(conn, merged.flag_ids, redis, bypass_cache)
+
+    async def _search_flags() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=merged.flag_ids,
+                bypass_cache=bypass_cache,
+                tool=True,
+            )
+
+    async def _get_args() -> list:
+        async with pool.acquire() as conn:
+            return await get_args(conn, merged.args_ids, redis, bypass_cache=bypass_cache)
+
+    async def _search_args() -> list:
+        async with pool.acquire() as conn:
+            return await search_args(
+                conn,
+                redis,
+                suggest_source="linked",
+                exclude_ids=merged.args_ids,
+                bypass_cache=bypass_cache,
+                tool=True,
+            )
+
+    async def _get_arg_positions() -> list:
+        async with pool.acquire() as conn:
+            return await get_arg_positions(
+                conn, merged.arg_position_ids, redis, bypass_cache=bypass_cache
+            )
+
+    async def _search_arg_positions() -> list:
+        async with pool.acquire() as conn:
+            return await search_arg_positions(
+                conn,
+                redis,
+                limit_count=100,
+                offset_count=0,
+                exclude_ids=merged.arg_position_ids,
+                args_ids=merged.args_ids,
+                bypass_cache=bypass_cache,
+                tool=True,
+            )
+
+    async def _get_args_outputs() -> list:
+        async with pool.acquire() as conn:
+            return await get_args_outputs(
+                conn, merged.args_outputs_ids, redis, bypass_cache=bypass_cache
+            )
+
+    async def _search_args_outputs() -> list:
+        async with pool.acquire() as conn:
+            return await search_args_outputs(
+                conn,
+                redis,
+                suggest_source="linked",
+                exclude_ids=merged.args_outputs_ids,
+                bypass_cache=bypass_cache,
+                tool=True,
+            )
+
     (
         names_selected,
         names_suggestions,
@@ -113,74 +218,18 @@ async def resolve_tool_artifact_context(
         args_outputs_selected,
         args_outputs_suggestions,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, merged.name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.name_ids,
-            bypass_cache=bypass_cache,
-            tool=True,
-        ),
-        # Descriptions
-        get_descriptions(conn, merged.description_ids, redis, bypass_cache),
-        search_descriptions(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.description_ids,
-            bypass_cache=bypass_cache,
-            tool=True,
-        ),
-        # Flags
-        get_flags(conn, merged.flag_ids, redis, bypass_cache),
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=merged.flag_ids,
-            bypass_cache=bypass_cache,
-            tool=True,
-        ),
-        # Args
-        get_args(conn, merged.args_ids, redis, bypass_cache=bypass_cache),
-        search_args(
-            conn,
-            redis,
-            suggest_source="linked",
-            exclude_ids=merged.args_ids,
-            bypass_cache=bypass_cache,
-            tool=True,
-        ),
-        # Arg Positions
-        get_arg_positions(
-            conn, merged.arg_position_ids, redis, bypass_cache=bypass_cache
-        ),
-        search_arg_positions(
-            conn,
-            redis,
-            limit_count=100,
-            offset_count=0,
-            exclude_ids=merged.arg_position_ids,
-            args_ids=merged.args_ids,
-            bypass_cache=bypass_cache,
-            tool=True,
-        ),
-        # Args Outputs
-        get_args_outputs(
-            conn, merged.args_outputs_ids, redis, bypass_cache=bypass_cache
-        ),
-        search_args_outputs(
-            conn,
-            redis,
-            suggest_source="linked",
-            exclude_ids=merged.args_outputs_ids,
-            bypass_cache=bypass_cache,
-            tool=True,
-        ),
+        _get_names(),
+        _search_names(),
+        _get_descriptions(),
+        _search_descriptions(),
+        _get_flags(),
+        _search_flags(),
+        _get_args(),
+        _search_args(),
+        _get_arg_positions(),
+        _search_arg_positions(),
+        _get_args_outputs(),
+        _search_args_outputs(),
     )
 
     # Filter flags to tool-specific types

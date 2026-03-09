@@ -51,7 +51,7 @@ class CreateRubricItem(BaseModel):
 
 
 async def create_rubric_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -75,7 +75,7 @@ async def create_rubric_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -96,19 +96,22 @@ async def create_rubric_client(
     has_errors = False
     error_results: list[RubricResultItem] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_rubric_values(conn, redis, item, is_create=True)
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                RubricResultItem(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_rubric_values(conn, redis, item, is_create=True)
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    RubricResultItem(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
                 )
-            )
-        else:
-            error_results.append(RubricResultItem(success=True, message="Validated"))
+            else:
+                error_results.append(
+                    RubricResultItem(success=True, message="Validated")
+                )
 
     if has_errors:
         return CreateRubricApiResponse(results=error_results)
@@ -117,37 +120,38 @@ async def create_rubric_client(
 
     results: list[RubricResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            rubrics_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            result = await create_rubric_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=item.department_ids,
-                flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                point_ids=item.point_ids,
-                standard_group_ids=item.standard_group_ids,
-                standard_ids=item.standard_ids,
-                rubric_ids=[rubrics_resource_id],
-            )
-
-            results.append(
-                RubricResultItem(
-                    success=True,
-                    rubric_id=result.id,
-                    message="Rubric created successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                rubrics_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                result = await create_rubric_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                    point_ids=item.point_ids,
+                    standard_group_ids=item.standard_group_ids,
+                    standard_ids=item.standard_ids,
+                    rubric_ids=[rubrics_resource_id],
+                )
+
+                results.append(
+                    RubricResultItem(
+                        success=True,
+                        rubric_id=result.id,
+                        message="Rubric created successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

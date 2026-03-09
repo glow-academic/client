@@ -47,7 +47,7 @@ CSV_COLUMNS = [
 
 
 async def export_rubric_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -69,7 +69,7 @@ async def export_rubric_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -82,12 +82,13 @@ async def export_rubric_client(
     if rubric_id:
         rubric_ids = [rubric_id]
     else:
-        rubric_ids, _total_count = await search_rubrics(
-            conn,
-            active_only=False,
-            limit_count=100000,
-            offset_count=0,
-        )
+        async with pool.acquire() as conn:
+            rubric_ids, _total_count = await search_rubrics(
+                conn,
+                active_only=False,
+                limit_count=100000,
+                offset_count=0,
+            )
 
         if not rubric_ids:
             return ExportRubricApiResponse(
@@ -98,17 +99,18 @@ async def export_rubric_client(
 
     # ── Step 3: Get rubric artifacts with all junction IDs ───────────
 
-    artifacts = await get_rubrics(
-        conn,
-        rubric_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        points=True,
-        standard_groups=True,
-        standards=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_rubrics(
+            conn,
+            rubric_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            points=True,
+            standard_groups=True,
+            standards=True,
+        )
 
     # ── Step 4: Parallel resource hydration ────────────────────────────
 
@@ -131,6 +133,30 @@ async def export_rubric_client(
     async def _empty() -> list:
         return []
 
+    async def _get_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _get_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _get_departments() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, all_department_ids, redis)
+
+    async def _get_points() -> list:
+        async with pool.acquire() as conn:
+            return await get_points(conn, all_point_ids, redis)
+
+    async def _get_standard_groups() -> list:
+        async with pool.acquire() as conn:
+            return await get_standard_groups(conn, all_standard_group_ids, redis)
+
+    async def _get_standards() -> list:
+        async with pool.acquire() as conn:
+            return await get_standards(conn, all_standard_ids, redis)
+
     (
         names_data,
         descriptions_data,
@@ -139,18 +165,12 @@ async def export_rubric_client(
         standard_groups_data,
         standards_data,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty(),
-        get_departments(conn, all_department_ids, redis)
-        if all_department_ids
-        else _empty(),
-        get_points(conn, all_point_ids, redis) if all_point_ids else _empty(),
-        get_standard_groups(conn, all_standard_group_ids, redis)
-        if all_standard_group_ids
-        else _empty(),
-        get_standards(conn, all_standard_ids, redis) if all_standard_ids else _empty(),
+        _get_names() if all_name_ids else _empty(),
+        _get_descriptions() if all_description_ids else _empty(),
+        _get_departments() if all_department_ids else _empty(),
+        _get_points() if all_point_ids else _empty(),
+        _get_standard_groups() if all_standard_group_ids else _empty(),
+        _get_standards() if all_standard_ids else _empty(),
     )
 
     # Build lookup maps
@@ -216,13 +236,14 @@ async def export_rubric_client(
 
     # Create upload entry via black-box tool
     file_size = len(csv_content.encode("utf-8"))
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="text/csv",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="text/csv",
+            size=file_size,
+        )
 
     return ExportRubricApiResponse(
         upload_id=upload_result.id,

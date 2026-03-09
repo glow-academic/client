@@ -69,7 +69,7 @@ DOCUMENT_FLAG_TYPES = {"document_active"}
 
 
 async def resolve_document_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     document_id: UUID | None,
@@ -93,26 +93,31 @@ async def resolve_document_context(
     param_ids = parameter_ids or []
 
     # Step 1: fetch artifact + draft in parallel
-    artifact_task = (
-        get_document_artifacts(
-            conn,
-            [document_id],
-            names=True,
-            descriptions=True,
-            departments=True,
-            flags=True,
-            files=True,
-            images=True,
-            parameter_fields=True,
-            parameters=True,
-            texts=True,
-        )
-        if document_id
-        else _empty()
-    )
-    draft_task = get_document_drafts(conn, [draft_id]) if draft_id else _empty()
+    async def _fetch_artifact() -> list:
+        if not document_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_document_artifacts(
+                conn,
+                [document_id],
+                names=True,
+                descriptions=True,
+                departments=True,
+                flags=True,
+                files=True,
+                images=True,
+                parameter_fields=True,
+                parameters=True,
+                texts=True,
+            )
 
-    artifacts, drafts = await asyncio.gather(artifact_task, draft_task)
+    async def _fetch_draft() -> list:
+        if not draft_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_document_drafts(conn, [draft_id])
+
+    artifacts, drafts = await asyncio.gather(_fetch_artifact(), _fetch_draft())
 
     artifact = artifacts[0] if artifacts else None
     draft = drafts[0] if drafts else None
@@ -123,6 +128,179 @@ async def resolve_document_context(
     active = artifact.active if artifact else True
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
+
+    async def _get_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, merged.name_ids, redis, bypass_cache)
+
+    async def _search_names() -> list:
+        async with pool.acquire() as conn:
+            return await search_names(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.name_ids,
+                bypass_cache=bypass_cache,
+                document=True,
+            )
+
+    async def _get_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+
+    async def _search_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await search_descriptions(
+                conn,
+                redis,
+                search=descriptions_search,
+                draft_id=group_id,
+                suggest_source="all",
+                exclude_ids=merged.description_ids,
+                bypass_cache=bypass_cache,
+                document=True,
+            )
+
+    async def _get_flags() -> list:
+        async with pool.acquire() as conn:
+            return await get_flags(conn, merged.flag_ids, redis, bypass_cache)
+
+    async def _search_flags() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=merged.flag_ids,
+                bypass_cache=bypass_cache,
+                document=True,
+            )
+
+    async def _get_departments() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(
+                conn, merged.department_ids, redis, bypass_cache=bypass_cache
+            )
+
+    async def _search_departments() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                suggest_source="all",
+                exclude_ids=merged.department_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_parameter_fields() -> list:
+        async with pool.acquire() as conn:
+            return await get_parameter_fields(
+                conn, merged.parameter_field_ids, redis, bypass_cache
+            )
+
+    async def _search_parameter_fields() -> list:
+        if not param_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await search_parameter_fields(
+                conn,
+                redis,
+                parameter_ids=param_ids,
+                bypass_cache=bypass_cache,
+                document=True,
+            )
+
+    async def _get_files() -> list:
+        async with pool.acquire() as conn:
+            return await get_files(conn, merged.files_ids, redis, bypass_cache)
+
+    async def _search_files() -> list:
+        async with pool.acquire() as conn:
+            return await search_files(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.files_ids,
+                bypass_cache=bypass_cache,
+                document=True,
+            )
+
+    async def _get_images() -> list:
+        async with pool.acquire() as conn:
+            return await get_images(conn, merged.images_ids, redis, bypass_cache)
+
+    async def _search_images() -> list:
+        async with pool.acquire() as conn:
+            return await search_images(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.images_ids,
+                bypass_cache=bypass_cache,
+                document=True,
+            )
+
+    async def _get_texts() -> list:
+        async with pool.acquire() as conn:
+            return await get_texts(conn, merged.texts_ids, redis, bypass_cache)
+
+    async def _search_texts() -> list:
+        async with pool.acquire() as conn:
+            return await search_texts(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=merged.texts_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_parameters() -> list:
+        if not param_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_parameters(conn, param_ids, redis, bypass_cache)
+
+    async def _search_parameters() -> list:
+        async with pool.acquire() as conn:
+            return await search_parameters(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                persona_parameter=None,
+                document_parameter=True,
+                scenario_parameter=None,
+                video_parameter=None,
+                suggest_source="all",
+                exclude_ids=param_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _search_fields_catalog() -> list:
+        async with pool.acquire() as conn:
+            return await search_fields(
+                conn,
+                redis,
+                search=None,
+                limit_count=200,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                bypass_cache=bypass_cache,
+            )
+
     (
         names_selected,
         names_suggestions,
@@ -144,127 +322,25 @@ async def resolve_document_context(
         parameters_suggestions,
         fields_catalog,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, merged.name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.name_ids,
-            bypass_cache=bypass_cache,
-            document=True,
-        ),
-        # Descriptions
-        get_descriptions(conn, merged.description_ids, redis, bypass_cache),
-        search_descriptions(
-            conn,
-            redis,
-            search=descriptions_search,
-            draft_id=group_id,
-            suggest_source="all",
-            exclude_ids=merged.description_ids,
-            bypass_cache=bypass_cache,
-            document=True,
-        ),
-        # Flags
-        get_flags(conn, merged.flag_ids, redis, bypass_cache),
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=merged.flag_ids,
-            bypass_cache=bypass_cache,
-            document=True,
-        ),
-        # Departments
-        get_departments(conn, merged.department_ids, redis, bypass_cache=bypass_cache),
-        search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            suggest_source="all",
-            exclude_ids=merged.department_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Parameter fields
-        get_parameter_fields(conn, merged.parameter_field_ids, redis, bypass_cache),
-        (
-            search_parameter_fields(
-                conn,
-                redis,
-                parameter_ids=param_ids,
-                bypass_cache=bypass_cache,
-                document=True,
-            )
-            if param_ids
-            else _empty()
-        ),
-        # Files
-        get_files(conn, merged.files_ids, redis, bypass_cache),
-        search_files(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.files_ids,
-            bypass_cache=bypass_cache,
-            document=True,
-        ),
-        # Images
-        get_images(conn, merged.images_ids, redis, bypass_cache),
-        search_images(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.images_ids,
-            bypass_cache=bypass_cache,
-            document=True,
-        ),
-        # Texts
-        get_texts(conn, merged.texts_ids, redis, bypass_cache),
-        search_texts(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.texts_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Parameters (from URL, not saved state)
-        get_parameters(conn, param_ids, redis, bypass_cache) if param_ids else _empty(),
-        search_parameters(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            persona_parameter=None,
-            document_parameter=True,
-            scenario_parameter=None,
-            video_parameter=None,
-            suggest_source="all",
-            exclude_ids=param_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Fields catalog
-        search_fields(
-            conn,
-            redis,
-            search=None,
-            limit_count=200,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            bypass_cache=bypass_cache,
-        ),
+        _get_names(),
+        _search_names(),
+        _get_descriptions(),
+        _search_descriptions(),
+        _get_flags(),
+        _search_flags(),
+        _get_departments(),
+        _search_departments(),
+        _get_parameter_fields(),
+        _search_parameter_fields(),
+        _get_files(),
+        _search_files(),
+        _get_images(),
+        _search_images(),
+        _get_texts(),
+        _search_texts(),
+        _get_parameters(),
+        _search_parameters(),
+        _search_fields_catalog(),
     )
 
     # Filter flags to document-specific types
@@ -277,16 +353,28 @@ async def resolve_document_context(
     all_image_ids = [i.id for i in images_selected + images_suggestions if i.id]
     all_text_ids = [t.id for t in texts_selected + texts_suggestions if t.id]
 
+    async def _fetch_file_entries() -> list:
+        if not all_file_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await search_file_entries(conn, files_ids=all_file_ids, limit=200)
+
+    async def _fetch_image_entries() -> list:
+        if not all_image_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await search_image_entries(conn, images_ids=all_image_ids, limit=200)
+
+    async def _fetch_text_entries() -> list:
+        if not all_text_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await search_text_entries(conn, text_ids=all_text_ids, limit=200)
+
     file_entries, image_entries, text_entries = await asyncio.gather(
-        search_file_entries(conn, files_ids=all_file_ids, limit=200)
-        if all_file_ids
-        else _empty(),
-        search_image_entries(conn, images_ids=all_image_ids, limit=200)
-        if all_image_ids
-        else _empty(),
-        search_text_entries(conn, text_ids=all_text_ids, limit=200)
-        if all_text_ids
-        else _empty(),
+        _fetch_file_entries(),
+        _fetch_image_entries(),
+        _fetch_text_entries(),
     )
 
     return ArtifactContext(

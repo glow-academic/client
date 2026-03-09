@@ -63,7 +63,7 @@ if TYPE_CHECKING:
 
 
 async def resolve_parameter_values(
-    conn: asyncpg.Connection,
+    conn: asyncpg.Connection | asyncpg.Pool,
     redis: Redis,
     item: SaveParameterItem,
     is_update: bool,
@@ -134,7 +134,7 @@ async def resolve_parameter_values(
 
 
 async def _create_denormalized_snapshot(
-    conn: asyncpg.Connection,
+    conn: asyncpg.Connection | asyncpg.Pool,
     redis: Redis,
     *,
     name_id: UUID | None,
@@ -168,7 +168,7 @@ async def _create_denormalized_snapshot(
 
 
 async def save_parameter_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -195,7 +195,7 @@ async def save_parameter_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -205,56 +205,60 @@ async def save_parameter_client(
 
     # -- Step 2: Per-item permission check --
 
-    for idx, item in enumerate(items):
-        if item.input_parameter_id is not None:
-            perms = await resolve_parameter_permissions_context(
-                conn, item.input_parameter_id
-            )
-            if not perms.exists:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Item {idx}: Parameter {item.input_parameter_id} not found.",
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            if item.input_parameter_id is not None:
+                perms = await resolve_parameter_permissions_context(
+                    conn, item.input_parameter_id
                 )
-            if not compute_can_edit(
-                user_role=profile.role,
-                parameter_department_ids=perms.department_ids,
-                active_scenario_count=perms.active_scenario_count,
-                user_department_ids=profile.department_ids,
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Item {idx}: You don't have permission to save this parameter.",
-                )
-        else:
-            if not compute_can_create(user_role=profile.role, department_ids=None):
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Item {idx}: You don't have permission to create a parameter.",
-                )
+                if not perms.exists:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Item {idx}: Parameter {item.input_parameter_id} not found.",
+                    )
+                if not compute_can_edit(
+                    user_role=profile.role,
+                    parameter_department_ids=perms.department_ids,
+                    active_scenario_count=perms.active_scenario_count,
+                    user_department_ids=profile.department_ids,
+                ):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"Item {idx}: You don't have permission to save this parameter.",
+                    )
+            else:
+                if not compute_can_create(user_role=profile.role, department_ids=None):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"Item {idx}: You don't have permission to create a parameter.",
+                    )
 
     # -- Step 3: Per-item value resolution --
 
     has_errors = False
     error_results: list[SaveParameterResult] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_parameter_values(
-            conn,
-            redis,
-            item,
-            is_update=item.input_parameter_id is not None,
-        )
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                SaveParameterResult(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
-                )
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_parameter_values(
+                conn,
+                redis,
+                item,
+                is_update=item.input_parameter_id is not None,
             )
-        else:
-            error_results.append(SaveParameterResult(success=True, message="Validated"))
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    SaveParameterResult(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
+                )
+            else:
+                error_results.append(
+                    SaveParameterResult(success=True, message="Validated")
+                )
 
     if has_errors:
         return SaveParameterApiResponse(results=error_results)
@@ -263,53 +267,54 @@ async def save_parameter_client(
 
     results: list[SaveParameterResult] = []
 
-    async with conn.transaction():
-        for _idx, item in enumerate(items):
-            is_update = item.input_parameter_id is not None
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for _idx, item in enumerate(items):
+                is_update = item.input_parameter_id is not None
 
-            # Create denormalized snapshot
-            parameters_resource_id = await _create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            if is_update:
-                result = await update_parameter_artifact(
+                # Create denormalized snapshot
+                parameters_resource_id = await _create_denormalized_snapshot(
                     conn,
-                    item.input_parameter_id,
-                    name_id=item.name_id if item.name_id else _UNSET,
-                    description_id=item.description_id
-                    if item.description_id
-                    else _UNSET,
-                    department_ids=item.department_ids,
-                    flag_ids=item.flag_ids,
-                    field_ids=item.field_ids,
-                    parameter_ids=[parameters_resource_id],
-                )
-                parameter_id = result.id
-            else:
-                result = await create_parameter_artifact(
-                    conn,
+                    redis,
                     name_id=item.name_id,
                     description_id=item.description_id,
-                    department_ids=item.department_ids,
-                    flag_ids=item.flag_ids,
-                    field_ids=item.field_ids,
-                    parameter_ids=[parameters_resource_id],
                 )
-                parameter_id = result.id
 
-            results.append(
-                SaveParameterResult(
-                    success=True,
-                    parameter_id=parameter_id,
-                    message="Parameter updated successfully"
-                    if is_update
-                    else "Parameter created successfully",
+                if is_update:
+                    result = await update_parameter_artifact(
+                        conn,
+                        item.input_parameter_id,
+                        name_id=item.name_id if item.name_id else _UNSET,
+                        description_id=item.description_id
+                        if item.description_id
+                        else _UNSET,
+                        department_ids=item.department_ids,
+                        flag_ids=item.flag_ids,
+                        field_ids=item.field_ids,
+                        parameter_ids=[parameters_resource_id],
+                    )
+                    parameter_id = result.id
+                else:
+                    result = await create_parameter_artifact(
+                        conn,
+                        name_id=item.name_id,
+                        description_id=item.description_id,
+                        department_ids=item.department_ids,
+                        flag_ids=item.flag_ids,
+                        field_ids=item.field_ids,
+                        parameter_ids=[parameters_resource_id],
+                    )
+                    parameter_id = result.id
+
+                results.append(
+                    SaveParameterResult(
+                        success=True,
+                        parameter_id=parameter_id,
+                        message="Parameter updated successfully"
+                        if is_update
+                        else "Parameter created successfully",
+                    )
                 )
-            )
 
     # -- Step 5: Invalidate cache --
 

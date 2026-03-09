@@ -11,11 +11,11 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
 import asyncpg
 from redis.asyncio import Redis
-from typing import Any
 
 from app.infra.types import ArtifactContext, ResourcePair
 
@@ -128,7 +128,9 @@ async def resolve_parameter_context(
 
     async def _get_descriptions() -> list[Any]:
         async with pool.acquire() as conn:
-            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+            return await get_descriptions(
+                conn, merged.description_ids, redis, bypass_cache
+            )
 
     async def _search_descriptions() -> list[Any]:
         async with pool.acquire() as conn:
@@ -160,7 +162,9 @@ async def resolve_parameter_context(
 
     async def _get_departments() -> list[Any]:
         async with pool.acquire() as conn:
-            return await get_departments(conn, merged.department_ids, redis, bypass_cache)
+            return await get_departments(
+                conn, merged.department_ids, redis, bypass_cache
+            )
 
     async def _search_departments() -> list[Any]:
         async with pool.acquire() as conn:
@@ -178,7 +182,9 @@ async def resolve_parameter_context(
 
     async def _get_fields() -> list[Any]:
         async with pool.acquire() as conn:
-            return await get_parameter_fields(conn, merged.field_ids, redis, bypass_cache)
+            return await get_parameter_fields(
+                conn, merged.field_ids, redis, bypass_cache
+            )
 
     async def _search_fields() -> list[Any]:
         async with pool.acquire() as conn:

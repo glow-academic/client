@@ -32,7 +32,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def delete_field_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -52,7 +52,7 @@ async def delete_field_client(
 
     # -- Step 1: Profile context -----------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -62,48 +62,51 @@ async def delete_field_client(
 
     # -- Step 2+3+4: Per-item permission checks (fail fast) --------------------
 
-    for idx, field_id in enumerate(field_ids):
-        ctx = await resolve_field_permissions_context(conn, field_id)
+    async with pool.acquire() as conn:
+        for idx, field_id in enumerate(field_ids):
+            ctx = await resolve_field_permissions_context(conn, field_id)
 
-        if not ctx.exists:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Item {idx}: Field {field_id} not found.",
+            if not ctx.exists:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Item {idx}: Field {field_id} not found.",
+                )
+
+            # Field permissions context doesn't include active_parameter_count,
+            # so we use search_parameters inline to check usage.
+            active_parameter_ids, _total = await search_parameters(
+                conn, field_ids=[field_id], active_only=True, limit_count=1
             )
+            active_parameter_count = len(active_parameter_ids)
 
-        # Field permissions context doesn't include active_parameter_count,
-        # so we use search_parameters inline to check usage.
-        active_parameter_ids, _total = await search_parameters(
-            conn, field_ids=[field_id], active_only=True, limit_count=1
-        )
-        active_parameter_count = len(active_parameter_ids)
-
-        if not compute_can_delete(
-            user_role=profile.role,
-            field_department_ids=ctx.department_ids,
-            active_parameter_count=active_parameter_count,
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Item {idx}: You don't have permission to delete this field.",
-            )
+            if not compute_can_delete(
+                user_role=profile.role,
+                field_department_ids=ctx.department_ids,
+                active_parameter_count=active_parameter_count,
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have permission to delete this field.",
+                )
 
     # -- Step 5: Fetch names for result messages -------------------------------
 
-    name_map: dict[UUID, str] = {}
-    artifacts = await get_fields(conn, field_ids, names=True)
-    for artifact in artifacts:
-        name = "Unknown"
-        if artifact.name_ids:
-            name_resources = await get_names(conn, artifact.name_ids, redis)
-            if name_resources:
-                name = name_resources[0].name or "Unknown"
-        name_map[artifact.id] = name
+    async with pool.acquire() as conn:
+        name_map: dict[UUID, str] = {}
+        artifacts = await get_fields(conn, field_ids, names=True)
+        for artifact in artifacts:
+            name = "Unknown"
+            if artifact.name_ids:
+                name_resources = await get_names(conn, artifact.name_ids, redis)
+                if name_resources:
+                    name = name_resources[0].name or "Unknown"
+            name_map[artifact.id] = name
 
     # -- Step 6: Single transaction -- bulk delete -----------------------------
 
-    async with conn.transaction():
-        result = await delete_fields(conn, field_ids)
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await delete_fields(conn, field_ids)
 
     # -- Step 7: Invalidate cache ----------------------------------------------
 

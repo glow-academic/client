@@ -31,7 +31,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def delete_profile_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -51,7 +51,7 @@ async def delete_profile_client(
 
     # -- Step 1: Current user's profile context -----------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -61,45 +61,50 @@ async def delete_profile_client(
 
     # -- Step 2+3+4: Per-item permission checks (fail fast) -----------------------
 
-    for idx, target_id in enumerate(profile_ids):
-        ctx = await resolve_profile_permissions_context(conn, target_id)
+    async with pool.acquire() as conn:
+        for idx, target_id in enumerate(profile_ids):
+            ctx = await resolve_profile_permissions_context(conn, target_id)
 
-        if not ctx.exists:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Item {idx}: Profile {target_id} not found.",
+            if not ctx.exists:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Item {idx}: Profile {target_id} not found.",
+                )
+
+            # Resolve target's role
+            target_ctx = await resolve_profile_identity_context(
+                pool, target_id, redis
             )
+            target_role = target_ctx.role if target_ctx else None
 
-        # Resolve target's role
-        target_ctx = await resolve_profile_identity_context(conn, target_id, redis)
-        target_role = target_ctx.role if target_ctx else None
-
-        if not compute_can_delete(
-            user_role=profile.role,
-            target_is_self=(target_id == profile_id),
-            target_role=target_role,
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Item {idx}: You don't have permission to delete this profile.",
-            )
+            if not compute_can_delete(
+                user_role=profile.role,
+                target_is_self=(target_id == profile_id),
+                target_role=target_role,
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have permission to delete this profile.",
+                )
 
     # -- Step 5: Fetch names for result messages ----------------------------------
 
-    name_map: dict[UUID, str] = {}
-    artifacts = await get_profiles(conn, profile_ids, names=True)
-    for artifact in artifacts:
-        name = "Unknown"
-        if artifact.name_ids:
-            name_resources = await get_names(conn, artifact.name_ids, redis)
-            if name_resources:
-                name = name_resources[0].name or "Unknown"
-        name_map[artifact.id] = name
+    async with pool.acquire() as conn:
+        name_map: dict[UUID, str] = {}
+        artifacts = await get_profiles(conn, profile_ids, names=True)
+        for artifact in artifacts:
+            name = "Unknown"
+            if artifact.name_ids:
+                name_resources = await get_names(conn, artifact.name_ids, redis)
+                if name_resources:
+                    name = name_resources[0].name or "Unknown"
+            name_map[artifact.id] = name
 
     # -- Step 6: Single transaction — bulk delete ---------------------------------
 
-    async with conn.transaction():
-        result = await delete_profiles(conn, profile_ids)
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await delete_profiles(conn, profile_ids)
 
     # -- Step 7: Invalidate cache -------------------------------------------------
 

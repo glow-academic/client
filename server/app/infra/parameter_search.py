@@ -23,6 +23,7 @@ from app.infra.parameter_permissions import (
     compute_can_edit,
 )
 from app.infra.parameter_permissions_context import (
+    ParameterPermissionsContext,
     resolve_parameter_permissions_context,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
@@ -47,7 +48,7 @@ from app.routes.v5.tools.resources.scenarios.search import (
 
 
 async def search_parameter_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -76,7 +77,7 @@ async def search_parameter_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -91,31 +92,33 @@ async def search_parameter_client(
     # -- Step 2: Search parameters --
     # The artifact search tool handles scenario_ids and field_ids filters internally
 
-    parameter_ids, total_count = await search_parameters(
-        conn,
-        search=search,
-        department_ids=filter_department_ids,
-        scenario_ids=scenario_ids,
-        field_ids=field_ids,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+    async with pool.acquire() as conn:
+        parameter_ids, total_count = await search_parameters(
+            conn,
+            search=search,
+            department_ids=filter_department_ids,
+            scenario_ids=scenario_ids,
+            field_ids=field_ids,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
     if not parameter_ids:
         return _empty_response(actor_name, total_count=0)
 
     # -- Step 3: Get parameter artifacts with junction IDs --
 
-    artifacts = await get_parameters(
-        conn,
-        parameter_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        fields=True,
-        parameters=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_parameters(
+            conn,
+            parameter_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            fields=True,
+            parameters=True,
+        )
 
     # -- Step 4: Parallel hydration + facets + usage counts --
 
@@ -129,7 +132,47 @@ async def search_parameter_client(
         all_field_junction_ids.extend(a.field_ids or [])
 
     # Per-parameter permissions context (gives us active_scenario_count)
-    perm_tasks = [resolve_parameter_permissions_context(conn, a.id) for a in artifacts]
+    async def _get_names_data() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _get_descriptions_data() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _get_parameter_fields_data() -> list:
+        if not all_field_junction_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_parameter_fields(conn, all_field_junction_ids, redis)
+
+    async def _search_scenarios() -> list:
+        async with pool.acquire() as conn:
+            return await search_scenarios_resource(
+                conn, redis, search=scenario_search, scenario=True, limit_count=100
+            )
+
+    async def _search_fields() -> list:
+        async with pool.acquire() as conn:
+            return await search_fields_resource(
+                conn, redis, search=field_search, parameter=True, limit_count=100
+            )
+
+    async def _search_depts() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn, redis, search=department_search, parameter=True, limit_count=100
+            )
+
+    async def _get_perm(artifact_id: UUID) -> ParameterPermissionsContext:
+        async with pool.acquire() as conn:
+            return await resolve_parameter_permissions_context(conn, artifact_id)
+
+    perm_tasks = [_get_perm(a.id) for a in artifacts]
 
     (
         names_data,
@@ -140,32 +183,23 @@ async def search_parameter_client(
         department_facet,
         *perm_results,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty_list(),
-        get_parameter_fields(conn, all_field_junction_ids, redis)
-        if all_field_junction_ids
-        else _empty_list(),
-        search_scenarios_resource(
-            conn, redis, search=scenario_search, scenario=True, limit_count=100
-        ),
-        search_fields_resource(
-            conn, redis, search=field_search, parameter=True, limit_count=100
-        ),
-        search_departments(
-            conn, redis, search=department_search, parameter=True, limit_count=100
-        ),
+        _get_names_data(),
+        _get_descriptions_data(),
+        _get_parameter_fields_data(),
+        _search_scenarios(),
+        _search_fields(),
+        _search_depts(),
         *perm_tasks,
     )
 
     # Hydrate field names for sample_items
     all_fields_resource_ids = list({pf.field_id for pf in parameter_fields_data})
-    fields_resource_data = (
-        await get_fields_resource(conn, all_fields_resource_ids, redis)
-        if all_fields_resource_ids
-        else []
-    )
+    async with pool.acquire() as conn:
+        fields_resource_data = (
+            await get_fields_resource(conn, all_fields_resource_ids, redis)
+            if all_fields_resource_ids
+            else []
+        )
     field_name_map: dict[UUID, str] = {f.id: f.name for f in fields_resource_data}
     # Map parameter_fields_resource ID -> field name
     pf_id_to_name: dict[UUID, str] = {}
