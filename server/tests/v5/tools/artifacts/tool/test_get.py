@@ -5,6 +5,7 @@ from tests.helpers import nonexistent_id, unique_tag
 
 from app.routes.v5.tools.artifacts.tool.create import create_tool
 from app.routes.v5.tools.artifacts.tool.get import get_tools
+from app.routes.v5.tools.artifacts.tool.update import update_tool
 from app.routes.v5.tools.resources.names.create import create_name
 
 pytestmark = pytest.mark.asyncio
@@ -93,3 +94,38 @@ async def test_no_junctions_when_all_false(conn, redis_client):
         "tool_ids",
     ]:
         assert getattr(p, field) is None
+
+
+async def test_hides_inactive_by_default(conn):
+    created = await create_tool(conn)
+    await update_tool(conn, created.id, active=False)
+
+    items = await get_tools(conn, [created.id])
+
+    assert items == []
+
+
+async def test_returns_inactive_when_active_filter_is_none(conn):
+    created = await create_tool(conn)
+    await update_tool(conn, created.id, active=False)
+
+    items = await get_tools(conn, [created.id], active=None)
+
+    assert len(items) == 1
+    assert items[0].id == created.id
+    assert items[0].active is False
+
+
+async def test_can_filter_for_only_inactive(conn):
+    active_item = await create_tool(conn)
+    inactive_item = await create_tool(conn)
+    await update_tool(conn, inactive_item.id, active=False)
+
+    items = await get_tools(
+        conn,
+        [active_item.id, inactive_item.id],
+        active=False,
+    )
+
+    assert [item.id for item in items] == [inactive_item.id]
+    assert items[0].active is False

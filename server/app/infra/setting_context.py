@@ -90,6 +90,7 @@ async def resolve_setting_context(
             return await get_setting_artifacts(
                 conn,
                 [setting_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 colors=True,

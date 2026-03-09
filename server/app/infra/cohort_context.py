@@ -93,6 +93,7 @@ async def resolve_cohort_context(
             return await get_cohort_artifacts(
                 conn,
                 [cohort_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 departments=True,

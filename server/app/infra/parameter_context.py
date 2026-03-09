@@ -87,6 +87,7 @@ async def resolve_parameter_context(
             return await get_parameter_artifacts(
                 conn,
                 [parameter_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 departments=True,

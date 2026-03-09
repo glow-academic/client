@@ -20,8 +20,10 @@ type DuplicateSimulationIn = InputOf<"/api/v5/artifacts/simulations/duplicate", 
 type DuplicateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/duplicate", "post">;
 type DeleteSimulationIn = InputOf<"/api/v5/artifacts/simulations/delete", "post">;
 type DeleteSimulationOut = OutputOf<"/api/v5/artifacts/simulations/delete", "post">;
-type SaveSimulationIn = InputOf<"/api/v5/artifacts/simulations/save", "post">;
-type SaveSimulationOut = OutputOf<"/api/v5/artifacts/simulations/save", "post">;
+type CreateSimulationIn = InputOf<"/api/v5/artifacts/simulations/create", "post">;
+type CreateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/create", "post">;
+type UpdateSimulationIn = InputOf<"/api/v5/artifacts/simulations/update", "post">;
+type UpdateSimulationOut = OutputOf<"/api/v5/artifacts/simulations/update", "post">;
 type SearchFlagsIn = InputOf<"/api/v5/resources/flags/search", "post">;
 type SearchFlagsOut = NonNullable<OutputOf<"/api/v5/resources/flags/search", "post">["items"]>;
 type ParseCsvIn = InputOf<"/uploads/csv", "post">;
@@ -77,11 +79,14 @@ async function deleteSimulation(
   return api.post("/artifacts/simulations/delete", input);
 }
 
-async function saveSimulation(
-  input: SaveSimulationIn,
-): Promise<SaveSimulationOut> {
+async function createSimulation(input: CreateSimulationIn): Promise<CreateSimulationOut> {
   "use server";
-  return api.post("/artifacts/simulations/save", input);
+  return api.post("/artifacts/simulations/create", input);
+}
+
+async function updateSimulation(input: UpdateSimulationIn): Promise<UpdateSimulationOut> {
+  "use server";
+  return api.post("/artifacts/simulations/update", input);
 }
 
 async function searchFlags(): Promise<SearchFlagsOut> {
@@ -171,7 +176,8 @@ export default async function SimulationsPage({ searchParams }: SimulationsPageP
           initialColumnVisibility={initialColumnVisibility}
           duplicateSimulationAction={duplicateSimulation}
           deleteSimulationAction={deleteSimulation}
-          saveSimulationAction={saveSimulation}
+          createSimulationAction={createSimulation}
+          updateSimulationAction={updateSimulation}
           searchFlagsAction={searchFlags}
           parseCsvAction={parseCsv}
           importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
@@ -195,8 +201,10 @@ export type {
   DuplicateSimulationOut,
   ParseCsvIn,
   ParseCsvOut,
-  SaveSimulationIn,
-  SaveSimulationOut,
+  CreateSimulationIn,
+  CreateSimulationOut,
+  UpdateSimulationIn,
+  UpdateSimulationOut,
   SearchFlagsOut,
   SimulationsListOut,
 };

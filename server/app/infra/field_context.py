@@ -85,6 +85,7 @@ async def resolve_field_context(
             return await get_field_artifacts(
                 conn,
                 [field_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 departments=True,

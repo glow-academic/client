@@ -79,6 +79,7 @@ async def resolve_auth_context(
             return await get_auth_artifacts(
                 c,
                 [auth_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 departments=True,

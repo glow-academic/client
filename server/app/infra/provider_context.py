@@ -84,6 +84,7 @@ async def resolve_provider_context(
             return await get_provider_artifacts(
                 conn,
                 [provider_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 departments=True,

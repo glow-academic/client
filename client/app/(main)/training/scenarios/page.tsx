@@ -20,8 +20,10 @@ type DuplicateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/duplicate", "pos
 type DuplicateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/duplicate", "post">;
 type DeleteScenarioIn = InputOf<"/api/v5/artifacts/scenarios/delete", "post">;
 type DeleteScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/delete", "post">;
-type SaveScenarioIn = InputOf<"/api/v5/artifacts/scenarios/save", "post">;
-type SaveScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/save", "post">;
+type CreateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/create", "post">;
+type CreateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/create", "post">;
+type UpdateScenarioIn = InputOf<"/api/v5/artifacts/scenarios/update", "post">;
+type UpdateScenarioOut = OutputOf<"/api/v5/artifacts/scenarios/update", "post">;
 type SearchFlagsIn = InputOf<"/api/v5/resources/flags/search", "post">;
 type SearchFlagsOut = NonNullable<OutputOf<"/api/v5/resources/flags/search", "post">["items"]>;
 type ParseCsvIn = InputOf<"/uploads/csv", "post">;
@@ -77,11 +79,14 @@ async function deleteScenario(
   return api.post("/artifacts/scenarios/delete", input);
 }
 
-async function saveScenario(
-  input: SaveScenarioIn,
-): Promise<SaveScenarioOut> {
+async function createScenario(input: CreateScenarioIn): Promise<CreateScenarioOut> {
   "use server";
-  return api.post("/artifacts/scenarios/save", input);
+  return api.post("/artifacts/scenarios/create", input);
+}
+
+async function updateScenario(input: UpdateScenarioIn): Promise<UpdateScenarioOut> {
+  "use server";
+  return api.post("/artifacts/scenarios/update", input);
 }
 
 async function searchFlags(): Promise<SearchFlagsOut> {
@@ -171,7 +176,8 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
           initialColumnVisibility={initialColumnVisibility}
           duplicateScenarioAction={duplicateScenario}
           deleteScenarioAction={deleteScenario}
-          saveScenarioAction={saveScenario}
+          createScenarioAction={createScenario}
+          updateScenarioAction={updateScenario}
           searchFlagsAction={searchFlags}
           parseCsvAction={parseCsv}
           importFields={listData.import_fields ?? undefined}
@@ -195,8 +201,10 @@ export type {
   DuplicateScenarioOut,
   ParseCsvIn,
   ParseCsvOut,
-  SaveScenarioIn,
-  SaveScenarioOut,
+  CreateScenarioIn,
+  CreateScenarioOut,
+  UpdateScenarioIn,
+  UpdateScenarioOut,
   SearchFlagsOut,
   ScenariosListOut,
 };

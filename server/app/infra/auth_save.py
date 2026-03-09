@@ -171,7 +171,7 @@ async def _create_denormalized_snapshot(
 
 
 async def save_auth_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -202,7 +202,7 @@ async def save_auth_client(
     # -- Step 1: Profile context -----------------------------------------------
 
     profile = await resolve_profile_identity_context(
-        conn,
+        pool,
         profile_id,
         redis,
         session_id=session_id,
@@ -219,7 +219,8 @@ async def save_auth_client(
 
     for idx, item in enumerate(items):
         if item.input_auth_id is not None:
-            perms = await resolve_auth_permissions_context(conn, item.input_auth_id)
+            async with pool.acquire() as conn:
+                perms = await resolve_auth_permissions_context(conn, item.input_auth_id)
             if not perms.exists:
                 raise HTTPException(
                     status_code=404,
@@ -246,12 +247,13 @@ async def save_auth_client(
     error_results: list[SaveAuthResult] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_auth_values(
-            conn,
-            redis,
-            item,
-            is_update=item.input_auth_id is not None,
-        )
+        async with pool.acquire() as conn:
+            item_errors = await resolve_auth_values(
+                conn,
+                redis,
+                item,
+                is_update=item.input_auth_id is not None,
+            )
         if item_errors:
             has_errors = True
             error_results.append(
@@ -271,62 +273,63 @@ async def save_auth_client(
 
     results: list[SaveAuthResult] = []
 
-    async with conn.transaction():
-        for _idx, item in enumerate(items):
-            is_update = item.input_auth_id is not None
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for _idx, item in enumerate(items):
+                is_update = item.input_auth_id is not None
 
-            # Create denormalized snapshot
-            auths_resource_id = await _create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=item.department_ids,
-            )
-
-            if is_update:
-                result = await update_auth_artifact(
+                # Create denormalized snapshot
+                auths_resource_id = await _create_denormalized_snapshot(
                     conn,
-                    item.input_auth_id,
-                    name_id=item.name_id if item.name_id else _UNSET,
-                    description_id=item.description_id
-                    if item.description_id
-                    else _UNSET,
-                    slug_id=item.slug_id if item.slug_id else _UNSET,
-                    department_ids=item.department_ids,
-                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                    item_ids=item.item_ids,
-                    protocol_ids=item.protocol_ids,
-                    auth_ids=[auths_resource_id]
-                    if auths_resource_id
-                    else item.auth_resource_ids,
-                )
-                auth_id = result.id
-            else:
-                result = await create_auth_artifact(
-                    conn,
+                    redis,
                     name_id=item.name_id,
                     description_id=item.description_id,
-                    slug_id=item.slug_id,
                     department_ids=item.department_ids,
-                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                    item_ids=item.item_ids,
-                    protocol_ids=item.protocol_ids,
-                    auth_ids=[auths_resource_id]
-                    if auths_resource_id
-                    else item.auth_resource_ids,
                 )
-                auth_id = result.id
 
-            results.append(
-                SaveAuthResult(
-                    success=True,
-                    auth_id=auth_id,
-                    message="Auth updated successfully"
-                    if is_update
-                    else "Auth created successfully",
+                if is_update:
+                    result = await update_auth_artifact(
+                        conn,
+                        item.input_auth_id,
+                        name_id=item.name_id if item.name_id else _UNSET,
+                        description_id=item.description_id
+                        if item.description_id
+                        else _UNSET,
+                        slug_id=item.slug_id if item.slug_id else _UNSET,
+                        department_ids=item.department_ids,
+                        flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                        item_ids=item.item_ids,
+                        protocol_ids=item.protocol_ids,
+                        auth_ids=[auths_resource_id]
+                        if auths_resource_id
+                        else item.auth_resource_ids,
+                    )
+                    auth_id = result.id
+                else:
+                    result = await create_auth_artifact(
+                        conn,
+                        name_id=item.name_id,
+                        description_id=item.description_id,
+                        slug_id=item.slug_id,
+                        department_ids=item.department_ids,
+                        flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                        item_ids=item.item_ids,
+                        protocol_ids=item.protocol_ids,
+                        auth_ids=[auths_resource_id]
+                        if auths_resource_id
+                        else item.auth_resource_ids,
+                    )
+                    auth_id = result.id
+
+                results.append(
+                    SaveAuthResult(
+                        success=True,
+                        auth_id=auth_id,
+                        message="Auth updated successfully"
+                        if is_update
+                        else "Auth created successfully",
+                    )
                 )
-            )
 
     # -- Step 5: Invalidate cache ----------------------------------------------
 

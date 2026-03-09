@@ -10,11 +10,11 @@ Data sources:
 """
 
 from collections import defaultdict
-from typing import Annotated, Any
+from typing import Any
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.chat_permissions import (
     compute_completion_pct,
@@ -24,7 +24,7 @@ from app.infra.chat_permissions import (
     format_cohort_names,
 )
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.practice_context import resolve_practice_context
 from app.routes.v5.api.main.chat.types import (
     ChatSimulationOperational,
@@ -167,13 +167,12 @@ async def get_practice_internal(
     is_instructional = user_role in ("instructional", "admin", "superadmin")
 
     # --- Phase 1: Resolve practice context ---
-    async with pool.acquire() as c:
-        ctx = await resolve_practice_context(
-            c,
-            redis,
-            profiles_resource_id=profiles_resource_id,
-            bypass_cache=bypass_cache,
-        )
+    ctx = await resolve_practice_context(
+        pool,
+        redis,
+        profiles_resource_id=profiles_resource_id,
+        bypass_cache=bypass_cache,
+    )
 
     # --- Phase 2: Extract data from ArtifactContext ---
     practices = ctx.entries.get("practices", [])
@@ -432,7 +431,6 @@ async def practice_get(
     request: GetPracticeRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetPracticeResponse:
     """Get simulations available for practice (operational)."""
     tags = ["practice", "get"]

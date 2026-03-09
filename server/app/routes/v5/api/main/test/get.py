@@ -48,7 +48,6 @@ async def get_test_internal(
     and returns TestInternalData. No caching.
     """
     try:
-
         # === RESOLVE CONTEXT ===
         ctx = await resolve_test_context(
             pool,

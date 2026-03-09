@@ -19,9 +19,6 @@ type DuplicateRubricIn = InputOf<"/api/v5/artifacts/rubrics/duplicate", "post">;
 type DuplicateRubricOut = OutputOf<"/api/v5/artifacts/rubrics/duplicate", "post">;
 type DeleteRubricIn = InputOf<"/api/v5/artifacts/rubrics/delete", "post">;
 type DeleteRubricOut = OutputOf<"/api/v5/artifacts/rubrics/delete", "post">;
-type SaveRubricIn = InputOf<"/api/v5/artifacts/rubrics/save", "post">;
-type SaveRubricOut = OutputOf<"/api/v5/artifacts/rubrics/save", "post">;
-
 /** ---- Body type for rubrics list request ---- */
 type RubricsListBody = {
   search?: string | null;
@@ -70,13 +67,6 @@ export async function deleteRubric(
   // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
   // No revalidateTag needed - Redis cache handles invalidation
   return api.post("/artifacts/rubrics/delete", input);
-}
-
-export async function saveRubric(input: SaveRubricIn): Promise<SaveRubricOut> {
-  "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/rubrics/save", input);
 }
 
 /** ---- Docs types for page metadata ---- */
@@ -147,7 +137,6 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
           listData={listData}
           duplicateRubricAction={duplicateRubric}
           deleteRubricAction={deleteRubric}
-          saveRubricAction={saveRubric}
           pageIndex={pageIndex}
           pageSize={pageSize}
           totalCount={listData.total_count ?? 0}
@@ -166,6 +155,4 @@ export type {
   DuplicateRubricIn,
   DuplicateRubricOut,
   RubricsListOut,
-  SaveRubricIn,
-  SaveRubricOut,
 };

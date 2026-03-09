@@ -17,11 +17,10 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio, get_redis_client
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
-from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.typed_emit import emit_to_internal
 from app.routes.v5.socket.client.types import GeneratePayload
 from app.routes.v5.socket.types import GenerateErrorApiRequest
@@ -86,10 +85,10 @@ async def generate_new(sid: str, data: dict[str, Any]) -> None:
         profile_id = uuid.UUID(profile_id_str)
         session_id = uuid.UUID(session_id_str)
         redis = get_redis_client()
-        async with get_db_connection() as conn:
-            profile_ctx = await resolve_profile_identity_context(
-                conn, profile_id, redis, session_id=session_id
-            )
+        pool = get_pool()
+        profile_ctx = await resolve_profile_identity_context(
+            pool, profile_id, redis, session_id=session_id
+        )
 
         if not profile_ctx:
             await _emit_error(

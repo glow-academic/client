@@ -2,15 +2,13 @@
 
 from collections import defaultdict
 from decimal import Decimal
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.activity_context import resolve_activity_search_context
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.activity.types import (
     ListActivityRequest,
     ListActivityResponse,
@@ -29,7 +27,6 @@ async def search_activity(
     request: ListActivityRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ListActivityResponse:
     """Get activity session history (bottom table, paginated)."""
     tags = ["artifacts", "activity", "list"]

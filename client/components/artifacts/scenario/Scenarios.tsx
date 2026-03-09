@@ -34,8 +34,10 @@ import type {
   DuplicateScenarioOut,
   ParseCsvIn,
   ParseCsvOut,
-  SaveScenarioIn,
-  SaveScenarioOut,
+  CreateScenarioIn,
+  CreateScenarioOut,
+  UpdateScenarioIn,
+  UpdateScenarioOut,
   ScenariosListOut,
   SearchFlagsOut,
 } from "@/app/(main)/training/scenarios/page";
@@ -97,7 +99,8 @@ export interface ScenariosProps {
   deleteScenarioAction?: (
     input: DeleteScenarioIn,
   ) => Promise<DeleteScenarioOut>;
-  saveScenarioAction?: (input: SaveScenarioIn) => Promise<SaveScenarioOut>;
+  createScenarioAction?: (input: CreateScenarioIn) => Promise<CreateScenarioOut>;
+  updateScenarioAction?: (input: UpdateScenarioIn) => Promise<UpdateScenarioOut>;
   searchFlagsAction?: () => Promise<SearchFlagsOut>;
   parseCsvAction?: (input: ParseCsvIn) => Promise<ParseCsvOut>;
   importFields?: ImportFieldDef[];
@@ -115,7 +118,8 @@ export function Scenarios({
   initialColumnVisibility,
   duplicateScenarioAction,
   deleteScenarioAction,
-  saveScenarioAction,
+  createScenarioAction,
+  updateScenarioAction,
   searchFlagsAction,
   parseCsvAction,
   importFields,
@@ -622,7 +626,7 @@ export function Scenarios({
   };
 
   const handleBulkEdit = async () => {
-    if (!saveScenarioAction || editableScenarios.length === 0) return;
+    if (!updateScenarioAction || editableScenarios.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     const hasDeptChange = bulkEditDepartmentIds !== null;
@@ -645,17 +649,13 @@ export function Scenarios({
         }
 
         return {
-          input_scenario_id: scenario.scenario_id!,
+          scenario_id: scenario.scenario_id!,
           ...(hasActiveChange && { active_flag_id: activeFlag }),
           ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
         };
       });
 
-      await saveScenarioAction({
-        body: {
-          scenarios: items,
-        },
-      });
+      await updateScenarioAction({ body: { scenarios: items } } as UpdateScenarioIn);
       toast.success(`${items.length} scenario(s) updated successfully`);
       clearSelection();
       router.refresh();
@@ -1208,7 +1208,7 @@ export function Scenarios({
                     Delete {deletableScenarios.length} of {selectedCount}
                   </Button>
                 )}
-                {saveScenarioAction && (
+                {updateScenarioAction && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -1559,7 +1559,7 @@ export function Scenarios({
           artifactName="Scenarios"
           parseCsvAction={parseCsvAction}
           onSave={async (items) => {
-            if (!saveScenarioAction) throw new Error("Save action not available");
+            if (!createScenarioAction) throw new Error("Create action not available");
             const scenarios = items.map((item) => ({
               name: item.name as string | undefined,
               description: item.description as string | undefined,
@@ -1575,7 +1575,7 @@ export function Scenarios({
               questions: item.questions as string[] | undefined,
               options: item.options as string[] | undefined,
             }));
-            return saveScenarioAction({ body: { scenarios } });
+            return createScenarioAction({ body: { scenarios } } as CreateScenarioIn);
           }}
         />
       )}

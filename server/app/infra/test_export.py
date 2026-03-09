@@ -90,10 +90,6 @@ RUN_CSV_COLUMNS = [
 ]
 
 
-async def _empty_list() -> list:  # type: ignore[type-arg]
-    return []
-
-
 async def export_test_client(
     pool: asyncpg.Pool,
     redis: Redis,  # type: ignore[type-arg]

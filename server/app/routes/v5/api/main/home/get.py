@@ -14,6 +14,7 @@ from collections import defaultdict
 from typing import Any
 from uuid import UUID
 
+import asyncpg
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.analytics_facets import (
@@ -33,7 +34,6 @@ from app.infra.home_permissions import (
     compute_status_instructional,
     format_cohort_names,
 )
-from app.infra.types import ArtifactContext
 from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.api.main.chat.types import (
     ChatSimulationOperational,

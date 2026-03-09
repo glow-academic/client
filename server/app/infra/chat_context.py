@@ -149,7 +149,11 @@ async def resolve_chat_context(
     async def _search_names() -> list:
         async with pool.acquire() as c:
             return await search_names(
-                c, redis, draft_id=group_id, exclude_ids=name_ids, bypass_cache=bypass_cache
+                c,
+                redis,
+                draft_id=group_id,
+                exclude_ids=name_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_descriptions() -> list:
@@ -159,8 +163,12 @@ async def resolve_chat_context(
     async def _search_descriptions() -> list:
         async with pool.acquire() as c:
             return await search_descriptions(
-                c, redis, search=description_search, draft_id=group_id,
-                exclude_ids=description_ids, bypass_cache=bypass_cache,
+                c,
+                redis,
+                search=description_search,
+                draft_id=group_id,
+                exclude_ids=description_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_flags() -> list:
@@ -170,8 +178,13 @@ async def resolve_chat_context(
     async def _search_flags() -> list:
         async with pool.acquire() as c:
             return await search_flags(
-                c, redis, search=None, limit_count=50, offset_count=0,
-                exclude_ids=flag_ids, bypass_cache=bypass_cache,
+                c,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=flag_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_departments() -> list:
@@ -181,9 +194,15 @@ async def resolve_chat_context(
     async def _search_departments() -> list:
         async with pool.acquire() as c:
             return await search_departments(
-                c, redis, search=None, limit_count=20, offset_count=0,
-                department_ids=user_dept_ids, suggest_source="recent",
-                exclude_ids=department_ids, bypass_cache=bypass_cache,
+                c,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                suggest_source="recent",
+                exclude_ids=department_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_personas() -> list:
@@ -193,10 +212,16 @@ async def resolve_chat_context(
     async def _search_personas() -> list:
         async with pool.acquire() as c:
             return await search_personas(
-                c, redis, search=persona_search, limit_count=20, offset_count=0,
-                department_ids=user_dept_ids, draft_id=group_id,
+                c,
+                redis,
+                search=persona_search,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                draft_id=group_id,
                 suggest_source="selected" if persona_show_selected else None,
-                exclude_ids=persona_ids, bypass_cache=bypass_cache,
+                exclude_ids=persona_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_documents() -> list:
@@ -206,10 +231,16 @@ async def resolve_chat_context(
     async def _search_documents() -> list:
         async with pool.acquire() as c:
             return await search_documents(
-                c, redis, search=document_search, limit_count=20, offset_count=0,
-                department_ids=user_dept_ids, draft_id=group_id,
+                c,
+                redis,
+                search=document_search,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                draft_id=group_id,
                 suggest_source="selected" if document_show_selected else None,
-                exclude_ids=document_ids, bypass_cache=bypass_cache,
+                exclude_ids=document_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_scenarios() -> list:
@@ -219,8 +250,13 @@ async def resolve_chat_context(
     async def _search_scenarios() -> list:
         async with pool.acquire() as c:
             return await search_scenarios(
-                c, redis, search=None, limit_count=20, offset_count=0,
-                exclude_ids=scenario_ids, bypass_cache=bypass_cache,
+                c,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=scenario_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_fields() -> list:
@@ -230,19 +266,30 @@ async def resolve_chat_context(
     async def _search_fields() -> list:
         async with pool.acquire() as c:
             return await search_fields(
-                c, redis, search=None, limit_count=20, offset_count=0,
-                exclude_ids=field_ids, bypass_cache=bypass_cache,
+                c,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=field_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_parameter_fields() -> list:
         async with pool.acquire() as c:
-            return await get_parameter_fields(c, parameter_field_ids, redis, bypass_cache)
+            return await get_parameter_fields(
+                c, parameter_field_ids, redis, bypass_cache
+            )
 
     async def _search_parameter_fields() -> list:
         async with pool.acquire() as c:
             return await search_parameter_fields(
-                c, redis, limit_count=20, offset_count=0,
-                exclude_ids=parameter_field_ids, bypass_cache=bypass_cache,
+                c,
+                redis,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=parameter_field_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_questions() -> list:
@@ -252,8 +299,13 @@ async def resolve_chat_context(
     async def _search_questions() -> list:
         async with pool.acquire() as c:
             return await search_questions(
-                c, redis, search=question_search, limit_count=20, offset_count=0,
-                exclude_ids=question_ids, bypass_cache=bypass_cache,
+                c,
+                redis,
+                search=question_search,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=question_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_options() -> list:
@@ -263,8 +315,13 @@ async def resolve_chat_context(
     async def _search_options() -> list:
         async with pool.acquire() as c:
             return await search_options(
-                c, redis, search=option_search, limit_count=20, offset_count=0,
-                exclude_ids=option_ids, bypass_cache=bypass_cache,
+                c,
+                redis,
+                search=option_search,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=option_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_videos() -> list:
@@ -274,8 +331,13 @@ async def resolve_chat_context(
     async def _search_videos() -> list:
         async with pool.acquire() as c:
             return await search_videos(
-                c, redis, search=video_search, limit_count=20, offset_count=0,
-                exclude_ids=video_ids, bypass_cache=bypass_cache,
+                c,
+                redis,
+                search=video_search,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=video_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_images() -> list:
@@ -285,19 +347,31 @@ async def resolve_chat_context(
     async def _search_images() -> list:
         async with pool.acquire() as c:
             return await search_images(
-                c, redis, search=image_search, limit_count=20, offset_count=0,
-                exclude_ids=image_ids, bypass_cache=bypass_cache,
+                c,
+                redis,
+                search=image_search,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=image_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_problem_statements() -> list:
         async with pool.acquire() as c:
-            return await get_problem_statements(c, problem_statement_ids, redis, bypass_cache)
+            return await get_problem_statements(
+                c, problem_statement_ids, redis, bypass_cache
+            )
 
     async def _search_problem_statements() -> list:
         async with pool.acquire() as c:
             return await search_problem_statements(
-                c, redis, search=problem_statement_search, limit_count=20, offset_count=0,
-                exclude_ids=problem_statement_ids, bypass_cache=bypass_cache,
+                c,
+                redis,
+                search=problem_statement_search,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=problem_statement_ids,
+                bypass_cache=bypass_cache,
             )
 
     async def _get_objectives() -> list:
@@ -307,8 +381,13 @@ async def resolve_chat_context(
     async def _search_objectives() -> list:
         async with pool.acquire() as c:
             return await search_objectives(
-                c, redis, search=None, limit_count=20, offset_count=0,
-                exclude_ids=objective_ids, bypass_cache=bypass_cache,
+                c,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=objective_ids,
+                bypass_cache=bypass_cache,
             )
 
     (

@@ -82,6 +82,7 @@ async def resolve_rubric_context(
             return await get_rubric_artifacts(
                 conn,
                 [rubric_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 departments=True,

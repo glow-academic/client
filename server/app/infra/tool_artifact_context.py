@@ -80,6 +80,7 @@ async def resolve_tool_artifact_context(
             return await get_tool_artifacts(
                 conn,
                 [tool_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 flags=True,

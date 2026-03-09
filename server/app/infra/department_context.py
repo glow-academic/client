@@ -77,6 +77,7 @@ async def resolve_department_context(
             return await get_department_artifacts(
                 conn,
                 [department_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 flags=True,

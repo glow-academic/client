@@ -981,134 +981,136 @@ async def attempt_proceed_impl(
         complete_all = payload.complete_all
 
         # Create run for entry creates
-        run_result = await create_run(
-            conn,
-            group_id=uuid.UUID(payload.group_id),
-            session_id=session_id_uuid,
-            profiles_id=profiles_id,
-        )
-        run_id = run_result.id
+        async with pool.acquire() as conn:
+            run_result = await create_run(
+                conn,
+                group_id=uuid.UUID(payload.group_id),
+                session_id=session_id_uuid,
+                profiles_id=profiles_id,
+            )
+            run_id = run_result.id
 
-        # Step 2a: If completed_chat_id, mark that chat completed
-        if completed_chat_id:
-            try:
-                # TODO: call_id required but not available in this context
-                await create_attempt_chat_completion(
+            # Step 2a: If completed_chat_id, mark that chat completed
+            if completed_chat_id:
+                try:
+                    # TODO: call_id required but not available in this context
+                    await create_attempt_chat_completion(
+                        conn,
+                        chat_id=completed_chat_id,
+                        call_id=run_id,  # placeholder — needs proper call_id
+                    )
+                except Exception:
+                    logger.debug(f"Chat {completed_chat_id} already completed")
+
+            # Step 2b: If complete_all, mark all remaining chats completed → ended
+            if complete_all:
+                bridges = await search_attempt_chat_bridges(
                     conn,
-                    chat_id=completed_chat_id,
-                    call_id=run_id,  # placeholder — needs proper call_id
+                    attempt_ids=[attempt_id],
+                    limit=1000,
+                    bypass_mv=True,
                 )
-            except Exception:
-                logger.debug(f"Chat {completed_chat_id} already completed")
 
-        # Step 2b: If complete_all, mark all remaining chats completed → ended
-        if complete_all:
+                for bridge in bridges:
+                    bridge_chat_id = bridge.attempt_chat_id
+                    if bridge_chat_id:
+                        try:
+                            # TODO: call_id required but not available in this context
+                            await create_attempt_chat_completion(
+                                conn,
+                                chat_id=bridge_chat_id,
+                                call_id=run_id,  # placeholder — needs proper call_id
+                            )
+                        except Exception:
+                            pass
+
+                await refresh_attempt(conn)
+                await refresh_attempt_chat(conn)
+
+                await emit(
+                    [
+                        internal_event(
+                            "attempt_ended",
+                            AttemptEndedData(
+                                sid=sid,
+                                attempt_id=str(attempt_id),
+                                success=True,
+                                all_scenarios_complete=True,
+                                message="All scenarios completed",
+                            ).model_dump(mode="json"),
+                        )
+                    ]
+                )
+                return
+
+        # ---- Context Resolution ----
+
+        async with pool.acquire() as conn:
+            # 3a. Get attempt entry (num_chats, practice flag, department_id)
+            attempt_entries = await get_attempts(conn, [attempt_id])
+            if not attempt_entries:
+                raise ValueError(f"Attempt not found: {attempt_id}")
+            attempt_data = attempt_entries[0]
+
+            num_chats = attempt_data.num_chats
+            is_practice = attempt_data.practice
+            attempt_department_id = attempt_data.department_id
+
+            # 3b. Get already-resolved bridges (completed_count + resolved chat_ids)
             bridges = await search_attempt_chat_bridges(
                 conn,
                 attempt_ids=[attempt_id],
                 limit=1000,
                 bypass_mv=True,
             )
+            completed_count = len(bridges)
 
-            for bridge in bridges:
-                bridge_chat_id = bridge.attempt_chat_id
-                if bridge_chat_id:
-                    try:
-                        # TODO: call_id required but not available in this context
-                        await create_attempt_chat_completion(
-                            conn,
-                            chat_id=bridge_chat_id,
-                            call_id=run_id,  # placeholder — needs proper call_id
-                        )
-                    except Exception:
-                        pass
+            # Look up chat_entry_ids from attempt_chat entries for resolved bridges
+            bridge_attempt_chat_ids = [b.attempt_chat_id for b in bridges]
+            if bridge_attempt_chat_ids:
+                attempt_chats, _ = await search_attempt_chats(
+                    conn,
+                    attempt_chat_ids=bridge_attempt_chat_ids,
+                    bypass_mv=True,
+                    limit=1000,
+                )
+                resolved_chat_ids = {ac.chat_entry_id for ac in attempt_chats}
+            else:
+                resolved_chat_ids = set()
 
-            await refresh_attempt(conn)
-            await refresh_attempt_chat(conn)
+            # 3c. Get parent chat_ids from practice/home
+            if is_practice:
+                practice_entries = await search_attempt_practice_entries(
+                    conn, attempt_ids=[attempt_id], bypass_mv=True
+                )
+                if not practice_entries:
+                    raise ValueError("No practice link for this attempt")
+                practice_id = practice_entries[0].practice_id
+                parent_chat_links = await search_practice_chats(
+                    conn, practice_ids=[practice_id], limit=1000, bypass_mv=True
+                )
+            else:
+                home_entries = await search_attempt_homes(
+                    conn, attempt_ids=[attempt_id], bypass_mv=True
+                )
+                if not home_entries:
+                    raise ValueError("No home link for this attempt")
+                home_id = home_entries[0].home_id
+                parent_chat_links = await search_home_chats(
+                    conn, home_ids=[home_id], limit=1000, bypass_mv=True
+                )
 
-            await emit(
-                [
-                    internal_event(
-                        "attempt_ended",
-                        AttemptEndedData(
-                            sid=sid,
-                            attempt_id=str(attempt_id),
-                            success=True,
-                            all_scenarios_complete=True,
-                            message="All scenarios completed",
-                        ).model_dump(mode="json"),
-                    )
-                ]
-            )
-            return
+            # Extract all parent chat_ids
+            all_parent_chat_ids = [
+                link.chat_id for link in parent_chat_links if link.chat_id
+            ]
 
-        # ---- Context Resolution ----
-
-        # 3a. Get attempt entry (num_chats, practice flag, department_id)
-        attempt_entries = await get_attempts(conn, [attempt_id])
-        if not attempt_entries:
-            raise ValueError(f"Attempt not found: {attempt_id}")
-        attempt_data = attempt_entries[0]
-
-        num_chats = attempt_data.num_chats
-        is_practice = attempt_data.practice
-        attempt_department_id = attempt_data.department_id
-
-        # 3b. Get already-resolved bridges (completed_count + resolved chat_ids)
-        bridges = await search_attempt_chat_bridges(
-            conn,
-            attempt_ids=[attempt_id],
-            limit=1000,
-            bypass_mv=True,
-        )
-        completed_count = len(bridges)
-
-        # Look up chat_entry_ids from attempt_chat entries for resolved bridges
-        bridge_attempt_chat_ids = [b.attempt_chat_id for b in bridges]
-        if bridge_attempt_chat_ids:
-            attempt_chats, _ = await search_attempt_chats(
+            # 3d. Get chat entry details for all parent chats (includes position)
+            all_chat_entries = await get_chat_entries_internal(
                 conn,
-                attempt_chat_ids=bridge_attempt_chat_ids,
-                bypass_mv=True,
-                limit=1000,
+                all_parent_chat_ids,
+                bypass_cache=True,
             )
-            resolved_chat_ids = {ac.chat_entry_id for ac in attempt_chats}
-        else:
-            resolved_chat_ids = set()
-
-        # 3c. Get parent chat_ids from practice/home
-        if is_practice:
-            practice_entries = await search_attempt_practice_entries(
-                conn, attempt_ids=[attempt_id], bypass_mv=True
-            )
-            if not practice_entries:
-                raise ValueError("No practice link for this attempt")
-            practice_id = practice_entries[0].practice_id
-            parent_chat_links = await search_practice_chats(
-                conn, practice_ids=[practice_id], limit=1000, bypass_mv=True
-            )
-        else:
-            home_entries = await search_attempt_homes(
-                conn, attempt_ids=[attempt_id], bypass_mv=True
-            )
-            if not home_entries:
-                raise ValueError("No home link for this attempt")
-            home_id = home_entries[0].home_id
-            parent_chat_links = await search_home_chats(
-                conn, home_ids=[home_id], limit=1000, bypass_mv=True
-            )
-
-        # Extract all parent chat_ids
-        all_parent_chat_ids = [
-            link.chat_id for link in parent_chat_links if link.chat_id
-        ]
-
-        # 3d. Get chat entry details for all parent chats (includes position)
-        all_chat_entries = await get_chat_entries_internal(
-            conn,
-            all_parent_chat_ids,
-            bypass_cache=True,
-        )
 
         # Sort by position, filter out already-resolved
         remaining = [
@@ -1271,69 +1273,72 @@ async def attempt_proceed_impl(
             vals = request_dict.get(key)
             return [uuid.UUID(v) for v in vals] if vals else None
 
-        async with conn.transaction():
-            call = await create_call(
-                conn,
-                run_id=run_id,
-                session_id=session_id_uuid,
-            )
-            chat_result = await create_attempt_chat(
-                conn,
-                call_id=call.id,
-                group_id=group_id,
-                chat_id=chat_entry_id,
-                title=request_dict.get("title", ""),
-                position=request_dict.get("position", 0),
-                time_limit=request_dict.get("time_limit"),
-                negative_time=request_dict.get("negative_time", False),
-                audio_enabled=request_dict.get("audio_enabled", True),
-                text_enabled=request_dict.get("text_enabled", True),
-                hints_enabled=request_dict.get("hints_enabled", False),
-                copy_paste_allowed=request_dict.get("copy_paste_allowed", True),
-                show_images=request_dict.get("show_images", True),
-                show_objectives=request_dict.get("show_objectives", True),
-                show_problem_statement=request_dict.get("show_problem_statement", True),
-                analyses_enabled=request_dict.get("analyses_enabled", True),
-                improvements_enabled=request_dict.get("improvements_enabled", True),
-                replacements_enabled=request_dict.get("replacements_enabled", True),
-                strengths_enabled=request_dict.get("strengths_enabled", True),
-                use_custom=request_dict.get("use_custom", False),
-                use_previous=request_dict.get("use_previous", False),
-                problem_statement_enabled=request_dict.get(
-                    "problem_statement_enabled", True
-                ),
-                objectives_enabled=request_dict.get("objectives_enabled", True),
-                video_enabled=request_dict.get("video_enabled", False),
-                images_enabled=request_dict.get("images_enabled", False),
-                questions_enabled=request_dict.get("questions_enabled", False),
-                rubrics_ids=_uuids("rubrics_ids"),
-                standards_ids=_uuids("standards_ids"),
-                standard_groups_ids=_uuids("standard_groups_ids"),
-                departments_ids=_uuids("departments_ids"),
-                personas_ids=_uuids("personas_ids"),
-                problem_statements_ids=_uuids("problem_statements_ids"),
-                objectives_ids=_uuids("objectives_ids"),
-                questions_ids=_uuids("questions_ids"),
-                options_ids=_uuids("options_ids"),
-                videos_ids=_uuids("videos_ids"),
-                images_ids=_uuids("images_ids"),
-                documents_ids=_uuids("documents_ids"),
-                parameter_fields_ids=_uuids("parameter_fields_ids"),
-            )
-            attempt_chat_id = chat_result.id
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                call = await create_call(
+                    conn,
+                    run_id=run_id,
+                    session_id=session_id_uuid,
+                )
+                chat_result = await create_attempt_chat(
+                    conn,
+                    call_id=call.id,
+                    group_id=group_id,
+                    chat_id=chat_entry_id,
+                    title=request_dict.get("title", ""),
+                    position=request_dict.get("position", 0),
+                    time_limit=request_dict.get("time_limit"),
+                    negative_time=request_dict.get("negative_time", False),
+                    audio_enabled=request_dict.get("audio_enabled", True),
+                    text_enabled=request_dict.get("text_enabled", True),
+                    hints_enabled=request_dict.get("hints_enabled", False),
+                    copy_paste_allowed=request_dict.get("copy_paste_allowed", True),
+                    show_images=request_dict.get("show_images", True),
+                    show_objectives=request_dict.get("show_objectives", True),
+                    show_problem_statement=request_dict.get(
+                        "show_problem_statement", True
+                    ),
+                    analyses_enabled=request_dict.get("analyses_enabled", True),
+                    improvements_enabled=request_dict.get("improvements_enabled", True),
+                    replacements_enabled=request_dict.get("replacements_enabled", True),
+                    strengths_enabled=request_dict.get("strengths_enabled", True),
+                    use_custom=request_dict.get("use_custom", False),
+                    use_previous=request_dict.get("use_previous", False),
+                    problem_statement_enabled=request_dict.get(
+                        "problem_statement_enabled", True
+                    ),
+                    objectives_enabled=request_dict.get("objectives_enabled", True),
+                    video_enabled=request_dict.get("video_enabled", False),
+                    images_enabled=request_dict.get("images_enabled", False),
+                    questions_enabled=request_dict.get("questions_enabled", False),
+                    rubrics_ids=_uuids("rubrics_ids"),
+                    standards_ids=_uuids("standards_ids"),
+                    standard_groups_ids=_uuids("standard_groups_ids"),
+                    departments_ids=_uuids("departments_ids"),
+                    personas_ids=_uuids("personas_ids"),
+                    problem_statements_ids=_uuids("problem_statements_ids"),
+                    objectives_ids=_uuids("objectives_ids"),
+                    questions_ids=_uuids("questions_ids"),
+                    options_ids=_uuids("options_ids"),
+                    videos_ids=_uuids("videos_ids"),
+                    images_ids=_uuids("images_ids"),
+                    documents_ids=_uuids("documents_ids"),
+                    parameter_fields_ids=_uuids("parameter_fields_ids"),
+                )
+                attempt_chat_id = chat_result.id
 
-            await create_attempt_chat_bridge(
-                conn,
-                attempt_id=attempt_id,
-                attempt_chat_id=attempt_chat_id,
-                session_id=session_id_uuid,
-            )
+                await create_attempt_chat_bridge(
+                    conn,
+                    attempt_id=attempt_id,
+                    attempt_chat_id=attempt_chat_id,
+                    session_id=session_id_uuid,
+                )
 
         # Step 9: Post-write
         if needs_generation:
             await emit_chat_generate_impl(
                 emit=emit,
-                conn=conn,
+                pool=pool,
                 sid=sid,
                 profile_id=profile_id_uuid,
                 profiles_id=profiles_id,
@@ -1346,8 +1351,9 @@ async def attempt_proceed_impl(
                 resource_types=resource_types_to_generate,
             )
         else:
-            await refresh_attempt(conn)
-            await refresh_attempt_chat(conn)
+            async with pool.acquire() as conn:
+                await refresh_attempt(conn)
+                await refresh_attempt_chat(conn)
 
             await emit(
                 [

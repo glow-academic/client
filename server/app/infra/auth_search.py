@@ -23,7 +23,10 @@ from app.infra.auth_permissions import (
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.infra.auth_permissions_context import resolve_auth_permissions_context
+from app.infra.auth_permissions_context import (
+    AuthPermissionsContext,
+    resolve_auth_permissions_context,
+)
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.auth.types import (
     ListAuthApiAuth,
@@ -40,7 +43,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 
 
 async def search_auth_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -66,7 +69,7 @@ async def search_auth_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -79,19 +82,21 @@ async def search_auth_client(
 
     # ── Step 2: Search auths ──────────────────────────────────────────
 
-    auth_ids, total_count = await search_auth_artifacts(
-        conn,
-        search=search,
-        department_ids=filter_department_ids,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+    async with pool.acquire() as conn:
+        auth_ids, total_count = await search_auth_artifacts(
+            conn,
+            search=search,
+            department_ids=filter_department_ids,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
     if not auth_ids:
         # Still fetch facets for empty results
-        department_facet = await search_departments(
-            conn, redis, search=department_search, auth=True, limit_count=100
-        )
+        async with pool.acquire() as conn:
+            department_facet = await search_departments(
+                conn, redis, search=department_search, auth=True, limit_count=100
+            )
 
         department_filter = ListFilterSection(
             options=[
@@ -113,15 +118,16 @@ async def search_auth_client(
 
     # ── Step 3: Get auth artifacts with junction IDs ──────────────────
 
-    artifacts = await get_auths(
-        conn,
-        auth_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        items=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_auths(
+            conn,
+            auth_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            items=True,
+        )
 
     # ── Step 4: Parallel hydration + facets ────────────────────────────
 
@@ -133,7 +139,29 @@ async def search_auth_client(
         all_description_ids.extend(a.description_ids or [])
 
     # Per-auth permissions context (gives us active_settings_count)
-    perm_tasks = [resolve_auth_permissions_context(conn, a.id) for a in artifacts]
+    async def _fetch_names_data() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_names(c, all_name_ids, redis)
+
+    async def _fetch_descriptions_data() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_descriptions(c, all_description_ids, redis)
+
+    async def _fetch_department_facet() -> list:
+        async with pool.acquire() as c:
+            return await search_departments(
+                c, redis, search=department_search, auth=True, limit_count=100
+            )
+
+    async def _fetch_perms(artifact_id: UUID) -> AuthPermissionsContext:
+        async with pool.acquire() as c:
+            return await resolve_auth_permissions_context(c, artifact_id)
+
+    perm_tasks = [_fetch_perms(a.id) for a in artifacts]
 
     (
         names_data,
@@ -141,13 +169,9 @@ async def search_auth_client(
         department_facet,
         *perm_results,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty_list(),
-        search_departments(
-            conn, redis, search=department_search, auth=True, limit_count=100
-        ),
+        _fetch_names_data(),
+        _fetch_descriptions_data(),
+        _fetch_department_facet(),
         *perm_tasks,
     )
 

@@ -20,8 +20,10 @@ type DuplicateCohortIn = InputOf<"/api/v5/artifacts/cohorts/duplicate", "post">;
 type DuplicateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/duplicate", "post">;
 type DeleteCohortIn = InputOf<"/api/v5/artifacts/cohorts/delete", "post">;
 type DeleteCohortOut = OutputOf<"/api/v5/artifacts/cohorts/delete", "post">;
-type SaveCohortIn = InputOf<"/api/v5/artifacts/cohorts/save", "post">;
-type SaveCohortOut = OutputOf<"/api/v5/artifacts/cohorts/save", "post">;
+type CreateCohortIn = InputOf<"/api/v5/artifacts/cohorts/create", "post">;
+type CreateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/create", "post">;
+type UpdateCohortIn = InputOf<"/api/v5/artifacts/cohorts/update", "post">;
+type UpdateCohortOut = OutputOf<"/api/v5/artifacts/cohorts/update", "post">;
 type SearchFlagsIn = InputOf<"/api/v5/resources/flags/search", "post">;
 type SearchFlagsOut = NonNullable<OutputOf<"/api/v5/resources/flags/search", "post">["items"]>;
 type ParseCsvIn = InputOf<"/uploads/csv", "post">;
@@ -75,9 +77,14 @@ async function deleteCohort(input: DeleteCohortIn): Promise<DeleteCohortOut> {
   return api.post("/artifacts/cohorts/delete", input);
 }
 
-async function saveCohort(input: SaveCohortIn): Promise<SaveCohortOut> {
+async function createCohort(input: CreateCohortIn): Promise<CreateCohortOut> {
   "use server";
-  return api.post("/artifacts/cohorts/save", input);
+  return api.post("/artifacts/cohorts/create", input);
+}
+
+async function updateCohort(input: UpdateCohortIn): Promise<UpdateCohortOut> {
+  "use server";
+  return api.post("/artifacts/cohorts/update", input);
 }
 
 async function searchFlags(): Promise<SearchFlagsOut> {
@@ -167,7 +174,8 @@ export default async function CohortsPage({ searchParams }: CohortsPageProps) {
           initialColumnVisibility={initialColumnVisibility}
           duplicateCohortAction={duplicateCohort}
           deleteCohortAction={deleteCohort}
-          saveCohortAction={saveCohort}
+          createCohortAction={createCohort}
+          updateCohortAction={updateCohort}
           searchFlagsAction={searchFlags}
           parseCsvAction={parseCsv}
           importFields={listData.import_fields as import("@/components/common/BulkImport").ImportFieldDef[] | undefined}
@@ -192,7 +200,9 @@ export type {
   DuplicateCohortOut,
   ParseCsvIn,
   ParseCsvOut,
-  SaveCohortIn,
-  SaveCohortOut,
+  CreateCohortIn,
+  CreateCohortOut,
+  UpdateCohortIn,
+  UpdateCohortOut,
   SearchFlagsOut,
 };

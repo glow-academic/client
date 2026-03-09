@@ -82,6 +82,7 @@ async def resolve_profile_context(
             return await get_profile_artifacts(
                 conn,
                 [profile_id],
+                active=None,
                 names=True,
                 departments=True,
                 flags=True,

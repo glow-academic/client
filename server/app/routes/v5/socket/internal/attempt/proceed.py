@@ -3,12 +3,11 @@
 from typing import Any
 from uuid import UUID
 
-from app.infra.globals import get_internal_sio, get_redis_client
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.attempt_events_impl import attempt_proceed_impl
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
-from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.socket_event import make_emit
 from app.utils.logging.db_logger import get_logger
 
@@ -32,23 +31,23 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
     if not session_id:
         return
 
-    async with get_db_connection() as conn:
-        redis = get_redis_client()
-        identity = await resolve_profile_identity_context(
-            conn,
-            UUID(profile_id),
-            redis,
-            bypass_cache=True,
-            session_id=UUID(session_id),
-        )
-        profiles_id = identity.profiles_id if identity else None
+    pool = get_pool()
+    redis = get_redis_client()
+    identity = await resolve_profile_identity_context(
+        pool,
+        UUID(profile_id),
+        redis,
+        bypass_cache=True,
+        session_id=UUID(session_id),
+    )
+    profiles_id = identity.profiles_id if identity else None
 
-        await attempt_proceed_impl(
-            data,
-            emit=make_emit(),
-            conn=conn,
-            redis=redis,
-            profile_id=profile_id,
-            session_id=session_id,
-            profiles_id=profiles_id,
-        )
+    await attempt_proceed_impl(
+        data,
+        emit=make_emit(),
+        pool=pool,
+        redis=redis,
+        profile_id=profile_id,
+        session_id=session_id,
+        profiles_id=profiles_id,
+    )

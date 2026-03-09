@@ -33,6 +33,7 @@ async def get_parameters(
     conn: asyncpg.Connection,
     ids: list[UUID],
     *,
+    active: bool | None = True,
     names: bool = False,
     descriptions: bool = False,
     departments: bool = False,
@@ -53,7 +54,7 @@ async def get_parameters(
         "parameters": parameters,
     }
 
-    active = [
+    active_junctions = [
         (table, col, field) for flag, table, col, field in JUNCTIONS if flags_map[flag]
     ]
 
@@ -67,7 +68,7 @@ async def get_parameters(
     ]
     joins: list[str] = []
 
-    for i, (table, col, field) in enumerate(active):
+    for i, (table, col, field) in enumerate(active_junctions):
         alias = f"j{i}"
         joins.append(
             f"LEFT JOIN {table} {alias} ON {alias}.parameter_id = p.id AND {alias}.active = true"
@@ -76,15 +77,21 @@ async def get_parameters(
             f"ARRAY_AGG(DISTINCT {alias}.{col}) FILTER (WHERE {alias}.{col} IS NOT NULL) AS {field}"
         )
 
+    where_clauses = ["p.id = ANY($1)"]
+    params: list[object] = [ids]
+    if active is not None:
+        where_clauses.append(f"p.active = ${len(params) + 1}")
+        params.append(active)
+
     query = f"""
         SELECT {", ".join(columns)}
         FROM {TABLE} p
         {" ".join(joins)}
-        WHERE p.id = ANY($1)
+        WHERE {" AND ".join(where_clauses)}
         GROUP BY p.id, p.created_at, p.updated_at, p.generated, p.mcp, p.active
     """
 
-    rows = await conn.fetch(query, ids)
+    rows = await conn.fetch(query, *params)
 
     results = []
     for r in rows:

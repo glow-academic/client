@@ -435,17 +435,16 @@ async def save_cohort_client(
         try:
             from app.infra.home_practice_sync import sync_home_practice_entries
 
-            async with pool.acquire() as conn:
-                await sync_home_practice_entries(
-                    conn=conn,
-                    cohorts_resource_id=resource_id,
-                    simulation_ids=item.simulation_ids or [],
-                    simulation_position_ids=item.simulation_position_ids or [],
-                    simulation_availability_ids=item.simulation_availability_ids or [],
-                    department_ids=item.department_ids or [],
-                    profile_ids=item.profile_ids or [],
-                    profile_persona_ids=item.profile_persona_ids or [],
-                )
+            await sync_home_practice_entries(
+                pool=pool,
+                cohorts_resource_id=resource_id,
+                simulation_ids=item.simulation_ids or [],
+                simulation_position_ids=item.simulation_position_ids or [],
+                simulation_availability_ids=item.simulation_availability_ids or [],
+                department_ids=item.department_ids or [],
+                profile_ids=item.profile_ids or [],
+                profile_persona_ids=item.profile_persona_ids or [],
+            )
         except Exception as sync_err:
             logger.warning(f"sync_home_practice_entries failed (non-fatal): {sync_err}")
 

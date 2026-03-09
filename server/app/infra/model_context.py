@@ -103,6 +103,7 @@ async def resolve_model_context(
             return await get_model_artifacts(
                 conn,
                 [model_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 departments=True,

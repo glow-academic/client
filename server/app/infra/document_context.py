@@ -100,6 +100,7 @@ async def resolve_document_context(
             return await get_document_artifacts(
                 conn,
                 [document_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 departments=True,

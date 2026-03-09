@@ -29,8 +29,10 @@ import type {
   ParseCsvIn,
   ParseCsvOut,
   PersonasListOut,
-  SavePersonaIn,
-  SavePersonaOut,
+  CreatePersonaIn,
+  CreatePersonaOut,
+  UpdatePersonaIn,
+  UpdatePersonaOut,
   SearchColorsOut,
   SearchIconsOut,
   SearchVoicesOut,
@@ -108,7 +110,8 @@ export interface PersonasProps {
     input: DuplicatePersonaIn
   ) => Promise<DuplicatePersonaOut>;
   deletePersonaAction?: (input: DeletePersonaIn) => Promise<DeletePersonaOut>;
-  savePersonaAction?: (input: SavePersonaIn) => Promise<SavePersonaOut>;
+  createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
+  updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
   searchColorsAction?: () => Promise<SearchColorsOut>;
   searchIconsAction?: () => Promise<SearchIconsOut>;
   searchVoicesAction?: () => Promise<SearchVoicesOut>;
@@ -129,7 +132,8 @@ export default function Personas({
   initialColumnVisibility,
   duplicatePersonaAction,
   deletePersonaAction,
-  savePersonaAction,
+  createPersonaAction,
+  updatePersonaAction,
   searchColorsAction,
   searchIconsAction,
   searchVoicesAction,
@@ -749,7 +753,7 @@ export default function Personas({
   };
 
   const handleBulkEdit = async () => {
-    if (!savePersonaAction || editablePersonas.length === 0) return;
+    if (!updatePersonaAction || editablePersonas.length === 0) return;
 
     if (!profile?.id) {
       toast.error("Profile not loaded. Please refresh the page.");
@@ -771,7 +775,7 @@ export default function Personas({
     setIsBulkEditing(true);
     try {
       const items = editablePersonas.map((p) => ({
-        input_persona_id: p.persona_id!,
+        persona_id: p.persona_id!,
         ...(hasActiveChange && { active_flag: bulkEditActiveStatus }),
         ...(hasColorChange && { color_id: bulkEditColorIds[0] }),
         ...(hasIconChange && { icon_id: bulkEditIconIds[0] }),
@@ -779,11 +783,11 @@ export default function Personas({
         ...(hasVoiceChange && { voice_ids: bulkEditVoiceIds }),
       }));
 
-      await savePersonaAction({
+      await updatePersonaAction({
         body: {
           personas: items,
         },
-      });
+      } as UpdatePersonaIn);
       toast.success(`${items.length} persona(s) updated successfully`);
       clearSelection();
       router.refresh();
@@ -1130,7 +1134,7 @@ export default function Personas({
                   Delete {deletablePersonas.length} of {selectedCount}
                 </Button>
               )}
-              {savePersonaAction && (
+              {updatePersonaAction && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -1602,7 +1606,7 @@ export default function Personas({
           artifactName="Personas"
           parseCsvAction={parseCsvAction}
           onSave={async (items) => {
-            if (!savePersonaAction) throw new Error("Save action not available");
+            if (!createPersonaAction) throw new Error("Create action not available");
             const personas = items.map((item) => ({
               name: item.name as string | undefined,
               description: item.description as string | undefined,
@@ -1615,7 +1619,7 @@ export default function Personas({
               examples: item.examples as string[] | undefined,
               voices: item.voices as string[] | undefined,
             }));
-            return savePersonaAction({ body: { personas } });
+            return createPersonaAction({ body: { personas } } as CreatePersonaIn);
           }}
         />
       )}

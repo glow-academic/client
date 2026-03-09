@@ -135,6 +135,7 @@ async def resolve_scenario_context(
             return await get_scenario_artifacts(
                 conn,
                 [scenario_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 departments=True,

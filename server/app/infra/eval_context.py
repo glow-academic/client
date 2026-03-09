@@ -83,6 +83,7 @@ async def resolve_eval_context(
             return await get_eval_artifacts(
                 conn,
                 [eval_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 departments=True,

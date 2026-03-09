@@ -19,8 +19,10 @@ import type {
   DuplicateCohortOut,
   ParseCsvIn,
   ParseCsvOut,
-  SaveCohortIn,
-  SaveCohortOut,
+  CreateCohortIn,
+  CreateCohortOut,
+  UpdateCohortIn,
+  UpdateCohortOut,
   SearchFlagsOut,
 } from "@/app/(main)/training/cohorts/page";
 import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
@@ -82,7 +84,8 @@ export interface CohortsProps {
     input: DuplicateCohortIn,
   ) => Promise<DuplicateCohortOut>;
   deleteCohortAction?: (input: DeleteCohortIn) => Promise<DeleteCohortOut>;
-  saveCohortAction?: (input: SaveCohortIn) => Promise<SaveCohortOut>;
+  createCohortAction?: (input: CreateCohortIn) => Promise<CreateCohortOut>;
+  updateCohortAction?: (input: UpdateCohortIn) => Promise<UpdateCohortOut>;
   searchFlagsAction?: () => Promise<SearchFlagsOut>;
   parseCsvAction?: (input: ParseCsvIn) => Promise<ParseCsvOut>;
   importFields?: ImportFieldDef[];
@@ -100,7 +103,8 @@ export default function Cohorts({
   initialColumnVisibility,
   duplicateCohortAction,
   deleteCohortAction,
-  saveCohortAction,
+  createCohortAction,
+  updateCohortAction,
   searchFlagsAction,
   parseCsvAction,
   importFields,
@@ -571,7 +575,7 @@ export default function Cohorts({
   };
 
   const handleBulkEdit = async () => {
-    if (!saveCohortAction || editableCohorts.length === 0) return;
+    if (!updateCohortAction || editableCohorts.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     const hasDeptChange = bulkEditDepartmentIds !== null;
@@ -594,17 +598,17 @@ export default function Cohorts({
         }
 
         return {
-          input_cohort_id: cohort.cohort_id!,
+          cohort_id: cohort.cohort_id!,
           ...(hasActiveChange && { flag_id: flagId }),
           ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
         };
       });
 
-      await saveCohortAction({
+      await updateCohortAction({
         body: {
           cohorts: items,
         },
-      });
+      } as UpdateCohortIn);
       toast.success(`${items.length} cohort(s) updated successfully`);
       clearSelection();
       router.refresh();
@@ -888,7 +892,7 @@ export default function Cohorts({
                     Delete {deletableCohorts.length} of {selectedCount}
                   </Button>
                 )}
-                {saveCohortAction && (
+                {updateCohortAction && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -1242,7 +1246,7 @@ export default function Cohorts({
             artifactName="Cohorts"
             parseCsvAction={parseCsvAction}
             onSave={async (items) => {
-              if (!saveCohortAction) throw new Error("Save action not available");
+              if (!createCohortAction) throw new Error("Create action not available");
               const cohorts = items.map((item) => ({
                 name: item.name as string | undefined,
                 description: item.description as string | undefined,
@@ -1251,7 +1255,7 @@ export default function Cohorts({
                 simulations: item.simulations as string[] | undefined,
                 profiles: item.profiles as string[] | undefined,
               }));
-              return saveCohortAction({ body: { cohorts } });
+              return createCohortAction({ body: { cohorts } } as CreateCohortIn);
             }}
           />
         )}

@@ -17,11 +17,10 @@ All attempt_* emits go to internal bus → internal/ handlers (DB) → server/ h
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio, get_redis_client, sio
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
-from app.infra.websocket.get_db_connection import get_db_connection
 from app.routes.v5.socket.client.types import AttemptMessagePayload
 from app.routes.v5.socket.internal.attempt.types import (
     AttemptAssistantStartData,
@@ -87,7 +86,8 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
 
         rooms = [sid, f"attempt_{chat_id}"]
 
-        async with get_db_connection() as conn:
+        pool = get_pool()
+        async with pool.acquire() as conn:
             # Step 1: Resolve group_id from attempt_chat_entry
             chat_entries = await get_attempt_chats(conn, [chat_id])
 
@@ -132,7 +132,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
                 return
 
             identity = await resolve_profile_identity_context(
-                conn,
+                pool,
                 profile_id,
                 get_redis_client(),
                 session_id=uuid.UUID(session_id_str),
@@ -173,7 +173,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
         )
 
         # Step 5: Create assistant placeholder + emit assistant_start
-        async with get_db_connection() as conn:
+        async with pool.acquire() as conn:
             assistant_result = await create_message(
                 conn,
                 run_id=run_id,
@@ -229,7 +229,7 @@ async def attempt_message(sid: str, data: dict[str, Any]) -> None:
         )
 
         # Step 5b: Refresh MVs so generate_prepare sees the new message
-        async with get_db_connection() as conn:
+        async with pool.acquire() as conn:
             await refresh_attempt_message(conn)
             await refresh_attempt_message_tree(conn)
 

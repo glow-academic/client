@@ -10,11 +10,10 @@ Flow:
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio, get_redis_client, sio
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
-from app.infra.websocket.get_db_connection import get_db_connection
 from app.routes.v5.socket.client.types import AttemptEndPayload
 from app.routes.v5.socket.internal.attempt.types import (
     AttemptErrorData,
@@ -71,12 +70,13 @@ async def attempt_end(sid: str, data: dict[str, Any]) -> None:
                 raise ValueError("Session not found for socket")
             session_id = uuid.UUID(session_id_str)
 
-            async with get_db_connection() as conn:
-                identity = await resolve_profile_identity_context(
-                    conn, profile_id, get_redis_client(), session_id=session_id
-                )
-                profiles_id = identity.profiles_id if identity else None
+            pool = get_pool()
+            identity = await resolve_profile_identity_context(
+                pool, profile_id, get_redis_client(), session_id=session_id
+            )
+            profiles_id = identity.profiles_id if identity else None
 
+            async with pool.acquire() as conn:
                 group_result = await create_group(
                     conn,
                     session_id=session_id,

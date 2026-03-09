@@ -21,8 +21,10 @@ type DuplicatePersonaIn = InputOf<"/api/v5/artifacts/personas/duplicate", "post"
 type DuplicatePersonaOut = OutputOf<"/api/v5/artifacts/personas/duplicate", "post">;
 type DeletePersonaIn = InputOf<"/api/v5/artifacts/personas/delete", "post">;
 type DeletePersonaOut = OutputOf<"/api/v5/artifacts/personas/delete", "post">;
-type SavePersonaIn = InputOf<"/api/v5/artifacts/personas/save", "post">;
-type SavePersonaOut = OutputOf<"/api/v5/artifacts/personas/save", "post">;
+type CreatePersonaIn = InputOf<"/api/v5/artifacts/personas/create", "post">;
+type CreatePersonaOut = OutputOf<"/api/v5/artifacts/personas/create", "post">;
+type UpdatePersonaIn = InputOf<"/api/v5/artifacts/personas/update", "post">;
+type UpdatePersonaOut = OutputOf<"/api/v5/artifacts/personas/update", "post">;
 type SearchColorsIn = InputOf<"/api/v5/resources/colors/search", "post">;
 type SearchColorsOut = NonNullable<OutputOf<"/api/v5/resources/colors/search", "post">["items"]>;
 type SearchIconsIn = InputOf<"/api/v5/resources/icons/search", "post">;
@@ -80,11 +82,14 @@ async function deletePersona(
   return api.post("/artifacts/personas/delete", input);
 }
 
-async function savePersona(
-  input: SavePersonaIn
-): Promise<SavePersonaOut> {
+async function createPersona(input: CreatePersonaIn): Promise<CreatePersonaOut> {
   "use server";
-  return api.post("/artifacts/personas/save", input);
+  return api.post("/artifacts/personas/create", input);
+}
+
+async function updatePersona(input: UpdatePersonaIn): Promise<UpdatePersonaOut> {
+  "use server";
+  return api.post("/artifacts/personas/update", input);
 }
 
 async function searchColors(): Promise<SearchColorsOut> {
@@ -191,7 +196,8 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
           initialColumnVisibility={initialColumnVisibility}
           duplicatePersonaAction={duplicatePersona}
           deletePersonaAction={deletePersona}
-          savePersonaAction={savePersona}
+          createPersonaAction={createPersona}
+          updatePersonaAction={updatePersona}
           searchColorsAction={searchColors}
           searchIconsAction={searchIcons}
           searchVoicesAction={searchVoices}
@@ -218,8 +224,10 @@ export type {
   ParseCsvIn,
   ParseCsvOut,
   PersonasListOut,
-  SavePersonaIn,
-  SavePersonaOut,
+  CreatePersonaIn,
+  CreatePersonaOut,
+  UpdatePersonaIn,
+  UpdatePersonaOut,
   SearchColorsOut,
   SearchIconsOut,
   SearchVoicesOut,

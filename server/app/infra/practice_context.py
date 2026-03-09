@@ -144,15 +144,11 @@ async def resolve_practice_context(
 
     async def _get_personas() -> list:
         async with pool.acquire() as conn:
-            return await get_personas(
-                conn, list(all_persona_ids), redis, bypass_cache
-            )
+            return await get_personas(conn, list(all_persona_ids), redis, bypass_cache)
 
     async def _get_rubrics() -> list:
         async with pool.acquire() as conn:
-            return await get_rubrics(
-                conn, list(all_rubric_ids), redis, bypass_cache
-            )
+            return await get_rubrics(conn, list(all_rubric_ids), redis, bypass_cache)
 
     async def _get_standard_groups() -> list:
         async with pool.acquire() as conn:
@@ -265,9 +261,7 @@ async def resolve_practice_search_context(
     if attempt_ids:
         async with pool.acquire() as conn:
             all_attempt_chats = (
-                await search_attempt_chats(
-                    conn, attempt_ids=attempt_ids, limit=10000
-                )
+                await search_attempt_chats(conn, attempt_ids=attempt_ids, limit=10000)
             )[0]
     else:
         all_attempt_chats = []

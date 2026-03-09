@@ -117,6 +117,7 @@ async def resolve_simulation_context(
             return await get_simulation_artifacts(
                 conn,
                 [simulation_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 departments=True,

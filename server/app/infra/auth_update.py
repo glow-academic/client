@@ -37,7 +37,7 @@ logger = get_logger(__name__)
 
 
 async def update_auth_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -65,7 +65,7 @@ async def update_auth_client(
     # ── Step 1: Profile context ────────────────────────────────────────
 
     profile = await resolve_profile_identity_context(
-        conn,
+        pool,
         profile_id,
         redis,
         session_id=session_id,
@@ -81,7 +81,8 @@ async def update_auth_client(
     # ── Step 2: Per-item permission check ──────────────────────────────
 
     for idx, item in enumerate(items):
-        perms = await resolve_auth_permissions_context(conn, item.auth_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_auth_permissions_context(conn, item.auth_id)
         if not perms.exists:
             raise HTTPException(
                 status_code=404,
@@ -102,7 +103,8 @@ async def update_auth_client(
     error_results: list[AuthResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_auth_values(conn, redis, item, is_create=False)
+        async with pool.acquire() as conn:
+            item_errors = await resolve_auth_values(conn, redis, item, is_create=False)
         if item_errors:
             has_errors = True
             error_results.append(
@@ -122,39 +124,40 @@ async def update_auth_client(
 
     results: list[AuthResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            auths_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=item.department_ids,
-            )
-
-            await update_auth_artifact(
-                conn,
-                item.auth_id,
-                name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id if item.description_id else _UNSET,
-                slug_id=item.slug_id if item.slug_id else _UNSET,
-                department_ids=item.department_ids,
-                flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                item_ids=item.item_ids,
-                protocol_ids=item.protocol_ids,
-                auth_ids=[auths_resource_id]
-                if auths_resource_id
-                else item.auth_resource_ids,
-            )
-
-            results.append(
-                AuthResultItem(
-                    success=True,
-                    auth_id=item.auth_id,
-                    message="Auth updated successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                auths_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
                 )
-            )
+
+                await update_auth_artifact(
+                    conn,
+                    item.auth_id,
+                    name_id=item.name_id if item.name_id else _UNSET,
+                    description_id=item.description_id if item.description_id else _UNSET,
+                    slug_id=item.slug_id if item.slug_id else _UNSET,
+                    department_ids=item.department_ids,
+                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                    item_ids=item.item_ids,
+                    protocol_ids=item.protocol_ids,
+                    auth_ids=[auths_resource_id]
+                    if auths_resource_id
+                    else item.auth_resource_ids,
+                )
+
+                results.append(
+                    AuthResultItem(
+                        success=True,
+                        auth_id=item.auth_id,
+                        message="Auth updated successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

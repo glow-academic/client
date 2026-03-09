@@ -98,6 +98,7 @@ async def resolve_agent_context(
             return await get_agent_artifacts(
                 conn,
                 [agent_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 departments=True,

@@ -1,13 +1,11 @@
 """Search endpoint for leaderboard artifact — profile rows, paginated."""
 
 from datetime import datetime
-from typing import Annotated
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.leaderboard_context import resolve_leaderboard_search_context
 from app.infra.leaderboard_permissions import (
     build_leaderboard_rows_v3,
@@ -34,7 +32,6 @@ async def search_leaderboard(
     request: ListLeaderboardRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ListLeaderboardResponse:
     """Get leaderboard profile rows (bottom table, paginated)."""
     tags = ["artifacts", "leaderboard", "list"]
@@ -108,22 +105,21 @@ async def search_leaderboard(
             attempt_type = "general"
 
         # --- Phase 2: Resolve leaderboard search context ---
-        async with pool.acquire() as c:
-            ctx = await resolve_leaderboard_search_context(
-                c,
-                redis,
-                target_profile_id=request.target_profile_id,
-                cohort_ids=cohort_ids_filter,
-                department_ids=request.department_ids,
-                simulation_ids=simulation_ids_filter,
-                scenario_ids=request.scenario_ids,
-                attempt_type=attempt_type,
-                is_archived=is_archived,
-                date_from=parsed_start_date.date() if parsed_start_date else None,
-                date_to=parsed_end_date.date() if parsed_end_date else None,
-                sort_order=request.sort_order or "desc",
-                bypass_cache=bypass_cache,
-            )
+        ctx = await resolve_leaderboard_search_context(
+            pool,
+            redis,
+            target_profile_id=request.target_profile_id,
+            cohort_ids=cohort_ids_filter,
+            department_ids=request.department_ids,
+            simulation_ids=simulation_ids_filter,
+            scenario_ids=request.scenario_ids,
+            attempt_type=attempt_type,
+            is_archived=is_archived,
+            date_from=parsed_start_date.date() if parsed_start_date else None,
+            date_to=parsed_end_date.date() if parsed_end_date else None,
+            sort_order=request.sort_order or "desc",
+            bypass_cache=bypass_cache,
+        )
 
         # --- Phase 3: Extract data ---
         attempt_chats = ctx.entries.get("attempt_chats", [])

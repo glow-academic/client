@@ -29,8 +29,6 @@ import type {
   DuplicateRubricIn,
   DuplicateRubricOut,
   RubricsListOut,
-  SaveRubricIn,
-  SaveRubricOut,
 } from "@/app/(main)/system/rubrics/page";
 import TableRubric from "@/components/artifacts/rubric/TableRubric";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
@@ -59,7 +57,6 @@ export interface RubricsProps {
     input: DuplicateRubricIn,
   ) => Promise<DuplicateRubricOut>;
   deleteRubricAction?: (input: DeleteRubricIn) => Promise<DeleteRubricOut>;
-  saveRubricAction?: (input: SaveRubricIn) => Promise<SaveRubricOut>;
   // Server-side pagination
   pageIndex: number;
   pageSize: number;

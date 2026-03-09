@@ -8,6 +8,7 @@ from collections import Counter, defaultdict
 from datetime import datetime
 from uuid import UUID
 
+import asyncpg
 from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 

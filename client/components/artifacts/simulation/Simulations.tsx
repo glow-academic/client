@@ -24,8 +24,10 @@ import type {
   DuplicateSimulationOut,
   ParseCsvIn,
   ParseCsvOut,
-  SaveSimulationIn,
-  SaveSimulationOut,
+  CreateSimulationIn,
+  CreateSimulationOut,
+  UpdateSimulationIn,
+  UpdateSimulationOut,
   SearchFlagsOut,
   SimulationsListOut,
 } from "@/app/(main)/training/simulations/page";
@@ -83,7 +85,8 @@ export interface SimulationsProps {
   deleteSimulationAction?: (
     input: DeleteSimulationIn,
   ) => Promise<DeleteSimulationOut>;
-  saveSimulationAction?: (input: SaveSimulationIn) => Promise<SaveSimulationOut>;
+  createSimulationAction?: (input: CreateSimulationIn) => Promise<CreateSimulationOut>;
+  updateSimulationAction?: (input: UpdateSimulationIn) => Promise<UpdateSimulationOut>;
   searchFlagsAction?: () => Promise<SearchFlagsOut>;
   parseCsvAction?: (input: ParseCsvIn) => Promise<ParseCsvOut>;
   importFields?: ImportFieldDef[];
@@ -101,7 +104,8 @@ export function Simulations({
   initialColumnVisibility,
   duplicateSimulationAction,
   deleteSimulationAction,
-  saveSimulationAction,
+  createSimulationAction,
+  updateSimulationAction,
   searchFlagsAction,
   parseCsvAction,
   importFields,
@@ -594,7 +598,7 @@ export function Simulations({
   };
 
   const handleBulkEdit = async () => {
-    if (!saveSimulationAction || editableSimulations.length === 0) return;
+    if (!updateSimulationAction || editableSimulations.length === 0) return;
 
     const hasActiveChange = bulkEditActiveStatus !== null;
     const hasPracticeChange = bulkEditPracticeMode !== null;
@@ -626,17 +630,17 @@ export function Simulations({
         }
 
         return {
-          input_simulation_id: sim.simulation_id!,
+          simulation_id: sim.simulation_id!,
           ...(hasAnyFlagChange && { flag_ids: flagIds }),
           ...(hasDeptChange && { department_ids: bulkEditDepartmentIds }),
         };
       });
 
-      await saveSimulationAction({
+      await updateSimulationAction({
         body: {
           simulations: items,
         },
-      });
+      } as UpdateSimulationIn);
       toast.success(`${items.length} simulation(s) updated successfully`);
       clearSelection();
       router.refresh();
@@ -967,7 +971,7 @@ export function Simulations({
                     Delete {deletableSimulations.length} of {selectedCount}
                   </Button>
                 )}
-                {saveSimulationAction && (
+                {updateSimulationAction && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -1369,7 +1373,7 @@ export function Simulations({
           artifactName="Simulations"
           parseCsvAction={parseCsvAction}
           onSave={async (items) => {
-            if (!saveSimulationAction) throw new Error("Save action not available");
+            if (!createSimulationAction) throw new Error("Create action not available");
             const simulations = items.map((item) => ({
               name: item.name as string | undefined,
               description: item.description as string | undefined,
@@ -1378,7 +1382,7 @@ export function Simulations({
               departments: item.departments as string[] | undefined,
               scenarios: item.scenarios as string[] | undefined,
             }));
-            return saveSimulationAction({ body: { simulations } });
+            return createSimulationAction({ body: { simulations } } as CreateSimulationIn);
           }}
         />
       )}

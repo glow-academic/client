@@ -1,15 +1,13 @@
 """Get endpoint for activity artifact — top cards (header metrics + profile summary)."""
 
 from collections import defaultdict
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.activity_context import resolve_activity_context
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.activity.types import (
     ActivityRequest,
     ActivityResources,
@@ -95,7 +93,6 @@ async def get_activity(
     request: ActivityRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ActivityResponse:
     """Get activity top cards — header metrics + profile summary."""
     tags = ["artifacts", "activity"]
@@ -128,24 +125,22 @@ async def get_activity(
         redis = get_redis_client()
 
         # --- Phase 0: Resolve common context (profile identity) ---
-        async with pool.acquire() as c:
-            common = await resolve_common_context(
-                c, redis, profile_id=profile_id, bypass_cache=bypass_cache
-            )
+        common = await resolve_common_context(
+            pool, redis, profile_id=profile_id, bypass_cache=bypass_cache
+        )
         if not common:
             raise HTTPException(status_code=401, detail="Profile not found")
 
         # --- Phase 1: Resolve activity context ---
-        async with pool.acquire() as c:
-            ctx = await resolve_activity_context(
-                c,
-                redis,
-                department_ids=request.department_ids or None,
-                roles=request.roles or None,
-                date_from=request.date_from,
-                date_to=request.date_to,
-                bypass_cache=bypass_cache,
-            )
+        ctx = await resolve_activity_context(
+            pool,
+            redis,
+            department_ids=request.department_ids or None,
+            roles=request.roles or None,
+            date_from=request.date_from,
+            date_to=request.date_to,
+            bypass_cache=bypass_cache,
+        )
 
         # --- Phase 2: Extract data ---
         sessions = ctx.entries.get("sessions", [])

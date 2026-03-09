@@ -13,6 +13,7 @@ import asyncio
 from collections import defaultdict
 from uuid import UUID
 
+import asyncpg
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context

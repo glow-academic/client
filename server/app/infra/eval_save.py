@@ -337,21 +337,20 @@ async def save_eval_client(
 
     # ── Step 6: Sync benchmark entries (non-fatal) ─────────────────────
 
-    async with pool.acquire() as conn:
-        for resource_id, item in sync_items:
-            try:
-                from app.infra.benchmark_sync import sync_benchmark_entries
+    for resource_id, item in sync_items:
+        try:
+            from app.infra.benchmark_sync import sync_benchmark_entries
 
-                await sync_benchmark_entries(
-                    conn=conn,
-                    evals_resource_id=resource_id,
-                    model_ids=item.model_ids or [],
-                    model_flag_ids=item.model_flag_ids or [],
-                    model_rubric_ids=item.model_rubric_ids or [],
-                    model_position_ids=item.model_position_ids or [],
-                    department_ids=item.department_ids or [],
-                )
-            except Exception as sync_err:
-                logger.warning(f"sync_benchmark_entries failed (non-fatal): {sync_err}")
+            await sync_benchmark_entries(
+                pool=pool,
+                evals_resource_id=resource_id,
+                model_ids=item.model_ids or [],
+                model_flag_ids=item.model_flag_ids or [],
+                model_rubric_ids=item.model_rubric_ids or [],
+                model_position_ids=item.model_position_ids or [],
+                department_ids=item.department_ids or [],
+            )
+        except Exception as sync_err:
+            logger.warning(f"sync_benchmark_entries failed (non-fatal): {sync_err}")
 
     return SaveEvalApiResponse(results=results)

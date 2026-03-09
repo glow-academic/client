@@ -1,12 +1,9 @@
 """Problem create endpoint."""
 
-from typing import Annotated
-
-import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.tools.entries.calls.create import create_call
 from app.routes.v5.tools.entries.groups.create import create_group
 from app.routes.v5.tools.entries.problems.create import (
@@ -37,7 +34,6 @@ async def create_problem(
     request: CreateProblemRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateProblemResponse:
     """Create new problem entry."""
     tags = ["problems", "views", "activity"]
@@ -67,24 +63,27 @@ async def create_problem(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
+
         # Create group → run → call → problem entry chain
         session_id = http_request.state.session_id
-        group_result = await create_group(conn, session_id=session_id)
-        run_result = await create_run(
-            conn, group_id=group_result.id, session_id=session_id
-        )
-        call_result = await create_call(
-            conn, run_id=run_result.id, session_id=session_id
-        )
+        async with pool.acquire() as conn:
+            group_result = await create_group(conn, session_id=session_id)
+            run_result = await create_run(
+                conn, group_id=group_result.id, session_id=session_id
+            )
+            call_result = await create_call(
+                conn, run_id=run_result.id, session_id=session_id
+            )
 
-        problem_result = await create_problem_entry(
-            conn,
-            session_id=session_id,
-            call_id=call_result.id,
-            type=request.type,
-            message=request.message,
-            profile_id=profile_id,
-        )
+            problem_result = await create_problem_entry(
+                conn,
+                session_id=session_id,
+                call_id=call_result.id,
+                type=request.type,
+                message=request.message,
+                profile_id=profile_id,
+            )
 
         result_data = CreateProblemResponse(
             problem_id=str(problem_result.id),
