@@ -4,8 +4,9 @@ resolve_persona_context is tested with mocked black-box fetchers.
 Tests verify: junction merging, draft overrides, and resource pair assembly.
 """
 
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -20,6 +21,19 @@ from app.routes.v5.tools.entries.persona_drafts.types import GetPersonaDraftResp
 
 NOW = datetime.now(UTC)
 MODULE = "app.infra.persona_context"
+
+
+def _mock_pool() -> MagicMock:
+    """Create a mock asyncpg.Pool whose acquire() yields a sentinel connection."""
+    pool = MagicMock()
+    sentinel_conn = MagicMock(name="mock_conn")
+
+    @asynccontextmanager
+    async def _acquire():
+        yield sentinel_conn
+
+    pool.acquire = _acquire
+    return pool
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -268,7 +282,7 @@ class TestResolvePersonaContextEmpty:
 
         with _mock_all_fetchers():
             result = await resolve_persona_context(
-                None,
+                _mock_pool(),
                 None,
                 persona_id=None,
                 group_id=group_id,
@@ -295,7 +309,7 @@ class TestResolvePersonaContextEmpty:
             m.override(f"{MODULE}.get_names", [selected_name])
 
             result = await resolve_persona_context(
-                None,
+                _mock_pool(),
                 None,
                 persona_id=persona_id,
                 group_id=group_id,
@@ -342,7 +356,7 @@ class TestResolvePersonaContextDraft:
             m.override(f"{MODULE}.get_names", [draft_name_obj])
 
             result = await resolve_persona_context(
-                None,
+                _mock_pool(),
                 None,
                 persona_id=persona_id,
                 group_id=group_id,
@@ -379,7 +393,7 @@ class TestResolvePersonaContextResources:
             m.override(f"{MODULE}.search_names", [suggestion_obj])
 
             result = await resolve_persona_context(
-                None,
+                _mock_pool(),
                 None,
                 persona_id=persona_id,
                 group_id=group_id,
@@ -394,7 +408,7 @@ class TestResolvePersonaContextResources:
 
         with _mock_all_fetchers():
             result = await resolve_persona_context(
-                None,
+                _mock_pool(),
                 None,
                 persona_id=None,
                 group_id=group_id,
@@ -431,7 +445,7 @@ class TestResolvePersonaContextResources:
             m.override(f"{MODULE}.get_persona_artifacts", [artifact])
 
             result = await resolve_persona_context(
-                None,
+                _mock_pool(),
                 None,
                 persona_id=persona_id,
                 group_id=group_id,
@@ -455,7 +469,7 @@ class TestResolvePersonaContextResources:
             m.override(f"{MODULE}.search_flags", [persona_flag, other_flag])
 
             result = await resolve_persona_context(
-                None,
+                _mock_pool(),
                 None,
                 persona_id=persona_id,
                 group_id=group_id,

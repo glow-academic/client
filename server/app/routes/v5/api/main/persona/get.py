@@ -127,8 +127,7 @@ async def get_persona_client(
 
     perms = None
     if persona_id is not None:
-        async with pool.acquire() as conn:
-            perms = await resolve_persona_permissions_context(conn, persona_id)
+        perms = await resolve_persona_permissions_context(pool, persona_id)
 
         if not perms.exists:
             raise HTTPException(

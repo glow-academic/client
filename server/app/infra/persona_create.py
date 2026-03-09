@@ -84,7 +84,7 @@ class CreatePersonaApiResponse(BaseModel):
 
 
 async def create_persona_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -97,14 +97,17 @@ async def create_persona_client(
       1. resolve_profile_identity_context → role, department_ids
       2. compute_can_create — single check (applies to all items)
       3. Per-item value resolution (raw → ID, required field enforcement)
-      4. Single transaction: create_persona_artifact + denormalized snapshot per item
-      5. invalidate_tags
+      4. Per-item denormalized snapshot (read-only hydration, outside transaction)
+      5. Single transaction: create_persona_artifact per item
+      6. invalidate_tags
     """
     from app.infra.persona_permissions import compute_can_create
 
     # ── Step 1: Profile context ────────────────────────────────────────
+    # resolve_profile_identity_context still takes conn (not yet refactored)
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    async with pool.acquire() as conn:
+        profile = await resolve_profile_identity_context(conn, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -126,7 +129,7 @@ async def create_persona_client(
     error_results: list[PersonaResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_persona_values(conn, redis, item, is_create=True)
+        item_errors = await resolve_persona_values(pool, redis, item, is_create=True)
         if item_errors:
             has_errors = True
             error_results.append(
@@ -142,52 +145,57 @@ async def create_persona_client(
     if has_errors:
         return CreatePersonaApiResponse(results=error_results)
 
-    # ── Step 4: Single transaction ─────────────────────────────────────
+    # ── Step 4: Denormalized snapshots (read-only, outside transaction) ─
+
+    snapshot_ids: list[UUID] = []
+    for item in items:
+        personas_resource_id = await create_denormalized_snapshot(
+            pool,
+            redis,
+            id=item.id,
+            name_id=item.name_id,
+            description_id=item.description_id,
+            color_id=item.color_id,
+            icon_id=item.icon_id,
+            instructions_id=item.instructions_id,
+            department_ids=item.department_ids,
+            example_ids=item.example_ids,
+            parameter_field_ids=item.parameter_field_ids,
+        )
+        snapshot_ids.append(personas_resource_id)
+
+    # ── Step 5: Single transaction — artifact writes ───────────────────
 
     results: list[PersonaResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            personas_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                color_id=item.color_id,
-                icon_id=item.icon_id,
-                instructions_id=item.instructions_id,
-                department_ids=item.department_ids,
-                example_ids=item.example_ids,
-                parameter_field_ids=item.parameter_field_ids,
-            )
-
-            result = await create_persona_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                color_id=item.color_id,
-                icon_id=item.icon_id,
-                instruction_id=item.instructions_id,
-                department_ids=item.department_ids,
-                example_ids=item.example_ids,
-                flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                parameter_field_ids=item.parameter_field_ids,
-                persona_ids=[personas_resource_id],
-                voice_ids=item.voice_ids,
-            )
-
-            results.append(
-                PersonaResultItem(
-                    success=True,
-                    persona_id=result.id,
-                    message="Persona created successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item, personas_resource_id in zip(items, snapshot_ids, strict=True):
+                result = await create_persona_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    color_id=item.color_id,
+                    icon_id=item.icon_id,
+                    instruction_id=item.instructions_id,
+                    department_ids=item.department_ids,
+                    example_ids=item.example_ids,
+                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                    parameter_field_ids=item.parameter_field_ids,
+                    persona_ids=[personas_resource_id],
+                    voice_ids=item.voice_ids,
                 )
-            )
 
-    # ── Step 5: Invalidate cache ───────────────────────────────────────
+                results.append(
+                    PersonaResultItem(
+                        success=True,
+                        persona_id=result.id,
+                        message="Persona created successfully",
+                    )
+                )
+
+    # ── Step 6: Invalidate cache ───────────────────────────────────────
 
     await invalidate_tags(["personas"], redis=redis)
 

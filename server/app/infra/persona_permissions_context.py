@@ -7,6 +7,7 @@ Shared save helpers (used by both create and update):
   2. resolve_persona_values — raw string → resource ID resolution
   3. create_denormalized_snapshot — hydrate IDs → personas_resource snapshot
 
+Each parallel branch acquires its own connection from the pool.
 Composes existing black-box fetchers — no raw SQL.
 """
 
@@ -65,21 +66,22 @@ class PersonaPermissionsContext:
 
 
 async def resolve_persona_permissions_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     persona_id: UUID,
 ) -> PersonaPermissionsContext:
     """Fetch just what's needed for persona permission checks.
 
-    Two black-box tool calls:
+    Two black-box tool calls (sequential — no gather needed):
       1. get_persona_artifacts → department_ids + persona_ids (resource IDs)
       2. search_scenarios → any active scenarios using this persona?
     """
-    artifacts = await get_persona_artifacts(
-        conn,
-        [persona_id],
-        departments=True,
-        personas=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_persona_artifacts(
+            conn,
+            [persona_id],
+            departments=True,
+            personas=True,
+        )
 
     if not artifacts:
         return PersonaPermissionsContext(
@@ -92,16 +94,16 @@ async def resolve_persona_permissions_context(
     department_ids = list(artifact.department_ids or [])
     personas_resource_ids = list(artifact.persona_ids or [])
 
-    _, total = (
-        await search_scenarios(
-            conn,
-            persona_ids=personas_resource_ids,
-            active_only=True,
-            limit_count=1,
-        )
-        if personas_resource_ids
-        else ([], 0)
-    )
+    if personas_resource_ids:
+        async with pool.acquire() as conn:
+            _, total = await search_scenarios(
+                conn,
+                persona_ids=personas_resource_ids,
+                active_only=True,
+                limit_count=1,
+            )
+    else:
+        total = 0
 
     return PersonaPermissionsContext(
         exists=True,
@@ -116,7 +118,7 @@ async def resolve_persona_permissions_context(
 
 
 async def resolve_persona_values(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     item: CreatePersonaItem | UpdatePersonaItem,
     is_create: bool,
@@ -128,6 +130,7 @@ async def resolve_persona_values(
     For 'match' resources (color, icon, departments, voices, flags, parameter_fields):
       Searches by name via the search tool, matches exact (case-insensitive).
 
+    Sequential tool calls — each acquires its own connection.
     Returns a list of errors (empty if all resolved).
     """
     from app.infra.persona_create import PersonaFieldError
@@ -137,30 +140,35 @@ async def resolve_persona_values(
     # --- Create resources ---
 
     if item.name is not None and item.name_id is None:
-        result = await create_name(conn, item.name, redis)
+        async with pool.acquire() as conn:
+            result = await create_name(conn, item.name, redis)
         item.name_id = result.id
 
     if item.description is not None and item.description_id is None:
-        result = await create_description(conn, item.description, redis)
+        async with pool.acquire() as conn:
+            result = await create_description(conn, item.description, redis)
         item.description_id = result.id
 
     if item.instructions is not None and item.instructions_id is None:
-        result = await create_instruction(conn, item.instructions, redis)
+        async with pool.acquire() as conn:
+            result = await create_instruction(conn, item.instructions, redis)
         item.instructions_id = result.id
 
     if item.examples is not None and item.example_ids is None:
         resolved_ids = []
         for ex in item.examples:
-            result = await create_example(conn, ex, redis)
+            async with pool.acquire() as conn:
+                result = await create_example(conn, ex, redis)
             resolved_ids.append(result.id)
         item.example_ids = resolved_ids
 
     # --- Match resources ---
 
     if item.color is not None and item.color_id is None:
-        results = await search_colors(
-            conn, redis, search=item.color, limit_count=20
-        )
+        async with pool.acquire() as conn:
+            results = await search_colors(
+                conn, redis, search=item.color, limit_count=20
+            )
         match = next(
             (r for r in results if r.name and r.name.lower() == item.color.lower()),
             None,
@@ -175,9 +183,10 @@ async def resolve_persona_values(
             )
 
     if item.icon is not None and item.icon_id is None:
-        results = await search_icons(
-            conn, redis, search=item.icon, limit_count=20
-        )
+        async with pool.acquire() as conn:
+            results = await search_icons(
+                conn, redis, search=item.icon, limit_count=20
+            )
         match = next(
             (r for r in results if r.name and r.name.lower() == item.icon.lower()),
             None,
@@ -190,13 +199,14 @@ async def resolve_persona_values(
             )
 
     if item.active_flag is not None and item.active_flag_id is None:
-        results = await search_flags(
-            conn,
-            redis,
-            search=None,
-            flag_type="persona_active",
-            limit_count=100,
-        )
+        async with pool.acquire() as conn:
+            results = await search_flags(
+                conn,
+                redis,
+                search=None,
+                flag_type="persona_active",
+                limit_count=100,
+            )
         match = next((r for r in results if r.type == "persona_active"), None)
         if match and match.id:
             if item.active_flag:
@@ -209,9 +219,10 @@ async def resolve_persona_values(
             )
 
     if item.departments is not None and item.department_ids is None:
-        all_depts = await search_departments(
-            conn, redis, search=None, limit_count=1000, persona=True
-        )
+        async with pool.acquire() as conn:
+            all_depts = await search_departments(
+                conn, redis, search=None, limit_count=1000, persona=True
+            )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []
         for dept_name in item.departments:
@@ -229,15 +240,16 @@ async def resolve_persona_values(
             item.department_ids = resolved_ids
 
     if item.voices is not None and item.voice_ids is None:
-        all_voices = await search_voices(
-            conn,
-            redis,
-            search=None,
-            limit_count=1000,
-            persona=True,
-            agent=False,
-            model=False,
-        )
+        async with pool.acquire() as conn:
+            all_voices = await search_voices(
+                conn,
+                redis,
+                search=None,
+                limit_count=1000,
+                persona=True,
+                agent=False,
+                model=False,
+            )
         voice_name_map = {v.voice.lower(): v.id for v in all_voices if v.voice and v.id}
         resolved_ids = []
         for voice_name in item.voices:
@@ -255,11 +267,14 @@ async def resolve_persona_values(
             item.voice_ids = resolved_ids
 
     if item.parameter_fields is not None and item.parameter_field_ids is None:
-        all_pf = await search_parameter_fields(conn, redis, persona=True)
+        async with pool.acquire() as conn:
+            all_pf = await search_parameter_fields(conn, redis, persona=True)
         field_ids_list = [pf.field_id for pf in all_pf if pf.field_id]
-        fields_list = (
-            await get_fields(conn, field_ids_list, redis) if field_ids_list else []
-        )
+        if field_ids_list:
+            async with pool.acquire() as conn:
+                fields_list = await get_fields(conn, field_ids_list, redis)
+        else:
+            fields_list = []
         field_name_map = {f.id: f.name for f in fields_list if f.name}
         pf_name_map = {
             field_name_map[pf.field_id].lower(): pf.id
@@ -301,7 +316,7 @@ async def resolve_persona_values(
 
 
 async def create_denormalized_snapshot(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     id: UUID | None = None,
@@ -314,10 +329,52 @@ async def create_denormalized_snapshot(
     example_ids: list[UUID] | None,
     parameter_field_ids: list[UUID] | None,
 ) -> UUID:
-    """Create a personas_resource snapshot by hydrating IDs to values."""
+    """Create a personas_resource snapshot by hydrating IDs to values.
 
-    async def _empty() -> list:
-        return []
+    Read-only hydration uses pool (parallel), then the write uses a single conn.
+    """
+
+    # Parallel read-only hydration — each branch acquires its own connection.
+
+    async def _get_names() -> list:
+        if not name_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, [name_id], redis, bypass_cache=True)
+
+    async def _get_descriptions() -> list:
+        if not description_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(
+                conn, [description_id], redis, bypass_cache=True
+            )
+
+    async def _get_colors() -> list:
+        if not color_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_colors(conn, [color_id], redis, bypass_cache=True)
+
+    async def _get_icons() -> list:
+        if not icon_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_icons(conn, [icon_id], redis, bypass_cache=True)
+
+    async def _get_instructions() -> list:
+        if not instructions_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_instructions(
+                conn, [instructions_id], redis, bypass_cache=True
+            )
+
+    async def _get_examples() -> list:
+        if not example_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_examples(conn, example_ids, redis, bypass_cache=True)
 
     (
         names,
@@ -327,33 +384,27 @@ async def create_denormalized_snapshot(
         instructions,
         examples_list,
     ) = await asyncio.gather(
-        get_names(conn, [name_id], redis, bypass_cache=True) if name_id else _empty(),
-        get_descriptions(conn, [description_id], redis, bypass_cache=True)
-        if description_id
-        else _empty(),
-        get_colors(conn, [color_id], redis, bypass_cache=True)
-        if color_id
-        else _empty(),
-        get_icons(conn, [icon_id], redis, bypass_cache=True) if icon_id else _empty(),
-        get_instructions(conn, [instructions_id], redis, bypass_cache=True)
-        if instructions_id
-        else _empty(),
-        get_examples(conn, example_ids, redis, bypass_cache=True)
-        if example_ids
-        else _empty(),
+        _get_names(),
+        _get_descriptions(),
+        _get_colors(),
+        _get_icons(),
+        _get_instructions(),
+        _get_examples(),
     )
 
-    result = await create_persona_resource(
-        conn,
-        redis,
-        id=id,
-        name=names[0].name if names else "",
-        description=descriptions[0].description if descriptions else "",
-        icon=icons[0].value if icons else "",
-        color=colors[0].hex_code if colors else "",
-        department_ids=department_ids,
-        instructions=instructions[0].template if instructions else "",
-        examples=[e.example for e in examples_list],
-        parameter_field_ids=parameter_field_ids,
-    )
+    # Write — single connection
+    async with pool.acquire() as conn:
+        result = await create_persona_resource(
+            conn,
+            redis,
+            id=id,
+            name=names[0].name if names else "",
+            description=descriptions[0].description if descriptions else "",
+            icon=icons[0].value if icons else "",
+            color=colors[0].hex_code if colors else "",
+            department_ids=department_ids,
+            instructions=instructions[0].template if instructions else "",
+            examples=[e.example for e in examples_list],
+            parameter_field_ids=parameter_field_ids,
+        )
     return result.id

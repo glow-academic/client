@@ -125,7 +125,7 @@ def _load_pre_existing_modules() -> str:
 
 
 async def _run_persona_seeds(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     persona_defs: list[dict],
 ) -> list[UUID]:
@@ -135,7 +135,7 @@ async def _run_persona_seeds(
     items = [CreatePersonaItem(**p) for p in persona_defs]
 
     result = await create_persona_client(
-        conn,
+        pool,
         redis,
         profile_id=SEED_PROFILE_ID,
         items=items,
@@ -268,6 +268,7 @@ async def main(setup: str = "university") -> None:
     redis_url = f"redis://{redis_host}:{redis_port}/0"
 
     try:
+        # Use a single connection for schema/module setup
         conn = await asyncpg.connect(pg_url)
 
         # 2. Load schema
@@ -302,7 +303,11 @@ async def main(setup: str = "university") -> None:
         print("Taking pre-seed snapshot...")
         before = await _snapshot_counts(conn, PERSONA_TABLES)
 
-        # 6. Run seeds
+        await conn.close()
+
+        # 6. Create pool for seed operations (infra functions need asyncpg.Pool)
+        pool = await asyncpg.create_pool(pg_url)
+
         redis_client = Redis.from_url(redis_url)
 
         # Set env vars needed by app imports
@@ -318,11 +323,12 @@ async def main(setup: str = "university") -> None:
             )
 
             if module_name == "personas":
-                await _run_persona_seeds(conn, redis_client, mod.personas)
+                await _run_persona_seeds(pool, redis_client, mod.personas)
 
         # 7. Dump new rows
         print("\nDumping seed-created rows...")
-        new_rows = await _dump_new_rows(conn, before, PERSONA_TABLES)
+        async with pool.acquire() as conn:
+            new_rows = await _dump_new_rows(conn, before, PERSONA_TABLES)
 
         total = sum(len(rows) for rows in new_rows.values())
         print(f"  {total} new rows across {len(new_rows)} tables.")
@@ -364,7 +370,7 @@ async def main(setup: str = "university") -> None:
                 print(f"  Wrote {filepath}")
 
         await redis_client.aclose()
-        await conn.close()
+        await pool.close()
 
     finally:
         pg.stop()

@@ -4,8 +4,9 @@ resolve_persona_permissions_context is tested with mocked black-box fetchers.
 Tests verify: exists detection, department_ids extraction, and active scenario counting.
 """
 
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
 import pytest
@@ -16,6 +17,19 @@ from app.infra.persona_permissions_context import (
 
 NOW = datetime.now(UTC)
 MODULE = "app.infra.persona_permissions_context"
+
+
+def _mock_pool() -> MagicMock:
+    """Create a mock asyncpg.Pool whose acquire() yields a sentinel connection."""
+    pool = MagicMock()
+    sentinel_conn = MagicMock(name="mock_conn")
+
+    @asynccontextmanager
+    async def _acquire():
+        yield sentinel_conn
+
+    pool.acquire = _acquire
+    return pool
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -47,7 +61,7 @@ class TestResolvePersonaPermissionsContext:
                 return_value=[],
             ),
         ):
-            result = await resolve_persona_permissions_context(None, persona_id)
+            result = await resolve_persona_permissions_context(_mock_pool(), persona_id)
 
         assert result.exists is False
         assert result.department_ids == []
@@ -76,7 +90,7 @@ class TestResolvePersonaPermissionsContext:
                 return_value=[],
             ),
         ):
-            result = await resolve_persona_permissions_context(None, persona_id)
+            result = await resolve_persona_permissions_context(_mock_pool(), persona_id)
 
         assert result.exists is True
         assert result.department_ids == [dept_id_1, dept_id_2]
@@ -102,18 +116,16 @@ class TestResolvePersonaPermissionsContext:
             patch(
                 f"{MODULE}.search_scenarios",
                 new_callable=AsyncMock,
-                return_value=[scenario_id],
+                return_value=([scenario_id], 1),
             ) as mock_scenarios,
         ):
-            result = await resolve_persona_permissions_context(None, persona_id)
+            result = await resolve_persona_permissions_context(_mock_pool(), persona_id)
 
         assert result.active_scenario_count == 1
-        mock_scenarios.assert_called_once_with(
-            None,
-            persona_ids=[personas_resource_id],
-            active_only=True,
-            limit_count=1,
-        )
+        mock_scenarios.assert_called_once()
+        assert mock_scenarios.call_args.kwargs["persona_ids"] == [personas_resource_id]
+        assert mock_scenarios.call_args.kwargs["active_only"] is True
+        assert mock_scenarios.call_args.kwargs["limit_count"] == 1
 
     async def test_no_personas_resource_skips_scenario_search(self):
         """When artifact has no persona_ids, search_scenarios is not called."""
@@ -135,7 +147,7 @@ class TestResolvePersonaPermissionsContext:
                 new_callable=AsyncMock,
             ) as mock_scenarios,
         ):
-            result = await resolve_persona_permissions_context(None, persona_id)
+            result = await resolve_persona_permissions_context(_mock_pool(), persona_id)
 
         mock_scenarios.assert_not_called()
         assert result.active_scenario_count == 0
@@ -156,7 +168,7 @@ class TestResolvePersonaPermissionsContext:
                 return_value=[artifact],
             ),
         ):
-            result = await resolve_persona_permissions_context(None, persona_id)
+            result = await resolve_persona_permissions_context(_mock_pool(), persona_id)
 
         assert result.exists is True
         assert result.department_ids == []
