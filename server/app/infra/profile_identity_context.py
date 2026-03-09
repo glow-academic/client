@@ -48,6 +48,9 @@ class ProfileIdentityContext:
     settings_id: UUID | None  # from primary department's setting_ids[0]
     requests_per_day: int | None  # rate limit from profiles_resource
     is_active: bool
+    # Server-resolved session + group (set when session_id or group hints are provided)
+    session_id: UUID | None = None
+    group_id: UUID | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -60,6 +63,13 @@ async def resolve_profile_identity_context(
     profile_id: UUID,
     redis: Redis,
     bypass_cache: bool = False,
+    # Server-resolved session (from require_auth middleware)
+    session_id: UUID | None = None,
+    # Group resolution hints (from request body — only needed for mutations)
+    draft_id: UUID | None = None,
+    attempt_id: UUID | None = None,
+    test_id: UUID | None = None,
+    artifact_type: str | None = None,
 ) -> ProfileIdentityContext | None:
     """Resolve a profile artifact ID into a hydrated ProfileIdentityContext.
 
@@ -70,6 +80,7 @@ async def resolve_profile_identity_context(
       1. get_profile_artifacts — fetches junction IDs
       2. asyncio.gather — hydrates all resources in parallel
       3. Pure Python assembly
+      4. (Optional) resolve group_id from hints or create fresh group
     """
     use_pool = isinstance(conn_or_pool, asyncpg.Pool)
 
@@ -219,6 +230,19 @@ async def resolve_profile_identity_context(
     # The artifact's active field reflects this
     is_active = artifact.active
 
+    # Step 4: resolve group_id (optional — only when hints are provided or session available)
+    resolved_group_id: UUID | None = None
+    if draft_id or attempt_id or test_id or session_id:
+        resolved_group_id = await _resolve_group_id(
+            conn_or_pool,
+            profiles_id=profile_id,
+            session_id=session_id,
+            draft_id=draft_id,
+            attempt_id=attempt_id,
+            test_id=test_id,
+            artifact_type=artifact_type,
+        )
+
     return ProfileIdentityContext(
         profiles_id=profiles_id,
         name=name,
@@ -233,7 +257,61 @@ async def resolve_profile_identity_context(
         settings_id=settings_id,
         requests_per_day=requests_per_day,
         is_active=is_active,
+        session_id=session_id,
+        group_id=resolved_group_id,
     )
+
+
+# ---------------------------------------------------------------------------
+# Group resolution (internal)
+# ---------------------------------------------------------------------------
+
+
+async def _resolve_group_id(
+    conn_or_pool: asyncpg.Connection | asyncpg.Pool,
+    *,
+    profiles_id: UUID,
+    session_id: UUID | None = None,
+    draft_id: UUID | None = None,
+    attempt_id: UUID | None = None,
+    test_id: UUID | None = None,
+    artifact_type: str | None = None,
+) -> UUID | None:
+    """Resolve a group_id from context hints, or create a fresh one.
+
+    Priority:
+      1. attempt_id → active chat → group_id
+      2. test_id → latest invocation → group_id
+      3. draft_id → draft's group_id
+      4. session_id available → create fresh group
+    """
+    from app.infra.auth.group import resolve_group
+
+    use_pool = isinstance(conn_or_pool, asyncpg.Pool)
+
+    if use_pool:
+        async with conn_or_pool.acquire() as conn:
+            result = await resolve_group(
+                conn,
+                profiles_id=profiles_id,
+                attempt_id=attempt_id,
+                test_id=test_id,
+                draft_id=draft_id,
+                artifact_type=artifact_type,
+            )
+    else:
+        result = await resolve_group(
+            conn_or_pool,
+            profiles_id=profiles_id,
+            attempt_id=attempt_id,
+            test_id=test_id,
+            draft_id=draft_id,
+            artifact_type=artifact_type,
+        )
+
+    if result and result.group_id:
+        return UUID(result.group_id)
+    return None
 
 
 async def _empty() -> list:

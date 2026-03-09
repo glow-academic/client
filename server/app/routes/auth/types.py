@@ -9,12 +9,6 @@ from pydantic import BaseModel
 
 from app.infra.auth.settings import SettingsThemeResult
 from app.infra.profile_identity_context import ProfileIdentityContext
-from app.routes.auth.route_permissions import (
-    BreadcrumbItem,
-    PageAccess,
-    PageMetadata,
-    SidebarSection,
-)
 from app.routes.shared_types import (
     QGetAgentsV4Item,
     QGetCohortsV4Item,
@@ -102,8 +96,6 @@ class GetProfileContextApiResponse(BaseModel):
     # Routing
     scoped_roles: list[str] | None = None
     available_sections: list[str] | None = None
-    available_routes: list[str] | None = None
-    redirect_path: str | None = None
     # Settings
     settings_id: str | None = None
     settings_success_threshold: int | None = None
@@ -119,11 +111,6 @@ class GetProfileContextApiResponse(BaseModel):
     actor_name: str | None = None
     # Artifact generation capability
     artifact_has_generate: dict[str, bool] | None = None
-    # Server-driven routing
-    sidebar_routes: list[SidebarSection] | None = None
-    breadcrumbs: list[BreadcrumbItem] | None = None
-    page_access: PageAccess | None = None
-    page_metadata: PageMetadata | None = None
 
 
 class GetAuthProfileApiResponse(BaseModel):
@@ -136,8 +123,6 @@ class GetAuthProfileApiResponse(BaseModel):
     active: bool | None = None
     scoped_roles: list[str] | None = None
     available_sections: list[str] | None = None
-    available_routes: list[str] | None = None
-    redirect_path: str | None = None
     role_resources: list[QGetProfileContextV4RoleResource] | None = None
     session_id: UUID | None = None
     actor_name: str | None = None
@@ -155,15 +140,6 @@ class GetAuthSettingsApiResponse(BaseModel):
     agents: list[QGetAgentsV4Item] | None = None
     tools: list[QGetToolsV4Item] | None = None
     artifact_has_generate: dict[str, bool] | None = None
-
-
-class GetAuthPageApiResponse(BaseModel):
-    """Response for POST /auth/page — server-driven routing metadata."""
-
-    sidebar_routes: list[SidebarSection] | None = None
-    breadcrumbs: list[BreadcrumbItem] | None = None
-    page_access: PageAccess | None = None
-    page_metadata: PageMetadata | None = None
 
 
 class GetDraftsApiResponse(BaseModel):

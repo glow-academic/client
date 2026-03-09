@@ -35,8 +35,10 @@ import {
 } from "@/lib/resources/action-builders";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-type SaveFieldIn = InputOf<"/api/v5/artifacts/fields/save", "post">;
-type SaveFieldOut = OutputOf<"/api/v5/artifacts/fields/save", "post">;
+type CreateFieldIn = InputOf<"/api/v5/artifacts/fields/create", "post">;
+type CreateFieldOut = OutputOf<"/api/v5/artifacts/fields/create", "post">;
+type UpdateFieldIn = InputOf<"/api/v5/artifacts/fields/update", "post">;
+type UpdateFieldOut = OutputOf<"/api/v5/artifacts/fields/update", "post">;
 type PatchFieldDraftIn = InputOf<"/api/v5/artifacts/fields/draft", "patch">;
 type PatchFieldDraftOut = OutputOf<"/api/v5/artifacts/fields/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -61,7 +63,9 @@ type FieldResourceType =
 
 type FieldFormState = {
   name_id: string | null;
+  name: string | null;
   description_id: string | null;
+  description: string | null;
   active_flag_id: string | null;
   department_ids: string[];
   conditional_parameter_ids: string[];
@@ -75,7 +79,8 @@ type FlushResult = {
 export interface FieldProps {
   fieldId?: string;
   fieldData?: FieldData;
-  saveFieldAction?: (input: SaveFieldIn) => Promise<SaveFieldOut>;
+  createFieldAction?: (input: CreateFieldIn) => Promise<CreateFieldOut>;
+  updateFieldAction?: (input: UpdateFieldIn) => Promise<UpdateFieldOut>;
   patchFieldDraftAction?: (
     input: PatchFieldDraftIn,
   ) => Promise<PatchFieldDraftOut>;
@@ -115,7 +120,8 @@ const FIELD_RESOURCES: ResourceConfig[] = [
 function FieldComponent({
   fieldId,
   fieldData,
-  saveFieldAction,
+  createFieldAction,
+  updateFieldAction,
   patchFieldDraftAction,
   createNamesAction,
   createDescriptionsAction,
@@ -147,7 +153,9 @@ function FieldComponent({
     if (!stableFieldData) {
       return {
         name_id: null,
+        name: null,
         description_id: null,
+        description: null,
         active_flag_id: null,
         department_ids: [],
         conditional_parameter_ids: [],
@@ -156,7 +164,9 @@ function FieldComponent({
 
     return {
       name_id: stableFieldData.names?.resource?.id ?? null,
+      name: null,
       description_id: stableFieldData.descriptions?.resource?.id ?? null,
+      description: null,
       active_flag_id: stableFieldData.flags?.resource?.flag_option_id ?? null,
       department_ids: (stableFieldData.departments?.current ?? [])
         .map((d) => d.department_id)
@@ -237,6 +247,8 @@ function FieldComponent({
     [stableFieldData],
   );
 
+  const serverSyncPendingRef = useRef(false);
+
   const patchActionRef = useRef<
     | ((
         payload: Record<string, unknown>,
@@ -250,29 +262,34 @@ function FieldComponent({
       return;
     }
     patchActionRef.current = async (payload: Record<string, unknown>) => {
-      return patchFieldDraftAction({
+      const result = await patchFieldDraftAction({
         body: payload as PatchFieldDraftIn["body"],
       });
+      const fs = result?.form_state;
+      if (fs) {
+        serverSyncPendingRef.current = true;
+        setFormState((prev) => ({
+          ...prev,
+          name_id: fs.name_id ?? prev.name_id,
+          name: fs.name_id ? null : prev.name,
+          description_id: fs.description_id ?? prev.description_id,
+          description: fs.description_id ? null : prev.description,
+          active_flag_id: fs.flag_id ?? prev.active_flag_id,
+          department_ids: fs.department_ids ?? prev.department_ids,
+          conditional_parameter_ids: fs.conditional_parameter_ids ?? prev.conditional_parameter_ids,
+        }));
+        requestAnimationFrame(() => {
+          serverSyncPendingRef.current = false;
+        });
+      }
+      return result;
     };
   }, [patchFieldDraftAction]);
 
-  const formStateKey = useMemo(
-    () =>
-      JSON.stringify({
-        name_id: formState.name_id,
-        description_id: formState.description_id,
-        active_flag_id: formState.active_flag_id,
-        department_ids: formState.department_ids,
-        conditional_parameter_ids: formState.conditional_parameter_ids,
-      }),
-    [
-      formState.name_id,
-      formState.description_id,
-      formState.active_flag_id,
-      formState.department_ids,
-      formState.conditional_parameter_ids,
-    ],
-  );
+  const formStateKey = useMemo(() => {
+    if (serverSyncPendingRef.current) return undefined;
+    return JSON.stringify(formState);
+  }, [formState]);
 
   const hasResourceIds = checkHasResourceIds(
     FIELD_RESOURCES,
@@ -285,7 +302,8 @@ function FieldComponent({
       expectedVersion: number,
       flushResults?: Record<string, unknown>,
     ) => {
-      return {
+      const currentFormState = formStateRef.current as unknown as FieldFormState;
+      const base: Record<string, unknown> = {
         input_draft_id: draftId || null,
         group_id: stableFieldData?.group_id ?? null,
         ...buildDraftPayload(FIELD_RESOURCES, {
@@ -298,6 +316,18 @@ function FieldComponent({
         }),
         expected_version: expectedVersion,
       };
+
+      // Overlay value fields (single-select values clear the corresponding ID)
+      if (currentFormState.name != null) {
+        base.name = currentFormState.name;
+        delete base.name_id;
+      }
+      if (currentFormState.description != null) {
+        base.description = currentFormState.description;
+        delete base.description_id;
+      }
+
+      return base;
     },
     [stableFieldData],
   );
@@ -393,9 +423,6 @@ function FieldComponent({
     if (!profile?.id) {
       throw new Error("Profile not loaded");
     }
-    if (!saveFieldAction) {
-      throw new Error("Save action unavailable");
-    }
     if (!stableFieldData?.group_id) {
       throw new Error("Group ID missing");
     }
@@ -420,23 +447,56 @@ function FieldComponent({
       flushResults as Record<string, unknown>,
     );
 
-    const efs = effectiveFormState as Record<string, unknown>;
-    await saveFieldAction({
-      body: {
-        input_field_id: isEditMode && fieldId ? fieldId : null,
-        name_id: efs["name_id"] as string,
-        description_id: (efs["description_id"] as string) ?? null,
-        flag_id: (efs["active_flag_id"] as string) ?? null,
-        department_ids: (efs["department_ids"] as string[])?.length
-          ? (efs["department_ids"] as string[])
-          : null,
-        conditional_parameter_ids: (
-          efs["conditional_parameter_ids"] as string[]
-        )?.length
-          ? (efs["conditional_parameter_ids"] as string[])
-          : null,
-      },
-    });
+    const efs = effectiveFormState as unknown as FieldFormState;
+
+    if (isEditMode && fieldId) {
+      if (!updateFieldAction) {
+        throw new Error("Update action unavailable");
+      }
+      await updateFieldAction({
+        body: {
+          fields: [
+            {
+              field_id: fieldId,
+              name_id: efs.name_id ?? undefined,
+              name: efs.name ?? undefined,
+              description_id: efs.description_id ?? undefined,
+              description: efs.description ?? undefined,
+              flag_id: efs.active_flag_id ?? undefined,
+              department_ids: efs.department_ids?.length
+                ? efs.department_ids
+                : undefined,
+              conditional_parameter_ids: efs.conditional_parameter_ids?.length
+                ? efs.conditional_parameter_ids
+                : undefined,
+            },
+          ],
+        },
+      });
+    } else {
+      if (!createFieldAction) {
+        throw new Error("Create action unavailable");
+      }
+      await createFieldAction({
+        body: {
+          fields: [
+            {
+              name_id: efs.name_id ?? undefined,
+              name: efs.name ?? undefined,
+              description_id: efs.description_id ?? undefined,
+              description: efs.description ?? undefined,
+              flag_id: efs.active_flag_id ?? undefined,
+              department_ids: efs.department_ids?.length
+                ? efs.department_ids
+                : undefined,
+              conditional_parameter_ids: efs.conditional_parameter_ids?.length
+                ? efs.conditional_parameter_ids
+                : undefined,
+            },
+          ],
+        },
+      });
+    }
 
     toast.success(`Field ${isEditMode ? "updated" : "created"} successfully`);
     router.push("/management/fields");
@@ -447,7 +507,8 @@ function FieldComponent({
     isEditMode,
     profile?.id,
     router,
-    saveFieldAction,
+    createFieldAction,
+    updateFieldAction,
     stableFieldData,
   ]);
 
@@ -565,12 +626,14 @@ function FieldComponent({
                 names={stableFieldData?.names?.resources ?? []}
                 disabled={disabled}
                 onNameIdChange={(name_id) =>
-                  setFormState((prev) => ({ ...prev, name_id }))
+                  setFormState((prev) => ({ ...prev, name_id, name: null }))
+                }
+                onNameChange={(name) =>
+                  setFormState((prev) => ({ ...prev, name, name_id: null }))
                 }
 
                 required={stableFieldData?.names?.required ?? false}
                 showAiGenerate={stableFieldData?.names?.show_ai_generate ?? false}
-                create_tool_id={stableFieldData?.names?.create_tool_id ?? null}
                 onGenerate={() => handleGenerateResources(["names"])}
                 createNamesAction={createNamesAction}
                 isAutosaveEnabled={isAutosaveEnabled}
@@ -602,15 +665,15 @@ function FieldComponent({
                 descriptions={stableFieldData?.descriptions?.resources ?? []}
                 disabled={disabled}
                 onDescriptionIdChange={(description_id) =>
-                  setFormState((prev) => ({ ...prev, description_id }))
+                  setFormState((prev) => ({ ...prev, description_id, description: null }))
+                }
+                onDescriptionChange={(description) =>
+                  setFormState((prev) => ({ ...prev, description, description_id: null }))
                 }
                 required={stableFieldData?.descriptions?.required ?? false}
 
                 showAiGenerate={
                   stableFieldData?.descriptions?.show_ai_generate ?? false
-                }
-                create_tool_id={
-                  stableFieldData?.descriptions?.create_tool_id ?? null
                 }
                 onGenerate={() => handleGenerateResources(["descriptions"])}
                 createDescriptionsAction={createDescriptionsAction}

@@ -34,7 +34,7 @@ async def get_emails(
 
     rows = await conn.fetch(
         """
-        SELECT id, email,
+        SELECT id, email, is_primary,
                created_at, active, mcp, generated
         FROM emails_resource
         WHERE id = ANY($1)
@@ -47,6 +47,7 @@ async def get_emails(
         GetEmailResponse(
             id=r["id"],
             email=r["email"],
+            is_primary=r["is_primary"],
             created_at=r["created_at"],
             active=r["active"],
             mcp=r["mcp"],

@@ -18,8 +18,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type GetFieldIn = InputOf<"/api/v5/artifacts/fields/get", "post">;
 type GetFieldOut = OutputOf<"/api/v5/artifacts/fields/get", "post">;
-type SaveFieldIn = InputOf<"/api/v5/artifacts/fields/save", "post">;
-type SaveFieldOut = OutputOf<"/api/v5/artifacts/fields/save", "post">;
+type UpdateFieldIn = InputOf<"/api/v5/artifacts/fields/update", "post">;
+type UpdateFieldOut = OutputOf<"/api/v5/artifacts/fields/update", "post">;
 type PatchFieldDraftIn = InputOf<"/api/v5/artifacts/fields/draft", "patch">;
 type PatchFieldDraftOut = OutputOf<"/api/v5/artifacts/fields/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -77,26 +77,9 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveField(input: SaveFieldIn): Promise<SaveFieldOut> {
+async function updateField(input: UpdateFieldIn): Promise<UpdateFieldOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // Use timeout wrapper for robust API calls
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-  try {
-    const result = await api.post("/artifacts/fields/save", input, {
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    return result;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new Error("Request timeout - please try again");
-    }
-    throw error;
-  }
+  return api.post("/artifacts/fields/update", input);
 }
 
 async function patchFieldDraft(
@@ -195,7 +178,7 @@ export default async function FieldEditPage({
             key={q.draftId || "no-draft"} // Force remount when draftId changes
             fieldId={fieldId}
             fieldData={fieldData}
-            saveFieldAction={saveField}
+            updateFieldAction={updateField}
             patchFieldDraftAction={patchFieldDraft}
             createNamesAction={createNames}
             createDescriptionsAction={createDescriptions}
@@ -230,6 +213,6 @@ export type {
   GetFieldOut,
   PatchFieldDraftIn,
   PatchFieldDraftOut,
-  SaveFieldIn,
-  SaveFieldOut,
+  UpdateFieldIn,
+  UpdateFieldOut,
 };

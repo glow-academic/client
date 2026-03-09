@@ -262,6 +262,16 @@ class PatchFieldDraftApiRequest(BaseModel):
     conditional_parameter_ids: list[UUID] | None = None
 
 
+class FieldDraftFormState(BaseModel):
+    """Server-authoritative form state returned after draft save."""
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID]
+    conditional_parameter_ids: list[UUID]
+
+
 class PatchFieldDraftApiResponse(BaseModel):
     """Response model for new-style field draft endpoint."""
 
@@ -269,6 +279,7 @@ class PatchFieldDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+    form_state: FieldDraftFormState | None = None
 
 
 # ========== Delete Endpoint Types ==========

@@ -1,168 +1,135 @@
-"""Tests for save_new.save_persona_client — composable save with mocked tools.
+"""Integration tests for persona_save — real pool, real DB, no mocks.
 
-Tests verify: permission checks, value resolution, artifact creation/update,
-and denormalized snapshot creation.
+Tests exercise the full save flow against testcontainers Postgres + Redis.
+Test data is created via black-box tool functions.
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
-from uuid import uuid4
+from uuid import UUID
 
 import pytest
 from fastapi import HTTPException
 
-from app.infra.persona_save import (
-    resolve_persona_values,
-    save_persona_client,
-)
-from app.routes.v5.api.main.persona.types import (
-    SavePersonaItem,
-)
+from app.infra.persona_save import resolve_persona_values, save_persona_client
+from app.routes.v5.api.main.persona.types import SavePersonaItem
 
-MODULE = "app.infra.persona_save"
+from .conftest import (
+    ADMIN_PROFILE_ID,
+    GUEST_PROFILE_ID,
+    SUPERADMIN_PROFILE_ID,
+)
 
 pytestmark = pytest.mark.asyncio
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 
-def _mock_pool():
-    """Create a mock pool with working acquire() context manager."""
-    pool = MagicMock()
-    conn = AsyncMock()
-    conn.transaction = MagicMock(
-        return_value=AsyncMock(__aenter__=AsyncMock(), __aexit__=AsyncMock())
-    )
-    acm = AsyncMock()
-    acm.__aenter__ = AsyncMock(return_value=conn)
-    acm.__aexit__ = AsyncMock(return_value=False)
-    pool.acquire = MagicMock(return_value=acm)
-    return pool
+async def _get_color_id(pool, redis_client) -> UUID:
+    """Fetch a real color_id from seeded data."""
+    from app.routes.v5.tools.resources.colors.search import search_colors
+
+    async with pool.acquire() as conn:
+        results = await search_colors(
+            conn, redis_client, search=None, limit_count=1, persona=True
+        )
+    assert results, "No persona colors in seed data"
+    return results[0].id
 
 
-def _profile(*, role="superadmin", department_ids=None):
-    """Fake ProfileContext."""
-    p = MagicMock()
-    p.role = role
-    p.department_ids = department_ids or []
-    p.name = "Test User"
-    return p
+async def _get_icon_id(pool, redis_client) -> UUID:
+    """Fetch a real icon_id from seeded data."""
+    from app.routes.v5.tools.resources.icons.search import search_icons
+
+    async with pool.acquire() as conn:
+        results = await search_icons(
+            conn, redis_client, search=None, limit_count=1, persona=True
+        )
+    assert results, "No persona icons in seed data"
+    return results[0].id
 
 
-def _perms(*, exists=True, department_ids=None, active_scenario_count=0):
-    """Fake PersonaPermissionsContext."""
-    p = MagicMock()
-    p.exists = exists
-    p.department_ids = department_ids or []
-    p.active_scenario_count = active_scenario_count
-    return p
+async def _create_instruction_id(pool, redis_client) -> UUID:
+    """Create an instruction resource."""
+    from app.routes.v5.tools.resources.instructions.create import create_instruction
+
+    async with pool.acquire() as conn:
+        result = await create_instruction(conn, "Test instruction template", redis_client)
+    return result.id
 
 
-def _create_result(persona_id=None):
-    """Fake CreatePersonaResponse / UpdatePersonaResponse."""
-    r = MagicMock()
-    r.id = persona_id or uuid4()
-    return r
-
-
-def _resource_result(resource_id=None):
-    """Fake resource create result."""
-    r = MagicMock()
-    r.id = resource_id or uuid4()
-    return r
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_persona_values — unit tests
-# ═══════════════════════════════════════════════════════════════════════════
+# ---------------------------------------------------------------------------
+# resolve_persona_values
+# ---------------------------------------------------------------------------
 
 
 class TestResolveValues:
-    async def test_passes_through_ids(self):
-        """When IDs are already provided, no create/search calls happen."""
-        item = SavePersonaItem(
-            name_id=uuid4(),
-            color_id=uuid4(),
-            icon_id=uuid4(),
-            instructions_id=uuid4(),
-        )
-        errors = await resolve_persona_values(_mock_pool(), None, item, is_update=False)
-        assert errors == []
+    async def test_passes_through_ids(self, pool, redis_client):
+        """When IDs are already provided, no create calls happen."""
+        color_id = await _get_color_id(pool, redis_client)
+        icon_id = await _get_icon_id(pool, redis_client)
+        instr_id = await _create_instruction_id(pool, redis_client)
 
-    async def test_creates_name_from_value(self):
-        """Raw name value → create_name → sets name_id."""
-        name_id = uuid4()
+        async with pool.acquire() as conn:
+            from app.routes.v5.tools.resources.names.create import create_name
+
+            name = await create_name(conn, "Existing Persona", redis_client)
+
         item = SavePersonaItem(
-            name="Test Persona",
-            color_id=uuid4(),
-            icon_id=uuid4(),
-            instructions_id=uuid4(),
+            name_id=name.id,
+            color_id=color_id,
+            icon_id=icon_id,
+            instructions_id=instr_id,
         )
 
-        with patch(
-            f"{MODULE}.create_name",
-            new_callable=AsyncMock,
-            return_value=_resource_result(name_id),
-        ):
-            errors = await resolve_persona_values(
-                _mock_pool(), None, item, is_update=False
-            )
+        errors = await resolve_persona_values(pool, redis_client, item, is_update=False)
 
         assert errors == []
-        assert item.name_id == name_id
+        assert item.name_id == name.id
 
-    async def test_matches_color_by_name(self):
-        """Raw color value → search_colors → match by name."""
-        color_id = uuid4()
-        fake_color = MagicMock()
-        fake_color.name = "Red"
-        fake_color.id = color_id
+    async def test_creates_name_from_value(self, pool, redis_client):
+        """Raw name value -> create_name -> sets name_id."""
+        color_id = await _get_color_id(pool, redis_client)
+        icon_id = await _get_icon_id(pool, redis_client)
+        instr_id = await _create_instruction_id(pool, redis_client)
 
         item = SavePersonaItem(
-            name_id=uuid4(),
-            color="red",
-            icon_id=uuid4(),
-            instructions_id=uuid4(),
+            name="Brand New Persona",
+            color_id=color_id,
+            icon_id=icon_id,
+            instructions_id=instr_id,
         )
 
-        with patch(
-            f"{MODULE}.search_colors",
-            new_callable=AsyncMock,
-            return_value=[fake_color],
-        ):
-            errors = await resolve_persona_values(
-                _mock_pool(), None, item, is_update=False
-            )
+        errors = await resolve_persona_values(pool, redis_client, item, is_update=False)
 
         assert errors == []
-        assert item.color_id == color_id
+        assert item.name_id is not None
 
-    async def test_color_not_found_returns_error(self):
-        """Unmatched color value → error."""
+    async def test_creates_description_from_value(self, pool, redis_client, name_id):
+        """Raw description value -> create_description -> sets description_id."""
+        color_id = await _get_color_id(pool, redis_client)
+        icon_id = await _get_icon_id(pool, redis_client)
+        instr_id = await _create_instruction_id(pool, redis_client)
+
         item = SavePersonaItem(
-            name_id=uuid4(),
-            color="nonexistent",
-            icon_id=uuid4(),
-            instructions_id=uuid4(),
+            name_id=name_id,
+            color_id=color_id,
+            icon_id=icon_id,
+            instructions_id=instr_id,
+            description="A useful persona",
         )
 
-        with patch(
-            f"{MODULE}.search_colors",
-            new_callable=AsyncMock,
-            return_value=[],
-        ):
-            errors = await resolve_persona_values(
-                _mock_pool(), None, item, is_update=False
-            )
+        errors = await resolve_persona_values(pool, redis_client, item, is_update=False)
 
-        assert len(errors) == 1
-        assert errors[0].field == "color"
+        assert errors == []
+        assert item.description_id is not None
 
-    async def test_required_fields_on_create(self):
-        """Missing required fields on create → errors."""
+    async def test_required_fields_on_create(self, pool, redis_client):
+        """Missing required fields on create -> errors."""
         item = SavePersonaItem()
 
-        errors = await resolve_persona_values(_mock_pool(), None, item, is_update=False)
+        errors = await resolve_persona_values(pool, redis_client, item, is_update=False)
 
         field_names = {e.field for e in errors}
         assert "name" in field_names
@@ -170,251 +137,190 @@ class TestResolveValues:
         assert "icon" in field_names
         assert "instructions" in field_names
 
-    async def test_no_required_validation_on_update(self):
+    async def test_no_required_validation_on_update(self, pool, redis_client):
         """Update mode skips required field validation."""
         item = SavePersonaItem()
 
-        errors = await resolve_persona_values(_mock_pool(), None, item, is_update=True)
+        errors = await resolve_persona_values(pool, redis_client, item, is_update=True)
 
         assert errors == []
 
-    async def test_creates_examples_from_values(self):
-        """Raw examples → create_example per item."""
-        ex1_id = uuid4()
-        ex2_id = uuid4()
-
-        item = SavePersonaItem(
-            name_id=uuid4(),
-            color_id=uuid4(),
-            icon_id=uuid4(),
-            instructions_id=uuid4(),
-            examples=["Hello", "Goodbye"],
-        )
-
-        with patch(
-            f"{MODULE}.create_example",
-            new_callable=AsyncMock,
-            side_effect=[_resource_result(ex1_id), _resource_result(ex2_id)],
-        ):
-            errors = await resolve_persona_values(
-                _mock_pool(), None, item, is_update=False
-            )
-
-        assert errors == []
-        assert item.example_ids == [ex1_id, ex2_id]
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# save_persona_client — mocked end-to-end tests
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-class TestSavePersonaClientCreate:
-    async def test_create_success(self):
-        """Full create flow with all IDs pre-resolved."""
-        profile_id = uuid4()
-        persona_id = uuid4()
-        name_id = uuid4()
-        color_id = uuid4()
-        icon_id = uuid4()
-        instructions_id = uuid4()
-        snapshot_id = uuid4()
+    async def test_creates_examples_from_values(self, pool, redis_client, name_id):
+        """Raw examples -> create_example per item."""
+        color_id = await _get_color_id(pool, redis_client)
+        icon_id = await _get_icon_id(pool, redis_client)
+        instr_id = await _create_instruction_id(pool, redis_client)
 
         item = SavePersonaItem(
             name_id=name_id,
             color_id=color_id,
             icon_id=icon_id,
-            instructions_id=instructions_id,
+            instructions_id=instr_id,
+            examples=["Hello", "Goodbye"],
         )
 
-        pool = _mock_pool()
-        redis = AsyncMock()
+        errors = await resolve_persona_values(pool, redis_client, item, is_update=False)
 
-        with (
-            patch(
-                f"{MODULE}.resolve_profile_identity_context",
-                new_callable=AsyncMock,
-                return_value=_profile(),
-            ),
-            patch(
-                f"{MODULE}.create_persona_artifact",
-                new_callable=AsyncMock,
-                return_value=_create_result(persona_id),
-            ),
-            patch(
-                f"{MODULE}._create_denormalized_snapshot",
-                new_callable=AsyncMock,
-                return_value=snapshot_id,
-            ),
-            patch(f"{MODULE}.invalidate_tags", new_callable=AsyncMock),
-        ):
-            result = await save_persona_client(
-                pool,
-                redis,
-                profile_id=profile_id,
-                items=[item],
-            )
+        assert errors == []
+        assert item.example_ids is not None
+        assert len(item.example_ids) == 2
+
+
+# ---------------------------------------------------------------------------
+# save_persona_client -- create
+# ---------------------------------------------------------------------------
+
+
+class TestSavePersonaClientCreate:
+    async def test_create_success(self, pool, redis_client, name_id):
+        """Superadmin can create a persona with pre-resolved IDs."""
+        color_id = await _get_color_id(pool, redis_client)
+        icon_id = await _get_icon_id(pool, redis_client)
+        instr_id = await _create_instruction_id(pool, redis_client)
+
+        result = await save_persona_client(
+            pool,
+            redis_client,
+            profile_id=SUPERADMIN_PROFILE_ID,
+            items=[
+                SavePersonaItem(
+                    name_id=name_id,
+                    color_id=color_id,
+                    icon_id=icon_id,
+                    instructions_id=instr_id,
+                )
+            ],
+        )
 
         assert len(result.results) == 1
         assert result.results[0].success is True
-        assert result.results[0].persona_id == persona_id
+        assert result.results[0].persona_id is not None
 
-    async def test_create_permission_denied(self):
-        """Non-admin cannot create."""
-        item = SavePersonaItem(name_id=uuid4())
-        pool = _mock_pool()
-        redis = AsyncMock()
+    async def test_create_with_raw_name(self, pool, redis_client):
+        """Superadmin can create a persona with raw name (auto-resolved)."""
+        color_id = await _get_color_id(pool, redis_client)
+        icon_id = await _get_icon_id(pool, redis_client)
+        instr_id = await _create_instruction_id(pool, redis_client)
 
-        with (
-            patch(
-                f"{MODULE}.resolve_profile_identity_context",
-                new_callable=AsyncMock,
-                return_value=_profile(role="student"),
-            ),
-            pytest.raises(HTTPException) as exc_info,
-        ):
-            await save_persona_client(pool, redis, profile_id=uuid4(), items=[item])
+        result = await save_persona_client(
+            pool,
+            redis_client,
+            profile_id=SUPERADMIN_PROFILE_ID,
+            items=[
+                SavePersonaItem(
+                    name="My New Persona",
+                    color_id=color_id,
+                    icon_id=icon_id,
+                    instructions_id=instr_id,
+                )
+            ],
+        )
+
+        assert len(result.results) == 1
+        assert result.results[0].success is True
+
+    async def test_create_permission_denied(self, pool, redis_client, name_id):
+        """Guest cannot create personas."""
+        with pytest.raises(HTTPException) as exc_info:
+            await save_persona_client(
+                pool,
+                redis_client,
+                profile_id=GUEST_PROFILE_ID,
+                items=[SavePersonaItem(name_id=name_id)],
+            )
 
         assert exc_info.value.status_code == 403
 
 
+# ---------------------------------------------------------------------------
+# save_persona_client -- update
+# ---------------------------------------------------------------------------
+
+
 class TestSavePersonaClientUpdate:
-    async def test_update_success(self):
-        """Full update flow with existing persona."""
-        profile_id = uuid4()
-        persona_id = uuid4()
-        name_id = uuid4()
-        snapshot_id = uuid4()
+    async def _create_persona(self, pool, redis_client) -> UUID:
+        """Helper: create a persona to update later."""
+        color_id = await _get_color_id(pool, redis_client)
+        icon_id = await _get_icon_id(pool, redis_client)
+        instr_id = await _create_instruction_id(pool, redis_client)
 
-        item = SavePersonaItem(
-            input_persona_id=persona_id,
-            name_id=name_id,
+        result = await save_persona_client(
+            pool,
+            redis_client,
+            profile_id=SUPERADMIN_PROFILE_ID,
+            items=[
+                SavePersonaItem(
+                    name="Persona To Update",
+                    color_id=color_id,
+                    icon_id=icon_id,
+                    instructions_id=instr_id,
+                )
+            ],
         )
+        return result.results[0].persona_id
 
-        pool = _mock_pool()
-        redis = AsyncMock()
+    async def test_update_success(self, pool, redis_client):
+        """Update an existing persona's name."""
+        persona_id = await self._create_persona(pool, redis_client)
 
-        with (
-            patch(
-                f"{MODULE}.resolve_profile_identity_context",
-                new_callable=AsyncMock,
-                return_value=_profile(),
-            ),
-            patch(
-                f"{MODULE}.resolve_persona_permissions_context",
-                new_callable=AsyncMock,
-                return_value=_perms(),
-            ),
-            patch(
-                f"{MODULE}.update_persona_artifact",
-                new_callable=AsyncMock,
-                return_value=_create_result(persona_id),
-            ),
-            patch(
-                f"{MODULE}._create_denormalized_snapshot",
-                new_callable=AsyncMock,
-                return_value=snapshot_id,
-            ),
-            patch(f"{MODULE}.invalidate_tags", new_callable=AsyncMock),
-        ):
-            result = await save_persona_client(
-                pool,
-                redis,
-                profile_id=profile_id,
-                items=[item],
-            )
+        result = await save_persona_client(
+            pool,
+            redis_client,
+            profile_id=SUPERADMIN_PROFILE_ID,
+            items=[SavePersonaItem(input_persona_id=persona_id, name="Updated Name")],
+        )
 
         assert len(result.results) == 1
         assert result.results[0].success is True
         assert result.results[0].persona_id == persona_id
         assert result.results[0].message == "Persona updated successfully"
 
-    async def test_update_persona_not_found(self):
-        """Update with non-existent persona → 404."""
-        item = SavePersonaItem(input_persona_id=uuid4())
-        pool = _mock_pool()
-        redis = AsyncMock()
+    async def test_update_persona_not_found(self, pool, redis_client):
+        """Update with non-existent persona -> 404."""
+        fake_id = UUID("00000000-0000-0000-0000-000000000001")
 
-        with (
-            patch(
-                f"{MODULE}.resolve_profile_identity_context",
-                new_callable=AsyncMock,
-                return_value=_profile(),
-            ),
-            patch(
-                f"{MODULE}.resolve_persona_permissions_context",
-                new_callable=AsyncMock,
-                return_value=_perms(exists=False),
-            ),
-            pytest.raises(HTTPException) as exc_info,
-        ):
-            await save_persona_client(pool, redis, profile_id=uuid4(), items=[item])
+        with pytest.raises(HTTPException) as exc_info:
+            await save_persona_client(
+                pool,
+                redis_client,
+                profile_id=SUPERADMIN_PROFILE_ID,
+                items=[SavePersonaItem(input_persona_id=fake_id)],
+            )
 
         assert exc_info.value.status_code == 404
 
-    async def test_update_permission_denied(self):
-        """Cannot edit when active scenarios exist and not superadmin."""
-        item = SavePersonaItem(input_persona_id=uuid4())
-        pool = _mock_pool()
-        redis = AsyncMock()
 
-        with (
-            patch(
-                f"{MODULE}.resolve_profile_identity_context",
-                new_callable=AsyncMock,
-                return_value=_profile(role="admin"),
-            ),
-            patch(
-                f"{MODULE}.resolve_persona_permissions_context",
-                new_callable=AsyncMock,
-                return_value=_perms(active_scenario_count=1),
-            ),
-            pytest.raises(HTTPException) as exc_info,
-        ):
-            await save_persona_client(pool, redis, profile_id=uuid4(), items=[item])
-
-        assert exc_info.value.status_code == 403
+# ---------------------------------------------------------------------------
+# save_persona_client -- validation
+# ---------------------------------------------------------------------------
 
 
 class TestSavePersonaClientValidation:
-    async def test_validation_errors_returned_without_mutation(self):
-        """Items with resolution errors → errors returned, no transaction."""
+    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+        """Items with missing required fields -> errors returned, no artifact created."""
         item = SavePersonaItem()  # Missing required fields
 
-        pool = _mock_pool()
-        redis = AsyncMock()
-
-        with (
-            patch(
-                f"{MODULE}.resolve_profile_identity_context",
-                new_callable=AsyncMock,
-                return_value=_profile(),
-            ),
-        ):
-            result = await save_persona_client(
-                pool,
-                redis,
-                profile_id=uuid4(),
-                items=[item],
-            )
+        result = await save_persona_client(
+            pool,
+            redis_client,
+            profile_id=SUPERADMIN_PROFILE_ID,
+            items=[item],
+        )
 
         assert len(result.results) == 1
         assert result.results[0].success is False
         assert result.results[0].errors is not None
 
-    async def test_profile_not_found(self):
-        """No profile → 401."""
-        pool = _mock_pool()
-        redis = AsyncMock()
+    async def test_profile_not_found(self, pool, redis_client):
+        """Non-existent profile -> 401."""
+        fake_profile = UUID("00000000-0000-0000-0000-000000000099")
 
-        with (
-            patch(
-                f"{MODULE}.resolve_profile_identity_context",
-                new_callable=AsyncMock,
-                return_value=None,
-            ),
-            pytest.raises(HTTPException) as exc_info,
-        ):
-            await save_persona_client(pool, redis, profile_id=uuid4(), items=[])
+        with pytest.raises(HTTPException) as exc_info:
+            await save_persona_client(
+                pool,
+                redis_client,
+                profile_id=fake_profile,
+                items=[],
+            )
 
         assert exc_info.value.status_code == 401

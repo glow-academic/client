@@ -14,12 +14,8 @@ from app.infra.auth.simulatable import SIMULATABLE_ROLES
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.sessions.get import get_session_internal
-from app.routes.auth.callback import resolve_redirect_path
 from app.routes.auth.permissions import convert_role
-from app.routes.auth.route_permissions import (
-    compute_available_routes,
-    compute_available_sections,
-)
+from app.routes.auth.route_permissions import compute_available_sections
 from app.routes.auth.types import AuthProfileInternalData, GetAuthProfileApiResponse
 from app.routes.shared_types import GetProfileContextApiRequest
 from app.routes.v5.tools.artifacts.cohort.get import get_cohorts as get_cohort_artifacts
@@ -154,14 +150,7 @@ async def get_auth_profile(
 
         pass1_start = time.time()
 
-        async def fetch_redirect():
-            async with pool.acquire() as c:
-                return await resolve_redirect_path(c, profile_id)
-
-        data, redirect_path = await asyncio.gather(
-            get_auth_profile_internal(conn, profile_id, bypass_cache),
-            fetch_redirect(),
-        )
+        data = await get_auth_profile_internal(conn, profile_id, bypass_cache)
         pass1_time = (time.time() - pass1_start) * 1000
 
         identity = data.identity
@@ -170,7 +159,6 @@ async def get_auth_profile(
         response.headers["X-Pass1-Time"] = f"{pass1_time:.1f}"
 
         user_artifacts = identity.role_artifacts or []
-        available_routes = compute_available_routes(user_artifacts)
         available_sections = compute_available_sections(user_artifacts)
 
         return GetAuthProfileApiResponse(
@@ -181,8 +169,6 @@ async def get_auth_profile(
             active=identity.is_active,
             scoped_roles=data.scoped_roles,
             available_sections=available_sections,
-            available_routes=available_routes,
-            redirect_path=redirect_path,
             role_resources=data.role_resources,
             session_id=data.session_id,
             actor_name=identity.name,

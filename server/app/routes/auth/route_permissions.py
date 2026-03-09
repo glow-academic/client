@@ -861,50 +861,8 @@ ROUTE_PERMISSIONS: list[SectionPermission] = [
 ]
 
 # ---------------------------------------------------------------------------
-# Lookup helpers (built once at import time)
-# ---------------------------------------------------------------------------
-
-# Map section name → SectionPermission for fast lookup
-_SECTION_MAP: dict[str, SectionPermission] = {
-    sp.section: sp for sp in ROUTE_PERMISSIONS
-}
-
-# Map route path → RoutePermission for fast lookup
-_ROUTE_MAP: dict[str, RoutePermission] = {}
-for _sp in ROUTE_PERMISSIONS:
-    for _rp in _sp.routes:
-        _ROUTE_MAP[_rp.path] = _rp
-
-# Map route path → section name
-_ROUTE_TO_SECTION: dict[str, str] = {}
-for _sp in ROUTE_PERMISSIONS:
-    for _rp in _sp.routes:
-        _ROUTE_TO_SECTION[_rp.path] = _sp.section
-
-# UUID regex for detecting dynamic segments
-_UUID_RE = re.compile(
-    r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE
-)
-
-
-def _is_uuid(segment: str) -> bool:
-    return bool(_UUID_RE.match(segment))
-
-
-# ---------------------------------------------------------------------------
 # Computation functions
 # ---------------------------------------------------------------------------
-
-
-def compute_available_routes(user_artifacts: list[str]) -> list[str]:
-    """Expand artifact list into route paths."""
-    artifact_set = set(user_artifacts)
-    routes: list[str] = []
-    for sp in ROUTE_PERMISSIONS:
-        for rp in sp.routes:
-            if rp.artifact and rp.artifact in artifact_set:
-                routes.append(rp.path)
-    return routes
 
 
 def compute_available_sections(user_artifacts: list[str]) -> list[str]:
@@ -915,10 +873,6 @@ def compute_available_sections(user_artifacts: list[str]) -> list[str]:
         if any(rp.artifact in artifact_set for rp in sp.routes if rp.artifact):
             sections.append(sp.section)
     return sections
-
-
-def compute_sidebar_routes(
-    available_sections: list[str],
 ) -> list[SidebarSection]:
     """Build sidebar menu from available sections."""
     result: list[SidebarSection] = []

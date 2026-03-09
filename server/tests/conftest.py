@@ -289,6 +289,28 @@ async def initialize_test_db() -> AsyncGenerator[None, None]:
 
 
 @pytest_asyncio.fixture
+async def pool() -> AsyncGenerator[asyncpg.Pool, None]:
+    """Provide a real asyncpg pool for integration tests.
+
+    Creates a fresh pool per test to avoid event loop issues.
+    Tests using this fixture exercise the real pool.acquire() → conn path,
+    matching production behavior.
+    """
+    global _test_db_url
+
+    if _test_db_url is None:
+        raise RuntimeError(
+            "Test database URL not available. Did initialize_test_db run?"
+        )
+
+    test_pool = await asyncpg.create_pool(_test_db_url, min_size=2, max_size=5)
+    try:
+        yield test_pool
+    finally:
+        await test_pool.close()
+
+
+@pytest_asyncio.fixture
 async def conn() -> AsyncGenerator[asyncpg.Connection, None]:
     """Provide clean database connection with transaction rollback.
 

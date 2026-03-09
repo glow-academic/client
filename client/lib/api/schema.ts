@@ -21303,6 +21303,22 @@ export interface components {
             resources?: unknown[] | null;
         };
         /**
+         * FieldDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        FieldDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids: string[];
+            /** Conditional Parameter Ids */
+            conditional_parameter_ids: string[];
+        };
+        /**
          * FieldFieldError
          * @description Per-field error from value resolution.
          */
@@ -28074,6 +28090,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["FieldDraftFormState"] | null;
         };
         /**
          * PatchModelDraftApiRequest

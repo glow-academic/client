@@ -47,8 +47,6 @@ interface ProfileContextType {
 
   // Permissions data (from server)
   availableSections: string[];
-  availableRoutes: string[];
-  redirectPath: string;
   scopedRoles: string[]; // Roles that the effective profile has scope to see
   roleResources: RoleResourceItem[];
 }
@@ -123,8 +121,6 @@ export function ProfileProviderClient({
 
     // Permissions data (from server)
     availableSections: initial?.available_sections ?? [],
-    availableRoutes: initial?.available_routes ?? [],
-    redirectPath: initial?.redirect_path ?? "/home",
     scopedRoles: initial?.scoped_roles ?? [],
     roleResources: initial?.role_resources ?? [],
   };

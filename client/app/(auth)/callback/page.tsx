@@ -1,23 +1,30 @@
 /**
  * app/(auth)/callback/page.tsx
- * Post-login routing page — resolves redirect_path via lightweight endpoint and redirects.
- * Lives in (auth) group to bypass the (main) layout access checks.
- * Only runs once after auth; users are free to navigate anywhere after.
+ * Post-login routing page — fetches profile and redirects based on role.
+ * Lives in (auth) group to bypass the (main) layout.
  */
 
 import { api } from "@/lib/api/client";
 import { redirect } from "next/navigation";
 
+/** Client-owned routing: role → default landing page */
+const ROLE_REDIRECT: Record<string, string> = {
+  superadmin: "/home",
+  admin: "/home",
+  instructional: "/home",
+  member: "/home",
+  guest: "/practice",
+};
+
 export default async function CallbackPage() {
   let redirectPath = "/home";
 
   try {
-    const res = await api.post("/auth/callback", { body: {} });
-    if (res?.redirect_path) {
-      redirectPath = res.redirect_path;
-    }
+    const profile = await api.post("/auth/profile", { body: {} });
+    const role = profile?.role ?? "guest";
+    redirectPath = ROLE_REDIRECT[role] ?? "/home";
   } catch {
-    // Fallback to /home if endpoint fails
+    // Fallback to /home if profile fetch fails
   }
 
   redirect(redirectPath);
