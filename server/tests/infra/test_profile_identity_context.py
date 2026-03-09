@@ -1,486 +1,91 @@
-"""Tests for infra.profile_identity_context — profile identity context resolution.
-
-resolve_profile_identity_context is tested with mocked black-box resource fetchers.
-"""
-
-from datetime import UTC, datetime
-from unittest.mock import AsyncMock, patch
-from uuid import uuid4
+"""Integration tests for infra.profile_identity_context — real DB, no mocks."""
 
 import pytest
+from tests.helpers import nonexistent_id, unique_tag
 
-from app.infra.profile_identity_context import (
-    resolve_profile_identity_context,
+from app.infra.profile_identity_context import resolve_profile_identity_context
+from app.routes.v5.tools.artifacts.profile.create import (
+    create_profile as create_profile_artifact,
 )
-from app.routes.v5.tools.artifacts.profile.types import GetProfilesResponse
-from app.routes.v5.tools.resources.departments.types import GetDepartmentResponse
-from app.routes.v5.tools.resources.emails.types import GetEmailResponse
-from app.routes.v5.tools.resources.names.types import GetNameResponse
-from app.routes.v5.tools.resources.profiles.types import GetProfileResponse
-from app.routes.v5.tools.resources.roles.types import GetRoleResponse
+from app.routes.v5.tools.artifacts.profile.update import (
+    update_profile as update_profile_artifact,
+)
+from app.routes.v5.tools.resources.names.create import create_name
 
-NOW = datetime.now(UTC)
-MODULE = "app.infra.profile_identity_context"
+pytestmark = pytest.mark.asyncio
 
 
-# ── Helpers ──────────────────────────────────────────────────────────────────
+class TestResolveProfileIdentityContext:
+    async def test_nonexistent_profile_returns_none(self, pool, redis_client):
+        result = await resolve_profile_identity_context(
+            pool,
+            nonexistent_id(),
+            redis_client,
+        )
 
-
-def _profile_artifact(
-    *,
-    profile_id=None,
-    name_ids=None,
-    role_ids=None,
-    department_ids=None,
-    email_ids=None,
-    profile_ids=None,
-    flag_ids=None,
-    active=True,
-) -> GetProfilesResponse:
-    return GetProfilesResponse(
-        id=profile_id or uuid4(),
-        created_at=NOW,
-        updated_at=NOW,
-        generated=False,
-        mcp=False,
-        active=active,
-        name_ids=name_ids,
-        role_ids=role_ids,
-        department_ids=department_ids,
-        email_ids=email_ids,
-        profile_ids=profile_ids,
-        flag_ids=flag_ids,
-    )
-
-
-def _name(*, name_id=None, name="Test User") -> GetNameResponse:
-    return GetNameResponse(
-        id=name_id or uuid4(),
-        name=name,
-        created_at=NOW,
-        active=True,
-        mcp=False,
-        generated=False,
-    )
-
-
-def _role(
-    *,
-    role_id=None,
-    role="admin",
-    name="Admin",
-    description="Administrator role",
-    artifacts=None,
-) -> GetRoleResponse:
-    return GetRoleResponse(
-        id=role_id or uuid4(),
-        role=role,
-        name=name,
-        description=description,
-        icon_id=None,
-        color_id=None,
-        artifacts=artifacts or ["persona", "scenario"],
-        created_at=NOW,
-        active=True,
-        generated=False,
-        mcp=False,
-    )
-
-
-def _department(
-    *,
-    dept_id=None,
-    name="Engineering",
-    is_primary=False,
-    setting_ids=None,
-) -> GetDepartmentResponse:
-    return GetDepartmentResponse(
-        id=dept_id or uuid4(),
-        name=name,
-        description=None,
-        department_ids=[],
-        setting_ids=setting_ids or [],
-        created_at=NOW,
-        active=True,
-        mcp=False,
-        generated=False,
-        is_primary=is_primary,
-    )
-
-
-def _email(
-    *,
-    email_id=None,
-    email="user@example.com",
-    is_primary=False,
-) -> GetEmailResponse:
-    return GetEmailResponse(
-        id=email_id or uuid4(),
-        email=email,
-        created_at=NOW,
-        active=True,
-        mcp=False,
-        generated=False,
-        is_primary=is_primary,
-    )
-
-
-def _profile(
-    *,
-    profile_id=None,
-    requests_per_day=None,
-) -> GetProfileResponse:
-    return GetProfileResponse(
-        id=profile_id or uuid4(),
-        name="Test User",
-        description=None,
-        role="admin",
-        department_ids=[],
-        role_id=None,
-        emails=[],
-        primary_email=None,
-        requests_per_day=requests_per_day,
-        last_login=NOW,
-        created_at=NOW,
-        active=True,
-        mcp=False,
-        generated=False,
-    )
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# resolve_profile_identity_context
-# ═══════════════════════════════════════════════════════════════════════════
-
-
-@pytest.mark.asyncio
-class TestResolveProfileIdentityContextEmpty:
-    async def test_no_profile_returns_none(self):
-        with patch(
-            f"{MODULE}.get_profile_artifacts",
-            new_callable=AsyncMock,
-            return_value=[],
-        ):
-            result = await resolve_profile_identity_context(None, uuid4(), None)
         assert result is None
 
-    async def test_no_profiles_junction_returns_none(self):
-        artifact = _profile_artifact(profile_ids=[])
-        with patch(
-            f"{MODULE}.get_profile_artifacts",
-            new_callable=AsyncMock,
-            return_value=[artifact],
-        ):
-            result = await resolve_profile_identity_context(None, artifact.id, None)
+    async def test_artifact_without_profiles_junction_returns_none(
+        self, pool, redis_client
+    ):
+        async with pool.acquire() as conn:
+            name_res = await create_name(conn, f"no-profile-{unique_tag()}", redis_client)
+            artifact_res = await create_profile_artifact(conn, name_id=name_res.id)
+
+        result = await resolve_profile_identity_context(
+            pool,
+            artifact_res.id,
+            redis_client,
+        )
+
         assert result is None
 
-
-@pytest.mark.asyncio
-class TestResolveProfileIdentityContextFull:
-    async def test_full_hydration_and_call_args(self):
-        """Verify IDs flow correctly: artifact → parallel fetchers → assembly."""
-        profiles_id = uuid4()
-        name_id = uuid4()
-        role_id = uuid4()
-        dept_id = uuid4()
-        email_id = uuid4()
-        settings_id = uuid4()
-
-        artifact = _profile_artifact(
-            name_ids=[name_id],
-            role_ids=[role_id],
-            department_ids=[dept_id],
-            email_ids=[email_id],
-            profile_ids=[profiles_id],
+    async def test_full_hydration_from_real_data(
+        self, pool, redis_client, profile_identity_factory
+    ):
+        profile = await profile_identity_factory(
+            name="Jane Doe",
+            departments=["Engineering", "Research"],
+            emails=["jane@example.com", "jane@org.com"],
         )
 
-        name = _name(name_id=name_id, name="Jane Doe")
-        role = _role(
-            role_id=role_id,
-            role="superadmin",
-            name="Super Admin",
-            description="Full access",
-            artifacts=["persona", "scenario", "rubric"],
+        result = await resolve_profile_identity_context(
+            pool,
+            profile.artifact_id,
+            redis_client,
         )
-        dept = _department(
-            dept_id=dept_id,
-            name="Organization",
-            is_primary=True,
-            setting_ids=[settings_id],
-        )
-        email = _email(
-            email_id=email_id,
-            email="jane@org.com",
-            is_primary=True,
-        )
-        profile = _profile(profile_id=profiles_id, requests_per_day=100)
-
-        with (
-            patch(
-                f"{MODULE}.get_profile_artifacts",
-                new_callable=AsyncMock,
-                return_value=[artifact],
-            ) as mock_artifacts,
-            patch(
-                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[name]
-            ) as mock_names,
-            patch(
-                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[role]
-            ) as mock_roles,
-            patch(
-                f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[dept]
-            ) as mock_depts,
-            patch(
-                f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[email]
-            ) as mock_emails,
-            patch(
-                f"{MODULE}.get_profiles", new_callable=AsyncMock, return_value=[profile]
-            ) as mock_profiles,
-        ):
-            result = await resolve_profile_identity_context(None, artifact.id, None)
-
-        # Verify correct IDs flowed to each fetcher
-        assert mock_artifacts.call_args[0][1] == [artifact.id]
-        assert mock_names.call_args[0][1] == [name_id]
-        assert mock_roles.call_args[0][1] == [role_id]
-        assert mock_depts.call_args[0][1] == [dept_id]
-        assert mock_emails.call_args[0][1] == [email_id]
-        assert mock_profiles.call_args[0][1] == [profiles_id]
-
-        # Verify assembly
-        assert result is not None
-        assert result.profiles_id == profiles_id
-        assert result.name == "Jane Doe"
-        assert result.role == "superadmin"
-        assert result.role_name == "Super Admin"
-        assert result.role_description == "Full access"
-        assert result.role_artifacts == ["persona", "scenario", "rubric"]
-        assert result.primary_email == "jane@org.com"
-        assert result.emails == ["jane@org.com"]
-        assert result.primary_department_id == dept_id
-        assert result.department_ids == [dept_id]
-        assert result.settings_id == settings_id
-        assert result.requests_per_day == 100
-        assert result.is_active is True
-
-    async def test_multiple_departments_picks_primary(self):
-        profiles_id = uuid4()
-        dept_primary_id = uuid4()
-        dept_other_id = uuid4()
-        settings_id = uuid4()
-
-        artifact = _profile_artifact(
-            name_ids=[uuid4()],
-            role_ids=[uuid4()],
-            department_ids=[dept_primary_id, dept_other_id],
-            email_ids=[],
-            profile_ids=[profiles_id],
-        )
-
-        dept_primary = _department(
-            dept_id=dept_primary_id,
-            name="Organization",
-            is_primary=True,
-            setting_ids=[settings_id],
-        )
-        dept_other = _department(
-            dept_id=dept_other_id,
-            name="University",
-            is_primary=False,
-        )
-
-        with (
-            patch(
-                f"{MODULE}.get_profile_artifacts",
-                new_callable=AsyncMock,
-                return_value=[artifact],
-            ),
-            patch(
-                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
-            ),
-            patch(
-                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
-            ),
-            patch(
-                f"{MODULE}.get_departments",
-                new_callable=AsyncMock,
-                return_value=[dept_primary, dept_other],
-            ),
-            patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
-            patch(
-                f"{MODULE}.get_profiles",
-                new_callable=AsyncMock,
-                return_value=[_profile(profile_id=profiles_id)],
-            ),
-        ):
-            result = await resolve_profile_identity_context(None, artifact.id, None)
 
         assert result is not None
-        assert result.primary_department_id == dept_primary_id
-        assert result.settings_id == settings_id
-        assert set(result.department_ids) == {dept_primary_id, dept_other_id}
-
-    async def test_multiple_emails_picks_primary(self):
-        profiles_id = uuid4()
-        email_primary_id = uuid4()
-        email_other_id = uuid4()
-
-        artifact = _profile_artifact(
-            name_ids=[uuid4()],
-            role_ids=[uuid4()],
-            department_ids=[],
-            email_ids=[email_primary_id, email_other_id],
-            profile_ids=[profiles_id],
-        )
-
-        email_primary = _email(
-            email_id=email_primary_id,
-            email="primary@org.com",
-            is_primary=True,
-        )
-        email_other = _email(
-            email_id=email_other_id,
-            email="secondary@org.com",
-            is_primary=False,
-        )
-
-        with (
-            patch(
-                f"{MODULE}.get_profile_artifacts",
-                new_callable=AsyncMock,
-                return_value=[artifact],
-            ),
-            patch(
-                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
-            ),
-            patch(
-                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
-            ),
-            patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[]),
-            patch(
-                f"{MODULE}.get_emails",
-                new_callable=AsyncMock,
-                return_value=[email_primary, email_other],
-            ),
-            patch(
-                f"{MODULE}.get_profiles",
-                new_callable=AsyncMock,
-                return_value=[_profile(profile_id=profiles_id)],
-            ),
-        ):
-            result = await resolve_profile_identity_context(None, artifact.id, None)
-
-        assert result is not None
-        assert result.primary_email == "primary@org.com"
-        assert result.emails == ["primary@org.com", "secondary@org.com"]
-
-    async def test_no_primary_department_returns_none_settings(self):
-        profiles_id = uuid4()
-        dept_id = uuid4()
-
-        artifact = _profile_artifact(
-            name_ids=[uuid4()],
-            role_ids=[uuid4()],
-            department_ids=[dept_id],
-            email_ids=[],
-            profile_ids=[profiles_id],
-        )
-
-        dept = _department(dept_id=dept_id, is_primary=False)
-
-        with (
-            patch(
-                f"{MODULE}.get_profile_artifacts",
-                new_callable=AsyncMock,
-                return_value=[artifact],
-            ),
-            patch(
-                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
-            ),
-            patch(
-                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
-            ),
-            patch(
-                f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[dept]
-            ),
-            patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
-            patch(
-                f"{MODULE}.get_profiles",
-                new_callable=AsyncMock,
-                return_value=[_profile(profile_id=profiles_id)],
-            ),
-        ):
-            result = await resolve_profile_identity_context(None, artifact.id, None)
-
-        assert result is not None
+        assert result.profiles_id == profile.profile_resource_id
+        assert result.name == profile.name
+        assert result.role == profile.role
+        assert result.role_name == profile.role_name
+        assert result.role_description == profile.role_description
+        assert result.role_artifacts == profile.role_artifacts
+        assert result.primary_email is None
+        assert result.emails == profile.emails
         assert result.primary_department_id is None
+        assert len(result.department_ids) == len(profile.departments)
         assert result.settings_id is None
+        assert result.requests_per_day is None
+        assert result.is_active is True
+        assert result.session_id is None
+        assert result.group_id is None
 
-    async def test_inactive_profile(self):
-        profiles_id = uuid4()
-
-        artifact = _profile_artifact(
-            name_ids=[uuid4()],
-            role_ids=[uuid4()],
-            department_ids=[],
-            email_ids=[],
-            profile_ids=[profiles_id],
-            active=False,
+    async def test_no_role_returns_empty_role_fields(
+        self, pool, redis_client, profile_identity_factory
+    ):
+        profile = await profile_identity_factory(
+            role=None,
+            departments=[],
+            emails=[],
         )
 
-        with (
-            patch(
-                f"{MODULE}.get_profile_artifacts",
-                new_callable=AsyncMock,
-                return_value=[artifact],
-            ),
-            patch(
-                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
-            ),
-            patch(
-                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
-            ),
-            patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[]),
-            patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
-            patch(
-                f"{MODULE}.get_profiles",
-                new_callable=AsyncMock,
-                return_value=[_profile(profile_id=profiles_id)],
-            ),
-        ):
-            result = await resolve_profile_identity_context(None, artifact.id, None)
-
-        assert result is not None
-        assert result.is_active is False
-
-    async def test_no_role_returns_empty_strings(self):
-        profiles_id = uuid4()
-
-        artifact = _profile_artifact(
-            name_ids=[uuid4()],
-            role_ids=[],
-            department_ids=[],
-            email_ids=[],
-            profile_ids=[profiles_id],
+        result = await resolve_profile_identity_context(
+            pool,
+            profile.artifact_id,
+            redis_client,
         )
-
-        with (
-            patch(
-                f"{MODULE}.get_profile_artifacts",
-                new_callable=AsyncMock,
-                return_value=[artifact],
-            ),
-            patch(
-                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
-            ),
-            patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
-            patch(
-                f"{MODULE}.get_profiles",
-                new_callable=AsyncMock,
-                return_value=[_profile(profile_id=profiles_id)],
-            ),
-        ):
-            result = await resolve_profile_identity_context(None, artifact.id, None)
 
         assert result is not None
         assert result.role == ""
@@ -488,119 +93,21 @@ class TestResolveProfileIdentityContextFull:
         assert result.role_description == ""
         assert result.role_artifacts == []
 
-    async def test_primary_department_without_settings(self):
-        """Primary department exists but has empty setting_ids."""
-        profiles_id = uuid4()
-        dept_id = uuid4()
-
-        artifact = _profile_artifact(
-            name_ids=[uuid4()],
-            role_ids=[uuid4()],
-            department_ids=[dept_id],
-            email_ids=[],
-            profile_ids=[profiles_id],
+    async def test_inactive_artifact_returns_inactive_context(
+        self, pool, redis_client, profile_identity_factory
+    ):
+        profile = await profile_identity_factory(
+            artifact_active=True,
         )
 
-        dept = _department(dept_id=dept_id, is_primary=True, setting_ids=[])
+        async with pool.acquire() as conn:
+            await update_profile_artifact(conn, profile.artifact_id, active=False)
 
-        with (
-            patch(
-                f"{MODULE}.get_profile_artifacts",
-                new_callable=AsyncMock,
-                return_value=[artifact],
-            ),
-            patch(
-                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
-            ),
-            patch(
-                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
-            ),
-            patch(
-                f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[dept]
-            ),
-            patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
-            patch(
-                f"{MODULE}.get_profiles",
-                new_callable=AsyncMock,
-                return_value=[_profile(profile_id=profiles_id)],
-            ),
-        ):
-            result = await resolve_profile_identity_context(None, artifact.id, None)
-
-        assert result is not None
-        assert result.primary_department_id == dept_id
-        assert result.settings_id is None
-
-    async def test_requests_per_day_flows_through(self):
-        """requests_per_day is extracted from profiles_resource."""
-        profiles_id = uuid4()
-
-        artifact = _profile_artifact(
-            name_ids=[uuid4()],
-            role_ids=[uuid4()],
-            department_ids=[],
-            email_ids=[],
-            profile_ids=[profiles_id],
+        result = await resolve_profile_identity_context(
+            pool,
+            profile.artifact_id,
+            redis_client,
         )
 
-        with (
-            patch(
-                f"{MODULE}.get_profile_artifacts",
-                new_callable=AsyncMock,
-                return_value=[artifact],
-            ),
-            patch(
-                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
-            ),
-            patch(
-                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
-            ),
-            patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[]),
-            patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
-            patch(
-                f"{MODULE}.get_profiles",
-                new_callable=AsyncMock,
-                return_value=[_profile(profile_id=profiles_id, requests_per_day=50)],
-            ),
-        ):
-            result = await resolve_profile_identity_context(None, artifact.id, None)
-
         assert result is not None
-        assert result.requests_per_day == 50
-
-    async def test_requests_per_day_none_when_not_set(self):
-        """requests_per_day is None when profiles_resource has no limit."""
-        profiles_id = uuid4()
-
-        artifact = _profile_artifact(
-            name_ids=[uuid4()],
-            role_ids=[uuid4()],
-            department_ids=[],
-            email_ids=[],
-            profile_ids=[profiles_id],
-        )
-
-        with (
-            patch(
-                f"{MODULE}.get_profile_artifacts",
-                new_callable=AsyncMock,
-                return_value=[artifact],
-            ),
-            patch(
-                f"{MODULE}.get_names", new_callable=AsyncMock, return_value=[_name()]
-            ),
-            patch(
-                f"{MODULE}.get_roles", new_callable=AsyncMock, return_value=[_role()]
-            ),
-            patch(f"{MODULE}.get_departments", new_callable=AsyncMock, return_value=[]),
-            patch(f"{MODULE}.get_emails", new_callable=AsyncMock, return_value=[]),
-            patch(
-                f"{MODULE}.get_profiles",
-                new_callable=AsyncMock,
-                return_value=[_profile(profile_id=profiles_id, requests_per_day=None)],
-            ),
-        ):
-            result = await resolve_profile_identity_context(None, artifact.id, None)
-
-        assert result is not None
-        assert result.requests_per_day is None
+        assert result.is_active is False

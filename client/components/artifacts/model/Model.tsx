@@ -73,8 +73,10 @@ const findCurrentFlagId = (
 ): string | null => flags?.find((f) => f.key === key)?.flag_option_id ?? null;
 
 // Types defined inline using InputOf/OutputOf
-type SaveModelIn = InputOf<"/api/v5/artifacts/models/save", "post">;
-type SaveModelOut = OutputOf<"/api/v5/artifacts/models/save", "post">;
+type CreateModelIn = InputOf<"/api/v5/artifacts/models/create", "post">;
+type CreateModelOut = OutputOf<"/api/v5/artifacts/models/create", "post">;
+type UpdateModelIn = InputOf<"/api/v5/artifacts/models/update", "post">;
+type UpdateModelOut = OutputOf<"/api/v5/artifacts/models/update", "post">;
 type PatchModelDraftIn = InputOf<"/api/v5/artifacts/models/draft", "patch">;
 type PatchModelDraftOut = OutputOf<"/api/v5/artifacts/models/draft", "patch">;
 
@@ -144,7 +146,8 @@ export interface ModelProps {
   modelId?: string;
   modelDetailDefault?: ModelData;
   modelDetail?: ModelData;
-  saveModelAction?: (input: SaveModelIn) => Promise<SaveModelOut>;
+  createModelAction?: (input: CreateModelIn) => Promise<CreateModelOut>;
+  updateModelAction?: (input: UpdateModelIn) => Promise<UpdateModelOut>;
   patchModelDraftAction?: (
     input: PatchModelDraftIn,
   ) => Promise<PatchModelDraftOut>;
@@ -169,7 +172,8 @@ function ModelComponent({
   modelId,
   modelDetailDefault,
   modelDetail: serverModelDetail,
-  saveModelAction,
+  createModelAction,
+  updateModelAction,
   patchModelDraftAction,
   createNamesAction,
   createDescriptionsAction,
@@ -225,7 +229,9 @@ function ModelComponent({
     const data = modelDataRef.current;
     if (!data) {
       return {
+        name: null as string | null,
         name_id: null as string | null,
+        description: null as string | null,
         description_id: null as string | null,
         value_id: null as string | null,
         provider_id: null as string | null,
@@ -250,6 +256,9 @@ function ModelComponent({
     const curFlags = data.flags?.current ?? [];
 
     return {
+      // Value fields (null when loading from server - server already has IDs)
+      name: null as string | null,
+      description: null as string | null,
       // Single-select IDs from section.resource.id
       name_id: (data.names?.resource?.id as string) ?? null,
       description_id: (data.descriptions?.resource?.id as string) ?? null,
@@ -429,40 +438,41 @@ function ModelComponent({
   const draftVersion = s?.draft_version;
 
   const formStateKey = React.useMemo(
-    () =>
-      JSON.stringify({
-        name_id: formState.name_id,
-        description_id: formState.description_id,
-        value_id: formState.value_id,
-        provider_id: formState.provider_id,
-        active_flag_id: formState.active_flag_id,
-        modalities_enabled_flag_id: formState.modalities_enabled_flag_id,
-        temperature_enabled_flag_id: formState.temperature_enabled_flag_id,
-        pricing_enabled_flag_id: formState.pricing_enabled_flag_id,
-        voices_enabled_flag_id: formState.voices_enabled_flag_id,
-        reasoning_levels_enabled_flag_id:
-          formState.reasoning_levels_enabled_flag_id,
-        qualities_enabled_flag_id: formState.qualities_enabled_flag_id,
-        departmentIds: formState.departmentIds,
-        modality_ids: formState.modality_ids,
-        temperature_level_ids: formState.temperature_level_ids,
-        reasoning_level_ids: formState.reasoning_level_ids,
-        quality_ids: formState.quality_ids,
-        pricing_ids: formState.pricing_ids,
-        voice_ids: formState.voice_ids,
-      }),
+    () => {
+      if (serverSyncPendingRef.current) return undefined;
+      return JSON.stringify(formState);
+    },
     [formState],
   );
+
+  const serverSyncPendingRef = React.useRef(false);
 
   const patchActionRef = React.useRef<
     ((payload: Record<string, unknown>) => Promise<{ draft_id?: string | null; new_version?: number | null }>) | undefined
   >(undefined);
   React.useEffect(() => {
     if (patchModelDraftAction) {
-      patchActionRef.current = async (payload: Record<string, unknown>) =>
-        patchModelDraftAction({
+      patchActionRef.current = async (payload: Record<string, unknown>) => {
+        const res = await patchModelDraftAction({
           body: payload,
         } as PatchModelDraftIn);
+        // Sync form state from server-authoritative form_state
+        const fs = (res as Record<string, unknown>)?.form_state as Record<string, unknown> | undefined;
+        if (fs) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name_id: (fs.name_id as string) ?? prev.name_id,
+            name: fs.name_id ? null : prev.name,
+            description_id: (fs.description_id as string) ?? prev.description_id,
+            description: fs.description_id ? null : prev.description,
+          }));
+          requestAnimationFrame(() => {
+            serverSyncPendingRef.current = false;
+          });
+        }
+        return res;
+      };
     } else {
       patchActionRef.current = undefined;
     }

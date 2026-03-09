@@ -20,6 +20,7 @@ from redis.asyncio import Redis
 from app.infra.model_permissions import compute_can_draft
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.model.types import (
+    ModelDraftFormState,
     PatchModelDraftApiRequest,
     PatchModelDraftApiResponse,
     SaveModelFieldError,
@@ -141,12 +142,29 @@ async def patch_model_draft_client(
                 voice_ids=request.voice_ids,
             )
 
-    # ── Step 5: Refresh MV ─────────────────────────────────────────────
+    # ── Step 5: Build form state (server is source of truth) ────────────
+
+    form_state = ModelDraftFormState(
+        name_id=request.name_id,
+        description_id=request.description_id,
+        flag_ids=request.flag_ids or [],
+        department_ids=request.department_ids or [],
+        modality_ids=request.modality_ids or [],
+        pricing_ids=request.pricing_ids or [],
+        provider_ids=request.provider_ids or [],
+        quality_ids=request.quality_ids or [],
+        reasoning_level_ids=request.reasoning_level_ids or [],
+        temperature_level_ids=request.temperature_level_ids or [],
+        value_ids=request.value_ids or [],
+        voice_ids=request.voice_ids or [],
+    )
+
+    # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
     async with pool.acquire() as conn:
         await refresh_model_drafts(conn)
 
-    # ── Step 6: Invalidate cache ───────────────────────────────────────
+    # ── Step 7: Invalidate cache ───────────────────────────────────────
 
     await invalidate_tags(["models", "drafts"], redis=redis)
 
@@ -155,4 +173,5 @@ async def patch_model_draft_client(
         draft_id=result.id,
         new_version=new_version,
         message="Draft created successfully",
+        form_state=form_state,
     )
