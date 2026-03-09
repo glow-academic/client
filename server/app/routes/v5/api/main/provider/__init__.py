@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.routes.v5.api.main.provider.create import router as create_router
+from app.routes.v5.api.main.provider.decrypt import router as decrypt_router
 from app.routes.v5.api.main.provider.delete import router as delete_router
 from app.routes.v5.api.main.provider.docs import router as docs_router
 from app.routes.v5.api.main.provider.draft import router as draft_router
@@ -28,3 +29,4 @@ router.include_router(drafts_router)
 router.include_router(docs_router)
 router.include_router(export_router)
 router.include_router(refresh_router)
+router.include_router(decrypt_router)

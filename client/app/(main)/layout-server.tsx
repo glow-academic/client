@@ -33,11 +33,8 @@ const REFRESH_ENDPOINT_MAP: Record<string, string> = {
 };
 type AttemptFullIn = InputOf<"/api/v5/artifacts/attempt/get", "post">;
 type AttemptFullOut = OutputOf<"/api/v5/artifacts/attempt/get", "post">;
-type SearchSimulatableProfilesIn = InputOf<"/auth/simulatable", "post">;
-type SearchSimulatableProfilesOut = OutputOf<
-  "/auth/simulatable",
-  "post"
->;
+type SearchProfilesIn = InputOf<"/api/v5/artifacts/profiles/search", "post">;
+type SearchProfilesOut = OutputOf<"/api/v5/artifacts/profiles/search", "post">;
 /** ---- Auth response type aliases ---- */
 export type AuthProfileResponse = AuthProfileOut;
 export type AuthSettingsResponse = AuthSettingsOut;
@@ -286,10 +283,10 @@ export async function exportPage(
 }
 
 /** ---- Strongly-typed server actions for Profile Emulation (single source of truth) ---- */
-export async function searchSimulatableProfiles(
-  input: SearchSimulatableProfilesIn
-): Promise<SearchSimulatableProfilesOut> {
-  return api.post("/auth/simulatable", input);
+export async function searchProfiles(
+  input: SearchProfilesIn
+): Promise<SearchProfilesOut> {
+  return api.post("/artifacts/profiles/search", input);
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
@@ -304,8 +301,8 @@ export type {
   ExitEmulationResult,
   GenerateMessagesIn,
   GenerateMessagesOut,
-  SearchSimulatableProfilesIn,
-  SearchSimulatableProfilesOut,
+  SearchProfilesIn,
+  SearchProfilesOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 };

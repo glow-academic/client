@@ -5,8 +5,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import type {
-  SearchSimulatableProfilesIn,
-  SearchSimulatableProfilesOut,
+  SearchProfilesIn,
+  SearchProfilesOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
@@ -37,9 +37,9 @@ import { ICON_MAP } from "@/utils/icons";
 export interface EmulateProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  searchSimulatableProfiles: (
-    input: SearchSimulatableProfilesIn,
-  ) => Promise<SearchSimulatableProfilesOut>;
+  searchProfiles: (
+    input: SearchProfilesIn,
+  ) => Promise<SearchProfilesOut>;
   switchEffectiveProfile: (
     input: SwitchEffectiveProfileParams,
   ) => Promise<SwitchEffectiveProfileResult>;
@@ -48,7 +48,7 @@ export interface EmulateProfileModalProps {
 export function EmulateProfileModal({
   open,
   onOpenChange,
-  searchSimulatableProfiles,
+  searchProfiles,
   switchEffectiveProfile,
 }: EmulateProfileModalProps) {
   const { profile, roleResources } = useProfile();
@@ -57,7 +57,7 @@ export function EmulateProfileModal({
     null,
   );
   const [searchData, setSearchData] =
-    useState<SearchSimulatableProfilesOut | null>(null);
+    useState<SearchProfilesOut | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isEmulating, setIsEmulating] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -118,10 +118,10 @@ export function EmulateProfileModal({
       if (!profile?.id) return;
       setIsLoading(true);
       try {
-        const data = await searchSimulatableProfiles({
+        const data = await searchProfiles({
           body: {
-            query: query ?? null,
-            limit_count: 200,
+            search: query || null,
+            page_size: 200,
           },
         });
         // profileId comes from X-Profile-Id header automatically
@@ -132,7 +132,7 @@ export function EmulateProfileModal({
         setIsLoading(false);
       }
     },
-    [profile?.id, searchSimulatableProfiles],
+    [profile?.id, searchProfiles],
   );
 
   // Handle search input change with debounce

@@ -26,17 +26,21 @@ from app.infra.tool_permissions import (
     TOOL_RESOURCES,
     compute_args_outputs_required,
     compute_args_required,
+    compute_artifacts_required,
     compute_can_edit,
     compute_description_required,
     compute_disabled_reason,
     compute_flag_required,
     compute_name_required,
+    compute_operations_required,
     compute_show_arg_positions,
     compute_show_args,
     compute_show_args_outputs,
+    compute_show_artifacts,
     compute_show_description,
     compute_show_flag,
     compute_show_name,
+    compute_show_operations,
     has_access,
 )
 from app.infra.tool_permissions_context import (
@@ -48,10 +52,12 @@ from app.routes.v5.api.main.tool.types import (
     ToolArgOutputSection,
     ToolArgPositionSection,
     ToolArgSection,
+    ToolArtifactSection,
     ToolDescriptionSection,
     ToolFlagConfig,
     ToolFlagSection,
     ToolNameSection,
+    ToolOperationSection,
 )
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -185,6 +191,14 @@ async def get_tool_client(
     all_args_outputs = dedupe_by_id(
         tool_ctx.resources["args_outputs"].selected
         + tool_ctx.resources["args_outputs"].suggestions
+    )
+    all_artifacts = dedupe_by_id(
+        tool_ctx.resources["artifacts"].selected
+        + tool_ctx.resources["artifacts"].suggestions
+    )
+    all_operations = dedupe_by_id(
+        tool_ctx.resources["operations"].selected
+        + tool_ctx.resources["operations"].suggestions
     )
 
     show_flags_map = {

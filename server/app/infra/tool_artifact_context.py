@@ -39,6 +39,10 @@ from app.routes.v5.tools.resources.flags.get import get_flags
 from app.routes.v5.tools.resources.flags.search import search_flags
 from app.routes.v5.tools.resources.names.get import get_names
 from app.routes.v5.tools.resources.names.search import search_names
+from app.routes.v5.tools.resources.artifacts.get import get_artifacts
+from app.routes.v5.tools.resources.artifacts.search import search_artifacts
+from app.routes.v5.tools.resources.operations.get import get_operations
+from app.routes.v5.tools.resources.operations.search import search_operations
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -87,6 +91,8 @@ async def resolve_tool_artifact_context(
                 args=True,
                 arg_positions=True,
                 args_outputs=True,
+                artifacts=True,
+                operations=True,
             )
 
     async def _fetch_draft() -> list:
@@ -209,6 +215,34 @@ async def resolve_tool_artifact_context(
                 tool=True,
             )
 
+    async def _get_artifacts() -> list:
+        async with pool.acquire() as conn:
+            return await get_artifacts(conn, merged.artifact_ids, redis, bypass_cache)
+
+    async def _search_artifacts() -> list:
+        async with pool.acquire() as conn:
+            return await search_artifacts(
+                conn,
+                redis,
+                exclude_ids=merged.artifact_ids,
+                bypass_cache=bypass_cache,
+                tool=True,
+            )
+
+    async def _get_operations() -> list:
+        async with pool.acquire() as conn:
+            return await get_operations(conn, merged.operation_ids, redis, bypass_cache)
+
+    async def _search_operations() -> list:
+        async with pool.acquire() as conn:
+            return await search_operations(
+                conn,
+                redis,
+                exclude_ids=merged.operation_ids,
+                bypass_cache=bypass_cache,
+                tool=True,
+            )
+
     (
         names_selected,
         names_suggestions,
@@ -222,6 +256,10 @@ async def resolve_tool_artifact_context(
         arg_positions_suggestions,
         args_outputs_selected,
         args_outputs_suggestions,
+        artifacts_selected,
+        artifacts_suggestions,
+        operations_selected,
+        operations_suggestions,
     ) = await asyncio.gather(
         _get_names(),
         _search_names(),
@@ -235,6 +273,10 @@ async def resolve_tool_artifact_context(
         _search_arg_positions(),
         _get_args_outputs(),
         _search_args_outputs(),
+        _get_artifacts(),
+        _search_artifacts(),
+        _get_operations(),
+        _search_operations(),
     )
 
     # Filter flags to tool-specific types
@@ -264,6 +306,12 @@ async def resolve_tool_artifact_context(
             "args_outputs": ResourcePair(
                 selected=args_outputs_selected, suggestions=args_outputs_suggestions
             ),
+            "artifacts": ResourcePair(
+                selected=artifacts_selected, suggestions=artifacts_suggestions
+            ),
+            "operations": ResourcePair(
+                selected=operations_selected, suggestions=operations_suggestions
+            ),
         },
         entries={},
     )
@@ -284,6 +332,8 @@ class _MergedIds:
     args_ids: list[UUID]
     arg_position_ids: list[UUID]
     args_outputs_ids: list[UUID]
+    artifact_ids: list[UUID]
+    operation_ids: list[UUID]
 
 
 def _merge_junction_ids(artifact, draft) -> _MergedIds:
@@ -294,6 +344,8 @@ def _merge_junction_ids(artifact, draft) -> _MergedIds:
     args_ids = list(artifact.args_ids or []) if artifact else []
     arg_position_ids = list(artifact.arg_positions_ids or []) if artifact else []
     args_outputs_ids = list(artifact.args_outputs_ids or []) if artifact else []
+    artifact_ids = list(artifact.artifact_ids or []) if artifact else []
+    operation_ids = list(artifact.operation_ids or []) if artifact else []
 
     # Draft overrides (if present) — ignore profile_ids from draft
     if draft:
@@ -309,6 +361,10 @@ def _merge_junction_ids(artifact, draft) -> _MergedIds:
             arg_position_ids = list(draft.arg_position_ids)
         if draft.args_output_ids:
             args_outputs_ids = list(draft.args_output_ids)
+        if draft.artifact_ids:
+            artifact_ids = list(draft.artifact_ids)
+        if draft.operation_ids:
+            operation_ids = list(draft.operation_ids)
 
     return _MergedIds(
         name_ids=name_ids,
@@ -317,6 +373,8 @@ def _merge_junction_ids(artifact, draft) -> _MergedIds:
         args_ids=args_ids,
         arg_position_ids=arg_position_ids,
         args_outputs_ids=args_outputs_ids,
+        artifact_ids=artifact_ids,
+        operation_ids=operation_ids,
     )
 
 

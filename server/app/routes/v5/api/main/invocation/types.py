@@ -228,3 +228,23 @@ class PatchInvocationDraftApiResponse(BaseModel):
     new_version: int
     message: str
     form_state: InvocationDraftFormState | None = None
+
+
+# =============================================================================
+# Decrypt Endpoint Types
+# =============================================================================
+
+
+class DecryptInvocationKeyApiRequest(BaseModel):
+    """Request to decrypt a key scoped to an invocation."""
+
+    invocation_id: UUID
+    key_id: UUID
+
+
+class DecryptInvocationKeyApiResponse(BaseModel):
+    """Decrypted key response."""
+
+    key: str | None = None
+    name: str | None = None
+    actor_name: str | None = None

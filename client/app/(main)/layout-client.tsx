@@ -26,8 +26,8 @@ import type {
   CreateFeedbackOut,
   ExitEmulationResult,
   SafeSessionSnapshot,
-  SearchSimulatableProfilesIn,
-  SearchSimulatableProfilesOut,
+  SearchProfilesIn,
+  SearchProfilesOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "./layout-server";
@@ -39,7 +39,7 @@ function MainLayoutContent({
   switchEffectiveProfileAction,
   exitEmulationAction,
   createFeedbackAction,
-  searchSimulatableProfilesAction,
+  searchProfilesAction,
 }: {
   children: React.ReactNode;
   initialSidebarOpen?: boolean;
@@ -48,9 +48,9 @@ function MainLayoutContent({
   ) => Promise<SwitchEffectiveProfileResult>;
   exitEmulationAction: () => Promise<ExitEmulationResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
-  searchSimulatableProfilesAction: (
-    input: SearchSimulatableProfilesIn
-  ) => Promise<SearchSimulatableProfilesOut>;
+  searchProfilesAction: (
+    input: SearchProfilesIn
+  ) => Promise<SearchProfilesOut>;
 }) {
   const pathname = usePathname() || "/";
   const router = useRouter();
@@ -99,7 +99,7 @@ function MainLayoutContent({
           switchEffectiveProfile={switchEffectiveProfileAction}
           exitEmulation={exitEmulationAction}
           createFeedback={createFeedbackAction}
-          searchSimulatableProfiles={searchSimulatableProfilesAction}
+          searchProfiles={searchProfilesAction}
         />
         <SidebarInset>
           <div className="flex flex-1 flex-col gap-4">{children}</div>
@@ -118,7 +118,7 @@ export function MainLayoutClient({
   switchEffectiveProfileAction,
   exitEmulationAction,
   createFeedbackAction,
-  searchSimulatableProfilesAction,
+  searchProfilesAction,
 }: {
   children: React.ReactNode;
   profileData: AuthProfileResponse | null;
@@ -131,9 +131,9 @@ export function MainLayoutClient({
   ) => Promise<SwitchEffectiveProfileResult>;
   exitEmulationAction: () => Promise<ExitEmulationResult>;
   createFeedbackAction: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
-  searchSimulatableProfilesAction: (
-    input: SearchSimulatableProfilesIn
-  ) => Promise<SearchSimulatableProfilesOut>;
+  searchProfilesAction: (
+    input: SearchProfilesIn
+  ) => Promise<SearchProfilesOut>;
 }) {
   const pathname = usePathname();
 
@@ -181,8 +181,8 @@ export function MainLayoutClient({
               switchEffectiveProfileAction={switchEffectiveProfileAction}
               exitEmulationAction={exitEmulationAction}
               createFeedbackAction={createFeedbackAction}
-              searchSimulatableProfilesAction={
-                searchSimulatableProfilesAction
+              searchProfilesAction={
+                searchProfilesAction
               }
             >
               {children}

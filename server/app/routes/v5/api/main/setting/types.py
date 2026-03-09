@@ -376,3 +376,21 @@ class ExportSettingApiResponse(BaseModel):
     upload_id: UUID
     file_name: str
     row_count: int
+
+
+# ========== Decrypt Endpoint Types ==========
+
+
+class DecryptSettingKeyApiRequest(BaseModel):
+    """Request to decrypt a key scoped to a setting."""
+
+    setting_id: UUID
+    key_id: UUID
+
+
+class DecryptSettingKeyApiResponse(BaseModel):
+    """Decrypted key response."""
+
+    key: str | None = None
+    name: str | None = None
+    actor_name: str | None = None

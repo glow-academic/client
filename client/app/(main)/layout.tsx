@@ -16,7 +16,7 @@ import {
   createFeedback,
   exitEmulation,
   getLayoutContextData,
-  searchSimulatableProfiles,
+  searchProfiles,
   switchEffectiveProfile,
 } from "./layout-server";
 import { LogoutGuard } from "./logout-guard";
@@ -88,7 +88,7 @@ export default async function MainLayout({
         switchEffectiveProfileAction={switchEffectiveProfile}
         exitEmulationAction={exitEmulation}
         createFeedbackAction={createFeedback}
-        searchSimulatableProfilesAction={searchSimulatableProfiles}
+        searchProfilesAction={searchProfiles}
       >
         <Suspense
           key={`suspense-${pathname}`}

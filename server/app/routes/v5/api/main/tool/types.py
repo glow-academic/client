@@ -55,6 +55,16 @@ class ToolArgPositionSection(BaseResourceSection):
     resources: list | None = None
 
 
+class ToolArtifactSection(BaseResourceSection):
+    current: list | None = None
+    resources: list | None = None
+
+
+class ToolOperationSection(BaseResourceSection):
+    current: list | None = None
+    resources: list | None = None
+
+
 class GetToolApiRequest(BaseModel):
     tool_id: UUID | None = None
     draft_id: UUID | None = None
@@ -80,6 +90,8 @@ class GetToolApiResponse(BaseModel):
     args: ToolArgSection | None = None
     arg_positions: ToolArgPositionSection | None = None
     args_outputs: ToolArgOutputSection | None = None
+    artifacts: ToolArtifactSection | None = None
+    operations: ToolOperationSection | None = None
 
 
 class ListToolApiTool(BaseModel):

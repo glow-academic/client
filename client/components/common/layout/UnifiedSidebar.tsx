@@ -8,8 +8,8 @@ import type {
   CreateFeedbackIn,
   CreateFeedbackOut,
   ExitEmulationResult,
-  SearchSimulatableProfilesIn,
-  SearchSimulatableProfilesOut,
+  SearchProfilesIn,
+  SearchProfilesOut,
   SwitchEffectiveProfileParams,
   SwitchEffectiveProfileResult,
 } from "@/app/(main)/layout-server";
@@ -76,9 +76,9 @@ export interface UnifiedSidebarProps
   ) => Promise<SwitchEffectiveProfileResult>;
   exitEmulation: () => Promise<ExitEmulationResult>;
   createFeedback: (input: CreateFeedbackIn) => Promise<CreateFeedbackOut>;
-  searchSimulatableProfiles: (
-    input: SearchSimulatableProfilesIn
-  ) => Promise<SearchSimulatableProfilesOut>;
+  searchProfiles: (
+    input: SearchProfilesIn
+  ) => Promise<SearchProfilesOut>;
 }
 
 interface ClassData {
@@ -120,7 +120,7 @@ export function UnifiedSidebar({
   switchEffectiveProfile,
   exitEmulation,
   createFeedback,
-  searchSimulatableProfiles,
+  searchProfiles,
   ...props
 }: UnifiedSidebarProps) {
   const [isNavigating, setIsNavigating] = useState(false);
@@ -535,7 +535,7 @@ export function UnifiedSidebar({
       <EmulateProfileModal
         open={isEmulateModalOpen}
         onOpenChange={setIsEmulateModalOpen}
-        searchSimulatableProfiles={searchSimulatableProfiles}
+        searchProfiles={searchProfiles}
         switchEffectiveProfile={switchEffectiveProfile}
       />
     </>

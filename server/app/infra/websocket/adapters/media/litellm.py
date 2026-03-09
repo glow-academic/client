@@ -5,10 +5,9 @@ import uuid
 from pathlib import Path
 from typing import Any
 
-from app.infra.globals import IMAGE_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER
+from app.infra.globals import IMAGE_FOLDER, UPLOAD_FOLDER, VIDEO_FOLDER, get_pool
 from app.infra.websocket.adapters.media.base import BaseMediaAdapter, MediaResult
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
-from app.infra.websocket.get_db_connection import get_db_connection
 from app.routes.v5.tools.entries.uploads.create import create_upload
 
 try:
@@ -326,7 +325,8 @@ class LitellmMediaAdapter(BaseMediaAdapter):
         if not session_id_str:
             raise RuntimeError("Session not found for socket — cannot create upload")
 
-        async with get_db_connection() as conn:
+        pool = get_pool()
+        async with pool.acquire() as conn:
             upload_result = await create_upload(
                 conn,
                 session_id=uuid.UUID(session_id_str),

@@ -267,34 +267,3 @@ class GetProfileContextApiRequest(BaseModel):
     department_id: str | None = None
 
 
-class GetKeyForDecryptApiRequest(BaseModel):
-    key_id: UUID
-
-
-class GetKeyForDecryptApiResponse(BaseModel):
-    key: str | None = None
-    name: str | None = None
-    actor_name: str | None = None
-
-
-class SearchSimulatableProfilesApiRequest(BaseModel):
-    limit_count: int
-    query: str
-
-
-class QSearchSimulatableProfilesV4Profile(BaseModel):
-    profile_id: UUID | None = None
-    name: str | None = None
-    emails: list[str] | None = None
-    primary_email: str | None = None
-    role: str | None = None
-    active: bool | None = None
-    req_per_day: int | None = None
-    created_at: datetime | None = None
-    updated_at: datetime | None = None
-    primary_department_id: UUID | None = None
-
-
-class SearchSimulatableProfilesApiResponse(BaseModel):
-    actor_name: str | None = None
-    profiles: list[QSearchSimulatableProfilesV4Profile] | None = None

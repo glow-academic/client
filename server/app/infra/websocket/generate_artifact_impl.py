@@ -18,13 +18,12 @@ from app.infra.artifacts import (
     format_messages_for_litellm,
     stream_litellm_events,
 )
-from app.infra.globals import UPLOAD_FOLDER
+from app.infra.globals import UPLOAD_FOLDER, get_pool
 from app.infra.tools.tool_executor import execute_tool_call
 from app.infra.websocket.generation_types import (
     GenerateArtifactPayload,
     GenerateErrorApiRequest,
 )
-from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.socket_event import EmitFn, internal_event
 from app.infra.websocket.tool_call_utils import (
     build_tool_output_schemas,
@@ -950,7 +949,8 @@ async def generate_artifact_impl(
                                 if data.profile_id
                                 else uuid.UUID(int=0)
                             )
-                            async with get_db_connection() as conn:
+                            pool = get_pool()
+                            async with pool.acquire() as conn:
                                 tool_result_str = await execute_tool_call(
                                     conn=conn,
                                     tool_name=tool_name,
