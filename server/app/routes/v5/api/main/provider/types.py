@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from app.infra.provider_create import CreateProviderItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.routes.v5.tools.entries.provider_drafts.types import GetProviderDraftResponse
 
 
 class ProviderFlagConfig(BaseModel):
@@ -276,6 +277,12 @@ class PatchProviderDraftApiResponse(BaseModel):
     new_version: int
     message: str
     form_state: ProviderDraftFormState | None = None
+
+
+class GetProviderDraftsApiResponse(BaseModel):
+    """Response model for provider drafts list endpoint."""
+
+    entries: list[GetProviderDraftResponse] | None = None
 
 
 # ========== Export Endpoint Types ==========

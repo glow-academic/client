@@ -21,16 +21,6 @@ from app.routes.shared_types import (
 )
 
 
-class QGetProfileContextV4Draft(BaseModel):
-    """Draft item returned by /auth/drafts endpoint."""
-
-    id: UUID | None = None
-    artifact_type: str | None = None
-    payload: dict | None = None
-    version: int | None = None
-    updated_at: str | None = None
-    group_id: str | None = None
-
 
 @dataclass
 class AuthProfileInternalData:
@@ -141,11 +131,6 @@ class GetAuthSettingsApiResponse(BaseModel):
     tools: list[QGetToolsV4Item] | None = None
     artifact_has_generate: dict[str, bool] | None = None
 
-
-class GetDraftsApiResponse(BaseModel):
-    """Response model for /auth/drafts endpoint."""
-
-    drafts: list[QGetProfileContextV4Draft] | None = None
 
 
 # ---------------------------------------------------------------------------

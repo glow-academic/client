@@ -21,11 +21,7 @@ import { FileText, Loader2, Plus, RefreshCw, Save } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo } from "react";
 
-interface SaveToolbarProps {
-  artifactType: string;
-}
-
-export function SaveToolbar({ artifactType }: SaveToolbarProps) {
+export function SaveToolbar() {
   const {
     isAutosaveEnabled,
     isAutosaveLoaded,
@@ -40,34 +36,10 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Filter drafts by artifact type
-  const filteredDrafts = useMemo(
-    () => drafts.filter((d) => d.artifact_type === artifactType),
-    [drafts, artifactType]
-  );
-
   // Get draft name for display
   const getDraftName = useCallback((draft: (typeof drafts)[0]): string => {
-    const payload = draft.payload as Record<string, unknown> | null;
-    if (!payload || typeof payload !== "object") {
-      return draft.updated_at
-        ? new Date(draft.updated_at).toLocaleDateString()
-        : "Draft";
-    }
-    if (
-      typeof payload["name"] === "string" &&
-      (payload["name"] as string).trim()
-    ) {
-      return payload["name"] as string;
-    }
-    if (
-      typeof payload["title"] === "string" &&
-      (payload["title"] as string).trim()
-    ) {
-      return payload["title"] as string;
-    }
-    return draft.updated_at
-      ? new Date(draft.updated_at).toLocaleDateString()
+    return draft.created_at
+      ? new Date(draft.created_at).toLocaleDateString()
       : "Draft";
   }, []);
 
@@ -153,10 +125,10 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
               <DropdownMenuSeparator />
             </>
           )}
-          {filteredDrafts.length === 0 ? (
+          {drafts.length === 0 ? (
             <DropdownMenuItem disabled>No drafts available</DropdownMenuItem>
           ) : (
-            filteredDrafts
+            drafts
               .filter((draft) => draft.id !== null)
               .map((draft) => (
                 <DropdownMenuItem
@@ -169,8 +141,8 @@ export function SaveToolbar({ artifactType }: SaveToolbarProps) {
                       {getDraftName(draft)}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {draft.updated_at
-                        ? new Date(draft.updated_at).toLocaleString()
+                      {draft.created_at
+                        ? new Date(draft.created_at).toLocaleString()
                         : ""}
                     </span>
                   </div>

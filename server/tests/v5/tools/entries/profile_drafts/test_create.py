@@ -47,6 +47,7 @@ async def test_create_without_connections_returns_empty_lists(conn, profile_id):
 
     items = await get_profile_drafts(conn, [result.id])
 
+    assert items[0].profile_ids == []
     assert items[0].department_ids == []
     assert items[0].email_ids == []
     assert items[0].flag_ids == []
@@ -66,6 +67,7 @@ async def test_create_with_connections(conn, profile_id):
         conn,
         group_id=group.id,
         session_id=session.id,
+        profile_ids=[profile_id],
         name_ids=[name_id],
         department_ids=[dept_id],
     )
@@ -73,9 +75,25 @@ async def test_create_with_connections(conn, profile_id):
     items = await get_profile_drafts(conn, [result.id])
 
     assert len(items) == 1
+    assert profile_id in items[0].profile_ids
     assert name_id in items[0].name_ids
     assert dept_id in items[0].department_ids
     assert items[0].flag_ids == []
+
+
+async def test_create_with_owner_profile(conn, profile_id):
+    session, group = await _setup(conn, profile_id)
+
+    result = await create_profile_draft(
+        conn,
+        group_id=group.id,
+        session_id=session.id,
+        profile_ids=[profile_id],
+    )
+
+    items = await get_profile_drafts(conn, [result.id])
+
+    assert items[0].profile_ids == [profile_id]
 
 
 async def test_create_with_multiple_connections(conn, profile_id):

@@ -16,10 +16,17 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.routes.v5.api.main.types import InternalResponseBase
+from app.routes.v5.tools.entries.chat_drafts.types import GetChatDraftResponse
 
 # =============================================================================
 # Export Types
 # =============================================================================
+
+
+class GetChatDraftsApiResponse(BaseModel):
+    """Response model for chat drafts list endpoint."""
+
+    entries: list[GetChatDraftResponse] | None = None
 
 
 class ExportChatApiResponse(BaseModel):

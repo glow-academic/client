@@ -7,7 +7,7 @@ import Setting from "@/components/artifacts/setting/Setting";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -165,17 +165,17 @@ export default async function NewSettingPage({
   };
   const [settingDetailDefault, draftsResult] = await Promise.all([
     getSettingDefault(input),
-    getDrafts(), // TODO: fetch only setting drafts (e.g. getDrafts({ artifact_type: "setting" }))
+    api.post("/artifacts/settings/drafts", {})
   ]);
 
   return (
-    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+    <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Settings", section: "settings", url: "/settings" },
           { title: "New Setting" },
         ]}
-        toolbar={<SaveToolbar artifactType="setting" />}
+        toolbar={<SaveToolbar />}
       />
       <div
         className="space-y-6 px-4"

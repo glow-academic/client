@@ -1,22 +1,20 @@
-"""Persona drafts list endpoint — returns all drafts owned by the current profile."""
+"""Persona drafts list endpoint — composable infra architecture.
+
+Thin route handler. Core logic lives in app.infra.persona_drafts.
+"""
 
 from __future__ import annotations
 
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Request, Response
-from pydantic import BaseModel
 
-from app.infra.globals import get_pool
-from app.routes.v5.tools.entries.persona_drafts.search import search_persona_drafts
-from app.routes.v5.tools.entries.persona_drafts.types import GetPersonaDraftResponse
+from app.infra.globals import get_pool, get_redis_client
+from app.infra.persona_drafts import list_persona_drafts_client
+from app.routes.v5.api.main.persona.types import GetPersonaDraftsApiResponse
 from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
-
-
-class GetPersonaDraftsApiResponse(BaseModel):
-    entries: list[GetPersonaDraftResponse] | None = None
 
 
 @router.post("/drafts", response_model=GetPersonaDraftsApiResponse)
@@ -34,30 +32,20 @@ async def get_persona_drafts(
             )
 
         pool = get_pool()
+        redis = get_redis_client()
+        bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-        # Resolve profile_id → profiles_id (resource ID) via junction
-        async with pool.acquire() as conn:
-            row = await conn.fetchrow(
-                """SELECT profiles_id
-                   FROM profile_profiles_junction
-                   WHERE profile_id = $1""",
-                UUID(profile_id),
-            )
-
-        if not row:
-            return GetPersonaDraftsApiResponse(entries=[])
-
-        profiles_id: UUID = row["profiles_id"]
-
-        # Search drafts filtered by ownership
-        async with pool.acquire() as conn:
-            entries = await search_persona_drafts(
-                conn,
-                profile_ids=[profiles_id],
-            )
+        context = await list_persona_drafts_client(
+            pool,
+            redis,
+            profile_id=UUID(profile_id),
+            bypass_cache=bypass_cache,
+        )
 
         response.headers["X-Cache-Tags"] = "personas,drafts"
-        return GetPersonaDraftsApiResponse(entries=entries)
+        return GetPersonaDraftsApiResponse(
+            entries=context.entries.get("drafts"),
+        )
 
     except HTTPException:
         raise

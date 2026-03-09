@@ -7,7 +7,7 @@ import Provider from "@/components/artifacts/provider/Provider";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -143,18 +143,18 @@ export default async function NewProviderPage({
   };
   const [providerDetailDefault, draftsResult] = await Promise.all([
     getProviderDefault(input),
-    getDrafts(), // TODO: fetch only provider drafts (e.g. getDrafts({ artifact_type: "provider" }))
+    api.post("/artifacts/providers/drafts", {})
   ]);
 
   return (
-    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+    <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Providers", section: "providers", url: "/intelligence/providers" },
           { title: "New Provider" },
         ]}
-        toolbar={<SaveToolbar artifactType="provider" />}
+        toolbar={<SaveToolbar />}
       />
       <div
         className="space-y-6 px-4"

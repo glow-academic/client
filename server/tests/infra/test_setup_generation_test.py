@@ -1,12 +1,6 @@
-"""Tests for infra.websocket.setup_generation_test.
+"""Integration tests for infra.websocket.setup_generation_test."""
 
-setup_generation_test is tested with mocked black-box entry creators.
-Tests verify: correct params flow to create_test / create_test_invocation /
-create_test_invocation_runs, and the result structure is correct.
-"""
-
-from unittest.mock import AsyncMock, patch
-from uuid import uuid4
+from uuid import UUID
 
 import pytest
 
@@ -15,215 +9,277 @@ from app.infra.websocket.setup_generation_test import (
     GenerationTestResult,
     setup_generation_test,
 )
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.runs.create import create_run
+from app.routes.v5.tools.entries.sessions.create import create_session
+from app.routes.v5.tools.entries.test.get import get_tests
+from app.routes.v5.tools.entries.test.refresh import refresh_test
+from app.routes.v5.tools.entries.test_invocation.get import get_test_invocations
+from app.routes.v5.tools.entries.test_invocation.refresh import refresh_test_invocation
+from app.routes.v5.tools.entries.test_invocation_runs.refresh import (
+    refresh_test_invocation_runs,
+)
+from app.routes.v5.tools.entries.test_invocation_runs.search import (
+    search_test_invocation_runs,
+)
+from app.routes.v5.tools.resources.agents.create import create_agent
+from app.routes.v5.tools.resources.rubrics.create import create_rubric
 
-MODULE = "app.infra.websocket.setup_generation_test"
-
-
-def _fake_create_response(entry_id=None):
-    """Return a mock with .id attribute."""
-    mock = AsyncMock()
-    mock.id = entry_id or uuid4()
-    return mock
-
-
-def _patch_create_test(test_id=None):
-    resp = _fake_create_response(test_id)
-    return patch(f"{MODULE}.create_test", new_callable=AsyncMock, return_value=resp)
-
-
-def _patch_create_invocation(invocation_ids=None):
-    """Patch create_test_invocation to return different IDs per call."""
-    ids = list(invocation_ids or [])
-    idx = {"i": 0}
-
-    async def side_effect(*args, **kwargs):
-        if idx["i"] < len(ids):
-            resp = _fake_create_response(ids[idx["i"]])
-            idx["i"] += 1
-            return resp
-        return _fake_create_response()
-
-    return patch(f"{MODULE}.create_test_invocation", side_effect=side_effect)
+pytestmark = pytest.mark.asyncio
 
 
-def _patch_create_runs():
-    resp = _fake_create_response()
-    return patch(
-        f"{MODULE}.create_test_invocation_runs",
-        new_callable=AsyncMock,
-        return_value=resp,
+async def _setup_run(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
+    group = await create_group(conn, session_id=session.id)
+    run = await create_run(conn, group_id=group.id, session_id=session.id)
+    return run.id
+
+
+async def _resource_id(conn, table: str) -> UUID:
+    resource_id = await conn.fetchval(f"SELECT id FROM {table} LIMIT 1")
+    assert resource_id is not None
+    return resource_id
+
+
+async def _create_agent_config(
+    conn,
+    redis_client,
+    *,
+    name: str,
+    with_options: bool = False,
+) -> AgentTestConfig:
+    rubric = await create_rubric(conn, redis_client, name=f"{name}-rubric")
+    agent = await create_agent(
+        conn,
+        name=name,
+        redis=redis_client,
+        rubric_id=rubric.id,
+    )
+
+    if not with_options:
+        return AgentTestConfig(agent_id=agent.id, rubric_id=rubric.id)
+
+    department_id = await _resource_id(conn, "departments_resource")
+    voice_id = await _resource_id(conn, "voices_resource")
+    reasoning_level_id = await _resource_id(conn, "reasoning_levels_resource")
+    temperature_level_id = await _resource_id(conn, "temperature_levels_resource")
+    quality_id = await _resource_id(conn, "qualities_resource")
+    modality_id = await _resource_id(conn, "modalities_resource")
+    prompt_id = await _resource_id(conn, "prompts_resource")
+    instruction_id = await _resource_id(conn, "instructions_resource")
+    tool_id = await _resource_id(conn, "tools_resource")
+
+    return AgentTestConfig(
+        agent_id=agent.id,
+        rubric_id=rubric.id,
+        department_ids=[department_id],
+        voice_ids=[voice_id],
+        reasoning_level_ids=[reasoning_level_id],
+        temperature_level_ids=[temperature_level_id],
+        quality_ids=[quality_id],
+        modality_ids=[modality_id],
+        prompt_ids=[prompt_id],
+        instruction_ids=[instruction_id],
+        tool_ids=[tool_id],
     )
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Tests
-# ═══════════════════════════════════════════════════════════════════════════
+async def _refresh_generation_test_views(conn) -> None:
+    await refresh_test(conn)
+    await refresh_test_invocation(conn)
+    await refresh_test_invocation_runs(conn)
 
 
-@pytest.mark.asyncio
-class TestSetupGenerationTestBasic:
+class TestSetupGenerationTest:
     async def test_empty_agents_raises(self):
         with pytest.raises(ValueError, match="at least one agent"):
-            await setup_generation_test(None, agents=[], run_id=uuid4())
+            await setup_generation_test(None, agents=[], run_id=UUID(int=1))
 
-    async def test_single_agent_creates_test_and_invocation(self):
-        test_id = uuid4()
-        inv_id = uuid4()
-        agent_id = uuid4()
-        rubric_id = uuid4()
-        run_id = uuid4()
-
-        agent = AgentTestConfig(agent_id=agent_id, rubric_id=rubric_id)
-
-        with (
-            _patch_create_test(test_id) as mock_test,
-            _patch_create_invocation([inv_id]) as mock_inv,
-            _patch_create_runs() as mock_runs,
-        ):
-            result = await setup_generation_test(None, agents=[agent], run_id=run_id)
-
-        assert isinstance(result, GenerationTestResult)
-        assert result.test_id == test_id
-        assert result.invocations == {agent_id: inv_id}
-
-        # create_test called with correct params
-        mock_test.assert_called_once()
-        call_kwargs = mock_test.call_args[1]
-        assert call_kwargs["num_invocations"] == 1
-        assert call_kwargs["infinite_mode"] is False
-
-        # create_test_invocation called with agent + rubric
-        mock_inv.assert_called_once()
-        inv_kwargs = mock_inv.call_args[1]
-        assert inv_kwargs["test_id"] == test_id
-        assert inv_kwargs["agent_ids"] == [agent_id]
-        assert inv_kwargs["rubric_ids"] == [rubric_id]
-
-        # create_test_invocation_runs called with run_id + agent
-        mock_runs.assert_called_once()
-        runs_kwargs = mock_runs.call_args[1]
-        assert runs_kwargs["test_invocation_id"] == inv_id
-        assert runs_kwargs["agent_ids"] == [agent_id]
-        assert runs_kwargs["run_ids"] == [run_id]
-
-    async def test_multiple_agents_creates_invocation_per_agent(self):
-        test_id = uuid4()
-        inv_id_1 = uuid4()
-        inv_id_2 = uuid4()
-        agent_1 = AgentTestConfig(agent_id=uuid4(), rubric_id=uuid4())
-        agent_2 = AgentTestConfig(agent_id=uuid4(), rubric_id=uuid4())
-        run_id = uuid4()
-
-        with (
-            _patch_create_test(test_id) as mock_test,
-            _patch_create_invocation([inv_id_1, inv_id_2]) as mock_inv,
-            _patch_create_runs() as mock_runs,
-        ):
-            result = await setup_generation_test(
-                None, agents=[agent_1, agent_2], run_id=run_id
-            )
-
-        assert result.test_id == test_id
-        assert result.invocations[agent_1.agent_id] == inv_id_1
-        assert result.invocations[agent_2.agent_id] == inv_id_2
-
-        # num_invocations = 2
-        assert mock_test.call_args[1]["num_invocations"] == 2
-
-        # 2 invocations + 2 runs created
-        assert mock_inv.call_count == 2
-        assert mock_runs.call_count == 2
-
-
-@pytest.mark.asyncio
-class TestSetupGenerationTestConfig:
-    async def test_agent_config_flows_to_invocation(self):
-        """Verify all agent config fields flow to the correct create calls."""
-        dept_ids = [uuid4()]
-        voice_ids = [uuid4()]
-        reasoning_ids = [uuid4()]
-        temp_ids = [uuid4()]
-        quality_ids = [uuid4()]
-        modality_ids = [uuid4()]
-        prompt_ids = [uuid4()]
-        instruction_ids = [uuid4()]
-        tool_ids = [uuid4()]
-
-        agent = AgentTestConfig(
-            agent_id=uuid4(),
-            rubric_id=uuid4(),
-            department_ids=dept_ids,
-            voice_ids=voice_ids,
-            reasoning_level_ids=reasoning_ids,
-            temperature_level_ids=temp_ids,
-            quality_ids=quality_ids,
-            modality_ids=modality_ids,
-            prompt_ids=prompt_ids,
-            instruction_ids=instruction_ids,
-            tool_ids=tool_ids,
+    async def test_single_agent_creates_test_and_invocation(
+        self, conn, profile_id, redis_client
+    ):
+        run_id = await _setup_run(conn, profile_id)
+        agent = await _create_agent_config(
+            conn, redis_client, name="single-generation-agent"
         )
 
-        with (
-            _patch_create_test(),
-            _patch_create_invocation([uuid4()]) as mock_inv,
-            _patch_create_runs() as mock_runs,
-        ):
-            await setup_generation_test(None, agents=[agent], run_id=uuid4())
+        result = await setup_generation_test(
+            conn,
+            agents=[agent],
+            run_id=run_id,
+            profile_id=profile_id,
+        )
 
-        # Invocation-level config
-        inv_kwargs = mock_inv.call_args[1]
-        assert inv_kwargs["department_ids"] == dept_ids
-        assert inv_kwargs["voice_ids"] == voice_ids
-        assert inv_kwargs["reasoning_level_ids"] == reasoning_ids
-        assert inv_kwargs["temperature_level_ids"] == temp_ids
-        assert inv_kwargs["quality_ids"] == quality_ids
-        assert inv_kwargs["modality_ids"] == modality_ids
+        await _refresh_generation_test_views(conn)
 
-        # Runs-level config (includes execution details + shared config)
-        runs_kwargs = mock_runs.call_args[1]
-        assert runs_kwargs["prompt_ids"] == prompt_ids
-        assert runs_kwargs["instruction_ids"] == instruction_ids
-        assert runs_kwargs["tool_ids"] == tool_ids
-        assert runs_kwargs["voice_ids"] == voice_ids
-        assert runs_kwargs["quality_ids"] == quality_ids
-        assert runs_kwargs["reasoning_level_ids"] == reasoning_ids
-        assert runs_kwargs["temperature_level_ids"] == temp_ids
-        assert runs_kwargs["modality_ids"] == modality_ids
+        assert isinstance(result, GenerationTestResult)
+        assert set(result.invocations.keys()) == {agent.agent_id}
 
-    async def test_profile_id_passed_to_create_test(self):
-        profile_id = uuid4()
-        agent = AgentTestConfig(agent_id=uuid4(), rubric_id=uuid4())
+        tests = await get_tests(conn, [result.test_id])
+        assert len(tests) == 1
+        assert tests[0].test_id == result.test_id
+        assert tests[0].profile_id == profile_id
+        assert tests[0].num_invocations == 1
+        assert tests[0].infinite_mode is False
+        assert tests[0].is_dynamic is False
 
-        with (
-            _patch_create_test() as mock_test,
-            _patch_create_invocation([uuid4()]),
-            _patch_create_runs(),
-        ):
-            await setup_generation_test(
-                None, agents=[agent], run_id=uuid4(), profile_id=profile_id
-            )
+        invocation_id = result.invocations[agent.agent_id]
+        invocations = await get_test_invocations(conn, [invocation_id])
+        assert len(invocations) == 1
+        assert invocations[0].test_id == result.test_id
+        assert invocations[0].agent_ids == [agent.agent_id]
+        assert invocations[0].rubric_id == agent.rubric_id
 
-        assert mock_test.call_args[1]["profiles_id"] == profile_id
+        invocation_runs, total_count = await search_test_invocation_runs(
+            conn,
+            test_invocation_ids=[invocation_id],
+        )
+        assert total_count == 1
+        assert len(invocation_runs) == 1
+        assert invocation_runs[0].test_invocation_id == invocation_id
+        assert invocation_runs[0].agent_ids == [agent.agent_id]
 
-    async def test_none_config_fields_passed_as_none(self):
-        """Agent with no optional config — None values pass through."""
-        agent = AgentTestConfig(agent_id=uuid4(), rubric_id=uuid4())
+        run_ids = await conn.fetch(
+            """
+            SELECT runs_id
+            FROM test_invocation_runs_runs_connection
+            WHERE test_invocation_runs_id = $1
+            """,
+            invocation_runs[0].id,
+        )
+        assert [row["runs_id"] for row in run_ids] == [run_id]
 
-        with (
-            _patch_create_test(),
-            _patch_create_invocation([uuid4()]) as mock_inv,
-            _patch_create_runs() as mock_runs,
-        ):
-            await setup_generation_test(None, agents=[agent], run_id=uuid4())
+    async def test_multiple_agents_creates_invocation_per_agent(
+        self, conn, profile_id, redis_client
+    ):
+        run_id = await _setup_run(conn, profile_id)
+        first_agent = await _create_agent_config(
+            conn, redis_client, name="first-multi-agent"
+        )
+        second_agent = await _create_agent_config(
+            conn, redis_client, name="second-multi-agent"
+        )
 
-        inv_kwargs = mock_inv.call_args[1]
-        assert inv_kwargs["department_ids"] is None
-        assert inv_kwargs["voice_ids"] is None
-        assert inv_kwargs["modality_ids"] is None
+        result = await setup_generation_test(
+            conn,
+            agents=[first_agent, second_agent],
+            run_id=run_id,
+            profile_id=profile_id,
+        )
 
-        runs_kwargs = mock_runs.call_args[1]
-        assert runs_kwargs["prompt_ids"] is None
-        assert runs_kwargs["instruction_ids"] is None
-        assert runs_kwargs["tool_ids"] is None
-        assert runs_kwargs["voice_ids"] is None
-        assert runs_kwargs["modality_ids"] is None
+        await _refresh_generation_test_views(conn)
+
+        assert set(result.invocations.keys()) == {
+            first_agent.agent_id,
+            second_agent.agent_id,
+        }
+
+        tests = await get_tests(conn, [result.test_id])
+        assert len(tests) == 1
+        assert tests[0].num_invocations == 2
+
+        invocation_ids = list(result.invocations.values())
+        invocations = await get_test_invocations(conn, invocation_ids)
+        assert len(invocations) == 2
+        assert {item.test_id for item in invocations} == {result.test_id}
+        assert {item.agent_ids[0] for item in invocations} == {
+            first_agent.agent_id,
+            second_agent.agent_id,
+        }
+
+        invocation_runs, total_count = await search_test_invocation_runs(
+            conn,
+            test_invocation_ids=invocation_ids,
+            limit=10,
+        )
+        assert total_count == 2
+        assert len(invocation_runs) == 2
+        assert {item.test_invocation_id for item in invocation_runs} == set(
+            invocation_ids
+        )
+
+    async def test_agent_config_flows_to_invocation_and_runs(
+        self, conn, profile_id, redis_client
+    ):
+        run_id = await _setup_run(conn, profile_id)
+        agent = await _create_agent_config(
+            conn,
+            redis_client,
+            name="configured-generation-agent",
+            with_options=True,
+        )
+
+        result = await setup_generation_test(
+            conn,
+            agents=[agent],
+            run_id=run_id,
+            profile_id=profile_id,
+        )
+
+        await _refresh_generation_test_views(conn)
+
+        invocation_id = result.invocations[agent.agent_id]
+        invocations = await get_test_invocations(conn, [invocation_id])
+        assert len(invocations) == 1
+        assert invocations[0].department_ids == agent.department_ids
+        assert invocations[0].voice_id == agent.voice_ids[0]
+        assert invocations[0].reasoning_level_id == agent.reasoning_level_ids[0]
+        assert invocations[0].temperature_level_id == agent.temperature_level_ids[0]
+        assert invocations[0].quality_id == agent.quality_ids[0]
+        assert invocations[0].modality_ids == agent.modality_ids
+
+        invocation_runs, total_count = await search_test_invocation_runs(
+            conn,
+            test_invocation_ids=[invocation_id],
+        )
+        assert total_count == 1
+        assert len(invocation_runs) == 1
+        assert invocation_runs[0].prompt_ids == agent.prompt_ids
+        assert invocation_runs[0].instruction_ids == agent.instruction_ids
+        assert invocation_runs[0].tool_ids == agent.tool_ids
+        assert invocation_runs[0].voice_ids == agent.voice_ids
+        assert invocation_runs[0].quality_ids == agent.quality_ids
+        assert (
+            invocation_runs[0].reasoning_level_ids == agent.reasoning_level_ids
+        )
+        assert (
+            invocation_runs[0].temperature_level_ids
+            == agent.temperature_level_ids
+        )
+        assert invocation_runs[0].modality_ids == agent.modality_ids
+
+    async def test_none_config_fields_round_trip_as_empty_lists(
+        self, conn, profile_id, redis_client
+    ):
+        run_id = await _setup_run(conn, profile_id)
+        agent = await _create_agent_config(
+            conn, redis_client, name="none-config-generation-agent"
+        )
+
+        result = await setup_generation_test(
+            conn,
+            agents=[agent],
+            run_id=run_id,
+            profile_id=profile_id,
+        )
+
+        await _refresh_generation_test_views(conn)
+
+        invocation_id = result.invocations[agent.agent_id]
+        invocations = await get_test_invocations(conn, [invocation_id])
+        assert len(invocations) == 1
+        assert invocations[0].department_ids == []
+        assert invocations[0].voice_id is None
+        assert invocations[0].modality_ids == []
+
+        invocation_runs, total_count = await search_test_invocation_runs(
+            conn,
+            test_invocation_ids=[invocation_id],
+        )
+        assert total_count == 1
+        assert len(invocation_runs) == 1
+        assert invocation_runs[0].prompt_ids == []
+        assert invocation_runs[0].instruction_ids == []
+        assert invocation_runs[0].tool_ids == []
+        assert invocation_runs[0].voice_ids == []
+        assert invocation_runs[0].modality_ids == []

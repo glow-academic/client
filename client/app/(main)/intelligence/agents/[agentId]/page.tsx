@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -137,20 +137,20 @@ export default async function AgentEditPage({
     const [agentDetail, docs, draftsResult] = await Promise.all([
       agentId ? getAgent(input) : Promise.resolve(null),
       getDocs({ body: { entity_id: agentId } }),
-      getDrafts(), // TODO: fetch only agent drafts (e.g. getDrafts({ artifact_type: "agent" }))
+      api.post("/artifacts/agents/drafts", {})
     ]);
 
     const entityName = docs.detail.title;
 
     return (
-      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Intelligence", section: "intelligence", url: "/intelligence" },
             { title: "Agents", section: "agents", url: "/intelligence/agents" },
             { title: entityName },
           ]}
-          toolbar={<SaveToolbar artifactType="agent" />}
+          toolbar={<SaveToolbar />}
         />
         <div className="space-y-6 px-4" data-page="agent-edit" data-agent-id={agentId}>
           <Agent

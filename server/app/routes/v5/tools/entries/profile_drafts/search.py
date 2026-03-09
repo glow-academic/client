@@ -25,6 +25,7 @@ async def search_profile_drafts(
         SELECT
             d.id, d.version, d.created_at, d.generated, d.mcp, d.active,
             d.group_id, d.session_id,
+            COALESCE(ARRAY_AGG(DISTINCT p.profiles_id) FILTER (WHERE p.profiles_id IS NOT NULL), '{}') AS profile_ids,
             COALESCE(ARRAY_AGG(DISTINCT dep.departments_id) FILTER (WHERE dep.departments_id IS NOT NULL), '{}') AS department_ids,
             COALESCE(ARRAY_AGG(DISTINCT em.emails_id) FILTER (WHERE em.emails_id IS NOT NULL), '{}') AS email_ids,
             COALESCE(ARRAY_AGG(DISTINCT f.flags_id) FILTER (WHERE f.flags_id IS NOT NULL), '{}') AS flag_ids,
@@ -71,6 +72,7 @@ async def search_profile_drafts(
             active=r["active"],
             group_id=r["group_id"],
             session_id=r["session_id"],
+            profile_ids=r["profile_ids"],
             department_ids=r["department_ids"],
             email_ids=r["email_ids"],
             flag_ids=r["flag_ids"],

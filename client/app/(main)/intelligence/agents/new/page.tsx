@@ -9,7 +9,7 @@ import Agent from "@/components/artifacts/agent/Agent";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -104,18 +104,18 @@ export default async function NewAgentPage({
   };
   const [agentDetailDefault, draftsResult] = await Promise.all([
     getAgent(input),
-    getDrafts(), // TODO: fetch only agent drafts (e.g. getDrafts({ artifact_type: "agent" }))
+    api.post("/artifacts/agents/drafts", {})
   ]);
 
   return (
-    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+    <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Agents", section: "agents", url: "/intelligence/agents" },
           { title: "New Agent" },
         ]}
-        toolbar={<SaveToolbar artifactType="agent" />}
+        toolbar={<SaveToolbar />}
       />
       <div
         className="space-y-6 px-4"

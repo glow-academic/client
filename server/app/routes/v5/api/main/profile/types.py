@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.infra.profile_create import CreateProfileItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.routes.v5.tools.entries.profile_drafts.types import GetProfileDraftResponse
 
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)
@@ -158,6 +159,12 @@ class GetProfileApiResponse(BaseModel):
     flags: ProfileFlagSection | None = None
     departments: ProfileDepartmentSection | None = None
     roles: ProfileRoleSection | None = None
+
+
+class GetProfileDraftsApiResponse(BaseModel):
+    """Response model for profile drafts list endpoint."""
+
+    entries: list[GetProfileDraftResponse] | None = None
 
 
 # ========== Shared Create/Update Types ==========

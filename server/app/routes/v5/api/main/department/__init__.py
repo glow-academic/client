@@ -6,6 +6,7 @@ from app.routes.v5.api.main.department.create import router as create_router
 from app.routes.v5.api.main.department.delete import router as delete_router
 from app.routes.v5.api.main.department.docs import router as docs_router
 from app.routes.v5.api.main.department.draft import router as draft_router
+from app.routes.v5.api.main.department.drafts import router as drafts_router
 from app.routes.v5.api.main.department.duplicate import router as duplicate_router
 from app.routes.v5.api.main.department.export import router as export_router
 from app.routes.v5.api.main.department.get import router as get_router
@@ -23,6 +24,7 @@ router.include_router(update_router)
 router.include_router(duplicate_router)
 router.include_router(delete_router)
 router.include_router(draft_router)
+router.include_router(drafts_router)
 router.include_router(docs_router)
 router.include_router(export_router)
 router.include_router(refresh_router)

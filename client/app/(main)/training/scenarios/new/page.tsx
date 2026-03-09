@@ -9,7 +9,7 @@ import Scenario from "@/components/artifacts/scenario/Scenario";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -117,18 +117,18 @@ export default async function NewScenarioPage({
       mcp: false,
     },
   }),
-    getDrafts(), // TODO: fetch only scenario drafts (e.g. getDrafts({ artifact_type: "scenario" }))
+    api.post("/artifacts/scenarios/drafts", {})
   ]);
 
   return (
-    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+    <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Training", section: "training", url: "/training" },
           { title: "Scenarios", section: "scenarios", url: "/training/scenarios" },
           { title: "New Scenario" },
         ]}
-        toolbar={<SaveToolbar artifactType="scenario" />}
+        toolbar={<SaveToolbar />}
       />
       <div
         className="space-y-6 px-4"

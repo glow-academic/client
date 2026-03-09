@@ -15,6 +15,7 @@ from pydantic import BaseModel
 
 from app.infra.model_create import CreateModelItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.routes.v5.tools.entries.model_drafts.types import GetModelDraftResponse
 
 # =============================================================================
 # Flag Config
@@ -374,6 +375,12 @@ class PatchModelDraftApiResponse(BaseModel):
     new_version: int
     message: str
     form_state: ModelDraftFormState | None = None
+
+
+class GetModelDraftsApiResponse(BaseModel):
+    """Response model for model drafts list endpoint."""
+
+    entries: list[GetModelDraftResponse] | None = None
 
 
 # ========== Export Endpoint Types ==========

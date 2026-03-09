@@ -98,6 +98,7 @@ class AttemptUserReceivedStartData(BaseModel):
     chat_id: str
     run_id: str
     profile_id: str
+    session_id: str | None = None
     item_id: str | None = None
     rooms: list[str] | None = None
 
@@ -115,6 +116,7 @@ class AttemptUserReceivedCompleteData(BaseModel):
     chat_id: str
     run_id: str
     content: str
+    session_id: str | None = None
     item_id: str | None = None
     rooms: list[str] | None = None
     audio_upload_id: str | None = None

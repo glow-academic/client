@@ -9,7 +9,7 @@ import Model from "@/components/artifacts/model/Model";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -161,20 +161,20 @@ export default async function ModelEditPage({
   const [model, docs, draftsResult] = await Promise.all([
     getModel(input),
     getDocs({ body: { entity_id: modelId } }),
-    getDrafts(), // TODO: fetch only model drafts (e.g. getDrafts({ artifact_type: "model" }))
+    api.post("/artifacts/models/drafts", {})
   ]);
 
   const entityName = docs.detail.title;
 
   return (
-    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+    <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
           { title: "Models", section: "models", url: "/intelligence/models" },
           { title: entityName },
         ]}
-        toolbar={<SaveToolbar artifactType="model" />}
+        toolbar={<SaveToolbar />}
       />
       <div className="space-y-6 px-4" data-page="model-edit" data-model-id={modelId}>
         <Model

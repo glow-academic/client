@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from app.infra.setting_create import CreateSettingItem
 from app.routes.v5.api.types import BaseResourceSection
+from app.routes.v5.tools.entries.setting_drafts.types import GetSettingDraftResponse
 
 # ========== Flag Enrichment ==========
 
@@ -280,6 +281,12 @@ class PatchSettingDraftApiResponse(BaseModel):
     new_version: int
     message: str
     form_state: SettingDraftFormState | None = None
+
+
+class GetSettingDraftsApiResponse(BaseModel):
+    """Response model for setting drafts list endpoint."""
+
+    entries: list[GetSettingDraftResponse] | None = None
 
 
 # ========== List Endpoint Types ==========

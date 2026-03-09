@@ -14,9 +14,7 @@ type AuthProfileIn = InputOf<"/auth/profile", "post">;
 type AuthProfileOut = OutputOf<"/auth/profile", "post">;
 type AuthSettingsIn = InputOf<"/auth/settings", "post">;
 type AuthSettingsOut = OutputOf<"/auth/settings", "post">;
-type DraftsIn = InputOf<"/auth/drafts", "post">;
-type DraftsOut = OutputOf<"/auth/drafts", "post">;
-type AnalyticsFiltersOut = OutputOf<"/auth/analytics", "post">;
+
 type CreateEmulationGrantIn = InputOf<"/auth/emulate", "post">;
 type CreateEmulationGrantOut = OutputOf<"/auth/emulate", "post">;
 type CreateFeedbackIn = InputOf<"/api/v5/artifacts/activity/problem", "post">;
@@ -68,29 +66,6 @@ export const getAuthSettings = cache(
   }
 );
 
-/** ---- Cached drafts fetch (parallel with context) ---- */
-export const getDrafts = cache(
-  async (): Promise<DraftsOut> => {
-    const extraHeaders = await buildAuthHeaders();
-    return api.post("/auth/drafts", { body: {} } as DraftsIn, { headers: extraHeaders });
-  }
-);
-
-/** ---- Cached analytics filters fetch (parallel with context) ---- */
-export const getAnalyticsFilters = cache(
-  async (): Promise<AnalyticsFiltersOut | null> => {
-    try {
-      const extraHeaders = await buildAuthHeaders();
-      return await api.post(
-        "/auth/analytics",
-        { body: {} } as InputOf<"/auth/analytics", "post">,
-        { headers: extraHeaders }
-      );
-    } catch {
-      return null;
-    }
-  }
-);
 
 /** ---- Generate messages server action ---- */
 type GenerateMessagesIn = InputOf<"/auth/generate", "post">;
@@ -102,10 +77,6 @@ export async function getGenerateMessages(
   return api.post("/auth/generate", input);
 }
 
-/** ---- Export type for client (type-only imports) ---- */
-export type DraftsResponse = DraftsOut;
-export type AnalyticsFiltersResponse = AnalyticsFiltersOut;
-export type ResolveGroupResponse = ResolveGroupOut;
 
 /** ---- Helper to get validated profile ID (reusable for API calls) ----
  * @param session - Optional session to reuse. If not provided, will fetch session.
@@ -328,7 +299,6 @@ export type RefreshPageFn = (page: string) => Promise<void>;
 export type ExportPageFn = typeof exportPage;
 
 export type {
-  AnalyticsFiltersOut,
   AttemptFullIn,
   AttemptFullOut,
   CreateFeedbackIn,

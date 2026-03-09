@@ -1,12 +1,6 @@
-"""Tests for infra.websocket.resolve_generation_winner.
+"""Integration tests for infra.websocket.resolve_generation_winner."""
 
-resolve_generation_winner is tested with mocked black-box functions
-(search_test_invocation_entries_internal, search_test_grades).
-Tests verify: correct params, score comparison, and edge cases.
-"""
-
-from unittest.mock import AsyncMock, patch
-from uuid import uuid4
+from uuid import UUID
 
 import pytest
 
@@ -14,219 +8,200 @@ from app.infra.websocket.resolve_generation_winner import (
     GenerationWinnerResult,
     resolve_generation_winner,
 )
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.runs.create import create_run
+from app.routes.v5.tools.entries.sessions.create import create_session
+from app.routes.v5.tools.entries.test.create import create_test
+from app.routes.v5.tools.entries.test_grade.create import create_test_grade
+from app.routes.v5.tools.entries.test_invocation.create import create_test_invocation
+from app.routes.v5.tools.resources.agents.create import create_agent
 
-MODULE = "app.infra.websocket.resolve_generation_winner"
-
-
-class FakeInvocation:
-    """Mimics GetTestInvocationResponse for testing."""
-
-    def __init__(self, invocation_id, agent_ids=None):
-        self.invocation_id = invocation_id
-        self.agent_ids = agent_ids or []
-
-
-class FakeGrade:
-    """Mimics GetTestGradeResponse for testing."""
-
-    def __init__(self, invocation_id, score, passed=True):
-        self.invocation_id = invocation_id
-        self.score = score
-        self.passed = passed
+pytestmark = pytest.mark.asyncio
 
 
-def _patch_search_invocations(invocations):
-    return patch(
-        f"{MODULE}.search_test_invocation_entries_internal",
-        new_callable=AsyncMock,
-        return_value=invocations,
+async def _create_generation_test(conn, profile_id):
+    session = await create_session(conn, profile_id=profile_id)
+    group = await create_group(conn, session_id=session.id)
+    run = await create_run(conn, group_id=group.id, session_id=session.id)
+    call = await create_call(conn, run_id=run.id, session_id=session.id)
+    test = await create_test(conn, call_id=call.id, profiles_id=profile_id)
+    return test.id, run.id, session.id
+
+
+async def _create_invocation_with_grade(
+    conn,
+    *,
+    test_id: UUID,
+    run_id: UUID,
+    session_id: UUID,
+    score: int,
+    passed: bool = True,
+    agent_ids: list[UUID] | None = None,
+) -> tuple[UUID, UUID | None]:
+    call = await create_call(conn, run_id=run_id, session_id=session_id)
+    invocation = await create_test_invocation(
+        conn,
+        test_id=test_id,
+        call_id=call.id,
+        agent_ids=agent_ids,
     )
-
-
-def _patch_search_grades(grades):
-    return patch(
-        f"{MODULE}.search_test_grades",
-        new_callable=AsyncMock,
-        return_value=grades,
+    await create_test_grade(
+        conn,
+        invocation_id=invocation.id,
+        call_id=call.id,
+        run_id=run_id,
+        time_taken=120,
+        passed=passed,
+        score=score,
     )
+    return invocation.id, agent_ids[0] if agent_ids else None
 
 
-# ═══════════════════════════════════════════════════════════════════════════
-# Tests
-# ═══════════════════════════════════════════════════════════════════════════
+async def _create_agent_id(conn, redis_client, name: str) -> UUID:
+    agent = await create_agent(conn, name=name, redis=redis_client)
+    return agent.id
 
 
-@pytest.mark.asyncio
-class TestResolveGenerationWinnerEmpty:
-    async def test_no_invocations_returns_none(self):
-        with _patch_search_invocations([]):
-            result = await resolve_generation_winner(None, test_id=uuid4())
+class TestResolveGenerationWinner:
+    async def test_no_invocations_returns_none(self, conn, profile_id):
+        test_id, _run_id, _session_id = await _create_generation_test(conn, profile_id)
+
+        result = await resolve_generation_winner(conn, test_id=test_id)
 
         assert result is None
 
-    async def test_no_grades_returns_none(self):
-        inv_id = uuid4()
-        agent_id = uuid4()
+    async def test_no_grades_returns_none(self, conn, profile_id, redis_client):
+        test_id, run_id, session_id = await _create_generation_test(conn, profile_id)
+        agent_id = await _create_agent_id(conn, redis_client, "winnerless-agent")
+        call = await create_call(conn, run_id=run_id, session_id=session_id)
+        await create_test_invocation(
+            conn,
+            test_id=test_id,
+            call_id=call.id,
+            agent_ids=[agent_id],
+        )
 
-        inv = FakeInvocation(invocation_id=inv_id, agent_ids=[agent_id])
-
-        with (
-            _patch_search_invocations([inv]),
-            _patch_search_grades([]),
-        ):
-            result = await resolve_generation_winner(None, test_id=uuid4())
+        result = await resolve_generation_winner(conn, test_id=test_id)
 
         assert result is None
 
+    async def test_single_agent_wins_by_default(
+        self, conn, profile_id, redis_client
+    ):
+        test_id, run_id, session_id = await _create_generation_test(conn, profile_id)
+        agent_id = await _create_agent_id(conn, redis_client, "single-winner")
+        invocation_id, _ = await _create_invocation_with_grade(
+            conn,
+            test_id=test_id,
+            run_id=run_id,
+            session_id=session_id,
+            agent_ids=[agent_id],
+            score=85,
+        )
 
-@pytest.mark.asyncio
-class TestResolveGenerationWinnerScoring:
-    async def test_single_agent_wins_by_default(self):
-        inv_id = uuid4()
-        agent_id = uuid4()
-        test_id = uuid4()
-
-        inv = FakeInvocation(invocation_id=inv_id, agent_ids=[agent_id])
-        grade = FakeGrade(invocation_id=inv_id, score=85)
-
-        with (
-            _patch_search_invocations([inv]),
-            _patch_search_grades([grade]),
-        ):
-            result = await resolve_generation_winner(None, test_id=test_id)
+        result = await resolve_generation_winner(conn, test_id=test_id)
 
         assert isinstance(result, GenerationWinnerResult)
         assert result.winning_agent_id == agent_id
+        assert result.winning_invocation_id == invocation_id
         assert result.winning_score == 85
         assert len(result.all_results) == 1
 
-    async def test_highest_score_wins(self):
-        inv_id_1 = uuid4()
-        inv_id_2 = uuid4()
-        agent_id_1 = uuid4()
-        agent_id_2 = uuid4()
-        test_id = uuid4()
+    async def test_highest_score_wins(self, conn, profile_id, redis_client):
+        test_id, run_id, session_id = await _create_generation_test(conn, profile_id)
+        first_agent_id = await _create_agent_id(conn, redis_client, "first-agent")
+        second_agent_id = await _create_agent_id(conn, redis_client, "second-agent")
 
-        invocations = [
-            FakeInvocation(invocation_id=inv_id_1, agent_ids=[agent_id_1]),
-            FakeInvocation(invocation_id=inv_id_2, agent_ids=[agent_id_2]),
-        ]
-        grades = [
-            FakeGrade(invocation_id=inv_id_1, score=70),
-            FakeGrade(invocation_id=inv_id_2, score=95),
-        ]
+        first_invocation_id, _ = await _create_invocation_with_grade(
+            conn,
+            test_id=test_id,
+            run_id=run_id,
+            session_id=session_id,
+            agent_ids=[first_agent_id],
+            score=70,
+        )
+        second_invocation_id, _ = await _create_invocation_with_grade(
+            conn,
+            test_id=test_id,
+            run_id=run_id,
+            session_id=session_id,
+            agent_ids=[second_agent_id],
+            score=95,
+        )
 
-        with (
-            _patch_search_invocations(invocations),
-            _patch_search_grades(grades),
-        ):
-            result = await resolve_generation_winner(None, test_id=test_id)
+        result = await resolve_generation_winner(conn, test_id=test_id)
 
-        assert result.winning_agent_id == agent_id_2
+        assert result is not None
+        assert result.winning_agent_id == second_agent_id
+        assert result.winning_invocation_id == second_invocation_id
         assert result.winning_score == 95
-        assert result.winning_invocation_id == inv_id_2
-        assert len(result.all_results) == 2
+        assert {item.invocation_id for item in result.all_results} == {
+            first_invocation_id,
+            second_invocation_id,
+        }
 
-    async def test_three_agents_middle_wins(self):
-        inv_ids = [uuid4() for _ in range(3)]
-        agent_ids = [uuid4() for _ in range(3)]
-        test_id = uuid4()
+    async def test_tie_first_graded_wins(self, conn, profile_id, redis_client):
+        test_id, run_id, session_id = await _create_generation_test(conn, profile_id)
+        first_agent_id = await _create_agent_id(conn, redis_client, "tie-first")
+        second_agent_id = await _create_agent_id(conn, redis_client, "tie-second")
 
-        invocations = [
-            FakeInvocation(invocation_id=inv_ids[i], agent_ids=[agent_ids[i]])
-            for i in range(3)
-        ]
-        grades = [
-            FakeGrade(invocation_id=inv_ids[0], score=50),
-            FakeGrade(invocation_id=inv_ids[1], score=100),
-            FakeGrade(invocation_id=inv_ids[2], score=75),
-        ]
+        first_invocation_id, _ = await _create_invocation_with_grade(
+            conn,
+            test_id=test_id,
+            run_id=run_id,
+            session_id=session_id,
+            agent_ids=[first_agent_id],
+            score=80,
+        )
+        await _create_invocation_with_grade(
+            conn,
+            test_id=test_id,
+            run_id=run_id,
+            session_id=session_id,
+            agent_ids=[second_agent_id],
+            score=80,
+        )
 
-        with (
-            _patch_search_invocations(invocations),
-            _patch_search_grades(grades),
-        ):
-            result = await resolve_generation_winner(None, test_id=test_id)
+        result = await resolve_generation_winner(conn, test_id=test_id)
 
-        assert result.winning_agent_id == agent_ids[1]
-        assert result.winning_score == 100
+        assert result is not None
+        assert result.winning_agent_id == first_agent_id
+        assert result.winning_invocation_id == first_invocation_id
+        assert result.winning_score == 80
 
-    async def test_tie_first_graded_wins(self):
-        """Equal scores — first in grades list wins (max picks first)."""
-        inv_id_1 = uuid4()
-        inv_id_2 = uuid4()
-        agent_id_1 = uuid4()
-        agent_id_2 = uuid4()
+    async def test_grade_without_agent_mapping_skipped(
+        self, conn, profile_id, redis_client
+    ):
+        test_id, run_id, session_id = await _create_generation_test(conn, profile_id)
+        mapped_agent_id = await _create_agent_id(conn, redis_client, "mapped-agent")
 
-        invocations = [
-            FakeInvocation(invocation_id=inv_id_1, agent_ids=[agent_id_1]),
-            FakeInvocation(invocation_id=inv_id_2, agent_ids=[agent_id_2]),
-        ]
-        grades = [
-            FakeGrade(invocation_id=inv_id_1, score=80),
-            FakeGrade(invocation_id=inv_id_2, score=80),
-        ]
+        mapped_invocation_id, _ = await _create_invocation_with_grade(
+            conn,
+            test_id=test_id,
+            run_id=run_id,
+            session_id=session_id,
+            agent_ids=[mapped_agent_id],
+            score=70,
+        )
+        unmapped_invocation_id, _ = await _create_invocation_with_grade(
+            conn,
+            test_id=test_id,
+            run_id=run_id,
+            session_id=session_id,
+            agent_ids=None,
+            score=100,
+        )
 
-        with (
-            _patch_search_invocations(invocations),
-            _patch_search_grades(grades),
-        ):
-            result = await resolve_generation_winner(None, test_id=uuid4())
+        result = await resolve_generation_winner(conn, test_id=test_id)
 
-        # First grade in list wins on tie
-        assert result.winning_agent_id == agent_id_1
-
-
-@pytest.mark.asyncio
-class TestResolveGenerationWinnerEdgeCases:
-    async def test_grade_without_agent_mapping_skipped(self):
-        """Grade for an invocation with no agent_ids is ignored."""
-        inv_id_1 = uuid4()
-        inv_id_2 = uuid4()
-        agent_id_1 = uuid4()
-
-        invocations = [
-            FakeInvocation(invocation_id=inv_id_1, agent_ids=[agent_id_1]),
-            FakeInvocation(invocation_id=inv_id_2, agent_ids=[]),  # no agent
-        ]
-        grades = [
-            FakeGrade(invocation_id=inv_id_1, score=70),
-            FakeGrade(invocation_id=inv_id_2, score=100),  # no agent → skipped
-        ]
-
-        with (
-            _patch_search_invocations(invocations),
-            _patch_search_grades(grades),
-        ):
-            result = await resolve_generation_winner(None, test_id=uuid4())
-
-        assert result.winning_agent_id == agent_id_1
+        assert result is not None
+        assert result.winning_agent_id == mapped_agent_id
+        assert result.winning_invocation_id == mapped_invocation_id
         assert result.winning_score == 70
-        assert len(result.all_results) == 1
-
-    async def test_correct_params_passed_to_black_boxes(self):
-        """Verify search functions receive correct test_id and invocation_ids."""
-        test_id = uuid4()
-        inv_id = uuid4()
-        agent_id = uuid4()
-
-        inv = FakeInvocation(invocation_id=inv_id, agent_ids=[agent_id])
-        grade = FakeGrade(invocation_id=inv_id, score=90)
-
-        with (
-            _patch_search_invocations([inv]) as mock_inv_search,
-            _patch_search_grades([grade]) as mock_grades,
-        ):
-            await resolve_generation_winner(None, test_id=test_id)
-
-        # search_test_invocation_entries_internal called with test_ids + bypass_mv
-        mock_inv_search.assert_called_once()
-        inv_kwargs = mock_inv_search.call_args[1]
-        assert inv_kwargs["test_ids"] == [test_id]
-        assert inv_kwargs["bypass_mv"] is True
-
-        # search_test_grades called with correct invocation_ids + bypass_mv
-        mock_grades.assert_called_once()
-        grade_kwargs = mock_grades.call_args[1]
-        assert grade_kwargs["invocation_ids"] == [inv_id]
-        assert grade_kwargs["bypass_mv"] is True
+        assert {item.invocation_id for item in result.all_results} == {
+            mapped_invocation_id
+        }
+        assert unmapped_invocation_id not in {
+            item.invocation_id for item in result.all_results
+        }

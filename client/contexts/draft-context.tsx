@@ -1,6 +1,6 @@
 "use client";
 
-import type { DraftsResponse } from "@/app/(main)/layout-server";
+import type { UUID } from "crypto";
 import React, {
   createContext,
   useCallback,
@@ -11,7 +11,14 @@ import React, {
 } from "react";
 import { toast } from "sonner";
 
-export type DraftItem = NonNullable<DraftsResponse["drafts"]>[number];
+export type DraftItem = {
+  id: UUID;
+  version: number;
+  created_at: string;
+  group_id: UUID;
+  name_ids?: UUID[];
+  [key: string]: unknown;
+};
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 

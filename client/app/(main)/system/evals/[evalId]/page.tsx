@@ -9,7 +9,7 @@ import Eval from "@/components/artifacts/eval/Eval";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -124,20 +124,20 @@ export default async function EvalDetailPage({
   const [evalDetail, docs, draftsResult] = await Promise.all([
     getEvalDetail(input),
     getDocs({ body: { entity_id: evalId } }),
-    getDrafts(), // TODO: fetch only eval drafts (e.g. getDrafts({ artifact_type: "eval" }))
+    api.post("/artifacts/evals/drafts", {})
   ]);
 
   const entityName = docs.detail.title;
 
   return (
-    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+    <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "System", section: "system", url: "/system" },
           { title: "Evals", section: "evals", url: "/system/evals" },
           { title: entityName },
         ]}
-        toolbar={<SaveToolbar artifactType="eval" />}
+        toolbar={<SaveToolbar />}
       />
       <div
         className="space-y-6 px-4"

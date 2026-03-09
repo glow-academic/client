@@ -9,7 +9,7 @@ import Parameter from "@/components/artifacts/parameter/Parameter";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -120,18 +120,18 @@ export default async function NewParameterPage({
   };
   const [parameterDetailDefault, draftsResult] = await Promise.all([
     getParameterDefault(input),
-    getDrafts(), // TODO: fetch only parameter drafts (e.g. getDrafts({ artifact_type: "parameter" }))
+    api.post("/artifacts/parameters/drafts", {})
   ]);
 
   return (
-    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+    <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Management", section: "management", url: "/management" },
           { title: "Parameters", section: "parameters", url: "/management/parameters" },
           { title: "New Parameter" },
         ]}
-        toolbar={<SaveToolbar artifactType="parameter" />}
+        toolbar={<SaveToolbar />}
       />
       <div className="space-y-6 px-4" data-page="parameter-new">
         <Parameter

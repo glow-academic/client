@@ -9,7 +9,7 @@ import Document from "@/components/artifacts/document/Document";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -158,18 +158,18 @@ export default async function NewDocumentPage({
   };
   const [documentDetailDefault, draftsResult] = await Promise.all([
     getDocumentDefault(input),
-    getDrafts(), // TODO: fetch only document drafts (e.g. getDrafts({ artifact_type: "document" }))
+    api.post("/artifacts/documents/drafts", {})
   ]);
 
   return (
-    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+    <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Management", section: "management", url: "/management" },
           { title: "Documents", section: "documents", url: "/management/documents" },
           { title: "New Document" },
         ]}
-        toolbar={<SaveToolbar artifactType="document" />}
+        toolbar={<SaveToolbar />}
       />
       <div
         className="space-y-6 px-4"

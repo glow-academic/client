@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.infra.parameter_create import CreateParameterItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.routes.v5.tools.entries.parameter_drafts.types import GetParameterDraftResponse
 
 # ---------------------------------------------------------------------------
 # Handcrafted resource types (replaces Q types from app.sql.types)
@@ -143,6 +144,12 @@ class GetParameterApiResponse(BaseModel):
     flags: ParameterFlagSection | None = None
     departments: ParameterDepartmentSection | None = None
     fields: ParameterFieldSection | None = None
+
+
+class GetParameterDraftsApiResponse(BaseModel):
+    """Response model for parameter drafts list endpoint."""
+
+    entries: list[GetParameterDraftResponse] | None = None
 
 
 # ========== List Endpoint Types ==========

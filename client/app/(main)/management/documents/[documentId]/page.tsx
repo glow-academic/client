@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Document from "@/components/artifacts/document/Document";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -174,20 +174,20 @@ export default async function DocumentEditPage({
     const [documentDetail, docs, draftsResult] = await Promise.all([
       getDocument(documentId, q.draftId ?? null),
       getDocs({ body: { entity_id: documentId } }),
-      getDrafts(), // TODO: fetch only document drafts (e.g. getDrafts({ artifact_type: "document" }))
+      api.post("/artifacts/documents/drafts", {})
     ]);
 
     const entityName = docs.detail.title;
 
     return (
-      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Management", section: "management", url: "/management" },
             { title: "Documents", section: "documents", url: "/management/documents" },
             { title: entityName },
           ]}
-          toolbar={<SaveToolbar artifactType="document" />}
+          toolbar={<SaveToolbar />}
         />
         <div
           className="space-y-6 px-4"

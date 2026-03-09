@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.infra.rubric_create import CreateRubricItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.routes.v5.tools.entries.rubric_drafts.types import GetRubricDraftResponse
 
 
 class RubricFlagConfig(BaseModel):
@@ -83,6 +84,12 @@ class GetRubricApiResponse(BaseModel):
     points: RubricPointsSection | None = None
     standard_groups: RubricStandardGroupsSection | None = None
     standards: RubricStandardsSection | None = None
+
+
+class GetRubricDraftsApiResponse(BaseModel):
+    """Response model for rubric drafts list endpoint."""
+
+    entries: list[GetRubricDraftResponse] | None = None
 
 
 # ========== Shared Create/Update Types ==========

@@ -28,6 +28,7 @@ from app.infra.websocket.attempt_types import (
     GenerateRequestData,
 )
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
+from app.infra.websocket.find_session_by_socket import find_session_by_socket
 from app.infra.websocket.session_store import get_session_by_group_id
 from app.infra.websocket.socket_event import EmitFn, internal_event
 from app.utils.logging.db_logger import get_logger
@@ -156,6 +157,7 @@ async def audio_speech_start_impl(
         return
 
     profile_id_str = await find_profile_by_socket(session.sid)
+    session_id_str = await find_session_by_socket(session.sid)
 
     await emit(
         [
@@ -166,6 +168,7 @@ async def audio_speech_start_impl(
                     chat_id=session.chat_id,
                     run_id=session.run_id,
                     profile_id=profile_id_str or "",
+                    session_id=session_id_str,
                     item_id=item_id,
                 ).model_dump(mode="json"),
             )
@@ -305,6 +308,7 @@ async def user_start_impl(
     sid = data.get("sid", "")
     chat_id = data.get("chat_id", "")
     run_id = data.get("run_id", "")
+    session_id_str = data.get("session_id", "")
     if not sid or not chat_id or not run_id:
         return
 
@@ -312,20 +316,28 @@ async def user_start_impl(
         from app.routes.v5.tools.entries.attempt_message.create import (
             create_attempt_message,
         )
+        from app.routes.v5.tools.entries.calls.create import create_call
         from app.routes.v5.tools.entries.messages.create import create_message
+
+        run_id_uuid = uuid.UUID(run_id)
+        session_id_uuid = uuid.UUID(session_id_str) if session_id_str else None
 
         async with pool.acquire() as conn:
             result = await create_message(
                 conn,
-                run_id=uuid.UUID(run_id),
+                run_id=run_id_uuid,
                 role="user",
             )
-            # TODO: wire up real call_id from generation context
+            call_result = await create_call(
+                conn,
+                run_id=run_id_uuid,
+                session_id=session_id_uuid or uuid.UUID(int=0),
+            )
             await create_attempt_message(
                 conn,
                 chat_id=uuid.UUID(chat_id),
                 message_id=result.id,
-                call_id=uuid.uuid4(),
+                call_id=call_result.id,
             )
 
         await emit(
@@ -466,11 +478,17 @@ async def user_complete_impl(
     sid = data.get("sid", "")
     chat_id = data.get("chat_id", "")
     run_id = data.get("run_id", "")
+    session_id_str = data.get("session_id", "")
     content = data.get("content", "")
     if not sid or not chat_id or not run_id or not content:
         return
 
     try:
+        from app.routes.v5.tools.entries.calls.create import create_call
+
+        run_id_uuid = uuid.UUID(run_id)
+        session_id_uuid = uuid.UUID(session_id_str) if session_id_str else None
+
         async with pool.acquire() as conn:
             # Find the open (uncompleted) user message for this chat
             messages, _ = await search_attempt_messages(
@@ -501,18 +519,22 @@ async def user_complete_impl(
                     "content": content,
                     "persona_id": STUDENT_PERSONA_ID,
                 },
-                run_id=uuid.UUID(run_id),
+                run_id=run_id_uuid,
             )
 
             # TODO: link audio upload if present (audio_upload_id in data)
             # Needs black-box for: create audio → audio_uploads → message_audios
 
             # Mark message as complete
-            # TODO: call_id required but not available in this context
+            call_result = await create_call(
+                conn,
+                run_id=run_id_uuid,
+                session_id=session_id_uuid or uuid.UUID(int=0),
+            )
             await create_attempt_message_completion(
                 conn,
                 attempt_message_id=message_id,
-                call_id=uuid.UUID("00000000-0000-0000-0000-000000000000"),
+                call_id=call_result.id,
             )
 
         await emit(
@@ -598,6 +620,7 @@ async def speech_complete_impl(
                     chat_id=session.chat_id,
                     run_id=session.run_id,
                     content=transcript.strip(),
+                    session_id=str(session_id) if session_id else None,
                     item_id=data.get("item_id"),
                     audio_upload_id=audio_upload_id,
                 ).model_dump(mode="json"),
@@ -995,14 +1018,21 @@ async def attempt_proceed_impl(
             )
             run_id = run_result.id
 
+            # Create a call for traceability
+            call_result = await create_call(
+                conn,
+                run_id=run_id,
+                session_id=session_id_uuid,
+            )
+            call_id = call_result.id
+
             # Step 2a: If completed_chat_id, mark that chat completed
             if completed_chat_id:
                 try:
-                    # TODO: call_id required but not available in this context
                     await create_attempt_chat_completion(
                         conn,
                         chat_id=completed_chat_id,
-                        call_id=run_id,  # placeholder — needs proper call_id
+                        call_id=call_id,
                     )
                 except Exception:
                     logger.debug(f"Chat {completed_chat_id} already completed")
@@ -1020,11 +1050,10 @@ async def attempt_proceed_impl(
                     bridge_chat_id = bridge.attempt_chat_id
                     if bridge_chat_id:
                         try:
-                            # TODO: call_id required but not available in this context
                             await create_attempt_chat_completion(
                                 conn,
                                 chat_id=bridge_chat_id,
-                                call_id=run_id,  # placeholder — needs proper call_id
+                                call_id=call_id,
                             )
                         except Exception:
                             pass
@@ -1429,6 +1458,7 @@ async def attempt_message_impl(
     from app.routes.v5.tools.entries.attempt_message_tree.refresh import (
         refresh_attempt_message_tree,
     )
+    from app.routes.v5.tools.entries.calls.create import create_call
     from app.routes.v5.tools.entries.messages.create import create_message
     from app.routes.v5.tools.entries.messages.search import search_messages
     from app.routes.v5.tools.entries.runs.create import create_run
@@ -1521,6 +1551,7 @@ async def attempt_message_impl(
                         chat_id=chat_id_str,
                         run_id=str(run_id),
                         profile_id=profile_id,
+                        session_id=session_id,
                         rooms=rooms,
                     ).model_dump(mode="json"),
                 )
@@ -1537,6 +1568,7 @@ async def attempt_message_impl(
                         chat_id=chat_id_str,
                         run_id=str(run_id),
                         content=message_text,
+                        session_id=session_id,
                         rooms=rooms,
                     ).model_dump(mode="json"),
                 )
@@ -1549,12 +1581,16 @@ async def attempt_message_impl(
                 conn, run_id=run_id, role="assistant"
             )
             if chat_id is not None:
-                # TODO: wire up real call_id from generation context
+                call_result = await create_call(
+                    conn,
+                    run_id=run_id,
+                    session_id=session_id_uuid,
+                )
                 await create_attempt_message(
                     conn,
                     chat_id=chat_id,
                     message_id=assistant_result.id,
-                    call_id=uuid.uuid4(),
+                    call_id=call_result.id,
                 )
             assistant_message_id = assistant_result.id
             created_at = assistant_result.created_at

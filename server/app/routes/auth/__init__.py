@@ -2,9 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.routes.auth.analytics import router as analytics_router
 from app.routes.auth.decrypt import router as decrypt_router
-from app.routes.auth.drafts import router as drafts_router
 from app.routes.auth.email import router as email_router
 from app.routes.auth.emulate import router as emulate_router
 from app.routes.auth.generate import router as generate_router
@@ -19,8 +17,6 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 # Include all auth endpoint routers
 router.include_router(profile_router)
 router.include_router(settings_router)
-router.include_router(analytics_router)
-router.include_router(drafts_router)
 router.include_router(email_router)
 router.include_router(generate_router)
 

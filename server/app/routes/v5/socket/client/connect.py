@@ -114,7 +114,7 @@ async def connect(
             token = extract_bearer_token(auth["token"])
             if token:
                 pool = get_pool()
-        async with pool.acquire() as conn:
+                async with pool.acquire() as conn:
                     identity = await resolve_identity(token, conn)
                     profile_id = str(identity.profile_id)
                     session_id = str(identity.session_id)

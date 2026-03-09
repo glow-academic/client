@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from app.infra.persona_create import CreatePersonaItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.routes.v5.tools.entries.persona_drafts.types import GetPersonaDraftResponse
 from app.routes.v5.tools.resources.fields.types import GetFieldResponse
 from app.routes.v5.tools.resources.parameters.types import GetParameterResponse
 
@@ -166,6 +167,12 @@ class PersonaDraftEntry(BaseModel):
     example_ids: list[UUID] | None = None
     parameter_ids: list[UUID] | None = None
     voice_ids: list[UUID] | None = None
+
+
+class GetPersonaDraftsApiResponse(BaseModel):
+    """Response model for persona drafts list endpoint."""
+
+    entries: list[GetPersonaDraftResponse] | None = None
 
 
 class PersonaFlagConfig(BaseModel):

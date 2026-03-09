@@ -405,10 +405,26 @@ class TestUserStartImpl:
             id="00000000-0000-0000-0000-000000000099",
             created_at=SimpleNamespace(isoformat=lambda: "2025-01-01T00:00:00"),
         )
-        with patch(
-            "app.routes.v5.tools.entries.messages.create.create_message",
-            new_callable=AsyncMock,
-            return_value=mock_result,
+        mock_attempt_msg = SimpleNamespace(
+            id="00000000-0000-0000-0000-000000000088",
+        )
+        mock_call = SimpleNamespace(id=UUID(int=77))
+        with (
+            patch(
+                "app.routes.v5.tools.entries.messages.create.create_message",
+                new_callable=AsyncMock,
+                return_value=mock_result,
+            ),
+            patch(
+                "app.routes.v5.tools.entries.attempt_message.create.create_attempt_message",
+                new_callable=AsyncMock,
+                return_value=mock_attempt_msg,
+            ),
+            patch(
+                "app.routes.v5.tools.entries.calls.create.create_call",
+                new_callable=AsyncMock,
+                return_value=mock_call,
+            ),
         ):
             await user_start_impl(
                 {
@@ -422,7 +438,6 @@ class TestUserStartImpl:
         assert len(events) == 1
         assert events[0].event == "attempt_user_start"
         assert events[0].data["message_id"] == "00000000-0000-0000-0000-000000000099"
-        mock_conn.execute.assert_called_once()
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1479,13 +1494,18 @@ class TestUserCompleteImpl:
         assert events == []
 
     @patch(
+        "app.routes.v5.tools.entries.calls.create.create_call",
+        new_callable=AsyncMock,
+        return_value=SimpleNamespace(id=UUID(int=77)),
+    )
+    @patch(
         f"{_ATTEMPT_MSG_COMPLETION}.create_attempt_message_completion",
         new_callable=AsyncMock,
     )
     @patch(f"{_ATTEMPT_CONTENT}.create_attempt_content", new_callable=AsyncMock)
     @patch(f"{_ATTEMPT_MSG_SEARCH}.search_attempt_messages", new_callable=AsyncMock)
     async def test_happy_path_emits_user_complete(
-        self, mock_search, mock_content, mock_completion
+        self, mock_search, mock_content, mock_completion, mock_call
     ):
         from datetime import datetime
         from uuid import UUID
@@ -2006,9 +2026,14 @@ class TestAttemptProceedImpl:
     @patch(_BRIDGES, new_callable=AsyncMock)
     @patch(_REFRESH_CHAT, new_callable=AsyncMock)
     @patch(_REFRESH_ATTEMPT, new_callable=AsyncMock)
+    @patch(
+        _CREATE_CALL, new_callable=AsyncMock,
+        return_value=SimpleNamespace(id=UUID(int=77)),
+    )
     @patch(_RUNS, new_callable=AsyncMock)
     async def test_complete_all_emits_ended(
-        self, mock_run, mock_refresh_a, mock_refresh_c, mock_bridges, mock_completion
+        self, mock_run, mock_call, mock_refresh_a,
+        mock_refresh_c, mock_bridges, mock_completion
     ):
         mock_run.return_value = SimpleNamespace(id=UUID(int=1))
         mock_bridges.return_value = [
@@ -2274,10 +2299,15 @@ class TestAttemptProceedImpl:
     @patch(_SEARCH_CHATS, new_callable=AsyncMock)
     @patch(_BRIDGES, new_callable=AsyncMock)
     @patch(_GET_ATTEMPTS, new_callable=AsyncMock)
+    @patch(
+        _CREATE_CALL, new_callable=AsyncMock,
+        return_value=SimpleNamespace(id=UUID(int=77)),
+    )
     @patch(_RUNS, new_callable=AsyncMock)
     async def test_user_choice_emits_started(
         self,
         mock_run,
+        mock_call,
         mock_get_attempt,
         mock_bridges,
         mock_search_chats,

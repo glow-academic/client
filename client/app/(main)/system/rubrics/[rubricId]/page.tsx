@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Rubric from "@/components/artifacts/rubric/Rubric";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -135,20 +135,20 @@ export default async function EditRubricPage({
         q.standardGroupSearch ?? null,
       ),
       getDocs({ body: { entity_id: rubricId } }),
-      getDrafts(), // TODO: fetch only rubric drafts (e.g. getDrafts({ artifact_type: "rubric" }))
+      api.post("/artifacts/rubrics/drafts", {})
     ]);
 
     const entityName = docs.detail.title;
 
     return (
-      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "System", section: "system", url: "/system" },
             { title: "Rubrics", section: "rubrics", url: "/system/rubrics" },
             { title: entityName },
           ]}
-          toolbar={<SaveToolbar artifactType="rubric" />}
+          toolbar={<SaveToolbar />}
         />
         <div
           className="space-y-6 px-4"

@@ -144,6 +144,26 @@ export interface paths {
         patch: operations["patch_persona_draft_api_v5_artifacts_personas_draft_patch"];
         trace?: never;
     };
+    "/api/v5/artifacts/personas/drafts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Persona Drafts
+         * @description List persona drafts owned by the current profile.
+         */
+        post: operations["get_persona_drafts_api_v5_artifacts_personas_drafts_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/personas/docs": {
         parameters: {
             query?: never;
@@ -12194,26 +12214,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/analytics": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Analytics Filters
-         * @description Return per-page analytics filter config and MV-backed options.
-         */
-        post: operations["get_analytics_filters_auth_analytics_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/auth/drafts": {
         parameters: {
             query?: never;
@@ -21617,37 +21617,6 @@ export interface components {
             rubrics?: components["schemas"]["AgentRubricSection"] | null;
         };
         /**
-         * GetAnalyticsFiltersApiResponse
-         * @description Response for POST /auth/analytics (backward-compatible).
-         */
-        GetAnalyticsFiltersApiResponse: {
-            fields: components["schemas"]["AnalyticsFilterFields"];
-            /**
-             * Department Options
-             * @default []
-             */
-            department_options: components["schemas"]["AnalyticsFilterOption"][];
-            /**
-             * Cohort Options
-             * @default []
-             */
-            cohort_options: components["schemas"]["AnalyticsFilterOption"][];
-            /**
-             * Role Options
-             * @default []
-             */
-            role_options: string[];
-            /**
-             * Attempt Options
-             * @default []
-             */
-            attempt_options: string[];
-            /** Date Range Earliest */
-            date_range_earliest?: string | null;
-            /** Date Range Latest */
-            date_range_latest?: string | null;
-        };
-        /**
          * GetAttemptDetailRequest
          * @description Client API request for attempt detail.
          *
@@ -22550,6 +22519,64 @@ export interface components {
             fields?: components["schemas"]["GetFieldResponse"][] | null;
             /** Resolved Parameter Ids */
             resolved_parameter_ids?: string[] | null;
+        };
+        /** GetPersonaDraftResponse */
+        GetPersonaDraftResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Version */
+            version: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Generated */
+            generated: boolean;
+            /** Mcp */
+            mcp: boolean;
+            /** Active */
+            active: boolean;
+            /**
+             * Group Id
+             * Format: uuid
+             */
+            group_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Color Ids */
+            color_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Description Ids */
+            description_ids: string[];
+            /** Example Ids */
+            example_ids: string[];
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Icon Ids */
+            icon_ids: string[];
+            /** Instruction Ids */
+            instruction_ids: string[];
+            /** Name Ids */
+            name_ids: string[];
+            /** Parameter Field Ids */
+            parameter_field_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Voice Ids */
+            voice_ids: string[];
+        };
+        /** GetPersonaDraftsApiResponse */
+        GetPersonaDraftsApiResponse: {
+            /** Entries */
+            entries?: components["schemas"]["GetPersonaDraftResponse"][] | null;
         };
         /** GetPersonaResponse */
         GetPersonaResponse: {
@@ -37504,6 +37531,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PatchPersonaDraftApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_persona_drafts_api_v5_artifacts_personas_drafts_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GetPersonaDraftsApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -60652,39 +60712,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["GetAuthSettingsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_analytics_filters_auth_analytics_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAnalyticsFiltersApiResponse"] | null;
                 };
             };
             /** @description Validation Error */

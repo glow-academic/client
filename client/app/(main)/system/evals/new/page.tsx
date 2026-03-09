@@ -8,7 +8,7 @@ import Eval from "@/components/artifacts/eval/Eval";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -111,18 +111,18 @@ export default async function NewEvalPage({
   };
   const [evalDetailDefault, draftsResult] = await Promise.all([
     getEvalDefault(input),
-    getDrafts(), // TODO: fetch only eval drafts (e.g. getDrafts({ artifact_type: "eval" }))
+    api.post("/artifacts/evals/drafts", {})
   ]);
 
   return (
-    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+    <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "System", section: "system", url: "/system" },
           { title: "Evals", section: "evals", url: "/system/evals" },
           { title: "New Eval" },
         ]}
-        toolbar={<SaveToolbar artifactType="eval" />}
+        toolbar={<SaveToolbar />}
       />
       <div
         className="space-y-6 px-4"

@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 from app.infra.auth_create import CreateAuthItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.routes.v5.tools.entries.auth_drafts.types import GetAuthDraftResponse
 
 
 class AuthFlagConfig(BaseModel):
@@ -93,6 +94,12 @@ class GetAuthApiResponse(BaseModel):
     protocols: AuthProtocolSection | None = None
     slugs: AuthSlugSection | None = None
     items: AuthItemSection | None = None
+
+
+class GetAuthDraftsApiResponse(BaseModel):
+    """Response model for auth drafts list endpoint."""
+
+    entries: list[GetAuthDraftResponse] | None = None
 
 
 # ========== Shared Create/Update Types ==========

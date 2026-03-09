@@ -32,7 +32,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { AnalyticsFilters } from "@/lib/search-params/analytics-defaults";
 import {
   ColumnFiltersState,
   SortingState,
@@ -43,6 +42,15 @@ import {
   getFacetedUniqueValues,
   useReactTable,
 } from "@tanstack/react-table";
+
+interface AnalyticsFilters {
+  startDate: string;
+  endDate: string;
+  cohortIds?: string[];
+  departmentIds?: string[];
+  roles?: string[];
+  simulationFilters?: string[];
+}
 
 interface ReportsProps {
   reportsData: ReportsOut;

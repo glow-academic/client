@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Tool from "@/components/artifacts/tool/Tool";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -156,7 +156,7 @@ export default async function ToolDetailPage({
     const [toolDetail, docs, draftsResult] = await Promise.all([
       getTool(input),
       getDocs({ body: { entity_id: toolId } }),
-      getDrafts(), // TODO: fetch only tool drafts (e.g. getDrafts({ artifact_type: "tool" }))
+      api.post("/artifacts/tools/drafts", {})
     ]);
 
     // Check access
@@ -167,14 +167,14 @@ export default async function ToolDetailPage({
     const entityName = docs.detail.title;
 
     return (
-      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Intelligence", section: "intelligence", url: "/intelligence" },
             { title: "Tools", section: "tools", url: "/intelligence/tools" },
             { title: entityName },
           ]}
-          toolbar={<SaveToolbar artifactType="tool" />}
+          toolbar={<SaveToolbar />}
         />
         <div
           className="space-y-6 px-4"

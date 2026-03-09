@@ -11,7 +11,7 @@ import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import type { ScenarioFlagsProps } from "@/components/resources/ScenarioFlags";
 import Simulation from "@/components/artifacts/simulation/Simulation";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -236,20 +236,20 @@ export default async function EditSimulationPage({
     const [simulationData, docs, draftsResult] = await Promise.all([
       getSimulation(input),
       getDocs({ body: { entity_id: simulationId } }),
-      getDrafts(), // TODO: fetch only simulation drafts (e.g. getDrafts({ artifact_type: "simulation" }))
+      api.post("/artifacts/simulations/drafts", {})
     ]);
 
     const entityName = docs.detail.title;
 
     return (
-      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Training", section: "training", url: "/training" },
             { title: "Simulations", section: "simulations", url: "/training/simulations" },
             { title: entityName },
           ]}
-          toolbar={<SaveToolbar artifactType="simulation" />}
+          toolbar={<SaveToolbar />}
         />
         <div
           className="space-y-6 px-4"

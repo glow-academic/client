@@ -15,6 +15,7 @@ async def create_profile_draft(
     version: int = 0,
     mcp: bool = False,
     soft: bool = False,
+    profile_ids: list[UUID] | None = None,
     department_ids: list[UUID] | None = None,
     email_ids: list[UUID] | None = None,
     flag_ids: list[UUID] | None = None,
@@ -41,6 +42,7 @@ async def create_profile_draft(
         raise ValueError("Failed to create profile_drafts entry")
 
     connections: list[tuple[str, str, list[UUID]]] = [
+        ("profile_drafts_profiles_connection", "profiles_id", profile_ids or []),
         (
             "profile_drafts_departments_connection",
             "departments_id",

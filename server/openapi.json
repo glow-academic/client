@@ -664,6 +664,90 @@
         }
       }
     },
+    "/api/v5/artifacts/personas/drafts": {
+      "post": {
+        "tags": [
+          "v5",
+          "artifacts",
+          "personas"
+        ],
+        "summary": "Get Persona Drafts",
+        "description": "List persona drafts owned by the current profile.",
+        "operationId": "get_persona_drafts_api_v5_artifacts_personas_drafts_post",
+        "parameters": [
+          {
+            "name": "X-Api-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Api-Key"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          },
+          {
+            "name": "X-MCP",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Mcp"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetPersonaDraftsApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v5/artifacts/personas/docs": {
       "post": {
         "tags": [
@@ -42748,96 +42832,6 @@
         }
       }
     },
-    "/auth/analytics": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Get Analytics Filters",
-        "description": "Return per-page analytics filter config and MV-backed options.",
-        "operationId": "get_analytics_filters_auth_analytics_post",
-        "parameters": [
-          {
-            "name": "X-Api-Key",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Api-Key"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "anyOf": [
-                    {
-                      "$ref": "#/components/schemas/GetAnalyticsFiltersApiResponse"
-                    },
-                    {
-                      "type": "null"
-                    }
-                  ],
-                  "title": "Response Get Analytics Filters Auth Analytics Post"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/auth/drafts": {
       "post": {
         "tags": [
@@ -71273,73 +71267,6 @@
         "title": "GetAgentApiResponse",
         "description": "Section-first response model for get agent endpoint."
       },
-      "GetAnalyticsFiltersApiResponse": {
-        "properties": {
-          "fields": {
-            "$ref": "#/components/schemas/AnalyticsFilterFields"
-          },
-          "department_options": {
-            "items": {
-              "$ref": "#/components/schemas/AnalyticsFilterOption"
-            },
-            "type": "array",
-            "title": "Department Options",
-            "default": []
-          },
-          "cohort_options": {
-            "items": {
-              "$ref": "#/components/schemas/AnalyticsFilterOption"
-            },
-            "type": "array",
-            "title": "Cohort Options",
-            "default": []
-          },
-          "role_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Role Options",
-            "default": []
-          },
-          "attempt_options": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Attempt Options",
-            "default": []
-          },
-          "date_range_earliest": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date Range Earliest"
-          },
-          "date_range_latest": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Date Range Latest"
-          }
-        },
-        "type": "object",
-        "required": [
-          "fields"
-        ],
-        "title": "GetAnalyticsFiltersApiResponse",
-        "description": "Response for POST /auth/analytics (backward-compatible)."
-      },
       "GetAttemptDetailRequest": {
         "properties": {
           "attempt_id": {
@@ -75206,6 +75133,177 @@
         "type": "object",
         "title": "GetPersonaApiResponse",
         "description": "Response model for get persona endpoint."
+      },
+      "GetPersonaDraftResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "generated": {
+            "type": "boolean",
+            "title": "Generated"
+          },
+          "mcp": {
+            "type": "boolean",
+            "title": "Mcp"
+          },
+          "active": {
+            "type": "boolean",
+            "title": "Active"
+          },
+          "group_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Group Id"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "color_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Color Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "description_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Description Ids"
+          },
+          "example_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Example Ids"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "icon_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Icon Ids"
+          },
+          "instruction_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Instruction Ids"
+          },
+          "name_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Name Ids"
+          },
+          "parameter_field_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Parameter Field Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "voice_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Voice Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "version",
+          "created_at",
+          "generated",
+          "mcp",
+          "active",
+          "group_id",
+          "session_id",
+          "color_ids",
+          "department_ids",
+          "description_ids",
+          "example_ids",
+          "flag_ids",
+          "icon_ids",
+          "instruction_ids",
+          "name_ids",
+          "parameter_field_ids",
+          "profile_ids",
+          "voice_ids"
+        ],
+        "title": "GetPersonaDraftResponse"
+      },
+      "GetPersonaDraftsApiResponse": {
+        "properties": {
+          "entries": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/GetPersonaDraftResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entries"
+          }
+        },
+        "type": "object",
+        "title": "GetPersonaDraftsApiResponse"
       },
       "GetPersonaResponse": {
         "properties": {

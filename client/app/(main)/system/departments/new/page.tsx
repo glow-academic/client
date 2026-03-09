@@ -9,7 +9,7 @@ import Department from "@/components/artifacts/department/Department";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -129,18 +129,18 @@ export default async function NewDepartmentPage({
   };
   const [departmentDetailDefault, draftsResult] = await Promise.all([
     getDepartmentDefault(input),
-    getDrafts(), // TODO: fetch only department drafts (e.g. getDrafts({ artifact_type: "department" }))
+    api.post("/artifacts/departments/drafts", {})
   ]);
 
   return (
-    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+    <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "System", section: "system", url: "/system" },
           { title: "Departments", section: "departments", url: "/system/departments" },
           { title: "New Department" },
         ]}
-        toolbar={<SaveToolbar artifactType="department" />}
+        toolbar={<SaveToolbar />}
       />
       <div
         className="space-y-6 px-4"

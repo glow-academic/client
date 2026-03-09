@@ -11,9 +11,17 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.routes.v5.tools.entries.invocation_drafts.types import GetInvocationDraftResponse
+
 # =============================================================================
 # Export Types
 # =============================================================================
+
+
+class GetInvocationDraftsApiResponse(BaseModel):
+    """Response model for invocation drafts list endpoint."""
+
+    entries: list[GetInvocationDraftResponse] | None = None
 
 
 class ExportInvocationApiResponse(BaseModel):

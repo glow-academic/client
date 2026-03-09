@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Simulation from "@/components/artifacts/simulation/Simulation";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -213,7 +213,7 @@ export default async function NewSimulationPage({
     } as GetSimulationIn["body"],
   };
 
-  const draftsResult = await getDrafts(); // TODO: fetch only simulation drafts (e.g. getDrafts({ artifact_type: "simulation" }))
+  const draftsResult = await api.post("/artifacts/simulations/drafts", {});
 
   let simulationDataDefault: GetSimulationOut | null = null;
   try {
@@ -233,14 +233,14 @@ export default async function NewSimulationPage({
   }
 
   return (
-    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+    <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Training", section: "training", url: "/training" },
           { title: "Simulations", section: "simulations", url: "/training/simulations" },
           { title: "New Simulation" },
         ]}
-        toolbar={<SaveToolbar artifactType="simulation" />}
+        toolbar={<SaveToolbar />}
       />
       <div
         className="space-y-6 px-4"

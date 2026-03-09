@@ -10,6 +10,13 @@ from pydantic import BaseModel
 
 from app.infra.eval_create import CreateEvalItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.routes.v5.tools.entries.eval_drafts.types import GetEvalDraftResponse
+
+class GetEvalDraftsApiResponse(BaseModel):
+    """Response model for eval drafts list endpoint."""
+
+    entries: list[GetEvalDraftResponse] | None = None
+
 
 # ========== Eval-specific resource types ==========
 

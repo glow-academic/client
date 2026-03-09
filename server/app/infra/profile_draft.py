@@ -137,6 +137,7 @@ async def patch_profile_draft_client(
                 group_id=profile.group_id or request.group_id,
                 session_id=session_id,
                 version=new_version,
+                profile_ids=[profile.profiles_id],
                 name_ids=[request.name_id] if request.name_id else None,
                 flag_ids=[request.flag_id] if request.flag_id else None,
                 department_ids=request.department_ids,

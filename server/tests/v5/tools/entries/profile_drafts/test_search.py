@@ -46,6 +46,21 @@ async def test_search_filters_by_session(conn, profile_id):
     assert result.id in ids
 
 
+async def test_search_filters_by_owner_profile(conn, profile_id):
+    session, group = await _setup(conn, profile_id)
+    result = await create_profile_draft(
+        conn,
+        group_id=group.id,
+        session_id=session.id,
+        profile_ids=[profile_id],
+    )
+
+    items = await search_profile_drafts(conn, profile_ids=[profile_id])
+
+    ids = [item.id for item in items]
+    assert result.id in ids
+
+
 async def test_search_returns_connections(conn, profile_id):
     session, group = await _setup(conn, profile_id)
 

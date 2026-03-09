@@ -12,7 +12,14 @@ from pydantic import BaseModel
 
 from app.infra.cohort_create import CreateCohortItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.routes.v5.tools.entries.cohort_drafts.types import GetCohortDraftResponse
 from app.routes.v5.tools.resources.personas.types import GetPersonaResponse
+
+class GetCohortDraftsApiResponse(BaseModel):
+    """Response model for cohort drafts list endpoint."""
+
+    entries: list[GetCohortDraftResponse] | None = None
+
 
 # =============================================================================
 # Resource Types (imported from SQL types for reuse)

@@ -16,6 +16,8 @@ from uuid import UUID
 
 import asyncpg
 
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.runs.get import get_run
 from app.routes.v5.tools.entries.test.create import create_test
 from app.routes.v5.tools.entries.test_invocation.create import create_test_invocation
 from app.routes.v5.tools.entries.test_invocation_runs.create import (
@@ -66,10 +68,17 @@ async def setup_generation_test(
     if not agents:
         raise ValueError("setup_generation_test requires at least one agent")
 
+    run = await get_run(conn, run_id)
+    if run is None:
+        raise ValueError(f"Run not found: {run_id}")
+
+    test_call = await create_call(conn, run_id=run_id, session_id=run.session_id)
+
     # 1. Create the test entry (finite mode — one invocation per agent)
     # is_dynamic=False: skip LLM re-run, grade existing agent output directly
     test_result = await create_test(
         conn,
+        call_id=test_call.id,
         profiles_id=profile_id,
         name="generation_resolution",
         num_invocations=len(agents),
@@ -82,10 +91,18 @@ async def setup_generation_test(
     invocations: dict[UUID, UUID] = {}
 
     for agent_config in agents:
+        invocation_call = await create_call(
+            conn,
+            run_id=run_id,
+            session_id=run.session_id,
+        )
+
         # Invocation-level: agent identity + rubric + high-level config
         inv_result = await create_test_invocation(
             conn,
             test_id=test_id,
+            call_id=invocation_call.id,
+            group_id=run.group_id,
             agent_ids=[agent_config.agent_id],
             rubric_ids=[agent_config.rubric_id],
             department_ids=agent_config.department_ids,

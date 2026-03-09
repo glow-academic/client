@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Field from "@/components/artifacts/field/Field";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -156,20 +156,20 @@ export default async function FieldEditPage({
     const [fieldData, docs, draftsResult] = await Promise.all([
       getField(input),
       getDocs({ body: { entity_id: fieldId } }),
-      getDrafts(), // TODO: fetch only field drafts (e.g. getDrafts({ artifact_type: "field" }))
+      api.post("/artifacts/fields/drafts", {})
     ]);
 
     const entityName = docs.detail.title;
 
     return (
-      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Management", section: "management", url: "/management" },
             { title: "Fields", section: "fields", url: "/management/fields" },
             { title: entityName },
           ]}
-          toolbar={<SaveToolbar artifactType="field" />}
+          toolbar={<SaveToolbar />}
         />
         <div className="space-y-6 px-4" data-page="field-edit" data-field-id={fieldId}>
           <Field

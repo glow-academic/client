@@ -19,6 +19,7 @@ class GetProfileDraftResponse(BaseModel):
     active: bool
     group_id: UUID
     session_id: UUID
+    profile_ids: list[UUID]
     department_ids: list[UUID]
     email_ids: list[UUID]
     flag_ids: list[UUID]

@@ -12,6 +12,7 @@ from pydantic import BaseModel, Field
 
 from app.infra.simulation_create import CreateSimulationItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.routes.v5.tools.entries.simulation_drafts.types import GetSimulationDraftResponse
 
 # =============================================================================
 # Resource Types (handcrafted — no dependency on app.sql.types)
@@ -443,6 +444,12 @@ class GetSimulationApiResponse(BaseModel):
     scenario_rubrics: SimulationScenarioRubricSection | None = None
     scenario_time_limits: SimulationScenarioTimeLimitSection | None = None
     rubrics: list[SimulationRubric] | None = None
+
+
+class GetSimulationDraftsApiResponse(BaseModel):
+    """Response model for simulation drafts list endpoint."""
+
+    entries: list[GetSimulationDraftResponse] | None = None
 
 
 # =============================================================================

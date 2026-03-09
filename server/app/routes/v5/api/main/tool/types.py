@@ -9,6 +9,7 @@ from pydantic import BaseModel
 
 from app.infra.tool_create import CreateToolItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.routes.v5.tools.entries.tool_drafts.types import GetToolDraftResponse
 
 
 class ToolFlagConfig(BaseModel):
@@ -266,6 +267,12 @@ class PatchToolDraftApiResponse(BaseModel):
     new_version: int
     message: str
     form_state: ToolDraftFormState | None = None
+
+
+class GetToolDraftsApiResponse(BaseModel):
+    """Response model for tool drafts list endpoint."""
+
+    entries: list[GetToolDraftResponse] | None = None
 
 
 # ========== Export Endpoint Types ==========

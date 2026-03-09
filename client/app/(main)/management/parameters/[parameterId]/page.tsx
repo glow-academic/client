@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Parameter from "@/components/artifacts/parameter/Parameter";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -133,20 +133,20 @@ export default async function ParameterEditPage({
     const [parameterDetail, docs, draftsResult] = await Promise.all([
       getParameter(input),
       getDocs({ body: { entity_id: parameterId } }),
-      getDrafts(), // TODO: fetch only parameter drafts (e.g. getDrafts({ artifact_type: "parameter" }))
+      api.post("/artifacts/parameters/drafts", {})
     ]);
 
     const entityName = docs.detail.title;
 
     return (
-      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+      <DraftProviderClient drafts={draftsResult.entries ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Management", section: "management", url: "/management" },
             { title: "Parameters", section: "parameters", url: "/management/parameters" },
             { title: entityName },
           ]}
-          toolbar={<SaveToolbar artifactType="parameter" />}
+          toolbar={<SaveToolbar />}
         />
         <div
           className="space-y-6 px-4"

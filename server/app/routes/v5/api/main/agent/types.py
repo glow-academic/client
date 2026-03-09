@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from app.infra.agent_create import CreateAgentItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
+from app.routes.v5.tools.entries.agent_drafts.types import GetAgentDraftResponse
 
 
 class AgentFlagConfig(BaseModel):
@@ -297,6 +298,12 @@ class PatchAgentDraftApiResponse(BaseModel):
     new_version: int
     message: str
     form_state: AgentDraftFormState | None = None
+
+
+class GetAgentDraftsApiResponse(BaseModel):
+    """Response model for agent drafts list endpoint."""
+
+    entries: list[GetAgentDraftResponse] | None = None
 
 
 # ========== List Endpoint Types ==========

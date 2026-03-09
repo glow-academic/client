@@ -9,7 +9,7 @@ import Profile from "@/components/artifacts/profile/Profile";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts } from "@/app/(main)/layout-server";
+
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -137,18 +137,18 @@ export default async function NewProfilePage({
   };
   const [profileDetailDefault, draftsResult] = await Promise.all([
     getProfileDefault(input),
-    getDrafts(), // TODO: fetch only profile drafts (e.g. getDrafts({ artifact_type: "profile" }))
+    api.post("/artifacts/profiles/drafts", {})
   ]);
 
   return (
-    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
+    <DraftProviderClient drafts={draftsResult.entries ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Management", section: "management", url: "/management" },
           { title: "Profiles", section: "profiles", url: "/management/profiles" },
           { title: "New Profile" },
         ]}
-        toolbar={<SaveToolbar artifactType="profile" />}
+        toolbar={<SaveToolbar />}
       />
       <div
         className="space-y-6 px-4"
