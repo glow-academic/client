@@ -57,6 +57,9 @@ type ChatBundleFormState = {
   image_ids: string[];
   problem_statement_ids: string[];
   objective_ids: string[];
+  // Value fields for unified draft (creatable resources)
+  name: string | null;
+  description: string | null;
 };
 
 interface ChatBundleProps {
@@ -108,6 +111,8 @@ export default function ChatBundle({
         "problem_statement_id",
       ),
       objective_ids: extractIds(s.objectives?.current, "objective_id"),
+      name: null,
+      description: null,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -138,6 +143,7 @@ export default function ChatBundle({
 
   const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const savingRef = useRef(false);
+  const serverSyncPendingRef = useRef(false);
 
   // Listen for attempt lifecycle events after submitting
   const { nextScenario } = useAttemptLifecycle({
@@ -190,23 +196,37 @@ export default function ChatBundle({
 
     savingRef.current = true;
     try {
+      // Build payload — ID fields + value fields for creatables
+      const payload: Record<string, unknown> = {
+        input_draft_id: draftId,
+        expected_version: draftVersion,
+        department_ids: formState.department_ids,
+        persona_ids: formState.persona_ids,
+        document_ids: formState.document_ids,
+        parameter_field_ids: formState.parameter_field_ids,
+        scenario_ids: formState.scenario_ids,
+        parameter_ids: formState.parameter_ids,
+        field_ids: formState.field_ids,
+        question_ids: formState.question_ids,
+        option_ids: formState.option_ids,
+        video_ids: formState.video_ids,
+        image_ids: formState.image_ids,
+        problem_statement_ids: formState.problem_statement_ids,
+        objective_ids: formState.objective_ids,
+      };
+
+      // Single-select creatables: value clears the corresponding IDs
+      if (formState.name) {
+        payload["name"] = formState.name;
+        delete payload["name_ids"];
+      }
+      if (formState.description) {
+        payload["description"] = formState.description;
+        delete payload["description_ids"];
+      }
+
       const result = await patchChatDraftAction({
-        body: {
-          input_draft_id: draftId,
-          expected_version: draftVersion,
-          department_ids: formState.department_ids,
-          persona_ids: formState.persona_ids,
-          document_ids: formState.document_ids,
-          parameter_field_ids: formState.parameter_field_ids,
-          parameter_ids: formState.parameter_ids,
-          field_ids: formState.field_ids,
-          question_ids: formState.question_ids,
-          option_ids: formState.option_ids,
-          video_ids: formState.video_ids,
-          image_ids: formState.image_ids,
-          problem_statement_ids: formState.problem_statement_ids,
-          objective_ids: formState.objective_ids,
-        },
+        body: payload,
       } as PatchChatBundleDraftIn);
 
       if (result.draft_id) {
@@ -214,6 +234,46 @@ export default function ChatBundle({
       }
       if (typeof result.new_version === "number") {
         setDraftVersion(result.new_version);
+      }
+
+      // Sync form_state from server response (server is source of truth)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const formStateData = (result as any).form_state as {
+        department_ids?: string[];
+        persona_ids?: string[];
+        document_ids?: string[];
+        parameter_field_ids?: string[];
+        scenario_ids?: string[];
+        parameter_ids?: string[];
+        field_ids?: string[];
+        question_ids?: string[];
+        option_ids?: string[];
+        video_ids?: string[];
+        image_ids?: string[];
+        problem_statement_ids?: string[];
+        objective_ids?: string[];
+      } | undefined;
+      if (formStateData) {
+        serverSyncPendingRef.current = true;
+        setFormState((prev) => ({
+          ...prev,
+          department_ids: formStateData.department_ids ?? prev.department_ids,
+          persona_ids: formStateData.persona_ids ?? prev.persona_ids,
+          document_ids: formStateData.document_ids ?? prev.document_ids,
+          parameter_field_ids: formStateData.parameter_field_ids ?? prev.parameter_field_ids,
+          scenario_ids: formStateData.scenario_ids ?? prev.scenario_ids,
+          parameter_ids: formStateData.parameter_ids ?? prev.parameter_ids,
+          field_ids: formStateData.field_ids ?? prev.field_ids,
+          question_ids: formStateData.question_ids ?? prev.question_ids,
+          option_ids: formStateData.option_ids ?? prev.option_ids,
+          video_ids: formStateData.video_ids ?? prev.video_ids,
+          image_ids: formStateData.image_ids ?? prev.image_ids,
+          problem_statement_ids: formStateData.problem_statement_ids ?? prev.problem_statement_ids,
+          objective_ids: formStateData.objective_ids ?? prev.objective_ids,
+          // Clear value fields after server resolves them
+          name: null,
+          description: null,
+        }));
       }
     } catch {
       toast.error("Failed to save draft selections.");
@@ -224,6 +284,12 @@ export default function ChatBundle({
 
   // Debounced autosave on form state change
   useEffect(() => {
+    // Skip autosave if this change was from server sync (prevents re-triggering)
+    if (serverSyncPendingRef.current) {
+      serverSyncPendingRef.current = false;
+      return;
+    }
+
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     saveTimerRef.current = setTimeout(() => {
       void saveDraftNow();

@@ -268,43 +268,39 @@ async def main(setup: str = "university") -> None:
     redis_url = f"redis://{redis_host}:{redis_port}/0"
 
     try:
-        pool = await asyncpg.create_pool(pg_url, min_size=2, max_size=10)
+        conn = await asyncpg.connect(pg_url)
 
         # 2. Load schema
         print("Loading schema...")
-        async with pool.acquire() as conn:
-            await conn.execute("""
-                CREATE SCHEMA IF NOT EXISTS keycloak;
-                CREATE TABLE IF NOT EXISTS keycloak.org (id text PRIMARY KEY, alias text);
-                CREATE TABLE IF NOT EXISTS keycloak.realm (name text PRIMARY KEY, ssl_required text);
-            """)
-            schema_sql = _filter_meta_commands(_concat_schema(SCHEMA_DIR))
-            await conn.execute(schema_sql)
+        await conn.execute("""
+            CREATE SCHEMA IF NOT EXISTS keycloak;
+            CREATE TABLE IF NOT EXISTS keycloak.org (id text PRIMARY KEY, alias text);
+            CREATE TABLE IF NOT EXISTS keycloak.realm (name text PRIMARY KEY, ssl_required text);
+        """)
+        schema_sql = _filter_meta_commands(_concat_schema(SCHEMA_DIR))
+        await conn.execute(schema_sql)
         print("  Schema loaded.")
 
         # 3. Load pre-existing modules (disable FK checks like load-modules.sh)
         print("Loading pre-existing modules (01-resources through 10-systems)...")
-        async with pool.acquire() as conn:
-            await conn.execute("SET session_replication_role = replica;")
-            modules_sql = _filter_meta_commands(_load_pre_existing_modules())
-            await conn.execute(modules_sql)
-            await conn.execute("SET session_replication_role = DEFAULT;")
+        await conn.execute("SET session_replication_role = replica;")
+        modules_sql = _filter_meta_commands(_load_pre_existing_modules())
+        await conn.execute(modules_sql)
+        await conn.execute("SET session_replication_role = DEFAULT;")
         print("  Modules loaded.")
 
         # 4. Refresh materialized views
         print("Refreshing materialized views...")
-        async with pool.acquire() as conn:
-            unpopulated = await conn.fetch(
-                "SELECT matviewname FROM pg_matviews WHERE NOT ispopulated"
-            )
-            for row in unpopulated:
-                await conn.execute(f'REFRESH MATERIALIZED VIEW "{row["matviewname"]}"')
+        unpopulated = await conn.fetch(
+            "SELECT matviewname FROM pg_matviews WHERE NOT ispopulated"
+        )
+        for row in unpopulated:
+            await conn.execute(f'REFRESH MATERIALIZED VIEW "{row["matviewname"]}"')
         print(f"  {len(unpopulated)} MVs refreshed.")
 
         # 5. Snapshot existing IDs
         print("Taking pre-seed snapshot...")
-        async with pool.acquire() as conn:
-            before = await _snapshot_counts(conn, PERSONA_TABLES)
+        before = await _snapshot_counts(conn, PERSONA_TABLES)
 
         # 6. Run seeds
         redis_client = Redis.from_url(redis_url)
@@ -322,12 +318,11 @@ async def main(setup: str = "university") -> None:
             )
 
             if module_name == "personas":
-                await _run_persona_seeds(pool, redis_client, mod.personas)
+                await _run_persona_seeds(conn, redis_client, mod.personas)
 
         # 7. Dump new rows
         print("\nDumping seed-created rows...")
-        async with pool.acquire() as conn:
-            new_rows = await _dump_new_rows(conn, before, PERSONA_TABLES)
+        new_rows = await _dump_new_rows(conn, before, PERSONA_TABLES)
 
         total = sum(len(rows) for rows in new_rows.values())
         print(f"  {total} new rows across {len(new_rows)} tables.")
@@ -369,7 +364,7 @@ async def main(setup: str = "university") -> None:
                 print(f"  Wrote {filepath}")
 
         await redis_client.aclose()
-        await pool.close()
+        await conn.close()
 
     finally:
         pg.stop()

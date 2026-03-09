@@ -422,7 +422,8 @@ class GetChatResponse(BaseModel):
 class PatchChatDraftApiRequest(BaseModel):
     """Request model for new-style chat draft endpoint.
 
-    All resources are ID-only (no creatable resources).
+    Single-select creatables: name, description
+      → value creates resource, ID replaces value (mutually exclusive).
 
     Client always sends full state (append-only — each write is a new version snapshot).
     """
@@ -430,6 +431,10 @@ class PatchChatDraftApiRequest(BaseModel):
     group_id: UUID
     input_draft_id: UUID | None = None
     expected_version: int = 0
+
+    # Single-select creatables — provide value OR ID
+    name: str | None = None
+    description: str | None = None
 
     # All ID-only
     name_ids: list[UUID] | None = None
@@ -450,6 +455,39 @@ class PatchChatDraftApiRequest(BaseModel):
     department_ids: list[UUID] | None = None
 
 
+class SaveChatFieldError(BaseModel):
+    """Per-field error from draft value resolution."""
+
+    field: str
+    message: str
+
+
+# =============================================================================
+# Chat Draft Form State (for form_state sync)
+# =============================================================================
+
+
+class ChatDraftFormState(BaseModel):
+    """Server-authoritative form state returned after draft save."""
+
+    name_ids: list[UUID] = []
+    description_ids: list[UUID] = []
+    flag_ids: list[UUID] = []
+    department_ids: list[UUID] = []
+    persona_ids: list[UUID] = []
+    document_ids: list[UUID] = []
+    parameter_field_ids: list[UUID] = []
+    parameter_ids: list[UUID] = []
+    scenario_ids: list[UUID] = []
+    field_ids: list[UUID] = []
+    question_ids: list[UUID] = []
+    option_ids: list[UUID] = []
+    video_ids: list[UUID] = []
+    image_ids: list[UUID] = []
+    problem_statement_ids: list[UUID] = []
+    objective_ids: list[UUID] = []
+
+
 class PatchChatDraftApiResponse(BaseModel):
     """Response model for new-style chat draft endpoint."""
 
@@ -457,6 +495,7 @@ class PatchChatDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+    form_state: ChatDraftFormState | None = None
 
 
 # =============================================================================

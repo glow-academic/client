@@ -159,7 +159,7 @@ async def resolve_persona_values(
 
     if item.color is not None and item.color_id is None:
         results = await search_colors(
-            conn, redis, search=item.color, limit_count=20, persona=True, setting=False
+            conn, redis, search=item.color, limit_count=20
         )
         match = next(
             (r for r in results if r.name and r.name.lower() == item.color.lower()),
@@ -176,7 +176,7 @@ async def resolve_persona_values(
 
     if item.icon is not None and item.icon_id is None:
         results = await search_icons(
-            conn, redis, search=item.icon, limit_count=20, persona=True
+            conn, redis, search=item.icon, limit_count=20
         )
         match = next(
             (r for r in results if r.name and r.name.lower() == item.icon.lower()),
@@ -196,7 +196,6 @@ async def resolve_persona_values(
             search=None,
             flag_type="persona_active",
             limit_count=100,
-            persona=True,
         )
         match = next((r for r in results if r.type == "persona_active"), None)
         if match and match.id:

@@ -9,15 +9,14 @@ Uses composable infra layers:
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.persona_context import resolve_persona_context
 from app.infra.persona_permissions import (
@@ -78,7 +77,7 @@ router = APIRouter()
 
 
 async def get_persona_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -107,13 +106,14 @@ async def get_persona_client(
 
     # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
-    common = await resolve_common_context(
-        conn,
-        redis,
-        profile_id=profile_id,
-        group_id=group_id,
-        bypass_cache=bypass_cache,
-    )
+    async with pool.acquire() as conn:
+        common = await resolve_common_context(
+            conn,
+            redis,
+            profile_id=profile_id,
+            group_id=group_id,
+            bypass_cache=bypass_cache,
+        )
 
     if common is None:
         raise HTTPException(
@@ -127,7 +127,8 @@ async def get_persona_client(
 
     perms = None
     if persona_id is not None:
-        perms = await resolve_persona_permissions_context(conn, persona_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_persona_permissions_context(conn, persona_id)
 
         if not perms.exists:
             raise HTTPException(
@@ -144,7 +145,7 @@ async def get_persona_client(
     # ── Step 3: Persona artifact context ──────────────────────────────────
 
     persona = await resolve_persona_context(
-        conn,
+        pool,
         redis,
         persona_id=persona_id,
         group_id=group_id,
@@ -445,7 +446,6 @@ async def get_persona(
     request: GetPersonaApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetPersonaApiResponse:
     """Get persona information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -458,10 +458,11 @@ async def get_persona(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await get_persona_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             persona_id=request.persona_id,

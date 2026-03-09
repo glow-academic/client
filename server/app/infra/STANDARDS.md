@@ -1,99 +1,56 @@
 # Infrastructure v5 Standards
 
-This document defines the standards and best practices for Infrastructure v5 utilities. These standards ensure consistency, maintainability, and adherence to the agents-style architecture pattern using PostgreSQL functions with composite types.
+This document defines the standards and best practices for Infrastructure v5 utilities.
 
 ## Overview
 
-Infrastructure v5 utilities follow the agents-style architecture pattern, which uses:
-
-- **PostgreSQL functions** with `RETURNS TABLE` instead of raw SQL queries (for database operations)
-- **Composite types** in the `types` schema for strongly typed nested structures
-- **Auto-generated Pydantic models** from SQL introspection instead of manual type definitions
-- **Single SQL file per function** with idempotent drop/recreate pattern
-- **Automatic type conversion** via `execute_sql_typed()` helper
-- **Strong typing** for both inputs and outputs
-
 Infrastructure utilities are categorized into three types:
 
-1. **Database Operations**: Utilities that interact with PostgreSQL (should use PostgreSQL functions)
+1. **Database Operations**: Utilities that interact with PostgreSQL via black box entry functions or inline SQL
 2. **Redis Operations**: Utilities that interact with Redis (follow consistent patterns)
 3. **Pure Python Utilities**: Utilities that don't interact with database/Redis (standard Python patterns)
 
 ## Key Principles
 
-### 1. Database Operations: One SQL File Per Function
+### 1. Database Operations: Entry Functions and Inline SQL
 
-**⚠️ CRITICAL: One SQL File Per Function, No Inline SQL**
+**Mutations** use black box entry functions from `server/app/routes/v5/tools/entries/`:
 
-- **One SQL file per infra function**: Each database operation has exactly one SQL file in `server/app/sql/queries/infrastructure/[category]/[operation]_complete.sql`
-- **No inline SQL**: All SQL must be in the `.sql` file, never embedded as strings in Python code
-- **Function-based**: SQL files define PostgreSQL functions, not raw queries
-- **File naming**: Pattern `infrastructure_{category}_{operation}_complete.sql` (e.g., `infrastructure_activity_profile_exists_complete.sql`)
+```python
+from app.routes.v5.tools.entries.calls.create import create_call
+from app.routes.v5.tools.entries.groups.create import create_group
+from app.routes.v5.tools.entries.runs.create import create_run
 
-**Why This Matters:**
+# Standard mutation chain: group → run → call → domain entry
+group_result = await create_group(conn, session_id=session_id)
+run_result = await create_run(conn, group_id=group_result.id, session_id=session_id)
+call_result = await create_call(conn, run_id=run_result.id, session_id=session_id)
+```
 
-- ✅ Type generation requires SQL files to introspect function signatures
-- ✅ SQL files can be version controlled and reviewed independently
-- ✅ No SQL string concatenation or dynamic SQL in Python code
-- ✅ Clear separation: SQL logic in `.sql` files, Python logic in infra files
+**Reads** use inline SQL or `*_internal()` resource/view functions.
 
-### 2. PostgreSQL Functions with Composite Types
+**Discovery queries** (e.g., introspecting pg_proc, information_schema) use inline SQL directly.
 
-- **One function per infra operation**: Function name follows `infra_{operation}_{category}_v4` pattern
-- **RETURNS TABLE**: Functions return structured rows with explicit column types
-- **Composite types**: Nested structures use composite types in `types` schema
-- **Idempotent**: Files use `BEGIN; DROP FUNCTION; DROP TYPE; CREATE TYPE; CREATE FUNCTION; COMMIT;`
+### 2. Hand-Crafted Pydantic Types
+
+- **Shared types**: `server/app/routes/shared_types.py` for cross-route types
+- **Per-route types**: `types.py` files alongside route handlers
+- Types are manually maintained Pydantic BaseModel subclasses
 
 ### 3. No JSONB - Use Composite Types
-
-**⚠️ CRITICAL: JSONB is NEVER allowed, even for complex nested structures.**
 
 **Key Principles:**
 
 - **No JSONB in inputs**: Function parameters must use native PostgreSQL types (`uuid`, `text`, `uuid[]`, etc.) or composite types, never JSONB
 - **Composite types for complex inputs**: If you need complex nested structures, use composite types as function parameters
-- **No JSONB in outputs**: Collections are arrays, not JSONB objects - Use `ARRAY_AGG(...)::types.composite_type[]` instead of `json_agg(jsonb_build_object(...))`
-- **No JSONB parsing**: Composite types are automatically decoded by `asyncpg` and converted to Pydantic models
+- **No JSONB in outputs**: Collections are arrays, not JSONB objects
 - **Lists everywhere**: All collections return as arrays of composite types, not nested JSONB structures
 
 ### 4. Type Preservation
 
-**⚠️ CRITICAL: Preserve Native PostgreSQL Types**
-
 When defining composite types, use native PostgreSQL types (`uuid`, `timestamptz`) instead of stringifying them to `text` unless there's a specific reason.
 
-**Key Principles:**
-
-1. **Use native PostgreSQL types for IDs and timestamps:**
-   ```sql
-   -- ✅ Good: native types
-   CREATE TYPE types.q_infra_profile_exists_v4_result AS (
-       profile_exists boolean
-   );
-   ```
-
-2. **Only use `text` when truly needed:**
-   - **Display-only fields**: `actor_name text` (always a string, never a UUID)
-   - **Enum-like values**: `role text` (when representing enum values as strings)
-
-3. **Type system handles conversion automatically:**
-   - `asyncpg` automatically converts PostgreSQL `uuid` → Python `UUID` objects
-   - `asyncpg` automatically converts PostgreSQL `timestamptz` → Python `datetime` objects
-   - Pydantic models validate and serialize these types correctly
-
-### 5. Auto-Generated Types Only
-
-**⚠️ CRITICAL: Never Keep Manual Types**
-
-**Key Principles:**
-
-1. **Always use auto-generated types**: Use `{FunctionName}SqlParams` and `{FunctionName}SqlRow` types generated from SQL function signatures
-2. **SQL functions use snake_case**: PostgreSQL function parameters use snake_case (e.g., `profile_id`, `department_id`)
-3. **Auto-generated types match SQL**: Generated types use snake_case to match SQL function signatures
-
-### 6. Redis Operations Pattern
-
-**⚠️ CRITICAL: Consistent Redis Patterns**
+### 5. Redis Operations Pattern
 
 Infrastructure utilities that interact with Redis should follow these patterns:
 
@@ -119,13 +76,10 @@ async def get_active_run(chat_id: str) -> str | None:
         run_id = await redis_client.get(f"active_run:{chat_id}")
         return run_id.decode("utf-8") if run_id else None
     except Exception:
-        # Don't log - let caller handle errors
         return None
 ```
 
-### 7. Pure Python Utilities Pattern
-
-**⚠️ CRITICAL: Standard Python Patterns**
+### 6. Pure Python Utilities Pattern
 
 Infrastructure utilities that don't interact with database/Redis should follow standard Python patterns:
 
@@ -147,11 +101,7 @@ from app.infra.globals import get_pool
 
 @asynccontextmanager
 async def get_db_connection() -> AsyncGenerator[asyncpg.Connection, None]:
-    """Get database connection for WebSocket handlers.
-
-    Raises:
-        RuntimeError: If database connection pool is not initialized
-    """
+    """Get database connection for WebSocket handlers."""
     pool = get_pool()
     if not pool:
         raise RuntimeError("Database connection pool not initialized")
@@ -160,218 +110,32 @@ async def get_db_connection() -> AsyncGenerator[asyncpg.Connection, None]:
         yield connection
 ```
 
-## SQL File Organization
-
-**Example Structure:**
-
-```
-server/app/infra/activity/
-├── profile_exists.py          # Python function
-└── insert.py                  # Python function
-
-server/app/sql/queries/infrastructure/activity/
-└── get_profile_name_for_logging_complete.sql    # One SQL file per function
-
-server/app/sql/queries/infrastructure/
-├── infrastructure_activity_profile_exists_complete.sql    # One SQL file per function
-└── infrastructure_activity_insert_complete.sql            # One SQL file per function
-```
-
-## Composite Types
-
-- **Schema**: All query-specific composite types live in `types` schema
-- **Naming**: `types.q_infra_{operation}_{category}_v4_{item_name}` (e.g., `types.q_infra_profile_exists_v4_result`)
-- **Versioned**: Include version (e.g. `v5`) in type names for future compatibility
-- **Shared**: Types can be reused across API, WebSocket, and infrastructure endpoints
-
-## Type Generation
-
-- **Auto-detection**: `execute_sql_typed()` detects if SQL file contains a function
-- **Introspection**: Queries `pg_proc` and `pg_type` to extract function signatures
-- **Pydantic models**: Generates `{FunctionName}SqlParams`, `{FunctionName}SqlRow`
-- **Composite models**: Generates nested Pydantic models for composite types
-
-**Key Difference from API/WebSocket:**
-
-- **No ApiRequest/ApiResponse**: Infra functions use `SqlParams`/`SqlRow` directly (no `ApiRequest`/`ApiResponse` wrapper types)
-- **Helper functions**: Infra functions are called by routes/events, not exposed directly
-
-## Common Patterns
-
-### Simple Function (No Composite Types)
-
-```sql
-BEGIN;
-
--- Drop function if exists (handle signature changes)
-DO $$ 
-BEGIN
-    DROP FUNCTION IF EXISTS infra_profile_exists_v4(uuid);
-EXCEPTION WHEN OTHERS THEN NULL;
-END $$;
-
--- Create function
-CREATE OR REPLACE FUNCTION infra_profile_exists_v4(
-    profile_id uuid
-)
-RETURNS TABLE (
-    profile_exists boolean
-)
-LANGUAGE sql
-STABLE
-AS $$
-    SELECT EXISTS(SELECT 1 FROM profiles WHERE id = profile_id) as profile_exists;
-$$;
-
-COMMIT;
-```
-
-### Python Function Using execute_sql_typed
-
-```python
-"""Check if a profile exists in the database."""
-
-import asyncpg  # type: ignore
-from typing import cast
-
-from app.sql.types import (
-    InfrastructureActivityProfileExistsSqlParams,
-    InfrastructureActivityProfileExistsSqlRow,
-)
-from app.utils.sql_helper import execute_sql_typed
-
-SQL_PATH = "app/sql/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql"
-
-
-async def profile_exists(profile_id: str, conn: asyncpg.Connection) -> bool:
-    """Check if a profile exists in the database.
-
-    Args:
-        profile_id: Profile UUID string
-        conn: Database connection
-
-    Returns:
-        True if profile exists, False otherwise
-    """
-    try:
-        params = InfrastructureActivityProfileExistsSqlParams(profile_id=profile_id)
-        result = cast(
-            InfrastructureActivityProfileExistsSqlRow,
-            await execute_sql_typed(conn, SQL_PATH, params=params),
-        )
-        return result.profile_exists if result else False
-    except (asyncpg.DataError, ValueError):
-        # Invalid UUID format - profile cannot exist
-        return False
-```
-
-## Common Pitfalls
-
-### Pitfall 1: Using Raw SQL Instead of Functions
-
-```python
-# ❌ BAD: Raw SQL with load_sql()
-sql = load_sql("app/sql/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql")
-result = await conn.fetchval(sql, profile_id)
-
-# ✅ GOOD: PostgreSQL function with execute_sql_typed()
-params = InfrastructureActivityProfileExistsSqlParams(profile_id=profile_id)
-result = cast(
-    InfrastructureActivityProfileExistsSqlRow,
-    await execute_sql_typed(conn, SQL_PATH, params=params),
-)
-```
-
-### Pitfall 2: Manual Type Definitions
-
-```python
-# ❌ BAD: Manual type definition
-class ProfileExistsParams(BaseModel):
-    profile_id: str
-
-# ✅ GOOD: Use auto-generated type
-from app.sql.types import InfraProfileExistsSqlParams
-```
-
-### Pitfall 3: Inline SQL
-
-```python
-# ❌ BAD: Inline SQL
-result = await conn.fetchval(
-    "SELECT EXISTS(SELECT 1 FROM profiles WHERE id = $1)",
-    profile_id,
-)
-
-# ✅ GOOD: SQL function in .sql file
-params = InfraProfileExistsSqlParams(profile_id=profile_id)
-result = await execute_sql_typed(conn, SQL_PATH, params=params)
-```
-
-### Pitfall 4: JSONB Instead of Composite Types
-
-```sql
--- ❌ BAD: JSONB aggregation (NEVER ALLOWED)
-json_agg(
-    jsonb_build_object(
-        'profile_id', p.id,
-        'name', p.name
-    )
-) as profiles
-
--- ✅ GOOD: Composite type array
-ARRAY_AGG(
-    (p.id, p.name)::types.q_infra_list_profiles_v4_profile
-    ORDER BY p.name
-) as profiles
-```
-
 ## Testing Checklist
 
-### SQL & Types
+### Database Operations
 
-- [ ] **One SQL file per function** (e.g., `profile_exists_complete.sql`)
-- [ ] **No inline SQL** (all SQL in `.sql` files, none in Python code)
-- [ ] **PostgreSQL function** (uses `CREATE OR REPLACE FUNCTION` with `RETURNS TABLE`)
-- [ ] **Function naming** (follows `infra_{operation}_{category}_v4` pattern)
-- [ ] **Idempotent SQL** (uses `BEGIN; DROP FUNCTION; CREATE FUNCTION; COMMIT;`)
-- [ ] SQL file compiles (`make sql-compile`)
-- [ ] Types generated correctly (`server/app/sql/types.py`)
-- [ ] **No JSONB parsing in Python file** - No `json.loads()` calls
-- [ ] **No JSONB in inputs** - Function parameters use native PostgreSQL types or composite types, never JSONB
-- [ ] **All JSONB aggregations converted** - No `jsonb_build_object`, `json_agg`, or `jsonb_agg` in SQL files
-- [ ] **Type preservation**: Composite types use `uuid`/`timestamptz` for IDs/timestamps (not `text` unless truly needed)
-- [ ] **No manual types** - All functions use auto-generated `{FunctionName}SqlParams` and `{FunctionName}SqlRow` types from SQL introspection
-
-### Python Function Testing
-
-- [ ] Test function works correctly
-- [ ] Verify types are generated correctly
-- [ ] Verify callers still work with migrated function
+- [ ] Uses entry functions for mutations (group→run→call chain)
+- [ ] Hand-crafted Pydantic types match expected data shapes
+- [ ] No JSONB parsing in Python file — no `json.loads()` calls
 - [ ] Integration tests pass
 
-### Redis Operations Testing
+### Redis Operations
 
 - [ ] Fallback to in-memory storage when Redis unavailable
 - [ ] Consistent key naming patterns
 - [ ] No logging in Redis operations
 - [ ] Type hints complete
 
-### Pure Python Utilities Testing
+### Pure Python Utilities
 
 - [ ] Type hints complete
 - [ ] Documentation complete
 - [ ] No side effects (if applicable)
 
-## Reference Implementation
-
-See `server/app/infra/activity/profile_exists.py` and `server/app/sql/queries/infrastructure/infrastructure_activity_profile_exists_complete.sql` as the reference implementation for database operations.
-
 ## Benefits
 
-1. **Strong Typing**: PostgreSQL enforces types at database level, Pydantic enforces at Python level
-2. **Type Safety**: All types generated from SQL, no drift between SQL and Python
-3. **Maintainability**: Single SQL file, clear function signature, idempotent migrations
-4. **Performance**: No JSONB aggregation overhead - composite types are more efficient, direct type decoding without parsing
-5. **No JSONB Parsing Errors**: Types are enforced at database level - no runtime `json.loads()` failures or type mismatches
-6. **Developer Experience**: Auto-completion, type checking, fewer runtime errors
-7. **Consistency**: Same pattern for API, WebSocket, and infrastructure endpoints
+1. **Simplicity**: No SQL compilation pipeline — types are hand-crafted and immediately available
+2. **Reusability**: Black box entry functions provide consistent mutation patterns
+3. **Strong Typing**: Pydantic enforces types at Python level, PostgreSQL at database level
+4. **Maintainability**: Entry functions encapsulate database operations, reducing boilerplate
+5. **Developer Experience**: No build step for types — edit and go

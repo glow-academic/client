@@ -17,7 +17,6 @@ server/app/
   server.py            — App factory, middleware, router mounting
 
   infra/               — Business logic, domain tools (globals, agents, websocket, generation, tools)
-  sql/                 — SQL queries, types, compilation
   registry/            — Artifact/entry/resource registries
   utils/               — Pure helpers (cache, logging, encryption)
 
@@ -47,21 +46,17 @@ server/app/
 ## Type Flow
 
 ```
-SQL files (server/app/sql/queries/)
-    ↓ make sql-compile
-server/app/sql/types.py (*SqlParams, *SqlRow)
+Hand-crafted Pydantic types (server/app/routes/shared_types.py, per-route types.py)
     ↓ make openapi-gen
 server/openapi.json
     ↓ make gen-client-types
 client/lib/api/schema.ts → InputOf / OutputOf
 ```
 
-**After editing SQL:** Always run `make sql-compile` to regenerate types.
-
 ## File Locations
 
 ```
-server/app/sql/queries/[resource]/                — SQL files (one per route)
+server/app/routes/v5/tools/entries/[entry_type]/  — Black box entry functions (create/search)
 server/app/routes/v5/api/main/[resource]/         — Artifact endpoints
 server/app/routes/v5/api/resources/[resource]/    — Resource endpoints
 server/app/routes/v5/api/views/[domain]/          — View endpoints
@@ -75,7 +70,8 @@ client/components/[resource]/                     — UI components
 ## Key Patterns
 
 - **Two-pass fetching**: Artifact endpoints do Pass 1 (SQL for IDs), Pass 2 (parallel `*_internal()` via `asyncio.gather()`)
-- **SQL execution**: All via `execute_sql_typed()` — no inline SQL in Python
+- **Entry functions**: Mutations use black box entry functions in `v5/tools/entries/` with group→run→call chains
+- **Hand-crafted types**: Pydantic models in `routes/shared_types.py` and per-route `types.py` files
 - **Composite types**: In `types` schema — never JSONB
 - **Transactions**: For mutations only, not for reads
 - **Cache**: `get_cached()`/`set_cached()` for reads, `invalidate_tags()` after mutations
