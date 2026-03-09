@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 import socketio  # type: ignore
-from fastapi import Depends, FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -289,23 +289,6 @@ fastapi_app.include_router(socket_v5_router)
 # ---------------------------------------------------------------------------
 # Routers — root-level (version-agnostic)
 # ---------------------------------------------------------------------------
-from app.infra.auth.middleware import require_auth  # noqa: E402
-from app.routes.auth import router as auth_router  # noqa: E402
-from app.utils.mcp.get_mcp import get_mcp  # noqa: E402
-
-fastapi_app.include_router(
-    auth_router,
-    dependencies=[
-        Depends(require_auth),
-        Depends(get_mcp),
-    ],
-)
-
-# Auth config discovery — no auth required (chicken-and-egg: clients need this to know how to auth)
-from app.routes.auth.config import router as auth_config_router  # noqa: E402
-
-fastapi_app.include_router(auth_config_router, prefix="/auth", tags=["auth"])
-
 from app.routes.default_idp import router as default_idp_router  # noqa: E402
 
 fastapi_app.include_router(default_idp_router)
@@ -330,9 +313,6 @@ from app.routes.root_info import router as root_info_router  # noqa: E402
 
 fastapi_app.include_router(root_info_router)
 
-from app.routes.schema_changed import router as schema_changed_router  # noqa: E402
-
-fastapi_app.include_router(schema_changed_router)
 
 from app.routes.init import router as init_router  # noqa: E402
 
