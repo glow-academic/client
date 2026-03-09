@@ -48,6 +48,7 @@ from app.routes.v5.api.main.document.types import (
     DocumentFlagSection,
     DocumentImageSection,
     DocumentNameSection,
+    DocumentParameterSection,
     DocumentTextSection,
     DocumentUploadSection,
     GetDocumentApiRequest,
@@ -194,6 +195,10 @@ async def get_document_client(
         document.resources["parameter_fields"].selected
         + document.resources["parameter_fields"].suggestions
     )
+    all_parameters = dedupe_by_id(
+        document.resources["parameters"].selected
+        + document.resources["parameters"].suggestions
+    )
 
     show_flags_map = {
         "names": compute_show_name(names_has_tools),
@@ -201,6 +206,7 @@ async def get_document_client(
         "flags": compute_show_flag(),
         "departments": compute_show_departments(len(all_departments)),
         "fields": compute_show_fields(len(all_fields)),
+        "parameters": len(all_parameters) > 0,
         "uploads": compute_show_uploads(),
         "images": True,
         "texts": True,
@@ -212,6 +218,7 @@ async def get_document_client(
         "flags": compute_flag_required(),
         "departments": compute_departments_required(),
         "fields": compute_fields_required(),
+        "parameters": False,
         "uploads": compute_uploads_required(),
         "images": False,
         "texts": False,
@@ -297,6 +304,7 @@ async def get_document_client(
         "descriptions": [d.id for d in document.resources["descriptions"].suggestions],
         "departments": [d.id for d in document.resources["departments"].suggestions],
         "fields": [f.id for f in document.resources["parameter_fields"].suggestions],
+        "parameters": [p.id for p in document.resources["parameters"].suggestions],
         "uploads": [f.id for f in document.resources["files"].suggestions],
         "images": [i.id for i in document.resources["images"].suggestions],
         "texts": [t.id for t in document.resources["texts"].suggestions],
@@ -354,6 +362,11 @@ async def get_document_client(
             **_section("fields"),
             current=document.resources["parameter_fields"].selected or None,
             resources=all_fields,
+        ),
+        parameters=DocumentParameterSection(
+            **_section("parameters"),
+            current=document.resources["parameters"].selected or None,
+            resources=all_parameters,
         ),
         uploads=DocumentUploadSection(
             **_section("uploads"),

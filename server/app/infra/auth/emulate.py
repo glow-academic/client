@@ -1,18 +1,15 @@
-"""Resolve emulation grant — composes canonical black boxes.
+"""Emulation grant management — composes canonical black boxes.
 
-Given a requester and target profile_id:
-  1. resolve_profile_identity_context → requester + target identity
-  2. Authorization check (role hierarchy)
-  3. search_sessions → find active sessions for both profiles
-  4. create_grant → create grant entry + profile link
-  5. create_emulation → create emulation entry + profile link
+Emulate: create grant + emulation entries for server-side identity swap.
+Unemulate: consume the innermost grant to peel one layer.
 
-Server-side resolve_identity() picks up the active grant on the next request
-and swaps the effective profile_id — no client-side redirect needed.
+resolve_identity() picks up active grants on every request and follows
+the chain iteratively (supports nested emulation up to depth 5).
 """
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
@@ -20,11 +17,25 @@ from uuid import UUID
 import asyncpg
 from redis.asyncio import Redis
 
+from app.infra.auth.resolve_identity import (
+    MAX_EMULATION_DEPTH,
+    resolve_emulation_chain,
+)
 from app.infra.auth.simulatable import SIMULATABLE_ROLES
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.tools.entries.emulations.create import create_emulation
+from app.routes.v5.tools.entries.grant_consumptions.create import (
+    create_grant_consumption,
+)
 from app.routes.v5.tools.entries.grants.create import create_grant
 from app.routes.v5.tools.entries.sessions.search import search_sessions
+
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Emulate — create a new emulation layer
+# ---------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
@@ -45,12 +56,26 @@ async def resolve_emulation(
     target_profile_id: UUID,
     ttl_minutes: int = 120,
     bypass_cache: bool = False,
+    actor_profile_id: UUID | None = None,
 ) -> EmulationResult:
     """Create an emulation grant using canonical black boxes.
 
     Returns an EmulationResult with allowed=False if authorization fails.
     On success, resolve_identity() will pick up the grant on the next request.
+
+    Uses actor_profile_id (the real JWT profile) to check depth limit.
     """
+    # Depth check — walk chain from the original profile
+    origin = actor_profile_id or requester_profile_id
+    chain = await resolve_emulation_chain(pool, origin)
+    if len(chain) >= MAX_EMULATION_DEPTH:
+        return EmulationResult(
+            allowed=False,
+            reason=f"Maximum emulation depth ({MAX_EMULATION_DEPTH}) reached",
+            grant_id=None,
+            expires_at=None,
+        )
+
     # Step 1: Resolve requester identity
     requester = await resolve_profile_identity_context(
         pool, requester_profile_id, redis, bypass_cache=bypass_cache
@@ -140,3 +165,48 @@ async def resolve_emulation(
         grant_id=grant_result.id,
         expires_at=expires_at,
     )
+
+
+# ---------------------------------------------------------------------------
+# Unemulate — consume the innermost grant to peel one layer
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class UnemulationResult:
+    """Result of an unemulation (consuming a grant)."""
+
+    ok: bool
+    reason: str | None
+
+
+async def resolve_unemulation(
+    pool: asyncpg.Pool,
+    *,
+    actor_profile_id: UUID,
+) -> UnemulationResult:
+    """Consume the innermost emulation grant to peel one layer.
+
+    Walks the emulation chain from actor_profile_id (the real JWT profile),
+    finds the last grant in the chain, and creates a consumption for it.
+
+    On the next request, resolve_identity() will resolve one layer less.
+    """
+    chain = await resolve_emulation_chain(pool, actor_profile_id)
+
+    if not chain:
+        return UnemulationResult(ok=False, reason="No active emulation to exit")
+
+    # Consume the innermost (last) grant in the chain
+    innermost = chain[-1]
+
+    async with pool.acquire() as conn:
+        await create_grant_consumption(conn, grant_id=innermost.grant_id)
+
+    logger.info(
+        f"Unemulated: consumed grant {innermost.grant_id}, "
+        f"peeled target {innermost.target_profile_id} "
+        f"(chain depth {len(chain)} → {len(chain) - 1})"
+    )
+
+    return UnemulationResult(ok=True, reason=None)

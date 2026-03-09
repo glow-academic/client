@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from app.infra.document_create import CreateDocumentItem
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.document_drafts.types import GetDocumentDraftResponse
+from app.routes.v5.tools.resources.parameters.types import GetParameterResponse
 
 
 class GetDocumentDraftsApiResponse(BaseModel):
@@ -155,6 +156,11 @@ class DocumentFieldSection(BaseResourceSection):
     resources: list[DocumentParameterFieldResource] | None = None
 
 
+class DocumentParameterSection(BaseResourceSection):
+    current: list[GetParameterResponse] | None = None
+    resources: list[GetParameterResponse] | None = None
+
+
 class DocumentUploadSection(BaseResourceSection):
     current: list[DocumentFileResource] | None = None
     resources: list[DocumentFileResource] | None = None
@@ -188,6 +194,7 @@ class GetDocumentApiResponse(BaseModel):
     flags: DocumentFlagSection | None = None
     departments: DocumentDepartmentSection | None = None
     fields: DocumentFieldSection | None = None
+    parameters: DocumentParameterSection | None = None
     uploads: DocumentUploadSection | None = None
     images: DocumentImageSection | None = None
     texts: DocumentTextSection | None = None

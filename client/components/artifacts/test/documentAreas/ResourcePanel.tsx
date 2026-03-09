@@ -7,14 +7,14 @@
 
 import { ResizablePanel } from "@/components/ui/resizable";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Models } from "@/components/resources/Models";
+import { Modalities } from "@/components/resources/Modalities";
 import { Prompts } from "@/components/resources/Prompts";
 import { Instructions } from "@/components/resources/Instructions";
 import { Voices } from "@/components/resources/Voices";
 import { TemperatureLevels } from "@/components/resources/TemperatureLevels";
 import { ReasoningLevels } from "@/components/resources/ReasoningLevels";
 import { Tools } from "@/components/resources/Tools";
-import { Keys } from "@/components/resources/Keys";
+import { Qualities } from "@/components/resources/Qualities";
 
 // Bundle data shape — matches the invocation/get response.
 // Typed as a scaffold interface since the invocation OpenAPI route
@@ -22,14 +22,14 @@ import { Keys } from "@/components/resources/Keys";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface ResourceSection { show?: boolean; current?: any[]; resources?: any[] }
 interface BundleData {
-  models?: ResourceSection;
+  modalities?: ResourceSection;
   prompts?: ResourceSection;
   instructions?: ResourceSection;
   voices?: ResourceSection;
   temperature_levels?: ResourceSection;
   reasoning_levels?: ResourceSection;
   tools?: ResourceSection;
-  keys?: ResourceSection;
+  qualities?: ResourceSection;
 }
 
 export interface ResourcePanelProps {
@@ -42,14 +42,14 @@ export interface ResourcePanelProps {
 
 export type BenchmarkBundleFormState = {
   department_ids: string[];
-  model_ids: string[];
+  modality_ids: string[];
   prompt_ids: string[];
   instruction_ids: string[];
   voice_ids: string[];
   temperature_level_ids: string[];
   reasoning_level_ids: string[];
   tool_ids: string[];
-  key_ids: string[];
+  quality_ids: string[];
 };
 
 export function extractIds<T>(
@@ -84,20 +84,17 @@ export function ResourcePanel({
         <div className="space-y-4 p-4">
           <h3 className="text-sm font-semibold">Agent Resources</h3>
 
-          {s.models?.show && (
-            <Models
-              model_id={form_state.model_ids[0] ?? null}
-              model_resource={s.models.current?.[0] ?? null}
-              show_models={s.models.show}
-              models={s.models.resources ?? []}
+          {s.modalities?.show && (
+            <Modalities
+              modality_ids={form_state.modality_ids}
+              modality_resources={s.modalities.current ?? []}
+              show_modalities={s.modalities.show}
+              modalities={s.modalities.resources ?? []}
               disabled={disabled ?? false}
-              onModelIdChange={(id: string | null) =>
-                on_form_change((prev) => ({
-                  ...prev,
-                  model_ids: id ? [id] : [],
-                }))
+              onChange={(ids) =>
+                on_form_change((prev) => ({ ...prev, modality_ids: ids }))
               }
-              label="Model"
+              label="Modalities"
             />
           )}
 
@@ -197,19 +194,17 @@ export function ResourcePanel({
             />
           )}
 
-          {s.keys?.show && (
-            <Keys
-              key_id={form_state.key_ids[0] ?? null}
-              key_resource={s.keys.current?.[0] ?? null}
-              show_key={s.keys.show}
-              keys={s.keys.resources ?? []}
+          {s.qualities?.show && (
+            <Qualities
+              quality_ids={form_state.quality_ids}
+              quality_resources={s.qualities.current ?? []}
+              show_qualities={s.qualities.show}
+              qualities={s.qualities.resources ?? []}
               disabled={disabled ?? false}
-              onKeyIdChange={(id: string | null) =>
-                on_form_change((prev) => ({
-                  ...prev,
-                  key_ids: id ? [id] : [],
-                }))
+              onChange={(ids) =>
+                on_form_change((prev) => ({ ...prev, quality_ids: ids }))
               }
+              label="Qualities"
             />
           )}
         </div>

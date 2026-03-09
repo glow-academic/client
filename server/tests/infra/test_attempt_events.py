@@ -11,7 +11,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID
 
 import pytest
+import pytest_asyncio
 
+import app.infra.globals as globals_mod
 from app.infra.websocket.attempt_events_impl import (
     attempt_next_impl,
     audio_delta_impl,
@@ -39,6 +41,12 @@ from app.infra.websocket.attempt_events_impl import (
 from app.infra.websocket.attempt_events_impl import (
     user_complete_impl as _user_complete_impl,
 )
+from app.infra.websocket.session_store import (
+    _session_store,
+    remove_session,
+)
+from app.infra.websocket.session_store import create_session as create_audio_session
+from app.infra.websocket.set_socket_owner import set_socket_owner
 from app.infra.websocket.socket_event import recording_emit
 from app.infra.websocket.test_events_impl import (
     _extract_grade_feedback,
@@ -82,6 +90,7 @@ from app.routes.v5.tools.entries.test.refresh import refresh_test
 from app.routes.v5.tools.entries.test_grade.create import create_test_grade
 from app.routes.v5.tools.entries.test_invocation.create import create_test_invocation
 from app.routes.v5.tools.entries.test_invocation.refresh import refresh_test_invocation
+from app.routes.v5.tools.entries.uploads.get import get_upload
 from app.routes.v5.tools.resources.profiles.create import create_profile
 
 _P = "app.infra.websocket.attempt_events_impl"
@@ -96,6 +105,62 @@ def _mock_pool(mock_conn: AsyncMock | None = None) -> MagicMock:
     cm.__aenter__.return_value = mock_conn
     pool.acquire.return_value = cm
     return pool
+
+
+@pytest_asyncio.fixture
+async def audio_session_factory(redis_client):
+    """Create real audio session-store state plus Redis socket mappings."""
+    previous_redis = globals_mod.redis_client
+    globals_mod.redis_client = redis_client
+    _session_store.clear()
+    globals_mod.get_socket_owner_dict().clear()
+    tracked_group_ids: list[str] = []
+    tracked_profile_ids: list[str] = []
+    tracked_sids: list[str] = []
+
+    async def _create(
+        *,
+        sid: str = "s1",
+        chat_id: str = "c1",
+        run_id: str = "r1",
+        group_id: str = "g1",
+        profile_id: str | None = None,
+        session_id: str | None = None,
+    ):
+        session = create_audio_session(
+            sid=sid,
+            chat_id=chat_id,
+            run_id=run_id,
+            group_id=group_id,
+        )
+        tracked_group_ids.append(group_id)
+
+        if profile_id is not None:
+            await set_socket_owner(profile_id, sid)
+            tracked_profile_ids.append(profile_id)
+
+        if session_id is not None:
+            await redis_client.set(f"socket_session:{sid}", session_id)
+            tracked_sids.append(sid)
+
+        return session
+
+    try:
+        yield _create
+    finally:
+        for group_id in tracked_group_ids:
+            remove_session(group_id)
+        for profile_id in tracked_profile_ids:
+            await redis_client.delete(
+                f"socket_owner:{profile_id}",
+            )
+        for sid in tracked_sids:
+            await redis_client.delete(
+                f"socket_session:{sid}", f"socket_to_profile:{sid}"
+            )
+        _session_store.clear()
+        globals_mod.get_socket_owner_dict().clear()
+        globals_mod.redis_client = previous_redis
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -144,19 +209,17 @@ class TestAudioSessionStartImpl:
         await audio_session_start_impl({"sid": "s1"}, emit=emit)
         assert events == []
 
-    async def test_emits_audio_ready_with_session(self):
+    async def test_emits_audio_ready_with_session(self, audio_session_factory):
         emit, events = recording_emit()
-        session = SimpleNamespace(chat_id="chat-1")
-        with patch(f"{_P}.get_session_by_group_id", return_value=session):
-            await audio_session_start_impl({"sid": "s1", "group_id": "g1"}, emit=emit)
+        await audio_session_factory(chat_id="chat-1")
+        await audio_session_start_impl({"sid": "s1", "group_id": "g1"}, emit=emit)
         assert len(events) == 1
         assert events[0].event == "attempt_audio_ready"
         assert events[0].data["chat_id"] == "chat-1"
 
     async def test_no_session_uses_group_id_as_chat_id(self):
         emit, events = recording_emit()
-        with patch(f"{_P}.get_session_by_group_id", return_value=None):
-            await audio_session_start_impl({"sid": "s1", "group_id": "g1"}, emit=emit)
+        await audio_session_start_impl({"sid": "s1", "group_id": "g1"}, emit=emit)
         assert events[0].data["chat_id"] == "g1"
 
 
@@ -174,22 +237,19 @@ class TestAudioDeltaImpl:
 
     async def test_no_session_emits_nothing(self):
         emit, events = recording_emit()
-        with patch(f"{_P}.get_session_by_group_id", return_value=None):
-            await audio_delta_impl({"group_id": "g1", "audio": b"data"}, emit=emit)
+        await audio_delta_impl({"group_id": "g1", "audio": b"data"}, emit=emit)
         assert events == []
 
-    async def test_no_audio_data_emits_nothing(self):
+    async def test_no_audio_data_emits_nothing(self, audio_session_factory):
         emit, events = recording_emit()
-        session = SimpleNamespace(sid="s1", chat_id="c1")
-        with patch(f"{_P}.get_session_by_group_id", return_value=session):
-            await audio_delta_impl({"group_id": "g1"}, emit=emit)
+        await audio_session_factory()
+        await audio_delta_impl({"group_id": "g1"}, emit=emit)
         assert events == []
 
-    async def test_emits_assistant_progress(self):
+    async def test_emits_assistant_progress(self, audio_session_factory):
         emit, events = recording_emit()
-        session = SimpleNamespace(sid="s1", chat_id="c1")
-        with patch(f"{_P}.get_session_by_group_id", return_value=session):
-            await audio_delta_impl({"group_id": "g1", "audio": b"chunk"}, emit=emit)
+        await audio_session_factory()
+        await audio_delta_impl({"group_id": "g1", "audio": b"chunk"}, emit=emit)
         assert len(events) == 1
         assert events[0].event == "attempt_assistant_progress"
         assert events[0].data["content_type"] == "audio"
@@ -209,32 +269,26 @@ class TestAudioSpeechStartImpl:
 
     async def test_no_session_emits_nothing(self):
         emit, events = recording_emit()
-        with patch(f"{_P}.get_session_by_group_id", return_value=None):
-            await audio_speech_start_impl(
-                {"group_id": "g1", "item_id": "i1"}, emit=emit
-            )
+        await audio_speech_start_impl({"group_id": "g1", "item_id": "i1"}, emit=emit)
         assert events == []
 
-    async def test_no_item_id_emits_nothing(self):
+    async def test_no_item_id_emits_nothing(self, audio_session_factory):
         emit, events = recording_emit()
-        session = SimpleNamespace(sid="s1", chat_id="c1", run_id="r1")
-        with patch(f"{_P}.get_session_by_group_id", return_value=session):
-            await audio_speech_start_impl({"group_id": "g1"}, emit=emit)
+        await audio_session_factory()
+        await audio_speech_start_impl({"group_id": "g1"}, emit=emit)
         assert events == []
 
-    async def test_emits_user_received_start(self):
+    async def test_emits_user_received_start(self, audio_session_factory):
         emit, events = recording_emit()
-        session = SimpleNamespace(sid="s1", chat_id="c1", run_id="r1")
-        with (
-            patch(f"{_P}.get_session_by_group_id", return_value=session),
-            patch(f"{_P}.find_profile_by_socket", return_value="prof-1"),
-        ):
-            await audio_speech_start_impl(
-                {"group_id": "g1", "item_id": "i1"}, emit=emit
-            )
+        await audio_session_factory(
+            profile_id="prof-1",
+            session_id="sess-1",
+        )
+        await audio_speech_start_impl({"group_id": "g1", "item_id": "i1"}, emit=emit)
         assert len(events) == 1
         assert events[0].event == "attempt_user_received_start"
         assert events[0].data["profile_id"] == "prof-1"
+        assert events[0].data["session_id"] == "sess-1"
         assert events[0].data["item_id"] == "i1"
 
 
@@ -252,27 +306,22 @@ class TestAudioSpeechDeltaImpl:
 
     async def test_no_session_emits_nothing(self):
         emit, events = recording_emit()
-        with patch(f"{_P}.get_session_by_group_id", return_value=None):
-            await audio_speech_delta_impl(
-                {"group_id": "g1", "item_id": "i1"}, emit=emit
-            )
+        await audio_speech_delta_impl({"group_id": "g1", "item_id": "i1"}, emit=emit)
         assert events == []
 
-    async def test_no_item_id_emits_nothing(self):
+    async def test_no_item_id_emits_nothing(self, audio_session_factory):
         emit, events = recording_emit()
-        session = SimpleNamespace(sid="s1", chat_id="c1")
-        with patch(f"{_P}.get_session_by_group_id", return_value=session):
-            await audio_speech_delta_impl({"group_id": "g1"}, emit=emit)
+        await audio_session_factory()
+        await audio_speech_delta_impl({"group_id": "g1"}, emit=emit)
         assert events == []
 
-    async def test_emits_user_received_progress(self):
+    async def test_emits_user_received_progress(self, audio_session_factory):
         emit, events = recording_emit()
-        session = SimpleNamespace(sid="s1", chat_id="c1")
-        with patch(f"{_P}.get_session_by_group_id", return_value=session):
-            await audio_speech_delta_impl(
-                {"group_id": "g1", "item_id": "i1", "transcript": "hi"},
-                emit=emit,
-            )
+        await audio_session_factory()
+        await audio_speech_delta_impl(
+            {"group_id": "g1", "item_id": "i1", "transcript": "hi"},
+            emit=emit,
+        )
         assert len(events) == 1
         assert events[0].event == "attempt_user_received_progress"
         assert events[0].data["transcript"] == "hi"
@@ -292,27 +341,24 @@ class TestAudioErrorImpl:
 
     async def test_no_session_emits_nothing(self):
         emit, events = recording_emit()
-        with patch(f"{_P}.get_session_by_group_id", return_value=None):
-            await audio_error_impl({"group_id": "g1"}, emit=emit)
+        await audio_error_impl({"group_id": "g1"}, emit=emit)
         assert events == []
 
-    async def test_emits_attempt_error(self):
+    async def test_emits_attempt_error(self, audio_session_factory):
         emit, events = recording_emit()
-        session = SimpleNamespace(sid="s1", chat_id="c1")
-        with patch(f"{_P}.get_session_by_group_id", return_value=session):
-            await audio_error_impl(
-                {"group_id": "g1", "error_message": "mic broke"}, emit=emit
-            )
+        await audio_session_factory()
+        await audio_error_impl(
+            {"group_id": "g1", "error_message": "mic broke"}, emit=emit
+        )
         assert len(events) == 1
         assert events[0].event == "attempt_error"
         assert events[0].data["error_type"] == "audio"
         assert events[0].data["message"] == "mic broke"
 
-    async def test_default_error_message(self):
+    async def test_default_error_message(self, audio_session_factory):
         emit, events = recording_emit()
-        session = SimpleNamespace(sid="s1", chat_id="c1")
-        with patch(f"{_P}.get_session_by_group_id", return_value=session):
-            await audio_error_impl({"group_id": "g1"}, emit=emit)
+        await audio_session_factory()
+        await audio_error_impl({"group_id": "g1"}, emit=emit)
         assert events[0].data["message"] == "Unknown audio error"
 
 
@@ -465,17 +511,15 @@ class TestAudioStopImpl:
     async def test_no_session_emits_audio_ended(self):
         """Even without a session, emits audio_ended."""
         emit, events = recording_emit()
-        with patch(f"{_P}.get_session_by_group_id", return_value=None):
-            await audio_stop_impl({"sid": "s1", "group_id": "g1"}, emit=emit)
+        await audio_stop_impl({"sid": "s1", "group_id": "g1"}, emit=emit)
         assert len(events) == 1
         assert events[0].event == "attempt_audio_ended"
         assert events[0].data["chat_id"] == "g1"
 
-    async def test_with_session_cleans_up_and_emits(self):
+    async def test_with_session_cleans_up_and_emits(self, audio_session_factory):
         emit, events = recording_emit()
-        session = SimpleNamespace(chat_id="c1")
+        session = await audio_session_factory()
         with (
-            patch(f"{_P}.get_session_by_group_id", return_value=session),
             patch(
                 "app.infra.websocket.audio_lifecycle.cleanup_audio_session",
                 new_callable=AsyncMock,
@@ -500,17 +544,15 @@ class TestAudioResponseCancelledImpl:
 
     async def test_no_session_emits_nothing(self):
         emit, events = recording_emit()
-        with patch(f"{_P}.get_session_by_group_id", return_value=None):
-            await audio_response_cancelled_impl({"group_id": "g1"}, emit=emit)
+        await audio_response_cancelled_impl({"group_id": "g1"}, emit=emit)
         assert events == []
 
-    async def test_emits_stopped_and_generate(self):
+    async def test_emits_stopped_and_generate(self, audio_session_factory):
         emit, events = recording_emit()
-        session = SimpleNamespace(sid="s1", chat_id="c1")
-        with patch(f"{_P}.get_session_by_group_id", return_value=session):
-            await audio_response_cancelled_impl(
-                {"group_id": "g1", "artifact_type": "agent"}, emit=emit
-            )
+        await audio_session_factory()
+        await audio_response_cancelled_impl(
+            {"group_id": "g1", "artifact_type": "agent"}, emit=emit
+        )
         assert len(events) == 2
         assert events[0].event == "attempt_stopped"
         assert events[0].data["chat_id"] == "c1"
@@ -1653,31 +1695,32 @@ class TestSpeechCompleteImpl:
         await _speech_complete_impl({"group_id": ""}, emit=emit, pool=_mock_pool())
         assert events == []
 
-    @patch(f"{_P}.get_session_by_group_id", return_value=None)
-    async def test_no_session_emits_nothing(self, _mock):
+    async def test_no_session_emits_nothing(self, pool):
         emit, events = recording_emit()
-        await _speech_complete_impl({"group_id": "g1"}, emit=emit, pool=_mock_pool())
+        await _speech_complete_impl({"group_id": "g1"}, emit=emit, pool=pool)
         assert events == []
 
-    @patch(f"{_P}.get_session_by_group_id")
-    async def test_empty_transcript_emits_nothing(self, mock_session):
-        mock_session.return_value = SimpleNamespace(sid="s1", chat_id="c1", run_id="r1")
+    async def test_empty_transcript_emits_nothing(self, pool, audio_session_factory):
+        await audio_session_factory()
         emit, events = recording_emit()
         await _speech_complete_impl(
             {"group_id": "g1", "transcript": ""},
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
         assert events == []
 
-    @patch(f"{_P}.get_session_by_group_id")
-    async def test_transcript_only_emits_received_complete(self, mock_session):
-        mock_session.return_value = SimpleNamespace(sid="s1", chat_id="c1", run_id="r1")
+    async def test_transcript_only_emits_received_complete(
+        self,
+        pool,
+        audio_session_factory,
+    ):
+        await audio_session_factory()
         emit, events = recording_emit()
         await _speech_complete_impl(
             {"group_id": "g1", "transcript": "hello world"},
             emit=emit,
-            pool=_mock_pool(),
+            pool=pool,
         )
 
         assert len(events) == 1
@@ -1685,16 +1728,14 @@ class TestSpeechCompleteImpl:
         assert events[0].data["content"] == "hello world"
         assert events[0].data["audio_upload_id"] is None
 
-    @patch(f"{_UPLOAD_CREATE}.create_upload", new_callable=AsyncMock)
-    @patch(f"{_P}.get_session_by_group_id")
-    async def test_with_audio_creates_upload(self, mock_session, mock_upload, tmp_path):
-        from uuid import UUID
-
-        mock_session.return_value = SimpleNamespace(sid="s1", chat_id="c1", run_id="r1")
-        mock_upload.return_value = SimpleNamespace(
-            id=UUID("019b3be4-36f0-788c-9df2-481eb5917960")
-        )
-
+    async def test_with_audio_creates_upload(
+        self,
+        pool,
+        audio_session_factory,
+        tmp_path,
+    ):
+        test_session_id = "00000000-0000-0000-0000-0000000000aa"
+        await audio_session_factory(session_id=test_session_id)
         emit, events = recording_emit()
         with patch("app.infra.globals.AUDIO_FOLDER", tmp_path):
             await _speech_complete_impl(
@@ -1704,13 +1745,20 @@ class TestSpeechCompleteImpl:
                     "audio": b"fake-audio-bytes",
                 },
                 emit=emit,
-                pool=_mock_pool(),
+                pool=pool,
+                session_id=UUID(test_session_id),
             )
 
         assert len(events) == 1
-        assert (
-            events[0].data["audio_upload_id"] == "019b3be4-36f0-788c-9df2-481eb5917960"
-        )
+        upload_id = UUID(events[0].data["audio_upload_id"])
+        async with pool.acquire() as conn:
+            upload = await get_upload(conn, upload_id)
+        assert upload is not None
+        assert upload.session_id == UUID(test_session_id)
+        assert upload.mime_type == "audio/pcm16"
+        assert upload.size == len(b"fake-audio-bytes")
+        assert upload.file_path.endswith(".pcm16")
+        assert (tmp_path / upload.file_path.removeprefix("audio/")).exists()
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -64,6 +64,14 @@ _system_session_id: UUID | None = None
 
 
 @dataclass(frozen=True)
+class EmulationChainLink:
+    """One hop in the emulation chain."""
+
+    grant_id: UUID
+    target_profile_id: UUID
+
+
+@dataclass(frozen=True)
 class Identity:
     """Resolved identity from a JWT token."""
 
@@ -73,6 +81,7 @@ class Identity:
     role: str | None = None
     is_emulation: bool = False
     actor_profile_id: UUID | None = None
+    emulation_depth: int = 0
 
 
 # ---------------------------------------------------------------------------
@@ -255,11 +264,13 @@ async def resolve_identity(token: str, pool: asyncpg.Pool) -> Identity:
     # Check for active emulation override (admin viewing as another profile)
     actor_profile_id: UUID | None = None
     is_emulation = False
-    emulation = await _resolve_emulation_override(pool, profile_id)
-    if emulation is not None:
+    emulation_depth = 0
+    chain = await resolve_emulation_chain(pool, profile_id)
+    if chain:
         actor_profile_id = profile_id
-        profile_id = emulation
+        profile_id = chain[-1].target_profile_id
         is_emulation = True
+        emulation_depth = len(chain)
 
     # Get or create session for the effective profile
     async with pool.acquire() as conn:
@@ -272,6 +283,7 @@ async def resolve_identity(token: str, pool: asyncpg.Pool) -> Identity:
         role=claims.get("role"),
         is_emulation=is_emulation,
         actor_profile_id=actor_profile_id,
+        emulation_depth=emulation_depth,
     )
 
 
@@ -363,13 +375,13 @@ async def _auto_create_guest_profile(
         return None
 
 
-async def _resolve_emulation_override(
-    pool: asyncpg.Pool, profile_id: UUID
-) -> UUID | None:
-    """Check if this profile has an active emulation grant.
+MAX_EMULATION_DEPTH = 5
 
-    If an unexpired, unconsumed grant exists, returns the target profile's
-    artifact ID. The caller should use this as the effective profile_id.
+
+async def _find_active_grant_target(
+    pool: asyncpg.Pool, profile_id: UUID
+) -> EmulationChainLink | None:
+    """Find a single active, unexpired, unconsumed emulation grant for a profile.
 
     Uses existing black boxes:
       - resolve_profile_identity_context → profiles_resource.id
@@ -378,7 +390,7 @@ async def _resolve_emulation_override(
       - search_emulations(grant_ids=...) → target profiles_resource.id
       - search_profiles(profile_ids=...) → target profile_artifact.id
 
-    Returns None if no active emulation.
+    Returns an EmulationChainLink or None.
     """
     from datetime import UTC, datetime
 
@@ -391,66 +403,97 @@ async def _resolve_emulation_override(
     )
     from app.routes.v5.tools.entries.grants.search import search_grants
 
-    try:
-        redis = get_redis_client()
+    redis = get_redis_client()
 
-        # Step 1: Resolve requester's profiles_resource.id
-        requester = await resolve_profile_identity_context(pool, profile_id, redis)
-        if not requester or not requester.profiles_id:
-            return None
+    context = await resolve_profile_identity_context(pool, profile_id, redis)
+    if not context or not context.profiles_id:
+        return None
 
-        # Step 2: Search for active grants for this profile
+    async with pool.acquire() as conn:
+        grants = await search_grants(
+            conn,
+            profiles_ids=[context.profiles_id],
+            active=True,
+            limit=10,
+        )
+
+    if not grants:
+        return None
+
+    now = datetime.now(UTC)
+
+    for grant in grants:
+        if grant.expires_at <= now:
+            continue
+
         async with pool.acquire() as conn:
-            grants = await search_grants(
+            consumptions = await search_grant_consumptions(
+                conn, grant_ids=[grant.id], limit=1
+            )
+        if consumptions:
+            continue
+
+        async with pool.acquire() as conn:
+            emulations = await search_emulations(conn, grant_ids=[grant.id], limit=1)
+        if not emulations or not emulations[0].profile_id:
+            continue
+
+        target_profiles_resource_id = emulations[0].profile_id
+
+        async with pool.acquire() as conn:
+            artifact_ids, _ = await search_profiles(
                 conn,
-                profiles_ids=[requester.profiles_id],
-                active=True,
-                limit=10,
+                profile_ids=[target_profiles_resource_id],
+                limit_count=1,
+            )
+        if artifact_ids:
+            return EmulationChainLink(
+                grant_id=grant.id,
+                target_profile_id=artifact_ids[0],
             )
 
-        if not grants:
-            return None
+    return None
 
-        now = datetime.now(UTC)
 
-        for grant in grants:
-            # Skip expired grants
-            if grant.expires_at <= now:
-                continue
+async def resolve_emulation_chain(
+    pool: asyncpg.Pool, profile_id: UUID
+) -> list[EmulationChainLink]:
+    """Follow the emulation chain iteratively up to MAX_EMULATION_DEPTH.
 
-            # Step 3: Check if grant has been consumed (skip if so)
-            async with pool.acquire() as conn:
-                consumptions = await search_grant_consumptions(
-                    conn, grant_ids=[grant.id], limit=1
-                )
-            if consumptions:
-                continue
+    Starting from profile_id, finds active grants and follows targets:
+      A → B → C (depth 2)
 
-            # Step 4: Find target profile from emulation entry
-            async with pool.acquire() as conn:
-                emulations = await search_emulations(
-                    conn, grant_ids=[grant.id], limit=1
-                )
-            if not emulations or not emulations[0].profile_id:
-                continue
+    Returns the full chain as a list of EmulationChainLink.
+    Empty list means no active emulation.
+    """
+    chain: list[EmulationChainLink] = []
+    current = profile_id
+    visited: set[UUID] = set()
 
-            target_profiles_resource_id = emulations[0].profile_id
+    try:
+        while len(chain) < MAX_EMULATION_DEPTH:
+            if current in visited:
+                break
+            visited.add(current)
 
-            # Step 5: Map target profiles_resource.id → profile_artifact.id
-            async with pool.acquire() as conn:
-                artifact_ids, _ = await search_profiles(
-                    conn,
-                    profile_ids=[target_profiles_resource_id],
-                    limit_count=1,
-                )
-            if artifact_ids:
-                logger.info(f"Emulation active: {profile_id} → {artifact_ids[0]}")
-                return artifact_ids[0]
+            link = await _find_active_grant_target(pool, current)
+            if link is None:
+                break
 
-        return None
+            chain.append(link)
+            current = link.target_profile_id
+
+        if chain:
+            logger.info(
+                f"Emulation chain: {profile_id} → "
+                + " → ".join(str(link.target_profile_id) for link in chain)
+                + f" (depth {len(chain)})"
+            )
+
+        return chain
     except Exception as e:
-        logger.warning(f"Failed to check emulation override: {e}")
-        return None
+        logger.warning(f"Failed to resolve emulation chain: {e}")
+        return []
 
 
 async def _get_or_create_session(conn: asyncpg.Connection, profile_id: UUID) -> UUID:

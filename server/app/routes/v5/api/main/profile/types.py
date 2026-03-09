@@ -357,6 +357,16 @@ class EmulateProfileApiResponse(BaseModel):
     expires_at: datetime | None = None
 
 
+# ========== Unemulate Endpoint Types ==========
+
+
+class UnemulateProfileApiResponse(BaseModel):
+    """Response model for exiting emulation (peel one layer)."""
+
+    ok: bool
+    reason: str | None = None
+
+
 class ListProfilesApiProfile(BaseModel):
     """Profile type for list endpoint with computed permissions."""
 
