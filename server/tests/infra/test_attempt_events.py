@@ -642,12 +642,12 @@ _TEST_GET = "app.routes.v5.api.main.test.get"
 class TestNextImpl:
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_next_impl({"test_id": "123"}, emit=emit, conn=AsyncMock())
+        await _test_next_impl({"test_id": "123"}, emit=emit, pool=_mock_pool())
         assert events == []
 
     async def test_invalid_test_id_emits_error(self):
         emit, events = recording_emit()
-        await _test_next_impl({"sid": "s1"}, emit=emit, conn=AsyncMock())
+        await _test_next_impl({"sid": "s1"}, emit=emit, pool=_mock_pool())
         assert len(events) == 1
         assert events[0].bus == "client"
         assert events[0].event == "test_error"
@@ -662,7 +662,7 @@ class TestNextImpl:
         await _test_next_impl(
             {"sid": "s1", "test_id": "019b3be4-36f0-788c-9df2-481eb5917940"},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert len(events) == 1
         assert events[0].bus == "client"
@@ -683,7 +683,7 @@ class TestNextImpl:
         await _test_next_impl(
             {"sid": "s1", "test_id": "019b3be4-36f0-788c-9df2-481eb5917940"},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert len(events) == 1
         assert events[0].bus == "internal"
@@ -702,7 +702,7 @@ class TestNextImpl:
         await _test_next_impl(
             {"sid": "s1", "test_id": "019b3be4-36f0-788c-9df2-481eb5917940"},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert len(events) == 1
         assert events[0].bus == "client"
@@ -770,7 +770,7 @@ class TestGradeCompleteImpl:
                 ],
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             profile_id="prof-1",
         )
         assert len(events) == 1
@@ -797,7 +797,7 @@ class TestGradeCompleteImpl:
                 "tool_results": [],
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             profile_id="prof-1",
         )
         mock_create.assert_called_once()
@@ -814,7 +814,7 @@ class TestGradeCompleteImpl:
                 "tool_results": [],
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             profile_id="prof-1",
         )
         # Should still emit grade progress, just no token created
@@ -830,7 +830,7 @@ class TestGradeCompleteImpl:
                 "tool_results": [],
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             profile_id="prof-1",
         )
         assert "test_inv-1" in events[0].data["rooms"]
@@ -879,12 +879,12 @@ _RUNS_SEARCH = "app.routes.v5.tools.entries.runs.search"
 class TestGroupImpl:
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_group_impl({}, emit=emit, conn=AsyncMock())
+        await _test_group_impl({}, emit=emit, pool=_mock_pool())
         assert events == []
 
     async def test_no_profile_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_group_impl({"sid": "s1"}, emit=emit, conn=AsyncMock())
+        await _test_group_impl({"sid": "s1"}, emit=emit, pool=_mock_pool())
         assert events == []
 
     @patch(f"{_RUNS_SEARCH}.search_runs", new_callable=AsyncMock)
@@ -900,7 +900,7 @@ class TestGroupImpl:
                 "group_id": "019b3be4-36f0-788c-9df2-481eb5917942",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert len(events) == 1
         assert events[0].event == "test_group_complete"
@@ -921,7 +921,7 @@ class TestGroupImpl:
                 "group_id": "019b3be4-36f0-788c-9df2-481eb5917942",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert len(events) == 1
         assert events[0].event == "test_run"
@@ -940,7 +940,7 @@ class TestGroupImpl:
                 "group_id": "019b3be4-36f0-788c-9df2-481eb5917942",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert len(events) == 1
         assert events[0].event == "test_error"
@@ -961,12 +961,12 @@ _CACHE = "app.utils.cache.invalidate_tags"
 class TestStartImpl:
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_start_impl({}, emit=emit, conn=AsyncMock())
+        await _test_start_impl({}, emit=emit, pool=_mock_pool())
         assert events == []
 
     async def test_no_profile_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_start_impl({"sid": "s1"}, emit=emit, conn=AsyncMock())
+        await _test_start_impl({"sid": "s1"}, emit=emit, pool=_mock_pool())
         assert events == []
 
     async def test_invalid_profile_id_returns(self):
@@ -974,7 +974,7 @@ class TestStartImpl:
         await _test_start_impl(
             {"sid": "s1", "profile_id": "not-a-uuid"},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert events == []
 
@@ -995,7 +995,7 @@ class TestStartImpl:
                 "profiles_id": "019b3be4-36f0-788c-9df2-481eb5917942",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         mock_create.assert_called_once()
         mock_refresh.assert_called_once()
@@ -1018,7 +1018,7 @@ class TestStartImpl:
                 "profiles_id": "019b3be4-36f0-788c-9df2-481eb5917942",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert len(events) == 1
         assert events[0].event == "test_error"
@@ -1040,7 +1040,7 @@ _TEST_GET = "app.routes.v5.tools.entries.test.get"
 class TestProceedImpl:
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_proceed_impl({"sid": ""}, emit=emit, conn=AsyncMock())
+        await _test_proceed_impl({"sid": ""}, emit=emit, pool=_mock_pool())
         assert events == []
 
     async def test_invalid_payload_emits_nothing(self):
@@ -1048,7 +1048,7 @@ class TestProceedImpl:
         await _test_proceed_impl(
             {"sid": "s1"},  # missing test_id
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert events == []
 
@@ -1075,7 +1075,7 @@ class TestProceedImpl:
                 "complete_all": True,
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
 
         # Only inv1 (uncompleted) should have completion created
@@ -1102,7 +1102,7 @@ class TestProceedImpl:
                 "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
 
         assert len(events) == 1
@@ -1123,7 +1123,7 @@ class TestProceedImpl:
                 "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
 
         assert len(events) == 1
@@ -1150,7 +1150,7 @@ class TestProceedImpl:
                 "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
 
         assert len(events) == 1
@@ -1188,7 +1188,7 @@ class TestProceedImpl:
                 "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
 
         assert mock_create_inv.called
@@ -1221,7 +1221,7 @@ class TestProceedImpl:
                 "completed_invocation_id": "019b3be4-36f0-788c-9df2-481eb5917943",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
 
         assert mock_complete.called
@@ -1243,7 +1243,7 @@ class TestProceedImpl:
                 "test_id": "019b3be4-36f0-788c-9df2-481eb5917940",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
 
         assert len(events) == 1
@@ -1265,7 +1265,7 @@ _INV_GET = "app.routes.v5.tools.entries.test_invocation.get"
 class TestRunImpl:
     async def test_no_sid_emits_nothing(self):
         emit, events = recording_emit()
-        await _test_run_impl({"sid": ""}, emit=emit, conn=AsyncMock())
+        await _test_run_impl({"sid": ""}, emit=emit, pool=_mock_pool())
         assert events == []
 
     async def test_no_profile_id_emits_nothing(self):
@@ -1273,7 +1273,7 @@ class TestRunImpl:
         await _test_run_impl(
             {"sid": "s1", "profile_id": ""},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert events == []
 
@@ -1282,7 +1282,7 @@ class TestRunImpl:
         await _test_run_impl(
             {"sid": "s1", "profile_id": "p1"},  # missing test_id etc
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert events == []
 
@@ -1300,7 +1300,7 @@ class TestRunImpl:
                 "run_id": "019b3be4-36f0-788c-9df2-481eb5917943",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
 
         assert len(events) == 1
@@ -1334,7 +1334,7 @@ class TestRunImpl:
                 "run_id": "019b3be4-36f0-788c-9df2-481eb5917943",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
 
         assert len(events) == 1
@@ -1391,7 +1391,7 @@ class TestRunImpl:
                 "run_id": "019b3be4-36f0-788c-9df2-481eb5917943",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
 
         # 1 user msg copied + 1 assistant placeholder = 2 calls
@@ -1423,7 +1423,7 @@ class TestRunImpl:
                 "run_id": "019b3be4-36f0-788c-9df2-481eb5917943",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
 
         assert len(events) == 1

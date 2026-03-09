@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 import Rubrics from "@/components/artifacts/rubric/Rubrics";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -131,6 +132,7 @@ export default async function RubricsPage({ searchParams }: RubricsPageProps) {
           { title: "System", section: "system", url: "/system" },
           { title: "Rubrics" },
         ]}
+        toolbar={<NewArtifactButton label="New Rubric" href="/system/rubrics/new" />}
       />
       <div className="space-y-6 px-4" data-page="rubrics-index">
         <Rubrics

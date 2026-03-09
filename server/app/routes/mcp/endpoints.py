@@ -76,7 +76,6 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     "cohort": {
         "get": ("app.routes.v5.api.main.cohort.get", "get_cohort"),
         "search": ("app.routes.v5.api.main.cohort.search", "search_cohort"),
-        "save": ("app.routes.v5.api.main.cohort.save", "save_cohort"),
         "delete": ("app.routes.v5.api.main.cohort.delete", "delete_cohort"),
         "duplicate": ("app.routes.v5.api.main.cohort.duplicate", "duplicate_cohort"),
         "draft": ("app.routes.v5.api.main.cohort.draft", "patch_cohort_draft"),
@@ -177,7 +176,6 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     "persona": {
         "get": ("app.routes.v5.api.main.persona.get", "get_persona"),
         "search": ("app.routes.v5.api.main.persona.search", "search_persona"),
-        "save": ("app.routes.v5.api.main.persona.save", "save_persona"),
         "delete": ("app.routes.v5.api.main.persona.delete", "delete_persona"),
         "duplicate": ("app.routes.v5.api.main.persona.duplicate", "duplicate_persona"),
         "draft": ("app.routes.v5.api.main.persona.draft", "patch_persona_draft"),
@@ -223,7 +221,6 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     "scenario": {
         "get": ("app.routes.v5.api.main.scenario.get", "get_scenario"),
         "search": ("app.routes.v5.api.main.scenario.search", "search_scenario"),
-        "save": ("app.routes.v5.api.main.scenario.save", "save_scenario"),
         "delete": ("app.routes.v5.api.main.scenario.delete", "delete_scenario"),
         "duplicate": (
             "app.routes.v5.api.main.scenario.duplicate",
@@ -248,7 +245,6 @@ ARTIFACT_REGISTRY: dict[str, dict[str, tuple[str, str]]] = {
     "simulation": {
         "get": ("app.routes.v5.api.main.simulation.get", "get_simulation"),
         "search": ("app.routes.v5.api.main.simulation.search", "search_simulation"),
-        "save": ("app.routes.v5.api.main.simulation.save", "save_simulation"),
         "delete": ("app.routes.v5.api.main.simulation.delete", "delete_simulation"),
         "duplicate": (
             "app.routes.v5.api.main.simulation.duplicate",
@@ -1295,29 +1291,6 @@ def register_endpoints(server: FastMCP) -> None:
         """
         payload: dict[str, Any] = kwargs or {}
         return await call_handler(artifact, "search", payload)
-
-    @server.tool(
-        description=(
-            "Direct save (create or update) — use when the user wants to skip "
-            "the draft review step. Include ALL resource IDs in the payload, not "
-            "just changed ones. After saving, share the artifact link with the "
-            f"user: {ORIGIN}/training/{{artifact}}s/{{artifact_id}}"
-        ),
-    )
-    async def save_artifact(
-        artifact: str,
-        payload: dict[str, Any],
-    ) -> dict[str, Any]:
-        """Save (create or update) an artifact directly.
-
-        Args:
-            artifact: Artifact type — one of: agent, auth, cohort, department,
-                document, eval, field, model, parameter, persona, profile,
-                provider, rubric, scenario, setting, simulation, tool.
-            payload: Full save payload — use docs(artifact) for schema.
-                Include ALL resource IDs, not just changed ones.
-        """
-        return await call_handler(artifact, "save", payload)
 
     @server.tool()
     async def delete_artifact(

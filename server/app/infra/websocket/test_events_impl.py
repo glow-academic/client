@@ -146,7 +146,7 @@ async def test_next_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn,
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
 ) -> None:
     """Find next invocation with pending runs and emit test_run or test_all_complete."""
     import uuid
@@ -180,11 +180,12 @@ async def test_next_impl(
         return
 
     try:
-        result = await get_test_internal(
-            conn=conn,
-            test_id=test_id,
-            bypass_cache=True,
-        )
+        async with pool.acquire() as conn:
+            result = await get_test_internal(
+                conn=conn,
+                test_id=test_id,
+                bypass_cache=True,
+            )
     except Exception as e:
         logger.exception(f"Error in test_next: {e}")
         await emit(
@@ -297,7 +298,7 @@ async def test_grade_complete_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn,
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     profile_id: str,
 ) -> None:
     """Handle test grade completion — record tokens, emit test_grade_progress."""
@@ -325,13 +326,14 @@ async def test_grade_complete_impl(
 
         # Record token usage
         if run_id and session_id:
-            await create_token(
-                conn,
-                run_id=uuid.UUID(run_id),
-                session_id=uuid.UUID(session_id),
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-            )
+            async with pool.acquire() as conn:
+                await create_token(
+                    conn,
+                    run_id=uuid.UUID(run_id),
+                    session_id=uuid.UUID(session_id),
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                )
 
         # TODO: need update_test_grade black-box function to update
         # score/passed on existing test_grade_entry by grade_id.
@@ -398,7 +400,7 @@ async def test_group_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn,
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
 ) -> None:
     """Orchestrate sequential runs within a group."""
     from app.infra.websocket.test_types import TestErrorData
@@ -428,13 +430,14 @@ async def test_group_impl(
         group_id = payload.group_id
         prev_run_id = payload.prev_run_id
 
-        runs, _ = await search_runs(
-            conn,
-            group_ids=[group_id],
-            sort_order="asc",
-            bypass_mv=True,
-            limit=1000,
-        )
+        async with pool.acquire() as conn:
+            runs, _ = await search_runs(
+                conn,
+                group_ids=[group_id],
+                sort_order="asc",
+                bypass_mv=True,
+                limit=1000,
+            )
 
         next_run_id = _find_next_run_id(runs, prev_run_id)
 
@@ -500,7 +503,7 @@ async def test_start_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn,
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis | None = None,
 ) -> None:
     """Create test via black boxes, optional benchmark bridge, delegate to test_proceed."""
@@ -545,45 +548,46 @@ async def test_start_impl(
     try:
         profiles_id = uuid.UUID(profiles_id_str)
 
-        # Step 1: Create test entry (black box)
-        result = await create_test(
-            conn,
-            profiles_id=profiles_id,
-            infinite_mode=infinite_mode,
-        )
-        test_id = result.id
-
-        # Step 2: Optional benchmark bridge (black box)
-        if benchmark_id:
-            session_id = (
-                uuid.UUID(session_id_str) if session_id_str else uuid.UUID(int=0)
-            )
-            await create_benchmark_test(
+        async with pool.acquire() as conn:
+            # Step 1: Create test entry (black box)
+            result = await create_test(
                 conn,
-                benchmark_id=benchmark_id,
-                test_id=test_id,
-                session_id=session_id,
+                profiles_id=profiles_id,
+                infinite_mode=infinite_mode,
             )
+            test_id = result.id
 
-        # Step 3: Link test_id → generation_run_id for generation resolution
-        generation_run_id = data.get("generation_run_id")
-        if generation_run_id:
-            try:
-                if redis:
-                    await redis.setex(
-                        f"generation_test_link:{test_id}",
-                        3600,
-                        generation_run_id,
-                    )
-            except Exception:
-                logger.warning(
-                    f"Failed to store generation_test_link for test {test_id}"
+            # Step 2: Optional benchmark bridge (black box)
+            if benchmark_id:
+                session_id = (
+                    uuid.UUID(session_id_str) if session_id_str else uuid.UUID(int=0)
+                )
+                await create_benchmark_test(
+                    conn,
+                    benchmark_id=benchmark_id,
+                    test_id=test_id,
+                    session_id=session_id,
                 )
 
-        # Step 4: Refresh MVs so the test is visible immediately
-        await refresh_test_invocation(conn)
-        if redis:
-            await invalidate_tags(["test", "tests", "benchmark"], redis=redis)
+            # Step 3: Link test_id → generation_run_id for generation resolution
+            generation_run_id = data.get("generation_run_id")
+            if generation_run_id:
+                try:
+                    if redis:
+                        await redis.setex(
+                            f"generation_test_link:{test_id}",
+                            3600,
+                            generation_run_id,
+                        )
+                except Exception:
+                    logger.warning(
+                        f"Failed to store generation_test_link for test {test_id}"
+                    )
+
+            # Step 4: Refresh MVs so the test is visible immediately
+            await refresh_test_invocation(conn)
+            if redis:
+                await invalidate_tags(["test", "tests", "benchmark"], redis=redis)
 
         # Step 5: Delegate to test_proceed
         await emit(
@@ -623,7 +627,7 @@ async def test_proceed_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn,
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis | None = None,
 ) -> None:
     """Shared core: resolve context → check done → resolve invocation → emit."""
@@ -671,21 +675,60 @@ async def test_proceed_impl(
         )
         complete_all = payload.complete_all
 
-        # Step 1: If completed_invocation_id, mark that invocation completed
-        if completed_invocation_id:
-            try:
-                await create_test_invocation_completion(
-                    conn,
-                    invocation_id=completed_invocation_id,
-                )
-            except Exception:
-                logger.warning(
-                    f"Failed to create test_completion for {completed_invocation_id} "
-                    f"(may already exist)"
-                )
+        async with pool.acquire() as conn:
+            # Step 1: If completed_invocation_id, mark that invocation completed
+            if completed_invocation_id:
+                try:
+                    await create_test_invocation_completion(
+                        conn,
+                        invocation_id=completed_invocation_id,
+                    )
+                except Exception:
+                    logger.warning(
+                        f"Failed to create test_completion for {completed_invocation_id} "
+                        f"(may already exist)"
+                    )
 
-        # Step 2: If complete_all, mark all remaining invocations completed → ended
-        if complete_all:
+            # Step 2: If complete_all, mark all remaining invocations completed → ended
+            if complete_all:
+                (
+                    all_invocations,
+                    _total_count,
+                ) = await search_test_invocation_entries_internal(
+                    conn,
+                    test_ids=[test_id],
+                    limit=1000,
+                    bypass_mv=True,
+                )
+                for inv in all_invocations:
+                    if not inv.invocation_completed:
+                        try:
+                            await create_test_invocation_completion(
+                                conn,
+                                invocation_id=inv.invocation_id,
+                            )
+                        except Exception:
+                            pass
+                await refresh_test_invocation(conn)
+                if redis:
+                    await invalidate_tags(["test", "tests", "benchmark"], redis=redis)
+
+                await emit(
+                    [
+                        internal_event(
+                            "test_ended",
+                            {
+                                "sid": sid,
+                                "test_id": str(test_id),
+                                "success": True,
+                                "message": "All invocations completed",
+                            },
+                        )
+                    ]
+                )
+                return
+
+            # Step 3: Get context — search invocations, find next uncompleted
             (
                 all_invocations,
                 _total_count,
@@ -695,46 +738,8 @@ async def test_proceed_impl(
                 limit=1000,
                 bypass_mv=True,
             )
-            for inv in all_invocations:
-                if not inv.invocation_completed:
-                    try:
-                        await create_test_invocation_completion(
-                            conn,
-                            invocation_id=inv.invocation_id,
-                        )
-                    except Exception:
-                        pass
-            await refresh_test_invocation(conn)
-            if redis:
-                await invalidate_tags(["test", "tests", "benchmark"], redis=redis)
 
-            await emit(
-                [
-                    internal_event(
-                        "test_ended",
-                        {
-                            "sid": sid,
-                            "test_id": str(test_id),
-                            "success": True,
-                            "message": "All invocations completed",
-                        },
-                    )
-                ]
-            )
-            return
-
-        # Step 3: Get context — search invocations, find next uncompleted
-        (
-            all_invocations,
-            _total_count,
-        ) = await search_test_invocation_entries_internal(
-            conn,
-            test_ids=[test_id],
-            limit=1000,
-            bypass_mv=True,
-        )
-
-        tests = await get_tests(conn, ids=[test_id])
+            tests = await get_tests(conn, ids=[test_id])
 
         is_dynamic = tests[0].is_dynamic if tests else True
         total_invocations = len(all_invocations)
@@ -793,22 +798,23 @@ async def test_proceed_impl(
             return
 
         # Step 6: Resolve invocation — create test_invocation_entry + bridge
-        inv_result = await create_test_invocation(
-            conn,
-            test_id=test_id,
-        )
-        test_invocation_id = inv_result.id
+        async with pool.acquire() as conn:
+            inv_result = await create_test_invocation(
+                conn,
+                test_id=test_id,
+            )
+            test_invocation_id = inv_result.id
 
-        await create_test_invocation_bridge(
-            conn,
-            test_invocation_id=test_invocation_id,
-            invocation_id=next_invocation.invocation_id,
-        )
+            await create_test_invocation_bridge(
+                conn,
+                test_invocation_id=test_invocation_id,
+                invocation_id=next_invocation.invocation_id,
+            )
 
-        # Step 7: Refresh MVs + emit test_invocation_started
-        await refresh_test_invocation(conn)
-        if redis:
-            await invalidate_tags(["test", "tests", "benchmark"], redis=redis)
+            # Step 7: Refresh MVs + emit test_invocation_started
+            await refresh_test_invocation(conn)
+            if redis:
+                await invalidate_tags(["test", "tests", "benchmark"], redis=redis)
 
         await emit(
             [
@@ -849,7 +855,7 @@ async def test_run_impl(
     data: dict[str, Any],
     *,
     emit: EmitFn,
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
 ) -> None:
     """Copy conversation from original run, create new run, emit generate_artifact."""
     import uuid
@@ -883,94 +889,95 @@ async def test_run_impl(
         test_invocation_id = payload.test_invocation_id
         original_run_id = payload.run_id
 
-        # Step 1: Resolve group_id from test_invocation_entry
-        invocations = await get_test_invocations(
-            conn, ids=[test_invocation_id], bypass_mv=True
-        )
-
-        if not invocations:
-            await emit(
-                [
-                    internal_event(
-                        "test_error",
-                        TestErrorData(
-                            sid=sid,
-                            invocation_id=str(test_invocation_id),
-                            message="No group found for test invocation",
-                            error_type="run",
-                        ).model_dump(mode="json"),
-                    )
-                ]
+        async with pool.acquire() as conn:
+            # Step 1: Resolve group_id from test_invocation_entry
+            invocations = await get_test_invocations(
+                conn, ids=[test_invocation_id], bypass_mv=True
             )
-            return
 
-        group_id = invocations[0].group_id
+            if not invocations:
+                await emit(
+                    [
+                        internal_event(
+                            "test_error",
+                            TestErrorData(
+                                sid=sid,
+                                invocation_id=str(test_invocation_id),
+                                message="No group found for test invocation",
+                                error_type="run",
+                            ).model_dump(mode="json"),
+                        )
+                    ]
+                )
+                return
 
-        # Step 2: Get session_id from payload
-        session_id_str = data.get("session_id")
-        session_id = uuid.UUID(session_id_str) if session_id_str else uuid.UUID(int=0)
+            group_id = invocations[0].group_id
 
-        # Step 3: Create new run + profile link
-        profiles_id_str = data.get("profiles_id")
-        profiles_id = uuid.UUID(profiles_id_str) if profiles_id_str else None
+            # Step 2: Get session_id from payload
+            session_id_str = data.get("session_id")
+            session_id = uuid.UUID(session_id_str) if session_id_str else uuid.UUID(int=0)
 
-        run_result = await create_run(
-            conn,
-            group_id=group_id,
-            session_id=session_id,
-            profiles_id=profiles_id,
-        )
-        new_run_id = run_result.id
+            # Step 3: Create new run + profile link
+            profiles_id_str = data.get("profiles_id")
+            profiles_id = uuid.UUID(profiles_id_str) if profiles_id_str else None
 
-        # Step 4: Fetch original messages
-        original_messages, _ = await search_messages(
-            conn,
-            run_ids=[original_run_id],
-            sort_order="asc",
-            bypass_mv=True,
-            limit=1000,
-        )
-
-        if not original_messages:
-            await emit(
-                [
-                    internal_event(
-                        "test_error",
-                        TestErrorData(
-                            sid=sid,
-                            invocation_id=str(test_invocation_id),
-                            message="No messages found in original run",
-                            error_type="run",
-                        ).model_dump(mode="json"),
-                    )
-                ]
+            run_result = await create_run(
+                conn,
+                group_id=group_id,
+                session_id=session_id,
+                profiles_id=profiles_id,
             )
-            return
+            new_run_id = run_result.id
 
-        # Remove the last assistant message
-        messages_to_copy = list(original_messages)
-        for i in range(len(messages_to_copy) - 1, -1, -1):
-            if messages_to_copy[i].role == "assistant":
-                messages_to_copy.pop(i)
-                break
+            # Step 4: Fetch original messages
+            original_messages, _ = await search_messages(
+                conn,
+                run_ids=[original_run_id],
+                sort_order="asc",
+                bypass_mv=True,
+                limit=1000,
+            )
 
-        # Step 5: Copy messages into the new run
-        # TODO: copy uploads (text_upload_ids, audio_upload_ids, etc.)
-        # and link them to the new messages via message_uploads_entry.
-        # Currently only creates the message shell.
-        for msg in messages_to_copy:
-            await create_message(
+            if not original_messages:
+                await emit(
+                    [
+                        internal_event(
+                            "test_error",
+                            TestErrorData(
+                                sid=sid,
+                                invocation_id=str(test_invocation_id),
+                                message="No messages found in original run",
+                                error_type="run",
+                            ).model_dump(mode="json"),
+                        )
+                    ]
+                )
+                return
+
+            # Remove the last assistant message
+            messages_to_copy = list(original_messages)
+            for i in range(len(messages_to_copy) - 1, -1, -1):
+                if messages_to_copy[i].role == "assistant":
+                    messages_to_copy.pop(i)
+                    break
+
+            # Step 5: Copy messages into the new run
+            # TODO: copy uploads (text_upload_ids, audio_upload_ids, etc.)
+            # and link them to the new messages via message_uploads_entry.
+            # Currently only creates the message shell.
+            for msg in messages_to_copy:
+                await create_message(
+                    conn,
+                    run_id=new_run_id,
+                    role=msg.role,
+                )
+
+            # Step 6: Create assistant placeholder
+            assistant_msg = await create_message(
                 conn,
                 run_id=new_run_id,
-                role=msg.role,
+                role="assistant",
             )
-
-        # Step 6: Create assistant placeholder
-        assistant_msg = await create_message(
-            conn,
-            run_id=new_run_id,
-            role="assistant",
-        )
 
         # Step 7: Emit test_run_started
         await emit(

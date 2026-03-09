@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 import Departments from "@/components/artifacts/department/Departments";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -81,6 +82,7 @@ export default async function DepartmentsPage() {
           { title: "System", section: "system", url: "/system" },
           { title: "Departments" },
         ]}
+        toolbar={<NewArtifactButton label="New Department" href="/system/departments/new" />}
       />
       <div className="space-y-6 px-4" data-page="departments-index">
         <Departments

@@ -6,6 +6,7 @@
  */
 
 import Documents from "@/components/artifacts/document/Documents";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -78,6 +79,7 @@ export default async function DocumentsPage() {
           { title: "Management", section: "management", url: "/management" },
           { title: "Documents" },
         ]}
+        toolbar={<NewArtifactButton label="New Document" href="/management/documents/new" />}
       />
       <div className="space-y-6 px-4" data-page="documents-index">
         <Documents listData={listData} deleteDocumentAction={deleteDocument} />

@@ -5,6 +5,7 @@
  * 07/21/2025
  */
 import Parameters from "@/components/artifacts/parameter/Parameters";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -83,6 +84,7 @@ export default async function ContextPage() {
           { title: "Management", section: "management", url: "/management" },
           { title: "Parameters" },
         ]}
+        toolbar={<NewArtifactButton label="New Parameter" href="/management/parameters/new" />}
       />
       <div className="space-y-6 px-4" data-page="parameters-index">
         <Parameters

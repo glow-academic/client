@@ -137,7 +137,6 @@ def get_glow_docs() -> dict[str, Any]:
             "base_path": "/api/v5/{artifact}",
             "endpoint_structure": {
                 "get": "POST /api/v5/{artifact}/get - Retrieve single artifact",
-                "save": "POST /api/v5/{artifact}/save - Create or update artifact",
                 "list": "POST /api/v5/{artifact}/list - List artifacts",
                 "duplicate": "POST /api/v5/{artifact}/duplicate - Duplicate artifact",
                 "delete": "POST /api/v5/{artifact}/delete - Delete artifact",
@@ -182,7 +181,6 @@ def get_glow_docs() -> dict[str, Any]:
                 ],
                 "artifact_operations": [
                     "get_artifact(name, payload) - Get an artifact",
-                    "save_artifact(name, payload) - Save an artifact",
                     "list_artifact(name, payload) - List artifacts",
                     "duplicate_artifact(name, payload) - Duplicate an artifact",
                     "delete_artifact(name, payload) - Delete an artifact",

@@ -3,6 +3,7 @@
  * Auth list page
  */
 import Auths from "@/components/artifacts/auth/Auths";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -79,6 +80,7 @@ export default async function AuthPage() {
           { title: "System", section: "system", url: "/system" },
           { title: "Auth" },
         ]}
+        toolbar={<NewArtifactButton label="New Auth" href="/system/auth/new" />}
       />
       <div className="space-y-6 px-4" data-page="auth-index">
         <Auths

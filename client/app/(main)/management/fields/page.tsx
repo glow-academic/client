@@ -5,6 +5,7 @@
  * 12/05/2025
  */
 import Fields from "@/components/artifacts/field/Fields";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -74,6 +75,7 @@ export default async function FieldsPage() {
           { title: "Management", section: "management", url: "/management" },
           { title: "Fields" },
         ]}
+        toolbar={<NewArtifactButton label="New Field" href="/management/fields/new" />}
       />
       <div className="space-y-6 px-4" data-page="fields-index">
         <Fields

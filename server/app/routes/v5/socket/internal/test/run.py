@@ -2,8 +2,7 @@
 
 from typing import Any
 
-from app.infra.globals import get_internal_sio
-from app.infra.websocket.get_db_connection import get_db_connection
+from app.infra.globals import get_internal_sio, get_pool
 from app.infra.websocket.socket_event import make_emit
 from app.infra.websocket.test_events_impl import test_run_impl
 
@@ -12,5 +11,4 @@ internal_sio = get_internal_sio()
 
 @internal_sio.on("test_run")  # type: ignore
 async def test_run_handler(data: dict[str, Any]) -> None:
-    async with get_db_connection() as conn:
-        await test_run_impl(data, emit=make_emit(), conn=conn)
+    await test_run_impl(data, emit=make_emit(), pool=get_pool())

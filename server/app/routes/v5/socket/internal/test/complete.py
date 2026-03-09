@@ -2,9 +2,8 @@
 
 from typing import Any
 
-from app.infra.globals import get_internal_sio
+from app.infra.globals import get_internal_sio, get_pool
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
-from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.socket_event import make_emit
 from app.infra.websocket.test_events_impl import test_grade_complete_impl
 
@@ -26,7 +25,6 @@ async def handle_test_grade_complete(data: dict[str, Any]) -> None:
     if not profile_id_str:
         return
 
-    async with get_db_connection() as conn:
-        await test_grade_complete_impl(
-            data, emit=make_emit(), conn=conn, profile_id=profile_id_str
-        )
+    await test_grade_complete_impl(
+        data, emit=make_emit(), pool=get_pool(), profile_id=profile_id_str
+    )

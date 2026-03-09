@@ -19,5 +19,4 @@ async def test_next_handler(data: dict[str, Any]) -> None:
         logger.error("Database pool not initialized")
         return
 
-    async with pool.acquire() as conn:
-        await test_next_impl(data, emit=make_emit(), conn=conn)
+    await test_next_impl(data, emit=make_emit(), pool=pool)

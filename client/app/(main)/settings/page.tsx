@@ -3,6 +3,7 @@
  * Settings list page - shows list of settings
  */
 import Settings from "@/components/artifacts/setting/Settings";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -57,6 +58,7 @@ export default async function SettingsPage() {
         breadcrumbs={[
           { title: "Settings" },
         ]}
+        toolbar={<NewArtifactButton label="New Setting" href="/settings/new" />}
       />
       <div className="space-y-6 px-4" data-page="settings-index">
         <Settings listData={listData} />

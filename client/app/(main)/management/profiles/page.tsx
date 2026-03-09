@@ -6,6 +6,7 @@
  */
 
 import Profiles from "@/components/artifacts/profile/Profiles";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -113,6 +114,7 @@ export default async function ProfilesPage() {
           { title: "Management", section: "management", url: "/management" },
           { title: "Profiles" },
         ]}
+        toolbar={<NewArtifactButton label="New Profile" href="/management/profiles/new" />}
       />
       <div className="space-y-6 px-4">
         <Profiles

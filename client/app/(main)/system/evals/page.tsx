@@ -5,6 +5,7 @@
  * 01/26/2025
  */
 import Evals from "@/components/artifacts/eval/Evals";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -111,6 +112,7 @@ export default async function EvalsPage({ searchParams }: EvalsPageProps) {
           { title: "System", section: "system", url: "/system" },
           { title: "Evals" },
         ]}
+        toolbar={<NewArtifactButton label="New Eval" href="/system/evals/new" />}
       />
       <div className="space-y-6 px-4">
         <Evals

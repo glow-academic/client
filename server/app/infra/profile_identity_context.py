@@ -86,6 +86,7 @@ async def resolve_profile_identity_context(
         artifacts = await get_profile_artifacts(
             conn,
             [profile_id],
+            active=None,
             names=True,
             roles=True,
             departments=True,
