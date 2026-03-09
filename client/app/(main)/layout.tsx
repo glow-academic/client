@@ -1,6 +1,6 @@
 /**
  * app/(main)/layout.tsx
- * Layout for the main section — provides sidebar + global providers (profile, settings, socket, theme).
+ * Layout for the main section — provides sidebar + global providers (profile, socket, theme).
  * Page-level concerns (drafts, group, analytics filters, toolbars) are owned by each page.
  * Pages render their own headers via <PageHeader>.
  * @AshokSaravanan222 & @siladiea
@@ -57,9 +57,8 @@ export default async function MainLayout({
     );
   }
 
-  // Fetch global layout data (profile + settings only)
-  const { profileData, settingsData, snapshot } =
-    await getLayoutContextData(session);
+  // Fetch global layout data (single call — profile context includes theme)
+  const { profileData, snapshot } = await getLayoutContextData(session);
 
   // Profile resolution failed → full-width access denied
   if (!profileData?.id) {
@@ -82,7 +81,6 @@ export default async function MainLayout({
       <MainLayoutClient
         key={`layout-${pathname}`}
         profileData={profileData}
-        settingsData={settingsData}
         sessionSnapshot={snapshot}
         initialSidebarOpen={initialSidebarOpen}
         switchEffectiveProfileAction={switchEffectiveProfile}

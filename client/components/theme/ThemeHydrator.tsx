@@ -2,30 +2,32 @@
 
 import { useEffect } from "react";
 import { applyThemeTokens } from "@/lib/theme/apply-theme";
-import type { ThemeTokens } from "@/lib/theme/types";
+import {
+  deriveThemeTokens,
+  type ThemePrimitives,
+} from "@/lib/theme/derive-tokens";
 
 /**
- * ThemeHydrator component that applies theme tokens
- * to CSS variables and handles dark/light mode class toggling.
+ * ThemeHydrator component that derives CSS tokens from raw color primitives
+ * and applies them as CSS variables. Handles dark/light mode class toggling.
  *
- * This component runs client-side only and applies theme changes when
- * tokens change. It returns null (no UI).
+ * This component runs client-side only and returns null (no UI).
  */
 export function ThemeHydrator({
-  tokens,
+  primitives,
 }: {
-  tokens: ThemeTokens | null;
+  primitives: ThemePrimitives | null;
 }) {
   useEffect(() => {
-    if (!tokens) return;
+    if (!primitives) return;
 
-    // Apply theme tokens to CSS variables
+    const tokens = deriveThemeTokens(primitives);
     applyThemeTokens(tokens);
 
     // Default to light mode
     const root = document.documentElement;
     root.classList.remove("dark");
-  }, [tokens]);
+  }, [primitives]);
 
-  return null; // No UI
+  return null;
 }

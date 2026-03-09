@@ -74,6 +74,28 @@ class CreateScenarioItem(BaseModel):
     options: list[str] | None = None
 
 
+class ScenarioFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class ScenarioResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    scenario_id: UUID | None = None
+    message: str
+    errors: list[ScenarioFieldError] | None = None
+
+
+class CreateScenarioApiResponse(BaseModel):
+    """Response model for bulk create scenario endpoint."""
+
+    results: list[ScenarioResultItem]
+
+
 def _collect_flag_ids(item: CreateScenarioItem) -> list[UUID] | None:
     """Collect all non-None flag IDs from the item into a single list."""
     flag_ids = []
@@ -110,10 +132,6 @@ async def create_scenario_client(
       5. invalidate_tags
     """
     from app.infra.scenario_permissions import compute_can_create
-    from app.routes.v5.api.main.scenario.types import (
-        CreateScenarioApiResponse,
-        ScenarioResultItem,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

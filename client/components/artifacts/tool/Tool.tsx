@@ -20,9 +20,11 @@ import { ReadOnlyBanner } from "@/components/common/forms/ReadOnlyBanner";
 import { SelectableGrid } from "@/components/common/forms/SelectableGrid";
 import { Args } from "@/components/resources/Args";
 import { ArgPositions } from "@/components/resources/ArgPositions";
+import { Artifacts } from "@/components/resources/Artifacts";
 import { ArgsOutputs } from "@/components/resources/ArgsOutputs";
 import { Descriptions } from "@/components/resources/Descriptions";
 import { Names } from "@/components/resources/Names";
+import { Operations } from "@/components/resources/Operations";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useProfile } from "@/contexts/profile-context";
 import { useDrafts } from "@/contexts/draft-context";
@@ -196,6 +198,8 @@ function ToolComponent({
       names: s.names,
       descriptions: s.descriptions,
       flags: s.flags,
+      artifacts: (s as any).artifacts,
+      operations: (s as any).operations,
     };
   }, [toolDataAny]);
 
@@ -312,6 +316,8 @@ function ToolComponent({
         args_ids: [] as string[],
         arg_position_ids: [] as string[],
         args_outputs_ids: [] as string[],
+        artifact_ids: [] as string[],
+        operation_ids: [] as string[],
       };
     }
     const currentName = data.names?.resource;
@@ -330,6 +336,12 @@ function ToolComponent({
       args_outputs_ids: (data.args_outputs?.current ?? [])
         .map((a) => a.id)
         .filter((id): id is string => !!id),
+      artifact_ids: ((data as any).artifacts?.current ?? [])
+        .map((a: any) => a.id)
+        .filter((id: unknown): id is string => !!id && typeof id === "string"),
+      operation_ids: ((data as any).operations?.current ?? [])
+        .map((a: any) => a.id)
+        .filter((id: unknown): id is string => !!id && typeof id === "string"),
     };
   }, []);
 
@@ -511,6 +523,8 @@ function ToolComponent({
         args_ids: formState.args_ids,
         arg_position_ids: formState.arg_position_ids,
         args_outputs_ids: formState.args_outputs_ids,
+        artifact_ids: formState.artifact_ids,
+        operation_ids: formState.operation_ids,
       });
     },
     [
@@ -525,6 +539,8 @@ function ToolComponent({
       formState.args_ids,
       formState.arg_position_ids,
       formState.args_outputs_ids,
+      formState.artifact_ids,
+      formState.operation_ids,
     ]
   );
 
@@ -540,7 +556,9 @@ function ToolComponent({
       !!formState.name_id ||
       formState.args_ids.length > 0 ||
       formState.arg_position_ids.length > 0 ||
-      formState.args_outputs_ids.length > 0;
+      formState.args_outputs_ids.length > 0 ||
+      formState.artifact_ids.length > 0 ||
+      formState.operation_ids.length > 0;
 
     if (!hasContent) {
       return;
@@ -567,6 +585,8 @@ function ToolComponent({
           arg_ids: fs.args_ids,
           arg_position_ids: fs.arg_position_ids,
           args_output_ids: fs.args_outputs_ids,
+          artifact_ids: fs.artifact_ids,
+          operation_ids: fs.operation_ids,
           expected_version: lastSavedVersionRef.current,
         };
 
@@ -861,6 +881,18 @@ function ToolComponent({
         ],
         resetFields: ["args_outputs_ids"],
       },
+      {
+        id: "artifacts",
+        title: "Artifacts",
+        description: "Select which artifact types this tool operates on.",
+        resetFields: ["artifact_ids"],
+      },
+      {
+        id: "operations",
+        title: "Operations",
+        description: "Select which operations this tool can perform.",
+        resetFields: ["operation_ids"],
+      },
     ],
     []
   );
@@ -888,6 +920,10 @@ function ToolComponent({
         return "Arg positions reset";
       case "args_outputs":
         return "Args outputs reset";
+      case "artifacts":
+        return "Artifacts reset";
+      case "operations":
+        return "Operations reset";
       default:
         return "Reset";
     }
@@ -916,6 +952,16 @@ function ToolComponent({
           return {
             ...prev,
             arg_position_ids: [],
+          };
+        case "artifacts":
+          return {
+            ...prev,
+            artifact_ids: [],
+          };
+        case "operations":
+          return {
+            ...prev,
+            operation_ids: [],
           };
         default:
           return prev;
@@ -1507,6 +1553,62 @@ function ToolComponent({
                   isAutosaveEnabled={isAutosaveEnabled}
                 />
               </div>
+            </StepCard>
+          );
+        }
+
+        case "artifacts": {
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["artifact_ids"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <Artifacts
+                artifact_ids={formState.artifact_ids}
+                artifact_resources={currentToolData?.artifacts?.current ?? []}
+                show_artifacts={currentToolData?.artifacts?.show ?? true}
+                artifacts={currentToolData?.artifacts?.resources ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, artifact_ids: ids }))
+                }
+                label="Artifacts"
+              />
+            </StepCard>
+          );
+        }
+
+        case "operations": {
+          return (
+            <StepCard
+              stepStatus={stepStatus}
+              stepNumber={stepNumber}
+              stepTitle={stepTitle}
+              stepDescription={stepDescription}
+              isReadonly={disabled}
+              isEditMode={isEditMode}
+              resetFields={["operation_ids"]}
+              {...(onReset ? { onReset } : {})}
+              resetLabel="Reset"
+            >
+              <Operations
+                operation_ids={formState.operation_ids}
+                operation_resources={currentToolData?.operations?.current ?? []}
+                show_operations={currentToolData?.operations?.show ?? true}
+                operations={currentToolData?.operations?.resources ?? []}
+                disabled={disabled}
+                onChange={(ids) =>
+                  setFormState((prev) => ({ ...prev, operation_ids: ids }))
+                }
+                label="Operations"
+              />
             </StepCard>
           );
         }

@@ -250,6 +250,8 @@ class PatchToolDraftApiRequest(BaseModel):
     arg_ids: list[UUID] | None = None
     arg_position_ids: list[UUID] | None = None
     args_output_ids: list[UUID] | None = None
+    artifact_ids: list[UUID] | None = None
+    operation_ids: list[UUID] | None = None
 
 
 class ToolDraftFormState(BaseModel):
@@ -262,6 +264,8 @@ class ToolDraftFormState(BaseModel):
     arg_ids: list[UUID]
     arg_position_ids: list[UUID]
     args_output_ids: list[UUID]
+    artifact_ids: list[UUID]
+    operation_ids: list[UUID]
 
 
 class PatchToolDraftApiResponse(BaseModel):

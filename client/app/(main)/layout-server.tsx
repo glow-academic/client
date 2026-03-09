@@ -10,14 +10,10 @@ import { headers } from "next/headers";
 import { cache } from "react";
 
 /** ---- Strong types from OpenAPI ---- */
-type AuthProfileIn = InputOf<"/auth/profile", "post">;
-type AuthProfileOut = OutputOf<"/auth/profile", "post">;
-type AuthSettingsIn = InputOf<"/auth/settings", "post">;
-type AuthSettingsOut = OutputOf<"/auth/settings", "post">;
+type ProfileContextIn = InputOf<"/api/v5/artifacts/profiles/context", "post">;
+type ProfileContextOut = OutputOf<"/api/v5/artifacts/profiles/context", "post">;
 
 type EmulateProfileIn = InputOf<"/api/v5/artifacts/profiles/emulate", "post">;
-type EmulateProfileOut = OutputOf<"/api/v5/artifacts/profiles/emulate", "post">;
-type UnemulateProfileOut = OutputOf<"/api/v5/artifacts/profiles/unemulate", "post">;
 type CreateFeedbackIn = InputOf<"/api/v5/artifacts/activity/problem", "post">;
 type CreateFeedbackOut = OutputOf<"/api/v5/artifacts/activity/problem", "post">;
 /** Page-specific refresh endpoint mapping */
@@ -35,11 +31,10 @@ type AttemptFullIn = InputOf<"/api/v5/artifacts/attempt/get", "post">;
 type AttemptFullOut = OutputOf<"/api/v5/artifacts/attempt/get", "post">;
 type SearchProfilesIn = InputOf<"/api/v5/artifacts/profiles/search", "post">;
 type SearchProfilesOut = OutputOf<"/api/v5/artifacts/profiles/search", "post">;
-/** ---- Auth response type aliases ---- */
-export type AuthProfileResponse = AuthProfileOut;
-export type AuthSettingsResponse = AuthSettingsOut;
+/** ---- Response type alias ---- */
+export type AuthProfileResponse = ProfileContextOut;
 
-/** ---- Shared header builder for auth endpoints ---- */
+/** ---- Shared header builder ---- */
 async function buildAuthHeaders(): Promise<Record<string, string>> {
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || "/";
@@ -49,30 +44,23 @@ async function buildAuthHeaders(): Promise<Record<string, string>> {
   return extraHeaders;
 }
 
-/** ---- Split auth fetches ---- */
-export const getAuthProfile = cache(
-  async (): Promise<AuthProfileOut> => {
+/** ---- Profile context fetch (canonical: /artifacts/profiles/context) ---- */
+export const getProfileContext = cache(
+  async (): Promise<ProfileContextOut> => {
     const extraHeaders = await buildAuthHeaders();
-    return api.post("/auth/profile", { body: {} } as AuthProfileIn, { headers: extraHeaders });
-  }
-);
-
-export const getAuthSettings = cache(
-  async (): Promise<AuthSettingsOut> => {
-    const extraHeaders = await buildAuthHeaders();
-    return api.post("/auth/settings", { body: {} } as AuthSettingsIn, { headers: extraHeaders });
+    return api.post("/artifacts/profiles/context", { body: {} } as ProfileContextIn, { headers: extraHeaders });
   }
 );
 
 
-/** ---- Generate messages server action ---- */
-type GenerateMessagesIn = InputOf<"/auth/generate", "post">;
-type GenerateMessagesOut = OutputOf<"/auth/generate", "post">;
+/** ---- Group messages server action (canonical: /artifacts/group/get) ---- */
+type GroupMessagesIn = InputOf<"/api/v5/artifacts/group/get", "post">;
+type GroupMessagesOut = OutputOf<"/api/v5/artifacts/group/get", "post">;
 
-export async function getGenerateMessages(
-  input: GenerateMessagesIn
-): Promise<GenerateMessagesOut> {
-  return api.post("/auth/generate", input);
+export async function getGroupMessages(
+  input: GroupMessagesIn
+): Promise<GroupMessagesOut> {
+  return api.post("/artifacts/group/get", input);
 }
 
 
@@ -84,7 +72,7 @@ export async function getValidatedProfileId(): Promise<{
   profileId: string | null;
 }> {
   try {
-    const profile = await getAuthProfile();
+    const profile = await getProfileContext();
     return { profileId: profile?.id ?? null };
   } catch {
     return { profileId: null };
@@ -93,7 +81,7 @@ export async function getValidatedProfileId(): Promise<{
 
 // Export ProfileItem type derived from server response
 export type ProfileItem = Pick<
-  AuthProfileOut,
+  ProfileContextOut,
   | "id"
   | "name"
   | "role"
@@ -107,66 +95,36 @@ export type SafeSessionSnapshot = {
 };
 
 /**
- * Fetches layout context data for the main layout
- *
- * Handles both auth modes:
- * - Authenticated users: Real NextAuth session with id_token
- * - Guest users: Pseudo-session from cookies (no id_token)
- *
- * Returns null initial if user doesn't have valid session or access,
- * which triggers access denied UI in the layout.
- *
- * @param session - Optional session to reuse. If not provided, will fetch session.
+ * Fetches layout context data for the main layout.
+ * Single call — profile context includes identity, permissions, and theme primitives.
  */
 export async function getLayoutContextData(session?: Session | null) {
   const resolvedSession = session ?? (await getSession());
 
-  // isAuthenticated distinguishes real sessions (has id_token) from pseudo-sessions (no id_token)
   const isAuthenticated = !!resolvedSession?.id_token;
   const idToken = resolvedSession?.id_token ?? null;
 
-  let profileData: AuthProfileOut | null = null;
-  let settingsData: AuthSettingsOut | null = null;
+  let profileData: ProfileContextOut | null = null;
 
   try {
-    const [profileRes, settingsRes] = await Promise.all([
-      getAuthProfile(),
-      getAuthSettings(),
-    ]);
-    profileData = profileRes;
-    settingsData = settingsRes;
+    profileData = await getProfileContext();
   } catch {
-    // If fetch fails (e.g., 403/404), return null
     const snapshot: SafeSessionSnapshot = { profileId: null, isAuthenticated, idToken };
-    return {
-      profileData: null,
-      settingsData: null,
-      snapshot,
-    };
+    return { profileData: null, snapshot };
   }
 
-  // Early return if no valid profile context
   if (!profileData?.id) {
     const snapshot: SafeSessionSnapshot = { profileId: null, isAuthenticated, idToken };
-    return {
-      profileData: null,
-      settingsData: null,
-      snapshot,
-    };
+    return { profileData: null, snapshot };
   }
 
-  // profileId comes from server response (resolved from JWT by middleware)
   const snapshot: SafeSessionSnapshot = {
     profileId: profileData.id,
     isAuthenticated,
     idToken,
   };
 
-  return {
-    profileData,
-    settingsData,
-    snapshot,
-  };
+  return { profileData, snapshot };
 }
 
 /** ---- Strongly-typed server actions for Session Management (single source of truth) ---- */
@@ -299,8 +257,8 @@ export type {
   CreateFeedbackIn,
   CreateFeedbackOut,
   ExitEmulationResult,
-  GenerateMessagesIn,
-  GenerateMessagesOut,
+  GroupMessagesIn,
+  GroupMessagesOut,
   SearchProfilesIn,
   SearchProfilesOut,
   SwitchEffectiveProfileParams,

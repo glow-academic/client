@@ -13,8 +13,6 @@ CREATE TYPE public.color_type AS ENUM (
     'success',
     'warning',
     'error',
-    'sidebar_background',
-    'sidebar_primary',
     'chart1',
     'chart2',
     'chart3',

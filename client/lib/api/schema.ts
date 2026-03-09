@@ -1984,6 +1984,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v5/artifacts/settings/decrypt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decrypt Setting Key
+         * @description Decrypt a key scoped to a setting artifact.
+         */
+        post: operations["decrypt_setting_key_api_v5_artifacts_settings_decrypt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/agents/get": {
         parameters: {
             query?: never;
@@ -2644,6 +2664,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v5/artifacts/providers/decrypt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Decrypt Provider Key
+         * @description Decrypt a key scoped to a provider artifact.
+         */
+        post: operations["decrypt_provider_key_api_v5_artifacts_providers_decrypt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/parameters/get": {
         parameters: {
             query?: never;
@@ -3084,6 +3124,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v5/artifacts/profiles/context": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Get Profile Context
+         * @description Identity + permissions + theme context endpoint.
+         */
+        post: operations["get_profile_context_api_v5_artifacts_profiles_context_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v5/artifacts/profiles/get": {
         parameters: {
             query?: never;
@@ -3258,6 +3318,46 @@ export interface paths {
          * @description Get composed documentation for the profile artifact.
          */
         post: operations["get_profile_docs_endpoint_api_v5_artifacts_profiles_docs_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/profiles/emulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Emulate Profile
+         * @description Create emulation grant. Next request will resolve to target profile.
+         */
+        post: operations["emulate_profile_api_v5_artifacts_profiles_emulate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v5/artifacts/profiles/unemulate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Unemulate Profile
+         * @description Exit innermost emulation layer. Next request resolves one layer less.
+         */
+        post: operations["unemulate_profile_api_v5_artifacts_profiles_unemulate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12514,126 +12614,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/profile": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Auth Profile
-         * @description Identity + permissions endpoint.
-         */
-        post: operations["get_auth_profile_auth_profile_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/settings": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Auth Settings
-         * @description Department-level settings + theme endpoint.
-         */
-        post: operations["get_auth_settings_auth_settings_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/generate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Group Messages
-         * @description Return paginated messages for a specific group.
-         */
-        post: operations["get_group_messages_auth_generate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/simulatable": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Search Simulatable Profiles
-         * @description Search profiles that can be emulated by the requester.
-         */
-        post: operations["search_simulatable_profiles_auth_simulatable_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/emulate": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Authorize Emulation
-         * @description Create emulation grant and return default-idp redirect URL.
-         */
-        post: operations["authorize_emulation_auth_emulate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/decrypt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Decrypt Key
-         * @description Decrypt a key's encrypted value.
-         */
-        post: operations["decrypt_key_auth_decrypt_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/auth/config": {
         parameters: {
             query?: never;
@@ -16901,61 +16881,6 @@ export interface components {
             /** Text Ids */
             text_ids?: string[] | null;
         };
-        /** CreateEmulationGrantApiRequest */
-        CreateEmulationGrantApiRequest: {
-            /**
-             * Requester Profile Id
-             * Format: uuid
-             */
-            requester_profile_id: string;
-            /**
-             * Target Profile Id
-             * Format: uuid
-             */
-            target_profile_id: string;
-            /**
-             * Ttl Minutes
-             * @default 120
-             */
-            ttl_minutes: number | null;
-            /** Signin Base Url */
-            signin_base_url?: string | null;
-            /** Callback Url */
-            callback_url?: string | null;
-            /** Idp Alias */
-            idp_alias?: string | null;
-            /** Return Url */
-            return_url?: string | null;
-            /** Keycloak Public Url */
-            keycloak_public_url?: string | null;
-            /** Keycloak Client Id */
-            keycloak_client_id?: string | null;
-            /** Origin */
-            origin?: string | null;
-            /** Prefix */
-            prefix?: string | null;
-        };
-        /** CreateEmulationGrantApiResponse */
-        CreateEmulationGrantApiResponse: {
-            /** Allowed */
-            allowed?: boolean | null;
-            /** Reason */
-            reason?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Grant Id */
-            grant_id?: string | null;
-            /** Expires At */
-            expires_at?: string | null;
-            /** Target Profile Id */
-            target_profile_id?: string | null;
-            /** Redirect Url */
-            redirect_url?: string | null;
-            /** Logout Url */
-            logout_url?: string | null;
-            /** Emulate Page Url */
-            emulate_page_url?: string | null;
-        };
         /**
          * CreateEvalApiRequest
          * @description Request model for bulk create eval endpoint.
@@ -17635,12 +17560,8 @@ export interface components {
             args_outputs_ids?: string[] | null;
             /** Artifact Ids */
             artifact_ids?: string[] | null;
-            /** Entry Ids */
-            entry_ids?: string[] | null;
             /** Operation Ids */
             operation_ids?: string[] | null;
-            /** Resource Ids */
-            resource_ids?: string[] | null;
             /** Tool Ids */
             tool_ids?: string[] | null;
         };
@@ -17936,6 +17857,62 @@ export interface components {
             value?: number | null;
             /** Count */
             count?: number | null;
+        };
+        /**
+         * DecryptProviderKeyApiRequest
+         * @description Request to decrypt a key scoped to a provider.
+         */
+        DecryptProviderKeyApiRequest: {
+            /**
+             * Provider Id
+             * Format: uuid
+             */
+            provider_id: string;
+            /**
+             * Key Id
+             * Format: uuid
+             */
+            key_id: string;
+        };
+        /**
+         * DecryptProviderKeyApiResponse
+         * @description Decrypted key response.
+         */
+        DecryptProviderKeyApiResponse: {
+            /** Key */
+            key?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
+        };
+        /**
+         * DecryptSettingKeyApiRequest
+         * @description Request to decrypt a key scoped to a setting.
+         */
+        DecryptSettingKeyApiRequest: {
+            /**
+             * Setting Id
+             * Format: uuid
+             */
+            setting_id: string;
+            /**
+             * Key Id
+             * Format: uuid
+             */
+            key_id: string;
+        };
+        /**
+         * DecryptSettingKeyApiResponse
+         * @description Decrypted key response.
+         */
+        DecryptSettingKeyApiResponse: {
+            /** Key */
+            key?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Actor Name */
+            actor_name?: string | null;
         };
         /**
          * DeleteAgentApiRequest
@@ -19065,6 +19042,34 @@ export interface components {
             /** Generated */
             generated?: boolean | null;
         };
+        /** DocumentParameterSection */
+        DocumentParameterSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Tool Id */
+            tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: components["schemas"]["GetParameterResponse"][] | null;
+            /** Resources */
+            resources?: components["schemas"]["GetParameterResponse"][] | null;
+        };
         /**
          * DocumentResultItem
          * @description Per-item result within a bulk create/update response.
@@ -19871,6 +19876,36 @@ export interface components {
             generated?: boolean | null;
             /** Email */
             email?: string | null;
+        };
+        /**
+         * EmulateProfileApiRequest
+         * @description Request model for profile emulation.
+         */
+        EmulateProfileApiRequest: {
+            /**
+             * Target Profile Id
+             * Format: uuid
+             */
+            target_profile_id: string;
+            /**
+             * Ttl Minutes
+             * @default 120
+             */
+            ttl_minutes: number | null;
+        };
+        /**
+         * EmulateProfileApiResponse
+         * @description Response model for profile emulation.
+         */
+        EmulateProfileApiResponse: {
+            /** Allowed */
+            allowed: boolean;
+            /** Reason */
+            reason?: string | null;
+            /** Grant Id */
+            grant_id?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
         };
         /** EndAllAttemptApiResponse */
         EndAllAttemptApiResponse: {
@@ -22142,57 +22177,6 @@ export interface components {
             /** Entries */
             entries?: components["schemas"]["GetAuthDraftResponse"][] | null;
         };
-        /**
-         * GetAuthProfileApiResponse
-         * @description Response for POST /auth/profile — identity + permissions.
-         */
-        GetAuthProfileApiResponse: {
-            /** Is Authorized */
-            is_authorized?: boolean | null;
-            /** Id */
-            id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Role */
-            role?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Scoped Roles */
-            scoped_roles?: string[] | null;
-            /** Available Sections */
-            available_sections?: string[] | null;
-            /** Role Resources */
-            role_resources?: components["schemas"]["QGetProfileContextV4RoleResource"][] | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
-        };
-        /**
-         * GetAuthSettingsApiResponse
-         * @description Response for POST /auth/settings — department-level settings + theme.
-         */
-        GetAuthSettingsApiResponse: {
-            /** Settings Id */
-            settings_id?: string | null;
-            /** Success Threshold */
-            success_threshold?: number | null;
-            /** Warning Threshold */
-            warning_threshold?: number | null;
-            /** Danger Threshold */
-            danger_threshold?: number | null;
-            tokens?: components["schemas"]["QGetProfileContextV4ThemeTokens"] | null;
-            /** Systems */
-            systems?: components["schemas"]["QGetSystemsV4Item"][] | null;
-            /** Agents */
-            agents?: components["schemas"]["QGetAgentsV4Item"][] | null;
-            /** Tools */
-            tools?: components["schemas"]["QGetToolsV4Item"][] | null;
-            /** Artifact Has Generate */
-            artifact_has_generate?: {
-                [key: string]: boolean;
-            } | null;
-        };
         /** GetChatDraftResponse */
         GetChatDraftResponse: {
             /**
@@ -22569,6 +22553,7 @@ export interface components {
             flags?: components["schemas"]["DocumentFlagSection"] | null;
             departments?: components["schemas"]["DocumentDepartmentSection"] | null;
             fields?: components["schemas"]["DocumentFieldSection"] | null;
+            parameters?: components["schemas"]["DocumentParameterSection"] | null;
             uploads?: components["schemas"]["DocumentUploadSection"] | null;
             images?: components["schemas"]["DocumentImageSection"] | null;
             texts?: components["schemas"]["DocumentTextSection"] | null;
@@ -22862,6 +22847,10 @@ export interface components {
              * Format: uuid
              */
             group_id: string;
+            /** Message Limit */
+            message_limit?: number | null;
+            /** Message Offset */
+            message_offset?: number | null;
         };
         /**
          * GetGroupDetailResponse
@@ -22875,6 +22864,13 @@ export interface components {
             group_exists: boolean;
             /** Actor Name */
             actor_name?: string | null;
+            /** Group Name */
+            group_name?: string | null;
+            /**
+             * Total Message Count
+             * @default 0
+             */
+            total_message_count: number;
             /** Runs */
             runs?: components["schemas"]["GroupDetailRunWithMessages"][];
             /** Models */
@@ -22883,48 +22879,6 @@ export interface components {
             agents?: components["schemas"]["GroupDetailResourceItem"][];
             /** Profiles */
             profiles?: components["schemas"]["GroupDetailResourceItem"][];
-        };
-        /**
-         * GetGroupMessagesApiRequest
-         * @description Request body for /auth/generate endpoint.
-         */
-        GetGroupMessagesApiRequest: {
-            /**
-             * Group Id
-             * Format: uuid
-             */
-            group_id: string;
-            /**
-             * Page Limit
-             * @default 50
-             */
-            page_limit: number;
-            /**
-             * Page Offset
-             * @default 0
-             */
-            page_offset: number;
-        };
-        /**
-         * GetGroupMessagesApiResponse
-         * @description Response model for /auth/group endpoint.
-         */
-        GetGroupMessagesApiResponse: {
-            /** Group Id */
-            group_id?: string | null;
-            /** Group Name */
-            group_name?: string | null;
-            /** Group Created At */
-            group_created_at?: string | null;
-            /** Session Id */
-            session_id?: string | null;
-            /** Messages */
-            messages?: components["schemas"]["GroupMessageItem"][] | null;
-            /**
-             * Total Message Count
-             * @default 0
-             */
-            total_message_count: number;
         };
         /** GetHealthResponse */
         GetHealthResponse: {
@@ -22978,23 +22932,6 @@ export interface components {
             /** Standards */
             standards?: components["schemas"]["StandardMapping"][] | null;
             analytics?: components["schemas"]["AnalyticsFacets"] | null;
-        };
-        /** GetKeyForDecryptApiRequest */
-        GetKeyForDecryptApiRequest: {
-            /**
-             * Key Id
-             * Format: uuid
-             */
-            key_id: string;
-        };
-        /** GetKeyForDecryptApiResponse */
-        GetKeyForDecryptApiResponse: {
-            /** Key */
-            key?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Actor Name */
-            actor_name?: string | null;
         };
         /** GetMetricsSearchResponse */
         GetMetricsSearchResponse: {
@@ -24582,6 +24519,8 @@ export interface components {
             args?: components["schemas"]["ToolArgSection"] | null;
             arg_positions?: components["schemas"]["ToolArgPositionSection"] | null;
             args_outputs?: components["schemas"]["ToolArgOutputSection"] | null;
+            artifacts?: components["schemas"]["ToolArtifactSection"] | null;
+            operations?: components["schemas"]["ToolOperationSection"] | null;
         };
         /** GetToolDraftResponse */
         GetToolDraftResponse: {
@@ -24619,20 +24558,20 @@ export interface components {
             arg_ids: string[];
             /** Args Output Ids */
             args_output_ids: string[];
+            /** Artifact Ids */
+            artifact_ids: string[];
             /** Department Ids */
             department_ids: string[];
             /** Description Ids */
             description_ids: string[];
-            /** Entry Ids */
-            entry_ids: string[];
             /** Flag Ids */
             flag_ids: string[];
             /** Name Ids */
             name_ids: string[];
+            /** Operation Ids */
+            operation_ids: string[];
             /** Profile Ids */
             profile_ids: string[];
-            /** Resource Ids */
-            resource_ids: string[];
         };
         /**
          * GetToolDraftsApiResponse
@@ -24923,32 +24862,6 @@ export interface components {
              * @default 50
              */
             limit: number;
-        };
-        /**
-         * GroupMessageItem
-         * @description A single message within a group.
-         */
-        GroupMessageItem: {
-            /** Message Id */
-            message_id?: string | null;
-            /** Run Id */
-            run_id?: string | null;
-            /** Role */
-            role?: string | null;
-            /** Message Created At */
-            message_created_at?: string | null;
-            /** Text Upload Ids */
-            text_upload_ids?: string[] | null;
-            /** Audio Upload Ids */
-            audio_upload_ids?: string[] | null;
-            /** Image Upload Ids */
-            image_upload_ids?: string[] | null;
-            /** Video Upload Ids */
-            video_upload_ids?: string[] | null;
-            /** File Upload Ids */
-            file_upload_ids?: string[] | null;
-            /** Call Upload Ids */
-            call_upload_ids?: string[] | null;
         };
         /** GroupPositionsGenerationEvent */
         GroupPositionsGenerationEvent: {
@@ -29585,8 +29498,7 @@ export interface components {
          *     Dual-mode for creatable resources only:
          *       - name/name_id, description/description_id
          *     ID-only for non-creatable resources:
-         *       - flag_ids, department_ids, arg_ids, arg_position_ids, args_output_ids,
-         *         entry_ids, resource_ids
+         *       - flag_ids, department_ids, arg_ids, arg_position_ids, args_output_ids
          *
          *     Client always sends full state (append-only — each write is a new version snapshot).
          */
@@ -29618,10 +29530,10 @@ export interface components {
             arg_position_ids?: string[] | null;
             /** Args Output Ids */
             args_output_ids?: string[] | null;
-            /** Entry Ids */
-            entry_ids?: string[] | null;
-            /** Resource Ids */
-            resource_ids?: string[] | null;
+            /** Artifact Ids */
+            artifact_ids?: string[] | null;
+            /** Operation Ids */
+            operation_ids?: string[] | null;
         };
         /**
          * PatchToolDraftApiResponse
@@ -30552,6 +30464,44 @@ export interface components {
             problem_statement?: string | null;
         };
         /**
+         * ProfileContextApiResponse
+         * @description Response for POST /artifacts/profiles/context — identity + permissions + theme.
+         *
+         *     Thin wrapper over resolve_profile_identity_context().
+         *     Replaces the old /auth/profile and /auth/settings endpoints.
+         */
+        ProfileContextApiResponse: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Role */
+            role?: string | null;
+            /** Active */
+            active?: boolean | null;
+            /** Role Artifacts */
+            role_artifacts?: string[] | null;
+            /** Available Sections */
+            available_sections?: string[] | null;
+            /** Scoped Roles */
+            scoped_roles?: string[] | null;
+            /** Department Ids */
+            department_ids?: string[] | null;
+            /** Primary Department Id */
+            primary_department_id?: string | null;
+            /** Settings Id */
+            settings_id?: string | null;
+            theme?: components["schemas"]["ThemePrimitives"] | null;
+            /** Session Id */
+            session_id?: string | null;
+            /** Is Emulation */
+            is_emulation?: boolean | null;
+            /** Emulation Depth */
+            emulation_depth?: number | null;
+            /** Role Resources */
+            role_resources?: components["schemas"]["QGetProfileContextV4RoleResource"][] | null;
+        };
+        /**
          * ProfileDepartmentResource
          * @description Department resource for profile.
          */
@@ -31419,35 +31369,6 @@ export interface components {
             /** Key */
             key?: string | null;
         };
-        /** QGetAgentsV4Item */
-        QGetAgentsV4Item: {
-            /** Id */
-            id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Model Id */
-            model_id?: string | null;
-            /** Temperature */
-            temperature?: number | null;
-            /** Reasoning */
-            reasoning?: string | null;
-            /** Tool Ids */
-            tool_ids?: string[] | null;
-            /** Quality */
-            quality?: string | null;
-            /** Voices */
-            voices?: string[] | null;
-            /** Prompt Id */
-            prompt_id?: string | null;
-            /** Instruction Ids */
-            instruction_ids?: string[] | null;
-            /** Active */
-            active?: boolean | null;
-            /** Generated */
-            generated?: boolean | null;
-        };
         /** QGetProfileContextV4RoleResource */
         QGetProfileContextV4RoleResource: {
             /** Role */
@@ -31460,144 +31381,6 @@ export interface components {
             icon_value?: string | null;
             /** Color Hex */
             color_hex?: string | null;
-        };
-        /** QGetProfileContextV4ThemeTokens */
-        QGetProfileContextV4ThemeTokens: {
-            /** Background */
-            background?: string | null;
-            /** Foreground */
-            foreground?: string | null;
-            /** Card */
-            card?: string | null;
-            /** Card Foreground */
-            card_foreground?: string | null;
-            /** Popover */
-            popover?: string | null;
-            /** Popover Foreground */
-            popover_foreground?: string | null;
-            /** Primary Color */
-            primary_color?: string | null;
-            /** Primary Foreground */
-            primary_foreground?: string | null;
-            /** Secondary */
-            secondary?: string | null;
-            /** Secondary Foreground */
-            secondary_foreground?: string | null;
-            /** Muted */
-            muted?: string | null;
-            /** Muted Foreground */
-            muted_foreground?: string | null;
-            /** Accent */
-            accent?: string | null;
-            /** Accent Foreground */
-            accent_foreground?: string | null;
-            /** Destructive */
-            destructive?: string | null;
-            /** Border */
-            border?: string | null;
-            /** Input */
-            input?: string | null;
-            /** Ring */
-            ring?: string | null;
-            /** Success */
-            success?: string | null;
-            /** Success Foreground */
-            success_foreground?: string | null;
-            /** Warning */
-            warning?: string | null;
-            /** Warning Foreground */
-            warning_foreground?: string | null;
-            /** Info */
-            info?: string | null;
-            /** Info Foreground */
-            info_foreground?: string | null;
-            /** Chart1 */
-            chart1?: string | null;
-            /** Chart2 */
-            chart2?: string | null;
-            /** Chart3 */
-            chart3?: string | null;
-            /** Chart4 */
-            chart4?: string | null;
-            /** Chart5 */
-            chart5?: string | null;
-            /** Sidebar */
-            sidebar?: string | null;
-            /** Sidebar Foreground */
-            sidebar_foreground?: string | null;
-            /** Sidebar Primary */
-            sidebar_primary?: string | null;
-            /** Sidebar Primary Foreground */
-            sidebar_primary_foreground?: string | null;
-            /** Sidebar Accent */
-            sidebar_accent?: string | null;
-            /** Sidebar Accent Foreground */
-            sidebar_accent_foreground?: string | null;
-            /** Sidebar Border */
-            sidebar_border?: string | null;
-            /** Sidebar Ring */
-            sidebar_ring?: string | null;
-        };
-        /** QGetSystemsV4Item */
-        QGetSystemsV4Item: {
-            /** Id */
-            id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Agent Ids */
-            agent_ids?: string[] | null;
-            /** Active */
-            active?: boolean | null;
-            /** Generated */
-            generated?: boolean | null;
-        };
-        /** QGetToolsV4Item */
-        QGetToolsV4Item: {
-            /** Id */
-            id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Generated */
-            generated?: boolean | null;
-            /** Args Ids */
-            args_ids?: string[] | null;
-            /** Args Output Ids */
-            args_output_ids?: string[] | null;
-            /** Operation */
-            operation?: string | null;
-            /** Resources */
-            resources?: string[] | null;
-            /** Entries */
-            entries?: string[] | null;
-            /** Artifacts */
-            artifacts?: string[] | null;
-        };
-        /** QSearchSimulatableProfilesV4Profile */
-        QSearchSimulatableProfilesV4Profile: {
-            /** Profile Id */
-            profile_id?: string | null;
-            /** Name */
-            name?: string | null;
-            /** Emails */
-            emails?: string[] | null;
-            /** Primary Email */
-            primary_email?: string | null;
-            /** Role */
-            role?: string | null;
-            /** Active */
-            active?: boolean | null;
-            /** Req Per Day */
-            req_per_day?: number | null;
-            /** Created At */
-            created_at?: string | null;
-            /** Updated At */
-            updated_at?: string | null;
-            /** Primary Department Id */
-            primary_department_id?: string | null;
         };
         /** QualitiesGenerationEvent */
         QualitiesGenerationEvent: {
@@ -34672,20 +34455,6 @@ export interface components {
          * @description Request model for setting search endpoint.
          */
         SearchSettingApiRequest: Record<string, never>;
-        /** SearchSimulatableProfilesApiRequest */
-        SearchSimulatableProfilesApiRequest: {
-            /** Limit Count */
-            limit_count: number;
-            /** Query */
-            query: string;
-        };
-        /** SearchSimulatableProfilesApiResponse */
-        SearchSimulatableProfilesApiResponse: {
-            /** Actor Name */
-            actor_name?: string | null;
-            /** Profiles */
-            profiles?: components["schemas"]["QSearchSimulatableProfilesV4Profile"][] | null;
-        };
         /**
          * SearchSimulationApiRequest
          * @description Request model for simulation search endpoint.
@@ -36924,6 +36693,39 @@ export interface components {
             /** Text Id */
             text_id?: string | null;
         };
+        /**
+         * ThemePrimitives
+         * @description Raw theme color primitives (hex values) from settings.
+         *
+         *     General-purpose — not CSS-specific. Clients derive their own
+         *     presentation tokens (oklch, CSS variables, etc.) from these.
+         */
+        ThemePrimitives: {
+            /** Primary */
+            primary?: string | null;
+            /** Accent */
+            accent?: string | null;
+            /** Background */
+            background?: string | null;
+            /** Surface */
+            surface?: string | null;
+            /** Success */
+            success?: string | null;
+            /** Warning */
+            warning?: string | null;
+            /** Error */
+            error?: string | null;
+            /** Chart1 */
+            chart1?: string | null;
+            /** Chart2 */
+            chart2?: string | null;
+            /** Chart3 */
+            chart3?: string | null;
+            /** Chart4 */
+            chart4?: string | null;
+            /** Chart5 */
+            chart5?: string | null;
+        };
         /** ThresholdsGenerationEvent */
         ThresholdsGenerationEvent: {
             /**
@@ -37061,6 +36863,34 @@ export interface components {
             /** Resources */
             resources?: unknown[] | null;
         };
+        /** ToolArtifactSection */
+        ToolArtifactSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Tool Id */
+            tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: unknown[] | null;
+            /** Resources */
+            resources?: unknown[] | null;
+        };
         /** ToolDescriptionSection */
         ToolDescriptionSection: {
             /**
@@ -37108,10 +36938,10 @@ export interface components {
             arg_position_ids: string[];
             /** Args Output Ids */
             args_output_ids: string[];
-            /** Entry Ids */
-            entry_ids: string[];
-            /** Resource Ids */
-            resource_ids: string[];
+            /** Artifact Ids */
+            artifact_ids: string[];
+            /** Operation Ids */
+            operation_ids: string[];
         };
         /**
          * ToolFieldError
@@ -37206,6 +37036,34 @@ export interface components {
             /** Resources */
             resources?: unknown[] | null;
         };
+        /** ToolOperationSection */
+        ToolOperationSection: {
+            /**
+             * Show
+             * @default false
+             */
+            show: boolean;
+            /**
+             * Required
+             * @default false
+             */
+            required: boolean;
+            /** Suggestions */
+            suggestions?: string[] | null;
+            /**
+             * Show Ai Generate
+             * @default false
+             */
+            show_ai_generate: boolean;
+            /** Tool Id */
+            tool_id?: string | null;
+            /** Link Tool Id */
+            link_tool_id?: string | null;
+            /** Current */
+            current?: unknown[] | null;
+            /** Resources */
+            resources?: unknown[] | null;
+        };
         /**
          * ToolResultItem
          * @description Per-item result within a bulk create/update response.
@@ -37272,6 +37130,16 @@ export interface components {
             entries?: unknown[] | null;
             /** Artifacts */
             artifacts?: unknown[] | null;
+        };
+        /**
+         * UnemulateProfileApiResponse
+         * @description Response model for exiting emulation (peel one layer).
+         */
+        UnemulateProfileApiResponse: {
+            /** Ok */
+            ok: boolean;
+            /** Reason */
+            reason?: string | null;
         };
         /**
          * UpdateAgentApiRequest
@@ -38239,12 +38107,8 @@ export interface components {
             args_outputs_ids?: string[] | null;
             /** Artifact Ids */
             artifact_ids?: string[] | null;
-            /** Entry Ids */
-            entry_ids?: string[] | null;
             /** Operation Ids */
             operation_ids?: string[] | null;
-            /** Resource Ids */
-            resource_ids?: string[] | null;
             /** Tool Ids */
             tool_ids?: string[] | null;
         };
@@ -42057,6 +41921,43 @@ export interface operations {
             };
         };
     };
+    decrypt_setting_key_api_v5_artifacts_settings_decrypt_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecryptSettingKeyApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecryptSettingKeyApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_agent_api_v5_artifacts_agents_get_post: {
         parameters: {
             query?: never;
@@ -43254,6 +43155,43 @@ export interface operations {
             };
         };
     };
+    decrypt_provider_key_api_v5_artifacts_providers_decrypt_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecryptProviderKeyApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DecryptProviderKeyApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_parameter_api_v5_artifacts_parameters_get_post: {
         parameters: {
             query?: never;
@@ -44052,6 +43990,43 @@ export interface operations {
             };
         };
     };
+    get_profile_context_api_v5_artifacts_profiles_context_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GetProfileContextApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileContextApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_profile_api_v5_artifacts_profiles_get_post: {
         parameters: {
             query?: never;
@@ -44368,6 +44343,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ComposedDocsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    emulate_profile_api_v5_artifacts_profiles_emulate_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmulateProfileApiRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmulateProfileApiResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unemulate_profile_api_v5_artifacts_profiles_unemulate_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Api-Key"?: string | null;
+                authorization?: string | null;
+                "X-MCP"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UnemulateProfileApiResponse"];
                 };
             };
             /** @description Validation Error */
@@ -62380,228 +62425,6 @@ export interface operations {
                     "application/json": {
                         [key: string]: boolean;
                     };
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_auth_profile_auth_profile_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetProfileContextApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAuthProfileApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_auth_settings_auth_settings_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetProfileContextApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAuthSettingsApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_group_messages_auth_generate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetGroupMessagesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetGroupMessagesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    search_simulatable_profiles_auth_simulatable_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SearchSimulatableProfilesApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SearchSimulatableProfilesApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    authorize_emulation_auth_emulate_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateEmulationGrantApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CreateEmulationGrantApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    decrypt_key_auth_decrypt_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetKeyForDecryptApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetKeyForDecryptApiResponse"];
                 };
             };
             /** @description Validation Error */

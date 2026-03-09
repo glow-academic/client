@@ -20,5 +20,6 @@ SETUP_NAME = "university"
 # Each corresponds to a .py file in this package.
 MODULES = [
     "personas",
-    # TODO: departments, documents, scenarios, simulations, cohorts, profiles, settings
+    "scenarios",
+    # TODO: departments, documents, simulations, cohorts, profiles, settings
 ]

@@ -57,6 +57,8 @@ async def get_group_internal(
     profile_id: UUID,
     group_id: UUID,
     bypass_cache: bool = False,
+    message_limit: int | None = None,
+    message_offset: int | None = None,
 ) -> GroupInternalData:
     """Core group detail fetcher.
 
@@ -73,6 +75,8 @@ async def get_group_internal(
             group_id=group_id,
             profile_id=profile_id,
             bypass_cache=bypass_cache,
+            message_limit=message_limit,
+            message_offset=message_offset,
         )
 
     async def _resolve_common() -> object:
@@ -92,6 +96,8 @@ async def get_group_internal(
     calls = ctx.entries.get("calls", [])
     actor_name_items = ctx.entries.get("actor_name_items", [])
     actor_name = actor_name_items[0].name if actor_name_items else None
+    group_name = ctx.entries.get("group_name")
+    total_message_count = ctx.entries.get("total_message_count", 0)
 
     if not runs:
         return GroupInternalData(
@@ -201,6 +207,8 @@ async def get_group_internal(
         resource_system_ids=resource_system_ids,
         group_id=group_id,
         actor_name=actor_name,
+        group_name=group_name,
+        total_message_count=total_message_count,
         name_map={item.id: item.name for item in names_list if item.id and item.name},
         tool_name_map={
             item.id: item.name for item in tools_list if item.id and item.name
@@ -247,6 +255,8 @@ async def get_group(
             profile_id=profile_id,
             group_id=request.group_id,
             bypass_cache=bypass_cache,
+            message_limit=request.message_limit,
+            message_offset=request.message_offset,
         )
 
         if not data.group_exists:
@@ -364,6 +374,8 @@ async def get_group(
         api_response = GetGroupDetailResponse(
             group_exists=True,
             actor_name=data.actor_name,
+            group_name=data.group_name,
+            total_message_count=data.total_message_count,
             runs=runs,
             models=models_list,
             agents=agents_list,

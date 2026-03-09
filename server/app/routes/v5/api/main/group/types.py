@@ -130,6 +130,8 @@ class GetGroupDetailRequest(BaseModel):
     """Request for group detail endpoint."""
 
     group_id: UUID
+    message_limit: int | None = None
+    message_offset: int | None = None
 
 
 class GetGroupDetailResponse(BaseModel):
@@ -137,6 +139,8 @@ class GetGroupDetailResponse(BaseModel):
 
     group_exists: bool = False
     actor_name: str | None = None
+    group_name: str | None = None
+    total_message_count: int = 0
     runs: list[GroupDetailRunWithMessages] = Field(default_factory=list)
     models: list[GroupDetailResourceItem] = Field(default_factory=list)
     agents: list[GroupDetailResourceItem] = Field(default_factory=list)
@@ -165,6 +169,8 @@ class GroupInternalData:
     group_id: UUID | None = None
     # Context
     actor_name: str | None = None
+    group_name: str | None = None
+    total_message_count: int = 0
     # Resource maps (from context resolver)
     name_map: dict[UUID, str] = field(default_factory=dict)
     tool_name_map: dict[UUID, str] = field(default_factory=dict)

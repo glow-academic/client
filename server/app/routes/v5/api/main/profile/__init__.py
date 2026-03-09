@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter
 
+from app.routes.v5.api.main.profile.context import router as context_router
 from app.routes.v5.api.main.profile.create import router as create_router
 from app.routes.v5.api.main.profile.delete import router as delete_router
 from app.routes.v5.api.main.profile.docs import router as docs_router
@@ -19,6 +20,7 @@ from app.routes.v5.api.main.profile.update import router as update_router
 router = APIRouter(prefix="/profiles", tags=["profiles"])
 
 # Include all endpoint routers (standard 6 endpoints)
+router.include_router(context_router)
 router.include_router(get_router)
 router.include_router(search_router)
 router.include_router(create_router)

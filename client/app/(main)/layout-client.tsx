@@ -1,7 +1,7 @@
 /**
  * Client component for main layout.
  *
- * Global concerns only: sidebar, profile, settings, socket, theme.
+ * Global concerns only: sidebar, profile, socket, theme.
  * Page-level concerns (drafts, group, analytics filters, toolbars)
  * are owned by each page's own client component.
  */
@@ -16,12 +16,10 @@ import React, { useEffect, useMemo } from "react";
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
 import { ProfileProviderClient } from "@/contexts/profile-context";
-import { SettingsProviderClient } from "@/contexts/settings-context";
 import { SocketProviderClient } from "@/contexts/socket-context";
 import { SIDEBAR_SECTIONS } from "@/lib/sidebar-config";
 import type {
   AuthProfileResponse,
-  AuthSettingsResponse,
   CreateFeedbackIn,
   CreateFeedbackOut,
   ExitEmulationResult,
@@ -112,7 +110,6 @@ function MainLayoutContent({
 export function MainLayoutClient({
   children,
   profileData,
-  settingsData,
   sessionSnapshot,
   initialSidebarOpen,
   switchEffectiveProfileAction,
@@ -122,7 +119,6 @@ export function MainLayoutClient({
 }: {
   children: React.ReactNode;
   profileData: AuthProfileResponse | null;
-  settingsData: AuthSettingsResponse | null;
   sessionSnapshot: SafeSessionSnapshot;
   /** Initial sidebar open state from SSR cookie */
   initialSidebarOpen?: boolean;
@@ -166,7 +162,7 @@ export function MainLayoutClient({
 
   return (
     <>
-      <ThemeHydrator tokens={settingsData?.tokens ?? null} />
+      <ThemeHydrator primitives={profileData?.theme ?? null} />
       <SocketProviderClient
         profileId={profileData?.id ?? null}
         idToken={sessionSnapshot?.idToken ?? null}
@@ -175,19 +171,15 @@ export function MainLayoutClient({
           initial={profileData}
           sessionSnapshot={sessionSnapshot}
         >
-          <SettingsProviderClient settings={settingsData}>
-            <MainLayoutContent
-              initialSidebarOpen={initialSidebarOpen}
-              switchEffectiveProfileAction={switchEffectiveProfileAction}
-              exitEmulationAction={exitEmulationAction}
-              createFeedbackAction={createFeedbackAction}
-              searchProfilesAction={
-                searchProfilesAction
-              }
-            >
-              {children}
-            </MainLayoutContent>
-          </SettingsProviderClient>
+          <MainLayoutContent
+            initialSidebarOpen={initialSidebarOpen}
+            switchEffectiveProfileAction={switchEffectiveProfileAction}
+            exitEmulationAction={exitEmulationAction}
+            createFeedbackAction={createFeedbackAction}
+            searchProfilesAction={searchProfilesAction}
+          >
+            {children}
+          </MainLayoutContent>
         </ProfileProviderClient>
       </SocketProviderClient>
     </>

@@ -8,6 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.infra.profile_create import CreateProfileItem
+from app.routes.shared_types import QGetProfileContextV4RoleResource
 from app.routes.v5.api.types import BaseResourceSection, ListFilterSection
 from app.routes.v5.tools.entries.profile_drafts.types import GetProfileDraftResponse
 
@@ -393,3 +394,66 @@ class ListProfilesApiResponse(BaseModel):
     department_filter: ListFilterSection | None = None
     role_filter: ListFilterSection | None = None
     total_count: int | None = None
+
+
+# ========== Context Endpoint Types ==========
+
+
+class ThemePrimitives(BaseModel):
+    """Raw theme color primitives (hex values) from settings.
+
+    General-purpose — not CSS-specific. Clients derive their own
+    presentation tokens (oklch, CSS variables, etc.) from these.
+    """
+
+    primary: str | None = None
+    accent: str | None = None
+    background: str | None = None
+    surface: str | None = None
+    success: str | None = None
+    warning: str | None = None
+    error: str | None = None
+    chart1: str | None = None
+    chart2: str | None = None
+    chart3: str | None = None
+    chart4: str | None = None
+    chart5: str | None = None
+
+
+class ProfileContextApiResponse(BaseModel):
+    """Response for POST /artifacts/profiles/context — identity + permissions + theme.
+
+    Thin wrapper over resolve_profile_identity_context().
+    Replaces the old /auth/profile and /auth/settings endpoints.
+    """
+
+    # Identity
+    id: UUID | None = None
+    name: str | None = None
+    role: str | None = None
+    active: bool | None = None
+
+    # Routing & permissions
+    role_artifacts: list[str] | None = None
+    available_sections: list[str] | None = None
+    scoped_roles: list[str] | None = None
+
+    # Departments
+    department_ids: list[str] | None = None
+    primary_department_id: str | None = None
+
+    # Settings
+    settings_id: str | None = None
+
+    # Theme (raw color primitives from settings)
+    theme: ThemePrimitives | None = None
+
+    # Session
+    session_id: UUID | None = None
+
+    # Emulation
+    is_emulation: bool | None = None
+    emulation_depth: int | None = None
+
+    # Role resources (all roles — for emulation role display)
+    role_resources: list[QGetProfileContextV4RoleResource] | None = None

@@ -9,7 +9,7 @@
 import Record from "@/components/artifacts/record/Record";
 import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { PageHeader } from "@/components/common/layout/PageHeader";
-import { getAuthProfile, refreshPage } from "@/app/(main)/layout-server";
+import { getProfileContext, refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -64,7 +64,7 @@ export default async function RecordPage({
   const q = loadProfileReportSearchParams(await searchParams);
 
   // Get profile context for actor_profile_id (cache()-wrapped, no extra request)
-  const profileContext = await getAuthProfile();
+  const profileContext = await getProfileContext();
 
   // Compute initial date range from search params (with 30-day fallback)
   const defaultStartDate = (() => {

@@ -37,8 +37,6 @@ class SettingsThemeResult:
     success: str | None = None
     warning: str | None = None
     error: str | None = None
-    sidebar_background: str | None = None
-    sidebar_primary: str | None = None
     chart1: str | None = None
     chart2: str | None = None
     chart3: str | None = None
@@ -119,8 +117,6 @@ async def resolve_settings_theme(
         success=color_map.get("success"),
         warning=color_map.get("warning"),
         error=color_map.get("error"),
-        sidebar_background=color_map.get("sidebar_background"),
-        sidebar_primary=color_map.get("sidebar_primary"),
         chart1=color_map.get("chart1"),
         chart2=color_map.get("chart2"),
         chart3=color_map.get("chart3"),

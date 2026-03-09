@@ -210,6 +210,8 @@ async def get_tool_client(
             len(all_arg_positions), len(all_args)
         ),
         "args_outputs": compute_show_args_outputs(len(all_args_outputs)),
+        "artifacts": compute_show_artifacts(len(all_artifacts)),
+        "operations": compute_show_operations(len(all_operations)),
     }
 
     required_flags_map = {
@@ -219,6 +221,8 @@ async def get_tool_client(
         "args": compute_args_required(),
         "arg_positions": False,
         "args_outputs": compute_args_outputs_required(),
+        "artifacts": compute_artifacts_required(),
+        "operations": compute_operations_required(),
     }
 
     def compute_show_ai_generate(resource: str) -> bool:
@@ -307,6 +311,8 @@ async def get_tool_client(
         "args_outputs": [
             ao.id for ao in tool_ctx.resources["args_outputs"].suggestions
         ],
+        "artifacts": [a.id for a in tool_ctx.resources["artifacts"].suggestions],
+        "operations": [o.id for o in tool_ctx.resources["operations"].suggestions],
     }
 
     def _section(resource_key: str) -> dict:
@@ -362,6 +368,16 @@ async def get_tool_client(
             **_section("args_outputs"),
             current=args_outputs_current or None,
             resources=all_args_outputs,
+        ),
+        artifacts=ToolArtifactSection(
+            **_section("artifacts"),
+            current=tool_ctx.resources["artifacts"].selected or None,
+            resources=all_artifacts,
+        ),
+        operations=ToolOperationSection(
+            **_section("operations"),
+            current=tool_ctx.resources["operations"].selected or None,
+            resources=all_operations,
         ),
     )
 

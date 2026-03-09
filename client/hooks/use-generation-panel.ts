@@ -12,8 +12,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useGroupIdOptional } from "@/contexts/group-context";
 import type {
-  GenerateMessagesIn,
-  GenerateMessagesOut,
+  GroupMessagesIn,
+  GroupMessagesOut,
 } from "@/app/(main)/layout-server";
 import type { TypeItem } from "@/components/common/ai/types";
 
@@ -37,7 +37,7 @@ const PANEL_COOKIE = "glow_ai_panel";
 export interface UseGenerationPanelConfig {
   /** Group ID injected by the page context. Falls back to GroupContext if not provided. */
   groupId: string | null;
-  getGenerateMessagesAction: (input: GenerateMessagesIn) => Promise<GenerateMessagesOut>;
+  getGroupMessagesAction: (input: GroupMessagesIn) => Promise<GroupMessagesOut>;
   /** Initial panel open state from SSR cookie */
   initialPanelOpen?: boolean;
   /** Valid type lists — selections default to all */
@@ -80,9 +80,31 @@ function typeItemKeys(items: TypeItem[]): string[] {
   return items.map((i) => `${i.name}:${i.operation}`);
 }
 
+/** Flatten messages from nested runs[].messages[] into a flat array. */
+function flattenRunMessages(res: GroupMessagesOut): GroupMessage[] {
+  const flat: GroupMessage[] = [];
+  for (const runWithMessages of res.runs ?? []) {
+    for (const msg of runWithMessages.messages ?? []) {
+      flat.push({
+        message_id: msg.id ? String(msg.id) : null,
+        run_id: runWithMessages.run?.id ? String(runWithMessages.run.id) : null,
+        role: msg.role ?? null,
+        message_created_at: null,
+        text_upload_ids: msg.text_upload_ids?.map(String) ?? null,
+        audio_upload_ids: msg.audio_upload_ids?.map(String) ?? null,
+        image_upload_ids: msg.image_upload_ids?.map(String) ?? null,
+        video_upload_ids: msg.video_upload_ids?.map(String) ?? null,
+        file_upload_ids: msg.file_upload_ids?.map(String) ?? null,
+        call_upload_ids: msg.call_upload_ids?.map(String) ?? null,
+      });
+    }
+  }
+  return flat;
+}
+
 export function useGenerationPanel({
   groupId: groupIdProp,
-  getGenerateMessagesAction,
+  getGroupMessagesAction,
   initialPanelOpen,
   validArtifactTypes = [],
   validResourceTypes = [],
@@ -125,18 +147,20 @@ export function useGenerationPanel({
     setIsLoadingMessages(true);
     offsetRef.current = 0;
 
-    getGenerateMessagesAction({
+    getGroupMessagesAction({
       body: {
-        page_limit: PAGE_SIZE,
-        page_offset: 0,
+        group_id: groupId,
+        message_limit: PAGE_SIZE,
+        message_offset: 0,
       },
     })
       .then((res) => {
         if (cancelled) return;
-        setMessages(res.messages ?? []);
+        const flat = flattenRunMessages(res);
+        setMessages(flat);
         setTotalMessageCount(res.total_message_count ?? 0);
         setGroupName(res.group_name ?? null);
-        offsetRef.current = (res.messages ?? []).length;
+        offsetRef.current = flat.length;
       })
       .catch(() => {
         if (cancelled) return;
@@ -151,7 +175,7 @@ export function useGenerationPanel({
     return () => {
       cancelled = true;
     };
-  }, [groupId, getGenerateMessagesAction]);
+  }, [groupId, getGroupMessagesAction]);
 
   // Load more (pagination)
   const loadMoreMessages = useCallback(() => {
@@ -159,14 +183,15 @@ export function useGenerationPanel({
     if (messages.length >= totalMessageCount) return;
 
     setIsLoadingMessages(true);
-    getGenerateMessagesAction({
+    getGroupMessagesAction({
       body: {
-        page_limit: PAGE_SIZE,
-        page_offset: offsetRef.current,
+        group_id: groupId,
+        message_limit: PAGE_SIZE,
+        message_offset: offsetRef.current,
       },
     })
       .then((res) => {
-        const newMessages = res.messages ?? [];
+        const newMessages = flattenRunMessages(res);
         setMessages((prev) => [...prev, ...newMessages]);
         offsetRef.current += newMessages.length;
       })
@@ -177,7 +202,7 @@ export function useGenerationPanel({
     isLoadingMessages,
     messages.length,
     totalMessageCount,
-    getGenerateMessagesAction,
+    getGroupMessagesAction,
   ]);
 
   // Type selection — default to all types selected

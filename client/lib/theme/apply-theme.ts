@@ -1,18 +1,16 @@
-import type { ThemeTokens } from "./types";
+import type { DerivedThemeTokens } from "./derive-tokens";
 
 /**
  * Maps theme token keys to their corresponding CSS variable names.
- * This bridges the semantic token names from the API to the CSS variables
- * used throughout the application.
  */
-const CSS_VAR_MAP: Record<keyof ThemeTokens, string> = {
+const CSS_VAR_MAP: Record<keyof DerivedThemeTokens, string> = {
   background: "--background",
   foreground: "--foreground",
   card: "--card",
   card_foreground: "--card-foreground",
   popover: "--popover",
   popover_foreground: "--popover-foreground",
-  primary_color: "--primary",
+  primary: "--primary",
   primary_foreground: "--primary-foreground",
   secondary: "--secondary",
   secondary_foreground: "--secondary-foreground",
@@ -48,19 +46,14 @@ const CSS_VAR_MAP: Record<keyof ThemeTokens, string> = {
 };
 
 /**
- * Applies theme tokens to CSS variables on the document root.
- * This function sets CSS custom properties that are used throughout
- * the application for theming.
- *
- * @param tokens - Theme tokens object containing color values
+ * Applies derived theme tokens to CSS variables on the document root.
  */
-export function applyThemeTokens(tokens: ThemeTokens): void {
-  // Early return for SSR - document is not available on the server
+export function applyThemeTokens(tokens: DerivedThemeTokens): void {
   if (typeof document === "undefined") return;
 
   const root = document.documentElement;
 
-  (Object.entries(tokens) as [keyof ThemeTokens, string][]).forEach(
+  (Object.entries(tokens) as [keyof DerivedThemeTokens, string][]).forEach(
     ([key, value]) => {
       const cssVar = CSS_VAR_MAP[key];
       if (!cssVar || !value) return;

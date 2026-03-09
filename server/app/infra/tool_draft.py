@@ -137,8 +137,8 @@ async def patch_tool_draft_client(
                 arg_ids=request.arg_ids,
                 arg_position_ids=request.arg_position_ids,
                 args_output_ids=request.args_output_ids,
-                entry_ids=request.entry_ids,
-                resource_ids=request.resource_ids,
+                artifact_ids=request.artifact_ids,
+                operation_ids=request.operation_ids,
             )
 
     # ── Step 5: Build form state (server is source of truth) ────────────
@@ -151,8 +151,8 @@ async def patch_tool_draft_client(
         arg_ids=request.arg_ids or [],
         arg_position_ids=request.arg_position_ids or [],
         args_output_ids=request.args_output_ids or [],
-        entry_ids=request.entry_ids or [],
-        resource_ids=request.resource_ids or [],
+        artifact_ids=request.artifact_ids or [],
+        operation_ids=request.operation_ids or [],
     )
 
     # ── Step 6: Refresh MV ─────────────────────────────────────────────
