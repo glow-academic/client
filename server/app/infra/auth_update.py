@@ -140,7 +140,9 @@ async def update_auth_client(
                     conn,
                     item.auth_id,
                     name_id=item.name_id if item.name_id else _UNSET,
-                    description_id=item.description_id if item.description_id else _UNSET,
+                    description_id=item.description_id
+                    if item.description_id
+                    else _UNSET,
                     slug_id=item.slug_id if item.slug_id else _UNSET,
                     department_ids=item.department_ids,
                     flag_ids=[item.active_flag_id] if item.active_flag_id else None,

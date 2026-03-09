@@ -598,6 +598,9 @@ class GetAttemptDetailResponse(BaseModel):
     show_results: bool | None = None
     should_show_controls: bool | None = None
     is_own_attempt: bool | None = None
+    # Inline controls data (replaces auth/group resolution for toolbar)
+    current_chat_id: str | None = None
+    has_messages: bool = False
     # Continuation options for infinite mode
     available_continuation_options: AvailableContinuationOptions | None = None
     # Extended data (scenario_documents removed - use chat.documents)
@@ -666,6 +669,8 @@ class AttemptInternalData:
     is_lobby: bool = False
     show_results: bool = False
     should_show_controls: bool = False
+    current_chat_id: str | None = None
+    has_messages: bool = False
     rubric_structure: RubricStructureData | None = None
     continuation_options: AvailableContinuationOptions | None = None
 

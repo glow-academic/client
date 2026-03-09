@@ -10,11 +10,10 @@ Uses composable infra layers:
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.auth_context import resolve_auth_context
@@ -36,7 +35,7 @@ from app.infra.auth_permissions import (
 )
 from app.infra.auth_permissions_context import resolve_auth_permissions_context
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.auth.types import (
@@ -71,7 +70,7 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
 
 
 async def get_auth_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -93,7 +92,7 @@ async def get_auth_client(
     # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
     common = await resolve_common_context(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
         group_id=group_id,
@@ -111,7 +110,8 @@ async def get_auth_client(
     # ── Step 2: Permissions check (fail fast before full hydration) ──────
 
     if auth_id is not None:
-        perms = await resolve_auth_permissions_context(conn, auth_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_auth_permissions_context(conn, auth_id)
 
         if not perms.exists:
             raise HTTPException(
@@ -122,7 +122,7 @@ async def get_auth_client(
     # ── Step 3: Auth artifact context ─────────────────────────────────────
 
     auth_ctx = await resolve_auth_context(
-        conn,
+        pool,
         redis,
         auth_id=auth_id,
         group_id=group_id,
@@ -324,7 +324,6 @@ async def get_auth(
     request: GetAuthApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetAuthApiResponse:
     """Get auth information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -337,10 +336,11 @@ async def get_auth(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await get_auth_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             auth_id=request.auth_id,

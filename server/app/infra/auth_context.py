@@ -113,19 +113,29 @@ async def resolve_auth_context(
     async def _search_names_sug() -> list:
         async with pool.acquire() as c:
             return await search_names(
-                c, redis, draft_id=group_id, exclude_ids=merged.name_ids,
-                bypass_cache=bypass_cache, auth=True,
+                c,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.name_ids,
+                bypass_cache=bypass_cache,
+                auth=True,
             )
 
     async def _get_descriptions_sel() -> list:
         async with pool.acquire() as c:
-            return await get_descriptions(c, merged.description_ids, redis, bypass_cache)
+            return await get_descriptions(
+                c, merged.description_ids, redis, bypass_cache
+            )
 
     async def _search_descriptions_sug() -> list:
         async with pool.acquire() as c:
             return await search_descriptions(
-                c, redis, draft_id=group_id, exclude_ids=merged.description_ids,
-                bypass_cache=bypass_cache, auth=True,
+                c,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.description_ids,
+                bypass_cache=bypass_cache,
+                auth=True,
             )
 
     async def _get_flags_sel() -> list:
@@ -135,8 +145,14 @@ async def resolve_auth_context(
     async def _search_flags_sug() -> list:
         async with pool.acquire() as c:
             return await search_flags(
-                c, redis, search=None, limit_count=50, offset_count=0,
-                exclude_ids=merged.flag_ids, bypass_cache=bypass_cache, auth=True,
+                c,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=merged.flag_ids,
+                bypass_cache=bypass_cache,
+                auth=True,
             )
 
     async def _get_protocols_sel() -> list:
@@ -146,8 +162,13 @@ async def resolve_auth_context(
     async def _search_protocols_sug() -> list:
         async with pool.acquire() as c:
             return await search_protocols(
-                c, redis, draft_id=group_id, suggest_source="recent",
-                exclude_ids=merged.protocol_ids, bypass_cache=bypass_cache, auth=True,
+                c,
+                redis,
+                draft_id=group_id,
+                suggest_source="recent",
+                exclude_ids=merged.protocol_ids,
+                bypass_cache=bypass_cache,
+                auth=True,
             )
 
     async def _get_slugs_sel() -> list:
@@ -157,8 +178,13 @@ async def resolve_auth_context(
     async def _search_slugs_sug() -> list:
         async with pool.acquire() as c:
             return await search_slugs(
-                c, redis, draft_id=group_id, suggest_source="recent",
-                exclude_ids=merged.slug_ids, bypass_cache=bypass_cache, auth=True,
+                c,
+                redis,
+                draft_id=group_id,
+                suggest_source="recent",
+                exclude_ids=merged.slug_ids,
+                bypass_cache=bypass_cache,
+                auth=True,
             )
 
     async def _get_items_sel() -> list:
@@ -168,8 +194,11 @@ async def resolve_auth_context(
     async def _search_items_sug() -> list:
         async with pool.acquire() as c:
             return await search_items(
-                c, redis, exclude_ids=merged.item_ids,
-                bypass_cache=bypass_cache, auth=True,
+                c,
+                redis,
+                exclude_ids=merged.item_ids,
+                bypass_cache=bypass_cache,
+                auth=True,
             )
 
     (

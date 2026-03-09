@@ -5,13 +5,10 @@ Thin route handler. Core logic lives in app.infra.auth_update.
 
 from __future__ import annotations
 
-from typing import Annotated
-
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.auth_update import update_auth_client
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.auth.types import (
     UpdateAuthApiRequest,
     UpdateAuthApiResponse,
@@ -26,7 +23,6 @@ async def update_auth(
     request: UpdateAuthApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateAuthApiResponse:
     """Update auths using composable infra architecture."""
     try:
@@ -38,10 +34,11 @@ async def update_auth(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await update_auth_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             items=request.auths,

@@ -102,8 +102,7 @@ async def export_reports_client(
     """Reports full export using composable infra functions."""
 
     # -- Step 1: Profile context --
-    async with pool.acquire() as conn:
-        profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
     if profile is None:
         raise HTTPException(
             status_code=401,

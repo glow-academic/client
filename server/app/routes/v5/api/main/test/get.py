@@ -192,6 +192,11 @@ async def get_test_internal(
             messages=messages if messages else None,
         )
 
+        # Inline controls data (replaces auth/group resolution)
+        current_invocation_id = str(invocations[0].invocation_id) if invocations else None
+        has_runs_or_groups = len(runs) > 0 or len(groups) > 0
+        show_controls = bool(invocations)
+
         return TestInternalData(
             test=test,
             invocations=invocations,
@@ -201,6 +206,9 @@ async def get_test_internal(
             runs=run_items,
             status=status,
             status_summary=status_summary,
+            show_controls=show_controls,
+            current_invocation_id=current_invocation_id,
+            has_runs_or_groups=has_runs_or_groups,
             entries_payload=entries_payload,
             resources_payload=resources_payload,
         )
@@ -267,6 +275,9 @@ async def get_test_client(
         infinite_mode=data.test.infinite_mode,
         runs=data.runs,
         status_summary=data.status_summary,
+        show_controls=data.show_controls,
+        current_invocation_id=data.current_invocation_id,
+        has_runs_or_groups=data.has_runs_or_groups,
         entries=data.entries_payload,
         resources=data.resources_payload,
     )

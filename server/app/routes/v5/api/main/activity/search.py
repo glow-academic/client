@@ -59,28 +59,26 @@ async def search_activity(
         redis = get_redis_client()
 
         # --- Phase 0: Resolve common context (profile identity) ---
-        async with pool.acquire() as c:
-            common = await resolve_common_context(
-                c, redis, profile_id=profile_id, bypass_cache=bypass_cache
-            )
+        common = await resolve_common_context(
+            pool, redis, profile_id=profile_id, bypass_cache=bypass_cache
+        )
         if not common:
             raise HTTPException(status_code=401, detail="Profile not found")
 
         # --- Phase 1: Resolve activity search context ---
-        async with pool.acquire() as c:
-            ctx = await resolve_activity_search_context(
-                c,
-                redis,
-                department_ids=request.department_ids or None,
-                roles=request.roles or None,
-                date_from=request.date_from,
-                date_to=request.date_to,
-                active=request.active,
-                sort_order=request.sort_order,
-                page=request.page,
-                page_size=request.page_size,
-                bypass_cache=bypass_cache,
-            )
+        ctx = await resolve_activity_search_context(
+            pool,
+            redis,
+            department_ids=request.department_ids or None,
+            roles=request.roles or None,
+            date_from=request.date_from,
+            date_to=request.date_to,
+            active=request.active,
+            sort_order=request.sort_order,
+            page=request.page,
+            page_size=request.page_size,
+            bypass_cache=bypass_cache,
+        )
 
         # --- Phase 2: Extract data ---
         sessions = ctx.entries.get("sessions", [])

@@ -105,6 +105,11 @@ class GetTestArtifactResponse(BaseModel):
     # Status summary
     status_summary: TestStatusSummary | None = None
 
+    # Inline controls data (replaces auth/group resolution for toolbar)
+    show_controls: bool = False
+    current_invocation_id: str | None = None
+    has_runs_or_groups: bool = False
+
     # Normalized entries and resources
     entries: TestEntries | None = None
     resources: TestResources | None = None
@@ -139,6 +144,11 @@ class TestInternalData:
     runs: list[TestRunItem] = field(default_factory=list)
     status: str = "pending"
     status_summary: TestStatusSummary = field(default_factory=TestStatusSummary)
+
+    # Inline controls data (replaces auth/group resolution)
+    show_controls: bool = False
+    current_invocation_id: str | None = None
+    has_runs_or_groups: bool = False
 
     # Full entries + resources
     entries_payload: TestEntries = field(default_factory=TestEntries)

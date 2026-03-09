@@ -6,6 +6,7 @@
  */
 
 import TestChat from "@/components/artifacts/test/setups/TestChat";
+import { InvocationControls } from "@/components/common/InvocationControls";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
@@ -70,6 +71,15 @@ export default async function TestPage({
             { title: "Benchmark", section: "benchmark", url: "/benchmark" },
             { title: "Test" },
           ]}
+          toolbar={
+            testData.show_controls && testData.current_invocation_id ? (
+              <InvocationControls
+                testId={testId}
+                currentInvocationId={testData.current_invocation_id}
+                hasRunsOrGroups={testData.has_runs_or_groups ?? false}
+              />
+            ) : undefined
+          }
         />
         <div className="px-4">
           <TestChat

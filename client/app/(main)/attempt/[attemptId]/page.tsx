@@ -8,6 +8,7 @@
 import { AttemptChat } from "@/components/artifacts/attempt/chat/setups/AttemptChat";
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
 import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SimulationControls } from "@/components/common/SimulationControls";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata, ResolvingMetadata } from "next";
@@ -97,6 +98,15 @@ export default async function AttemptPage({
           breadcrumbs={[
             { title: "Attempt" },
           ]}
+          toolbar={
+            attemptData.should_show_controls && attemptData.current_chat_id ? (
+              <SimulationControls
+                attemptId={attemptId}
+                currentChatId={attemptData.current_chat_id}
+                hasMessages={attemptData.has_messages ?? false}
+              />
+            ) : undefined
+          }
         />
         <div className="space-y-6 px-4">
           <AttemptChat

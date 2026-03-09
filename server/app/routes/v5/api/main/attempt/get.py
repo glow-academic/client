@@ -897,6 +897,16 @@ async def get_attempt_internal(
         show_results = all_chats_completed
         should_show_controls = is_active and not all_chats_completed
 
+        # Inline controls data (replaces auth/group resolution)
+        current_chat_id: str | None = None
+        has_messages = False
+        if should_show_controls and chats and current_chat_index is not None:
+            current_chat = chats[current_chat_index]
+            current_chat_id = str(current_chat.id)
+            has_messages = any(
+                m.chat_id == current_chat.id for m in messages_result
+            )
+
         # === COMPUTE LOBBY STATE & CONTINUATION OPTIONS ===
         has_remaining = (
             expected_chat_count is not None
@@ -958,6 +968,8 @@ async def get_attempt_internal(
             is_lobby=is_lobby,
             show_results=show_results,
             should_show_controls=should_show_controls,
+            current_chat_id=current_chat_id,
+            has_messages=has_messages,
             rubric_structure=rubric_structure,
             continuation_options=continuation_options,
         )
@@ -1036,6 +1048,8 @@ async def get_attempt_client(
         is_lobby=data.is_lobby,
         show_results=data.show_results,
         should_show_controls=data.should_show_controls,
+        current_chat_id=data.current_chat_id,
+        has_messages=data.has_messages,
         is_own_attempt=data.is_own_attempt,
         available_continuation_options=data.continuation_options,
         rubric_structure=data.rubric_structure,

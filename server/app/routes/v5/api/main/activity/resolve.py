@@ -61,7 +61,7 @@ async def resolve_problem(
                 conn, run_id=run_result.id, session_id=session_id
             )
 
-            resolve_result = await create_resolve(
+            await create_resolve(
                 conn,
                 problem_id=request.problem_id,
                 resolved=request.resolved,

@@ -176,7 +176,9 @@ async def resolve_activity_context(
         if not all_profile_ids:
             return []
         async with pool.acquire() as c:
-            return await get_names(c, list(all_profile_ids), redis, bypass_cache=bypass_cache)
+            return await get_names(
+                c, list(all_profile_ids), redis, bypass_cache=bypass_cache
+            )
 
     names_selected = await _fetch_names()
 
@@ -295,7 +297,9 @@ async def resolve_activity_search_context(
         if not profile_ids_set:
             return []
         async with pool.acquire() as c:
-            return await get_names(c, list(profile_ids_set), redis, bypass_cache=bypass_cache)
+            return await get_names(
+                c, list(profile_ids_set), redis, bypass_cache=bypass_cache
+            )
 
     async def _fetch_pricing_res() -> list:
         if not pricing_ids_set:
