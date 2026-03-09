@@ -33,7 +33,7 @@ async def test_includes_all_operations(conn):
 
     op_names = [op.name for op in result.operations]
     assert "create_metrics_entry_internal" in op_names
-    assert "get_metrics_entries_internal" in op_names
+    assert "get_metrics" in op_names
     assert "search_metrics" in op_names
 
 

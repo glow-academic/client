@@ -37,28 +37,12 @@ type CreateProviderKeysOut = OutputOf<
   "/api/v5/resources/provider_keys",
   "post"
 >;
-type GetProviderKeysIn = InputOf<
-  "/api/v5/resources/provider_keys/get",
-  "post"
->;
-type GetProviderKeysOut = OutputOf<
-  "/api/v5/resources/provider_keys/get",
-  "post"
->;
 type CreateAuthItemKeysIn = InputOf<
   "/api/v5/resources/auth_item_keys",
   "post"
 >;
 type CreateAuthItemKeysOut = OutputOf<
   "/api/v5/resources/auth_item_keys",
-  "post"
->;
-type GetAuthItemKeysIn = InputOf<
-  "/api/v5/resources/auth_item_keys/get",
-  "post"
->;
-type GetAuthItemKeysOut = OutputOf<
-  "/api/v5/resources/auth_item_keys/get",
   "post"
 >;
 
@@ -121,25 +105,11 @@ async function createProviderKeys(
   return api.post("/resources/provider_keys", input);
 }
 
-async function getProviderKeys(
-  input: GetProviderKeysIn
-): Promise<GetProviderKeysOut> {
-  "use server";
-  return api.post("/resources/provider_keys/get", input);
-}
-
 async function createAuthItemKeys(
   input: CreateAuthItemKeysIn
 ): Promise<CreateAuthItemKeysOut> {
   "use server";
   return api.post("/resources/auth_item_keys", input);
-}
-
-async function getAuthItemKeys(
-  input: GetAuthItemKeysIn
-): Promise<GetAuthItemKeysOut> {
-  "use server";
-  return api.post("/resources/auth_item_keys/get", input);
 }
 
 
@@ -228,19 +198,9 @@ export default async function NewSettingPage({
             "use server";
             return createProviderKeys({ body: { ...input, mcp: false } });
           }}
-          getProviderKeysAction={async (ids) => {
-            "use server";
-            const result = await getProviderKeys({ body: { ids } });
-            return result.items ?? [];
-          }}
           createAuthItemKeysAction={async (input) => {
             "use server";
             return createAuthItemKeys({ body: { ...input, mcp: false } });
-          }}
-          getAuthItemKeysAction={async (ids) => {
-            "use server";
-            const result = await getAuthItemKeys({ body: { ids } });
-            return result.items ?? [];
           }}
         />
       </div>

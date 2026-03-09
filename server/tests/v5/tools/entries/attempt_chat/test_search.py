@@ -53,7 +53,7 @@ async def test_finds_created_entry(conn, profile_id):
     result, attempt, _ = await _setup(conn, profile_id)
     await refresh_attempt_chat(conn)
 
-    items = await search_attempt_chats(conn, attempt_ids=[attempt.id])
+    items, _total_count = await search_attempt_chats(conn, attempt_ids=[attempt.id])
 
     ids = [item.chat_id for item in items]
     assert result.id in ids
@@ -63,7 +63,7 @@ async def test_filters_by_attempt_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_chat(conn)
 
-    items = await search_attempt_chats(conn, attempt_ids=[nonexistent_id()])
+    items, _total_count = await search_attempt_chats(conn, attempt_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -72,7 +72,7 @@ async def test_filters_by_group_id(conn, profile_id):
     result, _, group = await _setup(conn, profile_id)
     await refresh_attempt_chat(conn)
 
-    items = await search_attempt_chats(conn, group_ids=[group.id])
+    items, _total_count = await search_attempt_chats(conn, group_ids=[group.id])
 
     ids = [item.chat_id for item in items]
     assert result.id in ids
@@ -82,7 +82,9 @@ async def test_pagination_limit(conn, profile_id):
     result, attempt, _ = await _setup(conn, profile_id)
     await refresh_attempt_chat(conn)
 
-    items = await search_attempt_chats(conn, attempt_ids=[attempt.id], limit=1)
+    items, _total_count = await search_attempt_chats(
+        conn, attempt_ids=[attempt.id], limit=1
+    )
 
     assert len(items) <= 1
 
@@ -91,7 +93,7 @@ async def test_returns_all_without_filter(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt_chat(conn)
 
-    items = await search_attempt_chats(conn)
+    items, _total_count = await search_attempt_chats(conn)
 
     assert len(items) >= 1
 
@@ -99,7 +101,9 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     result, attempt, _ = await _setup(conn, profile_id)
 
-    items = await search_attempt_chats(conn, attempt_ids=[attempt.id], bypass_mv=True)
+    items, _total_count = await search_attempt_chats(
+        conn, attempt_ids=[attempt.id], bypass_mv=True
+    )
 
     ids = [item.chat_id for item in items]
     assert result.id in ids

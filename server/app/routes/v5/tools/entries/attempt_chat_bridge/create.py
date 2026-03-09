@@ -14,22 +14,20 @@ async def create_attempt_chat_bridge(
     attempt_id: UUID,
     attempt_chat_id: UUID,
     session_id: UUID,
-    id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
 ) -> CreateAttemptChatBridgeResponse:
     """Create an attempt_chat_bridge_entry row."""
     await conn.execute(
         """
-        INSERT INTO attempt_chat_bridge_entry (id, attempt_id, attempt_chat_id, session_id, active, mcp, generated)
-        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, true)
+        INSERT INTO attempt_chat_bridge_entry (attempt_id, attempt_chat_id, session_id, active, mcp, generated)
+        VALUES ($1, $2, $3, $4, $5, true)
         """,
         attempt_id,
         attempt_chat_id,
         session_id,
         not soft,
         mcp,
-        id,
     )
 
     return CreateAttemptChatBridgeResponse(

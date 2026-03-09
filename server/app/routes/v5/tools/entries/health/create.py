@@ -5,6 +5,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.health.types import CreateHealthResponse
 
 
@@ -23,6 +24,9 @@ async def create_health(
     """Create a health entry."""
     if ts is None:
         ts = datetime.now(UTC)
+    if session_id is None:
+        session = await create_session(conn, mcp=mcp, soft=soft)
+        session_id = session.id
 
     health_id = await conn.fetchval(
         """INSERT INTO health_entry (id, ts, service, ok, latency_ms, error, session_id, active, mcp, generated)

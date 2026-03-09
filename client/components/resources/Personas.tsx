@@ -16,7 +16,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { getIconComponent } from "@/utils/icons";
 import { useResourceAi } from "@/hooks/use-resource-ai";
@@ -44,13 +43,17 @@ const generateGradientFromHex = (hexColor: string): string => {
   return `linear-gradient(135deg, ${lighterHex} 0%, ${hexColor} 100%)`;
 };
 
-// Link types for tool call tracking
-type LinkPersonasIn = InputOf<"/api/v5/resources/personas/link", "post">;
-type LinkPersonasOut = OutputOf<"/api/v5/resources/personas/link", "post">;
-
-// Derive resource item type from the GET endpoint response
-type PersonaGetResponse = OutputOf<"/api/v5/resources/personas/get", "post">;
-export type PersonaResourceItem = NonNullable<PersonaGetResponse["items"]>[number];
+export interface PersonaResourceItem {
+  persona_id?: string | null;
+  id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  generated?: boolean | null;
+  video_persona?: boolean | null;
+  non_video_persona?: boolean | null;
+  icon?: string | null;
+  color?: string | null;
+}
 
 export interface PersonaItem {
   id: string;
@@ -77,10 +80,9 @@ export interface PersonasProps {
   onGenerate?: () => void | Promise<void>;
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   videoEnabled?: boolean; // Whether video mode is enabled (for filtering)
-  // Link tool call tracking
-  link_tool_id?: string | null;
-  linkPersonasAction?: (input: LinkPersonasIn) => Promise<LinkPersonasOut>;
-  aiPersonaResources?: Pick<PersonaResourceItem, "persona_id" | "name">[] | null;
+  aiPersonaResources?:
+    | Pick<PersonaResourceItem, "persona_id" | "name">[]
+    | null;
 }
 
 export function Personas({
@@ -100,8 +102,6 @@ export function Personas({
   onGenerate,
   showAiGenerate = false,
   videoEnabled = false,
-  link_tool_id,
-  linkPersonasAction,
   aiPersonaResources,
 }: PersonasProps) {
   const ids = useMemo(() => persona_ids ?? [], [persona_ids]);
@@ -173,16 +173,9 @@ export function Personas({
         ? ids.filter((id) => id !== personaId)
         : [...ids, personaId];
 
-      // Fire link tracking when adding (not removing)
-      if (!isCurrentlySelected && linkPersonasAction && group_id && link_tool_id) {
-        linkPersonasAction({
-          body: { resource_id: personaId, tool_id: link_tool_id },
-        }).catch(() => {});
-      }
-
       onChange(newIds);
     },
-    [ids, onChange, linkPersonasAction, group_id, link_tool_id]
+    [ids, onChange]
   );
 
   // Check if any persona resource is generated (must be before early return)
@@ -321,7 +314,9 @@ export function Personas({
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isAiSuggested &&
+                  !isSelected &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               {/* Check icon - top right */}

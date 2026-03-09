@@ -26,16 +26,16 @@ import { toast } from "sonner";
 import * as tus from "tus-js-client";
 import { v4 as uuidv4 } from "uuid";
 
-// Link types for tool call tracking
-type LinkVideosIn = InputOf<"/api/v5/resources/videos/link", "post">;
-type LinkVideosOut = OutputOf<"/api/v5/resources/videos/link", "post">;
-
 type CreateDraftVideosIn = InputOf<"/api/v5/resources/videos", "post">;
 type CreateDraftVideosOut = OutputOf<"/api/v5/resources/videos", "post">;
 
-// Derive resource item type from the GET endpoint response
-type VideoGetResponse = OutputOf<"/api/v5/resources/videos/get", "post">;
-export type VideoResourceItem = NonNullable<VideoGetResponse["items"]>[number];
+export interface VideoResourceItem {
+  video_id?: string | null;
+  name?: string | null;
+  length_seconds?: number | null;
+  upload_id?: string | null;
+  generated?: boolean | null;
+}
 
 export interface VideoItem {
   id: string;
@@ -84,9 +84,6 @@ export interface VideosProps {
    *  Called after TUS upload + finalize with the creation parameters.
    *  TODO: Server-side DraftVideoValue needs upload_id field for file-backed videos. */
   onVideoUploadValue?: (video: { name: string; description: string; upload_id: string; length_seconds: number }) => void;
-  // Link tool call tracking (reserved for future use)
-  link_tool_id?: string | null;
-  linkVideosAction?: (input: LinkVideosIn) => Promise<LinkVideosOut>;
 }
 
 export function Videos({
@@ -116,8 +113,6 @@ export function Videos({
   finalizeUploadAction,
   aiVideoResources: _aiVideoResources,
   onVideoUploadValue,
-  link_tool_id: _link_tool_id,
-  linkVideosAction: _linkVideosAction,
 }: VideosProps) {
   const ids = useMemo(() => video_ids ?? [], [video_ids]);
   const show = show_videos ?? false;

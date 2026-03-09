@@ -22,7 +22,7 @@ async def create_attempt_message(
     entry_id = await conn.fetchval(
         """
         INSERT INTO attempt_message_entry (id, chat_id, call_id, active, mcp, generated)
-        VALUES (COALESCE($6, $1), $2, $3, $4, $5, true)
+        VALUES (COALESCE($6::uuid, $1::uuid), $2, $3, $4, $5, true)
         RETURNING id
         """,
         message_id,

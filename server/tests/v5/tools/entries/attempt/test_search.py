@@ -34,7 +34,7 @@ async def test_finds_created_entry(conn, profile_id):
     attempt = await _setup(conn, profile_id)
     await refresh_attempt(conn)
 
-    items = await search_attempts(conn)
+    items, _total_count = await search_attempts(conn)
 
     ids = [item.attempt_id for item in items]
     assert attempt.id in ids
@@ -44,7 +44,7 @@ async def test_filters_by_profile_id(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt(conn)
 
-    items = await search_attempts(conn, profile_ids=[nonexistent_id()])
+    items, _total_count = await search_attempts(conn, profile_ids=[nonexistent_id()])
 
     assert items == []
 
@@ -53,7 +53,7 @@ async def test_pagination_limit(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt(conn)
 
-    items = await search_attempts(conn, limit=1)
+    items, _total_count = await search_attempts(conn, limit=1)
 
     assert len(items) <= 1
 
@@ -62,7 +62,7 @@ async def test_returns_all_without_filter(conn, profile_id):
     await _setup(conn, profile_id)
     await refresh_attempt(conn)
 
-    items = await search_attempts(conn)
+    items, _total_count = await search_attempts(conn)
 
     assert len(items) >= 1
 
@@ -70,7 +70,7 @@ async def test_returns_all_without_filter(conn, profile_id):
 async def test_bypass_mv_finds_without_refresh(conn, profile_id):
     attempt = await _setup(conn, profile_id)
 
-    items = await search_attempts(conn, bypass_mv=True)
+    items, _total_count = await search_attempts(conn, bypass_mv=True)
 
     ids = [item.attempt_id for item in items]
     assert attempt.id in ids

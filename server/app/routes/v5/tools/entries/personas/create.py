@@ -4,6 +4,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.personas.types import CreatePersonasResponse
 
 
@@ -16,6 +17,10 @@ async def create_personas(
     persona_ids: list[UUID] | None = None,
 ) -> CreatePersonasResponse:
     """Create a personas entry with optional persona connections."""
+    if session_id is None:
+        session = await create_session(conn, mcp=mcp, soft=soft)
+        session_id = session.id
+
     entry_id = await conn.fetchval(
         """
         INSERT INTO personas_entry (id, session_id, active, mcp, generated)

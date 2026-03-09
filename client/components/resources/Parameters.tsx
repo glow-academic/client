@@ -17,19 +17,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { Check, Loader2, Sparkles, X } from "lucide-react";
 import { useCallback, useEffect, useMemo } from "react";
 
-// Derive resource item type from the GET endpoint response
-type ParameterGetResponse = OutputOf<
-  "/api/v5/resources/parameters/get",
-  "post"
->;
-export type ParameterResourceItem = NonNullable<
-  ParameterGetResponse["items"]
->[number];
+// Local interface replacing derived resource GET type
+export interface ParameterResourceItem {
+  id?: string | null;
+  parameter_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  scenario_parameter?: boolean | null;
+  video_parameter?: boolean | null;
+  non_video_parameter?: boolean | null;
+  conditional?: boolean | null;
+  generated?: boolean | null;
+}
 
 export interface ParametersItem {
   id: string;

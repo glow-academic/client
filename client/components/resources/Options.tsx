@@ -35,14 +35,13 @@ import type { QuestionsResourceItem } from "./Questions";
 type CreateDraftOptionsIn = InputOf<"/api/v5/resources/options", "post">;
 type CreateDraftOptionsOut = OutputOf<"/api/v5/resources/options", "post">;
 
-type LinkOptionsIn = InputOf<"/api/v5/resources/options/link", "post">;
-type LinkOptionsOut = OutputOf<"/api/v5/resources/options/link", "post">;
-
-// Derive resource item type from the GET endpoint response
-type OptionsGetResponse = OutputOf<"/api/v5/resources/options/get", "post">;
-export type OptionResourceItem = NonNullable<
-  OptionsGetResponse["items"]
->[number];
+export interface OptionResourceItem {
+  option_id?: string | null;
+  option_text?: string | null;
+  is_correct?: boolean | null;
+  generated?: boolean | null;
+  question_id?: string | null;
+}
 
 type FlushResult = { option_ids: string[] } | void;
 
@@ -62,7 +61,7 @@ export interface OptionsProps {
   options?: OptionResourceItem[];
   question_ids?: string[];
   question_resources?: QuestionsResourceItem[];
-  /** Internal (possibly unflushed) questions from Questions component — used to render sections immediately */
+  /** Internal (possibly unflushed) questions from Questions component -- used to render sections immediately */
   internalQuestions?: { id: string; question_text: string }[];
   disabled?: boolean;
   onChange: (ids: string[]) => void;
@@ -71,16 +70,18 @@ export interface OptionsProps {
   createOptionsAction?:
     | ((input: CreateDraftOptionsIn) => Promise<CreateDraftOptionsOut>)
     | undefined;
-  /** Report value changes upward (unified draft pattern — parent owns creation) */
-  onOptionsChange?: (options: Array<{ option_text: string; is_correct: boolean; question_id: string }>) => void;
+  /** Report value changes upward (unified draft pattern -- parent owns creation) */
+  onOptionsChange?: (
+    options: Array<{
+      option_text: string;
+      is_correct: boolean;
+      question_id: string;
+    }>
+  ) => void;
   isAutosaveEnabled?: boolean;
   registerFlush?: (flush: () => Promise<FlushResult>) => void;
   showAiGenerate?: boolean;
   onGenerate?: () => void | Promise<void>;
-  link_tool_id?: string | null;
-  linkOptionsAction?:
-    | ((input: LinkOptionsIn) => Promise<LinkOptionsOut>)
-    | undefined;
 }
 
 export function Options({
@@ -101,16 +102,17 @@ export function Options({
   registerFlush,
   showAiGenerate = false,
   onGenerate,
-  link_tool_id: _link_tool_id,
-  linkOptionsAction: _linkOptionsAction,
 }: OptionsProps) {
   const ids = useMemo(() => option_ids ?? [], [option_ids]);
   const show = show_options ?? false;
   const questionIds = useMemo(() => question_ids ?? [], [question_ids]);
-  const internalQuestions = useMemo(() => internalQuestionsProp ?? [], [internalQuestionsProp]);
+  const internalQuestions = useMemo(
+    () => internalQuestionsProp ?? [],
+    [internalQuestionsProp]
+  );
   const questionResources = useMemo(
     () => question_resources ?? [],
-    [question_resources],
+    [question_resources]
   );
 
   // Use internalQuestions (includes unflushed) for rendering, fall back to flushed question_ids
@@ -148,7 +150,8 @@ export function Options({
         map[o.option_id] = {
           option_text: o.option_text ?? "",
           is_correct: o.is_correct ?? false,
-          question_id: (o as Record<string, unknown>).question_id as string ?? "",
+          question_id:
+            ((o as Record<string, unknown>).question_id as string) ?? "",
         };
       }
     });
@@ -194,7 +197,7 @@ export function Options({
         if (mapped) {
           optionIdMapRef.current.set(
             `${mapped.option_text}|${mapped.is_correct}|${mapped.question_id}`,
-            id,
+            id
           );
         }
       });
@@ -212,7 +215,8 @@ export function Options({
         // Find the real ID for this pending question by matching text
         const pendingText = o.question_id.replace("pending-", "");
         const match = internalQuestions.find(
-          (q) => q.question_text === pendingText && !q.id.startsWith("pending-"),
+          (q) =>
+            q.question_text === pendingText && !q.id.startsWith("pending-")
         );
         if (match) {
           changed = true;
@@ -252,8 +256,8 @@ export function Options({
       (o) =>
         o.option_text.trim() &&
         !optionIdMapRef.current.has(
-          `${o.option_text}|${o.is_correct}|${o.question_id}`,
-        ),
+          `${o.option_text}|${o.is_correct}|${o.question_id}`
+        )
     );
 
     if (!hasToCreate) {
@@ -261,11 +265,13 @@ export function Options({
         .filter((o) => o.option_text.trim())
         .map((o) =>
           optionIdMapRef.current.get(
-            `${o.option_text}|${o.is_correct}|${o.question_id}`,
-          ),
+            `${o.option_text}|${o.is_correct}|${o.question_id}`
+          )
         )
         .filter((id): id is string => id !== undefined);
-      if (JSON.stringify(lastReportedIdsRef.current) !== JSON.stringify(allIds)) {
+      if (
+        JSON.stringify(lastReportedIdsRef.current) !== JSON.stringify(allIds)
+      ) {
         lastReportedIdsRef.current = allIds;
         onChangeRef.current(allIds);
       }
@@ -294,8 +300,8 @@ export function Options({
         o.option_text.trim() &&
         !o.question_id.startsWith("pending-") &&
         !optionIdMapRef.current.has(
-          `${o.option_text}|${o.is_correct}|${o.question_id}`,
-        ),
+          `${o.option_text}|${o.is_correct}|${o.question_id}`
+        )
     );
 
     for (const option of toCreate) {
@@ -312,11 +318,14 @@ export function Options({
         if (result.option_id) {
           optionIdMapRef.current.set(
             `${option.option_text}|${option.is_correct}|${option.question_id}`,
-            result.option_id,
+            result.option_id
           );
         }
       } catch (error) {
-        console.error(`Failed to create option: "${option.option_text}"`, error);
+        console.error(
+          `Failed to create option: "${option.option_text}"`,
+          error
+        );
         throw error;
       }
     }
@@ -325,8 +334,8 @@ export function Options({
       .filter((o) => o.option_text.trim())
       .map((o) =>
         optionIdMapRef.current.get(
-          `${o.option_text}|${o.is_correct}|${o.question_id}`,
-        ),
+          `${o.option_text}|${o.is_correct}|${o.question_id}`
+        )
       )
       .filter((id): id is string => id !== undefined);
 
@@ -363,7 +372,7 @@ export function Options({
   const handleAddOption = useCallback(
     (questionId: string) => {
       const questionOptions = internalOptions.filter(
-        (o) => o.question_id === questionId,
+        (o) => o.question_id === questionId
       );
       if (questionOptions.length >= 5) {
         toast.error("Maximum 5 options per question");
@@ -379,7 +388,7 @@ export function Options({
         },
       ]);
     },
-    [internalOptions],
+    [internalOptions]
   );
 
   const handleRemoveOption = useCallback(
@@ -396,7 +405,7 @@ export function Options({
         });
       });
     },
-    [],
+    []
   );
 
   const handleOptionTextChange = useCallback(
@@ -415,7 +424,7 @@ export function Options({
         });
       });
     },
-    [],
+    []
   );
 
   const handleToggleCorrect = useCallback(
@@ -434,7 +443,7 @@ export function Options({
         });
       });
     },
-    [],
+    []
   );
 
   const handleDragStart = useCallback(
@@ -442,7 +451,7 @@ export function Options({
       setDraggedIndex({ questionId, optionIndex });
       e.dataTransfer.effectAllowed = "move";
     },
-    [],
+    []
   );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -462,8 +471,12 @@ export function Options({
         return;
       }
       setInternalOptions((prev) => {
-        const questionOpts = prev.filter((o) => o.question_id === questionId);
-        const otherOpts = prev.filter((o) => o.question_id !== questionId);
+        const questionOpts = prev.filter(
+          (o) => o.question_id === questionId
+        );
+        const otherOpts = prev.filter(
+          (o) => o.question_id !== questionId
+        );
         const [removed] = questionOpts.splice(draggedIndex.optionIndex, 1);
         if (removed) {
           questionOpts.splice(targetIndex, 0, removed);
@@ -472,7 +485,7 @@ export function Options({
       });
       setDraggedIndex(null);
     },
-    [draggedIndex],
+    [draggedIndex]
   );
 
   // AI suggestion handling
@@ -582,8 +595,7 @@ export function Options({
 
       {/* Per-question option sections */}
       {displayQuestions.map(({ id: qId }) => {
-        const questionLabel =
-          questionLabelMap[qId] || "Question";
+        const questionLabel = questionLabelMap[qId] || "Question";
         const questionOptions = optionsByQuestion[qId] ?? [];
 
         return (
@@ -598,7 +610,7 @@ export function Options({
                   "flex items-center gap-2",
                   draggedIndex?.questionId === qId &&
                     draggedIndex?.optionIndex === optIdx &&
-                    "opacity-50",
+                    "opacity-50"
                 )}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, qId, optIdx)}

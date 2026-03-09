@@ -4,6 +4,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.benchmark.types import CreateBenchmarkResponse
 
 
@@ -20,6 +21,10 @@ async def create_benchmark(
     soft: bool = False,
 ) -> CreateBenchmarkResponse:
     """Create a benchmark entry with optional connection tables."""
+    if session_id is None:
+        session = await create_session(conn, mcp=mcp, soft=soft)
+        session_id = session.id
+
     benchmark_id = await conn.fetchval(
         """
         INSERT INTO benchmark_entry (id, session_id, use_groups, dynamic, active, mcp, generated)

@@ -62,9 +62,6 @@ export interface ProfilesProps {
   showAiGenerate?: boolean; // Whether to show AI generate button (computed server-side)
   searchTerm?: string; // Search term for filtering profiles
   showSelectedFilter?: boolean; // Whether to show only selected profiles
-  // Link tool call tracking
-  link_tool_id?: string | null;
-  linkProfilesAction?: (input: LinkProfilesIn) => Promise<LinkProfilesOut>;
   aiProfileResources?: Array<{
     profile_id?: string | null;
     name?: string | null;
@@ -88,8 +85,6 @@ export function Profiles({
   showAiGenerate = false,
   searchTerm = "",
   showSelectedFilter = false,
-  link_tool_id,
-  linkProfilesAction,
 }: ProfilesProps) {
   const ids = useMemo(() => profile_ids ?? [], [profile_ids]);
   const show = show_profiles ?? false;
@@ -100,7 +95,11 @@ export function Profiles({
   );
 
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestions, clear: clearAi } = useResourceAi({
+  const {
+    isGenerating: aiIsGenerating,
+    aiSuggestions,
+    clear: clearAi,
+  } = useResourceAi({
     resourceType: "profiles",
     groupId: group_id,
     accumulate: true,
@@ -111,9 +110,7 @@ export function Profiles({
   const aiSuggestedIds = useMemo(
     () =>
       new Set(
-        aiSuggestions
-          .map((p) => p.id)
-          .filter(Boolean) as string[]
+        aiSuggestions.map((p) => p.id).filter(Boolean) as string[]
       ),
     [aiSuggestions]
   );
@@ -125,7 +122,9 @@ export function Profiles({
       .map((p) => ({
         id: p.profile_id!,
         name: p.name!,
-        ...(p.description?.trim() ? { description: p.description.trim() } : {}),
+        ...(p.description?.trim()
+          ? { description: p.description.trim() }
+          : {}),
       }));
   }, [allProfiles]);
 
@@ -137,7 +136,8 @@ export function Profiles({
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
       filtered = filtered.filter((profile) => {
-        const searchText = `${profile.name} ${profile.description || ""}`.toLowerCase();
+        const searchText =
+          `${profile.name} ${profile.description || ""}`.toLowerCase();
         return searchText.includes(searchLower);
       });
     }
@@ -163,16 +163,9 @@ export function Profiles({
         ? ids.filter((id) => id !== profileId)
         : [...ids, profileId];
 
-      // Fire link tracking when adding (not removing)
-      if (!isSelected && linkProfilesAction && group_id && link_tool_id) {
-        linkProfilesAction({
-          body: { resource_id: profileId, tool_id: link_tool_id },
-        }).catch(() => {});
-      }
-
       onChange(newIds);
     },
-    [ids, onChange, linkProfilesAction, group_id, link_tool_id]
+    [ids, onChange]
   );
 
   // Check if any profile resource is generated (must be before early return)
@@ -295,7 +288,9 @@ export function Profiles({
                 "hover:shadow-md hover:bg-accent/50",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isSelected && "ring-2 ring-primary bg-accent",
-                isAiSuggested && !isSelected && "ring-2 ring-success bg-success/10"
+                isAiSuggested &&
+                  !isSelected &&
+                  "ring-2 ring-success bg-success/10"
               )}
             >
               {/* Check icon - top right */}
@@ -320,7 +315,9 @@ export function Profiles({
               )}
 
               <div className="flex-1 min-w-0">
-                <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
+                <h3 className="font-medium text-sm leading-tight">
+                  {item.name}
+                </h3>
                 {item.description && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                     <p className="truncate">{item.description}</p>

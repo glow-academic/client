@@ -4,6 +4,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.metrics.types import CreateMetricsEntryResponse
 
 
@@ -20,6 +21,10 @@ async def create_metrics_entry_internal(
     soft: bool = False,
 ) -> CreateMetricsEntryResponse:
     """Create a metrics entry."""
+    if session_id is None:
+        session = await create_session(conn, mcp=mcp, soft=soft)
+        session_id = session.id
+
     out_ts = await conn.fetchval(
         """
         INSERT INTO metrics_entry (session_id, ts, requests_total, errors_total,

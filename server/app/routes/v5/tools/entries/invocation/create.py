@@ -4,6 +4,7 @@ from uuid import UUID
 
 import asyncpg  # type: ignore
 
+from app.routes.v5.tools.entries.sessions.create import create_session
 from app.routes.v5.tools.entries.invocation.types import CreateInvocationResponse
 
 
@@ -32,6 +33,10 @@ async def create_invocation(
     voice_ids: list[UUID] | None = None,
 ) -> CreateInvocationResponse:
     """Create an invocation entry with optional connection table links."""
+    if session_id is None:
+        session = await create_session(conn, mcp=mcp, soft=soft)
+        session_id = session.id
+
     invocation_id = await conn.fetchval(
         """
         INSERT INTO invocation_entry (id, benchmark_id, session_id, use_custom, "position", active, mcp, generated)

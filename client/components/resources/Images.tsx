@@ -21,22 +21,30 @@ import type { InputOf, OutputOf } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useResourceAi } from "@/hooks/use-resource-ai";
 import { inferMimeFromName } from "@/utils/mime-map";
-import { Check, Eye, Image, Loader2, Sparkles, Upload, X } from "lucide-react";
+import {
+  Check,
+  Eye,
+  Image,
+  Loader2,
+  Sparkles,
+  Upload,
+  X,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
 import { v4 as uuidv4 } from "uuid";
 
-// Link types for tool call tracking
-type LinkImagesIn = InputOf<"/api/v5/resources/images/link", "post">;
-type LinkImagesOut = OutputOf<"/api/v5/resources/images/link", "post">;
-
 type CreateDraftImagesIn = InputOf<"/api/v5/resources/images", "post">;
 type CreateDraftImagesOut = OutputOf<"/api/v5/resources/images", "post">;
 
-// Derive resource item type from the GET endpoint response
-type ImageGetResponse = OutputOf<"/api/v5/resources/images/get", "post">;
-export type ImageResourceItem = NonNullable<ImageGetResponse["item"]>;
+export interface ImageResourceItem {
+  image_id?: string | null;
+  id?: string | null;
+  name?: string | null;
+  upload_id?: string | null;
+  generated?: boolean | null;
+}
 
 export interface ImageItem {
   id: string;
@@ -75,21 +83,26 @@ export interface ImagesProps {
   /** When false, skip automatic resource creation (manual save mode) */
   isAutosaveEnabled?: boolean;
   /** Register a flush callback with parent for manual save - returns created IDs */
-  registerFlush?: (flush: () => Promise<{ image_ids: string[] } | void>) => void;
+  registerFlush?: (
+    flush: () => Promise<{ image_ids: string[] } | void>
+  ) => void;
   /** Action to finalize TUS upload */
   finalizeUploadAction?: (uploadId: string) => Promise<{
     success: boolean;
     upload_id?: string;
     message?: string;
   }>;
-  aiImageResources?: Pick<ImageResourceItem, "image_id" | "name">[] | null;
-  /** Report uploaded image values upward (unified draft pattern — parent owns creation)
+  aiImageResources?:
+    | Pick<ImageResourceItem, "image_id" | "name">[]
+    | null;
+  /** Report uploaded image values upward (unified draft pattern -- parent owns creation)
    *  Called after TUS upload + finalize with the creation parameters.
    *  TODO: Server-side DraftImageValue needs upload_id field for file-backed images. */
-  onImageUploadValue?: (image: { name: string; description: string; upload_id: string }) => void;
-  // Link tool call tracking (reserved for future use)
-  link_tool_id?: string | null;
-  linkImagesAction?: (input: LinkImagesIn) => Promise<LinkImagesOut>;
+  onImageUploadValue?: (image: {
+    name: string;
+    description: string;
+    upload_id: string;
+  }) => void;
 }
 
 export function Images({
@@ -121,14 +134,16 @@ export function Images({
   finalizeUploadAction,
   aiImageResources: _aiImageResources,
   onImageUploadValue,
-  link_tool_id: _link_tool_id,
-  linkImagesAction: _linkImagesAction,
 }: ImagesProps) {
   const ids = useMemo(() => image_ids ?? [], [image_ids]);
   const show = show_images ?? false;
   const allImages = useMemo(() => images ?? [], [images]);
   // Socket-based AI suggestion handling via shared hook
-  const { isGenerating: aiIsGenerating, aiSuggestion, clear: clearAi } = useResourceAi({
+  const {
+    isGenerating: aiIsGenerating,
+    aiSuggestion,
+    clear: clearAi,
+  } = useResourceAi({
     resourceType: "images",
     groupId: group_id,
   });
@@ -199,7 +214,9 @@ export function Images({
 
   // Track which image IDs have already had resources created
   const createdImageIdsRef = useRef<Set<string>>(new Set());
-  const flushRef = useRef<(() => Promise<{ image_ids: string[] } | void>) | undefined>(undefined);
+  const flushRef = useRef<
+    (() => Promise<{ image_ids: string[] } | void>) | undefined
+  >(undefined);
   const [previewImageId, setPreviewImageId] = useState<string | null>(null);
 
   // TUS upload state
@@ -245,7 +262,6 @@ export function Images({
       );
 
       // Create resources for newly selected images (only if autosave is enabled)
-      const create_tool_id = create_tool_id;
       if (
         isAutosaveEnabled &&
         newlySelected.length > 0 &&
@@ -279,7 +295,15 @@ export function Images({
       // Update parent state
       onChange(selectedIds);
     },
-    [ids, onChange, createImagesAction, create_tool_id, group_id, imageMapping, isAutosaveEnabled]
+    [
+      ids,
+      onChange,
+      createImagesAction,
+      create_tool_id,
+      group_id,
+      imageMapping,
+      isAutosaveEnabled,
+    ]
   );
 
   // Flush function for manual save mode - creates pending resources and returns all IDs
@@ -306,7 +330,10 @@ export function Images({
           createdImageIdsRef.current.add(imageId);
         } catch (error) {
           // eslint-disable-next-line no-console
-          console.error(`Failed to create image resource for ${imageId}:`, error);
+          console.error(
+            `Failed to create image resource for ${imageId}:`,
+            error
+          );
         }
       }
     }
@@ -324,8 +351,12 @@ export function Images({
   // TUS upload function
   const uploadFile = useCallback(
     async (file: File) => {
-      const create_tool_id = create_tool_id;
-      if (!finalizeUploadAction || !createImagesAction || !group_id || !create_tool_id) {
+      if (
+        !finalizeUploadAction ||
+        !createImagesAction ||
+        !group_id ||
+        !create_tool_id
+      ) {
         toast.error("Upload functionality not available");
         return;
       }
@@ -357,7 +388,8 @@ export function Images({
           },
           onError: (error) => {
             toast.error(`Upload failed: ${file.name}`, {
-              description: error.message || "An error occurred during upload",
+              description:
+                error.message || "An error occurred during upload",
               id: toastId,
             });
             setActiveUploads((prev) => {
@@ -367,7 +399,9 @@ export function Images({
             });
           },
           onProgress: (bytesUploaded, bytesTotal) => {
-            const progress = Math.round((bytesUploaded / bytesTotal) * 100);
+            const progress = Math.round(
+              (bytesUploaded / bytesTotal) * 100
+            );
             setActiveUploads((prev) => {
               const newMap = new Map(prev);
               const upload = newMap.get(fileId);
@@ -401,14 +435,19 @@ export function Images({
 
             try {
               const uploadUrl = tusUploadInstance?.url || "";
-              const tusUploadIdMatch = uploadUrl.match(/\/uploads\/([^\/]+)$/);
+              const tusUploadIdMatch = uploadUrl.match(
+                /\/uploads\/([^\/]+)$/
+              );
               if (!tusUploadIdMatch || !tusUploadIdMatch[1]) {
-                throw new Error("Failed to extract upload ID from upload URL");
+                throw new Error(
+                  "Failed to extract upload ID from upload URL"
+                );
               }
               const tusUploadId = tusUploadIdMatch[1];
 
               // Finalize upload to get database upload_id
-              const finalizeResult = await finalizeUploadAction(tusUploadId);
+              const finalizeResult =
+                await finalizeUploadAction(tusUploadId);
 
               if (!finalizeResult.success || !finalizeResult.upload_id) {
                 throw new Error(
@@ -419,12 +458,16 @@ export function Images({
               const databaseUploadId = finalizeResult.upload_id;
 
               // Report upload value upward for unified draft pattern
-              onImageUploadValue?.({ name: file.name, description: "", upload_id: databaseUploadId });
+              onImageUploadValue?.({
+                name: file.name,
+                description: "",
+                upload_id: databaseUploadId,
+              });
 
               // Create image resource entry
               const createResult = await createImagesAction({
                 body: {
-                    name: file.name,
+                  name: file.name,
                   description: "",
                   upload_id: databaseUploadId,
                   mcp: false,
@@ -723,49 +766,57 @@ export function Images({
 
       {/* Image Picker and Preview Section (matching ContentSection pattern) */}
       <div className="space-y-2">
-
         {/* Image Grid - Horizontal Scrollable Row (matching ContentSection pattern) */}
         <div className="overflow-x-auto">
           <div className="flex gap-2 pb-2">
             {/* Display AI suggested images (not yet selected) */}
-            {showDiff && aiSuggestion?.filter(
-              (ai) => ai.image_id && !ids.includes(ai.image_id)
-            ).map((ai) => {
-              const imgData = allImages.find((i) => (i.image_id ?? i.id) === ai.image_id);
-              if (!imgData || !ai.image_id) return null;
-              return (
-                <div
-                  key={ai.image_id}
-                  className="relative aspect-square w-32 min-w-[8rem] border-2 border-success rounded-lg overflow-hidden bg-success/10 shrink-0"
-                >
-                  {/* AI suggested badge - top right */}
-                  <div className="absolute top-1 right-1 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
-                    AI Suggested
-                  </div>
-                  {/* Preview button - top left */}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setPreviewImageId(imgData.upload_id || ai.image_id!);
-                    }}
-                    className="absolute top-1 left-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
-                    disabled={disabled}
-                  >
-                    <Eye className="h-3.5 w-3.5 text-primary-foreground" />
-                  </button>
-                  <ImageViewer
-                    imageId={imgData.upload_id || ai.image_id!}
-                    name={ai.name || "Image"}
-                    bare={true}
-                  />
-                  {/* Image name at bottom */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1 z-10">
-                    <span className="truncate block">{ai.name || "Image"}</span>
-                  </div>
-                </div>
-              );
-            })}
+            {showDiff &&
+              aiSuggestion
+                ?.filter(
+                  (ai) => ai.image_id && !ids.includes(ai.image_id)
+                )
+                .map((ai) => {
+                  const imgData = allImages.find(
+                    (i) => (i.image_id ?? i.id) === ai.image_id
+                  );
+                  if (!imgData || !ai.image_id) return null;
+                  return (
+                    <div
+                      key={ai.image_id}
+                      className="relative aspect-square w-32 min-w-[8rem] border-2 border-success rounded-lg overflow-hidden bg-success/10 shrink-0"
+                    >
+                      {/* AI suggested badge - top right */}
+                      <div className="absolute top-1 right-1 z-10 px-1.5 py-0.5 bg-success/20 text-success text-[10px] rounded font-medium">
+                        AI Suggested
+                      </div>
+                      {/* Preview button - top left */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewImageId(
+                            imgData.upload_id || ai.image_id!
+                          );
+                        }}
+                        className="absolute top-1 left-1 z-10 h-6 w-6 bg-primary rounded-full flex items-center justify-center hover:bg-primary/90 transition-colors"
+                        disabled={disabled}
+                      >
+                        <Eye className="h-3.5 w-3.5 text-primary-foreground" />
+                      </button>
+                      <ImageViewer
+                        imageId={imgData.upload_id || ai.image_id!}
+                        name={ai.name || "Image"}
+                        bare={true}
+                      />
+                      {/* Image name at bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white text-xs px-2 py-1 z-10">
+                        <span className="truncate block">
+                          {ai.name || "Image"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
 
             {/* Display selected images */}
             {selectedImages.map((img) => (
@@ -810,30 +861,39 @@ export function Images({
             ))}
 
             {/* Add Image Box - Show until max (matching ContentSection pattern) */}
-            {selectedImages.length < maxImages && activeUploads.size === 0 && (
-              <div
-                onClick={() => {
-                  if (!disabled && !isUploadingImage && (onImageUpload || finalizeUploadAction)) {
-                    effectiveImageInputRef.current?.click();
-                  }
-                }}
-                className={cn(
-                  "aspect-square w-32 min-w-[8rem] border-2 border-dashed border-muted-foreground/50 rounded-lg cursor-pointer bg-muted/20 hover:border-muted-foreground hover:bg-muted/50 transition-colors flex flex-col items-center justify-center shrink-0",
-                  (disabled || isUploadingImage) && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                <Upload className="h-6 w-6 text-muted-foreground mb-1" />
-                <p className="text-xs text-muted-foreground text-center px-2">
-                  Add image
-                </p>
-              </div>
-            )}
+            {selectedImages.length < maxImages &&
+              activeUploads.size === 0 && (
+                <div
+                  onClick={() => {
+                    if (
+                      !disabled &&
+                      !isUploadingImage &&
+                      (onImageUpload || finalizeUploadAction)
+                    ) {
+                      effectiveImageInputRef.current?.click();
+                    }
+                  }}
+                  className={cn(
+                    "aspect-square w-32 min-w-[8rem] border-2 border-dashed border-muted-foreground/50 rounded-lg cursor-pointer bg-muted/20 hover:border-muted-foreground hover:bg-muted/50 transition-colors flex flex-col items-center justify-center shrink-0",
+                    (disabled || isUploadingImage) &&
+                      "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                  <p className="text-xs text-muted-foreground text-center px-2">
+                    Add image
+                  </p>
+                </div>
+              )}
 
             {/* Upload progress indicator */}
             {activeUploads.size > 0 && (
               <div className="aspect-square w-32 min-w-[8rem] border-2 border-dashed border-primary rounded-lg bg-muted/20 flex flex-col items-center justify-center shrink-0">
                 {Array.from(activeUploads.values()).map((upload) => (
-                  <div key={upload.toastId} className="w-full px-2 text-center">
+                  <div
+                    key={upload.toastId}
+                    className="w-full px-2 text-center"
+                  >
                     <Loader2 className="h-6 w-6 text-primary mb-1 mx-auto animate-spin" />
                     <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden mb-1">
                       <div
@@ -842,7 +902,9 @@ export function Images({
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      {upload.status === "finalizing" ? "Finalizing..." : `${upload.progress}%`}
+                      {upload.status === "finalizing"
+                        ? "Finalizing..."
+                        : `${upload.progress}%`}
                     </p>
                   </div>
                 ))}
@@ -857,8 +919,12 @@ export function Images({
             ref={effectiveImageInputRef}
             type="file"
             accept="image/*"
-            onChange={finalizeUploadAction ? handleInternalUpload : onImageUpload}
-            disabled={isUploadingImage || disabled || activeUploads.size > 0}
+            onChange={
+              finalizeUploadAction ? handleInternalUpload : onImageUpload
+            }
+            disabled={
+              isUploadingImage || disabled || activeUploads.size > 0
+            }
             className="hidden"
           />
         )}
@@ -874,8 +940,9 @@ export function Images({
             <ImageViewer
               imageId={previewImageId}
               name={
-                selectedImages.find((img) => img.upload_id === previewImageId)?.name ||
-                "Image"
+                selectedImages.find(
+                  (img) => img.upload_id === previewImageId
+                )?.name || "Image"
               }
             />
           </div>
