@@ -51,6 +51,28 @@ class CreateFieldItem(BaseModel):
     field_ids: list[UUID] | None = None
 
 
+class FieldFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class FieldResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    field_id: UUID | None = None
+    message: str
+    errors: list[FieldFieldError] | None = None
+
+
+class CreateFieldApiResponse(BaseModel):
+    """Response model for bulk create field endpoint."""
+
+    results: list[FieldResultItem]
+
+
 async def create_field_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -71,10 +93,6 @@ async def create_field_client(
       5. invalidate_tags
     """
     from app.infra.field_permissions import compute_can_create
-    from app.routes.v5.api.main.field.types import (
-        CreateFieldApiResponse,
-        FieldResultItem,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

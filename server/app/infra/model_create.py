@@ -58,6 +58,28 @@ class CreateModelItem(BaseModel):
     model_ids: list[UUID] | None = None
 
 
+class ModelFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class ModelResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    model_id: UUID | None = None
+    message: str
+    errors: list[ModelFieldError] | None = None
+
+
+class CreateModelApiResponse(BaseModel):
+    """Response model for bulk create model endpoint."""
+
+    results: list[ModelResultItem]
+
+
 async def create_model_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -78,10 +100,6 @@ async def create_model_client(
       5. invalidate_tags
     """
     from app.infra.model_permissions import compute_can_create
-    from app.routes.v5.api.main.model.types import (
-        CreateModelApiResponse,
-        ModelResultItem,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

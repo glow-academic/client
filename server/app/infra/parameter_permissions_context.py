@@ -34,11 +34,8 @@ from app.routes.v5.tools.resources.parameters.create import (
 )
 
 if TYPE_CHECKING:
-    from app.infra.parameter_create import CreateParameterItem
-    from app.routes.v5.api.main.parameter.types import (
-        ParameterFieldError,
-        UpdateParameterItem,
-    )
+    from app.infra.parameter_create import CreateParameterItem, ParameterFieldError
+    from app.routes.v5.api.main.parameter.types import UpdateParameterItem
 
 
 @dataclass(frozen=True)
@@ -110,7 +107,7 @@ async def resolve_parameter_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.parameter.types import ParameterFieldError
+    from app.infra.parameter_create import ParameterFieldError
 
     errors: list[ParameterFieldError] = []
 
@@ -132,7 +129,6 @@ async def resolve_parameter_values(
             redis,
             search=None,
             limit_count=1000,
-            parameter=True,
         )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []

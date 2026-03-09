@@ -33,9 +33,8 @@ from app.routes.v5.tools.resources.settings.create import (
 )
 
 if TYPE_CHECKING:
-    from app.infra.setting_create import CreateSettingItem
+    from app.infra.setting_create import CreateSettingItem, SettingFieldError
     from app.routes.v5.api.main.setting.types import (
-        SettingFieldError,
         UpdateSettingItem,
     )
 
@@ -98,7 +97,7 @@ async def resolve_setting_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.setting.types import SettingFieldError
+    from app.infra.setting_create import SettingFieldError
 
     errors: list[SettingFieldError] = []
 
@@ -120,7 +119,6 @@ async def resolve_setting_values(
             redis,
             search=None,
             limit_count=1000,
-            setting=True,
         )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []

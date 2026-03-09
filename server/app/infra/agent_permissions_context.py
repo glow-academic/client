@@ -33,9 +33,8 @@ from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
-    from app.infra.agent_create import CreateAgentItem
+    from app.infra.agent_create import AgentFieldError, CreateAgentItem
     from app.routes.v5.api.main.agent.types import (
-        AgentFieldError,
         UpdateAgentItem,
     )
 
@@ -98,7 +97,7 @@ async def resolve_agent_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.agent.types import AgentFieldError
+    from app.infra.agent_create import AgentFieldError
 
     errors: list[AgentFieldError] = []
 
@@ -120,7 +119,6 @@ async def resolve_agent_values(
             redis,
             search=None,
             limit_count=1000,
-            agent=True,
         )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []

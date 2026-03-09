@@ -36,9 +36,8 @@ from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
-    from app.infra.auth_create import CreateAuthItem
+    from app.infra.auth_create import AuthFieldError, CreateAuthItem
     from app.routes.v5.api.main.auth.types import (
-        AuthFieldError,
         UpdateAuthItem,
     )
 
@@ -118,7 +117,7 @@ async def resolve_auth_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.auth.types import AuthFieldError
+    from app.infra.auth_create import AuthFieldError
 
     errors: list[AuthFieldError] = []
 
@@ -140,7 +139,6 @@ async def resolve_auth_values(
             redis,
             search=None,
             limit_count=1000,
-            auth=True,
         )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []

@@ -55,6 +55,28 @@ class CreateAgentItem(BaseModel):
     agent_ids: list[UUID] | None = None
 
 
+class AgentFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class AgentResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    agent_id: UUID | None = None
+    message: str
+    errors: list[AgentFieldError] | None = None
+
+
+class CreateAgentApiResponse(BaseModel):
+    """Response model for bulk create agent endpoint."""
+
+    results: list[AgentResultItem]
+
+
 async def create_agent_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -75,10 +97,6 @@ async def create_agent_client(
       5. invalidate_tags
     """
     from app.infra.agent_permissions import compute_can_create
-    from app.routes.v5.api.main.agent.types import (
-        AgentResultItem,
-        CreateAgentApiResponse,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

@@ -34,9 +34,8 @@ from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
-    from app.infra.department_create import CreateDepartmentItem
+    from app.infra.department_create import CreateDepartmentItem, DepartmentFieldError
     from app.routes.v5.api.main.department.types import (
-        DepartmentFieldError,
         UpdateDepartmentItem,
     )
 
@@ -106,7 +105,7 @@ async def resolve_department_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.department.types import DepartmentFieldError
+    from app.infra.department_create import DepartmentFieldError
 
     errors: list[DepartmentFieldError] = []
 
@@ -129,7 +128,6 @@ async def resolve_department_values(
             search=None,
             flag_type="department_active",
             limit_count=100,
-            department=True,
         )
         match = next((r for r in results if r.type == "department_active"), None)
         if match and match.id:

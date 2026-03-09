@@ -182,36 +182,39 @@ async def audio_session_factory(redis_client):
 
 
 @pytest_asyncio.fixture
-async def attempt_chat_factory(conn, profile_id):
+async def attempt_chat_factory(pool, redis_client):
     """Create a minimal real attempt chat graph for attempt message tests."""
 
     async def _create():
-        session = await create_session(conn, profile_id=profile_id)
-        group = await create_group(conn, session_id=session.id)
-        run = await create_run(conn, group_id=group.id, session_id=session.id)
-        call = await create_call(conn, run_id=run.id, session_id=session.id)
-        persona = await create_persona(conn, session_id=session.id)
-        attempt = await create_attempt(
-            conn,
-            call_id=call.id,
-            user_persona_id=persona.id,
-            profiles_id=profile_id,
-        )
-        chat = await create_chat(conn, session_id=session.id)
-        call2 = await create_call(conn, run_id=run.id, session_id=session.id)
-        attempt_chat = await create_attempt_chat(
-            conn,
-            call_id=call2.id,
-            group_id=group.id,
-            chat_id=chat.id,
-        )
-        await create_attempt_chat_bridge(
-            conn,
-            attempt_id=attempt.id,
-            attempt_chat_id=attempt_chat.id,
-            session_id=session.id,
-        )
+        async with pool.acquire() as conn:
+            profile = await create_profile(conn, redis_client)
+            session = await create_session(conn, profile_id=profile.id)
+            group = await create_group(conn, session_id=session.id)
+            run = await create_run(conn, group_id=group.id, session_id=session.id)
+            call = await create_call(conn, run_id=run.id, session_id=session.id)
+            persona = await create_persona(conn, session_id=session.id)
+            attempt = await create_attempt(
+                conn,
+                call_id=call.id,
+                user_persona_id=persona.id,
+                profiles_id=profile.id,
+            )
+            chat = await create_chat(conn, session_id=session.id)
+            call2 = await create_call(conn, run_id=run.id, session_id=session.id)
+            attempt_chat = await create_attempt_chat(
+                conn,
+                call_id=call2.id,
+                group_id=group.id,
+                chat_id=chat.id,
+            )
+            await create_attempt_chat_bridge(
+                conn,
+                attempt_id=attempt.id,
+                attempt_chat_id=attempt_chat.id,
+                session_id=session.id,
+            )
         return SimpleNamespace(
+            profile=profile,
             session=session,
             group=group,
             run=run,

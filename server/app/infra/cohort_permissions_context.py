@@ -36,11 +36,8 @@ from app.routes.v5.tools.resources.profiles.search import search_profiles
 from app.routes.v5.tools.resources.simulations.search import search_simulations
 
 if TYPE_CHECKING:
-    from app.infra.cohort_create import CreateCohortItem
-    from app.routes.v5.api.main.cohort.types import (
-        CohortFieldError,
-        UpdateCohortItem,
-    )
+    from app.infra.cohort_create import CohortFieldError, CreateCohortItem
+    from app.routes.v5.api.main.cohort.types import UpdateCohortItem
 
 
 @dataclass(frozen=True)
@@ -101,7 +98,7 @@ async def resolve_cohort_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.cohort.types import CohortFieldError
+    from app.infra.cohort_create import CohortFieldError
 
     errors: list[CohortFieldError] = []
 
@@ -124,7 +121,6 @@ async def resolve_cohort_values(
             search=None,
             flag_type="cohort_active",
             limit_count=1000,
-            cohort=True,
         )
         match = next((f for f in results if f.type == "cohort_active"), None)
         if match and match.id:
@@ -145,7 +141,6 @@ async def resolve_cohort_values(
             redis,
             search=None,
             limit_count=1000,
-            cohort=True,
         )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []
@@ -169,7 +164,6 @@ async def resolve_cohort_values(
             redis,
             search=None,
             limit_count=1000,
-            cohort=True,
         )
         sim_name_map = {
             s.name.lower(): s.id for s in all_simulations if s.name and s.id

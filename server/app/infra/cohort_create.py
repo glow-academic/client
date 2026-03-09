@@ -62,6 +62,28 @@ class CreateCohortItem(BaseModel):
     profiles: list[str] | None = None
 
 
+class CohortFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class CohortResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    cohort_id: UUID | None = None
+    message: str
+    errors: list[CohortFieldError] | None = None
+
+
+class CreateCohortApiResponse(BaseModel):
+    """Response model for bulk create cohort endpoint."""
+
+    results: list[CohortResultItem]
+
+
 async def create_cohort_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -83,10 +105,6 @@ async def create_cohort_client(
       6. sync_home_practice_entries (non-fatal)
     """
     from app.infra.cohort_permissions import compute_can_create
-    from app.routes.v5.api.main.cohort.types import (
-        CohortResultItem,
-        CreateCohortApiResponse,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

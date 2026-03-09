@@ -59,6 +59,28 @@ class CreateAuthItem(BaseModel):
     auth_resource_ids: list[UUID] | None = None
 
 
+class AuthFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class AuthResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    auth_id: UUID | None = None
+    message: str
+    errors: list[AuthFieldError] | None = None
+
+
+class CreateAuthApiResponse(BaseModel):
+    """Response model for bulk create auth endpoint."""
+
+    results: list[AuthResultItem]
+
+
 async def create_auth_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -80,10 +102,6 @@ async def create_auth_client(
       6. perform_keycloak_sync (non-fatal)
     """
     from app.infra.auth_permissions import compute_can_create
-    from app.routes.v5.api.main.auth.types import (
-        AuthResultItem,
-        CreateAuthApiResponse,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

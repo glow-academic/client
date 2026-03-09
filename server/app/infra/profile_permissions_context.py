@@ -31,9 +31,8 @@ from app.routes.v5.tools.resources.profiles.create import (
 )
 
 if TYPE_CHECKING:
-    from app.infra.profile_create import CreateProfileItem
+    from app.infra.profile_create import CreateProfileItem, ProfileFieldError
     from app.routes.v5.api.main.profile.types import (
-        ProfileFieldError,
         UpdateProfileItem,
     )
 
@@ -116,7 +115,7 @@ async def resolve_profile_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.profile.types import ProfileFieldError
+    from app.infra.profile_create import ProfileFieldError
 
     errors: list[ProfileFieldError] = []
 
@@ -134,7 +133,6 @@ async def resolve_profile_values(
             redis,
             search=None,
             limit_count=1000,
-            profile=True,
         )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []

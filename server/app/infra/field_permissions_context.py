@@ -34,9 +34,8 @@ from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
-    from app.infra.field_create import CreateFieldItem
+    from app.infra.field_create import CreateFieldItem, FieldFieldError
     from app.routes.v5.api.main.field.types import (
-        FieldFieldError,
         UpdateFieldItem,
     )
 
@@ -116,7 +115,7 @@ async def resolve_field_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.field.types import FieldFieldError
+    from app.infra.field_create import FieldFieldError
 
     errors: list[FieldFieldError] = []
 
@@ -138,7 +137,6 @@ async def resolve_field_values(
             redis,
             search=None,
             limit_count=1000,
-            field=True,
         )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []

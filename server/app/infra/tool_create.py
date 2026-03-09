@@ -53,6 +53,28 @@ class CreateToolItem(BaseModel):
     tool_ids: list[UUID] | None = None
 
 
+class ToolFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class ToolResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    tool_id: UUID | None = None
+    message: str
+    errors: list[ToolFieldError] | None = None
+
+
+class CreateToolApiResponse(BaseModel):
+    """Response model for bulk create tool endpoint."""
+
+    results: list[ToolResultItem]
+
+
 async def create_tool_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -73,10 +95,6 @@ async def create_tool_client(
       5. invalidate_tags
     """
     from app.infra.tool_permissions import compute_can_create
-    from app.routes.v5.api.main.tool.types import (
-        CreateToolApiResponse,
-        ToolResultItem,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

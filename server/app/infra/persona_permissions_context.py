@@ -49,9 +49,8 @@ from app.routes.v5.tools.resources.personas.create import (
 from app.routes.v5.tools.resources.voices.search import search_voices
 
 if TYPE_CHECKING:
-    from app.infra.persona_create import CreatePersonaItem
+    from app.infra.persona_create import CreatePersonaItem, PersonaFieldError
     from app.routes.v5.api.main.persona.types import (
-        PersonaFieldError,
         UpdatePersonaItem,
     )
 
@@ -219,7 +218,7 @@ async def resolve_persona_values(
     if item.departments is not None and item.department_ids is None:
         async with pool.acquire() as conn:
             all_depts = await search_departments(
-                conn, redis, search=None, limit_count=1000, persona=True
+                conn, redis, search=None, limit_count=1000
             )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []
@@ -244,9 +243,6 @@ async def resolve_persona_values(
                 redis,
                 search=None,
                 limit_count=1000,
-                persona=True,
-                agent=False,
-                model=False,
             )
         voice_name_map = {v.voice.lower(): v.id for v in all_voices if v.voice and v.id}
         resolved_ids = []
@@ -266,7 +262,7 @@ async def resolve_persona_values(
 
     if item.parameter_fields is not None and item.parameter_field_ids is None:
         async with pool.acquire() as conn:
-            all_pf = await search_parameter_fields(conn, redis, persona=True)
+            all_pf = await search_parameter_fields(conn, redis)
         field_ids_list = [pf.field_id for pf in all_pf if pf.field_id]
         if field_ids_list:
             async with pool.acquire() as conn:

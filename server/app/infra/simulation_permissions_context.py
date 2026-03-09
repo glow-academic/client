@@ -37,10 +37,8 @@ from app.routes.v5.tools.resources.simulations.create import (
 
 if TYPE_CHECKING:
     from app.infra.simulation_create import CreateSimulationItem
-    from app.routes.v5.api.main.simulation.types import (
-        SimulationFieldError,
-        UpdateSimulationItem,
-    )
+    from app.infra.simulation_create import SimulationFieldError
+    from app.routes.v5.api.main.simulation.types import UpdateSimulationItem
 
 
 @dataclass(frozen=True)
@@ -118,7 +116,7 @@ async def resolve_simulation_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.simulation.types import SimulationFieldError
+    from app.infra.simulation_create import SimulationFieldError
 
     errors: list[SimulationFieldError] = []
 
@@ -142,7 +140,6 @@ async def resolve_simulation_values(
                 search=None,
                 flag_type="simulation_inactive",
                 limit_count=1000,
-                simulation=True,
             )
             match = next((f for f in results if f.type == "simulation_inactive"), None)
             if match and match.id:
@@ -162,7 +159,6 @@ async def resolve_simulation_values(
                 search=None,
                 flag_type="simulation_practice",
                 limit_count=1000,
-                simulation=True,
             )
             match = next((f for f in results if f.type == "simulation_practice"), None)
             if match and match.id:
@@ -182,7 +178,6 @@ async def resolve_simulation_values(
                 redis,
                 search=None,
                 limit_count=1000,
-                simulation=True,
             )
             dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
             resolved_ids = []
@@ -206,7 +201,6 @@ async def resolve_simulation_values(
                 redis,
                 search=None,
                 limit_count=1000,
-                simulation=True,
             )
             scenario_name_map = {
                 s.name.lower(): s.id for s in all_scenarios if s.name and s.id

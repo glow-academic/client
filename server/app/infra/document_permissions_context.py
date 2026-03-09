@@ -35,9 +35,8 @@ from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
-    from app.infra.document_create import CreateDocumentItem
+    from app.infra.document_create import CreateDocumentItem, DocumentFieldError
     from app.routes.v5.api.main.document.types import (
-        DocumentFieldError,
         UpdateDocumentItem,
     )
 
@@ -117,7 +116,7 @@ async def resolve_document_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.document.types import DocumentFieldError
+    from app.infra.document_create import DocumentFieldError
 
     errors: list[DocumentFieldError] = []
 
@@ -140,7 +139,6 @@ async def resolve_document_values(
             search=None,
             flag_type="document_active",
             limit_count=1000,
-            document=True,
         )
         match = next((f for f in results if f.type == "document_active"), None)
         if match and match.id:
@@ -161,7 +159,6 @@ async def resolve_document_values(
             redis,
             search=None,
             limit_count=1000,
-            document=True,
         )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []

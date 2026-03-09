@@ -57,6 +57,28 @@ class CreateSimulationItem(BaseModel):
     scenarios: list[str] | None = None
 
 
+class SimulationFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SimulationResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    simulation_id: UUID | None = None
+    message: str
+    errors: list[SimulationFieldError] | None = None
+
+
+class CreateSimulationApiResponse(BaseModel):
+    """Response model for bulk create simulation endpoint."""
+
+    results: list[SimulationResultItem]
+
+
 async def create_simulation_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -77,10 +99,6 @@ async def create_simulation_client(
       5. invalidate_tags
     """
     from app.infra.simulation_permissions import compute_can_create
-    from app.routes.v5.api.main.simulation.types import (
-        CreateSimulationApiResponse,
-        SimulationResultItem,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

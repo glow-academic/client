@@ -34,9 +34,8 @@ from app.routes.v5.tools.resources.rubrics.create import (
 )
 
 if TYPE_CHECKING:
-    from app.infra.rubric_create import CreateRubricItem
+    from app.infra.rubric_create import CreateRubricItem, RubricFieldError
     from app.routes.v5.api.main.rubric.types import (
-        RubricFieldError,
         UpdateRubricItem,
     )
 
@@ -128,7 +127,7 @@ async def resolve_rubric_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.rubric.types import RubricFieldError
+    from app.infra.rubric_create import RubricFieldError
 
     errors: list[RubricFieldError] = []
 
@@ -151,7 +150,6 @@ async def resolve_rubric_values(
             search=None,
             flag_type="rubric_active",
             limit_count=100,
-            rubric=True,
         )
         match = next((r for r in results if r.type == "rubric_active"), None)
         if match and match.id:
@@ -170,7 +168,6 @@ async def resolve_rubric_values(
             redis,
             search=None,
             limit_count=1000,
-            rubric=True,
         )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids: list[UUID] = []

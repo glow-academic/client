@@ -46,6 +46,28 @@ class CreateProfileItem(BaseModel):
     role_ids: list[UUID] | None = None
 
 
+class ProfileFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class ProfileResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    profile_id: UUID | None = None
+    message: str
+    errors: list[ProfileFieldError] | None = None
+
+
+class CreateProfileApiResponse(BaseModel):
+    """Response model for bulk create profile endpoint."""
+
+    results: list[ProfileResultItem]
+
+
 async def create_profile_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -66,10 +88,6 @@ async def create_profile_client(
       5. invalidate_tags
     """
     from app.infra.profile_permissions import compute_can_create
-    from app.routes.v5.api.main.profile.types import (
-        CreateProfileApiResponse,
-        ProfileResultItem,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

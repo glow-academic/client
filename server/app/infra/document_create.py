@@ -55,6 +55,28 @@ class CreateDocumentItem(BaseModel):
     text_ids: list[UUID] | None = None
 
 
+class DocumentFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class DocumentResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    document_id: UUID | None = None
+    message: str
+    errors: list[DocumentFieldError] | None = None
+
+
+class CreateDocumentApiResponse(BaseModel):
+    """Response model for bulk create document endpoint."""
+
+    results: list[DocumentResultItem]
+
+
 async def create_document_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -75,10 +97,6 @@ async def create_document_client(
       5. invalidate_tags
     """
     from app.infra.document_permissions import compute_can_create
-    from app.routes.v5.api.main.document.types import (
-        CreateDocumentApiResponse,
-        DocumentResultItem,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

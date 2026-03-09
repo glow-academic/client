@@ -14,10 +14,10 @@ from dataclasses import dataclass
 from uuid import UUID
 
 import asyncpg
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
 from app.infra.types import ArtifactContext, ResourcePair
-from app.routes.v5.api.main.simulation.types import SimulationScenarioFlag
 
 # Artifact + draft fetchers
 from app.routes.v5.tools.artifacts.simulation.get import (
@@ -79,6 +79,18 @@ SCENARIO_FLAG_TYPES_ORDERED = [
     "use_custom",
     "use_previous",
 ]
+
+
+class SimulationScenarioFlag(BaseModel):
+    """Infra-local scenario flag option shape used during context assembly."""
+
+    id: UUID | None = None
+    scenario_id: UUID | None = None
+    flag_id: UUID | None = None
+    name: str | None = None
+    description: str | None = None
+    icon: str | None = None
+    generated: bool | None = None
 
 
 # ---------------------------------------------------------------------------

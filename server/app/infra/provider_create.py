@@ -50,6 +50,28 @@ class CreateProviderItem(BaseModel):
     value_ids: list[UUID] | None = None
 
 
+class ProviderFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class ProviderResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    provider_id: UUID | None = None
+    message: str
+    errors: list[ProviderFieldError] | None = None
+
+
+class CreateProviderApiResponse(BaseModel):
+    """Response model for bulk create provider endpoint."""
+
+    results: list[ProviderResultItem]
+
+
 async def create_provider_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -70,10 +92,6 @@ async def create_provider_client(
       5. invalidate_tags
     """
     from app.infra.provider_permissions import compute_can_create
-    from app.routes.v5.api.main.provider.types import (
-        CreateProviderApiResponse,
-        ProviderResultItem,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

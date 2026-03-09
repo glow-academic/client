@@ -50,6 +50,28 @@ class CreateRubricItem(BaseModel):
     standard_ids: list[UUID] | None = None
 
 
+class RubricFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class RubricResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    rubric_id: UUID | None = None
+    message: str
+    errors: list[RubricFieldError] | None = None
+
+
+class CreateRubricApiResponse(BaseModel):
+    """Response model for bulk create rubric endpoint."""
+
+    results: list[RubricResultItem]
+
+
 async def create_rubric_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -70,10 +92,6 @@ async def create_rubric_client(
       5. invalidate_tags
     """
     from app.infra.rubric_permissions import compute_can_create
-    from app.routes.v5.api.main.rubric.types import (
-        CreateRubricApiResponse,
-        RubricResultItem,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

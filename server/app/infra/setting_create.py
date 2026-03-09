@@ -59,6 +59,28 @@ class CreateSettingItem(BaseModel):
     setting_resource_ids: list[UUID] | None = None
 
 
+class SettingFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class SettingResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    setting_id: UUID | None = None
+    message: str
+    errors: list[SettingFieldError] | None = None
+
+
+class CreateSettingApiResponse(BaseModel):
+    """Response model for bulk create setting endpoint."""
+
+    results: list[SettingResultItem]
+
+
 async def create_setting_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -78,11 +100,6 @@ async def create_setting_client(
       4. Single transaction: create_setting_artifact + denormalized snapshot per item
       5. invalidate_tags
     """
-    from app.routes.v5.api.main.setting.types import (
-        CreateSettingApiResponse,
-        SettingResultItem,
-    )
-
     # ── Step 1: Profile context ────────────────────────────────────────
 
     profile = await resolve_profile_identity_context(

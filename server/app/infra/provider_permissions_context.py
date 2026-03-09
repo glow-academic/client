@@ -35,9 +35,8 @@ from app.routes.v5.tools.resources.providers.create import (
 )
 
 if TYPE_CHECKING:
-    from app.infra.provider_create import CreateProviderItem
+    from app.infra.provider_create import CreateProviderItem, ProviderFieldError
     from app.routes.v5.api.main.provider.types import (
-        ProviderFieldError,
         UpdateProviderItem,
     )
 
@@ -111,7 +110,7 @@ async def resolve_provider_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.provider.types import ProviderFieldError
+    from app.infra.provider_create import ProviderFieldError
 
     errors: list[ProviderFieldError] = []
 
@@ -134,7 +133,6 @@ async def resolve_provider_values(
             search=None,
             flag_type="provider_active",
             limit_count=100,
-            provider=True,
         )
         match = next((r for r in results if r.type == "provider_active"), None)
         if match and match.id:
@@ -153,7 +151,6 @@ async def resolve_provider_values(
             redis,
             search=None,
             limit_count=1000,
-            provider=True,
         )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids: list[UUID] = []

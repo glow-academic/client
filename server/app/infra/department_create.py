@@ -50,6 +50,28 @@ class CreateDepartmentItem(BaseModel):
     department_ids: list[UUID] | None = None
 
 
+class DepartmentFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class DepartmentResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    department_id: UUID | None = None
+    message: str
+    errors: list[DepartmentFieldError] | None = None
+
+
+class CreateDepartmentApiResponse(BaseModel):
+    """Response model for bulk create department endpoint."""
+
+    results: list[DepartmentResultItem]
+
+
 async def create_department_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -71,10 +93,6 @@ async def create_department_client(
       6. perform_keycloak_sync (non-fatal)
     """
     from app.infra.department_permissions import compute_can_create
-    from app.routes.v5.api.main.department.types import (
-        CreateDepartmentApiResponse,
-        DepartmentResultItem,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

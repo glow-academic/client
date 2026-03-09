@@ -46,6 +46,28 @@ class CreateParameterItem(BaseModel):
     field_ids: list[UUID] | None = None
 
 
+class ParameterFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class ParameterResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    parameter_id: UUID | None = None
+    message: str
+    errors: list[ParameterFieldError] | None = None
+
+
+class CreateParameterApiResponse(BaseModel):
+    """Response model for bulk create parameter endpoint."""
+
+    results: list[ParameterResultItem]
+
+
 async def create_parameter_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -66,10 +88,6 @@ async def create_parameter_client(
       5. invalidate_tags
     """
     from app.infra.parameter_permissions import compute_can_create
-    from app.routes.v5.api.main.parameter.types import (
-        CreateParameterApiResponse,
-        ParameterResultItem,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

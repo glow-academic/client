@@ -453,10 +453,6 @@ async def audio_response_cancelled_impl(
 # attempt_user_received_complete → DB write → attempt_user_complete
 # ---------------------------------------------------------------------------
 
-# Hardcoded Student persona for user messages
-STUDENT_PERSONA_ID = uuid.UUID("019bb25e-e60c-7352-9b81-f411f56092a9")
-
-
 async def user_complete_impl(
     data: dict[str, Any],
     *,
@@ -468,6 +464,7 @@ async def user_complete_impl(
     from app.routes.v5.tools.entries.attempt_content.create import (
         create_attempt_content as create_attempt_content_entry_internal,
     )
+    from app.routes.v5.tools.entries.attempt.search import search_attempts
     from app.routes.v5.tools.entries.attempt_message.search import (
         search_attempt_messages,
     )
@@ -500,7 +497,7 @@ async def user_complete_impl(
 
             # Filter: user messages that are not completed, most recent first
             open_user_messages = [
-                m for m in messages if m.type == "user" and not m.completed
+                m for m in messages if m.type == "query" and not m.completed
             ]
 
             if not open_user_messages:
@@ -510,16 +507,31 @@ async def user_complete_impl(
             message = open_user_messages[0]
             message_id = message.message_id
             created_at = message.created_at
+            attempts, _ = await search_attempts(
+                conn,
+                attempt_ids=[message.attempt_id],
+                bypass_mv=True,
+                limit=1,
+            )
+            if not attempts:
+                logger.warning(f"No attempt found for chat={chat_id}")
+                return
+
+            user_persona_id = attempts[0].user_persona_id
+
+            content_call = await create_call(
+                conn,
+                run_id=run_id_uuid,
+                session_id=session_id_uuid or uuid.UUID(int=0),
+            )
 
             # Write content
             await create_attempt_content_entry_internal(
                 conn,
-                {
-                    "message_id": message_id,
-                    "content": content,
-                    "persona_id": STUDENT_PERSONA_ID,
-                },
-                run_id=run_id_uuid,
+                message_id=message_id,
+                call_id=content_call.id,
+                content=content,
+                persona_id=user_persona_id,
             )
 
             # TODO: link audio upload if present (audio_upload_id in data)

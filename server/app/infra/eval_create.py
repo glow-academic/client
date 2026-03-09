@@ -52,6 +52,28 @@ class CreateEvalItem(BaseModel):
     model_position_ids: list[UUID] | None = None
 
 
+class EvalFieldError(BaseModel):
+    """Per-field error from value resolution."""
+
+    field: str
+    message: str
+
+
+class EvalResultItem(BaseModel):
+    """Per-item result within a bulk create/update response."""
+
+    success: bool
+    eval_id: UUID | None = None
+    message: str
+    errors: list[EvalFieldError] | None = None
+
+
+class CreateEvalApiResponse(BaseModel):
+    """Response model for bulk create eval endpoint."""
+
+    results: list[EvalResultItem]
+
+
 async def create_eval_client(
     pool: asyncpg.Pool,
     redis: Redis,
@@ -72,10 +94,6 @@ async def create_eval_client(
       5. invalidate_tags
     """
     from app.infra.eval_permissions import compute_can_create
-    from app.routes.v5.api.main.eval.types import (
-        CreateEvalApiResponse,
-        EvalResultItem,
-    )
 
     # ── Step 1: Profile context ────────────────────────────────────────
 

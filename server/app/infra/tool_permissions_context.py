@@ -35,9 +35,8 @@ from app.routes.v5.tools.resources.tools.create import (
 )
 
 if TYPE_CHECKING:
-    from app.infra.tool_create import CreateToolItem
+    from app.infra.tool_create import CreateToolItem, ToolFieldError
     from app.routes.v5.api.main.tool.types import (
-        ToolFieldError,
         UpdateToolItem,
     )
 
@@ -99,7 +98,7 @@ async def resolve_tool_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.tool.types import ToolFieldError
+    from app.infra.tool_create import ToolFieldError
 
     errors: list[ToolFieldError] = []
 

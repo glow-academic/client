@@ -31,9 +31,8 @@ from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names
 
 if TYPE_CHECKING:
-    from app.infra.eval_create import CreateEvalItem
+    from app.infra.eval_create import CreateEvalItem, EvalFieldError
     from app.routes.v5.api.main.eval.types import (
-        EvalFieldError,
         UpdateEvalItem,
     )
 
@@ -96,7 +95,7 @@ async def resolve_eval_values(
 
     Returns a list of errors (empty if all resolved).
     """
-    from app.routes.v5.api.main.eval.types import EvalFieldError
+    from app.infra.eval_create import EvalFieldError
 
     errors: list[EvalFieldError] = []
 
@@ -118,7 +117,6 @@ async def resolve_eval_values(
             redis,
             search=None,
             limit_count=1000,
-            eval=True,
         )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []
