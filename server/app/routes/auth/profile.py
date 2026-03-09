@@ -4,14 +4,13 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Annotated, Any
+from typing import Any
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.auth.simulatable import SIMULATABLE_ROLES
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.sessions.get import get_session_internal
 from app.routes.auth.permissions import convert_role
@@ -29,7 +28,6 @@ router = APIRouter()
 
 
 async def get_auth_profile_internal(
-    conn: asyncpg.Connection,
     profile_id: UUID | None,
     bypass_cache: bool = False,
 ) -> AuthProfileInternalData:
@@ -43,15 +41,16 @@ async def get_auth_profile_internal(
 
     redis = get_redis_client()
 
-    identity = await resolve_profile_identity_context(
-        conn, profile_id, redis, bypass_cache=bypass_cache
-    )
-    if not identity:
-        raise HTTPException(status_code=404, detail="Profile not found")
-
     pool = get_pool()
     if not pool:
         raise HTTPException(status_code=500, detail="Database pool not available")
+
+    async with pool.acquire() as conn:
+        identity = await resolve_profile_identity_context(
+            conn, profile_id, redis, bypass_cache=bypass_cache
+        )
+    if not identity:
+        raise HTTPException(status_code=404, detail="Profile not found")
 
     # Compute scoped_roles from identity.role via SIMULATABLE_ROLES
     scoped_roles = sorted(SIMULATABLE_ROLES.get(identity.role, set()))
@@ -130,7 +129,6 @@ async def get_auth_profile(
     request: GetProfileContextApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetAuthProfileApiResponse:
     """Identity + permissions endpoint."""
     sql_query: str | None = None
@@ -144,13 +142,9 @@ async def get_auth_profile(
 
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
-        pool = get_pool()
-        if not pool:
-            raise HTTPException(status_code=500, detail="Database pool not available")
-
         pass1_start = time.time()
 
-        data = await get_auth_profile_internal(conn, profile_id, bypass_cache)
+        data = await get_auth_profile_internal(profile_id, bypass_cache)
         pass1_time = (time.time() - pass1_start) * 1000
 
         identity = data.identity

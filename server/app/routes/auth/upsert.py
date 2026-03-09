@@ -1,12 +1,9 @@
 """Profile create or update endpoint — thin route, delegates to infra."""
 
-from typing import Annotated
-
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.auth.upsert import resolve_profile_upsert
-from app.infra.globals import get_db, get_redis_client, transaction
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.shared_types import (
     CreateOrUpdateProfileApiRequest,
     CreateOrUpdateProfileApiResponse,
@@ -22,7 +19,6 @@ async def create_or_update_profile(
     request: CreateOrUpdateProfileApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> CreateOrUpdateProfileApiResponse:
     """Create or update a profile based on email."""
     try:
@@ -43,20 +39,22 @@ async def create_or_update_profile(
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
         redis = get_redis_client()
 
-        async with transaction(conn):
-            result = await resolve_profile_upsert(
-                conn,
-                redis,
-                name=request.name,
-                emails=request.emails,
-                role=request.role,
-                primary_email_index=primary_index,
-                active=request.active if request.active is not None else True,
-                department_ids=request.department_ids,
-                profile_id_new=request.profile_id_new,
-                current_profile_id=current_profile_id,
-                bypass_cache=bypass_cache,
-            )
+        pool = get_pool()
+        async with pool.acquire() as conn:
+            async with conn.transaction():
+                result = await resolve_profile_upsert(
+                    conn,
+                    redis,
+                    name=request.name,
+                    emails=request.emails,
+                    role=request.role,
+                    primary_email_index=primary_index,
+                    active=request.active if request.active is not None else True,
+                    department_ids=request.department_ids,
+                    profile_id_new=request.profile_id_new,
+                    current_profile_id=current_profile_id,
+                    bypass_cache=bypass_cache,
+                )
 
         # Invalidate cache after mutation
         tags = ["profile"]

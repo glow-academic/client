@@ -7,11 +7,10 @@ Called alongside context from layout-server.tsx.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Annotated, cast
+from typing import cast
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 
 from app.infra.auth.analytics import (
     resolve_benchmark_filters,
@@ -20,7 +19,7 @@ from app.infra.auth.analytics import (
     resolve_profile_facts_filters,
 )
 from app.infra.auth.simulatable import SIMULATABLE_ROLES
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.auth.types import (
     AnalyticsFilterField,
@@ -185,7 +184,6 @@ def get_page_filter_config(pathname: str) -> PageFilterConfig | None:
 )
 async def get_analytics_filters(
     http_request: Request,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetAnalyticsFiltersApiResponse | None:
     """Return per-page analytics filter config and MV-backed options."""
     pathname = http_request.headers.get("X-Pathname", "")
@@ -204,9 +202,15 @@ async def get_analytics_filters(
         return None
 
     redis = get_redis_client()
-    identity = await resolve_profile_identity_context(
-        conn, profile_id, redis, bypass_cache=bypass_cache
-    )
+
+    pool = get_pool()
+    if not pool:
+        raise HTTPException(status_code=500, detail="Database pool not available")
+
+    async with pool.acquire() as conn:
+        identity = await resolve_profile_identity_context(
+            conn, profile_id, redis, bypass_cache=bypass_cache
+        )
     if not identity:
         return None
 
@@ -216,22 +220,17 @@ async def get_analytics_filters(
     # Resolve cohort resource IDs via black boxes
     cohort_ids: list[UUID] = []
     if identity.profiles_id:
-        cohort_artifact_ids, _ = await search_cohorts(
-            conn, profile_ids=[identity.profiles_id], active_only=True, limit_count=1000
-        )
+        async with pool.acquire() as conn:
+            cohort_artifact_ids, _ = await search_cohorts(
+                conn, profile_ids=[identity.profiles_id], active_only=True, limit_count=1000
+            )
         if cohort_artifact_ids:
-            pool_for_cohorts = get_pool()
-            if pool_for_cohorts:
-                async with pool_for_cohorts.acquire() as c:
-                    cohort_arts = await get_cohort_artifacts(
-                        c, cohort_artifact_ids, cohorts=True
-                    )
-                    for ca in cohort_arts:
-                        cohort_ids.extend(ca.cohort_ids or [])
-
-    pool = get_pool()
-    if not pool:
-        raise HTTPException(status_code=500, detail="Database pool not available")
+            async with pool.acquire() as c:
+                cohort_arts = await get_cohort_artifacts(
+                    c, cohort_artifact_ids, cohorts=True
+                )
+                for ca in cohort_arts:
+                    cohort_ids.extend(ca.cohort_ids or [])
 
     fields = config.fields
 

@@ -1,12 +1,9 @@
 """Search simulatable profiles endpoint — thin route, delegates to infra."""
 
-from typing import Annotated
-
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.auth.simulatable import resolve_simulatable_profiles
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.shared_types import (
     QSearchSimulatableProfilesV4Profile,
     SearchSimulatableProfilesApiRequest,
@@ -22,7 +19,6 @@ async def search_simulatable_profiles(
     request: SearchSimulatableProfilesApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> SearchSimulatableProfilesApiResponse:
     """Search profiles that can be emulated by the requester."""
     try:
@@ -36,14 +32,16 @@ async def search_simulatable_profiles(
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
         redis = get_redis_client()
 
-        result = await resolve_simulatable_profiles(
-            conn,
-            redis,
-            profile_id=profile_id,
-            limit_count=request.limit_count,
-            query=request.query,
-            bypass_cache=bypass_cache,
-        )
+        pool = get_pool()
+        async with pool.acquire() as conn:
+            result = await resolve_simulatable_profiles(
+                conn,
+                redis,
+                profile_id=profile_id,
+                limit_count=request.limit_count,
+                query=request.query,
+                bypass_cache=bypass_cache,
+            )
 
         return SearchSimulatableProfilesApiResponse(
             actor_name=result.actor_name,

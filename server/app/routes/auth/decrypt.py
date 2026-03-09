@@ -1,12 +1,9 @@
 """Keys decrypt endpoint — thin route, delegates to infra."""
 
-from typing import Annotated
-
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.auth.decrypt import resolve_decrypt
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.shared_types import (
     GetKeyForDecryptApiRequest,
     GetKeyForDecryptApiResponse,
@@ -21,7 +18,6 @@ async def decrypt_key(
     request: GetKeyForDecryptApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetKeyForDecryptApiResponse:
     """Decrypt a key's encrypted value."""
     try:
@@ -35,13 +31,15 @@ async def decrypt_key(
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
         redis = get_redis_client()
 
-        result = await resolve_decrypt(
-            conn,
-            redis,
-            profile_id=profile_id,
-            key_id=request.key_id,
-            bypass_cache=bypass_cache,
-        )
+        pool = get_pool()
+        async with pool.acquire() as conn:
+            result = await resolve_decrypt(
+                conn,
+                redis,
+                profile_id=profile_id,
+                key_id=request.key_id,
+                bypass_cache=bypass_cache,
+            )
 
         return GetKeyForDecryptApiResponse(
             key=result.key,

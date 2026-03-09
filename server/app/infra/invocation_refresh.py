@@ -45,8 +45,7 @@ async def refresh_invocation_client(
 
     # ── Step 1: Permission check ─────────────────────────────────────────
 
-    async with pool.acquire() as conn:
-        profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(

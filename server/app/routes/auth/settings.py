@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.auth.settings import resolve_settings_theme
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.auth.permissions import derive_theme_tokens
 from app.routes.auth.types import (
@@ -33,7 +31,6 @@ router = APIRouter()
 
 
 async def get_auth_settings_internal(
-    conn: asyncpg.Connection,
     profile_id: UUID | None,
     bypass_cache: bool = False,
 ) -> AuthSettingsInternalData:
@@ -46,17 +43,19 @@ async def get_auth_settings_internal(
         raise HTTPException(status_code=404, detail="Profile context not found")
 
     redis = get_redis_client()
-    identity = await resolve_profile_identity_context(
-        conn, profile_id, redis, bypass_cache=bypass_cache
-    )
-    if not identity:
-        raise HTTPException(
-            status_code=404, detail=f"Profile context not found: {profile_id}"
-        )
 
     pool = get_pool()
     if not pool:
         raise HTTPException(status_code=500, detail="Database pool not available")
+
+    async with pool.acquire() as conn:
+        identity = await resolve_profile_identity_context(
+            conn, profile_id, redis, bypass_cache=bypass_cache
+        )
+    if not identity:
+        raise HTTPException(
+            status_code=404, detail=f"Profile context not found: {profile_id}"
+        )
 
     settings_id = identity.settings_id
 
