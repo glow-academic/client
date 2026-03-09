@@ -45,7 +45,7 @@ class EmulationResult:
 
 
 async def resolve_emulation(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     requester_profile_id: UUID,
@@ -60,7 +60,7 @@ async def resolve_emulation(
     """
     # Step 1: Resolve requester identity
     requester = await resolve_profile_identity_context(
-        conn, requester_profile_id, redis, bypass_cache=bypass_cache
+        pool, requester_profile_id, redis, bypass_cache=bypass_cache
     )
     if not requester:
         return EmulationResult(
@@ -77,7 +77,7 @@ async def resolve_emulation(
 
     # Step 2: Resolve target identity
     target = await resolve_profile_identity_context(
-        conn, target_profile_id, redis, bypass_cache=bypass_cache
+        pool, target_profile_id, redis, bypass_cache=bypass_cache
     )
     if not target:
         return EmulationResult(
@@ -111,9 +111,10 @@ async def resolve_emulation(
         )
 
     # Step 4: Find active sessions for requester and target
-    requester_sessions = await search_sessions(
-        conn, profile_ids=[requester.profiles_id], active=True, limit=1
-    )
+    async with pool.acquire() as conn:
+        requester_sessions = await search_sessions(
+            conn, profile_ids=[requester.profiles_id], active=True, limit=1
+        )
     if not requester_sessions:
         return EmulationResult(
             allowed=False,
@@ -127,9 +128,10 @@ async def resolve_emulation(
             emulate_page_url=None,
         )
 
-    target_sessions = await search_sessions(
-        conn, profile_ids=[target.profiles_id], active=True, limit=1
-    )
+    async with pool.acquire() as conn:
+        target_sessions = await search_sessions(
+            conn, profile_ids=[target.profiles_id], active=True, limit=1
+        )
     if not target_sessions:
         return EmulationResult(
             allowed=False,
@@ -148,20 +150,22 @@ async def resolve_emulation(
 
     # Step 5: Create grant + profile link
     expires_at = datetime.now(UTC) + timedelta(minutes=ttl_minutes)
-    grant_result = await create_grant(
-        conn,
-        session_id=requester_session_id,
-        expires_at=expires_at,
-        profiles_id=requester.profiles_id,
-    )
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            grant_result = await create_grant(
+                conn,
+                session_id=requester_session_id,
+                expires_at=expires_at,
+                profiles_id=requester.profiles_id,
+            )
 
-    # Step 6: Create emulation + profile link
-    await create_emulation(
-        conn,
-        grant_id=grant_result.id,
-        session_id=target_session_id,
-        profile_id=target.profiles_id,
-    )
+            # Step 6: Create emulation + profile link
+            await create_emulation(
+                conn,
+                grant_id=grant_result.id,
+                session_id=target_session_id,
+                profile_id=target.profiles_id,
+            )
 
     # Step 7: Construct URLs
     origin = os.getenv("ORIGIN", "http://localhost:3000").rstrip("/")

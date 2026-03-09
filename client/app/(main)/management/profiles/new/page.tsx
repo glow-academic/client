@@ -8,7 +8,8 @@
 import Profile from "@/components/artifacts/profile/Profile";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -137,10 +138,13 @@ export default async function NewProfilePage({
       group_id: groupId,
     } as GetProfileIn["body"],
   };
-  const profileDetailDefault = await getProfileDefault(input);
+  const [profileDetailDefault, draftsResult] = await Promise.all([
+    getProfileDefault(input),
+    getDrafts(), // TODO: fetch only profile drafts (e.g. getDrafts({ artifact_type: "profile" }))
+  ]);
 
   return (
-    <>
+    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Management", section: "management", url: "/management" },
@@ -164,7 +168,7 @@ export default async function NewProfilePage({
           createRequestLimitsAction={createDraftRequestLimits}
         />
       </div>
-    </>
+    </DraftProviderClient>
   );
 }
 

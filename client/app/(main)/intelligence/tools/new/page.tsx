@@ -6,7 +6,8 @@
 import Tool from "@/components/artifacts/tool/Tool";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -140,10 +141,13 @@ export default async function NewToolPage({
       group_id: groupId,
     } as GetToolIn["body"],
   };
-  const toolDetailDefault = await getToolDefault(input);
+  const [toolDetailDefault, draftsResult] = await Promise.all([
+    getToolDefault(input),
+    getDrafts(), // TODO: fetch only tool drafts (e.g. getDrafts({ artifact_type: "tool" }))
+  ]);
 
   return (
-    <>
+    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -166,7 +170,7 @@ export default async function NewToolPage({
           createArgsOutputsAction={createDraftArgsOutputs}
         />
       </div>
-    </>
+    </DraftProviderClient>
   );
 }
 

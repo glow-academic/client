@@ -32,14 +32,13 @@ async def decrypt_key(
         redis = get_redis_client()
 
         pool = get_pool()
-        async with pool.acquire() as conn:
-            result = await resolve_decrypt(
-                conn,
-                redis,
-                profile_id=profile_id,
-                key_id=request.key_id,
-                bypass_cache=bypass_cache,
-            )
+        result = await resolve_decrypt(
+            pool,
+            redis,
+            profile_id=profile_id,
+            key_id=request.key_id,
+            bypass_cache=bypass_cache,
+        )
 
         return GetKeyForDecryptApiResponse(
             key=result.key,

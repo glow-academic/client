@@ -11,7 +11,6 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.analytics_facets import (
-    HIDDEN,
     VISIBLE,
     AnalyticsFacetsConfig,
     resolve_analytics_facets,

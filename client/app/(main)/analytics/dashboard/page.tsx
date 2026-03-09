@@ -7,15 +7,13 @@
  */
 
 import Dashboard from "@/components/artifacts/dashboard/Dashboard";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { PageHeader } from "@/components/common/layout/PageHeader";
+import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
-import {
-  computeAnalyticsDefaults,
-  resolveAnalyticsFilters,
-} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { loadDashboardSearchParams } from "@/lib/search-params/dashboard";
 
@@ -64,10 +62,6 @@ export default async function DashboardPage({
   // Parse search params via nuqs loader
   const q = loadDashboardSearchParams(await searchParams);
 
-  // Compute defaults and resolve filters
-  const { defaults, profileContext } = await computeAnalyticsDefaults();
-  const filters = resolveAnalyticsFilters(q, defaults, profileContext);
-
   // Section picker params (canonical — shared across charts in each section)
   const rubricIds = q.rubricIds ?? undefined;
   const rubricSearch = q.rubricSearch ?? undefined;
@@ -99,12 +93,12 @@ export default async function DashboardPage({
   // Single API call returning all dashboard data
   const data = await getDashboard({
     body: {
-      start_date: filters.startDate,
-      end_date: filters.endDate,
-      cohort_ids: filters.cohortIds,
-      department_ids: filters.departmentIds,
-      roles: filters.roles,
-      simulation_filters: filters.simulationFilters,
+      ...(q.startDate && { start_date: q.startDate }),
+      ...(q.endDate && { end_date: q.endDate }),
+      ...(q.cohortIds?.length && { cohort_ids: q.cohortIds }),
+      ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
+      ...(q.roles?.length && { roles: q.roles }),
+      ...(q.simulationFilters?.length && { simulation_filters: q.simulationFilters }),
       page_limit: 50,
       page_offset: 0,
       // Section pickers (canonical)
@@ -130,6 +124,34 @@ export default async function DashboardPage({
     },
   });
 
+  // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
+  const facets = data.analytics;
+  const defaultStartDate = (() => {
+    if (q.startDate) return q.startDate;
+    if (facets?.date_range_earliest) {
+      const d = new Date(facets.date_range_earliest);
+      d.setHours(0, 0, 0, 0);
+      return d.toISOString();
+    }
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  })();
+  const defaultEndDate = (() => {
+    if (q.endDate) return q.endDate;
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  })();
+  const defaultFilters = {
+    startDate: defaultStartDate,
+    endDate: defaultEndDate,
+    cohortIds: q.cohortIds ?? [],
+    departmentIds: q.departmentIds ?? [],
+    roles: q.roles ?? [],
+  };
+
   const initialHistoryVisibility = await readViewCookie("history");
 
   return (
@@ -139,6 +161,12 @@ export default async function DashboardPage({
           { title: "Analytics", section: "analytics", url: "/analytics" },
           { title: "Dashboard" },
         ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshPage={refreshPage}
+            analyticsFilters={facets}
+          />
+        }
       />
       <div className="px-4">
         <Dashboard
@@ -158,7 +186,7 @@ export default async function DashboardPage({
           scenarioIndex={scenarioIndex}
           historyPage={historyPage}
           historyPageSize={historyPageSize}
-          defaultFilters={filters}
+          defaultFilters={defaultFilters}
           bulkArchiveAttemptsAction={bulkArchiveAttempts}
           historyProfileSearch={historyProfileSearch}
           historySimulationSearch={historySimulationSearch}

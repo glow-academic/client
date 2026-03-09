@@ -23,7 +23,6 @@ import type {
   CreateCohortOut,
   UpdateCohortIn,
   UpdateCohortOut,
-  SearchFlagsOut,
 } from "@/app/(main)/training/cohorts/page";
 import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
@@ -86,7 +85,6 @@ export interface CohortsProps {
   deleteCohortAction?: (input: DeleteCohortIn) => Promise<DeleteCohortOut>;
   createCohortAction?: (input: CreateCohortIn) => Promise<CreateCohortOut>;
   updateCohortAction?: (input: UpdateCohortIn) => Promise<UpdateCohortOut>;
-  searchFlagsAction?: () => Promise<SearchFlagsOut>;
   parseCsvAction?: (input: ParseCsvIn) => Promise<ParseCsvOut>;
   importFields?: ImportFieldDef[];
   // Server-side pagination/filtering state
@@ -96,6 +94,7 @@ export interface CohortsProps {
   simulationSearch: string;
   profileSearch: string;
   departmentSearch: string;
+  flagSearch: string;
 }
 
 export default function Cohorts({
@@ -105,7 +104,6 @@ export default function Cohorts({
   deleteCohortAction,
   createCohortAction,
   updateCohortAction,
-  searchFlagsAction,
   parseCsvAction,
   importFields,
   pageIndex,
@@ -114,6 +112,7 @@ export default function Cohorts({
   simulationSearch,
   profileSearch,
   departmentSearch,
+  flagSearch,
 }: CohortsProps) {
   const router = useRouter();
   useArtifactAi({
@@ -147,18 +146,16 @@ export default function Cohorts({
   const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
   const [bulkEditDepartmentIds, setBulkEditDepartmentIds] = useState<string[] | null>(null);
 
-  // Lazy-loaded flag options
-  const [flagOptions, setFlagOptions] = useState<{ id: string; name: string; type: string }[]>([]);
-  const [flagsLoaded, setFlagsLoaded] = useState(false);
-
   // Debounce refs
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const simulationSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const profileSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const departmentSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flagSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Local search state (for immediate UI feedback while debouncing)
   const [localSearch, setLocalSearch] = useState(searchParams.get("search") ?? "");
+  const [localFlagSearch, setLocalFlagSearch] = useState(flagSearch);
 
   // URL parameter update helper
   const updateCohortsParams = useCallback(
@@ -290,6 +287,11 @@ export default function Cohorts({
         .filter((opt) => opt.value && opt.label),
     [cohortsData?.department_filter],
   );
+  const flagOptions = useMemo(() => {
+    return (cohortsData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [cohortsData?.flag_filter]);
 
   // Define table columns inline
   const columns: ColumnDef<(typeof cohorts)[number]>[] = useMemo(
@@ -516,10 +518,22 @@ export default function Cohorts({
     [updateCohortsParams],
   );
 
+  const handleFlagSearchChange = useCallback(
+    (term: string) => {
+      setLocalFlagSearch(term);
+      if (flagSearchTimeoutRef.current) clearTimeout(flagSearchTimeoutRef.current);
+      flagSearchTimeoutRef.current = setTimeout(() => {
+        updateCohortsParams({ flagSearch: term || null });
+      }, 300);
+    },
+    [updateCohortsParams],
+  );
+
   // Reset all filters
   const handleResetFilters = useCallback(() => {
     setColumnFilters([]);
     setLocalSearch("");
+    setLocalFlagSearch("");
     updateCohortsParams({
       search: null,
       simulationIds: null,
@@ -528,6 +542,7 @@ export default function Cohorts({
       simulationSearch: null,
       profileSearch: null,
       departmentSearch: null,
+      flagSearch: null,
       page: null,
     });
   }, [updateCohortsParams]);
@@ -622,25 +637,10 @@ export default function Cohorts({
     }
   };
 
-  const openBulkEditDialog = async () => {
+  const openBulkEditDialog = () => {
     // Reset form state
     setBulkEditActiveStatus(null);
     setBulkEditDepartmentIds(null);
-
-    // Lazy-load flag options
-    if (!flagsLoaded) {
-      try {
-        const flags = await searchFlagsAction?.() ?? [];
-        setFlagOptions(
-          (flags as { id?: string | null; name?: string | null; type?: string | null }[])
-            .filter((f): f is { id: string; name: string; type: string } => !!f.id && !!f.name && !!f.type)
-        );
-        setFlagsLoaded(true);
-      } catch {
-        toast.error("Failed to load flag options");
-      }
-    }
-
     setShowBulkEditDialog(true);
   };
 

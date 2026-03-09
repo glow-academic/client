@@ -8,7 +8,8 @@
 import Eval from "@/components/artifacts/eval/Eval";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -124,15 +125,16 @@ export default async function EvalDetailPage({
       available_model_runs_search: q.modelRunSearch ?? null,
     } as GetEvalIn["body"],
   };
-  const [evalDetail, docs] = await Promise.all([
+  const [evalDetail, docs, draftsResult] = await Promise.all([
     getEvalDetail(input),
     getDocs({ body: { entity_id: evalId } }),
+    getDrafts(), // TODO: fetch only eval drafts (e.g. getDrafts({ artifact_type: "eval" }))
   ]);
 
   const entityName = docs.detail.title;
 
   return (
-    <>
+    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "System", section: "system", url: "/system" },
@@ -154,7 +156,7 @@ export default async function EvalDetailPage({
           patchEvalDraftAction={patchEvalDraft}
         />
       </div>
-    </>
+    </DraftProviderClient>
   );
 }
 

@@ -7,7 +7,8 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Setting from "@/components/artifacts/setting/Setting";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -211,15 +212,16 @@ export default async function SettingEditPage({
         color_search: q.colorSearch ?? null,
       } as GetSettingIn["body"],
     };
-    const [settingDetail, docs] = await Promise.all([
+    const [settingDetail, docs, draftsResult] = await Promise.all([
       getSetting(input),
       getDocs({ body: { entity_id: settingId } }),
+      getDrafts(), // TODO: fetch only setting drafts (e.g. getDrafts({ artifact_type: "setting" }))
     ]);
 
     const entityName = docs.detail.title;
 
     return (
-      <>
+      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Settings", section: "settings", url: "/settings" },
@@ -261,7 +263,7 @@ export default async function SettingEditPage({
             }}
           />
         </div>
-      </>
+      </DraftProviderClient>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

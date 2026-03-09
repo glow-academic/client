@@ -33,15 +33,14 @@ async def search_simulatable_profiles(
         redis = get_redis_client()
 
         pool = get_pool()
-        async with pool.acquire() as conn:
-            result = await resolve_simulatable_profiles(
-                conn,
-                redis,
-                profile_id=profile_id,
-                limit_count=request.limit_count,
-                query=request.query,
-                bypass_cache=bypass_cache,
-            )
+        result = await resolve_simulatable_profiles(
+            pool,
+            redis,
+            profile_id=profile_id,
+            limit_count=request.limit_count,
+            query=request.query,
+            bypass_cache=bypass_cache,
+        )
 
         return SearchSimulatableProfilesApiResponse(
             actor_name=result.actor_name,

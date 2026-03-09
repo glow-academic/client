@@ -25,14 +25,13 @@ async def get_profile_by_email(
         redis = get_redis_client()
 
         pool = get_pool()
-        async with pool.acquire() as conn:
-            result = await resolve_profile_by_email(
-                conn,
-                redis,
-                email=request.email,
-                actor_profile_id=profile_id,
-                bypass_cache=bypass_cache,
-            )
+        result = await resolve_profile_by_email(
+            pool,
+            redis,
+            email=request.email,
+            actor_profile_id=profile_id,
+            bypass_cache=bypass_cache,
+        )
 
         if not result:
             raise HTTPException(status_code=404, detail="Profile not found")

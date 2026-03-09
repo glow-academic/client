@@ -376,7 +376,7 @@ class TestUserStartImpl:
         await user_start_impl(
             {"sid": "", "chat_id": "c1", "run_id": "r1"},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert events == []
 
@@ -385,7 +385,7 @@ class TestUserStartImpl:
         await user_start_impl(
             {"sid": "s1", "chat_id": "", "run_id": "r1"},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert events == []
 
@@ -394,7 +394,7 @@ class TestUserStartImpl:
         await user_start_impl(
             {"sid": "s1", "chat_id": "c1", "run_id": ""},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert events == []
 
@@ -417,7 +417,7 @@ class TestUserStartImpl:
                     "run_id": "00000000-0000-0000-0000-000000000002",
                 },
                 emit=emit,
-                conn=mock_conn,
+                pool=_mock_pool(mock_conn),
             )
         assert len(events) == 1
         assert events[0].event == "attempt_user_start"
@@ -1449,7 +1449,7 @@ class TestUserCompleteImpl:
         await _user_complete_impl(
             {"sid": "", "chat_id": "c1", "run_id": "r1", "content": "hi"},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert events == []
 
@@ -1458,7 +1458,7 @@ class TestUserCompleteImpl:
         await _user_complete_impl(
             {"sid": "s1", "chat_id": "c1", "run_id": "r1", "content": ""},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert events == []
 
@@ -1474,7 +1474,7 @@ class TestUserCompleteImpl:
                 "content": "hello",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert events == []
 
@@ -1512,7 +1512,7 @@ class TestUserCompleteImpl:
                 "content": "hello world",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
 
         assert mock_content.called
@@ -1554,7 +1554,7 @@ class TestUserCompleteImpl:
                 "content": "hello",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert events == []
 
@@ -1570,13 +1570,13 @@ _UPLOAD_CREATE = "app.routes.v5.tools.entries.uploads.create"
 class TestSpeechCompleteImpl:
     async def test_no_group_id_emits_nothing(self):
         emit, events = recording_emit()
-        await _speech_complete_impl({"group_id": ""}, emit=emit, conn=AsyncMock())
+        await _speech_complete_impl({"group_id": ""}, emit=emit, pool=_mock_pool())
         assert events == []
 
     @patch(f"{_P}.get_session_by_group_id", return_value=None)
     async def test_no_session_emits_nothing(self, _mock):
         emit, events = recording_emit()
-        await _speech_complete_impl({"group_id": "g1"}, emit=emit, conn=AsyncMock())
+        await _speech_complete_impl({"group_id": "g1"}, emit=emit, pool=_mock_pool())
         assert events == []
 
     @patch(f"{_P}.get_session_by_group_id")
@@ -1586,7 +1586,7 @@ class TestSpeechCompleteImpl:
         await _speech_complete_impl(
             {"group_id": "g1", "transcript": ""},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
         assert events == []
 
@@ -1597,7 +1597,7 @@ class TestSpeechCompleteImpl:
         await _speech_complete_impl(
             {"group_id": "g1", "transcript": "hello world"},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
         )
 
         assert len(events) == 1
@@ -1624,7 +1624,7 @@ class TestSpeechCompleteImpl:
                     "audio": b"fake-audio-bytes",
                 },
                 emit=emit,
-                conn=AsyncMock(),
+                pool=_mock_pool(),
             )
 
         assert len(events) == 1
@@ -1658,7 +1658,7 @@ class TestAttemptStartImpl:
         await _attempt_start_impl(
             {"sid": ""},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             profile_id="p1",
             session_id="s1",
         )
@@ -1669,7 +1669,7 @@ class TestAttemptStartImpl:
         await _attempt_start_impl(
             {"sid": "s1"},  # missing practice_id/home_id
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -1687,7 +1687,7 @@ class TestAttemptStartImpl:
                 "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -1765,7 +1765,7 @@ class TestAttemptStartImpl:
                 "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
             },
             emit=emit,
-            conn=mock_conn,
+            pool=_mock_pool(mock_conn),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -1791,7 +1791,7 @@ class TestAttemptStartImpl:
                 "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
             },
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -1820,7 +1820,7 @@ class TestEmitChatGenerateImpl:
         emit, events = recording_emit()
         await _emit_chat_generate_impl(
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             sid="s1",
             profile_id=UUID(int=10),
             profiles_id=UUID(int=11),
@@ -1848,7 +1848,7 @@ class TestEmitChatGenerateImpl:
         emit, events = recording_emit()
         await _emit_chat_generate_impl(
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             sid="s1",
             profile_id=UUID(int=10),
             profiles_id=UUID(int=11),
@@ -1877,7 +1877,7 @@ class TestEmitChatGenerateImpl:
         emit, events = recording_emit()
         await _emit_chat_generate_impl(
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             sid="s1",
             profile_id=UUID(int=10),
             profiles_id=UUID(int=11),
@@ -1901,7 +1901,7 @@ class TestEmitChatGenerateImpl:
         draft = UUID(int=99)
         await _emit_chat_generate_impl(
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             sid="s1",
             profile_id=UUID(int=10),
             profiles_id=UUID(int=11),
@@ -1928,7 +1928,7 @@ class TestEmitChatGenerateImpl:
 
         await _emit_chat_generate_impl(
             emit=emit,
-            conn=mock_conn,
+            pool=_mock_pool(mock_conn),
             sid="s1",
             profile_id=UUID(int=10),
             profiles_id=profiles_id,
@@ -1985,7 +1985,7 @@ class TestAttemptProceedImpl:
         await _attempt_proceed_impl(
             {"sid": ""},
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -1996,7 +1996,7 @@ class TestAttemptProceedImpl:
         await _attempt_proceed_impl(
             {"sid": "s1"},  # missing attempt_id, group_id
             emit=emit,
-            conn=AsyncMock(),
+            pool=_mock_pool(),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -2035,7 +2035,7 @@ class TestAttemptProceedImpl:
                 "complete_all": True,
             },
             emit=emit,
-            conn=mock_conn,
+            pool=_mock_pool(mock_conn),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -2101,7 +2101,7 @@ class TestAttemptProceedImpl:
                 "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
             },
             emit=emit,
-            conn=mock_conn,
+            pool=_mock_pool(mock_conn),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -2179,7 +2179,7 @@ class TestAttemptProceedImpl:
                 "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
             },
             emit=emit,
-            conn=mock_conn,
+            pool=_mock_pool(mock_conn),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -2258,7 +2258,7 @@ class TestAttemptProceedImpl:
                 "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
             },
             emit=emit,
-            conn=mock_conn,
+            pool=_mock_pool(mock_conn),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -2326,7 +2326,7 @@ class TestAttemptProceedImpl:
                 "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
             },
             emit=emit,
-            conn=mock_conn,
+            pool=_mock_pool(mock_conn),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )
@@ -2357,7 +2357,7 @@ class TestAttemptProceedImpl:
                 "group_id": "019b3be4-36f0-788c-9df2-481eb5917951",
             },
             emit=emit,
-            conn=mock_conn,
+            pool=_mock_pool(mock_conn),
             profile_id="019b3be4-36f0-788c-9df2-481eb5917941",
             session_id="019b3be4-36f0-788c-9df2-481eb5917942",
         )

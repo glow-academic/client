@@ -74,10 +74,9 @@ async def get_auth_settings_internal(
     async def fetch_settings_theme():
         if not settings_id:
             return None
-        async with pool.acquire() as c:
-            return await resolve_settings_theme(
-                c, redis, settings_id, bypass_cache=bypass_cache
-            )
+        return await resolve_settings_theme(
+            pool, redis, settings_id, bypass_cache=bypass_cache
+        )
 
     async def fetch_systems():
         if not settings_system_ids:

@@ -6,11 +6,12 @@
 import Provider from "@/components/artifacts/provider/Provider";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
-import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetProviderIn = InputOf<"/api/v5/artifacts/providers/get", "post">;
@@ -144,10 +145,13 @@ export default async function NewProviderPage({
       group_id: groupId,
     } as GetProviderIn["body"],
   };
-  const providerDetailDefault = await getProviderDefault(input);
+  const [providerDetailDefault, draftsResult] = await Promise.all([
+    getProviderDefault(input),
+    getDrafts(), // TODO: fetch only provider drafts (e.g. getDrafts({ artifact_type: "provider" }))
+  ]);
 
   return (
-    <>
+    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -172,7 +176,7 @@ export default async function NewProviderPage({
           createEndpointsAction={createEndpoints}
         />
       </div>
-    </>
+    </DraftProviderClient>
   );
 }
 

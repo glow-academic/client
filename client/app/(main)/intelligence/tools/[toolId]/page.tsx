@@ -7,7 +7,8 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Tool from "@/components/artifacts/tool/Tool";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -156,9 +157,10 @@ export default async function ToolDetailPage({
         group_id: groupId,
       } as GetToolIn["body"],
     };
-    const [toolDetail, docs] = await Promise.all([
+    const [toolDetail, docs, draftsResult] = await Promise.all([
       getTool(input),
       getDocs({ body: { entity_id: toolId } }),
+      getDrafts(), // TODO: fetch only tool drafts (e.g. getDrafts({ artifact_type: "tool" }))
     ]);
 
     // Check access
@@ -169,7 +171,7 @@ export default async function ToolDetailPage({
     const entityName = docs.detail.title;
 
     return (
-      <>
+      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -195,7 +197,7 @@ export default async function ToolDetailPage({
             createArgsOutputsAction={createDraftArgsOutputs}
           />
         </div>
-      </>
+      </DraftProviderClient>
     );
   } catch (error: unknown) {
     // Check if it's a 404 error (tool not found)

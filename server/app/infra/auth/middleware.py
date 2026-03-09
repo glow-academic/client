@@ -9,10 +9,8 @@ The client no longer needs to send X-Profile-Id or X-Session-Id headers.
 from __future__ import annotations
 
 import logging
-from typing import Annotated
 
-import asyncpg
-from fastapi import Depends, Header, HTTPException, Request
+from fastapi import Header, HTTPException, Request
 
 from app.infra.auth.license_key import validate_license_key
 from app.infra.auth.resolve_identity import (
@@ -21,7 +19,7 @@ from app.infra.auth.resolve_identity import (
     extract_bearer_token,
     resolve_identity,
 )
-from app.infra.globals import get_db
+from app.infra.globals import get_pool
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +28,6 @@ async def require_auth(
     request: Request,
     x_api_key: str | None = Header(default=None, alias="X-Api-Key"),
     authorization: str | None = Header(default=None),
-    conn: Annotated[asyncpg.Connection, Depends(get_db)] = None,
 ) -> Identity:
     """FastAPI dependency that validates auth and resolves identity.
 
@@ -69,8 +66,9 @@ async def require_auth(
             detail="Missing Authorization: Bearer <token> header",
         )
 
+    pool = get_pool()
     try:
-        identity = await resolve_identity(token, conn)
+        identity = await resolve_identity(token, pool)
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e)) from e
 

@@ -220,7 +220,7 @@ def _issuer_matches(actual: str, expected: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
-async def resolve_identity(token: str, conn: asyncpg.Connection) -> Identity:
+async def resolve_identity(token: str, pool: asyncpg.Pool) -> Identity:
     """Resolve a Bearer JWT token to a full Identity.
 
     1. Verify JWT signature
@@ -229,7 +229,7 @@ async def resolve_identity(token: str, conn: asyncpg.Connection) -> Identity:
 
     Args:
         token: JWT token string (without "Bearer " prefix)
-        conn: Database connection
+        pool: Database pool
 
     Returns:
         Identity with profile_id, session_id, and metadata
@@ -240,14 +240,16 @@ async def resolve_identity(token: str, conn: asyncpg.Connection) -> Identity:
     claims = verify_jwt(token)
 
     # Resolve profile_id
-    profile_id = await _resolve_profile_id(claims, conn)
+    async with pool.acquire() as conn:
+        profile_id = await _resolve_profile_id(claims, conn)
     if profile_id is None:
         raise ValueError(
             f"No profile found for token claims (email={claims.get('email')})"
         )
 
     # Get or create session for this profile
-    session_id = await _get_or_create_session(conn, profile_id)
+    async with pool.acquire() as conn:
+        session_id = await _get_or_create_session(conn, profile_id)
 
     return Identity(
         profile_id=profile_id,

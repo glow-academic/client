@@ -40,21 +40,19 @@ async def create_or_update_profile(
         redis = get_redis_client()
 
         pool = get_pool()
-        async with pool.acquire() as conn:
-            async with conn.transaction():
-                result = await resolve_profile_upsert(
-                    conn,
-                    redis,
-                    name=request.name,
-                    emails=request.emails,
-                    role=request.role,
-                    primary_email_index=primary_index,
-                    active=request.active if request.active is not None else True,
-                    department_ids=request.department_ids,
-                    profile_id_new=request.profile_id_new,
-                    current_profile_id=current_profile_id,
-                    bypass_cache=bypass_cache,
-                )
+        result = await resolve_profile_upsert(
+            pool,
+            redis,
+            name=request.name,
+            emails=request.emails,
+            role=request.role,
+            primary_email_index=primary_index,
+            active=request.active if request.active is not None else True,
+            department_ids=request.department_ids,
+            profile_id_new=request.profile_id_new,
+            current_profile_id=current_profile_id,
+            bypass_cache=bypass_cache,
+        )
 
         # Invalidate cache after mutation
         tags = ["profile"]

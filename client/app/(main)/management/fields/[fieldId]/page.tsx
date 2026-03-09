@@ -9,7 +9,8 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Field from "@/components/artifacts/field/Field";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -156,15 +157,16 @@ export default async function FieldEditPage({
           q.conditionalParameterShowSelected ?? null,
       } as GetFieldIn["body"],
     };
-    const [fieldData, docs] = await Promise.all([
+    const [fieldData, docs, draftsResult] = await Promise.all([
       getField(input),
       getDocs({ body: { entity_id: fieldId } }),
+      getDrafts(), // TODO: fetch only field drafts (e.g. getDrafts({ artifact_type: "field" }))
     ]);
 
     const entityName = docs.detail.title;
 
     return (
-      <>
+      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Management", section: "management", url: "/management" },
@@ -184,7 +186,7 @@ export default async function FieldEditPage({
             createDescriptionsAction={createDescriptions}
           />
         </div>
-      </>
+      </DraftProviderClient>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

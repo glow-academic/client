@@ -39,7 +39,6 @@ import type {
   UpdateScenarioIn,
   UpdateScenarioOut,
   ScenariosListOut,
-  SearchFlagsOut,
 } from "@/app/(main)/training/scenarios/page";
 import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
@@ -101,7 +100,6 @@ export interface ScenariosProps {
   ) => Promise<DeleteScenarioOut>;
   createScenarioAction?: (input: CreateScenarioIn) => Promise<CreateScenarioOut>;
   updateScenarioAction?: (input: UpdateScenarioIn) => Promise<UpdateScenarioOut>;
-  searchFlagsAction?: () => Promise<SearchFlagsOut>;
   parseCsvAction?: (input: ParseCsvIn) => Promise<ParseCsvOut>;
   importFields?: ImportFieldDef[];
   // Server-side pagination/filtering state
@@ -111,6 +109,7 @@ export interface ScenariosProps {
   personaSearch: string;
   simulationSearch: string;
   departmentSearch: string;
+  flagSearch: string;
 }
 
 export function Scenarios({
@@ -120,7 +119,6 @@ export function Scenarios({
   deleteScenarioAction,
   createScenarioAction,
   updateScenarioAction,
-  searchFlagsAction,
   parseCsvAction,
   importFields,
   pageIndex,
@@ -129,6 +127,7 @@ export function Scenarios({
   personaSearch,
   simulationSearch,
   departmentSearch,
+  flagSearch,
 }: ScenariosProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -158,10 +157,6 @@ export function Scenarios({
   const [bulkEditActiveStatus, setBulkEditActiveStatus] = useState<boolean | null>(null);
   const [bulkEditDepartmentIds, setBulkEditDepartmentIds] = useState<string[] | null>(null);
 
-  // Lazy-loaded flag options
-  const [flagOptions, setFlagOptions] = useState<{ id: string; name: string; type: string }[]>([]);
-  const [flagsLoaded, setFlagsLoaded] = useState(false);
-
   useArtifactAi({
     artifactType: "scenario",
     validResourceTypes: ["names", "descriptions", "problem_statements", "objectives", "scenario_flags", "departments", "personas", "documents", "parameters", "parameter_fields", "images", "videos", "questions"],
@@ -173,9 +168,11 @@ export function Scenarios({
   const personaSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const simulationSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const departmentSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flagSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Local search state (for immediate UI feedback while debouncing)
   const [localSearch, setLocalSearch] = useState(searchParams.get("search") ?? "");
+  const [localFlagSearch, setLocalFlagSearch] = useState(flagSearch);
 
   // URL parameter update helper
   const updateScenariosParams = useCallback(
@@ -356,6 +353,11 @@ export function Scenarios({
         .filter((opt) => opt.value && opt.label),
     [scenariosData?.department_filter],
   );
+  const flagOptions = useMemo(() => {
+    return (scenariosData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [scenariosData?.flag_filter]);
 
   // Define table columns inline
   const columns: ColumnDef<(typeof scenarios)[number]>[] = useMemo(() => {
@@ -669,24 +671,10 @@ export function Scenarios({
     }
   };
 
-  const openBulkEditDialog = async () => {
+  const openBulkEditDialog = () => {
     // Reset form state
     setBulkEditActiveStatus(null);
     setBulkEditDepartmentIds(null);
-
-    // Lazy-load flag options
-    if (!flagsLoaded) {
-      try {
-        const flags = await searchFlagsAction?.() ?? [];
-        setFlagOptions(
-          (flags as { id?: string | null; name?: string | null; type?: string | null }[])
-            .filter((f): f is { id: string; name: string; type: string } => !!f.id && !!f.name && !!f.type)
-        );
-        setFlagsLoaded(true);
-      } catch {
-        toast.error("Failed to load flag options");
-      }
-    }
 
     setShowBulkEditDialog(true);
   };
@@ -800,10 +788,22 @@ export function Scenarios({
     [updateScenariosParams],
   );
 
+  const handleFlagSearchChange = useCallback(
+    (term: string) => {
+      setLocalFlagSearch(term);
+      if (flagSearchDebounceRef.current) clearTimeout(flagSearchDebounceRef.current);
+      flagSearchDebounceRef.current = setTimeout(() => {
+        updateScenariosParams({ flagSearch: term || null });
+      }, 300);
+    },
+    [updateScenariosParams],
+  );
+
   // Reset all filters
   const handleResetFilters = useCallback(() => {
     setColumnFilters([]);
     setLocalSearch("");
+    setLocalFlagSearch("");
     updateScenariosParams({
       search: null,
       personaIds: null,
@@ -812,6 +812,7 @@ export function Scenarios({
       personaSearch: null,
       simulationSearch: null,
       departmentSearch: null,
+      flagSearch: null,
       page: null,
     });
   }, [updateScenariosParams]);

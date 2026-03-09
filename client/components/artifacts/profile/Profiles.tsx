@@ -108,8 +108,6 @@ import {
 
 // Import types from page (all types are already exported from the page)
 import type {
-  BulkCreateOrUpdateProfileIn,
-  BulkCreateOrUpdateProfileOut,
   BulkDeleteProfileIn,
   BulkDeleteProfileOut,
   CSVColumnMapping,
@@ -136,10 +134,6 @@ export type SearchProfileAction = (
   input: SearchProfileIn
 ) => Promise<SearchProfileOut>;
 export type ProcessCSVAction = (input: ProcessCSVIn) => Promise<ProcessCSVOut>;
-export type BulkCreateOrUpdateProfileAction = (
-  input: BulkCreateOrUpdateProfileIn
-) => Promise<BulkCreateOrUpdateProfileOut>;
-
 export interface ProfilesProps {
   // Server-provided data (fetched server-side, no client fetching)
   listData: ProfilesListOut;
@@ -148,7 +142,6 @@ export interface ProfilesProps {
   deleteProfileAction?: DeleteProfileAction;
   bulkDeleteProfileAction?: BulkDeleteProfileAction;
   processCSVAction?: ProcessCSVAction;
-  bulkCreateOrUpdateProfileAction?: BulkCreateOrUpdateProfileAction;
 }
 
 // Helper functions
@@ -365,7 +358,6 @@ export default function Profiles({
   deleteProfileAction,
   bulkDeleteProfileAction,
   processCSVAction,
-  bulkCreateOrUpdateProfileAction,
 }: ProfilesProps) {
   const router = useRouter();
   const {
@@ -916,29 +908,8 @@ export default function Profiles({
         };
       });
 
-      if (!bulkCreateOrUpdateProfileAction) {
-        toast.error("Bulk create or update action not available");
-        return;
-      }
-
-      if (!profile?.id) {
-        toast.error("Profile ID is required");
-        return;
-      }
-
-      const response = await bulkCreateOrUpdateProfileAction({
-        body: {
-          profiles,
-          current_profile_id: profile.id,
-        },
-      });
-
-      router.refresh();
-      toast.success(
-        `Successfully processed ${response.created_count} created, ${response.updated_count} updated profile(s)!`
-      );
-
-      setShowCSVImportModal(false);
+      toast.error("Bulk create or update is no longer available. Please use individual profile create/update instead.");
+      return;
     } catch (error) {
       const errorMessage =
         error instanceof Error
@@ -954,9 +925,6 @@ export default function Profiles({
     departmentMappingForCSV,
     validDepartmentIdsForCSV,
     validRoles,
-    bulkCreateOrUpdateProfileAction,
-    router,
-    profile?.id,
   ]);
 
   const validRowCount = processedRows.filter(

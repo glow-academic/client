@@ -30,16 +30,15 @@ async def authorize_emulation(
         redis = get_redis_client()
 
         pool = get_pool()
-        async with pool.acquire() as conn:
-            result = await resolve_emulation(
-                conn,
-                redis,
-                requester_profile_id=requester_profile_id,
-                target_profile_id=request.target_profile_id,
-                ttl_minutes=request.ttl_minutes,
-                return_url=request.return_url,
-                bypass_cache=bypass_cache,
-            )
+        result = await resolve_emulation(
+            pool,
+            redis,
+            requester_profile_id=requester_profile_id,
+            target_profile_id=request.target_profile_id,
+            ttl_minutes=request.ttl_minutes,
+            return_url=request.return_url,
+            bypass_cache=bypass_cache,
+        )
 
         if not result.allowed:
             raise HTTPException(status_code=403, detail=result.reason or "Forbidden")

@@ -9,7 +9,8 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Document from "@/components/artifacts/document/Document";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -174,15 +175,16 @@ export default async function DocumentEditPage({
 
   // Fetch document detail (always fresh - source of truth) with draft_id
   try {
-    const [documentDetail, docs] = await Promise.all([
+    const [documentDetail, docs, draftsResult] = await Promise.all([
       getDocument(documentId, q.draftId ?? null, groupId),
       getDocs({ body: { entity_id: documentId } }),
+      getDrafts(), // TODO: fetch only document drafts (e.g. getDrafts({ artifact_type: "document" }))
     ]);
 
     const entityName = docs.detail.title;
 
     return (
-      <>
+      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Management", section: "management", url: "/management" },
@@ -211,7 +213,7 @@ export default async function DocumentEditPage({
             createTextsAction={createDraftTexts}
           />
         </div>
-      </>
+      </DraftProviderClient>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

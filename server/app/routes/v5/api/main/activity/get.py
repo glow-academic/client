@@ -29,6 +29,21 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+# ---------------------------------------------------------------------------
+# Activity analytics facets config
+# ---------------------------------------------------------------------------
+
+ACTIVITY_FACETS_CONFIG = AnalyticsFacetsConfig(
+    fields=AnalyticsFilterFields(
+        date_range=VISIBLE,
+        departments=VISIBLE,
+        cohorts=HIDDEN,
+        roles=HIDDEN,
+        attempts=HIDDEN,
+    ),
+    mv_source="profile_facts",
+)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -139,15 +154,24 @@ async def get_activity(
         if not common:
             raise HTTPException(status_code=401, detail="Profile not found")
 
-        # --- Phase 1: Resolve activity context ---
-        ctx = await resolve_activity_context(
-            pool,
-            redis,
-            department_ids=request.department_ids or None,
-            roles=request.roles or None,
-            date_from=request.date_from,
-            date_to=request.date_to,
-            bypass_cache=bypass_cache,
+        # --- Phase 1: Resolve activity context + analytics facets in parallel ---
+        ctx, analytics_facets = await asyncio.gather(
+            resolve_activity_context(
+                pool,
+                redis,
+                department_ids=request.department_ids or None,
+                roles=request.roles or None,
+                date_from=request.date_from,
+                date_to=request.date_to,
+                bypass_cache=bypass_cache,
+            ),
+            resolve_analytics_facets(
+                pool,
+                redis,
+                config=ACTIVITY_FACETS_CONFIG,
+                profile=common.profile,
+                bypass_cache=bypass_cache,
+            ),
         )
 
         # --- Phase 2: Extract data ---
@@ -202,6 +226,7 @@ async def get_activity(
             emulations_count=emulations_count,
             profile_summary=profile_summary,
             resources=resources,
+            analytics=analytics_facets,
         )
 
         await set_cached(

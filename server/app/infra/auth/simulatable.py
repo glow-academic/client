@@ -52,7 +52,7 @@ class SimulatableResult:
 
 
 async def resolve_simulatable_profiles(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -67,7 +67,7 @@ async def resolve_simulatable_profiles(
     """
     # Step 1: Get requester identity (logged-in user)
     identity = await resolve_profile_identity_context(
-        conn, profile_id, redis, bypass_cache=bypass_cache
+        pool, profile_id, redis, bypass_cache=bypass_cache
     )
     if not identity:
         raise ValueError(f"Profile not found: {profile_id}")
@@ -78,23 +78,25 @@ async def resolve_simulatable_profiles(
         return SimulatableResult(actor_name=identity.name, profiles=[])
 
     # Step 2: Search roles to resolve enum strings → role resource UUIDs
-    all_roles = await search_roles(
-        conn, redis, limit_count=100, bypass_cache=bypass_cache
-    )
+    async with pool.acquire() as conn:
+        all_roles = await search_roles(
+            conn, redis, limit_count=100, bypass_cache=bypass_cache
+        )
     allowed_role_ids = [r.id for r in all_roles if r.role in allowed_roles]
     if not allowed_role_ids:
         return SimulatableResult(actor_name=identity.name, profiles=[])
 
     # Step 3: Search profile artifacts by role + text search, exclude requester
     search_text = query if query and query.strip() else None
-    artifact_ids, _total = await search_profiles(
-        conn,
-        role_ids=allowed_role_ids,
-        exclude_ids=[profile_id],
-        search=search_text,
-        active_only=False,
-        limit_count=limit_count,
-    )
+    async with pool.acquire() as conn:
+        artifact_ids, _total = await search_profiles(
+            conn,
+            role_ids=allowed_role_ids,
+            exclude_ids=[profile_id],
+            search=search_text,
+            active_only=False,
+            limit_count=limit_count,
+        )
     if not artifact_ids:
         return SimulatableResult(actor_name=identity.name, profiles=[])
 
@@ -102,7 +104,7 @@ async def resolve_simulatable_profiles(
     result_profiles: list[SimulatableProfile] = []
     for aid in artifact_ids:
         target = await resolve_profile_identity_context(
-            conn, aid, redis, bypass_cache=bypass_cache
+            pool, aid, redis, bypass_cache=bypass_cache
         )
         if not target:
             continue

@@ -31,7 +31,7 @@ class DecryptResult:
 
 
 async def resolve_decrypt(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -43,12 +43,13 @@ async def resolve_decrypt(
     Raises ValueError for missing profile or key.
     """
     identity = await resolve_profile_identity_context(
-        conn, profile_id, redis, bypass_cache=bypass_cache
+        pool, profile_id, redis, bypass_cache=bypass_cache
     )
     if not identity:
         raise ValueError(f"Profile not found: {profile_id}")
 
-    keys = await get_keys(conn, [key_id], redis, bypass_cache=bypass_cache)
+    async with pool.acquire() as conn:
+        keys = await get_keys(conn, [key_id], redis, bypass_cache=bypass_cache)
     if not keys:
         raise ValueError(f"Key not found: {key_id}")
 

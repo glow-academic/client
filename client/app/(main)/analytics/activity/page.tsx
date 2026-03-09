@@ -6,14 +6,12 @@
  */
 
 import Activity from "@/components/artifacts/activity/Activity";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { PageHeader } from "@/components/common/layout/PageHeader";
+import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
-import {
-  computeAnalyticsDefaults,
-  resolveAnalyticsFilters,
-} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { loadActivitySearchParams } from "@/lib/search-params/activity";
 
@@ -66,10 +64,6 @@ export default async function ActivityPage({
   // Parse search params via nuqs loader
   const q = loadActivitySearchParams(await searchParams);
 
-  // Compute defaults and resolve filters
-  const { defaults, profileContext } = await computeAnalyticsDefaults();
-  const filters = resolveAnalyticsFilters(q, defaults, profileContext);
-
   // Activity-specific params with defaults
   const activityPage = q.activityPage ?? 0;
   const activityPageSize = q.activityPageSize ?? 50;
@@ -83,10 +77,10 @@ export default async function ActivityPage({
   // Fetch bundle + embedded session history in a single API call
   const bundleData = await getActivityBundle({
     body: {
-      date_from: filters.startDate,
-      date_to: filters.endDate,
-      department_ids: filters.departmentIds,
-      roles: filters.roles,
+      ...(q.startDate && { date_from: q.startDate }),
+      ...(q.endDate && { date_to: q.endDate }),
+      ...(q.departmentIds?.length && { department_ids: q.departmentIds }),
+      ...(q.roles?.length && { roles: q.roles }),
       page_limit: 50,
       page_offset: 0,
       summary_profile_id: summaryProfileId,
@@ -97,6 +91,9 @@ export default async function ActivityPage({
       history_sort_order: "desc",
     },
   });
+
+  // Extract inline analytics facets from response
+  const facets = bundleData.analytics;
 
   // Extract embedded history or use empty fallback
   const activityData: ActivityListOut = bundleData.history ?? {
@@ -114,6 +111,12 @@ export default async function ActivityPage({
           { title: "Analytics", section: "analytics", url: "/analytics" },
           { title: "Activity" },
         ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshPage={refreshPage}
+            analyticsFilters={facets}
+          />
+        }
       />
       <div className="space-y-6 px-4" data-page="activity-index">
         <Activity

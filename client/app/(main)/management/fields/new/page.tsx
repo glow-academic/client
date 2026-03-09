@@ -8,7 +8,8 @@
 import Field from "@/components/artifacts/field/Field";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -148,10 +149,13 @@ export default async function NewFieldPage({
         q.conditionalParameterShowSelected ?? null,
     } as GetFieldIn["body"],
   };
-  const fieldData = await getFieldDefault(input);
+  const [fieldData, draftsResult] = await Promise.all([
+    getFieldDefault(input),
+    getDrafts(), // TODO: fetch only field drafts (e.g. getDrafts({ artifact_type: "field" }))
+  ]);
 
   return (
-    <>
+    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Management", section: "management", url: "/management" },
@@ -170,7 +174,7 @@ export default async function NewFieldPage({
           createDescriptionsAction={createDescriptions}
         />
       </div>
-    </>
+    </DraftProviderClient>
   );
 }
 

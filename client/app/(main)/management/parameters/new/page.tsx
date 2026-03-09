@@ -8,7 +8,8 @@
 import Parameter from "@/components/artifacts/parameter/Parameter";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -120,10 +121,13 @@ export default async function NewParameterPage({
       group_id: groupId,
     } as ParameterGetIn["body"],
   };
-  const parameterDetailDefault = await getParameterDefault(input);
+  const [parameterDetailDefault, draftsResult] = await Promise.all([
+    getParameterDefault(input),
+    getDrafts(), // TODO: fetch only parameter drafts (e.g. getDrafts({ artifact_type: "parameter" }))
+  ]);
 
   return (
-    <>
+    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Management", section: "management", url: "/management" },
@@ -143,7 +147,7 @@ export default async function NewParameterPage({
           createDescriptionsAction={createDescriptions}
         />
       </div>
-    </>
+    </DraftProviderClient>
   );
 }
 

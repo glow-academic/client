@@ -8,7 +8,8 @@
 import Model from "@/components/artifacts/model/Model";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -161,15 +162,16 @@ export default async function ModelEditPage({
       group_id: groupId,
     },
   };
-  const [model, docs] = await Promise.all([
+  const [model, docs, draftsResult] = await Promise.all([
     getModel(input),
     getDocs({ body: { entity_id: modelId } }),
+    getDrafts(), // TODO: fetch only model drafts (e.g. getDrafts({ artifact_type: "model" }))
   ]);
 
   const entityName = docs.detail.title;
 
   return (
-    <>
+    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -192,7 +194,7 @@ export default async function ModelEditPage({
           createVoicesAction={createDraftVoices}
         />
       </div>
-    </>
+    </DraftProviderClient>
   );
 }
 

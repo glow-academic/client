@@ -28,7 +28,6 @@ import type {
   CreateSimulationOut,
   UpdateSimulationIn,
   UpdateSimulationOut,
-  SearchFlagsOut,
   SimulationsListOut,
 } from "@/app/(main)/training/simulations/page";
 import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
@@ -87,7 +86,6 @@ export interface SimulationsProps {
   ) => Promise<DeleteSimulationOut>;
   createSimulationAction?: (input: CreateSimulationIn) => Promise<CreateSimulationOut>;
   updateSimulationAction?: (input: UpdateSimulationIn) => Promise<UpdateSimulationOut>;
-  searchFlagsAction?: () => Promise<SearchFlagsOut>;
   parseCsvAction?: (input: ParseCsvIn) => Promise<ParseCsvOut>;
   importFields?: ImportFieldDef[];
   // Server-side pagination/filtering state
@@ -97,6 +95,7 @@ export interface SimulationsProps {
   scenarioSearch: string;
   cohortSearch: string;
   departmentSearch: string;
+  flagSearch: string;
 }
 
 export function Simulations({
@@ -106,7 +105,6 @@ export function Simulations({
   deleteSimulationAction,
   createSimulationAction,
   updateSimulationAction,
-  searchFlagsAction,
   parseCsvAction,
   importFields,
   pageIndex,
@@ -115,6 +113,7 @@ export function Simulations({
   scenarioSearch,
   cohortSearch,
   departmentSearch,
+  flagSearch,
 }: SimulationsProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -144,10 +143,6 @@ export function Simulations({
   const [bulkEditPracticeMode, setBulkEditPracticeMode] = useState<boolean | null>(null);
   const [bulkEditDepartmentIds, setBulkEditDepartmentIds] = useState<string[] | null>(null);
 
-  // Lazy-loaded flag options
-  const [flagOptions, setFlagOptions] = useState<{ id: string; name: string; type: string }[]>([]);
-  const [flagsLoaded, setFlagsLoaded] = useState(false);
-
   useArtifactAi({
     artifactType: "simulation",
     validResourceTypes: ["names", "descriptions", "flags", "departments", "scenarios", "scenario_flags", "scenario_positions", "scenario_rubrics", "scenario_time_limits"],
@@ -159,9 +154,11 @@ export function Simulations({
   const scenarioSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cohortSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const departmentSearchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flagSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Local search state (for immediate UI feedback while debouncing)
   const [localSearch, setLocalSearch] = useState(searchParams.get("search") ?? "");
+  const [localFlagSearch, setLocalFlagSearch] = useState(flagSearch);
 
   // URL parameter update helper
   const updateSimulationsParams = useCallback(
@@ -304,6 +301,11 @@ export function Simulations({
         .filter((opt) => opt.value && opt.label),
     [simulationsData?.department_filter],
   );
+  const flagOptions = useMemo(() => {
+    return (simulationsData?.flag_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, type: opt.type ?? null }));
+  }, [simulationsData?.flag_filter]);
 
   // Define table columns inline
   const columns: ColumnDef<(typeof simulations)[number]>[] = useMemo(
@@ -537,10 +539,22 @@ export function Simulations({
     [updateSimulationsParams],
   );
 
+  const handleFlagSearchChange = useCallback(
+    (term: string) => {
+      setLocalFlagSearch(term);
+      if (flagSearchTimeoutRef.current) clearTimeout(flagSearchTimeoutRef.current);
+      flagSearchTimeoutRef.current = setTimeout(() => {
+        updateSimulationsParams({ flagSearch: term || null });
+      }, 300);
+    },
+    [updateSimulationsParams],
+  );
+
   // Reset all filters
   const handleResetFilters = useCallback(() => {
     setColumnFilters([]);
     setLocalSearch("");
+    setLocalFlagSearch("");
     updateSimulationsParams({
       search: null,
       scenarioIds: null,
@@ -549,6 +563,7 @@ export function Simulations({
       scenarioSearch: null,
       cohortSearch: null,
       departmentSearch: null,
+      flagSearch: null,
       page: null,
     });
   }, [updateSimulationsParams]);
@@ -654,25 +669,11 @@ export function Simulations({
     }
   };
 
-  const openBulkEditDialog = async () => {
+  const openBulkEditDialog = () => {
     // Reset form state
     setBulkEditActiveStatus(null);
     setBulkEditPracticeMode(null);
     setBulkEditDepartmentIds(null);
-
-    // Lazy-load flag options
-    if (!flagsLoaded) {
-      try {
-        const flags = await searchFlagsAction?.() ?? [];
-        setFlagOptions(
-          (flags as { id?: string | null; name?: string | null; type?: string | null }[])
-            .filter((f): f is { id: string; name: string; type: string } => !!f.id && !!f.name && !!f.type)
-        );
-        setFlagsLoaded(true);
-      } catch {
-        toast.error("Failed to load flag options");
-      }
-    }
 
     setShowBulkEditDialog(true);
   };

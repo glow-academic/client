@@ -9,11 +9,12 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Rubric from "@/components/artifacts/rubric/Rubric";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
-import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetRubricIn = InputOf<"/api/v5/artifacts/rubrics/get", "post">;
@@ -131,7 +132,7 @@ export default async function EditRubricPage({
 
   // Fetch data using unified get endpoint
   try {
-    const [rubricData, docs] = await Promise.all([
+    const [rubricData, docs, draftsResult] = await Promise.all([
       getRubric(
         rubricId,
         q.draftId ?? null,
@@ -140,12 +141,13 @@ export default async function EditRubricPage({
         groupId,
       ),
       getDocs({ body: { entity_id: rubricId } }),
+      getDrafts(), // TODO: fetch only rubric drafts (e.g. getDrafts({ artifact_type: "rubric" }))
     ]);
 
     const entityName = docs.detail.title;
 
     return (
-      <>
+      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "System", section: "system", url: "/system" },
@@ -171,7 +173,7 @@ export default async function EditRubricPage({
             createStandardGroupsAction={createDraftStandardGroups}
           />
         </div>
-      </>
+      </DraftProviderClient>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

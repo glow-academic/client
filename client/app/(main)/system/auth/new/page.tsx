@@ -5,7 +5,8 @@
 import Auth from "@/components/artifacts/auth/Auth";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -142,10 +143,13 @@ export default async function AuthCreatePage({
       group_id: groupId,
     } as GetAuthIn["body"],
   };
-  const authData = await getAuthDefault(input);
+  const [authData, draftsResult] = await Promise.all([
+    getAuthDefault(input),
+    getDrafts(), // TODO: fetch only auth drafts (e.g. getDrafts({ artifact_type: "auth" }))
+  ]);
 
   return (
-    <>
+    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "System", section: "system", url: "/system" },
@@ -166,7 +170,7 @@ export default async function AuthCreatePage({
           createSlugsAction={createDraftSlugs}
         />
       </div>
-    </>
+    </DraftProviderClient>
   );
 }
 

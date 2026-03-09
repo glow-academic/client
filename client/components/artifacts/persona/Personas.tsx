@@ -33,9 +33,6 @@ import type {
   CreatePersonaOut,
   UpdatePersonaIn,
   UpdatePersonaOut,
-  SearchColorsOut,
-  SearchIconsOut,
-  SearchVoicesOut,
 } from "@/app/(main)/training/personas/page";
 import BulkImport, { type ImportFieldDef } from "@/components/common/BulkImport";
 import { DataTableFacetedFilter } from "@/components/common/table/DataTableFacetedFilter";
@@ -112,9 +109,6 @@ export interface PersonasProps {
   deletePersonaAction?: (input: DeletePersonaIn) => Promise<DeletePersonaOut>;
   createPersonaAction?: (input: CreatePersonaIn) => Promise<CreatePersonaOut>;
   updatePersonaAction?: (input: UpdatePersonaIn) => Promise<UpdatePersonaOut>;
-  searchColorsAction?: () => Promise<SearchColorsOut>;
-  searchIconsAction?: () => Promise<SearchIconsOut>;
-  searchVoicesAction?: () => Promise<SearchVoicesOut>;
   parseCsvAction?: ((input: ParseCsvIn) => Promise<ParseCsvOut>) | undefined;
   importFields?: ImportFieldDef[] | undefined;
   // Server-side pagination
@@ -125,6 +119,9 @@ export interface PersonasProps {
   scenarioSearch: string;
   fieldSearch: string;
   departmentSearch: string;
+  colorSearch: string;
+  iconSearch: string;
+  voiceSearch: string;
 }
 
 export default function Personas({
@@ -134,9 +131,6 @@ export default function Personas({
   deletePersonaAction,
   createPersonaAction,
   updatePersonaAction,
-  searchColorsAction,
-  searchIconsAction,
-  searchVoicesAction,
   parseCsvAction,
   importFields,
   pageIndex,
@@ -145,6 +139,9 @@ export default function Personas({
   scenarioSearch,
   fieldSearch,
   departmentSearch,
+  colorSearch,
+  iconSearch,
+  voiceSearch,
 }: PersonasProps) {
   const { profile } = useProfile();
   const router = useRouter();
@@ -176,12 +173,6 @@ export default function Personas({
 
   // Bulk import state
   const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
-
-  // Lazy-loaded picker options
-  const [colorOptions, setColorOptions] = useState<{ id: string; name: string; hex_code?: string | null }[]>([]);
-  const [iconOptions, setIconOptions] = useState<{ id: string; name: string; value?: string | null }[]>([]);
-  const [voiceOptions, setVoiceOptions] = useState<{ id: string; voice: string }[]>([]);
-  const [optionsLoaded, setOptionsLoaded] = useState(false);
 
   // Socket listener for generation events (toasts, spinners, completion refresh)
   // Generation is dispatched from the GenerationPanel, not from this page
@@ -299,6 +290,25 @@ export default function Personas({
       .filter((opt) => opt.value && opt.label);
   }, [personasData?.department_filter]);
 
+  // Derive picker options from listData filter sections (for bulk edit dialog)
+  const colorOptions = useMemo(() => {
+    return (personasData?.color_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, hex_code: opt.hex_code ?? null }));
+  }, [personasData?.color_filter]);
+
+  const iconOptions = useMemo(() => {
+    return (personasData?.icon_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, name: opt.name!, value: opt.value ?? null }));
+  }, [personasData?.icon_filter]);
+
+  const voiceOptions = useMemo(() => {
+    return (personasData?.voice_filter?.options || [])
+      .filter((opt): opt is typeof opt & { id: string; name: string } => !!opt.id && !!opt.name)
+      .map((opt) => ({ id: opt.id!, voice: opt.name! }));
+  }, [personasData?.voice_filter]);
+
   // Helper to update URL search params
   const updatePersonasParams = useCallback(
     (updates: {
@@ -311,6 +321,9 @@ export default function Personas({
       scenarioSearch?: string;
       fieldSearch?: string;
       departmentSearch?: string;
+      colorSearch?: string;
+      iconSearch?: string;
+      voiceSearch?: string;
     }) => {
       const params = new URLSearchParams(searchParams?.toString() || "");
 
@@ -377,6 +390,30 @@ export default function Personas({
         }
       }
 
+      if (updates.colorSearch !== undefined) {
+        if (updates.colorSearch === "") {
+          params.delete("colorSearch");
+        } else {
+          params.set("colorSearch", updates.colorSearch);
+        }
+      }
+
+      if (updates.iconSearch !== undefined) {
+        if (updates.iconSearch === "") {
+          params.delete("iconSearch");
+        } else {
+          params.set("iconSearch", updates.iconSearch);
+        }
+      }
+
+      if (updates.voiceSearch !== undefined) {
+        if (updates.voiceSearch === "") {
+          params.delete("voiceSearch");
+        } else {
+          params.set("voiceSearch", updates.voiceSearch);
+        }
+      }
+
       const qs = params.toString();
       router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
     },
@@ -439,10 +476,16 @@ export default function Personas({
   const scenarioSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fieldSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const departmentSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const colorSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const iconSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voiceSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [localScenarioSearch, setLocalScenarioSearch] = useState(scenarioSearch);
   const [localFieldSearch, setLocalFieldSearch] = useState(fieldSearch);
   const [localDepartmentSearch, setLocalDepartmentSearch] = useState(departmentSearch);
+  const [localColorSearch, setLocalColorSearch] = useState(colorSearch);
+  const [localIconSearch, setLocalIconSearch] = useState(iconSearch);
+  const [localVoiceSearch, setLocalVoiceSearch] = useState(voiceSearch);
 
   const handleScenarioSearchChange = useCallback(
     (value: string) => {
@@ -478,6 +521,45 @@ export default function Personas({
       }
       departmentSearchTimeoutRef.current = setTimeout(() => {
         updatePersonasParams({ departmentSearch: value });
+      }, 300);
+    },
+    [updatePersonasParams]
+  );
+
+  const handleColorSearchChange = useCallback(
+    (value: string) => {
+      setLocalColorSearch(value);
+      if (colorSearchTimeoutRef.current) {
+        clearTimeout(colorSearchTimeoutRef.current);
+      }
+      colorSearchTimeoutRef.current = setTimeout(() => {
+        updatePersonasParams({ colorSearch: value });
+      }, 300);
+    },
+    [updatePersonasParams]
+  );
+
+  const handleIconSearchChange = useCallback(
+    (value: string) => {
+      setLocalIconSearch(value);
+      if (iconSearchTimeoutRef.current) {
+        clearTimeout(iconSearchTimeoutRef.current);
+      }
+      iconSearchTimeoutRef.current = setTimeout(() => {
+        updatePersonasParams({ iconSearch: value });
+      }, 300);
+    },
+    [updatePersonasParams]
+  );
+
+  const handleVoiceSearchChange = useCallback(
+    (value: string) => {
+      setLocalVoiceSearch(value);
+      if (voiceSearchTimeoutRef.current) {
+        clearTimeout(voiceSearchTimeoutRef.current);
+      }
+      voiceSearchTimeoutRef.current = setTimeout(() => {
+        updatePersonasParams({ voiceSearch: value });
       }, 300);
     },
     [updatePersonasParams]
@@ -801,7 +883,7 @@ export default function Personas({
     }
   };
 
-  const openBulkEditDialog = async () => {
+  const openBulkEditDialog = () => {
     // Reset form state
     setBulkEditActiveStatus(null);
     setBulkEditColorIds([]);
@@ -809,32 +891,7 @@ export default function Personas({
     setBulkEditDepartmentIds(null);
     setBulkEditVoiceIds(null);
 
-    // Lazy-load picker options
-    if (!optionsLoaded) {
-      try {
-        const [colors, icons, voices] = await Promise.all([
-          searchColorsAction?.() ?? Promise.resolve([]),
-          searchIconsAction?.() ?? Promise.resolve([]),
-          searchVoicesAction?.() ?? Promise.resolve([]),
-        ]);
-        setColorOptions(
-          (colors as { id?: string | null; name?: string | null; hex_code?: string | null }[])
-            .filter((c): c is { id: string; name: string; hex_code?: string | null } => !!c.id && !!c.name)
-        );
-        setIconOptions(
-          (icons as { id?: string | null; name?: string | null; value?: string | null }[])
-            .filter((i): i is { id: string; name: string; value?: string | null } => !!i.id && !!i.name)
-        );
-        setVoiceOptions(
-          (voices as { id?: string | null; voice?: string | null }[])
-            .filter((v): v is { id: string; voice: string } => !!v.id && !!v.voice)
-        );
-        setOptionsLoaded(true);
-      } catch {
-        toast.error("Failed to load options");
-      }
-    }
-
+    // Options come from listData filter sections — no lazy-load needed
     setShowBulkEditDialog(true);
   };
 
@@ -1226,6 +1283,9 @@ export default function Personas({
                       setLocalScenarioSearch("");
                       setLocalFieldSearch("");
                       setLocalDepartmentSearch("");
+                      setLocalColorSearch("");
+                      setLocalIconSearch("");
+                      setLocalVoiceSearch("");
                       table.resetColumnFilters();
                       updatePersonasParams({
                         page: 0,
@@ -1236,6 +1296,9 @@ export default function Personas({
                         scenarioSearch: "",
                         fieldSearch: "",
                         departmentSearch: "",
+                        colorSearch: "",
+                        iconSearch: "",
+                        voiceSearch: "",
                       });
                     }}
                     className="h-8 px-2 lg:px-3 hidden md:flex"

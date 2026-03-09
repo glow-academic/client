@@ -50,7 +50,7 @@ class SettingsThemeResult:
 
 
 async def resolve_settings_theme(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     settings_id: UUID,
     bypass_cache: bool = False,
@@ -60,13 +60,14 @@ async def resolve_settings_theme(
     Composes canonical black boxes — no inline SQL.
     """
     # Step 1: Get setting artifact with junction IDs
-    artifacts = await get_setting_artifacts(
-        conn,
-        [settings_id],
-        colors=True,
-        thresholds=True,
-        flags=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_setting_artifacts(
+            conn,
+            [settings_id],
+            colors=True,
+            thresholds=True,
+            flags=True,
+        )
     if not artifacts:
         return None
 
@@ -76,12 +77,22 @@ async def resolve_settings_theme(
     flag_ids = artifact.flag_ids or []
 
     # Step 2: Fetch resources in parallel
+    async def _get_colors():
+        async with pool.acquire() as c:
+            return await get_colors(c, color_ids, redis, bypass_cache)
+
+    async def _get_thresholds():
+        async with pool.acquire() as c:
+            return await get_thresholds(c, threshold_ids, redis, bypass_cache)
+
+    async def _get_flags():
+        async with pool.acquire() as c:
+            return await get_flags(c, flag_ids, redis, bypass_cache)
+
     colors_res, thresholds_res, flags_res = await asyncio.gather(
-        get_colors(conn, color_ids, redis, bypass_cache) if color_ids else _empty(),
-        get_thresholds(conn, threshold_ids, redis, bypass_cache)
-        if threshold_ids
-        else _empty(),
-        get_flags(conn, flag_ids, redis, bypass_cache) if flag_ids else _empty(),
+        _get_colors() if color_ids else _empty(),
+        _get_thresholds() if threshold_ids else _empty(),
+        _get_flags() if flag_ids else _empty(),
     )
 
     # Step 3: Check active flag
@@ -122,7 +133,7 @@ async def resolve_settings_theme(
 
 
 async def resolve_thresholds(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     profile_id: UUID | None,
     bypass_cache: bool = False,
@@ -140,13 +151,13 @@ async def resolve_thresholds(
         return {"success": success, "warning": warning, "danger": danger}
 
     identity = await resolve_profile_identity_context(
-        conn, profile_id, redis, bypass_cache=bypass_cache
+        pool, profile_id, redis, bypass_cache=bypass_cache
     )
     if not identity or not identity.settings_id:
         return {"success": success, "warning": warning, "danger": danger}
 
     theme = await resolve_settings_theme(
-        conn, redis, identity.settings_id, bypass_cache=bypass_cache
+        pool, redis, identity.settings_id, bypass_cache=bypass_cache
     )
     if theme:
         success = theme.success_threshold or success

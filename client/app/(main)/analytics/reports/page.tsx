@@ -6,18 +6,14 @@
  */
 
 import Reports from "@/components/artifacts/reports/Reports";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { PageHeader } from "@/components/common/layout/PageHeader";
+import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
-import {
-  type AnalyticsFilters,
-  computeAnalyticsDefaults,
-  resolveAnalyticsFilters,
-} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { loadReportsSearchParams } from "@/lib/search-params/reports";
 
 /** ---- Strong types from OpenAPI ---- */
@@ -65,20 +61,30 @@ export default async function ReportsFullPage({
   // Parse search params via nuqs loader
   const q = loadReportsSearchParams(await searchParams);
 
-  // Compute defaults and resolve filters
-  const { defaults, profileContext } = await computeAnalyticsDefaults();
-  const resolved = resolveAnalyticsFilters(q, defaults, profileContext);
+  // Compute initial date range from search params (with 30-day fallback)
+  const defaultStartDate = (() => {
+    if (q.startDate) return q.startDate;
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  })();
+  const defaultEndDate = (() => {
+    if (q.endDate) return q.endDate;
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  })();
 
-  // Build AnalyticsFilters for Reports component (optional arrays)
-  const filters: AnalyticsFilters = {
-    startDate: resolved.startDate,
-    endDate: resolved.endDate,
+  // Build filters from search params (replaces computeAnalyticsDefaults + resolveAnalyticsFilters)
+  const filters = {
+    startDate: defaultStartDate,
+    endDate: defaultEndDate,
+    cohortIds: q.cohortIds ?? ([] as string[]),
+    departmentIds: q.departmentIds ?? ([] as string[]),
+    roles: q.roles ?? ([] as string[]),
+    simulationFilters: q.simulationFilters ?? (["general"] as string[]),
   };
-  if (resolved.cohortIds.length > 0) filters.cohortIds = resolved.cohortIds;
-  if (resolved.departmentIds.length > 0) filters.departmentIds = resolved.departmentIds;
-  if (resolved.roles.length > 0) filters.roles = resolved.roles;
-  if (resolved.simulationFilters.length > 0)
-    filters.simulationFilters = resolved.simulationFilters;
 
   // Reports-specific params with defaults
   const reportsPage = q.reportsPage ?? 0;
@@ -90,146 +96,37 @@ export default async function ReportsFullPage({
   const reportsSortBy = q.reportsSortBy ?? "averageScore";
   const reportsSortOrder = q.reportsSortOrder ?? "desc";
 
-  // Create reportsKey for Suspense boundary to trigger re-fetch on URL param changes
-  // Include analytics filter params so reports re-fetch when filters change
-  const reportsKey = [
-    reportsPage,
-    reportsPageSize,
-    reportsSearch || "",
-    (reportsProfileIds || []).join(","),
-    (reportsSimulationIds || []).join(","),
-    (reportsScenarioIds || []).join(","),
-    reportsSortBy,
-    reportsSortOrder,
-    filters.startDate,
-    filters.endDate,
-    (filters.cohortIds || []).join(","),
-    (filters.departmentIds || []).join(","),
-    (filters.roles || []).join(","),
-    (filters.simulationFilters || []).join(","),
-  ].join("|");
-
-  // Read view cookie for column visibility
-  const initialColumnVisibility = await readViewCookie("reports");
-
-  // Create empty reports data for loading state
-  const emptyReportsData = {
-    sections: {
-      header_metrics: {
-        total_attempts: { current_value: null, has_data: false, method: null, data_points: [], hover: null, status: "neutral" },
-        average_score: { current_value: null, has_data: false, method: null, data_points: [], hover: null, status: "neutral" },
-        completion_percentage: { current_value: null, has_data: false, method: null, data_points: [], hover: null, status: "neutral" },
-        first_attempt_pass_rate: { current_value: null, has_data: false, method: null, data_points: [], hover: null, status: "neutral" },
-      },
-      overview: { status: { has_data: false, status: "neutral" }, rows: [] },
-      leaderboard: { status: { has_data: false, status: "neutral" }, rows: [] },
-      trends: { status: { has_data: false, status: "neutral" }, chart_data: [] },
-      history: { status: { has_data: false, status: "neutral" }, rows: [] },
-    },
-    views: { attempt_facts: [], chat_facts: [], daily_metrics: [], profile_metrics: [] },
-    resources: { simulations: {}, profiles: {}, scenarios: {}, cohorts: {}, personas: {}, rubrics: {} },
-    total_count: 0,
-    simulation_options: [],
-    profile_options: [],
-    scenario_options: [],
-  } as ReportsOut;
-
-  return (
-    <>
-      <PageHeader
-        breadcrumbs={[
-          { title: "Analytics", section: "analytics", url: "/analytics" },
-          { title: "Reports" },
-        ]}
-      />
-      <div className="space-y-6 px-4" data-page="reports-index">
-        <Suspense
-          key={reportsKey}
-          fallback={
-            <Reports
-              reportsData={emptyReportsData}
-              filters={filters}
-              isLoading={true}
-              profileOptions={[]}
-              simulationOptions={[]}
-              scenarioOptions={[]}
-              initialColumnVisibility={initialColumnVisibility}
-            />
-          }
-        >
-          <ReportsSection
-            filters={filters}
-            reportsPage={reportsPage}
-            reportsPageSize={reportsPageSize}
-            reportsSearch={reportsSearch}
-            reportsProfileIds={reportsProfileIds}
-            reportsSimulationIds={reportsSimulationIds}
-            reportsScenarioIds={reportsScenarioIds}
-            reportsSortBy={reportsSortBy}
-            reportsSortOrder={reportsSortOrder}
-            initialColumnVisibility={initialColumnVisibility}
-          />
-        </Suspense>
-      </div>
-    </>
-  );
-}
-
-/** ---- Inline reports section component (only used here) ---- */
-async function ReportsSection({
-  filters,
-  reportsPage,
-  reportsPageSize,
-  reportsSearch,
-  reportsProfileIds,
-  reportsSimulationIds,
-  reportsScenarioIds,
-  reportsSortBy,
-  reportsSortOrder,
-  initialColumnVisibility,
-}: {
-  filters: AnalyticsFilters;
-  reportsPage: number;
-  reportsPageSize: number;
-  reportsSearch?: string | undefined;
-  reportsProfileIds?: string[] | undefined;
-  reportsSimulationIds?: string[] | undefined;
-  reportsScenarioIds?: string[] | undefined;
-  reportsSortBy: string;
-  reportsSortOrder: string;
-  initialColumnVisibility?: Record<string, boolean>;
-}) {
-  // Build reports filters with pagination/search/sorting/filtering params (snake_case for API)
-  const reportsFilters = {
-    start_date: filters.startDate,
-    end_date: filters.endDate,
-    cohort_ids: filters.cohortIds || [],
-    department_ids: filters.departmentIds || [],
-    roles: filters.roles || [],
-    simulation_filters: filters.simulationFilters || [],
-    page_limit: reportsPageSize,
-    page_offset: reportsPage * reportsPageSize,
-    ...(reportsSearch && { search: reportsSearch }),
-    sort_by: reportsSortBy,
-    sort_order: reportsSortOrder,
-    ...(reportsProfileIds &&
-      reportsProfileIds.length > 0 && {
-        profile_ids: reportsProfileIds,
-      }),
-    ...(reportsSimulationIds &&
-      reportsSimulationIds.length > 0 && {
-        simulation_ids: reportsSimulationIds,
-      }),
-    ...(reportsScenarioIds &&
-      reportsScenarioIds.length > 0 && {
-        scenario_ids: reportsScenarioIds,
-      }),
-  };
-
-  // Fetch reports data server-side
+  // Single API call returning all reports data (with inline analytics facets)
   const reportsData = await getReports({
-    body: reportsFilters,
+    body: {
+      start_date: filters.startDate,
+      end_date: filters.endDate,
+      ...(filters.cohortIds.length > 0 && { cohort_ids: filters.cohortIds }),
+      ...(filters.departmentIds.length > 0 && { department_ids: filters.departmentIds }),
+      ...(filters.roles.length > 0 && { roles: filters.roles }),
+      ...(filters.simulationFilters.length > 0 && { simulation_filters: filters.simulationFilters }),
+      page_limit: reportsPageSize,
+      page_offset: reportsPage * reportsPageSize,
+      ...(reportsSearch && { search: reportsSearch }),
+      sort_by: reportsSortBy,
+      sort_order: reportsSortOrder,
+      ...(reportsProfileIds &&
+        reportsProfileIds.length > 0 && {
+          profile_ids: reportsProfileIds,
+        }),
+      ...(reportsSimulationIds &&
+        reportsSimulationIds.length > 0 && {
+          simulation_ids: reportsSimulationIds,
+        }),
+      ...(reportsScenarioIds &&
+        reportsScenarioIds.length > 0 && {
+          scenario_ids: reportsScenarioIds,
+        }),
+    },
   });
+
+  // Extract inline analytics facets from response (replaces computeAnalyticsDefaults)
+  const facets = reportsData.analytics;
 
   // Extract filter options from API response (snake_case from server)
   const profileOptions =
@@ -275,16 +172,35 @@ async function ReportsSection({
         )
       : [];
 
+  // Read view cookie for column visibility
+  const initialColumnVisibility = await readViewCookie("reports");
+
   return (
-    <Reports
-      reportsData={reportsData}
-      filters={filters}
-      isLoading={false}
-      profileOptions={profileOptions}
-      simulationOptions={simulationOptions}
-      scenarioOptions={scenarioOptions}
-      initialColumnVisibility={initialColumnVisibility}
-    />
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Analytics", section: "analytics", url: "/analytics" },
+          { title: "Reports" },
+        ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshPage={refreshPage}
+            analyticsFilters={facets}
+          />
+        }
+      />
+      <div className="space-y-6 px-4" data-page="reports-index">
+        <Reports
+          reportsData={reportsData}
+          filters={filters}
+          isLoading={false}
+          profileOptions={profileOptions}
+          simulationOptions={simulationOptions}
+          scenarioOptions={scenarioOptions}
+          initialColumnVisibility={initialColumnVisibility}
+        />
+      </div>
+    </>
   );
 }
 

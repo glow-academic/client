@@ -7,15 +7,13 @@
  */
 
 import Record from "@/components/artifacts/record/Record";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { PageHeader } from "@/components/common/layout/PageHeader";
+import { getAuthProfile, refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
-import {
-  computeAnalyticsDefaults,
-  resolveAnalyticsFilters,
-} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { loadProfileReportSearchParams } from "@/lib/search-params/profile-report";
 
@@ -65,9 +63,23 @@ export default async function RecordPage({
   // Parse search params via nuqs loader
   const q = loadProfileReportSearchParams(await searchParams);
 
-  // Compute defaults and resolve filters
-  const { defaults, profileContext } = await computeAnalyticsDefaults();
-  const filters = resolveAnalyticsFilters(q, defaults, profileContext);
+  // Get profile context for actor_profile_id (cache()-wrapped, no extra request)
+  const profileContext = await getAuthProfile();
+
+  // Compute initial date range from search params (with 30-day fallback)
+  const defaultStartDate = (() => {
+    if (q.startDate) return q.startDate;
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  })();
+  const defaultEndDate = (() => {
+    if (q.endDate) return q.endDate;
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  })();
 
   // Section picker params (canonical — shared across charts in each section)
   const rubricIds = q.rubricIds ?? undefined;
@@ -96,12 +108,12 @@ export default async function RecordPage({
   // Single API call returning all dashboard data
   const data = await getDashboard({
     body: {
-      start_date: filters.startDate,
-      end_date: filters.endDate,
-      cohort_ids: filters.cohortIds,
-      department_ids: filters.departmentIds,
-      roles: filters.roles,
-      simulation_filters: filters.simulationFilters,
+      start_date: defaultStartDate,
+      end_date: defaultEndDate,
+      ...(q.cohortIds && q.cohortIds.length > 0 && { cohort_ids: q.cohortIds }),
+      ...(q.departmentIds && q.departmentIds.length > 0 && { department_ids: q.departmentIds }),
+      ...(q.roles && q.roles.length > 0 && { roles: q.roles }),
+      ...(q.simulationFilters && q.simulationFilters.length > 0 && { simulation_filters: q.simulationFilters }),
       target_profile_id: recordId,
       actor_profile_id: profileContext.id || recordId,
       page_limit: 50,
@@ -126,6 +138,17 @@ export default async function RecordPage({
     },
   });
 
+  // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
+  const facets = data.analytics;
+  const initialFilters = {
+    startDate: defaultStartDate,
+    endDate: defaultEndDate,
+    cohortIds: q.cohortIds ?? [],
+    departmentIds: q.departmentIds ?? [],
+    roles: q.roles ?? [],
+    simulationFilters: q.simulationFilters ?? ["general"],
+  };
+
   const profileData = {
     name: data.profile_name || null,
     emails: data.profile_emails || null,
@@ -140,6 +163,12 @@ export default async function RecordPage({
           { title: "Reports", section: "analytics", url: "/analytics/reports" },
           { title: "Profile" },
         ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshPage={refreshPage}
+            analyticsFilters={facets}
+          />
+        }
       />
       <div className="px-4">
         <Record
@@ -160,7 +189,7 @@ export default async function RecordPage({
           scenarioIndex={scenarioIndex}
           historyPage={historyPage}
           historyPageSize={historyPageSize}
-          defaultFilters={filters}
+          defaultFilters={initialFilters}
           initialColumnVisibility={await readViewCookie("history")}
         />
       </div>

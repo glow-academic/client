@@ -8,7 +8,8 @@
 import Document from "@/components/artifacts/document/Document";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -159,10 +160,13 @@ export default async function NewDocumentPage({
       group_id: groupId,
     } as GetDocumentIn["body"],
   };
-  const documentDetailDefault = await getDocumentDefault(input);
+  const [documentDetailDefault, draftsResult] = await Promise.all([
+    getDocumentDefault(input),
+    getDrafts(), // TODO: fetch only document drafts (e.g. getDrafts({ artifact_type: "document" }))
+  ]);
 
   return (
-    <>
+    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "Management", section: "management", url: "/management" },
@@ -189,7 +193,7 @@ export default async function NewDocumentPage({
           createTextsAction={createDraftTexts}
         />
       </div>
-    </>
+    </DraftProviderClient>
   );
 }
 

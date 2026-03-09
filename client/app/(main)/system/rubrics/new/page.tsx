@@ -8,11 +8,12 @@
 import Rubric from "@/components/artifacts/rubric/Rubric";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
-import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetRubricIn = InputOf<"/api/v5/artifacts/rubrics/get", "post">;
@@ -161,15 +162,18 @@ export default async function NewRubricPage({
   const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "rubric" })).group_id;
 
   // Fetch rubric data using unified get endpoint (rubric_id = null for new mode)
-  const rubricData = await getRubric(
-    q.draftId ?? null,
-    q.descriptionSearch ?? null,
-    q.standardGroupSearch ?? null,
-    groupId,
-  );
+  const [rubricData, draftsResult] = await Promise.all([
+    getRubric(
+      q.draftId ?? null,
+      q.descriptionSearch ?? null,
+      q.standardGroupSearch ?? null,
+      groupId,
+    ),
+    getDrafts(), // TODO: fetch only rubric drafts (e.g. getDrafts({ artifact_type: "rubric" }))
+  ]);
 
   return (
-    <>
+    <DraftProviderClient drafts={draftsResult.drafts ?? []}>
       <PageHeader
         breadcrumbs={[
           { title: "System", section: "system", url: "/system" },
@@ -190,7 +194,7 @@ export default async function NewRubricPage({
           createStandardGroupsAction={createDraftStandardGroups}
         />
       </div>
-    </>
+    </DraftProviderClient>
   );
 }
 

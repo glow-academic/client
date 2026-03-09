@@ -7,11 +7,12 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Provider from "@/components/artifacts/provider/Provider";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
 import { createLoader, parseAsString } from "nuqs/server";
-import { resolveGroupId } from "@/app/(main)/layout-server";
 
 /** ---- Strong types from OpenAPI ---- */
 type GetProviderIn = InputOf<"/api/v5/artifacts/providers/get", "post">;
@@ -165,9 +166,10 @@ export default async function EditProviderPage({
         group_id: groupId,
       } as GetProviderIn["body"],
     };
-    const [providerDetail, docs] = await Promise.all([
+    const [providerDetail, docs, draftsResult] = await Promise.all([
       getProvider(input).catch(() => null),
       getDocs({ body: { entity_id: providerId } }),
+      getDrafts(), // TODO: fetch only provider drafts (e.g. getDrafts({ artifact_type: "provider" }))
     ]);
 
     if (!providerDetail) {
@@ -177,7 +179,7 @@ export default async function EditProviderPage({
     const entityName = docs.detail.title;
 
     return (
-      <>
+      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Intelligence", section: "intelligence", url: "/intelligence" },
@@ -203,7 +205,7 @@ export default async function EditProviderPage({
             createEndpointsAction={createEndpoints}
           />
         </div>
-      </>
+      </DraftProviderClient>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

@@ -101,10 +101,9 @@ async def resolve_reports_context(
 
     async def _fetch_thresholds() -> dict[str, int | float]:
         profile_for_settings = actor_profile_id or target_profile_id
-        async with pool.acquire() as c:
-            return await resolve_thresholds(
-                c, redis, profile_for_settings, bypass_cache=bypass_cache
-            )
+        return await resolve_thresholds(
+            pool, redis, profile_for_settings, bypass_cache=bypass_cache
+        )
 
     chat_items, thresholds = await asyncio.gather(
         _fetch_chats(),

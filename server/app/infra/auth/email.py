@@ -38,7 +38,7 @@ class ProfileByEmailResult:
 
 
 async def resolve_profile_by_email(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     email: str,
@@ -50,9 +50,10 @@ async def resolve_profile_by_email(
     Returns None if no profile matches the email.
     """
     # Step 1: Find email resource matching the address
-    email_results = await search_emails(
-        conn, redis, search=email, limit_count=100, bypass_cache=bypass_cache
-    )
+    async with pool.acquire() as conn:
+        email_results = await search_emails(
+            conn, redis, search=email, limit_count=100, bypass_cache=bypass_cache
+        )
 
     # Filter to exact match (search_emails does ILIKE substring matching)
     matching_email_ids = [
@@ -62,9 +63,10 @@ async def resolve_profile_by_email(
         return None
 
     # Step 2: Find profile artifact owning that email
-    artifact_ids, _total = await search_profiles(
-        conn, email_ids=matching_email_ids, active_only=False, limit_count=1
-    )
+    async with pool.acquire() as conn:
+        artifact_ids, _total = await search_profiles(
+            conn, email_ids=matching_email_ids, active_only=False, limit_count=1
+        )
     if not artifact_ids:
         return None
 
@@ -72,7 +74,7 @@ async def resolve_profile_by_email(
 
     # Step 3: Hydrate profile identity
     identity = await resolve_profile_identity_context(
-        conn, target_id, redis, bypass_cache=bypass_cache
+        pool, target_id, redis, bypass_cache=bypass_cache
     )
     if not identity:
         return None
@@ -81,7 +83,7 @@ async def resolve_profile_by_email(
     actor_name: str | None = None
     if actor_profile_id:
         actor_identity = await resolve_profile_identity_context(
-            conn, actor_profile_id, redis, bypass_cache=bypass_cache
+            pool, actor_profile_id, redis, bypass_cache=bypass_cache
         )
         if actor_identity:
             actor_name = actor_identity.name
