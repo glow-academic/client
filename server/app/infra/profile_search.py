@@ -43,7 +43,7 @@ from app.routes.v5.tools.resources.roles.search import search_roles
 
 
 async def search_profile_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -74,7 +74,7 @@ async def search_profile_client(
 
     # -- Step 1: Profile context --
 
-    actor_profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    actor_profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if actor_profile is None:
         raise HTTPException(
@@ -88,44 +88,46 @@ async def search_profile_client(
 
     # -- Step 2: Resolve role_filter string to role_ids --
 
-    role_ids_filter: list[UUID] | None = None
-    if role_filter:
-        # Search roles to find the matching role resource ID
-        all_roles = await get_roles(conn, None, redis)
-        matching = [r for r in all_roles if r.role == role_filter]
-        if matching:
-            role_ids_filter = [r.id for r in matching]
-        else:
-            # No matching role — empty result
-            return _empty_response(actor_name, total_count=0)
+    async with pool.acquire() as conn:
+        role_ids_filter: list[UUID] | None = None
+        if role_filter:
+            # Search roles to find the matching role resource ID
+            all_roles = await get_roles(conn, None, redis)
+            matching = [r for r in all_roles if r.role == role_filter]
+            if matching:
+                role_ids_filter = [r.id for r in matching]
+            else:
+                # No matching role — empty result
+                return _empty_response(actor_name, total_count=0)
 
-    # -- Step 3: Search profiles --
+        # -- Step 3: Search profiles --
 
-    profile_ids, total_count = await search_profiles(
-        conn,
-        search=search,
-        department_ids=filter_department_ids,
-        cohort_ids=cohort_ids,
-        role_ids=role_ids_filter,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+        profile_ids, total_count = await search_profiles(
+            conn,
+            search=search,
+            department_ids=filter_department_ids,
+            cohort_ids=cohort_ids,
+            role_ids=role_ids_filter,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
     if not profile_ids:
         return _empty_response(actor_name, total_count=0)
 
     # -- Step 4: Get profile artifacts with junction IDs --
 
-    artifacts = await get_profiles(
-        conn,
-        profile_ids,
-        names=True,
-        departments=True,
-        emails=True,
-        profiles=True,
-        request_limits=True,
-        roles=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_profiles(
+            conn,
+            profile_ids,
+            names=True,
+            departments=True,
+            emails=True,
+            profiles=True,
+            request_limits=True,
+            roles=True,
+        )
 
     # -- Step 5: Parallel hydration + facets --
 
@@ -144,6 +146,42 @@ async def search_profile_client(
         all_request_limit_ids.extend(a.request_limit_ids or [])
         all_profile_resource_ids.extend(a.profile_ids or [])
 
+    async def _fetch_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_emails() -> list:
+        async with pool.acquire() as conn:
+            return await get_emails(conn, all_email_ids, redis)
+
+    async def _fetch_departments() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, all_department_ids, redis)
+
+    async def _fetch_roles() -> list:
+        async with pool.acquire() as conn:
+            return await get_roles(conn, all_role_ids, redis)
+
+    async def _fetch_request_limits() -> list:
+        async with pool.acquire() as conn:
+            return await get_request_limits(conn, all_request_limit_ids, redis)
+
+    async def _fetch_profiles_resource() -> list:
+        async with pool.acquire() as conn:
+            return await get_profiles_resource(conn, all_profile_resource_ids, redis)
+
+    async def _fetch_department_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn, redis, search=department_search, profile=True, limit_count=100
+            )
+
+    async def _fetch_role_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_roles(
+                conn, redis, search=role_search, profile=True, limit_count=100
+            )
+
     (
         names_data,
         emails_data,
@@ -154,22 +192,14 @@ async def search_profile_client(
         department_facet,
         role_facet,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_emails(conn, all_email_ids, redis) if all_email_ids else _empty_list(),
-        get_departments(conn, all_department_ids, redis)
-        if all_department_ids
-        else _empty_list(),
-        get_roles(conn, all_role_ids, redis) if all_role_ids else _empty_list(),
-        get_request_limits(conn, all_request_limit_ids, redis)
-        if all_request_limit_ids
-        else _empty_list(),
-        get_profiles_resource(conn, all_profile_resource_ids, redis)
-        if all_profile_resource_ids
-        else _empty_list(),
-        search_departments(
-            conn, redis, search=department_search, profile=True, limit_count=100
-        ),
-        search_roles(conn, redis, search=role_search, profile=True, limit_count=100),
+        _fetch_names() if all_name_ids else _empty_list(),
+        _fetch_emails() if all_email_ids else _empty_list(),
+        _fetch_departments() if all_department_ids else _empty_list(),
+        _fetch_roles() if all_role_ids else _empty_list(),
+        _fetch_request_limits() if all_request_limit_ids else _empty_list(),
+        _fetch_profiles_resource() if all_profile_resource_ids else _empty_list(),
+        _fetch_department_facet(),
+        _fetch_role_facet(),
     )
 
     # Build lookup maps

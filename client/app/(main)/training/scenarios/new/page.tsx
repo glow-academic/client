@@ -6,6 +6,8 @@
  */
 
 import Scenario from "@/components/artifacts/scenario/Scenario";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -119,17 +121,27 @@ export default async function NewScenarioPage({
   });
 
   return (
-    <div
-      className="space-y-6"
-      data-page="scenario-new"
-      aria-label="Create new scenario page"
-    >
-      <Scenario
-        scenarioDetailDefault={scenarioDetailDefault}
-        createScenarioAction={createScenario}
-        patchScenarioDraftAction={patchScenarioDraft}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Training", section: "training", url: "/training" },
+          { title: "Scenarios", section: "scenarios", url: "/training/scenarios" },
+          { title: "New Scenario" },
+        ]}
+        toolbar={<SaveToolbar artifactType="scenario" />}
       />
-    </div>
+      <div
+        className="space-y-6 px-4"
+        data-page="scenario-new"
+        aria-label="Create new scenario page"
+      >
+        <Scenario
+          scenarioDetailDefault={scenarioDetailDefault}
+          createScenarioAction={createScenario}
+          patchScenarioDraftAction={patchScenarioDraft}
+        />
+      </div>
+    </>
   );
 }
 

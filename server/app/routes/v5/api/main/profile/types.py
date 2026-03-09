@@ -331,6 +331,8 @@ class PatchProfileDraftApiRequest(BaseModel):
     # Creatable single-select — provide value or ID
     name: str | None = None
     name_id: UUID | None = None
+    email: str | None = None
+    request_limit: int | None = None
 
     # Non-creatable — ID-only
     flag_id: UUID | None = None

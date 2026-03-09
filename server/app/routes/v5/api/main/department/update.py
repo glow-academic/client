@@ -5,13 +5,10 @@ Thin route handler. Core logic lives in app.infra.department_update.
 
 from __future__ import annotations
 
-from typing import Annotated
-
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.department_update import update_department_client
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.department.types import (
     UpdateDepartmentApiRequest,
     UpdateDepartmentApiResponse,
@@ -26,7 +23,6 @@ async def update_department(
     request: UpdateDepartmentApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateDepartmentApiResponse:
     """Update departments using composable infra architecture."""
     try:
@@ -37,10 +33,11 @@ async def update_department(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await update_department_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             items=request.departments,

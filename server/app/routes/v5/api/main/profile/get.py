@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.profile_context import resolve_profile_context
 from app.infra.profile_permissions import (
@@ -73,7 +73,7 @@ def derive_flag_key_and_label(name: str | None) -> tuple[str, str]:
 
 
 async def get_profile_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -95,7 +95,7 @@ async def get_profile_client(
     # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
     common = await resolve_common_context(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
         group_id=group_id,
@@ -118,7 +118,8 @@ async def get_profile_client(
 
     perms = None
     if target_profile_id is not None:
-        perms = await resolve_profile_permissions_context(conn, target_profile_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_profile_permissions_context(conn, target_profile_id)
 
         if not perms.exists:
             raise HTTPException(
@@ -135,7 +136,7 @@ async def get_profile_client(
     # ── Step 3: Profile artifact context ─────────────────────────────────
 
     profile_ctx = await resolve_profile_context(
-        conn,
+        pool,
         redis,
         profile_id=target_profile_id,
         group_id=group_id,
@@ -369,7 +370,6 @@ async def get_profile(
     request: GetProfileApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetProfileApiResponse:
     """Get profile information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -382,10 +382,11 @@ async def get_profile(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await get_profile_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             target_profile_id=request.target_profile_id,

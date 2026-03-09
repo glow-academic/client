@@ -12,7 +12,7 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.provider_search import search_provider_client
 from app.routes.v5.api.main.provider.types import ListProviderApiResponse
 from app.utils.error.handle_route_error import handle_route_error

@@ -10,7 +10,7 @@ from typing import Annotated
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_duplicate import duplicate_profile_client
 from app.routes.v5.api.main.profile.types import (
     DuplicateProfileApiRequest,
@@ -29,7 +29,6 @@ async def duplicate_profile(
     request: DuplicateProfileApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateProfileApiResponse:
     """Duplicate a profile — composable infra architecture."""
     tags = ["profiles"]
@@ -42,9 +41,10 @@ async def duplicate_profile(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
         result = await duplicate_profile_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             target_profile_id=request.target_profile_id,

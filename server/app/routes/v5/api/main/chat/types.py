@@ -293,8 +293,6 @@ class BaseChatSection(BaseModel):
     required: bool = False
     suggestions: list[UUID] | None = None
     show_ai_generate: bool = False
-    create_tool_id: UUID | None = None
-    link_tool_id: UUID | None = None
 
 
 class ChatDepartmentSection(BaseChatSection):
@@ -419,11 +417,54 @@ class GetChatResponse(BaseModel):
 # =============================================================================
 
 
+# =============================================================================
+# Draft value types (for creatable resources)
+# =============================================================================
+
+
+class DraftImageValue(BaseModel):
+    """Value for creating an image via the draft endpoint."""
+
+    name: str
+    description: str
+    upload_id: UUID | None = (
+        None  # future: link to uploaded file; not required for creation
+    )
+
+
+class DraftVideoValue(BaseModel):
+    """Value for creating a video via the draft endpoint."""
+
+    name: str
+    description: str
+    upload_id: UUID | None = (
+        None  # future: link to uploaded file; not required for creation
+    )
+
+
+class DraftQuestionValue(BaseModel):
+    """Value for creating a question via the draft endpoint."""
+
+    question_text: str
+    time: int = 30
+    allow_multiple: bool = False
+
+
+class DraftOptionValue(BaseModel):
+    """Value for creating an option via the draft endpoint."""
+
+    option_text: str
+    question_id: UUID | None = None
+
+
 class PatchChatDraftApiRequest(BaseModel):
     """Request model for new-style chat draft endpoint.
 
-    Single-select creatables: name, description
+    Single-select creatables: name, description, problem_statement
       → value creates resource, ID replaces value (mutually exclusive).
+
+    Multi-select creatables: objectives, images, videos, questions, options
+      → values create resources, created IDs are merged with existing IDs.
 
     Client always sends full state (append-only — each write is a new version snapshot).
     """
@@ -435,6 +476,14 @@ class PatchChatDraftApiRequest(BaseModel):
     # Single-select creatables — provide value OR ID
     name: str | None = None
     description: str | None = None
+    problem_statement: str | None = None
+
+    # Multi-select creatables — values create resources, merged with IDs
+    objectives: list[str] | None = None
+    images: list[DraftImageValue] | None = None
+    videos: list[DraftVideoValue] | None = None
+    questions: list[DraftQuestionValue] | None = None
+    options: list[DraftOptionValue] | None = None
 
     # All ID-only
     name_ids: list[UUID] | None = None

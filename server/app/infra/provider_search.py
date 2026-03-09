@@ -44,7 +44,7 @@ from app.routes.v5.tools.resources.values.get import get_values
 
 
 async def search_provider_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -65,7 +65,7 @@ async def search_provider_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -88,9 +88,10 @@ async def search_provider_client(
             get_models as get_model_artifacts,
         )
 
-        model_artifacts = await get_model_artifacts(
-            conn, filter_model_ids, providers=True
-        )
+        async with pool.acquire() as conn:
+            model_artifacts = await get_model_artifacts(
+                conn, filter_model_ids, providers=True
+            )
         pids: set[UUID] = set()
         for m in model_artifacts:
             pids.update(m.provider_ids or [])
@@ -116,31 +117,33 @@ async def search_provider_client(
             # Both selected or empty — show all
             active_only = False
 
-    provider_ids_list, total_count = await search_providers(
-        conn,
-        search=search,
-        department_ids=filter_department_ids,
-        provider_ids=provider_resource_ids,
-        active_only=active_only,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+    async with pool.acquire() as conn:
+        provider_ids_list, total_count = await search_providers(
+            conn,
+            search=search,
+            department_ids=filter_department_ids,
+            provider_ids=provider_resource_ids,
+            active_only=active_only,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
     if not provider_ids_list:
         return _empty_response(actor_name, total_count=0)
 
     # ── Step 4: Get provider artifacts with junction IDs ────────────────
 
-    all_artifacts = await get_providers(
-        conn,
-        provider_ids_list,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        values=True,
-        providers=True,
-    )
+    async with pool.acquire() as conn:
+        all_artifacts = await get_providers(
+            conn,
+            provider_ids_list,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            values=True,
+            providers=True,
+        )
 
     # Post-filter for inactive_only (search tool only supports active_only)
     if inactive_only:
@@ -164,6 +167,34 @@ async def search_provider_client(
         all_value_ids.extend(a.value_ids or [])
         all_provider_resource_ids.extend(a.provider_ids or [])
 
+    async def _fetch_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _fetch_values() -> list:
+        async with pool.acquire() as conn:
+            return await get_values(conn, all_value_ids, redis)
+
+    async def _fetch_providers_resource() -> list:
+        async with pool.acquire() as conn:
+            return await get_providers_resource(conn, all_provider_resource_ids, redis)
+
+    async def _fetch_department_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn, redis, search=department_search, provider=True, limit_count=100
+            )
+
+    async def _fetch_model_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_models_resource(
+                conn, redis, search=model_search, limit_count=100
+            )
+
     (
         names_data,
         descriptions_data,
@@ -172,19 +203,15 @@ async def search_provider_client(
         department_facet,
         model_facet,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty_list(),
-        get_values(conn, all_value_ids, redis) if all_value_ids else _empty_list(),
-        get_providers_resource(conn, all_provider_resource_ids, redis)
+        _fetch_names() if all_name_ids else _empty_list(),
+        _fetch_descriptions() if all_description_ids else _empty_list(),
+        _fetch_values() if all_value_ids else _empty_list(),
+        _fetch_providers_resource()
         if all_provider_resource_ids
         else _empty_list(),
         # Facets
-        search_departments(
-            conn, redis, search=department_search, provider=True, limit_count=100
-        ),
-        search_models_resource(conn, redis, search=model_search, limit_count=100),
+        _fetch_department_facet(),
+        _fetch_model_facet(),
     )
 
     # Build lookup maps

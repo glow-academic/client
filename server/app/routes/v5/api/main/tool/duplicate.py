@@ -5,12 +5,9 @@ Thin route handler. Core logic lives in app.infra.tool_duplicate.
 
 from __future__ import annotations
 
-from typing import Annotated
+from fastapi import APIRouter, HTTPException, Request, Response
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.tool_duplicate import duplicate_tool_client
 from app.routes.v5.api.main.tool.types import (
     DuplicateToolApiRequest,
@@ -29,7 +26,6 @@ async def duplicate_tool(
     request: DuplicateToolApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateToolApiResponse:
     """Duplicate a tool — composable infra architecture."""
     tags = ["tools"]
@@ -42,9 +38,10 @@ async def duplicate_tool(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
         result = await duplicate_tool_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             tool_id=request.tool_id,

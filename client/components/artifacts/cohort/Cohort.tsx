@@ -1128,7 +1128,6 @@ function CohortComponent({
                   hideDescription={true}
 
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
-                  create_tool_id={s?.names?.tool_id ?? null}
                   createNamesAction={
                     createNamesAction as
                       | ((
@@ -1198,7 +1197,6 @@ function CohortComponent({
                   data-testid="input-cohort-description"
 
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
-                  create_tool_id={s?.descriptions?.tool_id ?? null}
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
@@ -1558,7 +1556,6 @@ function CohortComponent({
                 }
                 cohort_id={cohortId ?? null}
 
-                create_tool_id={null}
                 createProfilePersonasAction={createProfilePersonasAction}
                 showAiGenerate={s?.profile_personas?.show_ai_generate ?? false}
                 onGenerate={handleGenerateProfilePersonas}

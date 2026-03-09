@@ -51,7 +51,7 @@ class CreateProviderItem(BaseModel):
 
 
 async def create_provider_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -75,7 +75,7 @@ async def create_provider_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -96,19 +96,24 @@ async def create_provider_client(
     has_errors = False
     error_results: list[ProviderResultItem] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_provider_values(conn, redis, item, is_create=True)
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                ProviderResultItem(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
-                )
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_provider_values(
+                conn, redis, item, is_create=True
             )
-        else:
-            error_results.append(ProviderResultItem(success=True, message="Validated"))
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    ProviderResultItem(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
+                )
+            else:
+                error_results.append(
+                    ProviderResultItem(success=True, message="Validated")
+                )
 
     if has_errors:
         return CreateProviderApiResponse(results=error_results)
@@ -117,37 +122,38 @@ async def create_provider_client(
 
     results: list[ProviderResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            providers_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            result = await create_provider_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=item.department_ids,
-                endpoint_ids=item.endpoint_ids,
-                flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                key_ids=item.key_ids,
-                provider_ids=[providers_resource_id],
-                value_ids=item.value_ids,
-            )
-
-            results.append(
-                ProviderResultItem(
-                    success=True,
-                    provider_id=result.id,
-                    message="Provider created successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                providers_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                result = await create_provider_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    endpoint_ids=item.endpoint_ids,
+                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                    key_ids=item.key_ids,
+                    provider_ids=[providers_resource_id],
+                    value_ids=item.value_ids,
+                )
+
+                results.append(
+                    ProviderResultItem(
+                        success=True,
+                        provider_id=result.id,
+                        message="Provider created successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

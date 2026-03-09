@@ -61,7 +61,7 @@ if TYPE_CHECKING:
 
 
 async def resolve_setting_values(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     item: SaveSettingItem,
     is_update: bool,
@@ -81,24 +81,26 @@ async def resolve_setting_values(
 
     # --- Create resources ---
 
-    if item.name is not None and item.name_id is None:
-        result = await create_name(conn, item.name, redis)
-        item.name_id = result.id
+    async with pool.acquire() as conn:
+        if item.name is not None and item.name_id is None:
+            result = await create_name(conn, item.name, redis)
+            item.name_id = result.id
 
-    if item.description is not None and item.description_id is None:
-        result = await create_description(conn, item.description, redis)
-        item.description_id = result.id
+        if item.description is not None and item.description_id is None:
+            result = await create_description(conn, item.description, redis)
+            item.description_id = result.id
 
     # --- Match resources ---
 
     if item.departments is not None and item.department_ids is None:
-        all_depts = await search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=1000,
-            setting=True,
-        )
+        async with pool.acquire() as conn:
+            all_depts = await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=1000,
+                setting=True,
+            )
         dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
         resolved_ids = []
         for dept_name in item.departments:
@@ -166,7 +168,7 @@ async def _create_denormalized_snapshot(
 
 
 async def save_setting_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -190,7 +192,7 @@ async def save_setting_client(
 
     # -- Step 1: Profile context -----------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -202,9 +204,10 @@ async def save_setting_client(
 
     for idx, item in enumerate(items):
         if item.input_setting_id is not None:
-            perms = await resolve_setting_permissions_context(
-                conn, item.input_setting_id
-            )
+            async with pool.acquire() as conn:
+                perms = await resolve_setting_permissions_context(
+                    conn, item.input_setting_id
+                )
             if not perms.exists:
                 raise HTTPException(
                     status_code=404,
@@ -234,7 +237,7 @@ async def save_setting_client(
 
     for idx, item in enumerate(items):
         item_errors = await resolve_setting_values(
-            conn,
+            pool,
             redis,
             item,
             is_update=item.input_setting_id is not None,

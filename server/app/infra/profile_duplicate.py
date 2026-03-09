@@ -34,7 +34,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def duplicate_profile_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -54,7 +54,7 @@ async def duplicate_profile_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -72,66 +72,68 @@ async def duplicate_profile_client(
 
     # ── Step 3: Fetch original profile with all junctions ──────────────
 
-    originals = await get_profiles(
-        conn,
-        [target_profile_id],
-        names=True,
-        departments=True,
-        emails=True,
-        profiles=True,
-        request_limits=True,
-        roles=True,
-    )
-
-    if not originals:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Profile {target_profile_id} not found.",
+    async with pool.acquire() as conn:
+        originals = await get_profiles(
+            conn,
+            [target_profile_id],
+            names=True,
+            departments=True,
+            emails=True,
+            profiles=True,
+            request_limits=True,
+            roles=True,
         )
 
-    original = originals[0]
+        if not originals:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Profile {target_profile_id} not found.",
+            )
 
-    # ── Step 4: Create new name resource ───────────────────────────────
+        original = originals[0]
 
-    original_name = "Unknown"
-    if original.name_ids:
-        name_resources = await get_names(conn, original.name_ids, redis)
-        if name_resources:
-            original_name = name_resources[0].name or "Unknown"
+        # ── Step 4: Create new name resource ───────────────────────────────
 
-    new_name_resource = await create_name(conn, f"{original_name} Copy", redis)
+        original_name = "Unknown"
+        if original.name_ids:
+            name_resources = await get_names(conn, original.name_ids, redis)
+            if name_resources:
+                original_name = name_resources[0].name or "Unknown"
 
-    # ── Step 5: Find inactive flag (profile_active, value=false) ───────
+        new_name_resource = await create_name(conn, f"{original_name} Copy", redis)
 
-    inactive_flag_id: UUID | None = None
-    flag_results = await search_flags(
-        conn,
-        redis,
-        flag_type="profile_active",
-        profile=True,
-        limit_count=10,
-    )
-    inactive_match = next((f for f in flag_results if not f.value), None)
-    if inactive_match:
-        inactive_flag_id = inactive_match.id
+        # ── Step 5: Find inactive flag (profile_active, value=false) ───────
+
+        inactive_flag_id: UUID | None = None
+        flag_results = await search_flags(
+            conn,
+            redis,
+            flag_type="profile_active",
+            profile=True,
+            limit_count=10,
+        )
+        inactive_match = next((f for f in flag_results if not f.value), None)
+        if inactive_match:
+            inactive_flag_id = inactive_match.id
 
     # ── Step 6: Create new profile artifact with inactive flag ─────────
 
     flag_ids = [inactive_flag_id] if inactive_flag_id else None
 
-    async with conn.transaction():
-        result = await create_profile_artifact(
-            conn,
-            name_id=new_name_resource.id,
-            request_limit_id=original.request_limit_ids[0]
-            if original.request_limit_ids
-            else None,
-            department_ids=original.department_ids,
-            email_ids=original.email_ids,
-            role_ids=original.role_ids,
-            profile_ids=original.profile_ids,
-            flag_ids=flag_ids,
-        )
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await create_profile_artifact(
+                conn,
+                name_id=new_name_resource.id,
+                request_limit_id=original.request_limit_ids[0]
+                if original.request_limit_ids
+                else None,
+                department_ids=original.department_ids,
+                email_ids=original.email_ids,
+                role_ids=original.role_ids,
+                profile_ids=original.profile_ids,
+                flag_ids=flag_ids,
+            )
 
     # ── Step 7: Invalidate cache ───────────────────────────────────────
 

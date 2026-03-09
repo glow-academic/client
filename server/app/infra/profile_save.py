@@ -59,7 +59,7 @@ if TYPE_CHECKING:
 
 
 async def resolve_profile_values(
-    conn: asyncpg.Connection,
+    conn: asyncpg.Connection | asyncpg.Pool,
     redis: Redis,
     item: SaveProfileItem,
     is_update: bool,
@@ -157,7 +157,7 @@ async def _create_denormalized_snapshot(
 
 
 async def save_profile_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -184,7 +184,7 @@ async def save_profile_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -194,58 +194,64 @@ async def save_profile_client(
 
     # -- Step 2: Per-item permission check --
 
-    for idx, item in enumerate(items):
-        if item.input_profile_id is not None:
-            # Update mode — target_is_self check
-            target_is_self = item.input_profile_id == profile_id
-            perms = await resolve_profile_permissions_context(
-                conn, item.input_profile_id
-            )
-            if not perms.exists:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Item {idx}: Profile {item.input_profile_id} not found.",
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            if item.input_profile_id is not None:
+                # Update mode — target_is_self check
+                target_is_self = item.input_profile_id == profile_id
+                perms = await resolve_profile_permissions_context(
+                    conn, item.input_profile_id
                 )
-            if not compute_can_edit(
-                user_role=profile.role,
-                target_is_self=target_is_self,
-                target_department_ids=perms.department_ids,
-                user_department_ids=profile.department_ids,
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Item {idx}: You don't have permission to save this profile.",
-                )
-        else:
-            if not compute_can_create(user_role=profile.role, department_ids=None):
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Item {idx}: You don't have permission to create a profile.",
-                )
+                if not perms.exists:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Item {idx}: Profile {item.input_profile_id} not found.",
+                    )
+                if not compute_can_edit(
+                    user_role=profile.role,
+                    target_is_self=target_is_self,
+                    target_department_ids=perms.department_ids,
+                    user_department_ids=profile.department_ids,
+                ):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"Item {idx}: You don't have permission to save this profile.",
+                    )
+            else:
+                if not compute_can_create(
+                    user_role=profile.role, department_ids=None
+                ):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"Item {idx}: You don't have permission to create a profile.",
+                    )
 
     # -- Step 3: Per-item value resolution --
 
     has_errors = False
     error_results: list[SaveProfileResult] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_profile_values(
-            conn,
-            redis,
-            item,
-            is_update=item.input_profile_id is not None,
-        )
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                SaveProfileResult(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
-                )
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_profile_values(
+                conn,
+                redis,
+                item,
+                is_update=item.input_profile_id is not None,
             )
-        else:
-            error_results.append(SaveProfileResult(success=True, message="Validated"))
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    SaveProfileResult(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
+                )
+            else:
+                error_results.append(
+                    SaveProfileResult(success=True, message="Validated")
+                )
 
     if has_errors:
         return SaveProfileApiResponse(results=error_results)
@@ -254,54 +260,55 @@ async def save_profile_client(
 
     results: list[SaveProfileResult] = []
 
-    async with conn.transaction():
-        for _idx, item in enumerate(items):
-            is_update = item.input_profile_id is not None
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for _idx, item in enumerate(items):
+                is_update = item.input_profile_id is not None
 
-            # Create denormalized snapshot
-            profiles_resource_id = await _create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-            )
-
-            if is_update:
-                result = await update_profile_artifact(
+                # Create denormalized snapshot
+                profiles_resource_id = await _create_denormalized_snapshot(
                     conn,
-                    item.input_profile_id,
-                    name_id=item.name_id if item.name_id else _UNSET,
-                    request_limit_id=item.request_limit_id
-                    if item.request_limit_id
-                    else _UNSET,
-                    department_ids=item.department_ids,
-                    flag_ids=[item.flag_id] if item.flag_id else None,
-                    email_ids=item.email_ids,
-                    role_ids=item.role_ids,
-                    profile_ids=[profiles_resource_id],
-                )
-                out_profile_id = result.id
-            else:
-                result = await create_profile_artifact(
-                    conn,
+                    redis,
                     name_id=item.name_id,
-                    request_limit_id=item.request_limit_id,
-                    department_ids=item.department_ids,
-                    flag_ids=[item.flag_id] if item.flag_id else None,
-                    email_ids=item.email_ids,
-                    role_ids=item.role_ids,
-                    profile_ids=[profiles_resource_id],
                 )
-                out_profile_id = result.id
 
-            results.append(
-                SaveProfileResult(
-                    success=True,
-                    profile_id=out_profile_id,
-                    message="Profile updated successfully"
-                    if is_update
-                    else "Profile created successfully",
+                if is_update:
+                    result = await update_profile_artifact(
+                        conn,
+                        item.input_profile_id,
+                        name_id=item.name_id if item.name_id else _UNSET,
+                        request_limit_id=item.request_limit_id
+                        if item.request_limit_id
+                        else _UNSET,
+                        department_ids=item.department_ids,
+                        flag_ids=[item.flag_id] if item.flag_id else None,
+                        email_ids=item.email_ids,
+                        role_ids=item.role_ids,
+                        profile_ids=[profiles_resource_id],
+                    )
+                    out_profile_id = result.id
+                else:
+                    result = await create_profile_artifact(
+                        conn,
+                        name_id=item.name_id,
+                        request_limit_id=item.request_limit_id,
+                        department_ids=item.department_ids,
+                        flag_ids=[item.flag_id] if item.flag_id else None,
+                        email_ids=item.email_ids,
+                        role_ids=item.role_ids,
+                        profile_ids=[profiles_resource_id],
+                    )
+                    out_profile_id = result.id
+
+                results.append(
+                    SaveProfileResult(
+                        success=True,
+                        profile_id=out_profile_id,
+                        message="Profile updated successfully"
+                        if is_update
+                        else "Profile created successfully",
+                    )
                 )
-            )
 
     # -- Step 5: Invalidate cache --
 

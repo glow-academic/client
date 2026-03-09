@@ -48,6 +48,15 @@ import type {
   SwitchEffectiveProfileResult,
 } from "./layout-server";
 
+// Routes where pages render their own <PageHeader> instead of the global header.
+// As pages are migrated, add their prefix here. Once all are migrated, remove
+// the global header entirely.
+const PAGE_HEADER_ROUTES = ["/training/scenarios"];
+
+function hasPageHeader(pathname: string): boolean {
+  return PAGE_HEADER_ROUTES.some((prefix) => pathname.startsWith(prefix));
+}
+
 // Inner component that uses the role context
 function MainLayoutContent({
   children,
@@ -94,6 +103,9 @@ function MainLayoutContent({
       router.refresh();
     }
   }, [pathname, router]);
+
+  // Check if this page renders its own header
+  const pageOwnsHeader = hasPageHeader(pathname);
 
   const serverBreadcrumbs = pageData?.breadcrumbs ?? null;
   const pageMetadata = pageData?.page_metadata ?? null;
@@ -184,58 +196,62 @@ function MainLayoutContent({
           searchSimulatableProfiles={searchSimulatableProfilesAction}
         />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-            <div className="flex items-center gap-2 px-4 flex-1">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-              <NavigationBreadcrumbs
-                breadcrumbs={breadcrumbs}
-                onSectionChange={handleSectionChange}
-              />
-            </div>
-
-            {attemptControls?.show_controls && attemptControls.attempt_id && (
-              <div className="pr-0">
-                <SimulationControls
-                  attemptId={attemptControls.attempt_id}
-                  currentChatId={attemptControls.current_chat_id!}
-                  hasMessages={attemptControls.has_messages ?? false}
+          {/* Pages in PAGE_HEADER_ROUTES render their own <PageHeader>. */}
+          {/* All other pages use the global header until migrated. */}
+          {!pageOwnsHeader && (
+            <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+              <div className="flex items-center gap-2 px-4 flex-1">
+                <SidebarTrigger className="-ml-1" />
+                <Separator orientation="vertical" className="mr-2 h-4" />
+                <NavigationBreadcrumbs
+                  breadcrumbs={breadcrumbs}
+                  onSectionChange={handleSectionChange}
                 />
               </div>
-            )}
-            {attemptControls?.show_controls && attemptControls.test_id && (
-              <div className="pr-0">
-                <InvocationControls
-                  testId={attemptControls.test_id}
-                  currentInvocationId={attemptControls.current_invocation_id!}
-                  hasRunsOrGroups={attemptControls.has_runs_or_groups ?? false}
-                />
-              </div>
-            )}
-            {canShowAnalyticsFilters && (
-              <AnalyticsFilters refreshPage={refreshPageAction} />
-            )}
-            {!attemptControls?.show_controls &&
-              (showDrafts && artifactType ? (
-                <SaveToolbar artifactType={artifactType} />
-              ) : (
-                actionButton && <div className="pr-0">{actionButton}</div>
-              ))}
-            <ExportButton exportPage={exportPageAction} />
-            <div className="pr-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-7"
-                onClick={panel.togglePanel}
-              >
-                <PanelRight className="h-4 w-4" />
-                <span className="sr-only">Toggle right panel</span>
-              </Button>
-            </div>
-          </header>
 
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+              {attemptControls?.show_controls && attemptControls.attempt_id && (
+                <div className="pr-0">
+                  <SimulationControls
+                    attemptId={attemptControls.attempt_id}
+                    currentChatId={attemptControls.current_chat_id!}
+                    hasMessages={attemptControls.has_messages ?? false}
+                  />
+                </div>
+              )}
+              {attemptControls?.show_controls && attemptControls.test_id && (
+                <div className="pr-0">
+                  <InvocationControls
+                    testId={attemptControls.test_id}
+                    currentInvocationId={attemptControls.current_invocation_id!}
+                    hasRunsOrGroups={attemptControls.has_runs_or_groups ?? false}
+                  />
+                </div>
+              )}
+              {canShowAnalyticsFilters && (
+                <AnalyticsFilters refreshPage={refreshPageAction} />
+              )}
+              {!attemptControls?.show_controls &&
+                (showDrafts && artifactType ? (
+                  <SaveToolbar artifactType={artifactType} />
+                ) : (
+                  actionButton && <div className="pr-0">{actionButton}</div>
+                ))}
+              <ExportButton exportPage={exportPageAction} />
+              <div className="pr-4">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-7"
+                  onClick={panel.togglePanel}
+                >
+                  <PanelRight className="h-4 w-4" />
+                  <span className="sr-only">Toggle right panel</span>
+                </Button>
+              </div>
+            </header>
+          )}
+
+          <div className={pageOwnsHeader ? "flex flex-1 flex-col gap-4" : "flex flex-1 flex-col gap-4 p-4 pt-0"}>{children}</div>
         </SidebarInset>
       </SidebarProvider>
       <GenerationPanel

@@ -33,7 +33,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def update_department_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -58,7 +58,7 @@ async def update_department_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -69,7 +69,8 @@ async def update_department_client(
     # ── Step 2: Per-item permission check ──────────────────────────────
 
     for idx, item in enumerate(items):
-        perms = await resolve_department_permissions_context(conn, item.department_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_department_permissions_context(conn, item.department_id)
         if not perms.exists:
             raise HTTPException(
                 status_code=404,
@@ -90,9 +91,10 @@ async def update_department_client(
     error_results: list[DepartmentResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_department_values(
-            conn, redis, item, is_create=False
-        )
+        async with pool.acquire() as conn:
+            item_errors = await resolve_department_values(
+                conn, redis, item, is_create=False
+            )
         if item_errors:
             has_errors = True
             error_results.append(
@@ -115,34 +117,37 @@ async def update_department_client(
     results: list[DepartmentResultItem] = []
     saved_department_ids: list[UUID] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            departments_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            await update_department_artifact(
-                conn,
-                item.department_id,
-                name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id if item.description_id else _UNSET,
-                department_ids=[departments_resource_id],
-                flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                settings_ids=item.settings_ids,
-            )
-
-            saved_department_ids.append(item.department_id)
-            results.append(
-                DepartmentResultItem(
-                    success=True,
-                    department_id=item.department_id,
-                    message="Department updated successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                departments_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                await update_department_artifact(
+                    conn,
+                    item.department_id,
+                    name_id=item.name_id if item.name_id else _UNSET,
+                    description_id=item.description_id
+                    if item.description_id
+                    else _UNSET,
+                    department_ids=[departments_resource_id],
+                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                    settings_ids=item.settings_ids,
+                )
+
+                saved_department_ids.append(item.department_id)
+                results.append(
+                    DepartmentResultItem(
+                        success=True,
+                        department_id=item.department_id,
+                        message="Department updated successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

@@ -63,7 +63,7 @@ if TYPE_CHECKING:
 
 
 async def resolve_department_values(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     item: SaveDepartmentItem,
     is_update: bool,
@@ -81,25 +81,27 @@ async def resolve_department_values(
 
     # --- Create resources ---
 
-    if item.name is not None and item.name_id is None:
-        result = await create_name(conn, item.name, redis)
-        item.name_id = result.id
+    async with pool.acquire() as conn:
+        if item.name is not None and item.name_id is None:
+            result = await create_name(conn, item.name, redis)
+            item.name_id = result.id
 
-    if item.description is not None and item.description_id is None:
-        result = await create_description(conn, item.description, redis)
-        item.description_id = result.id
+        if item.description is not None and item.description_id is None:
+            result = await create_description(conn, item.description, redis)
+            item.description_id = result.id
 
     # --- Match resources ---
 
     if item.active_flag is not None and item.active_flag_id is None:
-        results = await search_flags(
-            conn,
-            redis,
-            search=None,
-            flag_type="department_active",
-            limit_count=100,
-            department=True,
-        )
+        async with pool.acquire() as conn:
+            results = await search_flags(
+                conn,
+                redis,
+                search=None,
+                flag_type="department_active",
+                limit_count=100,
+                department=True,
+            )
         match = next((r for r in results if r.type == "department_active"), None)
         if match and match.id:
             if item.active_flag:
@@ -134,7 +136,10 @@ async def _create_denormalized_snapshot(
     name_id: UUID | None,
     description_id: UUID | None,
 ) -> UUID:
-    """Create a departments_resource snapshot by hydrating IDs to values."""
+    """Create a departments_resource snapshot by hydrating IDs to values.
+
+    NOTE: This is called within an existing transaction, so it receives conn directly.
+    """
 
     async def _empty() -> list:
         return []
@@ -161,7 +166,7 @@ async def _create_denormalized_snapshot(
 
 
 async def save_department_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -189,7 +194,7 @@ async def save_department_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -201,9 +206,10 @@ async def save_department_client(
 
     for idx, item in enumerate(items):
         if item.input_department_id is not None:
-            perms = await resolve_department_permissions_context(
-                conn, item.input_department_id
-            )
+            async with pool.acquire() as conn:
+                perms = await resolve_department_permissions_context(
+                    conn, item.input_department_id
+                )
             if not perms.exists:
                 raise HTTPException(
                     status_code=404,
@@ -231,7 +237,7 @@ async def save_department_client(
 
     for idx, item in enumerate(items):
         item_errors = await resolve_department_values(
-            conn,
+            pool,
             redis,
             item,
             is_update=item.input_department_id is not None,
@@ -258,52 +264,57 @@ async def save_department_client(
     results: list[SaveDepartmentResult] = []
     saved_department_ids: list[UUID] = []
 
-    async with conn.transaction():
-        for _idx, item in enumerate(items):
-            is_update = item.input_department_id is not None
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for _idx, item in enumerate(items):
+                is_update = item.input_department_id is not None
 
-            # Create denormalized snapshot
-            departments_resource_id = await _create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            if is_update:
-                result = await update_department_artifact(
+                # Create denormalized snapshot
+                departments_resource_id = await _create_denormalized_snapshot(
                     conn,
-                    item.input_department_id,
-                    name_id=item.name_id if item.name_id else _UNSET,
-                    description_id=item.description_id
-                    if item.description_id
-                    else _UNSET,
-                    department_ids=[departments_resource_id],
-                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                    settings_ids=item.settings_ids,
-                )
-                department_id = result.id
-            else:
-                result = await create_department_artifact(
-                    conn,
+                    redis,
                     name_id=item.name_id,
                     description_id=item.description_id,
-                    department_ids=[departments_resource_id],
-                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                    settings_ids=item.settings_ids,
                 )
-                department_id = result.id
 
-            saved_department_ids.append(department_id)
-            results.append(
-                SaveDepartmentResult(
-                    success=True,
-                    department_id=department_id,
-                    message="Department updated successfully"
-                    if is_update
-                    else "Department created successfully",
+                if is_update:
+                    result = await update_department_artifact(
+                        conn,
+                        item.input_department_id,
+                        name_id=item.name_id if item.name_id else _UNSET,
+                        description_id=item.description_id
+                        if item.description_id
+                        else _UNSET,
+                        department_ids=[departments_resource_id],
+                        flag_ids=[item.active_flag_id]
+                        if item.active_flag_id
+                        else None,
+                        settings_ids=item.settings_ids,
+                    )
+                    department_id = result.id
+                else:
+                    result = await create_department_artifact(
+                        conn,
+                        name_id=item.name_id,
+                        description_id=item.description_id,
+                        department_ids=[departments_resource_id],
+                        flag_ids=[item.active_flag_id]
+                        if item.active_flag_id
+                        else None,
+                        settings_ids=item.settings_ids,
+                    )
+                    department_id = result.id
+
+                saved_department_ids.append(department_id)
+                results.append(
+                    SaveDepartmentResult(
+                        success=True,
+                        department_id=department_id,
+                        message="Department updated successfully"
+                        if is_update
+                        else "Department created successfully",
+                    )
                 )
-            )
 
     # -- Step 5: Invalidate cache --
 

@@ -27,7 +27,9 @@ from app.routes.v5.api.main.profile.types import (
 )
 from app.routes.v5.tools.entries.profile_drafts.create import create_profile_draft
 from app.routes.v5.tools.entries.profile_drafts.refresh import refresh_profile_drafts
+from app.routes.v5.tools.resources.emails.create import create_email
 from app.routes.v5.tools.resources.names.create import create_name
+from app.routes.v5.tools.resources.request_limits.create import create_request_limit
 from app.utils.cache.invalidate_tags import invalidate_tags
 
 # ---------------------------------------------------------------------------
@@ -42,7 +44,7 @@ async def _resolve_creatable_values(
 ) -> list[SaveProfileFieldError]:
     """Resolve raw value fields to resource IDs (mutates request in place).
 
-    Only handles creatable resources: name.
+    Only handles creatable resources: name, email, request_limit.
     Returns a list of errors (empty if all resolved).
     """
     errors: list[SaveProfileFieldError] = []
@@ -50,6 +52,18 @@ async def _resolve_creatable_values(
     if request.name is not None and request.name_id is None:
         result = await create_name(conn, request.name, redis)
         request.name_id = result.id
+
+    if request.email is not None:
+        result = await create_email(conn, request.email, redis)
+        if request.email_ids is None:
+            request.email_ids = []
+        request.email_ids.append(result.id)
+
+    if request.request_limit is not None:
+        result = await create_request_limit(conn, request.request_limit, redis)
+        if request.request_limit_ids is None:
+            request.request_limit_ids = []
+        request.request_limit_ids.append(result.id)
 
     return errors
 

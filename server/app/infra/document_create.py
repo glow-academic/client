@@ -103,7 +103,9 @@ async def create_document_client(
 
     async with pool.acquire() as conn:
         for idx, item in enumerate(items):
-            item_errors = await resolve_document_values(conn, redis, item, is_create=True)
+            item_errors = await resolve_document_values(
+                conn, redis, item, is_create=True
+            )
             if item_errors:
                 has_errors = True
                 error_results.append(

@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 import { Scenarios } from "@/components/artifacts/scenario/Scenarios";
+import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
@@ -157,24 +158,32 @@ export default async function ScenariosPage({ searchParams }: ScenariosPageProps
   ]);
 
   return (
-    <div className="space-y-6" data-page="scenarios-index">
-      <Scenarios
-        listData={listData}
-        initialColumnVisibility={initialColumnVisibility}
-        duplicateScenarioAction={duplicateScenario}
-        deleteScenarioAction={deleteScenario}
-        saveScenarioAction={saveScenario}
-        searchFlagsAction={searchFlags}
-        parseCsvAction={parseCsv}
-        importFields={listData.import_fields ?? undefined}
-        pageIndex={pageIndex}
-        pageSize={pageSize}
-        totalCount={listData.total_count ?? 0}
-        personaSearch={q.personaSearch ?? ""}
-        simulationSearch={q.simulationSearch ?? ""}
-        departmentSearch={q.departmentSearch ?? ""}
+    <>
+      <PageHeader
+        breadcrumbs={[
+          { title: "Training", section: "training", url: "/training" },
+          { title: "Scenarios" },
+        ]}
       />
-    </div>
+      <div className="space-y-6 px-4" data-page="scenarios-index">
+        <Scenarios
+          listData={listData}
+          initialColumnVisibility={initialColumnVisibility}
+          duplicateScenarioAction={duplicateScenario}
+          deleteScenarioAction={deleteScenario}
+          saveScenarioAction={saveScenario}
+          searchFlagsAction={searchFlags}
+          parseCsvAction={parseCsv}
+          importFields={listData.import_fields ?? undefined}
+          pageIndex={pageIndex}
+          pageSize={pageSize}
+          totalCount={listData.total_count ?? 0}
+          personaSearch={q.personaSearch ?? ""}
+          simulationSearch={q.simulationSearch ?? ""}
+          departmentSearch={q.departmentSearch ?? ""}
+        />
+      </div>
+    </>
   );
 }
 

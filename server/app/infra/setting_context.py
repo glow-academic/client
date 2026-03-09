@@ -61,7 +61,7 @@ SETTING_FLAG_NAMES = {"setting_active"}
 
 
 async def resolve_setting_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     setting_id: UUID | None,
@@ -82,27 +82,33 @@ async def resolve_setting_context(
     user_dept_ids = user_department_ids or []
 
     # Step 1: fetch artifact + draft in parallel
-    artifact_task = (
-        get_setting_artifacts(
-            conn,
-            [setting_id],
-            names=True,
-            descriptions=True,
-            colors=True,
-            departments=True,
-            flags=True,
-            profiles=True,
-            auths=True,
-            provider_keys=True,
-            auth_item_keys=True,
-            systems=True,
-        )
-        if setting_id
-        else _empty()
-    )
-    draft_task = get_setting_drafts(conn, [draft_id]) if draft_id else _empty()
 
-    artifacts, drafts = await asyncio.gather(artifact_task, draft_task)
+    async def _fetch_artifacts() -> list:
+        if not setting_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_setting_artifacts(
+                conn,
+                [setting_id],
+                names=True,
+                descriptions=True,
+                colors=True,
+                departments=True,
+                flags=True,
+                profiles=True,
+                auths=True,
+                provider_keys=True,
+                auth_item_keys=True,
+                systems=True,
+            )
+
+    async def _fetch_drafts() -> list:
+        if not draft_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_setting_drafts(conn, [draft_id])
+
+    artifacts, drafts = await asyncio.gather(_fetch_artifacts(), _fetch_drafts())
 
     artifact = artifacts[0] if artifacts else None
     draft = drafts[0] if drafts else None
@@ -113,6 +119,87 @@ async def resolve_setting_context(
     active = artifact.active if artifact else True
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
+
+    async def _get_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, merged.name_ids, redis, bypass_cache)
+
+    async def _search_names() -> list:
+        async with pool.acquire() as conn:
+            return await search_names(conn, redis, draft_id=group_id, exclude_ids=merged.name_ids, bypass_cache=bypass_cache, setting=True)
+
+    async def _get_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+
+    async def _search_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await search_descriptions(conn, redis, draft_id=group_id, exclude_ids=merged.description_ids, bypass_cache=bypass_cache, setting=True)
+
+    async def _get_colors() -> list:
+        async with pool.acquire() as conn:
+            return await get_colors(conn, merged.color_ids, redis, bypass_cache)
+
+    async def _search_colors() -> list:
+        async with pool.acquire() as conn:
+            return await search_colors(conn, redis, search=color_search, limit_count=20, offset_count=0, draft_id=group_id, suggest_source="recent" if setting_id else "all", exclude_ids=merged.color_ids, bypass_cache=bypass_cache, setting=True)
+
+    async def _get_flags() -> list:
+        async with pool.acquire() as conn:
+            return await get_flags(conn, merged.flag_ids, redis, bypass_cache)
+
+    async def _search_flags() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(conn, redis, search=None, limit_count=50, offset_count=0, exclude_ids=merged.flag_ids, bypass_cache=bypass_cache, setting=True)
+
+    async def _get_departments() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, merged.department_ids, redis, bypass_cache)
+
+    async def _search_departments() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(conn, redis, search=None, limit_count=20, offset_count=0, department_ids=user_dept_ids, suggest_source="all", exclude_ids=merged.department_ids, bypass_cache=bypass_cache)
+
+    async def _get_profiles() -> list:
+        async with pool.acquire() as conn:
+            return await get_profiles(conn, merged.profile_ids, redis, bypass_cache)
+
+    async def _search_profiles() -> list:
+        async with pool.acquire() as conn:
+            return await search_profiles(conn, redis, search=None, limit_count=20, offset_count=0, exclude_ids=merged.profile_ids, bypass_cache=bypass_cache, setting=True)
+
+    async def _get_auths() -> list:
+        async with pool.acquire() as conn:
+            return await get_auths(conn, merged.auth_ids, redis, bypass_cache)
+
+    async def _search_auths() -> list:
+        async with pool.acquire() as conn:
+            return await search_auths(conn, redis, search=None, limit_count=20, offset_count=0, exclude_ids=merged.auth_ids, bypass_cache=bypass_cache, setting=True)
+
+    async def _get_provider_keys() -> list:
+        async with pool.acquire() as conn:
+            return await get_provider_keys(conn, merged.provider_key_ids, redis, bypass_cache)
+
+    async def _search_provider_keys() -> list:
+        async with pool.acquire() as conn:
+            return await search_provider_keys(conn, redis, search=None, limit_count=20, offset_count=0, exclude_ids=merged.provider_key_ids, bypass_cache=bypass_cache, setting=True)
+
+    async def _get_auth_item_keys() -> list:
+        async with pool.acquire() as conn:
+            return await get_auth_item_keys(conn, merged.auth_item_key_ids, redis, bypass_cache)
+
+    async def _search_auth_item_keys() -> list:
+        async with pool.acquire() as conn:
+            return await search_auth_item_keys(conn, redis, search=None, limit_count=20, offset_count=0, exclude_ids=merged.auth_item_key_ids, bypass_cache=bypass_cache, setting=True)
+
+    async def _get_systems() -> list:
+        async with pool.acquire() as conn:
+            return await get_systems(conn, merged.systems_ids, redis, bypass_cache)
+
+    async def _search_systems() -> list:
+        async with pool.acquire() as conn:
+            return await search_systems(conn, redis, search=None, limit_count=20, offset_count=0, exclude_ids=merged.systems_ids, bypass_cache=bypass_cache, setting=True)
+
     (
         names_selected,
         names_suggestions,
@@ -135,125 +222,26 @@ async def resolve_setting_context(
         systems_selected,
         systems_suggestions,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, merged.name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.name_ids,
-            bypass_cache=bypass_cache,
-            setting=True,
-        ),
-        # Descriptions
-        get_descriptions(conn, merged.description_ids, redis, bypass_cache),
-        search_descriptions(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.description_ids,
-            bypass_cache=bypass_cache,
-            setting=True,
-        ),
-        # Colors
-        get_colors(conn, merged.color_ids, redis, bypass_cache),
-        search_colors(
-            conn,
-            redis,
-            search=color_search,
-            limit_count=20,
-            offset_count=0,
-            draft_id=group_id,
-            suggest_source="recent" if setting_id else "all",
-            exclude_ids=merged.color_ids,
-            bypass_cache=bypass_cache,
-            setting=True,
-        ),
-        # Flags
-        get_flags(conn, merged.flag_ids, redis, bypass_cache),
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=merged.flag_ids,
-            bypass_cache=bypass_cache,
-            setting=True,
-        ),
-        # Departments
-        get_departments(conn, merged.department_ids, redis, bypass_cache),
-        search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            suggest_source="all",
-            exclude_ids=merged.department_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Profiles
-        get_profiles(conn, merged.profile_ids, redis, bypass_cache),
-        search_profiles(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.profile_ids,
-            bypass_cache=bypass_cache,
-            setting=True,
-        ),
-        # Auths
-        get_auths(conn, merged.auth_ids, redis, bypass_cache),
-        search_auths(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.auth_ids,
-            bypass_cache=bypass_cache,
-            setting=True,
-        ),
-        # Provider keys
-        get_provider_keys(conn, merged.provider_key_ids, redis, bypass_cache),
-        search_provider_keys(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.provider_key_ids,
-            bypass_cache=bypass_cache,
-            setting=True,
-        ),
-        # Auth item keys
-        get_auth_item_keys(conn, merged.auth_item_key_ids, redis, bypass_cache),
-        search_auth_item_keys(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.auth_item_key_ids,
-            bypass_cache=bypass_cache,
-            setting=True,
-        ),
-        # Systems
-        get_systems(conn, merged.systems_ids, redis, bypass_cache),
-        search_systems(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=merged.systems_ids,
-            bypass_cache=bypass_cache,
-            setting=True,
-        ),
+        _get_names(),
+        _search_names(),
+        _get_descriptions(),
+        _search_descriptions(),
+        _get_colors(),
+        _search_colors(),
+        _get_flags(),
+        _search_flags(),
+        _get_departments(),
+        _search_departments(),
+        _get_profiles(),
+        _search_profiles(),
+        _get_auths(),
+        _search_auths(),
+        _get_provider_keys(),
+        _search_provider_keys(),
+        _get_auth_item_keys(),
+        _search_auth_item_keys(),
+        _get_systems(),
+        _search_systems(),
     )
 
     # Filter flags to setting-specific types

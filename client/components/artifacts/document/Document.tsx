@@ -335,7 +335,7 @@ function DocumentComponent({
             description: null,
             name_id: fs.name_id ?? prev.name_id,
             description_id: fs.description_id ?? prev.description_id,
-            flag_ids: fs.flag_ids ?? prev.flag_ids,
+            active_flag_id: fs.flag_ids?.[0] ?? prev.active_flag_id,
             department_ids: fs.department_ids ?? prev.department_ids,
             upload_ids: fs.file_ids ?? prev.upload_ids,
             image_ids: fs.image_ids ?? prev.image_ids,
@@ -897,7 +897,6 @@ function DocumentComponent({
                   showAiGenerate={
                     documentDetail?.names?.show_ai_generate ?? false
                   }
-                  create_tool_id={documentDetail?.names?.create_tool_id ?? null}
                   createNamesAction={createNamesAction}
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
@@ -964,9 +963,6 @@ function DocumentComponent({
 
                   showAiGenerate={
                     documentDetail?.descriptions?.show_ai_generate ?? false
-                  }
-                  create_tool_id={
-                    documentDetail?.descriptions?.create_tool_id ?? null
                   }
                   createDescriptionsAction={createDescriptionsAction}
                   isAutosaveEnabled={isAutosaveEnabled}
@@ -1140,7 +1136,6 @@ function DocumentComponent({
                 showAiGenerate={
                   documentDetail?.uploads?.show_ai_generate ?? false
                 }
-                create_tool_id={documentDetail?.uploads?.create_tool_id ?? null}
                 createUploadsAction={createUploadsAction}
                 searchTerm={uploadSearchTerm}
                 registerFlush={registerFlushCallbacks["uploads"]}
@@ -1200,7 +1195,6 @@ function DocumentComponent({
                 showAiGenerate={
                   documentDetail?.images?.show_ai_generate ?? false
                 }
-                create_tool_id={documentDetail?.images?.create_tool_id ?? null}
                 createImagesAction={createImagesAction}
                 registerFlush={registerFlushCallbacks["images"]}
                 isAutosaveEnabled={isAutosaveEnabled}
@@ -1253,7 +1247,6 @@ function DocumentComponent({
                 showAiGenerate={
                   documentDetail?.texts?.show_ai_generate ?? false
                 }
-                create_tool_id={documentDetail?.texts?.create_tool_id ?? null}
                 createTextsAction={createTextsAction}
                 registerFlush={registerFlushCallbacks["texts"]}
                 isAutosaveEnabled={isAutosaveEnabled}

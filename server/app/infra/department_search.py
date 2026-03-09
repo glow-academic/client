@@ -24,6 +24,7 @@ from app.infra.department_permissions import (
     compute_can_edit,
 )
 from app.infra.department_permissions_context import (
+    DepartmentPermissionsContext,
     resolve_department_permissions_context,
 )
 from app.infra.profile_identity_context import resolve_profile_identity_context
@@ -43,7 +44,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 
 
 async def search_department_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -66,7 +67,7 @@ async def search_department_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -79,26 +80,28 @@ async def search_department_client(
 
     # ── Step 2: Search departments ─────────────────────────────────────
 
-    department_ids, total_count = await search_department_artifacts(
-        conn,
-        search=search,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+    async with pool.acquire() as conn:
+        department_ids, total_count = await search_department_artifacts(
+            conn,
+            search=search,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
     if not department_ids:
         return _empty_response(actor_name, total_count=0)
 
     # ── Step 3: Get department artifacts with junction IDs ─────────────
 
-    artifacts = await get_departments(
-        conn,
-        department_ids,
-        names=True,
-        descriptions=True,
-        flags=True,
-        departments=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_departments(
+            conn,
+            department_ids,
+            names=True,
+            descriptions=True,
+            flags=True,
+            departments=True,
+        )
 
     # ── Step 4: Parallel hydration + permissions + staff counts ────────
 
@@ -110,27 +113,38 @@ async def search_department_client(
         all_description_ids.extend(a.description_ids or [])
 
     # Build parallel tasks
-    names_task = get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list()
-    descriptions_task = (
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty_list()
-    )
+
+    async def _fetch_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_descriptions() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
 
     # Per-department: resolve permissions context + staff count
     # permissions_context gives us usage_count
     # search_profiles with department_ids gives us staff_count via total_count
-    perm_tasks = [resolve_department_permissions_context(conn, a.id) for a in artifacts]
 
-    # Staff counts: for each department, search profiles with its departments_resource IDs
-    staff_tasks = [
-        _staff_count_for_department(conn, a.department_ids) for a in artifacts
-    ]
+    async def _fetch_perm(artifact_id: UUID) -> DepartmentPermissionsContext:
+        async with pool.acquire() as conn:
+            return await resolve_department_permissions_context(conn, artifact_id)
+
+    async def _fetch_staff(dept_ids: list[UUID] | None) -> int:
+        async with pool.acquire() as conn:
+            return await _staff_count_for_department(conn, dept_ids)
+
+    perm_tasks = [_fetch_perm(a.id) for a in artifacts]
+    staff_tasks = [_fetch_staff(a.department_ids) for a in artifacts]
 
     # Gather all
     results = await asyncio.gather(
-        names_task,
-        descriptions_task,
+        _fetch_names(),
+        _fetch_descriptions(),
         *perm_tasks,
         *staff_tasks,
     )

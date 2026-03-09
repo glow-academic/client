@@ -40,7 +40,7 @@ from app.routes.v5.tools.resources.names.get import get_names
 
 
 async def search_tool_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -61,7 +61,7 @@ async def search_tool_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -83,7 +83,10 @@ async def search_tool_client(
             get_agents as get_agent_artifacts,
         )
 
-        agent_artifacts = await get_agent_artifacts(conn, filter_agent_ids, tools=True)
+        async with pool.acquire() as conn:
+            agent_artifacts = await get_agent_artifacts(
+                conn, filter_agent_ids, tools=True
+            )
         tids: set[UUID] = set()
         for a in agent_artifacts:
             tids.update(a.tool_ids or [])
@@ -94,28 +97,30 @@ async def search_tool_client(
 
     # ── Step 3: Search tools ────────────────────────────────────────
 
-    tool_ids_list, total_count = await search_tools(
-        conn,
-        search=search,
-        department_ids=filter_department_ids,
-        tool_ids=tool_resource_ids,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+    async with pool.acquire() as conn:
+        tool_ids_list, total_count = await search_tools(
+            conn,
+            search=search,
+            department_ids=filter_department_ids,
+            tool_ids=tool_resource_ids,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
     if not tool_ids_list:
         return _empty_response(actor_name, total_count=0)
 
     # ── Step 4: Get tool artifacts with junction IDs ────────────────
 
-    artifacts = await get_tools(
-        conn,
-        tool_ids_list,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_tools(
+            conn,
+            tool_ids_list,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+        )
 
     # ── Step 5: Parallel hydration + facets ────────────────────────────
 
@@ -126,23 +131,40 @@ async def search_tool_client(
         all_name_ids.extend(a.name_ids or [])
         all_description_ids.extend(a.description_ids or [])
 
+    async def _fetch_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_descriptions() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _fetch_department_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn, redis, search=department_search, tool=True, limit_count=100
+            )
+
+    async def _fetch_agent_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_agents_resource(
+                conn, redis, search=agent_search, agent=True, limit_count=100
+            )
+
     (
         names_data,
         descriptions_data,
         department_facet,
         agent_facet,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty_list(),
-        # Facets
-        search_departments(
-            conn, redis, search=department_search, tool=True, limit_count=100
-        ),
-        search_agents_resource(
-            conn, redis, search=agent_search, agent=True, limit_count=100
-        ),
+        _fetch_names(),
+        _fetch_descriptions(),
+        _fetch_department_facet(),
+        _fetch_agent_facet(),
     )
 
     # Build lookup maps

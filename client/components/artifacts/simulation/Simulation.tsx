@@ -1185,7 +1185,6 @@ function SimulationComponent({
                   defaultName="New Simulation"
                   hideDescription={true}
                   showAiGenerate={s.names?.show_ai_generate ?? false}
-                  create_tool_id={s.names?.tool_id ?? null}
 
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["names"]}
@@ -1231,7 +1230,6 @@ function SimulationComponent({
                   createDescriptionsAction={createDescriptionsAction}
                   required={s.descriptions?.required ?? false}
                   showAiGenerate={s.descriptions?.show_ai_generate ?? false}
-                  create_tool_id={s.descriptions?.tool_id ?? null}
 
                   isAutosaveEnabled={isAutosaveEnabled}
                   registerFlush={registerFlushCallbacks["descriptions"]}
@@ -1418,7 +1416,6 @@ function SimulationComponent({
                   onGenerate={handleGenerateScenarioFlags}
                   required={s.scenario_flags?.required ?? false}
                   showAiGenerate={s.scenario_flags?.show_ai_generate ?? false}
-                  create_tool_id={s.scenario_flags?.tool_id ?? null}
 
                   onScenarioFlagValues={(flags) =>
                     setFormState((prev) => ({
@@ -1455,7 +1452,6 @@ function SimulationComponent({
                   onGenerate={handleGenerateScenarioPositions}
                   required={s.scenario_positions?.required ?? false}
                   showAiGenerate={s.scenario_positions?.show_ai_generate ?? false}
-                  create_tool_id={s.scenario_positions?.tool_id ?? null}
 
                   onScenarioPositionValues={(positions) =>
                     setFormState((prev) => ({
@@ -1489,7 +1485,6 @@ function SimulationComponent({
                   onGenerate={handleGenerateScenarioRubrics}
                   required={s.scenario_rubrics?.required ?? false}
                   showAiGenerate={s.scenario_rubrics?.show_ai_generate ?? false}
-                  create_tool_id={s.scenario_rubrics?.tool_id ?? null}
 
                   onScenarioRubricValues={(rubrics) =>
                     setFormState((prev) => ({
@@ -1524,7 +1519,6 @@ function SimulationComponent({
                   onGenerate={handleGenerateScenarioTimeLimits}
                   required={s.scenario_time_limits?.required ?? false}
                   showAiGenerate={s.scenario_time_limits?.show_ai_generate ?? false}
-                  create_tool_id={s.scenario_time_limits?.tool_id ?? null}
                   onScenarioTimeLimitValues={(timeLimits) =>
                     setFormState((prev) => ({
                       ...prev,

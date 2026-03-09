@@ -5,14 +5,12 @@ Thin route handler. Core logic lives in app.infra.tool_search.
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.tool_search import search_tool_client
 from app.routes.v5.api.main.tool.types import ListToolApiResponse
 from app.utils.error.handle_route_error import handle_route_error
@@ -41,7 +39,6 @@ async def search_tool(
     request: SearchToolApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ListToolApiResponse:
     """Search tools — composable infra architecture."""
     tags = ["tools"]
@@ -54,9 +51,10 @@ async def search_tool(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
         result = await search_tool_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             search=request.search,

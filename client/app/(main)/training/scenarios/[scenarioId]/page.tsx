@@ -6,6 +6,8 @@
  */
 
 import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDenied";
+import { PageHeader } from "@/components/common/layout/PageHeader";
+import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Scenario from "@/components/artifacts/scenario/Scenario";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -299,26 +301,42 @@ export default async function EditScenarioPage({
     const groupId = (await resolveGroupId({ draft_id: filterParams.draftId ?? null, artifact_type: "scenario" })).group_id;
     filterParams.groupId = groupId;
 
-    const scenarioDetail = await getScenario(
-      scenarioId,
-      Object.keys(filterParams).length > 0
-        ? (filterParams as Parameters<typeof getScenario>[1])
-        : undefined
-    );
+    const [scenarioDetail, docs] = await Promise.all([
+      getScenario(
+        scenarioId,
+        Object.keys(filterParams).length > 0
+          ? (filterParams as Parameters<typeof getScenario>[1])
+          : undefined
+      ),
+      getDocs({ body: { entity_id: scenarioId } }),
+    ]);
+
+    // Entity name from docs (already resolved server-side)
+    const entityName = docs.detail.title;
 
     return (
-      <div
-        className="space-y-6"
-        data-page="scenario-edit"
-        data-scenario-id={scenarioId}
-      >
-        <Scenario
-          scenarioId={scenarioId}
-          scenarioDetail={scenarioDetail}
-          updateScenarioAction={updateScenario}
-          patchScenarioDraftAction={patchScenarioDraft}
+      <>
+        <PageHeader
+          breadcrumbs={[
+            { title: "Training", section: "training", url: "/training" },
+            { title: "Scenarios", section: "scenarios", url: "/training/scenarios" },
+            { title: entityName },
+          ]}
+          toolbar={<SaveToolbar artifactType="scenario" />}
         />
-      </div>
+        <div
+          className="space-y-6 px-4"
+          data-page="scenario-edit"
+          data-scenario-id={scenarioId}
+        >
+          <Scenario
+            scenarioId={scenarioId}
+            scenarioDetail={scenarioDetail}
+            updateScenarioAction={updateScenario}
+            patchScenarioDraftAction={patchScenarioDraft}
+          />
+        </div>
+      </>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

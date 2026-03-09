@@ -10,7 +10,7 @@ from typing import Annotated
 import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_update import update_profile_client
 from app.routes.v5.api.main.profile.types import (
     UpdateProfileApiRequest,
@@ -26,7 +26,6 @@ async def update_profile(
     request: UpdateProfileApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateProfileApiResponse:
     """Update profiles using composable infra architecture."""
     try:
@@ -37,10 +36,11 @@ async def update_profile(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await update_profile_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             items=request.profiles,

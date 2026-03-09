@@ -22,7 +22,10 @@ from app.infra.document_permissions import (
     compute_can_duplicate,
     compute_can_edit,
 )
-from app.infra.document_permissions_context import resolve_document_permissions_context
+from app.infra.document_permissions_context import (
+    DocumentPermissionsContext,
+    resolve_document_permissions_context,
+)
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.document.types import (
     ListDocumentApiDocument,
@@ -43,7 +46,7 @@ from app.routes.v5.tools.resources.scenarios.search import (
 
 
 async def search_document_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -73,7 +76,7 @@ async def search_document_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -88,30 +91,32 @@ async def search_document_client(
     # -- Step 2: Search documents --
     # The artifact search tool handles scenario_ids and field_ids filters internally
 
-    document_ids, total_count = await search_documents(
-        conn,
-        search=search,
-        department_ids=filter_department_ids,
-        scenario_ids=scenario_ids,
-        field_ids=field_ids,
-        limit_count=page_size,
-        offset_count=page_offset,
-    )
+    async with pool.acquire() as conn:
+        document_ids, total_count = await search_documents(
+            conn,
+            search=search,
+            department_ids=filter_department_ids,
+            scenario_ids=scenario_ids,
+            field_ids=field_ids,
+            limit_count=page_size,
+            offset_count=page_offset,
+        )
 
     if not document_ids:
         return _empty_response(actor_name, total_count=0)
 
     # -- Step 3: Get document artifacts with junction IDs --
 
-    artifacts = await get_documents(
-        conn,
-        document_ids,
-        names=True,
-        departments=True,
-        flags=True,
-        files=True,
-        documents=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_documents(
+            conn,
+            document_ids,
+            names=True,
+            departments=True,
+            flags=True,
+            files=True,
+            documents=True,
+        )
 
     # -- Step 4: Parallel hydration + facets --
 
@@ -125,8 +130,42 @@ async def search_document_client(
     # Deduplicate files IDs
     all_files_ids = list(set(all_files_ids))
 
+    async def _fetch_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_uploads() -> list:
+        if not all_files_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_uploads(conn, all_files_ids, redis)
+
+    async def _fetch_scenario_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_scenarios_resource(
+                conn, redis, search=scenario_search, scenario=True, limit_count=100
+            )
+
+    async def _fetch_field_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_fields_resource(
+                conn, redis, search=field_search, parameter=True, limit_count=100
+            )
+
+    async def _fetch_department_facet() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn, redis, search=department_search, document=True, limit_count=100
+            )
+
     # Per-document permissions context (gives us active_scenario_count)
-    perm_tasks = [resolve_document_permissions_context(conn, a.id) for a in artifacts]
+    async def _fetch_perm(artifact_id: UUID) -> DocumentPermissionsContext:
+        async with pool.acquire() as conn:
+            return await resolve_document_permissions_context(conn, artifact_id)
+
+    perm_tasks = [_fetch_perm(a.id) for a in artifacts]
 
     (
         names_data,
@@ -136,17 +175,11 @@ async def search_document_client(
         department_facet,
         *perm_results,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty_list(),
-        get_uploads(conn, all_files_ids, redis) if all_files_ids else _empty_list(),
-        search_scenarios_resource(
-            conn, redis, search=scenario_search, scenario=True, limit_count=100
-        ),
-        search_fields_resource(
-            conn, redis, search=field_search, parameter=True, limit_count=100
-        ),
-        search_departments(
-            conn, redis, search=department_search, document=True, limit_count=100
-        ),
+        _fetch_names(),
+        _fetch_uploads(),
+        _fetch_scenario_facet(),
+        _fetch_field_facet(),
+        _fetch_department_facet(),
         *perm_tasks,
     )
 

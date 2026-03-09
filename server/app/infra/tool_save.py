@@ -136,7 +136,7 @@ async def _create_denormalized_snapshot(
 
 
 async def save_tool_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -163,7 +163,7 @@ async def save_tool_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -173,54 +173,56 @@ async def save_tool_client(
 
     # -- Step 2: Per-item permission check --
 
-    for idx, item in enumerate(items):
-        if item.input_tool_id is not None:
-            perms = await resolve_tool_permissions_context(conn, item.input_tool_id)
-            if not perms.exists:
-                raise HTTPException(
-                    status_code=404,
-                    detail=f"Item {idx}: Tool {item.input_tool_id} not found.",
-                )
-            if not compute_can_edit(
-                user_role=profile.role,
-                active_agent_count=perms.active_agent_count,
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Item {idx}: You don't have permission to save this tool.",
-                )
-        else:
-            if not compute_can_create(
-                user_role=profile.role,
-            ):
-                raise HTTPException(
-                    status_code=403,
-                    detail=f"Item {idx}: You don't have permission to create a tool.",
-                )
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            if item.input_tool_id is not None:
+                perms = await resolve_tool_permissions_context(conn, item.input_tool_id)
+                if not perms.exists:
+                    raise HTTPException(
+                        status_code=404,
+                        detail=f"Item {idx}: Tool {item.input_tool_id} not found.",
+                    )
+                if not compute_can_edit(
+                    user_role=profile.role,
+                    active_agent_count=perms.active_agent_count,
+                ):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"Item {idx}: You don't have permission to save this tool.",
+                    )
+            else:
+                if not compute_can_create(
+                    user_role=profile.role,
+                ):
+                    raise HTTPException(
+                        status_code=403,
+                        detail=f"Item {idx}: You don't have permission to create a tool.",
+                    )
 
     # -- Step 3: Per-item value resolution --
 
     has_errors = False
     error_results: list[SaveToolResult] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_tool_values(
-            conn,
-            redis,
-            item,
-            is_update=item.input_tool_id is not None,
-        )
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                SaveToolResult(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
-                )
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_tool_values(
+                conn,
+                redis,
+                item,
+                is_update=item.input_tool_id is not None,
             )
-        else:
-            error_results.append(SaveToolResult(success=True, message="Validated"))
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    SaveToolResult(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
+                )
+            else:
+                error_results.append(SaveToolResult(success=True, message="Validated"))
 
     if has_errors:
         return SaveToolApiResponse(results=error_results)
@@ -229,65 +231,66 @@ async def save_tool_client(
 
     results: list[SaveToolResult] = []
 
-    async with conn.transaction():
-        for _idx, item in enumerate(items):
-            is_update = item.input_tool_id is not None
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for _idx, item in enumerate(items):
+                is_update = item.input_tool_id is not None
 
-            # Create denormalized snapshot
-            tools_resource_id = await _create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            if is_update:
-                result = await update_tool_artifact(
+                # Create denormalized snapshot
+                tools_resource_id = await _create_denormalized_snapshot(
                     conn,
-                    item.input_tool_id,
-                    name_id=item.name_id if item.name_id else _UNSET,
-                    description_id=item.description_id
-                    if item.description_id
-                    else _UNSET,
-                    department_ids=item.department_ids,
-                    flag_ids=item.flag_ids,
-                    arg_positions_ids=item.arg_positions_ids,
-                    args_ids=item.args_ids,
-                    args_outputs_ids=item.args_outputs_ids,
-                    artifact_ids=item.artifact_ids,
-                    entry_ids=item.entry_ids,
-                    operation_ids=item.operation_ids,
-                    resource_ids=item.resource_ids,
-                    tool_ids=[tools_resource_id],
-                )
-                tool_id = result.id
-            else:
-                result = await create_tool_artifact(
-                    conn,
+                    redis,
                     name_id=item.name_id,
                     description_id=item.description_id,
-                    department_ids=item.department_ids,
-                    flag_ids=item.flag_ids,
-                    arg_positions_ids=item.arg_positions_ids,
-                    args_ids=item.args_ids,
-                    args_outputs_ids=item.args_outputs_ids,
-                    artifact_ids=item.artifact_ids,
-                    entry_ids=item.entry_ids,
-                    operation_ids=item.operation_ids,
-                    resource_ids=item.resource_ids,
-                    tool_ids=[tools_resource_id],
                 )
-                tool_id = result.id
 
-            results.append(
-                SaveToolResult(
-                    success=True,
-                    tool_id=tool_id,
-                    message="Tool updated successfully"
-                    if is_update
-                    else "Tool created successfully",
+                if is_update:
+                    result = await update_tool_artifact(
+                        conn,
+                        item.input_tool_id,
+                        name_id=item.name_id if item.name_id else _UNSET,
+                        description_id=item.description_id
+                        if item.description_id
+                        else _UNSET,
+                        department_ids=item.department_ids,
+                        flag_ids=item.flag_ids,
+                        arg_positions_ids=item.arg_positions_ids,
+                        args_ids=item.args_ids,
+                        args_outputs_ids=item.args_outputs_ids,
+                        artifact_ids=item.artifact_ids,
+                        entry_ids=item.entry_ids,
+                        operation_ids=item.operation_ids,
+                        resource_ids=item.resource_ids,
+                        tool_ids=[tools_resource_id],
+                    )
+                    tool_id = result.id
+                else:
+                    result = await create_tool_artifact(
+                        conn,
+                        name_id=item.name_id,
+                        description_id=item.description_id,
+                        department_ids=item.department_ids,
+                        flag_ids=item.flag_ids,
+                        arg_positions_ids=item.arg_positions_ids,
+                        args_ids=item.args_ids,
+                        args_outputs_ids=item.args_outputs_ids,
+                        artifact_ids=item.artifact_ids,
+                        entry_ids=item.entry_ids,
+                        operation_ids=item.operation_ids,
+                        resource_ids=item.resource_ids,
+                        tool_ids=[tools_resource_id],
+                    )
+                    tool_id = result.id
+
+                results.append(
+                    SaveToolResult(
+                        success=True,
+                        tool_id=tool_id,
+                        message="Tool updated successfully"
+                        if is_update
+                        else "Tool created successfully",
+                    )
                 )
-            )
 
     # -- Step 5: Invalidate cache --
 

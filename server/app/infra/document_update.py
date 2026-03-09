@@ -32,7 +32,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def update_document_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -56,7 +56,7 @@ async def update_document_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -66,42 +66,48 @@ async def update_document_client(
 
     # ── Step 2: Per-item permission check ──────────────────────────────
 
-    for idx, item in enumerate(items):
-        perms = await resolve_document_permissions_context(conn, item.document_id)
-        if not perms.exists:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Item {idx}: Document {item.document_id} not found.",
-            )
-        if not compute_can_edit(
-            user_role=profile.role,
-            document_department_ids=perms.department_ids,
-            active_scenario_count=perms.active_scenario_count,
-            user_department_ids=profile.department_ids,
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Item {idx}: You don't have permission to update this document.",
-            )
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            perms = await resolve_document_permissions_context(conn, item.document_id)
+            if not perms.exists:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Item {idx}: Document {item.document_id} not found.",
+                )
+            if not compute_can_edit(
+                user_role=profile.role,
+                document_department_ids=perms.department_ids,
+                active_scenario_count=perms.active_scenario_count,
+                user_department_ids=profile.department_ids,
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have permission to update this document.",
+                )
 
     # ── Step 3: Per-item value resolution ──────────────────────────────
 
     has_errors = False
     error_results: list[DocumentResultItem] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_document_values(conn, redis, item, is_create=False)
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                DocumentResultItem(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
-                )
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_document_values(
+                conn, redis, item, is_create=False
             )
-        else:
-            error_results.append(DocumentResultItem(success=True, message="Validated"))
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    DocumentResultItem(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
+                )
+            else:
+                error_results.append(
+                    DocumentResultItem(success=True, message="Validated")
+                )
 
     if has_errors:
         return UpdateDocumentApiResponse(results=error_results)
@@ -110,39 +116,42 @@ async def update_document_client(
 
     results: list[DocumentResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            documents_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            flag_ids = [item.flag_id] if item.flag_id else None
-
-            await update_document_artifact(
-                conn,
-                item.document_id,
-                name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id if item.description_id else _UNSET,
-                department_ids=item.department_ids,
-                flag_ids=flag_ids,
-                file_ids=item.upload_ids,
-                image_ids=item.image_ids,
-                parameter_field_ids=item.field_ids,
-                text_ids=item.text_ids,
-                document_ids=[documents_resource_id],
-            )
-
-            results.append(
-                DocumentResultItem(
-                    success=True,
-                    document_id=item.document_id,
-                    message="Document updated successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                documents_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                flag_ids = [item.flag_id] if item.flag_id else None
+
+                await update_document_artifact(
+                    conn,
+                    item.document_id,
+                    name_id=item.name_id if item.name_id else _UNSET,
+                    description_id=item.description_id
+                    if item.description_id
+                    else _UNSET,
+                    department_ids=item.department_ids,
+                    flag_ids=flag_ids,
+                    file_ids=item.upload_ids,
+                    image_ids=item.image_ids,
+                    parameter_field_ids=item.field_ids,
+                    text_ids=item.text_ids,
+                    document_ids=[documents_resource_id],
+                )
+
+                results.append(
+                    DocumentResultItem(
+                        success=True,
+                        document_id=item.document_id,
+                        message="Document updated successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

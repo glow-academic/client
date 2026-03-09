@@ -47,7 +47,7 @@ CSV_COLUMNS = [
 
 
 async def export_provider_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -69,7 +69,7 @@ async def export_provider_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -79,36 +79,38 @@ async def export_provider_client(
 
     # ── Step 2: Search all providers (full dump) ─────────────────────
 
-    if provider_id:
-        provider_ids = [provider_id]
-    else:
-        provider_ids, _total_count = await search_providers(
-            conn,
-            active_only=False,
-            limit_count=100000,
-            offset_count=0,
-        )
-
-        if not provider_ids:
-            return ExportProviderApiResponse(
-                upload_id=UUID("00000000-0000-0000-0000-000000000000"),
-                file_name="",
-                row_count=0,
+    async with pool.acquire() as conn:
+        if provider_id:
+            provider_ids = [provider_id]
+        else:
+            provider_ids, _total_count = await search_providers(
+                conn,
+                active_only=False,
+                limit_count=100000,
+                offset_count=0,
             )
+
+            if not provider_ids:
+                return ExportProviderApiResponse(
+                    upload_id=UUID("00000000-0000-0000-0000-000000000000"),
+                    file_name="",
+                    row_count=0,
+                )
 
     # ── Step 3: Get provider artifacts with all junction IDs ─────────
 
-    artifacts = await get_providers(
-        conn,
-        provider_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        endpoints=True,
-        keys=True,
-        values=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_providers(
+            conn,
+            provider_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            endpoints=True,
+            keys=True,
+            values=True,
+        )
 
     # ── Step 4: Parallel resource hydration ────────────────────────────
 
@@ -131,6 +133,30 @@ async def export_provider_client(
     async def _empty() -> list:
         return []
 
+    async def _fetch_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _fetch_departments() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, all_department_ids, redis)
+
+    async def _fetch_endpoints() -> list:
+        async with pool.acquire() as conn:
+            return await get_endpoints(conn, all_endpoint_ids, redis)
+
+    async def _fetch_keys() -> list:
+        async with pool.acquire() as conn:
+            return await get_keys(conn, all_key_ids, redis)
+
+    async def _fetch_values() -> list:
+        async with pool.acquire() as conn:
+            return await get_values(conn, all_value_ids, redis)
+
     (
         names_data,
         descriptions_data,
@@ -139,16 +165,12 @@ async def export_provider_client(
         keys_data,
         values_data,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty(),
-        get_departments(conn, all_department_ids, redis)
-        if all_department_ids
-        else _empty(),
-        get_endpoints(conn, all_endpoint_ids, redis) if all_endpoint_ids else _empty(),
-        get_keys(conn, all_key_ids, redis) if all_key_ids else _empty(),
-        get_values(conn, all_value_ids, redis) if all_value_ids else _empty(),
+        _fetch_names() if all_name_ids else _empty(),
+        _fetch_descriptions() if all_description_ids else _empty(),
+        _fetch_departments() if all_department_ids else _empty(),
+        _fetch_endpoints() if all_endpoint_ids else _empty(),
+        _fetch_keys() if all_key_ids else _empty(),
+        _fetch_values() if all_value_ids else _empty(),
     )
 
     # Build lookup maps
@@ -212,13 +234,14 @@ async def export_provider_client(
 
     # Create upload entry via black-box tool
     file_size = len(csv_content.encode("utf-8"))
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="text/csv",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="text/csv",
+            size=file_size,
+        )
 
     return ExportProviderApiResponse(
         upload_id=upload_result.id,

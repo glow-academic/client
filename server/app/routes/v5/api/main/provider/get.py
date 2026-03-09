@@ -18,7 +18,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.provider_context import resolve_provider_context
 from app.infra.provider_permissions import (

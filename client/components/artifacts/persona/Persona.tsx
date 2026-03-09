@@ -1051,7 +1051,6 @@ function PersonaComponent({
 
                   showAiGenerate={s?.names?.show_ai_generate ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  create_tool_id={s?.names?.tool_id ?? null}
                 />
               }
               resetFields={["name", "description", "department_ids", "active"]}
@@ -1105,7 +1104,6 @@ function PersonaComponent({
 
                   showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
                   isAutosaveEnabled={isAutosaveEnabled}
-                  create_tool_id={s?.descriptions?.tool_id ?? null}
                 />
                 <Departments
                   department_ids={formState.department_ids ?? []}
@@ -1213,7 +1211,6 @@ function PersonaComponent({
                 required={s?.parameter_fields?.required ?? false}
                 onGenerate={generateHandlers["parameter_fields"]}
                 isAutosaveEnabled={isAutosaveEnabled}
-                create_tool_id={s?.parameter_fields?.tool_id ?? null}
               />
             </StepCard>
           );
@@ -1290,7 +1287,6 @@ function PersonaComponent({
                 showAiGenerate={s?.colors?.show_ai_generate ?? false}
                 required={s?.colors?.required ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
-                create_tool_id={s?.colors?.tool_id ?? null}
               />
             </StepCard>
           );
@@ -1436,7 +1432,6 @@ function PersonaComponent({
 
                 showAiGenerate={s?.instructions?.show_ai_generate ?? false}
                 isAutosaveEnabled={isAutosaveEnabled}
-                create_tool_id={s?.instructions?.tool_id ?? null}
               />
               <Examples
                 example_ids={formState.example_ids ?? []}
@@ -1472,7 +1467,6 @@ function PersonaComponent({
                       )
                     : {}
                 }
-                create_tool_id={s?.examples?.tool_id ?? null}
               />
               <Voices
                 voice_ids={formState.voice_ids ?? []}
@@ -1487,7 +1481,6 @@ function PersonaComponent({
 
                 showAiGenerate={s?.voices?.show_ai_generate ?? false}
                 onGenerate={generateHandlers["voices"]}
-                create_tool_id={s?.voices?.tool_id ?? null}
                 isAutosaveEnabled={isAutosaveEnabled}
               />
             </StepCard>

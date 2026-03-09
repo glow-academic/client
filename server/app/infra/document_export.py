@@ -44,7 +44,7 @@ CSV_COLUMNS = [
 
 
 async def export_document_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -66,7 +66,7 @@ async def export_document_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -79,12 +79,13 @@ async def export_document_client(
     if document_id:
         document_ids = [document_id]
     else:
-        document_ids, _total_count = await search_documents(
-            conn,
-            active_only=False,
-            limit_count=100000,
-            offset_count=0,
-        )
+        async with pool.acquire() as conn:
+            document_ids, _total_count = await search_documents(
+                conn,
+                active_only=False,
+                limit_count=100000,
+                offset_count=0,
+            )
 
         if not document_ids:
             return ExportDocumentApiResponse(
@@ -95,15 +96,16 @@ async def export_document_client(
 
     # ── Step 3: Get document artifacts with all junction IDs ────────────
 
-    artifacts = await get_documents(
-        conn,
-        document_ids,
-        names=True,
-        descriptions=True,
-        departments=True,
-        flags=True,
-        parameter_fields=True,
-    )
+    async with pool.acquire() as conn:
+        artifacts = await get_documents(
+            conn,
+            document_ids,
+            names=True,
+            descriptions=True,
+            departments=True,
+            flags=True,
+            parameter_fields=True,
+        )
 
     # ── Step 4: Parallel resource hydration ────────────────────────────
 
@@ -118,8 +120,29 @@ async def export_document_client(
         all_department_ids.extend(a.department_ids or [])
         all_parameter_field_ids.extend(a.parameter_field_ids or [])
 
-    async def _empty() -> list:
-        return []
+    async def _fetch_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, all_name_ids, redis)
+
+    async def _fetch_descriptions() -> list:
+        if not all_description_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, all_description_ids, redis)
+
+    async def _fetch_departments() -> list:
+        if not all_department_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_departments(conn, all_department_ids, redis)
+
+    async def _fetch_parameter_fields() -> list:
+        if not all_parameter_field_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_parameter_fields(conn, all_parameter_field_ids, redis)
 
     (
         names_data,
@@ -127,16 +150,10 @@ async def export_document_client(
         departments_data,
         parameter_fields_data,
     ) = await asyncio.gather(
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty(),
-        get_descriptions(conn, all_description_ids, redis)
-        if all_description_ids
-        else _empty(),
-        get_departments(conn, all_department_ids, redis)
-        if all_department_ids
-        else _empty(),
-        get_parameter_fields(conn, all_parameter_field_ids, redis)
-        if all_parameter_field_ids
-        else _empty(),
+        _fetch_names(),
+        _fetch_descriptions(),
+        _fetch_departments(),
+        _fetch_parameter_fields(),
     )
 
     # Build lookup maps
@@ -147,7 +164,10 @@ async def export_document_client(
     # Parameter fields: two-hop (parameter_field → field → name)
     pf_field_id_map = {pf.id: pf.field_id for pf in parameter_fields_data}
     all_field_ids = list({fid for fid in pf_field_id_map.values() if fid})
-    fields_data = await get_fields(conn, all_field_ids, redis) if all_field_ids else []
+    async with pool.acquire() as conn:
+        fields_data = (
+            await get_fields(conn, all_field_ids, redis) if all_field_ids else []
+        )
     field_name_map = {f.id: f.name for f in fields_data}
     pf_name_map = {
         pf_id: field_name_map.get(field_id, "")
@@ -199,13 +219,14 @@ async def export_document_client(
 
     # Create upload entry via black-box tool
     file_size = len(csv_content.encode("utf-8"))
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="text/csv",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="text/csv",
+            size=file_size,
+        )
 
     return ExportDocumentApiResponse(
         upload_id=upload_result.id,

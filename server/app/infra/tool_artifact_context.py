@@ -123,7 +123,9 @@ async def resolve_tool_artifact_context(
 
     async def _get_descriptions() -> list:
         async with pool.acquire() as conn:
-            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+            return await get_descriptions(
+                conn, merged.description_ids, redis, bypass_cache
+            )
 
     async def _search_descriptions() -> list:
         async with pool.acquire() as conn:
@@ -155,7 +157,9 @@ async def resolve_tool_artifact_context(
 
     async def _get_args() -> list:
         async with pool.acquire() as conn:
-            return await get_args(conn, merged.args_ids, redis, bypass_cache=bypass_cache)
+            return await get_args(
+                conn, merged.args_ids, redis, bypass_cache=bypass_cache
+            )
 
     async def _search_args() -> list:
         async with pool.acquire() as conn:
