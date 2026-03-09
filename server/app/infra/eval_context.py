@@ -56,7 +56,7 @@ EVAL_FLAG_NAMES = {"eval_active", "dynamic", ""}
 
 
 async def resolve_eval_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     eval_id: UUID | None,
@@ -75,25 +75,31 @@ async def resolve_eval_context(
     user_dept_ids = user_department_ids or []
 
     # Step 1: fetch artifact + draft in parallel
-    artifact_task = (
-        get_eval_artifacts(
-            conn,
-            [eval_id],
-            names=True,
-            descriptions=True,
-            departments=True,
-            flags=True,
-            models=True,
-            model_flags=True,
-            model_rubrics=True,
-            model_positions=True,
-        )
-        if eval_id
-        else _empty()
-    )
-    draft_task = get_eval_drafts(conn, [draft_id]) if draft_id else _empty()
 
-    artifacts, drafts = await asyncio.gather(artifact_task, draft_task)
+    async def _fetch_artifact() -> list:
+        if not eval_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_eval_artifacts(
+                conn,
+                [eval_id],
+                names=True,
+                descriptions=True,
+                departments=True,
+                flags=True,
+                models=True,
+                model_flags=True,
+                model_rubrics=True,
+                model_positions=True,
+            )
+
+    async def _fetch_draft() -> list:
+        if not draft_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_eval_drafts(conn, [draft_id])
+
+    artifacts, drafts = await asyncio.gather(_fetch_artifact(), _fetch_draft())
 
     artifact = artifacts[0] if artifacts else None
     draft = drafts[0] if drafts else None
@@ -104,6 +110,122 @@ async def resolve_eval_context(
     active = artifact.active if artifact else True
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
+
+    async def _get_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, merged.name_ids, redis, bypass_cache)
+
+    async def _search_names() -> list:
+        async with pool.acquire() as conn:
+            return await search_names(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.name_ids,
+                bypass_cache=bypass_cache,
+                eval=True,
+            )
+
+    async def _get_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+
+    async def _search_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await search_descriptions(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.description_ids,
+                bypass_cache=bypass_cache,
+                eval=True,
+            )
+
+    async def _get_flags() -> list:
+        async with pool.acquire() as conn:
+            return await get_flags(conn, merged.flag_ids, redis, bypass_cache)
+
+    async def _search_flags() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=merged.flag_ids,
+                bypass_cache=bypass_cache,
+                eval=True,
+            )
+
+    async def _get_departments() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, merged.department_ids, redis, bypass_cache)
+
+    async def _search_departments() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                suggest_source="all" if eval_id is None else "recent",
+                exclude_ids=merged.department_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_models() -> list:
+        async with pool.acquire() as conn:
+            return await get_models(conn, merged.model_ids, redis, bypass_cache)
+
+    async def _get_model_flags() -> list:
+        async with pool.acquire() as conn:
+            return await get_model_flags(conn, merged.model_flag_ids, redis, bypass_cache)
+
+    async def _search_model_flags() -> list:
+        async with pool.acquire() as conn:
+            return await search_model_flags(
+                conn,
+                redis,
+                exclude_ids=merged.model_flag_ids,
+                bypass_cache=bypass_cache,
+                eval=True,
+            )
+
+    async def _get_model_rubrics() -> list:
+        async with pool.acquire() as conn:
+            return await get_model_rubrics(
+                conn, merged.model_rubric_ids, redis, bypass_cache
+            )
+
+    async def _search_model_rubrics() -> list:
+        async with pool.acquire() as conn:
+            return await search_model_rubrics(
+                conn,
+                redis,
+                exclude_ids=merged.model_rubric_ids,
+                bypass_cache=bypass_cache,
+                eval=True,
+            )
+
+    async def _get_model_positions() -> list:
+        async with pool.acquire() as conn:
+            return await get_model_positions(
+                conn, merged.model_position_ids, redis, bypass_cache
+            )
+
+    async def _search_model_positions() -> list:
+        async with pool.acquire() as conn:
+            return await search_model_positions(
+                conn,
+                redis,
+                exclude_ids=merged.model_position_ids,
+                bypass_cache=bypass_cache,
+                eval=True,
+            )
+
     (
         names_selected,
         names_suggestions,
@@ -121,80 +243,21 @@ async def resolve_eval_context(
         model_positions_selected,
         model_positions_suggestions,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, merged.name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.name_ids,
-            bypass_cache=bypass_cache,
-            eval=True,
-        ),
-        # Descriptions
-        get_descriptions(conn, merged.description_ids, redis, bypass_cache),
-        search_descriptions(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.description_ids,
-            bypass_cache=bypass_cache,
-            eval=True,
-        ),
-        # Flags
-        get_flags(conn, merged.flag_ids, redis, bypass_cache),
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=merged.flag_ids,
-            bypass_cache=bypass_cache,
-            eval=True,
-        ),
-        # Departments
-        get_departments(conn, merged.department_ids, redis, bypass_cache),
-        search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            suggest_source="all" if eval_id is None else "recent",
-            exclude_ids=merged.department_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Models (get only — no eval-specific search available)
-        get_models(conn, merged.model_ids, redis, bypass_cache),
-        # Model flags
-        get_model_flags(conn, merged.model_flag_ids, redis, bypass_cache),
-        search_model_flags(
-            conn,
-            redis,
-            exclude_ids=merged.model_flag_ids,
-            bypass_cache=bypass_cache,
-            eval=True,
-        ),
-        # Model rubrics
-        get_model_rubrics(conn, merged.model_rubric_ids, redis, bypass_cache),
-        search_model_rubrics(
-            conn,
-            redis,
-            exclude_ids=merged.model_rubric_ids,
-            bypass_cache=bypass_cache,
-            eval=True,
-        ),
-        # Model positions
-        get_model_positions(conn, merged.model_position_ids, redis, bypass_cache),
-        search_model_positions(
-            conn,
-            redis,
-            exclude_ids=merged.model_position_ids,
-            bypass_cache=bypass_cache,
-            eval=True,
-        ),
+        _get_names(),
+        _search_names(),
+        _get_descriptions(),
+        _search_descriptions(),
+        _get_flags(),
+        _search_flags(),
+        _get_departments(),
+        _search_departments(),
+        _get_models(),
+        _get_model_flags(),
+        _search_model_flags(),
+        _get_model_rubrics(),
+        _search_model_rubrics(),
+        _get_model_positions(),
+        _search_model_positions(),
     )
 
     # Filter flags to eval-specific types

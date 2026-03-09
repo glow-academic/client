@@ -53,7 +53,7 @@ class CreateEvalItem(BaseModel):
 
 
 async def create_eval_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -77,7 +77,7 @@ async def create_eval_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -98,8 +98,9 @@ async def create_eval_client(
     has_errors = False
     error_results: list[EvalResultItem] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_eval_values(conn, redis, item, is_create=True)
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_eval_values(conn, redis, item, is_create=True)
         if item_errors:
             has_errors = True
             error_results.append(

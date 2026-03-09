@@ -152,7 +152,9 @@ async def resolve_model_context(
 
     async def _get_descriptions() -> list:
         async with pool.acquire() as conn:
-            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+            return await get_descriptions(
+                conn, merged.description_ids, redis, bypass_cache
+            )
 
     async def _search_descriptions() -> list:
         async with pool.acquire() as conn:
@@ -184,7 +186,9 @@ async def resolve_model_context(
 
     async def _get_departments() -> list:
         async with pool.acquire() as conn:
-            return await get_departments(conn, merged.department_ids, redis, bypass_cache)
+            return await get_departments(
+                conn, merged.department_ids, redis, bypass_cache
+            )
 
     async def _search_departments() -> list:
         async with pool.acquire() as conn:

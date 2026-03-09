@@ -47,7 +47,7 @@ class CreateParameterItem(BaseModel):
 
 
 async def create_parameter_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -71,7 +71,7 @@ async def create_parameter_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -92,19 +92,24 @@ async def create_parameter_client(
     has_errors = False
     error_results: list[ParameterResultItem] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_parameter_values(conn, redis, item, is_create=True)
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                ParameterResultItem(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
-                )
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_parameter_values(
+                conn, redis, item, is_create=True
             )
-        else:
-            error_results.append(ParameterResultItem(success=True, message="Validated"))
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    ParameterResultItem(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
+                )
+            else:
+                error_results.append(
+                    ParameterResultItem(success=True, message="Validated")
+                )
 
     if has_errors:
         return CreateParameterApiResponse(results=error_results)
@@ -113,35 +118,36 @@ async def create_parameter_client(
 
     results: list[ParameterResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            parameters_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            result = await create_parameter_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=item.department_ids,
-                flag_ids=item.flag_ids,
-                field_ids=item.field_ids,
-                parameter_ids=[parameters_resource_id],
-            )
-
-            results.append(
-                ParameterResultItem(
-                    success=True,
-                    parameter_id=result.id,
-                    message="Parameter created successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                parameters_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                result = await create_parameter_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    flag_ids=item.flag_ids,
+                    field_ids=item.field_ids,
+                    parameter_ids=[parameters_resource_id],
+                )
+
+                results.append(
+                    ParameterResultItem(
+                        success=True,
+                        parameter_id=result.id,
+                        message="Parameter created successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

@@ -98,9 +98,7 @@ async def update_agent_client(
 
     async with pool.acquire() as conn:
         for idx, item in enumerate(items):
-            item_errors = await resolve_agent_values(
-                conn, redis, item, is_create=False
-            )
+            item_errors = await resolve_agent_values(conn, redis, item, is_create=False)
             if item_errors:
                 has_errors = True
                 error_results.append(
@@ -111,9 +109,7 @@ async def update_agent_client(
                     )
                 )
             else:
-                error_results.append(
-                    AgentResultItem(success=True, message="Validated")
-                )
+                error_results.append(AgentResultItem(success=True, message="Validated"))
 
     if has_errors:
         return UpdateAgentApiResponse(results=error_results)

@@ -138,7 +138,9 @@ async def resolve_cohort_context(
 
     async def _fetch_descriptions_selected() -> list:
         async with pool.acquire() as conn:
-            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+            return await get_descriptions(
+                conn, merged.description_ids, redis, bypass_cache
+            )
 
     async def _fetch_descriptions_suggestions() -> list:
         async with pool.acquire() as conn:

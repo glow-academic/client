@@ -164,9 +164,7 @@ async def resolve_simulation_values(
                 limit_count=1000,
                 simulation=True,
             )
-            match = next(
-                (f for f in results if f.type == "simulation_practice"), None
-            )
+            match = next((f for f in results if f.type == "simulation_practice"), None)
             if match and match.id:
                 if item.is_practice:
                     item.flag_ids = (item.flag_ids or []) + [match.id]
@@ -186,9 +184,7 @@ async def resolve_simulation_values(
                 limit_count=1000,
                 simulation=True,
             )
-            dept_name_map = {
-                d.name.lower(): d.id for d in all_depts if d.name and d.id
-            }
+            dept_name_map = {d.name.lower(): d.id for d in all_depts if d.name and d.id}
             resolved_ids = []
             for dept_name in item.departments:
                 dept_id = dept_name_map.get(dept_name.lower())

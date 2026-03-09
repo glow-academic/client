@@ -289,7 +289,9 @@ async def save_cohort_client(
     for idx, item in enumerate(items):
         if item.input_cohort_id is not None:
             async with pool.acquire() as conn:
-                perms = await resolve_cohort_permissions_context(conn, item.input_cohort_id)
+                perms = await resolve_cohort_permissions_context(
+                    conn, item.input_cohort_id
+                )
             if not perms.exists:
                 raise HTTPException(
                     status_code=404,

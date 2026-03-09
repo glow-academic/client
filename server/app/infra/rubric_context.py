@@ -42,6 +42,7 @@ from app.routes.v5.tools.resources.standard_groups.search import search_standard
 from app.routes.v5.tools.resources.standards.get import get_standards
 from app.routes.v5.tools.resources.standards.search import search_standards
 
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -55,7 +56,7 @@ RUBRIC_FLAG_NAMES = {"rubric_active"}
 
 
 async def resolve_rubric_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     rubric_id: UUID | None,
@@ -74,24 +75,30 @@ async def resolve_rubric_context(
     user_dept_ids = user_department_ids or []
 
     # Step 1: fetch artifact + draft in parallel
-    artifact_task = (
-        get_rubric_artifacts(
-            conn,
-            [rubric_id],
-            names=True,
-            descriptions=True,
-            departments=True,
-            flags=True,
-            points=True,
-            standard_groups=True,
-            standards=True,
-        )
-        if rubric_id
-        else _empty()
-    )
-    draft_task = get_rubric_drafts(conn, [draft_id]) if draft_id else _empty()
 
-    artifacts, drafts = await asyncio.gather(artifact_task, draft_task)
+    async def _fetch_artifacts() -> list:
+        if not rubric_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_rubric_artifacts(
+                conn,
+                [rubric_id],
+                names=True,
+                descriptions=True,
+                departments=True,
+                flags=True,
+                points=True,
+                standard_groups=True,
+                standards=True,
+            )
+
+    async def _fetch_drafts() -> list:
+        if not draft_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_rubric_drafts(conn, [draft_id])
+
+    artifacts, drafts = await asyncio.gather(_fetch_artifacts(), _fetch_drafts())
 
     artifact = artifacts[0] if artifacts else None
     draft = drafts[0] if drafts else None
@@ -102,6 +109,116 @@ async def resolve_rubric_context(
     active = artifact.active if artifact else True
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
+
+    async def _get_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, merged.name_ids, redis, bypass_cache)
+
+    async def _search_names() -> list:
+        async with pool.acquire() as conn:
+            return await search_names(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.name_ids,
+                bypass_cache=bypass_cache,
+                rubric=True,
+            )
+
+    async def _get_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+
+    async def _search_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await search_descriptions(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.description_ids,
+                bypass_cache=bypass_cache,
+                rubric=True,
+            )
+
+    async def _get_flags() -> list:
+        async with pool.acquire() as conn:
+            return await get_flags(conn, merged.flag_ids, redis, bypass_cache)
+
+    async def _search_flags() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=merged.flag_ids,
+                bypass_cache=bypass_cache,
+                rubric=True,
+            )
+
+    async def _get_departments() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, merged.department_ids, redis, bypass_cache)
+
+    async def _search_departments() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                suggest_source="all" if rubric_id is None else "recent",
+                exclude_ids=merged.department_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_points() -> list:
+        async with pool.acquire() as conn:
+            return await get_points(conn, merged.point_ids, redis, bypass_cache)
+
+    async def _search_points() -> list:
+        async with pool.acquire() as conn:
+            return await search_points(
+                conn,
+                redis,
+                exclude_ids=merged.point_ids,
+                bypass_cache=bypass_cache,
+                rubric=True,
+            )
+
+    async def _get_standard_groups() -> list:
+        async with pool.acquire() as conn:
+            return await get_standard_groups(
+                conn, merged.standard_group_ids, redis, bypass_cache
+            )
+
+    async def _search_standard_groups() -> list:
+        async with pool.acquire() as conn:
+            return await search_standard_groups(
+                conn,
+                redis,
+                exclude_ids=merged.standard_group_ids,
+                bypass_cache=bypass_cache,
+                rubric=True,
+            )
+
+    async def _get_standards() -> list:
+        async with pool.acquire() as conn:
+            return await get_standards(conn, merged.standard_ids, redis, bypass_cache)
+
+    async def _search_standards() -> list:
+        async with pool.acquire() as conn:
+            return await search_standards(
+                conn,
+                redis,
+                exclude_ids=merged.standard_ids,
+                bypass_cache=bypass_cache,
+                rubric=True,
+            )
+
     (
         names_selected,
         names_suggestions,
@@ -118,78 +235,20 @@ async def resolve_rubric_context(
         standards_selected,
         standards_suggestions,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, merged.name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.name_ids,
-            bypass_cache=bypass_cache,
-            rubric=True,
-        ),
-        # Descriptions
-        get_descriptions(conn, merged.description_ids, redis, bypass_cache),
-        search_descriptions(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.description_ids,
-            bypass_cache=bypass_cache,
-            rubric=True,
-        ),
-        # Flags
-        get_flags(conn, merged.flag_ids, redis, bypass_cache),
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=merged.flag_ids,
-            bypass_cache=bypass_cache,
-            rubric=True,
-        ),
-        # Departments
-        get_departments(conn, merged.department_ids, redis, bypass_cache),
-        search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            suggest_source="all" if rubric_id is None else "recent",
-            exclude_ids=merged.department_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Points
-        get_points(conn, merged.point_ids, redis, bypass_cache),
-        search_points(
-            conn,
-            redis,
-            exclude_ids=merged.point_ids,
-            bypass_cache=bypass_cache,
-            rubric=True,
-        ),
-        # Standard Groups
-        get_standard_groups(conn, merged.standard_group_ids, redis, bypass_cache),
-        search_standard_groups(
-            conn,
-            redis,
-            exclude_ids=merged.standard_group_ids,
-            bypass_cache=bypass_cache,
-            rubric=True,
-        ),
-        # Standards
-        get_standards(conn, merged.standard_ids, redis, bypass_cache),
-        search_standards(
-            conn,
-            redis,
-            exclude_ids=merged.standard_ids,
-            bypass_cache=bypass_cache,
-            rubric=True,
-        ),
+        _get_names(),
+        _search_names(),
+        _get_descriptions(),
+        _search_descriptions(),
+        _get_flags(),
+        _search_flags(),
+        _get_departments(),
+        _search_departments(),
+        _get_points(),
+        _search_points(),
+        _get_standard_groups(),
+        _search_standard_groups(),
+        _get_standards(),
+        _search_standards(),
     )
 
     # Filter flags to rubric-specific types

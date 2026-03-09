@@ -171,7 +171,9 @@ async def export_cohort_client(
         if not all_simulation_position_ids:
             return []
         async with pool.acquire() as conn:
-            return await get_simulation_positions(conn, all_simulation_position_ids, redis)
+            return await get_simulation_positions(
+                conn, all_simulation_position_ids, redis
+            )
 
     async def _fetch_simulation_availability() -> list:
         if not all_simulation_availability_ids:

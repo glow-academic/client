@@ -10,15 +10,14 @@ Uses composable infra layers:
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.helpers import dedupe_by_id
 from app.infra.simulation_context import resolve_simulation_context
 from app.infra.simulation_permissions import (
@@ -77,7 +76,7 @@ router = APIRouter()
 
 
 async def get_simulation_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -101,7 +100,7 @@ async def get_simulation_client(
     # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
     common = await resolve_common_context(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
         group_id=group_id,
@@ -120,7 +119,8 @@ async def get_simulation_client(
 
     perms = None
     if simulation_id is not None:
-        perms = await resolve_simulation_permissions_context(conn, simulation_id)
+        async with pool.acquire() as conn:
+            perms = await resolve_simulation_permissions_context(conn, simulation_id)
 
         if not perms.exists:
             raise HTTPException(
@@ -138,7 +138,7 @@ async def get_simulation_client(
     # ── Step 3: Simulation artifact context ─────────────────────────────
 
     simulation = await resolve_simulation_context(
-        conn,
+        pool,
         redis,
         simulation_id=simulation_id,
         group_id=group_id,
@@ -407,7 +407,6 @@ async def get_simulation(
     request: GetSimulationApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSimulationApiResponse:
     """Get simulation information using composable infra architecture."""
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
@@ -420,10 +419,11 @@ async def get_simulation(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await get_simulation_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             simulation_id=request.simulation_id,

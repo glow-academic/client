@@ -5,13 +5,10 @@ Thin route handler. Core logic lives in app.infra.cohort_update.
 
 from __future__ import annotations
 
-from typing import Annotated
-
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.cohort_update import update_cohort_client
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.cohort.types import (
     UpdateCohortApiRequest,
     UpdateCohortApiResponse,
@@ -26,7 +23,6 @@ async def update_cohort(
     request: UpdateCohortApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> UpdateCohortApiResponse:
     """Update cohorts using composable infra architecture."""
     try:
@@ -37,10 +33,11 @@ async def update_cohort(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
 
         response_data = await update_cohort_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             items=request.cohorts,

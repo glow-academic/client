@@ -169,7 +169,9 @@ async def export_simulation_client(
         if not all_scenario_time_limit_ids:
             return []
         async with pool.acquire() as conn:
-            return await get_scenario_time_limits(conn, all_scenario_time_limit_ids, redis)
+            return await get_scenario_time_limits(
+                conn, all_scenario_time_limit_ids, redis
+            )
 
     (
         names_data,

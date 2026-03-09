@@ -5,12 +5,9 @@ Thin route handler. Core logic lives in app.infra.simulation_duplicate.
 
 from __future__ import annotations
 
-from typing import Annotated
+from fastapi import APIRouter, HTTPException, Request, Response
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
-
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.simulation_duplicate import duplicate_simulation_client
 from app.routes.v5.api.main.simulation.types import (
     DuplicateSimulationApiRequest,
@@ -29,7 +26,6 @@ async def duplicate_simulation(
     request: DuplicateSimulationApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> DuplicateSimulationApiResponse:
     """Duplicate a simulation — composable infra architecture."""
     tags = ["simulations"]
@@ -42,9 +38,10 @@ async def duplicate_simulation(
                 detail="Profile ID is required. Please sign in again.",
             )
 
+        pool = get_pool()
         redis = get_redis_client()
         result = await duplicate_simulation_client(
-            conn,
+            pool,
             redis,
             profile_id=profile_id,
             simulation_id=request.simulation_id,

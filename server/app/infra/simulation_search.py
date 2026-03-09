@@ -185,7 +185,9 @@ async def search_simulation_client(
         if not all_scenario_resource_ids:
             return []
         async with pool.acquire() as conn:
-            return await get_scenarios_resource(conn, list(all_scenario_resource_ids), redis)
+            return await get_scenarios_resource(
+                conn, list(all_scenario_resource_ids), redis
+            )
 
     async def _fetch_scenario_facet() -> list:
         async with pool.acquire() as conn:
@@ -232,7 +234,9 @@ async def search_simulation_client(
     personas_data = []
     if all_persona_ids:
         async with pool.acquire() as conn:
-            personas_data = await get_personas_resource(conn, list(all_persona_ids), redis)
+            personas_data = await get_personas_resource(
+                conn, list(all_persona_ids), redis
+            )
 
     persona_map: dict[UUID, str] = {
         p.persona_id: p.color or "" for p in personas_data if p.persona_id

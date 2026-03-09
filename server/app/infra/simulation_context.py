@@ -166,7 +166,9 @@ async def resolve_simulation_context(
 
     async def _get_descriptions_selected() -> list:
         async with pool.acquire() as conn:
-            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+            return await get_descriptions(
+                conn, merged.description_ids, redis, bypass_cache
+            )
 
     async def _search_descriptions_suggestions() -> list:
         async with pool.acquire() as conn:
@@ -194,7 +196,9 @@ async def resolve_simulation_context(
 
     async def _get_departments_selected() -> list:
         async with pool.acquire() as conn:
-            return await get_departments(conn, merged.department_ids, redis, bypass_cache=bypass_cache)
+            return await get_departments(
+                conn, merged.department_ids, redis, bypass_cache=bypass_cache
+            )
 
     async def _search_departments_suggestions() -> list:
         async with pool.acquire() as conn:
@@ -212,7 +216,9 @@ async def resolve_simulation_context(
 
     async def _get_scenarios_selected() -> list:
         async with pool.acquire() as conn:
-            return await get_scenario_resources(conn, merged.scenario_ids, redis, bypass_cache)
+            return await get_scenario_resources(
+                conn, merged.scenario_ids, redis, bypass_cache
+            )
 
     async def _search_scenarios_suggestions() -> list:
         async with pool.acquire() as conn:
@@ -231,7 +237,9 @@ async def resolve_simulation_context(
 
     async def _get_scenario_flags_selected() -> list:
         async with pool.acquire() as conn:
-            return await get_scenario_flags(conn, merged.scenario_flag_ids, redis, bypass_cache)
+            return await get_scenario_flags(
+                conn, merged.scenario_flag_ids, redis, bypass_cache
+            )
 
     async def _search_scenario_flag_types_all() -> list:
         async with pool.acquire() as conn:
@@ -247,7 +255,9 @@ async def resolve_simulation_context(
 
     async def _get_scenario_positions_selected() -> list:
         async with pool.acquire() as conn:
-            return await get_scenario_positions(conn, merged.scenario_position_ids, redis, bypass_cache)
+            return await get_scenario_positions(
+                conn, merged.scenario_position_ids, redis, bypass_cache
+            )
 
     async def _search_scenario_positions_suggestions() -> list:
         async with pool.acquire() as conn:
@@ -260,7 +270,9 @@ async def resolve_simulation_context(
 
     async def _get_scenario_rubrics_selected() -> list:
         async with pool.acquire() as conn:
-            return await get_scenario_rubrics(conn, merged.scenario_rubric_ids, redis, bypass_cache)
+            return await get_scenario_rubrics(
+                conn, merged.scenario_rubric_ids, redis, bypass_cache
+            )
 
     async def _search_scenario_rubrics_suggestions() -> list:
         async with pool.acquire() as conn:

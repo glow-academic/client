@@ -262,9 +262,7 @@ async def save_agent_client(
                     )
                 )
             else:
-                error_results.append(
-                    SaveAgentResult(success=True, message="Validated")
-                )
+                error_results.append(SaveAgentResult(success=True, message="Validated"))
 
     if has_errors:
         return SaveAgentApiResponse(results=error_results)

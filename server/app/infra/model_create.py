@@ -120,9 +120,7 @@ async def create_model_client(
                     )
                 )
             else:
-                error_results.append(
-                    ModelResultItem(success=True, message="Validated")
-                )
+                error_results.append(ModelResultItem(success=True, message="Validated"))
 
     if has_errors:
         return CreateModelApiResponse(results=error_results)

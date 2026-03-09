@@ -32,7 +32,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def update_simulation_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -56,7 +56,7 @@ async def update_simulation_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -66,23 +66,26 @@ async def update_simulation_client(
 
     # ── Step 2: Per-item permission check ──────────────────────────────
 
-    for idx, item in enumerate(items):
-        perms = await resolve_simulation_permissions_context(conn, item.simulation_id)
-        if not perms.exists:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Item {idx}: Simulation {item.simulation_id} not found.",
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            perms = await resolve_simulation_permissions_context(
+                conn, item.simulation_id
             )
-        if not compute_can_edit(
-            user_role=profile.role,
-            simulation_department_ids=perms.department_ids,
-            cohort_usage_count=perms.cohort_usage_count,
-            user_department_ids=profile.department_ids,
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail=f"Item {idx}: You don't have permission to update this simulation.",
-            )
+            if not perms.exists:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Item {idx}: Simulation {item.simulation_id} not found.",
+                )
+            if not compute_can_edit(
+                user_role=profile.role,
+                simulation_department_ids=perms.department_ids,
+                cohort_usage_count=perms.cohort_usage_count,
+                user_department_ids=profile.department_ids,
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Item {idx}: You don't have permission to update this simulation.",
+                )
 
     # ── Step 3: Per-item value resolution ──────────────────────────────
 
@@ -91,7 +94,7 @@ async def update_simulation_client(
 
     for idx, item in enumerate(items):
         item_errors = await resolve_simulation_values(
-            conn, redis, item, is_create=False
+            pool, redis, item, is_create=False
         )
         if item_errors:
             has_errors = True
@@ -114,38 +117,41 @@ async def update_simulation_client(
 
     results: list[SimulationResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            simulations_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            await update_simulation_artifact(
-                conn,
-                item.simulation_id,
-                name_id=item.name_id if item.name_id else _UNSET,
-                description_id=item.description_id if item.description_id else _UNSET,
-                department_ids=item.department_ids,
-                flag_ids=item.flag_ids,
-                scenario_ids=item.scenario_ids,
-                scenario_flag_ids=item.scenario_flag_ids,
-                scenario_position_ids=item.scenario_position_ids,
-                scenario_rubric_ids=item.scenario_rubric_ids,
-                scenario_time_limit_ids=item.scenario_time_limit_ids,
-                simulation_ids=[simulations_resource_id],
-            )
-
-            results.append(
-                SimulationResultItem(
-                    success=True,
-                    simulation_id=item.simulation_id,
-                    message="Simulation updated successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                simulations_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                await update_simulation_artifact(
+                    conn,
+                    item.simulation_id,
+                    name_id=item.name_id if item.name_id else _UNSET,
+                    description_id=item.description_id
+                    if item.description_id
+                    else _UNSET,
+                    department_ids=item.department_ids,
+                    flag_ids=item.flag_ids,
+                    scenario_ids=item.scenario_ids,
+                    scenario_flag_ids=item.scenario_flag_ids,
+                    scenario_position_ids=item.scenario_position_ids,
+                    scenario_rubric_ids=item.scenario_rubric_ids,
+                    scenario_time_limit_ids=item.scenario_time_limit_ids,
+                    simulation_ids=[simulations_resource_id],
+                )
+
+                results.append(
+                    SimulationResultItem(
+                        success=True,
+                        simulation_id=item.simulation_id,
+                        message="Simulation updated successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

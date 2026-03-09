@@ -15,6 +15,7 @@ from uuid import UUID
 
 import asyncpg
 from redis.asyncio import Redis
+from typing import Any
 
 from app.infra.types import ArtifactContext, ResourcePair
 
@@ -60,7 +61,7 @@ PARAMETER_FLAG_NAMES = {
 
 
 async def resolve_parameter_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     parameter_id: UUID | None,
@@ -79,22 +80,27 @@ async def resolve_parameter_context(
     user_dept_ids = user_department_ids or []
 
     # Step 1: fetch artifact + draft in parallel
-    artifact_task = (
-        get_parameter_artifacts(
-            conn,
-            [parameter_id],
-            names=True,
-            descriptions=True,
-            departments=True,
-            flags=True,
-            fields=True,
-        )
-        if parameter_id
-        else _empty()
-    )
-    draft_task = get_parameter_drafts(conn, [draft_id]) if draft_id else _empty()
+    async def _fetch_artifacts() -> list[Any]:
+        if not parameter_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_parameter_artifacts(
+                conn,
+                [parameter_id],
+                names=True,
+                descriptions=True,
+                departments=True,
+                flags=True,
+                fields=True,
+            )
 
-    artifacts, drafts = await asyncio.gather(artifact_task, draft_task)
+    async def _fetch_drafts() -> list[Any]:
+        if not draft_id:
+            return []
+        async with pool.acquire() as conn:
+            return await get_parameter_drafts(conn, [draft_id])
+
+    artifacts, drafts = await asyncio.gather(_fetch_artifacts(), _fetch_drafts())
 
     artifact = artifacts[0] if artifacts else None
     draft = drafts[0] if drafts else None
@@ -105,6 +111,83 @@ async def resolve_parameter_context(
     active = artifact.active if artifact else True
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
+    async def _get_names() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_names(conn, merged.name_ids, redis, bypass_cache)
+
+    async def _search_names() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await search_names(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.name_ids,
+                bypass_cache=bypass_cache,
+                parameter=True,
+            )
+
+    async def _get_descriptions() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, merged.description_ids, redis, bypass_cache)
+
+    async def _search_descriptions() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await search_descriptions(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=merged.description_ids,
+                bypass_cache=bypass_cache,
+                parameter=True,
+            )
+
+    async def _get_flags() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_flags(conn, merged.flag_ids, redis, bypass_cache)
+
+    async def _search_flags() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=merged.flag_ids,
+                bypass_cache=bypass_cache,
+                parameter=True,
+            )
+
+    async def _get_departments() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, merged.department_ids, redis, bypass_cache)
+
+    async def _search_departments() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                suggest_source="all" if parameter_id is None else "recent",
+                exclude_ids=merged.department_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_fields() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_parameter_fields(conn, merged.field_ids, redis, bypass_cache)
+
+    async def _search_fields() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await search_parameter_fields(
+                conn,
+                redis,
+                bypass_cache=bypass_cache,
+            )
+
     (
         names_selected,
         names_suggestions,
@@ -117,58 +200,16 @@ async def resolve_parameter_context(
         fields_selected,
         fields_suggestions,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, merged.name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.name_ids,
-            bypass_cache=bypass_cache,
-            parameter=True,
-        ),
-        # Descriptions
-        get_descriptions(conn, merged.description_ids, redis, bypass_cache),
-        search_descriptions(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.description_ids,
-            bypass_cache=bypass_cache,
-            parameter=True,
-        ),
-        # Flags
-        get_flags(conn, merged.flag_ids, redis, bypass_cache),
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=merged.flag_ids,
-            bypass_cache=bypass_cache,
-            parameter=True,
-        ),
-        # Departments
-        get_departments(conn, merged.department_ids, redis, bypass_cache),
-        search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            suggest_source="all" if parameter_id is None else "recent",
-            exclude_ids=merged.department_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Fields (parameter_fields_resource)
-        get_parameter_fields(conn, merged.field_ids, redis, bypass_cache),
-        search_parameter_fields(
-            conn,
-            redis,
-            bypass_cache=bypass_cache,
-        ),
+        _get_names(),
+        _search_names(),
+        _get_descriptions(),
+        _search_descriptions(),
+        _get_flags(),
+        _search_flags(),
+        _get_departments(),
+        _search_departments(),
+        _get_fields(),
+        _search_fields(),
     )
 
     # Filter flags to parameter-specific types

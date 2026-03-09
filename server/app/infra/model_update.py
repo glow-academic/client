@@ -103,9 +103,7 @@ async def update_model_client(
                     )
                 )
             else:
-                error_results.append(
-                    ModelResultItem(success=True, message="Validated")
-                )
+                error_results.append(ModelResultItem(success=True, message="Validated"))
 
     if has_errors:
         return UpdateModelApiResponse(results=error_results)
