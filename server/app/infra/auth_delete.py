@@ -31,7 +31,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def delete_auth_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -54,7 +54,7 @@ async def delete_auth_client(
     # -- Step 1: Profile context ------------------------------------------------
 
     profile = await resolve_profile_identity_context(
-        conn,
+        pool,
         profile_id,
         redis,
         session_id=session_id,
@@ -69,7 +69,8 @@ async def delete_auth_client(
     # -- Step 2+3: Per-item permission checks (fail fast) -----------------------
 
     for idx, auth_id in enumerate(auth_ids):
-        ctx = await resolve_auth_permissions_context(conn, auth_id)
+        async with pool.acquire() as conn:
+            ctx = await resolve_auth_permissions_context(conn, auth_id)
 
         if not ctx.exists:
             raise HTTPException(
@@ -78,10 +79,11 @@ async def delete_auth_client(
             )
 
         # Active settings count via setting_auths_junction
-        active_settings_count: int = await conn.fetchval(
-            "SELECT COUNT(*)::int FROM setting_auths_junction WHERE auths_id = $1 AND active = true",
-            auth_id,
-        )
+        async with pool.acquire() as conn:
+            active_settings_count: int = await conn.fetchval(
+                "SELECT COUNT(*)::int FROM setting_auths_junction WHERE auths_id = $1 AND active = true",
+                auth_id,
+            )
 
         if not compute_can_delete(
             user_role=profile.role,
@@ -95,19 +97,22 @@ async def delete_auth_client(
     # -- Step 4: Fetch names for result messages --------------------------------
 
     name_map: dict[UUID, str] = {}
-    artifacts = await get_auths(conn, auth_ids, names=True)
+    async with pool.acquire() as conn:
+        artifacts = await get_auths(conn, auth_ids, names=True)
     for artifact in artifacts:
         name = "Unknown"
         if artifact.name_ids:
-            name_resources = await get_names(conn, artifact.name_ids, redis)
+            async with pool.acquire() as conn:
+                name_resources = await get_names(conn, artifact.name_ids, redis)
             if name_resources:
                 name = name_resources[0].name or "Unknown"
         name_map[artifact.id] = name
 
     # -- Step 5: Single transaction -- bulk delete ------------------------------
 
-    async with conn.transaction():
-        result = await delete_auths(conn, auth_ids)
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await delete_auths(conn, auth_ids)
 
     # -- Step 6: Invalidate cache -----------------------------------------------
 

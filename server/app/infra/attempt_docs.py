@@ -32,7 +32,7 @@ _PAGE_METADATA = PageMetadataConfig(
 
 
 async def docs_attempt_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -49,7 +49,7 @@ async def docs_attempt_client(
 
     # -- Step 1: Profile context -----------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -59,8 +59,12 @@ async def docs_attempt_client(
 
     # -- Step 2: Entry docs ----------------------------------------------------
 
+    async def _fetch_attempt_docs() -> object:
+        async with pool.acquire() as c:
+            return await get_attempt_docs(c)
+
     (attempt_entry,) = await asyncio.gather(
-        get_attempt_docs(conn),
+        _fetch_attempt_docs(),
     )
 
     # -- Page metadata ---------------------------------------------------------

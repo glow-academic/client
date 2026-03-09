@@ -291,13 +291,21 @@ async def resolve_activity_search_context(
                 pricing_ids_set.add(p.pricing_id)
 
     # Step 6: Parallel hydrate resources
+    async def _fetch_names_res() -> list:
+        if not profile_ids_set:
+            return []
+        async with pool.acquire() as c:
+            return await get_names(c, list(profile_ids_set), redis, bypass_cache=bypass_cache)
+
+    async def _fetch_pricing_res() -> list:
+        if not pricing_ids_set:
+            return []
+        async with pool.acquire() as c:
+            return await get_pricing(c, list(pricing_ids_set), redis, bypass_cache)
+
     names_selected, pricing_selected = await asyncio.gather(
-        get_names(conn, list(profile_ids_set), redis, bypass_cache=bypass_cache)
-        if profile_ids_set
-        else _empty_list(),
-        get_pricing(conn, list(pricing_ids_set), redis, bypass_cache)
-        if pricing_ids_set
-        else _empty_list(),
+        _fetch_names_res(),
+        _fetch_pricing_res(),
     )
 
     return ArtifactContext(

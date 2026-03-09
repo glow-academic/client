@@ -55,7 +55,7 @@ AUTH_FLAG_NAMES = {
 
 
 async def resolve_auth_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     auth_id: UUID | None,
@@ -72,24 +72,29 @@ async def resolve_auth_context(
     """
 
     # Step 1: fetch artifact + draft in parallel
-    artifact_task = (
-        get_auth_artifacts(
-            conn,
-            [auth_id],
-            names=True,
-            descriptions=True,
-            departments=True,
-            flags=True,
-            items=True,
-            protocols=True,
-            slugs=True,
-        )
-        if auth_id
-        else _empty()
-    )
-    draft_task = get_auth_drafts(conn, [draft_id]) if draft_id else _empty()
+    async def _fetch_artifact() -> list:
+        if not auth_id:
+            return []
+        async with pool.acquire() as c:
+            return await get_auth_artifacts(
+                c,
+                [auth_id],
+                names=True,
+                descriptions=True,
+                departments=True,
+                flags=True,
+                items=True,
+                protocols=True,
+                slugs=True,
+            )
 
-    artifacts, drafts = await asyncio.gather(artifact_task, draft_task)
+    async def _fetch_draft() -> list:
+        if not draft_id:
+            return []
+        async with pool.acquire() as c:
+            return await get_auth_drafts(c, [draft_id])
+
+    artifacts, drafts = await asyncio.gather(_fetch_artifact(), _fetch_draft())
 
     artifact = artifacts[0] if artifacts else None
     draft = drafts[0] if drafts else None
@@ -100,6 +105,72 @@ async def resolve_auth_context(
     active = artifact.active if artifact else True
 
     # Step 2: parallel hydrate — selected + suggestions for each resource
+    async def _get_names_sel() -> list:
+        async with pool.acquire() as c:
+            return await get_names(c, merged.name_ids, redis, bypass_cache)
+
+    async def _search_names_sug() -> list:
+        async with pool.acquire() as c:
+            return await search_names(
+                c, redis, draft_id=group_id, exclude_ids=merged.name_ids,
+                bypass_cache=bypass_cache, auth=True,
+            )
+
+    async def _get_descriptions_sel() -> list:
+        async with pool.acquire() as c:
+            return await get_descriptions(c, merged.description_ids, redis, bypass_cache)
+
+    async def _search_descriptions_sug() -> list:
+        async with pool.acquire() as c:
+            return await search_descriptions(
+                c, redis, draft_id=group_id, exclude_ids=merged.description_ids,
+                bypass_cache=bypass_cache, auth=True,
+            )
+
+    async def _get_flags_sel() -> list:
+        async with pool.acquire() as c:
+            return await get_flags(c, merged.flag_ids, redis, bypass_cache)
+
+    async def _search_flags_sug() -> list:
+        async with pool.acquire() as c:
+            return await search_flags(
+                c, redis, search=None, limit_count=50, offset_count=0,
+                exclude_ids=merged.flag_ids, bypass_cache=bypass_cache, auth=True,
+            )
+
+    async def _get_protocols_sel() -> list:
+        async with pool.acquire() as c:
+            return await get_protocols(c, merged.protocol_ids, redis, bypass_cache)
+
+    async def _search_protocols_sug() -> list:
+        async with pool.acquire() as c:
+            return await search_protocols(
+                c, redis, draft_id=group_id, suggest_source="recent",
+                exclude_ids=merged.protocol_ids, bypass_cache=bypass_cache, auth=True,
+            )
+
+    async def _get_slugs_sel() -> list:
+        async with pool.acquire() as c:
+            return await get_slugs(c, merged.slug_ids, redis, bypass_cache)
+
+    async def _search_slugs_sug() -> list:
+        async with pool.acquire() as c:
+            return await search_slugs(
+                c, redis, draft_id=group_id, suggest_source="recent",
+                exclude_ids=merged.slug_ids, bypass_cache=bypass_cache, auth=True,
+            )
+
+    async def _get_items_sel() -> list:
+        async with pool.acquire() as c:
+            return await get_items(c, merged.item_ids, redis, bypass_cache)
+
+    async def _search_items_sug() -> list:
+        async with pool.acquire() as c:
+            return await search_items(
+                c, redis, exclude_ids=merged.item_ids,
+                bypass_cache=bypass_cache, auth=True,
+            )
+
     (
         names_selected,
         names_suggestions,
@@ -114,69 +185,18 @@ async def resolve_auth_context(
         items_selected,
         items_suggestions,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, merged.name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.name_ids,
-            bypass_cache=bypass_cache,
-            auth=True,
-        ),
-        # Descriptions
-        get_descriptions(conn, merged.description_ids, redis, bypass_cache),
-        search_descriptions(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=merged.description_ids,
-            bypass_cache=bypass_cache,
-            auth=True,
-        ),
-        # Flags
-        get_flags(conn, merged.flag_ids, redis, bypass_cache),
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=merged.flag_ids,
-            bypass_cache=bypass_cache,
-            auth=True,
-        ),
-        # Protocols
-        get_protocols(conn, merged.protocol_ids, redis, bypass_cache),
-        search_protocols(
-            conn,
-            redis,
-            draft_id=group_id,
-            suggest_source="recent",
-            exclude_ids=merged.protocol_ids,
-            bypass_cache=bypass_cache,
-            auth=True,
-        ),
-        # Slugs
-        get_slugs(conn, merged.slug_ids, redis, bypass_cache),
-        search_slugs(
-            conn,
-            redis,
-            draft_id=group_id,
-            suggest_source="recent",
-            exclude_ids=merged.slug_ids,
-            bypass_cache=bypass_cache,
-            auth=True,
-        ),
-        # Items
-        get_items(conn, merged.item_ids, redis, bypass_cache),
-        search_items(
-            conn,
-            redis,
-            exclude_ids=merged.item_ids,
-            bypass_cache=bypass_cache,
-            auth=True,
-        ),
+        _get_names_sel(),
+        _search_names_sug(),
+        _get_descriptions_sel(),
+        _search_descriptions_sug(),
+        _get_flags_sel(),
+        _search_flags_sug(),
+        _get_protocols_sel(),
+        _search_protocols_sug(),
+        _get_slugs_sel(),
+        _search_slugs_sug(),
+        _get_items_sel(),
+        _search_items_sug(),
     )
 
     # Filter flags to auth-specific types

@@ -52,20 +52,22 @@ _PAGE_METADATA = PageMetadataConfig(
 
 
 async def _resolve_entity_name(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     entity_id: UUID,
 ) -> str | None:
     """Get display name for an auth by ID using black-box tools."""
-    artifacts = await get_auth_artifacts(conn, [entity_id], names=True)
+    async with pool.acquire() as conn:
+        artifacts = await get_auth_artifacts(conn, [entity_id], names=True)
     if not artifacts or not artifacts[0].name_ids:
         return None
-    names_data = await get_names(conn, artifacts[0].name_ids, redis)
+    async with pool.acquire() as conn:
+        names_data = await get_names(conn, artifacts[0].name_ids, redis)
     return names_data[0].name if names_data else None
 
 
 async def docs_auth_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -82,7 +84,7 @@ async def docs_auth_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -91,6 +93,42 @@ async def docs_auth_client(
         )
 
     # ── Step 2: Parallel docs fetches ──────────────────────────────────
+
+    async def _fetch_auth_docs() -> object:
+        async with pool.acquire() as c:
+            return await get_auth_docs(c)
+
+    async def _fetch_auth_drafts_docs() -> object:
+        async with pool.acquire() as c:
+            return await get_auth_drafts_docs(c)
+
+    async def _fetch_names_docs() -> object:
+        async with pool.acquire() as c:
+            return await get_names_docs(c)
+
+    async def _fetch_descriptions_docs() -> object:
+        async with pool.acquire() as c:
+            return await get_descriptions_docs(c)
+
+    async def _fetch_departments_docs() -> object:
+        async with pool.acquire() as c:
+            return await get_departments_docs(c)
+
+    async def _fetch_flags_docs() -> object:
+        async with pool.acquire() as c:
+            return await get_flags_docs(c)
+
+    async def _fetch_items_docs() -> object:
+        async with pool.acquire() as c:
+            return await get_items_docs(c)
+
+    async def _fetch_protocols_docs() -> object:
+        async with pool.acquire() as c:
+            return await get_protocols_docs(c)
+
+    async def _fetch_slugs_docs() -> object:
+        async with pool.acquire() as c:
+            return await get_slugs_docs(c)
 
     (
         artifact,
@@ -103,21 +141,21 @@ async def docs_auth_client(
         protocols,
         slugs,
     ) = await asyncio.gather(
-        get_auth_docs(conn),
-        get_auth_drafts_docs(conn),
-        get_names_docs(conn),
-        get_descriptions_docs(conn),
-        get_departments_docs(conn),
-        get_flags_docs(conn),
-        get_items_docs(conn),
-        get_protocols_docs(conn),
-        get_slugs_docs(conn),
+        _fetch_auth_docs(),
+        _fetch_auth_drafts_docs(),
+        _fetch_names_docs(),
+        _fetch_descriptions_docs(),
+        _fetch_departments_docs(),
+        _fetch_flags_docs(),
+        _fetch_items_docs(),
+        _fetch_protocols_docs(),
+        _fetch_slugs_docs(),
     )
 
     # ── Step 3: Page metadata ───────────────────────────────────────────
     entity_name = None
     if entity_id is not None:
-        entity_name = await _resolve_entity_name(conn, redis, entity_id)
+        entity_name = await _resolve_entity_name(pool, redis, entity_id)
     page_metadata = compute_docs_metadata(_PAGE_METADATA, entity_name)
 
     # ── Step 4: Assemble response ──────────────────────────────────────

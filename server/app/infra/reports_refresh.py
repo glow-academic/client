@@ -21,7 +21,7 @@ _VIEWS: list[str] = []
 
 
 async def refresh_reports_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis | None,
     *,
     profile_id: UUID,
@@ -36,7 +36,8 @@ async def refresh_reports_client(
 
     # ── Step 1: Permission check ─────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    async with pool.acquire() as conn:
+        profile = await resolve_profile_identity_context(conn, profile_id, redis)
 
     if profile is None:
         raise HTTPException(

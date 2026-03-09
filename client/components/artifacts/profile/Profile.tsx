@@ -60,8 +60,10 @@ type PatchProfileDraftOut = {
   new_version?: number | null;
 };
 
-type SaveProfileIn = InputOf<"/api/v5/artifacts/profiles/save", "post">;
-type SaveProfileOut = OutputOf<"/api/v5/artifacts/profiles/save", "post">;
+type CreateProfileIn = InputOf<"/api/v5/artifacts/profiles/create", "post">;
+type CreateProfileOut = OutputOf<"/api/v5/artifacts/profiles/create", "post">;
+type UpdateProfileIn = InputOf<"/api/v5/artifacts/profiles/update", "post">;
+type UpdateProfileOut = OutputOf<"/api/v5/artifacts/profiles/update", "post">;
 type CreateDraftNamesIn = Parameters<NonNullable<NamesProps["createNamesAction"]>>[0];
 type CreateDraftNamesOut = Awaited<
   ReturnType<NonNullable<NamesProps["createNamesAction"]>>
@@ -183,7 +185,8 @@ const PROFILE_RESOURCES: ResourceConfig[] = [
 export interface ProfileProps {
   profileId?: string;
   profileData?: unknown;
-  saveProfileAction?: (input: SaveProfileIn) => Promise<SaveProfileOut>;
+  createProfileAction?: (input: CreateProfileIn) => Promise<CreateProfileOut>;
+  updateProfileAction?: (input: UpdateProfileIn) => Promise<UpdateProfileOut>;
   patchProfileDraftAction?: (
     input: PatchProfileDraftIn
   ) => Promise<PatchProfileDraftOut>;
@@ -201,7 +204,8 @@ export interface ProfileProps {
 function ProfileComponent({
   profileId,
   profileData,
-  saveProfileAction,
+  createProfileAction,
+  updateProfileAction,
   patchProfileDraftAction,
   createNamesAction,
   createEmailsAction,
@@ -737,33 +741,49 @@ function ProfileComponent({
         throw new Error("Profile not loaded");
       }
 
-      if (!saveProfileAction) {
-        toast.error("Save action not available");
-        throw new Error("Save action not available");
-      }
-
       if (!effectiveFormState.name_id) {
         toast.error("Required fields are missing");
         throw new Error("Required fields are missing");
       }
 
       try {
-        await saveProfileAction({
-          body: {
-            input_profile_id: isEditMode && profileId ? profileId : null,
-            role: effectiveFormState.role || null,
-            name_id: effectiveFormState.name_id!,
-            flag_id: effectiveFormState.active_flag_id ?? null,
-            request_limit_id: effectiveFormState.request_limit_id ?? null,
-            email_ids: effectiveFormState.email_ids?.length
-              ? effectiveFormState.email_ids
-              : null,
-            department_ids: effectiveFormState.department_ids?.length
-              ? effectiveFormState.department_ids
-              : null,
-            expected_version: currentProfileData?.draft_version ?? 0,
-          },
-        });
+        if (isEditMode && profileId && updateProfileAction) {
+          await updateProfileAction({
+            body: {
+              profiles: [{
+                profile_id: profileId,
+                name_id: effectiveFormState.name_id || undefined,
+                flag_id: effectiveFormState.active_flag_id || undefined,
+                request_limit_id: effectiveFormState.request_limit_id || undefined,
+                email_ids: effectiveFormState.email_ids?.length
+                  ? effectiveFormState.email_ids
+                  : undefined,
+                department_ids: effectiveFormState.department_ids?.length
+                  ? effectiveFormState.department_ids
+                  : undefined,
+              }],
+            },
+          } as UpdateProfileIn);
+        } else if (createProfileAction) {
+          await createProfileAction({
+            body: {
+              profiles: [{
+                name_id: effectiveFormState.name_id || undefined,
+                flag_id: effectiveFormState.active_flag_id || undefined,
+                request_limit_id: effectiveFormState.request_limit_id || undefined,
+                email_ids: effectiveFormState.email_ids?.length
+                  ? effectiveFormState.email_ids
+                  : undefined,
+                department_ids: effectiveFormState.department_ids?.length
+                  ? effectiveFormState.department_ids
+                  : undefined,
+              }],
+            },
+          } as CreateProfileIn);
+        } else {
+          toast.error("Save action not available");
+          throw new Error("Save action not available");
+        }
         toast.success(
           `Profile ${isEditMode ? "updated" : "created"} successfully!`
         );
@@ -779,7 +799,8 @@ function ProfileComponent({
       isEditMode,
       profileId,
       profile?.id,
-      saveProfileAction,
+      createProfileAction,
+      updateProfileAction,
       router,
       isAutosaveEnabled,
       flushAllResources,
@@ -1392,7 +1413,8 @@ export default React.memo(ProfileComponent, (prevProps, nextProps) => {
   }
 
   if (
-    prevProps.saveProfileAction !== nextProps.saveProfileAction ||
+    prevProps.createProfileAction !== nextProps.createProfileAction ||
+    prevProps.updateProfileAction !== nextProps.updateProfileAction ||
     prevProps.patchProfileDraftAction !== nextProps.patchProfileDraftAction ||
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createEmailsAction !== nextProps.createEmailsAction ||

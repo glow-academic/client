@@ -46,7 +46,7 @@ CSV_COLUMNS = [
 
 
 async def export_invocation_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -70,7 +70,8 @@ async def export_invocation_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    async with pool.acquire() as conn:
+        profile = await resolve_profile_identity_context(conn, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -81,7 +82,7 @@ async def export_invocation_client(
     # ── Step 2: Resolve invocation context (draft-only) ────────────────
 
     ctx = await resolve_invocation_context(
-        conn,
+        pool,
         redis,
         group_id=group_id,
         draft_id=draft_id,
@@ -213,13 +214,14 @@ async def export_invocation_client(
 
     # Create upload entry via black-box tool
     file_size = len(csv_content.encode("utf-8"))
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="text/csv",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="text/csv",
+            size=file_size,
+        )
 
     return ExportInvocationApiResponse(
         upload_id=upload_result.id,

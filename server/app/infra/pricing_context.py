@@ -211,9 +211,7 @@ async def resolve_pricing_search_context(
         if not all_name_ids:
             return []
         async with pool.acquire() as conn:
-            return await get_names(
-                conn, all_name_ids, redis, bypass_cache=bypass_cache
-            )
+            return await get_names(conn, all_name_ids, redis, bypass_cache=bypass_cache)
 
     (
         agents_selected,

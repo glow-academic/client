@@ -1,12 +1,10 @@
 """Search endpoint for reports artifact — composable infra pattern."""
 
 from datetime import datetime
-from typing import Annotated
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.reports_context import resolve_reports_context
 from app.infra.reports_permissions import build_reports_sections_v2
 from app.routes.v5.api.main.reports.types import (
@@ -31,7 +29,6 @@ async def get_reports(
     request: ReportsRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ReportsResponse:
     """Get reports artifact data via composable context resolver."""
     tags = ["artifacts", "reports", "views", "analytics"]

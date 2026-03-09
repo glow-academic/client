@@ -58,7 +58,7 @@ METRICS_CSV_COLUMNS = [
 
 
 async def export_health_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -78,7 +78,7 @@ async def export_health_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -88,12 +88,20 @@ async def export_health_client(
 
     # -- Step 2: Parallel search all entry types (full dump) --
 
+    async def _fetch_health() -> list:
+        async with pool.acquire() as conn:
+            return await search_health(conn, limit=100000, offset=0)
+
+    async def _fetch_metrics() -> list:
+        async with pool.acquire() as conn:
+            return await search_metrics(conn, limit=100000, offset=0)
+
     (
         health_entries,
         metrics_entries,
     ) = await asyncio.gather(
-        search_health(conn, limit=100000, offset=0),
-        search_metrics(conn, limit=100000, offset=0),
+        _fetch_health(),
+        _fetch_metrics(),
     )
 
     if not health_entries and not metrics_entries:
@@ -173,13 +181,14 @@ async def export_health_client(
 
     # Create upload entry via black-box tool
     file_size = len(zip_content)
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="application/zip",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="application/zip",
+            size=file_size,
+        )
 
     return ExportHealthApiResponse(
         upload_id=upload_result.id,

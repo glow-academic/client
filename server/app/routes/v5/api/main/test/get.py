@@ -7,13 +7,12 @@ Two-layer BFF pattern:
 Uses composable context resolver with black-box tools.
 """
 
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.test_context import resolve_test_context
 from app.infra.test_permissions import compute_test_status
 from app.routes.v5.api.main.test.types import (
@@ -38,7 +37,7 @@ router = APIRouter()
 
 
 async def get_test_internal(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     test_id: UUID,
     bypass_cache: bool = False,
     profile_id: UUID | None = None,
@@ -49,9 +48,6 @@ async def get_test_internal(
     and returns TestInternalData. No caching.
     """
     try:
-        pool = get_pool()
-        if not pool:
-            raise RuntimeError("Database pool not initialized")
 
         # === RESOLVE CONTEXT ===
         ctx = await resolve_test_context(
@@ -229,7 +225,7 @@ async def get_test_internal(
 
 
 async def get_test_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     test_id: UUID,
     bypass_cache: bool = False,
     cache_key_path: str = "/api/v5/artifacts/test/get",
@@ -249,7 +245,7 @@ async def get_test_client(
             return GetTestArtifactResponse.model_validate(cached["data"]), True
 
     data = await get_test_internal(
-        conn=conn,
+        pool=pool,
         test_id=test_id,
         bypass_cache=bypass_cache,
     )
@@ -297,15 +293,15 @@ async def get_test_artifact(
     request: GetTestArtifactRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetTestArtifactResponse:
     """Get benchmark test artifact details with tests/invocations in parallel."""
     tags = ["artifacts", "test"]
     bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
     try:
+        pool = get_pool()
         response_data, cache_hit = await get_test_client(
-            conn=conn,
+            pool=pool,
             test_id=request.test_id,
             bypass_cache=bypass_cache,
             cache_key_path=http_request.url.path,

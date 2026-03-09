@@ -88,7 +88,7 @@ EMULATIONS_CSV_COLUMNS = [
 
 
 async def export_activity_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -108,7 +108,7 @@ async def export_activity_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -118,6 +118,26 @@ async def export_activity_client(
 
     # -- Step 2: Parallel search all entry types (full dump) --
 
+    async def _fetch_activity() -> list:
+        async with pool.acquire() as c:
+            return await search_activity(c, limit=100000, offset=0)
+
+    async def _fetch_logins() -> list:
+        async with pool.acquire() as c:
+            return await search_logins(c, limit=100000, offset=0)
+
+    async def _fetch_problems() -> list:
+        async with pool.acquire() as c:
+            return await search_problems(c, limit=100000, offset=0)
+
+    async def _fetch_grants() -> list:
+        async with pool.acquire() as c:
+            return await search_grants(c, limit=100000, offset=0)
+
+    async def _fetch_emulations() -> list:
+        async with pool.acquire() as c:
+            return await search_emulations(c, limit=100000, offset=0)
+
     (
         activity_entries,
         logins_entries,
@@ -125,11 +145,11 @@ async def export_activity_client(
         grants_entries,
         emulations_entries,
     ) = await asyncio.gather(
-        search_activity(conn, limit=100000, offset=0),
-        search_logins(conn, limit=100000, offset=0),
-        search_problems(conn, limit=100000, offset=0),
-        search_grants(conn, limit=100000, offset=0),
-        search_emulations(conn, limit=100000, offset=0),
+        _fetch_activity(),
+        _fetch_logins(),
+        _fetch_problems(),
+        _fetch_grants(),
+        _fetch_emulations(),
     )
 
     if (
@@ -166,13 +186,14 @@ async def export_activity_client(
         if e.profile_id:
             all_profile_ids.add(e.profile_id)
 
-    async def _empty() -> list:
-        return []
+    async def _fetch_profiles() -> list:
+        if not all_profile_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_profiles(c, list(all_profile_ids), redis)
 
     (profiles_data,) = await asyncio.gather(
-        get_profiles(conn, list(all_profile_ids), redis)
-        if all_profile_ids
-        else _empty(),
+        _fetch_profiles(),
     )
 
     # Build lookup maps
@@ -303,13 +324,14 @@ async def export_activity_client(
 
     # Create upload entry via black-box tool
     file_size = len(zip_content)
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="application/zip",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="application/zip",
+            size=file_size,
+        )
 
     return ExportActivityApiResponse(
         upload_id=upload_result.id,

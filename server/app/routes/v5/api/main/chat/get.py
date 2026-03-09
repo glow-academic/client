@@ -9,17 +9,17 @@ Uses composable infra layers:
 
 from __future__ import annotations
 
-from typing import Annotated, cast
+from typing import cast
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 from redis.asyncio import Redis
 
 from app.infra.chat_context import resolve_chat_context
 from app.infra.chat_permissions import CHAT_BUNDLE_RESOURCES
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.tool_graph import score_tools
 from app.routes.v5.api.main.chat.types import (
     BaseChatSection,
@@ -71,7 +71,7 @@ _SECTION_CLASSES: dict[str, type] = {
 
 
 async def get_chat_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -105,7 +105,7 @@ async def get_chat_client(
     # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
     common = await resolve_common_context(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
         group_id=group_id,
@@ -121,7 +121,7 @@ async def get_chat_client(
     # ── Step 2: Chat artifact context (draft-only) ────────────────────────
 
     ctx = await resolve_chat_context(
-        conn,
+        pool,
         redis,
         group_id=group_id,
         draft_id=draft_id,
@@ -190,7 +190,6 @@ async def get_chat_client(
 async def chat_get(
     request: GetChatRequest,
     http_request: Request,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetChatResponse:
     """Get hydrated resources for chat bundle customization."""
     try:
@@ -202,10 +201,11 @@ async def chat_get(
             )
 
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
+        pool = get_pool()
         redis = get_redis_client()
 
         return await get_chat_client(
-            conn,
+            pool,
             redis,
             profile_id=cast(UUID, profile_id),
             chat_entry_id=request.chat_entry_id,

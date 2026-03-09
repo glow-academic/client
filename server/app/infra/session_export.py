@@ -67,7 +67,7 @@ RUN_CSV_COLUMNS = [
 
 
 async def export_session_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -81,7 +81,7 @@ async def export_session_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -91,7 +91,8 @@ async def export_session_client(
 
     # -- Step 2: Get session metadata --
 
-    sessions = await get_sessions(conn, [target_session_id])
+    async with pool.acquire() as conn:
+        sessions = await get_sessions(conn, [target_session_id])
 
     if not sessions:
         return ExportSessionApiResponse(
@@ -102,22 +103,29 @@ async def export_session_client(
 
     # -- Step 3: Get groups for this session --
 
-    groups = await search_groups(
-        conn, session_ids=[target_session_id], limit=100000, offset=0
-    )
+    async with pool.acquire() as conn:
+        groups = await search_groups(
+            conn, session_ids=[target_session_id], limit=100000, offset=0
+        )
 
     # -- Step 4: Get runs for all groups --
 
     all_group_ids = [g.id for g in groups]
-    runs = (
-        (await search_runs(conn, group_ids=all_group_ids, limit=100000, offset=0))[0]
-        if all_group_ids
-        else []
-    )
+    if all_group_ids:
+        async with pool.acquire() as conn:
+            runs = (
+                await search_runs(conn, group_ids=all_group_ids, limit=100000, offset=0)
+            )[0]
+    else:
+        runs = []
 
     # -- Step 5: Compute per-run costs --
 
-    run_costs = await compute_costs_from_runs(conn, runs) if runs else {}
+    if runs:
+        async with pool.acquire() as conn:
+            run_costs = await compute_costs_from_runs(conn, runs)
+    else:
+        run_costs = {}
 
     # -- Step 6: Hydrate names --
 
@@ -135,16 +143,23 @@ async def export_session_client(
         if r.model_ids:
             all_model_ids.update(r.model_ids)
 
-    async def _empty() -> list:
-        return []
-
     all_name_ids = list(all_agent_ids | all_model_ids)
 
+    async def _fetch_profiles() -> list:
+        if not all_profile_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_profiles(c, list(all_profile_ids), redis)
+
+    async def _fetch_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_names(c, all_name_ids, redis)
+
     profiles_data, name_items = await asyncio.gather(
-        get_profiles(conn, list(all_profile_ids), redis)
-        if all_profile_ids
-        else _empty(),
-        get_names(conn, all_name_ids, redis) if all_name_ids else _empty(),
+        _fetch_profiles(),
+        _fetch_names(),
     )
 
     profile_map = {p.id: p.name or "" for p in profiles_data}
@@ -230,13 +245,14 @@ async def export_session_client(
 
     # Create upload entry via black-box tool
     file_size = len(zip_content)
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="application/zip",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="application/zip",
+            size=file_size,
+        )
 
     return ExportSessionApiResponse(
         upload_id=upload_result.id,

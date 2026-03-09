@@ -16,7 +16,7 @@ import asyncpg
 from redis.asyncio import Redis
 
 from app.infra.docs.get_operation_info import get_operation_info
-from app.infra.docs.types import ComposedDocsResponse
+from app.infra.docs.types import ComposedDocsResponse, DocsResponse
 from app.infra.docs_helper import PageMetadataConfig, compute_docs_metadata
 from app.infra.profile_identity_context import resolve_profile_identity_context
 
@@ -34,7 +34,7 @@ _PAGE_METADATA = PageMetadataConfig(
 
 
 async def docs_home_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -51,7 +51,7 @@ async def docs_home_client(
 
     # -- Step 1: Profile context ------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -61,8 +61,12 @@ async def docs_home_client(
 
     # -- Step 2: Parallel docs fetches ------------------------------------
 
+    async def _fetch_home_docs() -> DocsResponse:
+        async with pool.acquire() as conn:
+            return await get_home_docs(conn)
+
     (home,) = await asyncio.gather(
-        get_home_docs(conn),
+        _fetch_home_docs(),
     )
 
     # -- Page metadata -----------------------------------------------------

@@ -2,14 +2,12 @@
 
 from collections import Counter, defaultdict
 from datetime import datetime
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.benchmark_context import resolve_benchmark_search_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.test_permissions import compute_test_status
 from app.routes.v5.api.main.benchmark.types import (
     BenchmarkHistoryItem,
@@ -27,7 +25,6 @@ async def search_benchmark_history(
     request: BenchmarkRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BenchmarkHistoryResponse:
     """Search benchmark test history with pagination and filters."""
     tags = ["artifacts", "benchmark", "search"]

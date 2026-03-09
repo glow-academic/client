@@ -72,7 +72,7 @@ async def _empty() -> list:  # type: ignore[type-arg]
 
 
 async def export_record_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,  # type: ignore[type-arg]
     *,
     profile_id: UUID,
@@ -94,7 +94,8 @@ async def export_record_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    async with pool.acquire() as conn:
+        profile = await resolve_profile_identity_context(conn, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -104,11 +105,21 @@ async def export_record_client(
 
     # -- Step 2: Search attempts + chats scoped to target profile --
 
+    async def _fetch_attempts() -> list:
+        async with pool.acquire() as conn:
+            return await search_attempts(
+                conn, profile_ids=[target_profile_id], limit=100000, offset=0
+            )
+
+    async def _fetch_chats() -> list:
+        async with pool.acquire() as conn:
+            return await search_attempt_chats(
+                conn, profile_ids=[target_profile_id], limit=100000, offset=0
+            )
+
     attempts, chats = await asyncio.gather(
-        search_attempts(conn, profile_ids=[target_profile_id], limit=100000, offset=0),
-        search_attempt_chats(
-            conn, profile_ids=[target_profile_id], limit=100000, offset=0
-        ),
+        _fetch_attempts(),
+        _fetch_chats(),
     )
 
     if not attempts and not chats:
@@ -147,6 +158,42 @@ async def export_record_client(
         if c.persona_ids:
             all_persona_ids.update(c.persona_ids)
 
+    async def _get_profiles() -> list:
+        if not all_profile_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_profiles(conn, list(all_profile_ids), redis)
+
+    async def _get_simulations() -> list:
+        if not all_simulation_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_simulations(conn, list(all_simulation_ids), redis)
+
+    async def _get_scenarios() -> list:
+        if not all_scenario_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_scenarios(conn, list(all_scenario_ids), redis)
+
+    async def _get_personas() -> list:
+        if not all_persona_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_personas(conn, list(all_persona_ids), redis)
+
+    async def _get_cohorts() -> list:
+        if not all_cohort_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_cohorts(conn, list(all_cohort_ids), redis)
+
+    async def _get_departments() -> list:
+        if not all_department_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_departments(conn, list(all_department_ids), redis)
+
     (
         profiles_data,
         simulations_data,
@@ -155,22 +202,12 @@ async def export_record_client(
         cohorts_data,
         departments_data,
     ) = await asyncio.gather(
-        get_profiles(conn, list(all_profile_ids), redis)
-        if all_profile_ids
-        else _empty(),
-        get_simulations(conn, list(all_simulation_ids), redis)
-        if all_simulation_ids
-        else _empty(),
-        get_scenarios(conn, list(all_scenario_ids), redis)
-        if all_scenario_ids
-        else _empty(),
-        get_personas(conn, list(all_persona_ids), redis)
-        if all_persona_ids
-        else _empty(),
-        get_cohorts(conn, list(all_cohort_ids), redis) if all_cohort_ids else _empty(),
-        get_departments(conn, list(all_department_ids), redis)
-        if all_department_ids
-        else _empty(),
+        _get_profiles(),
+        _get_simulations(),
+        _get_scenarios(),
+        _get_personas(),
+        _get_cohorts(),
+        _get_departments(),
     )
 
     # Build lookup maps
@@ -254,13 +291,14 @@ async def export_record_client(
         f.write(zip_content)
 
     file_size = len(zip_content)
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="application/zip",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="application/zip",
+            size=file_size,
+        )
 
     return ExportRecordApiResponse(
         upload_id=upload_result.id,

@@ -6,11 +6,9 @@ Cards for evals from benchmark_mv + invocation_mv + test_invocation_mv.
 import asyncio
 from collections import Counter, defaultdict
 from datetime import datetime
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from redis.asyncio import Redis
 
 from app.infra.benchmark_context import (
@@ -20,7 +18,7 @@ from app.infra.benchmark_context import (
 from app.infra.benchmark_permissions import (
     compute_benchmark_eval_status,
 )
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.test_permissions import compute_test_status
 from app.infra.types import ArtifactContext
 from app.routes.v5.api.main.benchmark.types import (
@@ -42,7 +40,6 @@ async def get_benchmark(
     request: BenchmarkRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> BenchmarkResponse:
     """Get benchmark artifact data with full resource hydration."""
     tags = ["artifacts", "benchmark"]

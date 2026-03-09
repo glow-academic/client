@@ -43,7 +43,7 @@ from app.routes.v5.tools.resources.standards.search import search_standards
 
 
 async def resolve_home_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profiles_resource_id: UUID,
@@ -69,22 +69,29 @@ async def resolve_home_context(
       7. Return ArtifactContext
     """
     # Step 1: Resolve user's cohort IDs
-    user_cohort_ids, _total = await search_cohorts(
-        conn,
-        profile_ids=[profiles_resource_id],
-        limit_count=1000,
-    )
+    async with pool.acquire() as conn:
+        user_cohort_ids, _total = await search_cohorts(
+            conn,
+            profile_ids=[profiles_resource_id],
+            limit_count=1000,
+        )
 
     # Step 2: Parallel raw MV reads (attempt_chats scoped by cohort for superset)
+    async def _fetch_homes() -> list:
+        async with pool.acquire() as conn:
+            return await search_homes(conn, limit=10000)
+
+    async def _fetch_attempt_chats() -> list:
+        async with pool.acquire() as conn:
+            return await search_attempt_chats(
+                conn,
+                cohort_ids=user_cohort_ids,
+                limit=10000,
+            )
+
     all_homes, all_attempt_chats = await asyncio.gather(
-        search_homes(conn, limit=10000),
-        search_attempt_chats(
-            conn,
-            cohort_ids=user_cohort_ids,
-            limit=10000,
-        )
-        if user_cohort_ids
-        else _empty_list(),
+        _fetch_homes(),
+        _fetch_attempt_chats() if user_cohort_ids else _empty_list(),
     )
 
     # Step 3: Filter homes by cohort overlap
@@ -101,7 +108,11 @@ async def resolve_home_context(
         all_chat_ids.extend(h.chat_ids or [])
     chat_ids_deduped = list(dict.fromkeys(all_chat_ids))
 
-    all_chats = await get_chats(conn, chat_ids_deduped) if chat_ids_deduped else []
+    if chat_ids_deduped:
+        async with pool.acquire() as conn:
+            all_chats = await get_chats(conn, chat_ids_deduped)
+    else:
+        all_chats = []
 
     # Step 5: Derive resource IDs from entries
     simulation_ids: list[UUID] = []
@@ -123,6 +134,35 @@ async def resolve_home_context(
         all_standard_group_ids.update(chat.standard_group_ids or [])
 
     # Step 6: Parallel hydrate resources
+    async def _get_simulations() -> list:
+        async with pool.acquire() as conn:
+            return await get_simulations(conn, simulation_ids_deduped, redis, bypass_cache)
+
+    async def _get_cohorts() -> list:
+        async with pool.acquire() as conn:
+            return await get_cohort_resources(conn, cohort_ids_list, redis, bypass_cache)
+
+    async def _get_personas() -> list:
+        async with pool.acquire() as conn:
+            return await get_personas(conn, list(all_persona_ids), redis, bypass_cache)
+
+    async def _get_rubrics() -> list:
+        async with pool.acquire() as conn:
+            return await get_rubrics(conn, list(all_rubric_ids), redis, bypass_cache)
+
+    async def _get_standard_groups() -> list:
+        async with pool.acquire() as conn:
+            return await get_standard_groups(conn, list(all_standard_group_ids), redis, bypass_cache)
+
+    async def _search_standards() -> list:
+        async with pool.acquire() as conn:
+            return await search_standards(
+                conn,
+                redis,
+                standard_group_ids=list(all_standard_group_ids),
+                bypass_cache=bypass_cache,
+            )
+
     (
         simulations_selected,
         cohorts_selected,
@@ -131,29 +171,12 @@ async def resolve_home_context(
         standard_groups_selected,
         standards_selected,
     ) = await asyncio.gather(
-        get_simulations(conn, simulation_ids_deduped, redis, bypass_cache)
-        if simulation_ids_deduped
-        else _empty_list(),
-        get_cohort_resources(conn, cohort_ids_list, redis, bypass_cache)
-        if cohort_ids_list
-        else _empty_list(),
-        get_personas(conn, list(all_persona_ids), redis, bypass_cache)
-        if all_persona_ids
-        else _empty_list(),
-        get_rubrics(conn, list(all_rubric_ids), redis, bypass_cache)
-        if all_rubric_ids
-        else _empty_list(),
-        get_standard_groups(conn, list(all_standard_group_ids), redis, bypass_cache)
-        if all_standard_group_ids
-        else _empty_list(),
-        search_standards(
-            conn,
-            redis,
-            standard_group_ids=list(all_standard_group_ids),
-            bypass_cache=bypass_cache,
-        )
-        if all_standard_group_ids
-        else _empty_list(),
+        _get_simulations() if simulation_ids_deduped else _empty_list(),
+        _get_cohorts() if cohort_ids_list else _empty_list(),
+        _get_personas() if all_persona_ids else _empty_list(),
+        _get_rubrics() if all_rubric_ids else _empty_list(),
+        _get_standard_groups() if all_standard_group_ids else _empty_list(),
+        _search_standards() if all_standard_group_ids else _empty_list(),
     )
 
     # Step 7: Return ArtifactContext
@@ -181,7 +204,7 @@ async def resolve_home_context(
 
 
 async def resolve_home_search_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profiles_resource_id: UUID,
@@ -210,37 +233,41 @@ async def resolve_home_search_context(
     page_offset = page * page_size
 
     # Step 1: Paginated attempts from attempt_mv
-    all_attempts, _total_count = await search_attempts(
-        conn,
-        profile_ids=[profiles_resource_id],
-        practice=False,
-        is_archived=False,
-        scenario_ids=scenario_ids,
-        infinite_mode=infinite_mode,
-        sort_order=sort_order,
-        limit=page_size,
-        offset=page_offset,
-    )
+    async with pool.acquire() as conn:
+        all_attempts, _total_count = await search_attempts(
+            conn,
+            profile_ids=[profiles_resource_id],
+            practice=False,
+            is_archived=False,
+            scenario_ids=scenario_ids,
+            infinite_mode=infinite_mode,
+            sort_order=sort_order,
+            limit=page_size,
+            offset=page_offset,
+        )
 
     # Also fetch total count (unfiltered by pagination)
-    total_attempts, total_count = await search_attempts(
-        conn,
-        profile_ids=[profiles_resource_id],
-        practice=False,
-        is_archived=False,
-        scenario_ids=scenario_ids,
-        infinite_mode=infinite_mode,
-        limit=100000,
-        offset=0,
-    )
+    async with pool.acquire() as conn:
+        total_attempts, total_count = await search_attempts(
+            conn,
+            profile_ids=[profiles_resource_id],
+            practice=False,
+            is_archived=False,
+            scenario_ids=scenario_ids,
+            infinite_mode=infinite_mode,
+            limit=100000,
+            offset=0,
+        )
 
     # Step 2: Fetch attempt_chats for paginated attempt_ids
     attempt_ids = [a.attempt_id for a in all_attempts]
-    all_attempt_chats = (
-        (await search_attempt_chats(conn, attempt_ids=attempt_ids, limit=10000))[0]
-        if attempt_ids
-        else []
-    )
+    if attempt_ids:
+        async with pool.acquire() as conn:
+            all_attempt_chats = (
+                await search_attempt_chats(conn, attempt_ids=attempt_ids, limit=10000)
+            )[0]
+    else:
+        all_attempt_chats = []
 
     # Step 3: Collect resource IDs for display names
     sim_ids: set[UUID] = set()
@@ -263,24 +290,32 @@ async def resolve_home_search_context(
             scenario_ids_set.add(ac.scenario_id)
 
     # Parallel hydrate
+    async def _get_simulations() -> list:
+        async with pool.acquire() as conn:
+            return await get_simulations(conn, list(sim_ids), redis, bypass_cache)
+
+    async def _get_profiles() -> list:
+        async with pool.acquire() as conn:
+            return await get_profiles(conn, list(profile_ids), redis, bypass_cache)
+
+    async def _get_personas() -> list:
+        async with pool.acquire() as conn:
+            return await get_personas(conn, list(persona_ids), redis, bypass_cache)
+
+    async def _get_scenarios() -> list:
+        async with pool.acquire() as conn:
+            return await get_scenarios(conn, list(scenario_ids_set), redis, bypass_cache)
+
     (
         simulations_selected,
         profiles_selected,
         personas_selected,
         scenarios_selected,
     ) = await asyncio.gather(
-        get_simulations(conn, list(sim_ids), redis, bypass_cache)
-        if sim_ids
-        else _empty_list(),
-        get_profiles(conn, list(profile_ids), redis, bypass_cache)
-        if profile_ids
-        else _empty_list(),
-        get_personas(conn, list(persona_ids), redis, bypass_cache)
-        if persona_ids
-        else _empty_list(),
-        get_scenarios(conn, list(scenario_ids_set), redis, bypass_cache)
-        if scenario_ids_set
-        else _empty_list(),
+        _get_simulations() if sim_ids else _empty_list(),
+        _get_profiles() if profile_ids else _empty_list(),
+        _get_personas() if persona_ids else _empty_list(),
+        _get_scenarios() if scenario_ids_set else _empty_list(),
     )
 
     # Collect filter options from total_attempts

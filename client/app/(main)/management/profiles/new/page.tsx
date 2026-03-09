@@ -18,8 +18,8 @@ import { cache } from "react";
 /** ---- Strong types from OpenAPI ---- */
 type GetProfileIn = InputOf<"/api/v5/artifacts/profiles/get", "post">;
 type GetProfileOut = OutputOf<"/api/v5/artifacts/profiles/get", "post">;
-type SaveProfileIn = InputOf<"/api/v5/artifacts/profiles/save", "post">;
-type SaveProfileOut = OutputOf<"/api/v5/artifacts/profiles/save", "post">;
+type CreateProfileIn = InputOf<"/api/v5/artifacts/profiles/create", "post">;
+type CreateProfileOut = OutputOf<"/api/v5/artifacts/profiles/create", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftEmailsIn = InputOf<"/api/v5/resources/emails", "post">;
@@ -48,11 +48,9 @@ const getProfileDefault = cache(
 );
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveProfile(input: SaveProfileIn): Promise<SaveProfileOut> {
+async function createProfile(input: CreateProfileIn): Promise<CreateProfileOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/profiles/save", input);
+  return api.post("/artifacts/profiles/create", input);
 }
 
 async function createDraftNames(
@@ -159,7 +157,7 @@ export default async function NewProfilePage({
         <Profile
           key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
           profileData={profileDetailDefault}
-          saveProfileAction={saveProfile}
+          createProfileAction={createProfile}
           patchProfileDraftAction={patchProfileDraft}
           createNamesAction={createDraftNames}
           createEmailsAction={createDraftEmails}

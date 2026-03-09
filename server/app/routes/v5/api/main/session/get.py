@@ -10,14 +10,13 @@ Zero inline SQL — all data from context resolver + resource fetchers.
 
 import asyncio
 from decimal import Decimal
-from typing import Annotated
 from uuid import UUID
 
 import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.pricing import compute_costs_from_runs
 from app.infra.session_context import resolve_session_context
 from app.infra.tool_graph import score_tools
@@ -224,7 +223,6 @@ async def get_session(
     request: GetSessionDetailRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetSessionDetailResponse:
     """Get session detail with groups and timeline."""
     tags = ["artifacts", "session"]
@@ -265,7 +263,8 @@ async def get_session(
         session = data.session
 
         # Compute per-run costs
-        run_costs = await compute_costs_from_runs(conn, data.runs, bypass_cache)
+        async with pool.acquire() as conn:
+            run_costs = await compute_costs_from_runs(conn, data.runs, bypass_cache)
 
         # Aggregate run stats per group
         group_run_aggs: dict[UUID, dict] = {}

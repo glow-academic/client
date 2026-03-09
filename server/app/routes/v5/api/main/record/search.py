@@ -5,15 +5,13 @@ Reuses dashboard's _build_history_response for pure Python assembly.
 """
 
 from datetime import datetime
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
 from app.infra.dashboard_context import resolve_dashboard_search_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.api.main.dashboard.search import _build_history_response
 from app.routes.v5.api.main.record.types import ListRecordRequest
 from app.routes.v5.api.main.types import HistoryResponse
@@ -30,7 +28,6 @@ async def search_record(
     request: ListRecordRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> HistoryResponse:
     """Get record attempt history for a single profile (paginated)."""
     tags = ["artifacts", "record", "list"]
@@ -71,14 +68,15 @@ async def search_record(
             raise HTTPException(status_code=401, detail="Profile not found")
 
         # Resolve profile_resource_id
-        profile_resource_id: UUID | None = await conn.fetchval(
-            """
-            SELECT profiles_id FROM profile_profiles_junction
-            WHERE profile_id = $1 AND active = true
-            LIMIT 1
-            """,
-            profile_id,
-        )
+        async with pool.acquire() as c:
+            profile_resource_id: UUID | None = await c.fetchval(
+                """
+                SELECT profiles_id FROM profile_profiles_junction
+                WHERE profile_id = $1 AND active = true
+                LIMIT 1
+                """,
+                profile_id,
+            )
 
         # Parse dates
         date_from = None

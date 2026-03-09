@@ -94,8 +94,10 @@ const DOCUMENT_RESOURCES: ResourceConfig[] = [
 ];
 
 // Types defined inline using InputOf/OutputOf
-type SaveDocumentIn = InputOf<"/api/v5/artifacts/documents/save", "post">;
-type SaveDocumentOut = OutputOf<"/api/v5/artifacts/documents/save", "post">;
+type CreateDocumentIn = InputOf<"/api/v5/artifacts/documents/create", "post">;
+type CreateDocumentOut = OutputOf<"/api/v5/artifacts/documents/create", "post">;
+type UpdateDocumentIn = InputOf<"/api/v5/artifacts/documents/update", "post">;
+type UpdateDocumentOut = OutputOf<"/api/v5/artifacts/documents/update", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -130,7 +132,8 @@ export interface DocumentProps {
   documentDetail?: DocumentData;
   documentDetailDefault?: DocumentData;
   // Server actions
-  saveDocumentAction?: (input: SaveDocumentIn) => Promise<SaveDocumentOut>;
+  createDocumentAction?: (input: CreateDocumentIn) => Promise<CreateDocumentOut>;
+  updateDocumentAction?: (input: UpdateDocumentIn) => Promise<UpdateDocumentOut>;
   patchDocumentDraftAction?: (
     input: PatchDocumentDraftIn,
   ) => Promise<PatchDocumentDraftOut>;
@@ -157,7 +160,8 @@ function DocumentComponent({
   mode = documentId ? "edit" : "create",
   documentDetail: documentDetailProp,
   documentDetailDefault,
-  saveDocumentAction,
+  createDocumentAction,
+  updateDocumentAction,
   patchDocumentDraftAction,
   createNamesAction,
   createDescriptionsAction,
@@ -580,11 +584,6 @@ function DocumentComponent({
         throw new Error("Profile not loaded");
       }
 
-      if (!saveDocumentAction) {
-        toast.error("Save action not available");
-        throw new Error("Save action not available");
-      }
-
       // Ensure required fields are present (TypeScript guard)
       if (!effectiveFormState.name_id) {
         toast.error("Required fields are missing");
@@ -592,29 +591,61 @@ function DocumentComponent({
       }
 
       try {
-        await saveDocumentAction({
-          body: {
-            input_document_id: isEditMode && documentId ? documentId : null,
-            name_id: effectiveFormState.name_id!,
-            description_id: effectiveFormState.description_id ?? null,
-            flag_id: effectiveFormState.active_flag_id ?? null,
-            department_ids: effectiveFormState.department_ids?.length
-              ? effectiveFormState.department_ids
-              : null,
-            field_ids: effectiveFormState.field_ids?.length
-              ? effectiveFormState.field_ids
-              : null,
-            upload_ids: effectiveFormState.upload_ids?.length
-              ? effectiveFormState.upload_ids
-              : null,
-            image_ids: effectiveFormState.image_ids?.length
-              ? effectiveFormState.image_ids
-              : null,
-            text_ids: effectiveFormState.text_ids?.length
-              ? effectiveFormState.text_ids
-              : null,
-          },
-        });
+        if (isEditMode && documentId && updateDocumentAction) {
+          await updateDocumentAction({
+            body: {
+              documents: [{
+                document_id: documentId,
+                name_id: effectiveFormState.name_id || undefined,
+                description_id: effectiveFormState.description_id || undefined,
+                flag_id: effectiveFormState.active_flag_id || undefined,
+                department_ids: effectiveFormState.department_ids?.length
+                  ? effectiveFormState.department_ids
+                  : undefined,
+                field_ids: effectiveFormState.field_ids?.length
+                  ? effectiveFormState.field_ids
+                  : undefined,
+                upload_ids: effectiveFormState.upload_ids?.length
+                  ? effectiveFormState.upload_ids
+                  : undefined,
+                image_ids: effectiveFormState.image_ids?.length
+                  ? effectiveFormState.image_ids
+                  : undefined,
+                text_ids: effectiveFormState.text_ids?.length
+                  ? effectiveFormState.text_ids
+                  : undefined,
+              }],
+            },
+          } as UpdateDocumentIn);
+        } else if (createDocumentAction) {
+          await createDocumentAction({
+            body: {
+              documents: [{
+                name_id: effectiveFormState.name_id || undefined,
+                description_id: effectiveFormState.description_id || undefined,
+                flag_id: effectiveFormState.active_flag_id || undefined,
+                department_ids: effectiveFormState.department_ids?.length
+                  ? effectiveFormState.department_ids
+                  : undefined,
+                field_ids: effectiveFormState.field_ids?.length
+                  ? effectiveFormState.field_ids
+                  : undefined,
+                upload_ids: effectiveFormState.upload_ids?.length
+                  ? effectiveFormState.upload_ids
+                  : undefined,
+                image_ids: effectiveFormState.image_ids?.length
+                  ? effectiveFormState.image_ids
+                  : undefined,
+                text_ids: effectiveFormState.text_ids?.length
+                  ? effectiveFormState.text_ids
+                  : undefined,
+              }],
+            },
+          } as CreateDocumentIn);
+        } else {
+          toast.error("Save action not available");
+          throw new Error("Save action not available");
+        }
         toast.success(
           `Document ${isEditMode ? "updated" : "created"} successfully!`,
         );
@@ -632,7 +663,8 @@ function DocumentComponent({
       isEditMode,
       documentId,
       profile?.id,
-      saveDocumentAction,
+      createDocumentAction,
+      updateDocumentAction,
       router,
       isAutosaveEnabled,
       flushAllResources,
@@ -1375,7 +1407,8 @@ export default React.memo(DocumentComponent, (prevProps, nextProps) => {
 
   // Compare function props by reference (should be stable from server actions)
   if (
-    prevProps.saveDocumentAction !== nextProps.saveDocumentAction ||
+    prevProps.createDocumentAction !== nextProps.createDocumentAction ||
+    prevProps.updateDocumentAction !== nextProps.updateDocumentAction ||
     prevProps.patchDocumentDraftAction !== nextProps.patchDocumentDraftAction ||
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||

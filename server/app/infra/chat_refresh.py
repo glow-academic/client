@@ -27,7 +27,7 @@ _VIEWS = ["chat_mv", "chat_drafts_mv"]
 
 
 async def refresh_chat_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis | None,
     *,
     profile_id: UUID,
@@ -43,7 +43,7 @@ async def refresh_chat_client(
 
     # -- Step 1: Permission check ------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -53,9 +53,17 @@ async def refresh_chat_client(
 
     # -- Step 2: Parallel refresh of dependent entry MVs -------------------
 
+    async def _refresh_chat() -> None:
+        async with pool.acquire() as conn:
+            await refresh_chat(conn)
+
+    async def _refresh_chat_drafts() -> None:
+        async with pool.acquire() as conn:
+            await refresh_chat_drafts(conn)
+
     await asyncio.gather(
-        refresh_chat(conn),
-        refresh_chat_drafts(conn),
+        _refresh_chat(),
+        _refresh_chat_drafts(),
     )
 
     # -- Step 3: Invalidate cache tags -------------------------------------

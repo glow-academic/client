@@ -17,8 +17,8 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type GetDocumentIn = InputOf<"/api/v5/artifacts/documents/get", "post">;
 type GetDocumentOut = OutputOf<"/api/v5/artifacts/documents/get", "post">;
-type SaveDocumentIn = InputOf<"/api/v5/artifacts/documents/save", "post">;
-type SaveDocumentOut = OutputOf<"/api/v5/artifacts/documents/save", "post">;
+type CreateDocumentIn = InputOf<"/api/v5/artifacts/documents/create", "post">;
+type CreateDocumentOut = OutputOf<"/api/v5/artifacts/documents/create", "post">;
 type PatchDocumentDraftIn = InputOf<"/api/v5/artifacts/documents/draft", "patch">;
 type PatchDocumentDraftOut = OutputOf<"/api/v5/artifacts/documents/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -53,11 +53,9 @@ const getDocumentDefault = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveDocument(input: SaveDocumentIn): Promise<SaveDocumentOut> {
+async function createDocument(input: CreateDocumentIn): Promise<CreateDocumentOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/documents/save", input);
+  return api.post("/artifacts/documents/create", input);
 }
 
 async function patchDocumentDraft(
@@ -182,7 +180,7 @@ export default async function NewDocumentPage({
           key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
           mode="create"
           documentDetailDefault={documentDetailDefault}
-          saveDocumentAction={saveDocument}
+          createDocumentAction={createDocument}
           patchDocumentDraftAction={patchDocumentDraft}
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}

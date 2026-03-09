@@ -1,12 +1,8 @@
 """Session refresh endpoint — composable infra architecture."""
 
-from typing import Annotated
+from fastapi import APIRouter, Request, Response
 
-import asyncpg
-from fastapi import APIRouter, Depends, Request, Response
-from redis.asyncio import Redis
-
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.refresh.types import RefreshResponse
 from app.infra.session_refresh import refresh_session_client
 
@@ -17,15 +13,14 @@ router = APIRouter()
 async def session_refresh(
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
-    redis: Annotated[Redis, Depends(get_redis_client)],
 ) -> RefreshResponse:
     """Refresh session materialized views and invalidate caches."""
     profile_id = http_request.state.profile_id
+    pool = get_pool()
 
     result = await refresh_session_client(
-        conn,
-        redis,
+        pool,
+        get_redis_client(),
         profile_id=profile_id,
     )
 

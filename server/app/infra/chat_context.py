@@ -70,7 +70,7 @@ CHAT_FLAG_NAMES = {"chat_active"}
 
 
 async def resolve_chat_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     group_id: UUID,
@@ -104,7 +104,11 @@ async def resolve_chat_context(
     user_dept_ids = user_department_ids or []
 
     # Step 1: fetch draft
-    drafts = await get_chat_drafts(conn, [draft_id]) if draft_id else []
+    if draft_id:
+        async with pool.acquire() as conn:
+            drafts = await get_chat_drafts(conn, [draft_id])
+    else:
+        drafts = []
     draft = drafts[0] if drafts else None
     draft_version = draft.version if draft else None
 
@@ -136,6 +140,177 @@ async def resolve_chat_context(
     objective_ids = list(draft.objective_ids) if draft and draft.objective_ids else []
 
     # Step 3: parallel hydrate — selected + suggestions for each resource
+    # Each call acquires its own connection from the pool for true parallelism.
+
+    async def _get_names() -> list:
+        async with pool.acquire() as c:
+            return await get_names(c, name_ids, redis, bypass_cache)
+
+    async def _search_names() -> list:
+        async with pool.acquire() as c:
+            return await search_names(
+                c, redis, draft_id=group_id, exclude_ids=name_ids, bypass_cache=bypass_cache
+            )
+
+    async def _get_descriptions() -> list:
+        async with pool.acquire() as c:
+            return await get_descriptions(c, description_ids, redis, bypass_cache)
+
+    async def _search_descriptions() -> list:
+        async with pool.acquire() as c:
+            return await search_descriptions(
+                c, redis, search=description_search, draft_id=group_id,
+                exclude_ids=description_ids, bypass_cache=bypass_cache,
+            )
+
+    async def _get_flags() -> list:
+        async with pool.acquire() as c:
+            return await get_flags(c, flag_ids, redis, bypass_cache)
+
+    async def _search_flags() -> list:
+        async with pool.acquire() as c:
+            return await search_flags(
+                c, redis, search=None, limit_count=50, offset_count=0,
+                exclude_ids=flag_ids, bypass_cache=bypass_cache,
+            )
+
+    async def _get_departments() -> list:
+        async with pool.acquire() as c:
+            return await get_departments(c, department_ids, redis, bypass_cache)
+
+    async def _search_departments() -> list:
+        async with pool.acquire() as c:
+            return await search_departments(
+                c, redis, search=None, limit_count=20, offset_count=0,
+                department_ids=user_dept_ids, suggest_source="recent",
+                exclude_ids=department_ids, bypass_cache=bypass_cache,
+            )
+
+    async def _get_personas() -> list:
+        async with pool.acquire() as c:
+            return await get_personas(c, persona_ids, redis, bypass_cache)
+
+    async def _search_personas() -> list:
+        async with pool.acquire() as c:
+            return await search_personas(
+                c, redis, search=persona_search, limit_count=20, offset_count=0,
+                department_ids=user_dept_ids, draft_id=group_id,
+                suggest_source="selected" if persona_show_selected else None,
+                exclude_ids=persona_ids, bypass_cache=bypass_cache,
+            )
+
+    async def _get_documents() -> list:
+        async with pool.acquire() as c:
+            return await get_documents(c, document_ids, redis, bypass_cache)
+
+    async def _search_documents() -> list:
+        async with pool.acquire() as c:
+            return await search_documents(
+                c, redis, search=document_search, limit_count=20, offset_count=0,
+                department_ids=user_dept_ids, draft_id=group_id,
+                suggest_source="selected" if document_show_selected else None,
+                exclude_ids=document_ids, bypass_cache=bypass_cache,
+            )
+
+    async def _get_scenarios() -> list:
+        async with pool.acquire() as c:
+            return await get_scenarios(c, scenario_ids, redis, bypass_cache)
+
+    async def _search_scenarios() -> list:
+        async with pool.acquire() as c:
+            return await search_scenarios(
+                c, redis, search=None, limit_count=20, offset_count=0,
+                exclude_ids=scenario_ids, bypass_cache=bypass_cache,
+            )
+
+    async def _get_fields() -> list:
+        async with pool.acquire() as c:
+            return await get_fields(c, field_ids, redis, bypass_cache)
+
+    async def _search_fields() -> list:
+        async with pool.acquire() as c:
+            return await search_fields(
+                c, redis, search=None, limit_count=20, offset_count=0,
+                exclude_ids=field_ids, bypass_cache=bypass_cache,
+            )
+
+    async def _get_parameter_fields() -> list:
+        async with pool.acquire() as c:
+            return await get_parameter_fields(c, parameter_field_ids, redis, bypass_cache)
+
+    async def _search_parameter_fields() -> list:
+        async with pool.acquire() as c:
+            return await search_parameter_fields(
+                c, redis, limit_count=20, offset_count=0,
+                exclude_ids=parameter_field_ids, bypass_cache=bypass_cache,
+            )
+
+    async def _get_questions() -> list:
+        async with pool.acquire() as c:
+            return await get_questions(c, question_ids, redis, bypass_cache)
+
+    async def _search_questions() -> list:
+        async with pool.acquire() as c:
+            return await search_questions(
+                c, redis, search=question_search, limit_count=20, offset_count=0,
+                exclude_ids=question_ids, bypass_cache=bypass_cache,
+            )
+
+    async def _get_options() -> list:
+        async with pool.acquire() as c:
+            return await get_options(c, option_ids, redis, bypass_cache)
+
+    async def _search_options() -> list:
+        async with pool.acquire() as c:
+            return await search_options(
+                c, redis, search=option_search, limit_count=20, offset_count=0,
+                exclude_ids=option_ids, bypass_cache=bypass_cache,
+            )
+
+    async def _get_videos() -> list:
+        async with pool.acquire() as c:
+            return await get_videos(c, video_ids, redis, bypass_cache)
+
+    async def _search_videos() -> list:
+        async with pool.acquire() as c:
+            return await search_videos(
+                c, redis, search=video_search, limit_count=20, offset_count=0,
+                exclude_ids=video_ids, bypass_cache=bypass_cache,
+            )
+
+    async def _get_images() -> list:
+        async with pool.acquire() as c:
+            return await get_images(c, image_ids, redis, bypass_cache)
+
+    async def _search_images() -> list:
+        async with pool.acquire() as c:
+            return await search_images(
+                c, redis, search=image_search, limit_count=20, offset_count=0,
+                exclude_ids=image_ids, bypass_cache=bypass_cache,
+            )
+
+    async def _get_problem_statements() -> list:
+        async with pool.acquire() as c:
+            return await get_problem_statements(c, problem_statement_ids, redis, bypass_cache)
+
+    async def _search_problem_statements() -> list:
+        async with pool.acquire() as c:
+            return await search_problem_statements(
+                c, redis, search=problem_statement_search, limit_count=20, offset_count=0,
+                exclude_ids=problem_statement_ids, bypass_cache=bypass_cache,
+            )
+
+    async def _get_objectives() -> list:
+        async with pool.acquire() as c:
+            return await get_objectives(c, objective_ids, redis, bypass_cache)
+
+    async def _search_objectives() -> list:
+        async with pool.acquire() as c:
+            return await search_objectives(
+                c, redis, search=None, limit_count=20, offset_count=0,
+                exclude_ids=objective_ids, bypass_cache=bypass_cache,
+            )
+
     (
         names_selected,
         names_suggestions,
@@ -168,175 +343,36 @@ async def resolve_chat_context(
         objectives_selected,
         objectives_suggestions,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=name_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Descriptions
-        get_descriptions(conn, description_ids, redis, bypass_cache),
-        search_descriptions(
-            conn,
-            redis,
-            search=description_search,
-            draft_id=group_id,
-            exclude_ids=description_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Flags
-        get_flags(conn, flag_ids, redis, bypass_cache),
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=flag_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Departments
-        get_departments(conn, department_ids, redis, bypass_cache),
-        search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            suggest_source="recent",
-            exclude_ids=department_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Personas
-        get_personas(conn, persona_ids, redis, bypass_cache),
-        search_personas(
-            conn,
-            redis,
-            search=persona_search,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            draft_id=group_id,
-            suggest_source="selected" if persona_show_selected else None,
-            exclude_ids=persona_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Documents
-        get_documents(conn, document_ids, redis, bypass_cache),
-        search_documents(
-            conn,
-            redis,
-            search=document_search,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            draft_id=group_id,
-            suggest_source="selected" if document_show_selected else None,
-            exclude_ids=document_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Scenarios
-        get_scenarios(conn, scenario_ids, redis, bypass_cache),
-        search_scenarios(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=scenario_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Fields
-        get_fields(conn, field_ids, redis, bypass_cache),
-        search_fields(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=field_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Parameter Fields
-        get_parameter_fields(conn, parameter_field_ids, redis, bypass_cache),
-        search_parameter_fields(
-            conn,
-            redis,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=parameter_field_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Questions
-        get_questions(conn, question_ids, redis, bypass_cache),
-        search_questions(
-            conn,
-            redis,
-            search=question_search,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=question_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Options
-        get_options(conn, option_ids, redis, bypass_cache),
-        search_options(
-            conn,
-            redis,
-            search=option_search,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=option_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Videos
-        get_videos(conn, video_ids, redis, bypass_cache),
-        search_videos(
-            conn,
-            redis,
-            search=video_search,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=video_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Images
-        get_images(conn, image_ids, redis, bypass_cache),
-        search_images(
-            conn,
-            redis,
-            search=image_search,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=image_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Problem Statements
-        get_problem_statements(conn, problem_statement_ids, redis, bypass_cache),
-        search_problem_statements(
-            conn,
-            redis,
-            search=problem_statement_search,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=problem_statement_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Objectives
-        get_objectives(conn, objective_ids, redis, bypass_cache),
-        search_objectives(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=objective_ids,
-            bypass_cache=bypass_cache,
-        ),
+        _get_names(),
+        _search_names(),
+        _get_descriptions(),
+        _search_descriptions(),
+        _get_flags(),
+        _search_flags(),
+        _get_departments(),
+        _search_departments(),
+        _get_personas(),
+        _search_personas(),
+        _get_documents(),
+        _search_documents(),
+        _get_scenarios(),
+        _search_scenarios(),
+        _get_fields(),
+        _search_fields(),
+        _get_parameter_fields(),
+        _search_parameter_fields(),
+        _get_questions(),
+        _search_questions(),
+        _get_options(),
+        _search_options(),
+        _get_videos(),
+        _search_videos(),
+        _get_images(),
+        _search_images(),
+        _get_problem_statements(),
+        _search_problem_statements(),
+        _get_objectives(),
+        _search_objectives(),
     )
 
     # Filter flags to chat-specific types

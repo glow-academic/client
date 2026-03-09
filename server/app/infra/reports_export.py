@@ -93,7 +93,7 @@ async def _empty_list() -> list:  # type: ignore[type-arg]
 
 
 async def export_reports_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,  # type: ignore[type-arg]
     *,
     profile_id: UUID,
@@ -102,7 +102,8 @@ async def export_reports_client(
     """Reports full export using composable infra functions."""
 
     # -- Step 1: Profile context --
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    async with pool.acquire() as conn:
+        profile = await resolve_profile_identity_context(conn, profile_id, redis)
     if profile is None:
         raise HTTPException(
             status_code=401,
@@ -110,9 +111,10 @@ async def export_reports_client(
         )
 
     # -- Step 2: Search all test invocations (full dump) --
-    invocations, _total_count = await search_test_invocation_entries_internal(
-        conn, limit=100000, offset=0
-    )
+    async with pool.acquire() as conn:
+        invocations, _total_count = await search_test_invocation_entries_internal(
+            conn, limit=100000, offset=0
+        )
 
     if not invocations:
         return ExportReportsApiResponse(
@@ -124,13 +126,21 @@ async def export_reports_client(
     # -- Step 3: Search groups and runs --
     invocation_ids = [inv.invocation_id for inv in invocations]
 
+    async def _fetch_groups() -> list:
+        async with pool.acquire() as conn:
+            return await search_test_invocation_groups(
+                conn, test_invocation_ids=invocation_ids, limit=100000, offset=0
+            )
+
+    async def _fetch_runs() -> list:
+        async with pool.acquire() as conn:
+            return await search_test_invocation_runs(
+                conn, test_invocation_ids=invocation_ids, limit=100000, offset=0
+            )
+
     groups, runs = await asyncio.gather(
-        search_test_invocation_groups(
-            conn, test_invocation_ids=invocation_ids, limit=100000, offset=0
-        ),
-        search_test_invocation_runs(
-            conn, test_invocation_ids=invocation_ids, limit=100000, offset=0
-        ),
+        _fetch_groups(),
+        _fetch_runs(),
     )
 
     # -- Step 4: Parallel resource hydration --
@@ -158,14 +168,28 @@ async def export_reports_client(
         all_name_ids.update(r.tool_ids or [])
         all_voice_ids.update(r.voice_ids or [])
 
+    async def _get_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(conn, list(all_name_ids), redis)
+
+    async def _get_departments() -> list:
+        if not all_department_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_departments(conn, list(all_department_ids), redis)
+
+    async def _get_voices() -> list:
+        if not all_voice_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_voices(conn, list(all_voice_ids), redis)
+
     names_data, departments_data, voices_data = await asyncio.gather(
-        get_names(conn, list(all_name_ids), redis) if all_name_ids else _empty_list(),
-        get_departments(conn, list(all_department_ids), redis)
-        if all_department_ids
-        else _empty_list(),
-        get_voices(conn, list(all_voice_ids), redis)
-        if all_voice_ids
-        else _empty_list(),
+        _get_names(),
+        _get_departments(),
+        _get_voices(),
     )
 
     name_map: dict[UUID, str] = {n.id: n.name for n in names_data}
@@ -282,13 +306,14 @@ async def export_reports_client(
         f.write(zip_content)
 
     file_size = len(zip_content)
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="application/zip",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="application/zip",
+            size=file_size,
+        )
 
     return ExportReportsApiResponse(
         upload_id=upload_result.id,

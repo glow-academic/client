@@ -60,7 +60,7 @@ class CreateAuthItem(BaseModel):
 
 
 async def create_auth_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -88,7 +88,7 @@ async def create_auth_client(
     # ── Step 1: Profile context ────────────────────────────────────────
 
     profile = await resolve_profile_identity_context(
-        conn,
+        pool,
         profile_id,
         redis,
         session_id=session_id,
@@ -115,7 +115,8 @@ async def create_auth_client(
     error_results: list[AuthResultItem] = []
 
     for idx, item in enumerate(items):
-        item_errors = await resolve_auth_values(conn, redis, item, is_create=True)
+        async with pool.acquire() as conn:
+            item_errors = await resolve_auth_values(conn, redis, item, is_create=True)
         if item_errors:
             has_errors = True
             error_results.append(
@@ -135,40 +136,41 @@ async def create_auth_client(
 
     results: list[AuthResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            auths_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=item.department_ids,
-            )
-
-            result = await create_auth_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                slug_id=item.slug_id,
-                department_ids=item.department_ids,
-                flag_ids=[item.active_flag_id] if item.active_flag_id else None,
-                item_ids=item.item_ids,
-                protocol_ids=item.protocol_ids,
-                auth_ids=[auths_resource_id]
-                if auths_resource_id
-                else item.auth_resource_ids,
-            )
-
-            results.append(
-                AuthResultItem(
-                    success=True,
-                    auth_id=result.id,
-                    message="Auth created successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                auths_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
                 )
-            )
+
+                result = await create_auth_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    slug_id=item.slug_id,
+                    department_ids=item.department_ids,
+                    flag_ids=[item.active_flag_id] if item.active_flag_id else None,
+                    item_ids=item.item_ids,
+                    protocol_ids=item.protocol_ids,
+                    auth_ids=[auths_resource_id]
+                    if auths_resource_id
+                    else item.auth_resource_ids,
+                )
+
+                results.append(
+                    AuthResultItem(
+                        success=True,
+                        auth_id=result.id,
+                        message="Auth created successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 

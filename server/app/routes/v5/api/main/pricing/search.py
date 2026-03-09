@@ -2,14 +2,12 @@
 
 from collections import defaultdict
 from decimal import Decimal
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.pricing_context import resolve_pricing_search_context
 from app.routes.v5.api.main.pricing.types import (
     ListPricingRequest,
@@ -29,7 +27,6 @@ async def search_pricing(
     request: ListPricingRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ListPricingResponse:
     """Get pricing group history (bottom table, paginated)."""
     tags = ["artifacts", "pricing", "list"]
@@ -70,18 +67,17 @@ async def search_pricing(
             raise HTTPException(status_code=401, detail="Profile not found")
 
         # --- Phase 1: Resolve pricing search context ---
-        async with pool.acquire() as c:
-            ctx = await resolve_pricing_search_context(
-                c,
-                redis,
-                session_ids=[request.session_id] if request.session_id else None,
-                date_from=request.effective_date_from,
-                date_to=request.effective_date_to,
-                sort_order=request.sort_order,
-                page=request.page,
-                page_size=request.page_size,
-                bypass_cache=bypass_cache,
-            )
+        ctx = await resolve_pricing_search_context(
+            pool,
+            redis,
+            session_ids=[request.session_id] if request.session_id else None,
+            date_from=request.effective_date_from,
+            date_to=request.effective_date_to,
+            sort_order=request.sort_order,
+            page=request.page,
+            page_size=request.page_size,
+            bypass_cache=bypass_cache,
+        )
 
         # --- Phase 2: Extract data ---
         groups = ctx.entries.get("groups", [])

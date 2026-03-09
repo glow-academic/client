@@ -26,7 +26,7 @@ _VIEWS = ["test_mv"]
 
 
 async def refresh_test_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis | None,
     *,
     profile_id: UUID,
@@ -42,7 +42,7 @@ async def refresh_test_client(
 
     # ── Step 1: Permission check ─────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -52,8 +52,12 @@ async def refresh_test_client(
 
     # ── Step 2: Parallel refresh of dependent entry MVs ──────────────────
 
+    async def _refresh_test() -> None:
+        async with pool.acquire() as conn:
+            await refresh_test(conn)
+
     await asyncio.gather(
-        refresh_test(conn),
+        _refresh_test(),
     )
 
     # ── Step 3: Invalidate cache tags ────────────────────────────────────

@@ -21,7 +21,7 @@ _VIEWS: list[str] = []
 
 
 async def refresh_dashboard_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis | None,
     *,
     profile_id: UUID,
@@ -36,7 +36,7 @@ async def refresh_dashboard_client(
 
     # -- Step 1: Permission check ------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(

@@ -29,7 +29,7 @@ _PAGE_METADATA = PageMetadataConfig(
 
 
 async def docs_dashboard_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -45,7 +45,7 @@ async def docs_dashboard_client(
 
     # -- Step 1: Profile context ------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(

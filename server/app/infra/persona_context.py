@@ -106,6 +106,7 @@ async def resolve_persona_context(
             return await get_persona_artifacts(
                 conn,
                 [persona_id],
+                active=None,
                 names=True,
                 descriptions=True,
                 colors=True,

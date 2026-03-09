@@ -19,8 +19,10 @@ import { createLoader, parseAsString } from "nuqs/server";
 type GetDocumentIn = InputOf<"/api/v5/artifacts/documents/get", "post">;
 type GetDocumentOut = OutputOf<"/api/v5/artifacts/documents/get", "post">;
 export type DocumentDetailOut = GetDocumentOut;
-type SaveDocumentIn = InputOf<"/api/v5/artifacts/documents/save", "post">;
-type SaveDocumentOut = OutputOf<"/api/v5/artifacts/documents/save", "post">;
+type CreateDocumentIn = InputOf<"/api/v5/artifacts/documents/create", "post">;
+type CreateDocumentOut = OutputOf<"/api/v5/artifacts/documents/create", "post">;
+type UpdateDocumentIn = InputOf<"/api/v5/artifacts/documents/update", "post">;
+type UpdateDocumentOut = OutputOf<"/api/v5/artifacts/documents/update", "post">;
 type PatchDocumentDraftIn = InputOf<"/api/v5/artifacts/documents/draft", "patch">;
 type PatchDocumentDraftOut = OutputOf<"/api/v5/artifacts/documents/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -73,11 +75,14 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveDocument(input: SaveDocumentIn): Promise<SaveDocumentOut> {
+async function createDocument(input: CreateDocumentIn): Promise<CreateDocumentOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/documents/save", input);
+  return api.post("/artifacts/documents/create", input);
+}
+
+async function updateDocument(input: UpdateDocumentIn): Promise<UpdateDocumentOut> {
+  "use server";
+  return api.post("/artifacts/documents/update", input);
 }
 
 async function patchDocumentDraft(
@@ -196,7 +201,8 @@ export default async function DocumentEditPage({
             documentId={documentId}
             mode="edit"
             documentDetail={documentDetail}
-            saveDocumentAction={saveDocument}
+            createDocumentAction={createDocument}
+            updateDocumentAction={updateDocument}
             patchDocumentDraftAction={patchDocumentDraft}
             createNamesAction={createDraftNames}
             createDescriptionsAction={createDraftDescriptions}

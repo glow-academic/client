@@ -32,7 +32,7 @@ _PAGE_METADATA = PageMetadataConfig(
 
 
 async def docs_session_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -49,7 +49,7 @@ async def docs_session_client(
 
     # -- Step 1: Profile context ------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -59,7 +59,8 @@ async def docs_session_client(
 
     # -- Step 2: Entry docs fetch -----------------------------------------
 
-    sessions = await get_sessions_docs(conn)
+    async with pool.acquire() as conn:
+        sessions = await get_sessions_docs(conn)
 
     # ── Page metadata ───────────────────────────────────────────────────
     page_metadata = compute_docs_metadata(_PAGE_METADATA)

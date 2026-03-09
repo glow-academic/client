@@ -487,7 +487,7 @@ def _compute_cert_from_attempts(
 
 
 async def export_home_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -497,14 +497,15 @@ async def export_home_client(
     from fastapi import HTTPException
 
     # -- Step 1: Profile context --
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
     if profile is None:
         raise HTTPException(
             status_code=401, detail="Profile not found. Please sign in again."
         )
 
     # -- Step 2: Search all attempts (full dump) --
-    attempts, _total_count = await search_attempts(conn, limit=100000, offset=0)
+    async with pool.acquire() as conn:
+        attempts, _total_count = await search_attempts(conn, limit=100000, offset=0)
 
     if not attempts:
         return ExportHomeApiResponse(
@@ -538,6 +539,30 @@ async def export_home_client(
     async def _empty() -> list[Any]:
         return []
 
+    async def _get_profiles() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_profiles(conn, list(all_profile_ids), redis)
+
+    async def _get_simulations() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_simulations(conn, list(all_simulation_ids), redis)
+
+    async def _get_scenarios() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_scenarios(conn, list(all_scenario_ids), redis)
+
+    async def _get_personas() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_personas(conn, list(all_persona_ids), redis)
+
+    async def _get_cohorts() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_cohorts(conn, list(all_cohort_ids), redis)
+
+    async def _get_departments() -> list[Any]:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, list(all_department_ids), redis)
+
     (
         profiles_data,
         simulations_data,
@@ -546,22 +571,12 @@ async def export_home_client(
         cohorts_data,
         departments_data,
     ) = await asyncio.gather(
-        get_profiles(conn, list(all_profile_ids), redis)
-        if all_profile_ids
-        else _empty(),
-        get_simulations(conn, list(all_simulation_ids), redis)
-        if all_simulation_ids
-        else _empty(),
-        get_scenarios(conn, list(all_scenario_ids), redis)
-        if all_scenario_ids
-        else _empty(),
-        get_personas(conn, list(all_persona_ids), redis)
-        if all_persona_ids
-        else _empty(),
-        get_cohorts(conn, list(all_cohort_ids), redis) if all_cohort_ids else _empty(),
-        get_departments(conn, list(all_department_ids), redis)
-        if all_department_ids
-        else _empty(),
+        _get_profiles() if all_profile_ids else _empty(),
+        _get_simulations() if all_simulation_ids else _empty(),
+        _get_scenarios() if all_scenario_ids else _empty(),
+        _get_personas() if all_persona_ids else _empty(),
+        _get_cohorts() if all_cohort_ids else _empty(),
+        _get_departments() if all_department_ids else _empty(),
     )
 
     profile_map = {p.id: p.name or "" for p in profiles_data}
@@ -633,13 +648,14 @@ async def export_home_client(
         f.write(zip_content)
 
     file_size = len(zip_content)
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="application/zip",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="application/zip",
+            size=file_size,
+        )
 
     return ExportHomeApiResponse(
         upload_id=upload_result.id,

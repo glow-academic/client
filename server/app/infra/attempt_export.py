@@ -79,7 +79,7 @@ async def _empty() -> list:  # type: ignore[type-arg]
 
 
 async def export_attempt_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,  # type: ignore[type-arg]
     *,
     profile_id: UUID,
@@ -100,7 +100,7 @@ async def export_attempt_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -110,10 +110,22 @@ async def export_attempt_client(
 
     # -- Step 2: Search attempt + chats + messages --
 
+    async def _fetch_attempts() -> list:
+        async with pool.acquire() as c:
+            return await search_attempts(c, attempt_ids=[attempt_id], limit=1)
+
+    async def _fetch_chats() -> list:
+        async with pool.acquire() as c:
+            return await search_attempt_chats(c, attempt_ids=[attempt_id], limit=100000)
+
+    async def _fetch_messages() -> list:
+        async with pool.acquire() as c:
+            return await search_attempt_messages(c, attempt_ids=[attempt_id], limit=100000)
+
     attempts, chats, messages = await asyncio.gather(
-        search_attempts(conn, attempt_ids=[attempt_id], limit=1),
-        search_attempt_chats(conn, attempt_ids=[attempt_id], limit=100000),
-        search_attempt_messages(conn, attempt_ids=[attempt_id], limit=100000),
+        _fetch_attempts(),
+        _fetch_chats(),
+        _fetch_messages(),
     )
 
     if not attempts:
@@ -146,24 +158,40 @@ async def export_attempt_client(
         if c.persona_ids:
             all_persona_ids.update(c.persona_ids)
 
+    async def _fetch_profiles() -> list:
+        if not all_profile_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_profiles(c, list(all_profile_ids), redis)
+
+    async def _fetch_simulations() -> list:
+        if not all_simulation_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_simulations(c, list(all_simulation_ids), redis)
+
+    async def _fetch_scenarios() -> list:
+        if not all_scenario_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_scenarios(c, list(all_scenario_ids), redis)
+
+    async def _fetch_personas() -> list:
+        if not all_persona_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_personas(c, list(all_persona_ids), redis)
+
     (
         profiles_data,
         simulations_data,
         scenarios_data,
         personas_data,
     ) = await asyncio.gather(
-        get_profiles(conn, list(all_profile_ids), redis)
-        if all_profile_ids
-        else _empty(),
-        get_simulations(conn, list(all_simulation_ids), redis)
-        if all_simulation_ids
-        else _empty(),
-        get_scenarios(conn, list(all_scenario_ids), redis)
-        if all_scenario_ids
-        else _empty(),
-        get_personas(conn, list(all_persona_ids), redis)
-        if all_persona_ids
-        else _empty(),
+        _fetch_profiles(),
+        _fetch_simulations(),
+        _fetch_scenarios(),
+        _fetch_personas(),
     )
 
     # Build lookup maps
@@ -263,13 +291,14 @@ async def export_attempt_client(
         f.write(zip_content)
 
     file_size = len(zip_content)
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="application/zip",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="application/zip",
+            size=file_size,
+        )
 
     return ExportAttemptApiResponse(
         upload_id=upload_result.id,

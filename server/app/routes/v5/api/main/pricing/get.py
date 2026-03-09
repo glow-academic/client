@@ -1,14 +1,12 @@
 """Get endpoint for pricing artifact — top chart (daily cost aggregation)."""
 
 from decimal import Decimal
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.common_context import resolve_common_context
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.pricing_context import resolve_pricing_context
 from app.routes.v5.api.main.pricing.types import (
     PricingDailyItem,
@@ -62,7 +60,6 @@ async def get_pricing(
     request: PricingRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> PricingResponse:
     """Get pricing top chart — daily cost aggregation + filter options."""
     tags = ["artifacts", "pricing"]
@@ -103,14 +100,13 @@ async def get_pricing(
             raise HTTPException(status_code=401, detail="Profile not found")
 
         # --- Phase 1: Resolve pricing context ---
-        async with pool.acquire() as c:
-            ctx = await resolve_pricing_context(
-                c,
-                redis,
-                date_from=request.effective_date_from,
-                date_to=request.effective_date_to,
-                bypass_cache=bypass_cache,
-            )
+        ctx = await resolve_pricing_context(
+            pool,
+            redis,
+            date_from=request.effective_date_from,
+            date_to=request.effective_date_to,
+            bypass_cache=bypass_cache,
+        )
 
         # --- Phase 2: Extract data ---
         runs = ctx.entries.get("runs", [])

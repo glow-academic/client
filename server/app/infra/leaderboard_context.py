@@ -30,7 +30,7 @@ from app.routes.v5.tools.resources.simulations.get import get_simulations
 
 
 async def resolve_leaderboard_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     target_profile_id: UUID | None = None,
@@ -52,25 +52,28 @@ async def resolve_leaderboard_context(
       - profiles
     """
     # Step 1: Fetch attempt_chats (no simulation/scenario filter for top sections)
-    all_attempt_chats, _total_count = await search_attempt_chats(
-        conn,
-        profile_ids=[target_profile_id] if target_profile_id else None,
-        cohort_ids=cohort_ids,
-        department_ids=department_ids,
-        attempt_type=attempt_type,
-        is_archived=is_archived,
-        date_from=date_from,
-        date_to=date_to,
-        limit=100000,
-    )
+    async with pool.acquire() as conn:
+        all_attempt_chats, _total_count = await search_attempt_chats(
+            conn,
+            profile_ids=[target_profile_id] if target_profile_id else None,
+            cohort_ids=cohort_ids,
+            department_ids=department_ids,
+            attempt_type=attempt_type,
+            is_archived=is_archived,
+            date_from=date_from,
+            date_to=date_to,
+            limit=100000,
+        )
 
     # Step 2: Fetch attempt_messages for message stats
     chat_ids = [ac.chat_id for ac in all_attempt_chats if ac.chat_id]
-    all_attempt_messages = (
-        (await search_attempt_messages(conn, chat_ids=chat_ids, limit=1000000))[0]
-        if chat_ids
-        else []
-    )
+    if chat_ids:
+        async with pool.acquire() as conn:
+            all_attempt_messages = (
+                await search_attempt_messages(conn, chat_ids=chat_ids, limit=1000000)
+            )[0]
+    else:
+        all_attempt_messages = []
 
     # Step 3: Derive resource IDs + hydrate
     profile_ids_set: set[UUID] = set()
@@ -78,11 +81,13 @@ async def resolve_leaderboard_context(
         if ac.profile_id:
             profile_ids_set.add(ac.profile_id)
 
-    profiles_selected = (
-        await get_profiles(conn, list(profile_ids_set), redis, bypass_cache)
-        if profile_ids_set
-        else []
-    )
+    if profile_ids_set:
+        async with pool.acquire() as conn:
+            profiles_selected = await get_profiles(
+                conn, list(profile_ids_set), redis, bypass_cache
+            )
+    else:
+        profiles_selected = []
 
     return ArtifactContext(
         artifact_id=None,
@@ -100,7 +105,7 @@ async def resolve_leaderboard_context(
 
 
 async def resolve_leaderboard_search_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     target_profile_id: UUID | None = None,
@@ -125,28 +130,31 @@ async def resolve_leaderboard_search_context(
       - profiles, simulations, scenarios
     """
     # Step 1: Fetch attempt_chats with full filter set
-    all_attempt_chats, _total_count = await search_attempt_chats(
-        conn,
-        profile_ids=[target_profile_id] if target_profile_id else None,
-        cohort_ids=cohort_ids,
-        department_ids=department_ids,
-        simulation_ids=simulation_ids,
-        scenario_ids=scenario_ids,
-        attempt_type=attempt_type,
-        is_archived=is_archived,
-        date_from=date_from,
-        date_to=date_to,
-        sort_order=sort_order,
-        limit=100000,
-    )
+    async with pool.acquire() as conn:
+        all_attempt_chats, _total_count = await search_attempt_chats(
+            conn,
+            profile_ids=[target_profile_id] if target_profile_id else None,
+            cohort_ids=cohort_ids,
+            department_ids=department_ids,
+            simulation_ids=simulation_ids,
+            scenario_ids=scenario_ids,
+            attempt_type=attempt_type,
+            is_archived=is_archived,
+            date_from=date_from,
+            date_to=date_to,
+            sort_order=sort_order,
+            limit=100000,
+        )
 
     # Step 2: Fetch attempt_messages for message stats
     chat_ids = [ac.chat_id for ac in all_attempt_chats if ac.chat_id]
-    all_attempt_messages = (
-        (await search_attempt_messages(conn, chat_ids=chat_ids, limit=1000000))[0]
-        if chat_ids
-        else []
-    )
+    if chat_ids:
+        async with pool.acquire() as conn:
+            all_attempt_messages = (
+                await search_attempt_messages(conn, chat_ids=chat_ids, limit=1000000)
+            )[0]
+    else:
+        all_attempt_messages = []
 
     # Step 3: Derive resource IDs
     profile_ids_set: set[UUID] = set()
@@ -162,16 +170,25 @@ async def resolve_leaderboard_search_context(
             scenario_ids_set.add(ac.scenario_id)
 
     # Step 4: Parallel hydrate resources
+
+    async def _get_profiles() -> list:
+        async with pool.acquire() as conn:
+            return await get_profiles(conn, list(profile_ids_set), redis, bypass_cache)
+
+    async def _get_simulations() -> list:
+        async with pool.acquire() as conn:
+            return await get_simulations(conn, list(sim_ids_set), redis, bypass_cache)
+
+    async def _get_scenarios() -> list:
+        async with pool.acquire() as conn:
+            return await get_scenarios(
+                conn, list(scenario_ids_set), redis, bypass_cache
+            )
+
     profiles_selected, simulations_selected, scenarios_selected = await asyncio.gather(
-        get_profiles(conn, list(profile_ids_set), redis, bypass_cache)
-        if profile_ids_set
-        else _empty_list(),
-        get_simulations(conn, list(sim_ids_set), redis, bypass_cache)
-        if sim_ids_set
-        else _empty_list(),
-        get_scenarios(conn, list(scenario_ids_set), redis, bypass_cache)
-        if scenario_ids_set
-        else _empty_list(),
+        _get_profiles() if profile_ids_set else _empty_list(),
+        _get_simulations() if sim_ids_set else _empty_list(),
+        _get_scenarios() if scenario_ids_set else _empty_list(),
     )
 
     return ArtifactContext(

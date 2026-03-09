@@ -10,6 +10,8 @@ from app.infra.persona_context import (
     resolve_persona_context,
 )
 from app.infra.types import ResourcePair
+from app.routes.v5.tools.artifacts.persona.create import create_persona
+from app.routes.v5.tools.artifacts.persona.update import update_persona
 
 
 def _artifact_stub(**overrides):
@@ -197,6 +199,22 @@ class TestResolvePersonaContext:
         ]
         assert fixture.suggestion_description_id in suggestion_ids
         assert fixture.selected_description_id not in suggestion_ids
+
+    async def test_inactive_artifact_returns_inactive_context(
+        self, pool, redis_client
+    ):
+        async with pool.acquire() as conn:
+            persona = await create_persona(conn)
+            await update_persona(conn, persona.id, active=False)
+
+        result = await resolve_persona_context(
+            pool,
+            redis_client,
+            persona_id=persona.id,
+            group_id=uuid4(),
+        )
+
+        assert result.active is False
 
     async def test_flag_suggestions_are_filtered_to_persona_types(
         self, pool, redis_client, persona_context_factory
