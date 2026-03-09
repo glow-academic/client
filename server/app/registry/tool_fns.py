@@ -915,7 +915,6 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.test_invocation_runs.create",
         "create_test_invocation_runs",
     ),
-    ("create", "test_stop"): (f"{_T}.entries.test_stop.create", "create_test_stop"),
     ("create", "text_uploads"): (
         f"{_T}.entries.text_uploads.create",
         "create_text_upload",
@@ -1206,7 +1205,6 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.test_invocation_runs.refresh",
         "refresh_test_invocation_runs",
     ),
-    ("refresh", "test_stop"): (f"{_T}.entries.test_stop.refresh", "refresh_test_stop"),
     ("refresh", "text_uploads"): (
         f"{_T}.entries.text_uploads.refresh",
         "refresh_text_uploads",
@@ -1482,7 +1480,6 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.test_invocation_runs.search",
         "search_test_invocation_runs",
     ),
-    ("search", "test_stop"): (f"{_T}.entries.test_stop.search", "search_test_stops"),
     ("search", "text_uploads"): (
         f"{_T}.entries.text_uploads.search",
         "search_text_uploads",
@@ -1740,7 +1737,6 @@ ENTRY_TOOL_FNS: dict[tuple[str, str], tuple[str, str]] = {
         f"{_T}.entries.test_invocation_runs.docs",
         "get_test_invocation_runs_docs",
     ),
-    ("docs", "test_stop"): (f"{_T}.entries.test_stop.docs", "get_test_stop_docs"),
     ("docs", "text_uploads"): (
         f"{_T}.entries.text_uploads.docs",
         "get_text_uploads_docs",

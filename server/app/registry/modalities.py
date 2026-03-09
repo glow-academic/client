@@ -177,7 +177,6 @@ ENTRY_MODALITIES: dict[tuple[str, str], frozenset[str]] = {
     ("create", "test_grades"): _CALL,
     ("create", "test_insights"): _CALL,
     ("create", "test_invocations"): _CALL,
-    ("create", "test_stops"): _CALL,
     ("create", "tests"): _CALL,
     ("create", "tokens"): _CALL,
     ("create", "uploads_completions"): _CALL,

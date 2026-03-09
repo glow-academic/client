@@ -20,11 +20,13 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
     )
     artifact_config = REGISTRY.get(artifact_type)
     redis = get_redis_client()
+    pool = get_pool()
 
-    await generate_prepare_impl(
-        data,
-        emit=make_emit(),
-        pool=get_pool(),
-        redis=redis,
-        artifact_config=artifact_config,
-    )
+    async with pool.acquire() as conn:
+        await generate_prepare_impl(
+            data,
+            emit=make_emit(),
+            conn=conn,
+            redis=redis,
+            artifact_config=artifact_config,
+        )

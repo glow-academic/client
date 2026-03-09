@@ -11,4 +11,6 @@ internal_sio = get_internal_sio()
 
 @internal_sio.on("generate_text_complete")  # type: ignore
 async def handle_text_complete(data: dict[str, Any]) -> None:
-    await text_complete_impl(data, emit=make_emit(), pool=get_pool())
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        await text_complete_impl(data, emit=make_emit(), conn=conn)

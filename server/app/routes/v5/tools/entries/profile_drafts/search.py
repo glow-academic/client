@@ -12,6 +12,7 @@ async def search_profile_drafts(
     conn: asyncpg.Connection,
     group_ids: list[UUID] | None = None,
     session_ids: list[UUID] | None = None,
+    profile_ids: list[UUID] | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
     mcp: bool | None = None,
@@ -36,20 +37,23 @@ async def search_profile_drafts(
         LEFT JOIN profile_drafts_flags_connection f ON f.draft_id = d.id
         LEFT JOIN profile_drafts_names_connection n ON n.draft_id = d.id
         LEFT JOIN profile_drafts_request_limits_connection rl ON rl.draft_id = d.id
+        LEFT JOIN profile_drafts_profiles_connection p ON p.draft_id = d.id
         LEFT JOIN profile_drafts_roles_connection ro ON ro.draft_id = d.id
         WHERE d.active = true
           AND ($1::uuid[] IS NULL OR d.group_id = ANY($1))
           AND ($2::uuid[] IS NULL OR d.session_id = ANY($2))
-          AND ($3::timestamptz IS NULL OR d.created_at >= $3)
-          AND ($4::timestamptz IS NULL OR d.created_at <= $4)
-          AND ($5::boolean IS NULL OR d.mcp = $5)
+          AND ($3::uuid[] IS NULL OR p.profiles_id = ANY($3))
+          AND ($4::timestamptz IS NULL OR d.created_at >= $4)
+          AND ($5::timestamptz IS NULL OR d.created_at <= $5)
+          AND ($6::boolean IS NULL OR d.mcp = $6)
         GROUP BY d.id, d.version, d.created_at, d.generated, d.mcp, d.active,
                  d.group_id, d.session_id
         ORDER BY d.created_at DESC
-        LIMIT $6 OFFSET $7
+        LIMIT $7 OFFSET $8
         """,
         group_ids,
         session_ids,
+        profile_ids,
         date_from,
         date_to,
         mcp,

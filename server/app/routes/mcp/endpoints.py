@@ -506,7 +506,6 @@ _ALL_ENTRIES = [
     "test_grade",
     "test_insights",
     "test_invocation",
-    "test_stop",
     "tests",
     "texts",
     "tokens",

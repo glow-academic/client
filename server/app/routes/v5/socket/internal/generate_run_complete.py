@@ -20,4 +20,6 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
     redis = get_redis_client()
     if not redis:
         return
-    await run_complete_impl(data, emit=make_emit(), pool=get_pool(), redis=redis)
+    pool = get_pool()
+    async with pool.acquire() as conn:
+        await run_complete_impl(data, emit=make_emit(), conn=conn, redis=redis)

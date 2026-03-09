@@ -6,13 +6,12 @@ Handles profile-based socket management, guest connections, and cleanup.
 import time
 import uuid
 
-from app.infra.globals import get_internal_sio, sio
+from app.infra.globals import get_internal_sio, get_pool, sio
 from app.infra.websocket.add_guest_socket import add_guest_socket
 from app.infra.websocket.decrement_guest_count import decrement_guest_count
 from app.infra.websocket.find_chats_by_socket import find_chats_by_socket
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
-from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.get_socket_owner import get_socket_owner
 from app.infra.websocket.increment_guest_count import increment_guest_count
 from app.infra.websocket.is_guest_socket import is_guest_socket
@@ -31,7 +30,8 @@ async def _mark_profile_inactive(profile_id: str, sid: str) -> None:
         session_id_str = await find_session_by_socket(sid)
         if not session_id_str:
             return
-        async with get_db_connection() as conn:
+        pool = get_pool()
+        async with pool.acquire() as conn:
             await create_activity(
                 conn,
                 session_id=uuid.UUID(session_id_str),
@@ -46,7 +46,8 @@ async def _mark_profile_active(profile_id: str, session_id: str | None) -> None:
     if not session_id:
         return
     try:
-        async with get_db_connection() as conn:
+        pool = get_pool()
+        async with pool.acquire() as conn:
             await create_activity(
                 conn,
                 session_id=uuid.UUID(session_id),
@@ -112,7 +113,8 @@ async def connect(
             # Resolve identity from JWT
             token = extract_bearer_token(auth["token"])
             if token:
-                async with get_db_connection() as conn:
+                pool = get_pool()
+        async with pool.acquire() as conn:
                     identity = await resolve_identity(token, conn)
                     profile_id = str(identity.profile_id)
                     session_id = str(identity.session_id)
