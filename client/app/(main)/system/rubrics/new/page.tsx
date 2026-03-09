@@ -17,8 +17,8 @@ import { resolveGroupId } from "@/app/(main)/layout-server";
 /** ---- Strong types from OpenAPI ---- */
 type GetRubricIn = InputOf<"/api/v5/artifacts/rubrics/get", "post">;
 type GetRubricOut = OutputOf<"/api/v5/artifacts/rubrics/get", "post">;
-type SaveRubricIn = InputOf<"/api/v5/artifacts/rubrics/save", "post">;
-type SaveRubricOut = OutputOf<"/api/v5/artifacts/rubrics/save", "post">;
+type CreateRubricIn = InputOf<"/api/v5/artifacts/rubrics/create", "post">;
+type CreateRubricOut = OutputOf<"/api/v5/artifacts/rubrics/create", "post">;
 type PatchRubricDraftIn = InputOf<"/api/v5/artifacts/rubrics/draft", "patch">;
 type PatchRubricDraftOut = OutputOf<"/api/v5/artifacts/rubrics/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -72,11 +72,9 @@ const getRubric = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveRubric(input: SaveRubricIn): Promise<SaveRubricOut> {
+async function createRubric(input: CreateRubricIn): Promise<CreateRubricOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/rubrics/save", input);
+  return api.post("/artifacts/rubrics/create", input);
 }
 
 async function patchRubricDraft(
@@ -184,7 +182,7 @@ export default async function NewRubricPage({
         <Rubric
           key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
           rubricData={rubricData}
-          saveRubricAction={saveRubric}
+          createRubricAction={createRubric}
           patchRubricDraftAction={patchRubricDraft}
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}

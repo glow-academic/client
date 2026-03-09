@@ -14,7 +14,6 @@ from app.routes.v5.api.main.provider.types import SaveProviderItem
 
 from .conftest import (
     GUEST_PROFILE_ID,
-    MEMBER_PROFILE_ID,
     SUPERADMIN_PROFILE_ID,
 )
 
@@ -155,9 +154,7 @@ class TestSaveProviderClientUpdate:
             redis_client,
             profile_id=SUPERADMIN_PROFILE_ID,
             items=[
-                SaveProviderItem(
-                    input_provider_id=provider_id, name="Updated Name"
-                )
+                SaveProviderItem(input_provider_id=provider_id, name="Updated Name")
             ],
         )
 
@@ -175,11 +172,7 @@ class TestSaveProviderClientUpdate:
                 pool,
                 redis_client,
                 profile_id=SUPERADMIN_PROFILE_ID,
-                items=[
-                    SaveProviderItem(
-                        input_provider_id=fake_id, name="Wont Work"
-                    )
-                ],
+                items=[SaveProviderItem(input_provider_id=fake_id, name="Wont Work")],
             )
 
         assert exc_info.value.status_code == 404
@@ -189,7 +182,9 @@ class TestSaveProviderClientUpdate:
 
 
 class TestSaveProviderClientValidation:
-    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+    async def test_validation_errors_returned_without_mutation(
+        self, pool, redis_client
+    ):
         """Items with missing required fields -> errors returned, no artifact created."""
         item = SaveProviderItem()  # Missing required name
 

@@ -14,7 +14,6 @@ from app.routes.v5.api.main.agent.types import SaveAgentItem
 
 from .conftest import (
     ADMIN_PROFILE_ID,
-    GUEST_PROFILE_ID,
     SUPERADMIN_PROFILE_ID,
 )
 
@@ -154,9 +153,7 @@ class TestSaveAgentClientUpdate:
             pool,
             redis_client,
             profile_id=SUPERADMIN_PROFILE_ID,
-            items=[
-                SaveAgentItem(input_agent_id=agent_id, name="Updated Name")
-            ],
+            items=[SaveAgentItem(input_agent_id=agent_id, name="Updated Name")],
         )
 
         assert len(result.results) == 1
@@ -173,9 +170,7 @@ class TestSaveAgentClientUpdate:
                 pool,
                 redis_client,
                 profile_id=SUPERADMIN_PROFILE_ID,
-                items=[
-                    SaveAgentItem(input_agent_id=fake_id, name="Wont Work")
-                ],
+                items=[SaveAgentItem(input_agent_id=fake_id, name="Wont Work")],
             )
 
         assert exc_info.value.status_code == 404
@@ -185,7 +180,9 @@ class TestSaveAgentClientUpdate:
 
 
 class TestSaveAgentClientValidation:
-    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+    async def test_validation_errors_returned_without_mutation(
+        self, pool, redis_client
+    ):
         """Items with missing required fields -> errors returned, no artifact created."""
         item = SaveAgentItem()  # Missing required name
 

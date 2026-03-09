@@ -18,8 +18,10 @@ import { resolveGroupId } from "@/app/(main)/layout-server";
 /** ---- Strong types from OpenAPI ---- */
 type GetRubricIn = InputOf<"/api/v5/artifacts/rubrics/get", "post">;
 type GetRubricOut = OutputOf<"/api/v5/artifacts/rubrics/get", "post">;
-type SaveRubricIn = InputOf<"/api/v5/artifacts/rubrics/save", "post">;
-type SaveRubricOut = OutputOf<"/api/v5/artifacts/rubrics/save", "post">;
+type CreateRubricIn = InputOf<"/api/v5/artifacts/rubrics/create", "post">;
+type CreateRubricOut = OutputOf<"/api/v5/artifacts/rubrics/create", "post">;
+type UpdateRubricIn = InputOf<"/api/v5/artifacts/rubrics/update", "post">;
+type UpdateRubricOut = OutputOf<"/api/v5/artifacts/rubrics/update", "post">;
 type PatchRubricDraftIn = InputOf<"/api/v5/artifacts/rubrics/draft", "patch">;
 type PatchRubricDraftOut = OutputOf<"/api/v5/artifacts/rubrics/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -160,7 +162,8 @@ export default async function EditRubricPage({
           <Rubric
             rubricId={rubricId}
             rubricData={rubricData}
-            saveRubricAction={saveRubric}
+            createRubricAction={createRubric}
+            updateRubricAction={updateRubric}
             patchRubricDraftAction={patchRubricDraft}
             createNamesAction={createDraftNames}
             createDescriptionsAction={createDraftDescriptions}
@@ -192,11 +195,14 @@ export default async function EditRubricPage({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveRubric(input: SaveRubricIn): Promise<SaveRubricOut> {
+async function createRubric(input: CreateRubricIn): Promise<CreateRubricOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/rubrics/save", input);
+  return api.post("/artifacts/rubrics/create", input);
+}
+
+async function updateRubric(input: UpdateRubricIn): Promise<UpdateRubricOut> {
+  "use server";
+  return api.post("/artifacts/rubrics/update", input);
 }
 
 async function patchRubricDraft(

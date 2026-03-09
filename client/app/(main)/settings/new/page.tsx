@@ -15,8 +15,8 @@ import { createLoader, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type GetSettingIn = InputOf<"/api/v5/artifacts/settings/get", "post">;
 type GetSettingOut = OutputOf<"/api/v5/artifacts/settings/get", "post">;
-type SaveSettingIn = InputOf<"/api/v5/artifacts/settings/save", "post">;
-type SaveSettingOut = OutputOf<"/api/v5/artifacts/settings/save", "post">;
+type CreateSettingIn = InputOf<"/api/v5/artifacts/settings/create", "post">;
+type CreateSettingOut = OutputOf<"/api/v5/artifacts/settings/create", "post">;
 type PatchSettingDraftIn = InputOf<"/api/v5/artifacts/settings/draft", "patch">;
 type PatchSettingDraftOut = OutputOf<"/api/v5/artifacts/settings/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -76,11 +76,9 @@ const getSettingDefault = async (
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveSetting(input: SaveSettingIn): Promise<SaveSettingOut> {
+async function createSetting(input: CreateSettingIn): Promise<CreateSettingOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/settings/save", input);
+  return api.post("/artifacts/settings/create", input);
 }
 
 async function patchSettingDraft(
@@ -217,7 +215,7 @@ export default async function NewSettingPage({
         <Setting
           key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
           settingData={settingDetailDefault}
-          saveSettingAction={saveSetting}
+          createSettingAction={createSetting}
           patchSettingDraftAction={patchSettingDraft}
           createNamesAction={createDraftNames}
           createDescriptionsAction={createDraftDescriptions}

@@ -53,7 +53,9 @@ async def delete_profile_client(
     # -- Step 1: Current user's profile context -----------------------------------
 
     profile = await resolve_profile_identity_context(
-        pool, profile_id, redis,
+        pool,
+        profile_id,
+        redis,
         session_id=session_id,
     )
 

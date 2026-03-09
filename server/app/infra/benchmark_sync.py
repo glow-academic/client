@@ -16,7 +16,7 @@ logger = get_logger(__name__)
 
 
 async def sync_benchmark_entries(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     evals_resource_id: UUID,
     model_ids: list[UUID],
     model_flag_ids: list[UUID],
@@ -31,7 +31,7 @@ async def sync_benchmark_entries(
     2. Group sub-resources by model_id
     3. Create entries using black-box entry creation tools
     """
-    from app.infra.globals import get_pool, get_redis_client
+    from app.infra.globals import get_redis_client
     from app.routes.v5.tools.entries.benchmark.create import create_benchmark
     from app.routes.v5.tools.entries.invocation.create import create_invocation
     from app.routes.v5.tools.resources.model_flags.get import get_model_flags
@@ -44,10 +44,6 @@ async def sync_benchmark_entries(
 
     if not model_ids:
         return 0
-
-    pool = get_pool()
-    if not pool:
-        raise RuntimeError("Database pool not initialized")
 
     # ── Pass 1: Parallel fetch all sub-resources ──
     async def _fetch_model_flags() -> list[Any]:
@@ -105,11 +101,12 @@ async def sync_benchmark_entries(
     # ── Pass 3: Create entries using black-box tools ──
 
     # Create benchmark entry
-    benchmark = await create_benchmark(
-        conn,
-        evals_ids=[evals_resource_id],
-        departments_ids=department_ids or [],
-    )
+    async with pool.acquire() as conn:
+        benchmark = await create_benchmark(
+            conn,
+            evals_ids=[evals_resource_id],
+            departments_ids=department_ids or [],
+        )
 
     entry_count = 0
 
@@ -125,16 +122,17 @@ async def sync_benchmark_entries(
         rubric_resource_ids = rubrics_by_model.get(model_id, [])
         flag_resource_ids = flags_by_model.get(model_id, [])
 
-        await create_invocation(
-            conn,
-            benchmark_id=benchmark.id,
-            use_custom=False,
-            position=position,
-            model_ids=[model_id],
-            model_flag_ids=flag_resource_ids,
-            model_rubric_ids=rubric_resource_ids,
-            model_position_ids=position_resource_ids,
-        )
+        async with pool.acquire() as conn:
+            await create_invocation(
+                conn,
+                benchmark_id=benchmark.id,
+                use_custom=False,
+                position=position,
+                model_ids=[model_id],
+                model_flag_ids=flag_resource_ids,
+                model_rubric_ids=rubric_resource_ids,
+                model_position_ids=position_resource_ids,
+            )
 
         entry_count += 1
 

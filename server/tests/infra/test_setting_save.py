@@ -13,7 +13,6 @@ from app.infra.setting_save import resolve_setting_values, save_setting_client
 from app.routes.v5.api.main.setting.types import SaveSettingItem
 
 from .conftest import (
-    ADMIN_PROFILE_ID,
     GUEST_PROFILE_ID,
     SUPERADMIN_PROFILE_ID,
 )
@@ -145,9 +144,7 @@ class TestSaveSettingClientUpdate:
             pool,
             redis_client,
             profile_id=SUPERADMIN_PROFILE_ID,
-            items=[
-                SaveSettingItem(input_setting_id=setting_id, name="Updated Name")
-            ],
+            items=[SaveSettingItem(input_setting_id=setting_id, name="Updated Name")],
         )
 
         assert len(result.results) == 1
@@ -169,7 +166,9 @@ class TestSaveSettingClientUpdate:
 
         assert exc_info.value.status_code == 404
 
-    async def test_update_superadmin_bypasses_department_check(self, pool, redis_client):
+    async def test_update_superadmin_bypasses_department_check(
+        self, pool, redis_client
+    ):
         """Superadmin can edit any setting regardless of departments."""
         setting_id = await self._create_setting(pool, redis_client)
 
@@ -192,7 +191,9 @@ class TestSaveSettingClientUpdate:
 
 
 class TestSaveSettingClientValidation:
-    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+    async def test_validation_errors_returned_without_mutation(
+        self, pool, redis_client
+    ):
         """Items with missing required fields -> errors returned, no artifact created."""
         item = SaveSettingItem()  # Missing required name
 

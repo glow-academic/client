@@ -118,16 +118,16 @@ async def _upsert_profile_request_limit(
     )
     if updated != "UPDATE 1":
         await conn.execute(
-        """
+            """
         INSERT INTO profile_request_limits_junction
             (profile_id, request_limits_id, requests_per_day, mcp)
         VALUES ($1, $2, $3, $4)
         """,
-        profile_id,
-        request_limit_id,
-        requests_per_day,
-        mcp,
-    )
+            profile_id,
+            request_limit_id,
+            requests_per_day,
+            mcp,
+        )
 
 
 async def update_profile(

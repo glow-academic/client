@@ -24,9 +24,9 @@ from app.routes.v5.tools.artifacts.agent.search import search_agents
 from app.routes.v5.tools.artifacts.tool.get import (
     get_tools as get_tool_artifacts,
 )
+from app.routes.v5.tools.resources.artifacts.get import get_artifacts
 from app.routes.v5.tools.resources.descriptions.create import create_description
 from app.routes.v5.tools.resources.descriptions.get import get_descriptions
-from app.routes.v5.tools.resources.artifacts.get import get_artifacts
 from app.routes.v5.tools.resources.entries.get import get_entries
 from app.routes.v5.tools.resources.names.create import create_name
 from app.routes.v5.tools.resources.names.get import get_names

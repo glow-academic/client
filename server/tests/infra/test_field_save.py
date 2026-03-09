@@ -13,7 +13,6 @@ from app.infra.field_save import resolve_field_values, save_field_client
 from app.routes.v5.api.main.field.types import SaveFieldItem
 
 from .conftest import (
-    GUEST_PROFILE_ID,
     MEMBER_PROFILE_ID,
     SUPERADMIN_PROFILE_ID,
 )
@@ -35,7 +34,9 @@ class TestResolveValues:
         item = SaveFieldItem(name_id=name.id)
 
         async with pool.acquire() as conn:
-            errors = await resolve_field_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_field_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.name_id == name.id
@@ -45,7 +46,9 @@ class TestResolveValues:
         item = SaveFieldItem(name="Brand New Field")
 
         async with pool.acquire() as conn:
-            errors = await resolve_field_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_field_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.name_id is not None
@@ -55,7 +58,9 @@ class TestResolveValues:
         item = SaveFieldItem(name_id=name_id, description="A useful field")
 
         async with pool.acquire() as conn:
-            errors = await resolve_field_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_field_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.description_id is not None
@@ -65,7 +70,9 @@ class TestResolveValues:
         item = SaveFieldItem()
 
         async with pool.acquire() as conn:
-            errors = await resolve_field_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_field_values(
+                conn, redis_client, item, is_update=False
+            )
 
         field_names = {e.field for e in errors}
         assert "name" in field_names
@@ -75,7 +82,9 @@ class TestResolveValues:
         item = SaveFieldItem()
 
         async with pool.acquire() as conn:
-            errors = await resolve_field_values(conn, redis_client, item, is_update=True)
+            errors = await resolve_field_values(
+                conn, redis_client, item, is_update=True
+            )
 
         assert errors == []
 
@@ -171,7 +180,9 @@ class TestSaveFieldClientUpdate:
 
 
 class TestSaveFieldClientValidation:
-    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+    async def test_validation_errors_returned_without_mutation(
+        self, pool, redis_client
+    ):
         """Items with missing required fields -> errors returned, no artifact created."""
         item = SaveFieldItem()  # Missing required name
 

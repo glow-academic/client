@@ -7,15 +7,13 @@
 
 import SimulationHistory from "@/components/common/SimulationHistory";
 import Home from "@/components/artifacts/home/Home";
+import { AnalyticsFilters } from "@/components/common/layout/AnalyticsFilters";
 import { PageHeader } from "@/components/common/layout/PageHeader";
+import { refreshPage } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import { isHardRefresh } from "@/lib/cache-utils";
 import { readViewCookie } from "@/lib/view-cookie";
-import {
-  computeAnalyticsDefaults,
-  resolveAnalyticsFilters,
-} from "@/lib/search-params/analytics-defaults";
 import type { Metadata } from "next";
 import { loadHomeSearchParams } from "@/lib/search-params/home";
 
@@ -53,10 +51,6 @@ interface HomePageProps {
 export default async function HomePage({ searchParams }: HomePageProps) {
   // Parse search params via nuqs loader
   const q = loadHomeSearchParams(await searchParams);
-
-  // Compute defaults and resolve filters
-  const { defaults, profileContext } = await computeAnalyticsDefaults();
-  const defaultFilters = resolveAnalyticsFilters(q, defaults, profileContext);
 
   // History params with defaults
   const historyPage = q.historyPage ?? 0;
@@ -121,12 +115,46 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     };
   });
 
+  // Compute initial filters from inline facets (replaces computeAnalyticsDefaults)
+  const facets = homeData.analytics;
+  const defaultStartDate = (() => {
+    if (q.startDate) return q.startDate;
+    if (facets?.date_range_earliest) {
+      const d = new Date(facets.date_range_earliest);
+      d.setHours(0, 0, 0, 0);
+      return d.toISOString();
+    }
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    d.setHours(0, 0, 0, 0);
+    return d.toISOString();
+  })();
+  const defaultEndDate = (() => {
+    if (q.endDate) return q.endDate;
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d.toISOString();
+  })();
+  const initialFilters = {
+    startDate: defaultStartDate,
+    endDate: defaultEndDate,
+    cohortIds: q.cohortIds ?? [],
+    departmentIds: q.departmentIds ?? [],
+    roles: q.roles ?? [],
+  };
+
   return (
     <>
       <PageHeader
         breadcrumbs={[
           { title: "Home", section: "home", url: "/home" },
         ]}
+        toolbar={
+          <AnalyticsFilters
+            refreshPage={refreshPage}
+            analyticsFilters={facets}
+          />
+        }
       />
       <div className="space-y-6 px-4">
         <Home homeData={homeData} />
@@ -142,7 +170,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             pageSize={historyPageSize}
             showArchive={false}
             singleProfile={true}
-            initialFilters={defaultFilters}
+            initialFilters={initialFilters}
             profileOptions={profileOptions}
             simulationOptions={simulationOptions}
             scenarioOptions={scenarioOptions}

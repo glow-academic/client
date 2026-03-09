@@ -312,6 +312,21 @@ class PatchSettingDraftApiRequest(BaseModel):
     threshold_ids: list[UUID] | None = None
 
 
+class SettingDraftFormState(BaseModel):
+    """Server-authoritative form state returned after draft save."""
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID]
+    color_ids: list[UUID]
+    profile_ids: list[UUID]
+    auth_ids: list[UUID]
+    provider_key_ids: list[UUID]
+    auth_item_key_ids: list[UUID]
+    threshold_ids: list[UUID]
+
+
 class PatchSettingDraftApiResponse(BaseModel):
     """Response model for new-style setting draft endpoint."""
 
@@ -319,6 +334,7 @@ class PatchSettingDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+    form_state: SettingDraftFormState | None = None
 
 
 # ========== List Endpoint Types ==========

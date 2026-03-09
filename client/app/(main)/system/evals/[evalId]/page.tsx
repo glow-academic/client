@@ -17,8 +17,10 @@ import { createLoader, parseAsBoolean, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type GetEvalIn = InputOf<"/api/v5/artifacts/evals/get", "post">;
 type GetEvalOut = OutputOf<"/api/v5/artifacts/evals/get", "post">;
-type SaveEvalIn = InputOf<"/api/v5/artifacts/evals/save", "post">;
-type SaveEvalOut = OutputOf<"/api/v5/artifacts/evals/save", "post">;
+type CreateEvalIn = InputOf<"/api/v5/artifacts/evals/create", "post">;
+type CreateEvalOut = OutputOf<"/api/v5/artifacts/evals/create", "post">;
+type UpdateEvalIn = InputOf<"/api/v5/artifacts/evals/update", "post">;
+type UpdateEvalOut = OutputOf<"/api/v5/artifacts/evals/update", "post">;
 type PatchEvalDraftIn = InputOf<"/api/v5/artifacts/evals/draft", "patch">;
 type PatchEvalDraftOut = OutputOf<"/api/v5/artifacts/evals/draft", "patch">;
 // Note: Run/stop eval functionality moved to websocket events (evals_start, evals_stop)
@@ -52,10 +54,14 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions ---- */
-async function saveEval(input: SaveEvalIn): Promise<SaveEvalOut> {
+async function createEval(input: CreateEvalIn): Promise<CreateEvalOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  return api.post("/artifacts/evals/save", input);
+  return api.post("/artifacts/evals/create", input);
+}
+
+async function updateEval(input: UpdateEvalIn): Promise<UpdateEvalOut> {
+  "use server";
+  return api.post("/artifacts/evals/update", input);
 }
 
 async function patchEvalDraft(
@@ -143,7 +149,8 @@ export default async function EvalDetailPage({
         <Eval
           evalId={evalId}
           evalDetail={evalDetail}
-          updateEvalAction={saveEval}
+          createEvalAction={createEval}
+            updateEvalAction={updateEval}
           patchEvalDraftAction={patchEvalDraft}
         />
       </div>
@@ -157,6 +164,8 @@ export type {
   GetEvalOut as EvalDetailOut,
   PatchEvalDraftIn,
   PatchEvalDraftOut,
-  SaveEvalIn as UpdateEvalIn,
-  SaveEvalOut as UpdateEvalOut,
+  CreateEvalIn,
+  CreateEvalOut,
+  UpdateEvalIn,
+  UpdateEvalOut,
 };

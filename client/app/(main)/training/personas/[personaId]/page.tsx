@@ -9,7 +9,8 @@ import { UnifiedAccessDenied } from "@/components/common/layout/UnifiedAccessDen
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Persona from "@/components/artifacts/persona/Persona";
-import { resolveGroupId } from "@/app/(main)/layout-server";
+import { DraftProviderClient } from "@/contexts/draft-context";
+import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -135,15 +136,16 @@ export default async function PersonaEditPage({
         parameter_ids: q.parameterIds ?? null,
       } as GetPersonaIn["body"],
     };
-    const [personaDetail, docs] = await Promise.all([
+    const [personaDetail, docs, draftsResult] = await Promise.all([
       getPersona(input),
       getDocs({ body: { entity_id: personaId } }),
+      getDrafts(), // TODO: fetch only persona drafts (e.g. getDrafts({ artifact_type: "persona" }))
     ]);
 
     const entityName = docs.detail.title;
 
     return (
-      <>
+      <DraftProviderClient drafts={draftsResult.drafts ?? []}>
         <PageHeader
           breadcrumbs={[
             { title: "Training", section: "training", url: "/training" },
@@ -164,7 +166,7 @@ export default async function PersonaEditPage({
             patchPersonaDraftAction={patchPersonaDraft}
           />
         </div>
-      </>
+      </DraftProviderClient>
     );
   } catch (error: unknown) {
     // Check if it's a 403 error (department access denied)

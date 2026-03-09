@@ -43,8 +43,10 @@ import { Loader2, Sparkles } from "lucide-react";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
-type SaveSettingIn = InputOf<"/api/v5/artifacts/settings/save", "post">;
-type SaveSettingOut = OutputOf<"/api/v5/artifacts/settings/save", "post">;
+type CreateSettingIn = InputOf<"/api/v5/artifacts/settings/create", "post">;
+type CreateSettingOut = OutputOf<"/api/v5/artifacts/settings/create", "post">;
+type UpdateSettingIn = InputOf<"/api/v5/artifacts/settings/update", "post">;
+type UpdateSettingOut = OutputOf<"/api/v5/artifacts/settings/update", "post">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
 type CreateDraftNamesOut = OutputOf<"/api/v5/resources/names", "post">;
 type CreateDraftDescriptionsIn = InputOf<
@@ -67,7 +69,8 @@ export interface SettingProps {
   // Server-provided data (for server-side rendering)
   settingData?: SettingData;
   // Server actions (replaces useMutation)
-  saveSettingAction?: (input: SaveSettingIn) => Promise<SaveSettingOut>;
+  createSettingAction?: (input: CreateSettingIn) => Promise<CreateSettingOut>;
+  updateSettingAction?: (input: UpdateSettingIn) => Promise<UpdateSettingOut>;
   patchSettingDraftAction?: (
     input: PatchSettingDraftIn
   ) => Promise<PatchSettingDraftOut>;
@@ -117,7 +120,8 @@ export interface SettingProps {
 function SettingComponent({
   settingId,
   settingData,
-  saveSettingAction,
+  createSettingAction,
+  updateSettingAction,
   patchSettingDraftAction,
   createNamesAction,
   createDescriptionsAction,
@@ -362,7 +366,9 @@ function SettingComponent({
     const data = settingDataRef.current;
     if (!data) {
       return {
+        name: null as string | null,
         name_id: null as string | null,
+        description: null as string | null,
         description_id: null as string | null,
         color_ids: [] as string[],
         active_flag_id: null as string | null,
@@ -378,7 +384,9 @@ function SettingComponent({
     // Extract resource IDs from server data
     // Note: Server data may have display values, but we only store IDs here
     return {
+      name: null as string | null,
       name_id: data.name_id ?? null,
+      description: null as string | null,
       description_id: data.description_id ?? null,
       color_ids: data.color_ids ?? [],
       active_flag_id: data.active_flag_id ?? null,
@@ -394,6 +402,8 @@ function SettingComponent({
   }, []);
 
   const [formState, setFormState] = useState(getInitialFormState);
+  // Prevent autosave re-trigger when syncing form_state from server response
+  const serverSyncPendingRef = React.useRef(false);
   // Use ref to access formState in renderStep without depending on it
   const formStateRef = React.useRef(formState);
   React.useEffect(() => {
@@ -566,9 +576,13 @@ function SettingComponent({
 
   // Build a stable key for "what would we patch" - only changes when form data actually changes
   const draftPatchKey = React.useMemo(() => {
+    // Guard: prevent autosave re-trigger when syncing form_state from server
+    if (serverSyncPendingRef.current) return null;
     return JSON.stringify({
       draftId: draftId || null,
+      name: formState.name,
       name_id: formState.name_id,
+      description: formState.description,
       description_id: formState.description_id,
       color_ids: formState.color_ids,
       active_flag_id: formState.active_flag_id,
@@ -584,7 +598,9 @@ function SettingComponent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     draftId,
+    formState.name,
     formState.name_id,
+    formState.description,
     formState.description_id,
     formState.active_flag_id,
     formStateColorIdsStr,
@@ -628,23 +644,37 @@ function SettingComponent({
     const timer = setTimeout(async () => {
       try {
         if (!patchSettingDraftActionRef.current) return;
+
+        // Build payload with value field overlay
+        const payload: Record<string, unknown> = {
+          input_draft_id: draftId || null,
+          flag_id: formState.active_flag_id || null,
+          color_ids: formState.color_ids.length > 0 ? formState.color_ids : null,
+          department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
+          profile_ids: formState.profile_ids.length > 0 ? formState.profile_ids : null,
+          auth_ids: formState.auth_ids.length > 0 ? formState.auth_ids : null,
+          provider_key_ids: formState.provider_key_ids.length > 0 ? formState.provider_key_ids : null,
+          auth_item_key_ids: formState.key_ids.length > 0 ? formState.key_ids : null,
+          role_ids: formState.role_ids.length > 0 ? formState.role_ids : null,
+          role_route_ids: formState.role_route_ids.length > 0 ? formState.role_route_ids : null,
+          expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
+        };
+
+        // Value field overlay: send value instead of ID for creatable resources
+        if (formState.name) {
+          payload["name"] = formState.name;
+        } else {
+          payload["name_id"] = formState.name_id || null;
+        }
+        if (formState.description) {
+          payload["description"] = formState.description;
+        } else {
+          payload["description_id"] = formState.description_id || null;
+        }
+
         const result = await patchSettingDraftActionRef.current({
-          body: {
-            input_draft_id: draftId || null,
-            name_id: formState.name_id || null,
-            description_id: formState.description_id || null,
-            flag_id: formState.active_flag_id || null,
-            color_ids: formState.color_ids.length > 0 ? formState.color_ids : null,
-            department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
-            profile_ids: formState.profile_ids.length > 0 ? formState.profile_ids : null,
-            auth_ids: formState.auth_ids.length > 0 ? formState.auth_ids : null,
-            provider_key_ids: formState.provider_key_ids.length > 0 ? formState.provider_key_ids : null,
-            auth_item_key_ids: formState.key_ids.length > 0 ? formState.key_ids : null,
-            role_ids: formState.role_ids.length > 0 ? formState.role_ids : null,
-            role_route_ids: formState.role_route_ids.length > 0 ? formState.role_route_ids : null,
-            expected_version: lastSavedVersionRef.current, // ✅ ref, not state dep
-          },
-        });
+          body: payload,
+        } as PatchSettingDraftIn);
 
         // Mark this payload as patched so we don't loop
         lastPatchedKeyRef.current = draftPatchKey;
@@ -652,6 +682,21 @@ function SettingComponent({
         if (!draftId && result.draft_id) {
           // Update URL when draft is created via GenericForm bridge (GenericForm owns URL state)
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
+        }
+
+        // Sync form_state from server (server is source of truth for resolved IDs)
+        if (result.form_state) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name: null,
+            name_id: (result.form_state!.name_id as string) ?? prev.name_id,
+            description: null,
+            description_id: (result.form_state!.description_id as string) ?? prev.description_id,
+          }));
+          requestAnimationFrame(() => {
+            serverSyncPendingRef.current = false;
+          });
         }
 
         // This can stay as state (for UI), but it won't re-trigger patching
@@ -713,28 +758,44 @@ function SettingComponent({
         throw new Error("Profile not loaded");
       }
 
-      if (!saveSettingAction) {
-        toast.error("Save action not available");
-        throw new Error("Save action not available");
-      }
-
       try {
-        await saveSettingAction({
-          body: {
-            input_setting_id: isEditMode && settingId ? settingId : null,
-            name_id: formState.name_id!,
-            description_id: formState.description_id || null,
-            flag_id: formState.active_flag_id || null,
-            color_ids: formState.color_ids.length > 0 ? formState.color_ids : null,
-            department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
-            profile_ids: formState.profile_ids.length > 0 ? formState.profile_ids : null,
-            auth_ids: formState.auth_ids.length > 0 ? formState.auth_ids : null,
-            provider_key_ids: formState.provider_key_ids.length > 0 ? formState.provider_key_ids : null,
-            auth_item_key_ids: formState.key_ids.length > 0 ? formState.key_ids : null,
-            role_ids: formState.role_ids.length > 0 ? formState.role_ids : null,
-            role_route_ids: formState.role_route_ids.length > 0 ? formState.role_route_ids : null,
-          },
-        });
+        if (isEditMode && settingId && updateSettingAction) {
+          await updateSettingAction({
+            body: {
+              settings: [{
+                setting_id: settingId,
+                name_id: formState.name_id || undefined,
+                description_id: formState.description_id || undefined,
+                active_flag_id: formState.active_flag_id || undefined,
+                color_ids: formState.color_ids.length > 0 ? formState.color_ids : undefined,
+                department_ids: formState.department_ids.length > 0 ? formState.department_ids : undefined,
+                profile_ids: formState.profile_ids.length > 0 ? formState.profile_ids : undefined,
+                auth_ids: formState.auth_ids.length > 0 ? formState.auth_ids : undefined,
+                provider_key_ids: formState.provider_key_ids.length > 0 ? formState.provider_key_ids : undefined,
+                auth_item_key_ids: formState.key_ids.length > 0 ? formState.key_ids : undefined,
+              }],
+            },
+          } as UpdateSettingIn);
+        } else if (createSettingAction) {
+          await createSettingAction({
+            body: {
+              settings: [{
+                name_id: formState.name_id || undefined,
+                description_id: formState.description_id || undefined,
+                active_flag_id: formState.active_flag_id || undefined,
+                color_ids: formState.color_ids.length > 0 ? formState.color_ids : undefined,
+                department_ids: formState.department_ids.length > 0 ? formState.department_ids : undefined,
+                profile_ids: formState.profile_ids.length > 0 ? formState.profile_ids : undefined,
+                auth_ids: formState.auth_ids.length > 0 ? formState.auth_ids : undefined,
+                provider_key_ids: formState.provider_key_ids.length > 0 ? formState.provider_key_ids : undefined,
+                auth_item_key_ids: formState.key_ids.length > 0 ? formState.key_ids : undefined,
+              }],
+            },
+          } as CreateSettingIn);
+        } else {
+          toast.error("Save action not available");
+          throw new Error("Save action not available");
+        }
         toast.success(
           `Setting ${isEditMode ? "updated" : "created"} successfully!`
         );
@@ -751,7 +812,8 @@ function SettingComponent({
       isEditMode,
       settingId,
       profile?.id,
-      saveSettingAction,
+      createSettingAction,
+      updateSettingAction,
       router,
       settingData?.name_required,
       settingData?.colors_required,
@@ -892,7 +954,9 @@ function SettingComponent({
         case "basic":
           return {
             ...prev,
+            name: null,
             name_id: null,
+            description: null,
             description_id: null,
             active_flag_id: null,
             department_ids: [],
@@ -982,7 +1046,10 @@ function SettingComponent({
                   names={currentSettingData?.names ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId }))
+                    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
+                  }
+                  onNameChange={(name) =>
+                    setFormState((prev) => ({ ...prev, name }))
                   }
                   placeholder="e.g., Production Settings"
                   defaultName="New Setting"
@@ -1069,7 +1136,11 @@ function SettingComponent({
                     setFormState((prev) => ({
                       ...prev,
                       description_id: descriptionId,
+                      description: null,
                     }))
+                  }
+                  onDescriptionChange={(description) =>
+                    setFormState((prev) => ({ ...prev, description }))
                   }
                   searchTerm={
                     (stepFormData["descriptionSearch"] as
@@ -1487,7 +1558,8 @@ export default React.memo(SettingComponent, (prevProps, nextProps) => {
 
   // Compare function props by reference (should be stable from server actions)
   if (
-    prevProps.saveSettingAction !== nextProps.saveSettingAction ||
+    prevProps.createSettingAction !== nextProps.createSettingAction ||
+    prevProps.updateSettingAction !== nextProps.updateSettingAction ||
     prevProps.patchSettingDraftAction !== nextProps.patchSettingDraftAction ||
     prevProps.createNamesAction !== nextProps.createNamesAction ||
     prevProps.createDescriptionsAction !== nextProps.createDescriptionsAction ||

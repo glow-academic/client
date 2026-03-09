@@ -29,7 +29,9 @@ class TestResolveProfileIdentityContext:
         self, pool, redis_client
     ):
         async with pool.acquire() as conn:
-            name_res = await create_name(conn, f"no-profile-{unique_tag()}", redis_client)
+            name_res = await create_name(
+                conn, f"no-profile-{unique_tag()}", redis_client
+            )
             artifact_res = await create_profile_artifact(conn, name_id=name_res.id)
 
         result = await resolve_profile_identity_context(
@@ -111,3 +113,19 @@ class TestResolveProfileIdentityContext:
 
         assert result is not None
         assert result.is_active is False
+
+    async def test_primary_department_setting_is_resolved(
+        self, pool, redis_client, setting_graph_factory
+    ):
+        fixture = await setting_graph_factory()
+
+        result = await resolve_profile_identity_context(
+            pool,
+            fixture.profile_artifact_id,
+            redis_client,
+        )
+
+        assert result is not None
+        assert result.profiles_id == fixture.profile_resource_id
+        assert result.primary_department_id == fixture.department_id
+        assert result.settings_id == fixture.setting_id

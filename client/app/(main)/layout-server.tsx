@@ -191,28 +191,20 @@ export async function getLayoutContextData(session?: Session | null) {
 
   let profileData: AuthProfileOut | null = null;
   let settingsData: AuthSettingsOut | null = null;
-  let draftsResult: DraftsOut | null = null;
-  let analyticsFilters: AnalyticsFiltersOut | null = null;
 
   try {
-    const [profileRes, settingsRes, draftsRes, filtersRes] = await Promise.all([
+    const [profileRes, settingsRes] = await Promise.all([
       getAuthProfile(),
       getAuthSettings(),
-      getDrafts(),
-      getAnalyticsFilters(),
     ]);
     profileData = profileRes;
     settingsData = settingsRes;
-    draftsResult = draftsRes;
-    analyticsFilters = filtersRes;
   } catch {
     // If fetch fails (e.g., 403/404), return null
     return {
       profileData: null,
       settingsData: null,
       snapshot,
-      drafts: [],
-      analyticsFilters: null,
     };
   }
 
@@ -222,8 +214,6 @@ export async function getLayoutContextData(session?: Session | null) {
       profileData: null,
       settingsData: null,
       snapshot,
-      drafts: [],
-      analyticsFilters: null,
     };
   }
 
@@ -231,8 +221,6 @@ export async function getLayoutContextData(session?: Session | null) {
     profileData,
     settingsData,
     snapshot,
-    drafts: draftsResult?.drafts ?? [],
-    analyticsFilters,
   };
 }
 

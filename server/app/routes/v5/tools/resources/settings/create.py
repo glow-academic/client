@@ -31,7 +31,7 @@ async def create_setting(
         INSERT INTO settings_resource (
             id, name, description, department_ids, provider_key_ids, auth_ids, system_ids, active, mcp, generated
         )
-        VALUES (COALESCE($10, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $8, $8)
+        VALUES (COALESCE($9, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $8, $8)
         RETURNING id
         """,
         name,

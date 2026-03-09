@@ -46,7 +46,7 @@ RUN_CSV_COLUMNS = [
 
 
 async def export_pricing_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -59,7 +59,8 @@ async def export_pricing_client(
 
     # -- Step 1: Profile context --
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    async with pool.acquire() as conn:
+        profile = await resolve_profile_identity_context(conn, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -69,7 +70,8 @@ async def export_pricing_client(
 
     # -- Step 2: Search all runs (full dump) --
 
-    runs, _total_count = await search_runs(conn, limit=100000, offset=0)
+    async with pool.acquire() as conn:
+        runs, _total_count = await search_runs(conn, limit=100000, offset=0)
 
     if not runs:
         return ExportPricingApiResponse(
@@ -80,7 +82,8 @@ async def export_pricing_client(
 
     # -- Step 3: Compute per-run costs --
 
-    run_costs = await compute_costs_from_runs(conn, runs)
+    async with pool.acquire() as conn:
+        run_costs = await compute_costs_from_runs(conn, runs)
 
     # -- Step 4: Hydrate names --
 
@@ -97,11 +100,13 @@ async def export_pricing_client(
             all_group_ids.add(r.group_id)
 
     all_name_ids = list(all_agent_ids | all_model_ids)
-    name_items = await get_names(conn, all_name_ids, redis) if all_name_ids else []
+    async with pool.acquire() as conn:
+        name_items = await get_names(conn, all_name_ids, redis) if all_name_ids else []
     name_map = {item.id: item.name for item in name_items if item.id and item.name}
 
     # Hydrate group names
-    groups = await get_groups(conn, list(all_group_ids)) if all_group_ids else []
+    async with pool.acquire() as conn:
+        groups = await get_groups(conn, list(all_group_ids)) if all_group_ids else []
     group_map = {g.id: g.name or "" for g in groups}
 
     # -- Step 5: Generate ZIP (runs.csv) + upload --
@@ -147,13 +152,14 @@ async def export_pricing_client(
         f.write(zip_content)
 
     file_size = len(zip_content)
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="application/zip",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="application/zip",
+            size=file_size,
+        )
 
     return ExportPricingApiResponse(
         upload_id=upload_result.id,

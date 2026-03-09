@@ -16,7 +16,12 @@ async def create_agent(
     description: str = "",
     redis: Redis = None,
     department_ids: list[UUID] | None = None,
+    model_id: UUID | None = None,
+    prompt_id: UUID | None = None,
+    rubric_id: UUID | None = None,
     tool_ids: list[UUID] | None = None,
+    instruction_ids: list[UUID] | None = None,
+    voices: list[str] | None = None,
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
@@ -27,15 +32,46 @@ async def create_agent(
     agent_id = await conn.fetchval(
         """
         INSERT INTO agents_resource (
-            id, name, description, department_ids, tool_ids, active, mcp, generated
+            id,
+            name,
+            description,
+            department_ids,
+            model_id,
+            prompt_id,
+            rubric_id,
+            tool_ids,
+            instruction_ids,
+            voices,
+            active,
+            mcp,
+            generated
         )
-        VALUES (COALESCE($8, uuidv7()), $1, $2, $3, $4, $5, $6, $6)
+        VALUES (
+            COALESCE($12, uuidv7()),
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9,
+            $10,
+            $11,
+            $11
+        )
         RETURNING id
         """,
         name,
         description,
         department_ids or [],
+        model_id,
+        prompt_id,
+        rubric_id,
         tool_ids or [],
+        instruction_ids or [],
+        voices or [],
         not soft,
         mcp,
         id,

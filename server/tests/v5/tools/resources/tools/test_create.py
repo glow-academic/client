@@ -2,6 +2,13 @@
 
 import pytest
 
+from app.routes.v5.tools.resources.args.create import create_arg
+from app.routes.v5.tools.resources.args_outputs.create import create_args_output
+from app.routes.v5.tools.resources.artifacts.create import create_artifact
+from app.routes.v5.tools.resources.departments.create import create_department
+from app.routes.v5.tools.resources.entries.create import create_entry
+from app.routes.v5.tools.resources.operations.create import create_operation
+from app.routes.v5.tools.resources.resources.create import create_resource
 from app.routes.v5.tools.resources.tools.create import create_tool
 from app.routes.v5.tools.resources.tools.get import get_tools
 
@@ -39,3 +46,53 @@ async def test_sets_mcp_flag(conn, redis_client):
 
     assert result.mcp is True
     assert result.generated is True
+
+
+async def test_round_trips_operation_targets_and_departments(conn, redis_client):
+    department = await create_department(conn, "tool-dept", redis=redis_client)
+    operation = await create_operation(conn, "create", redis_client)
+    resource = await create_resource(conn, "names", redis_client)
+    entry = await create_entry(conn, "messages", redis_client)
+    artifact = await create_artifact(conn, "profile", redis_client)
+
+    result = await create_tool(
+        conn,
+        "linked-tool",
+        redis=redis_client,
+        department_ids=[department.id],
+        operation=operation.operation,
+        resources=[resource.resource],
+        entries=[entry.entry],
+        artifacts=[artifact.artifact],
+    )
+
+    items = await get_tools(conn, [result.id], redis_client, bypass_cache=True)
+
+    assert items[0].department_ids == [department.id]
+    assert items[0].operation == operation.operation
+    assert items[0].resources == [resource.resource]
+    assert items[0].entries == [entry.entry]
+    assert items[0].artifacts == [artifact.artifact]
+
+
+async def test_round_trips_args_and_outputs(conn, redis_client):
+    arg = await create_arg(conn, "tool-arg", "text", redis_client)
+    arg_output = await create_args_output(
+        conn,
+        arg.id,
+        "tool-arg-output",
+        redis_client,
+    )
+
+    result = await create_tool(
+        conn,
+        "linked-tool-io",
+        redis=redis_client,
+        args_ids=[arg.id],
+        args_output_ids=[arg_output.id],
+    )
+
+    items = await get_tools(conn, [result.id], redis_client, bypass_cache=True)
+
+    assert items[0].args_ids == [arg.id]
+    assert items[0].args_output_ids == [arg_output.id]

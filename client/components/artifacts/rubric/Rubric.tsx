@@ -37,8 +37,10 @@ import {
 } from "@/lib/resources/action-builders";
 import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
-type SaveRubricIn = InputOf<"/api/v5/artifacts/rubrics/save", "post">;
-type SaveRubricOut = OutputOf<"/api/v5/artifacts/rubrics/save", "post">;
+type CreateRubricIn = InputOf<"/api/v5/artifacts/rubrics/create", "post">;
+type CreateRubricOut = OutputOf<"/api/v5/artifacts/rubrics/create", "post">;
+type UpdateRubricIn = InputOf<"/api/v5/artifacts/rubrics/update", "post">;
+type UpdateRubricOut = OutputOf<"/api/v5/artifacts/rubrics/update", "post">;
 type PatchRubricDraftIn = InputOf<"/api/v5/artifacts/rubrics/draft", "patch">;
 type PatchRubricDraftOut = OutputOf<"/api/v5/artifacts/rubrics/draft", "patch">;
 type CreateDraftNamesIn = InputOf<"/api/v5/resources/names", "post">;
@@ -73,7 +75,9 @@ type RubricResourceType =
   | "standards";
 
 type RubricFormState = {
+  name: string | null;
   name_id: string | null;
+  description: string | null;
   description_id: string | null;
   active_flag_id: string | null;
   department_ids: string[];
@@ -147,7 +151,8 @@ const RUBRIC_RESOURCES: ResourceConfig[] = [
 export interface RubricProps {
   rubricId?: string;
   rubricData?: RubricData;
-  saveRubricAction?: (input: SaveRubricIn) => Promise<SaveRubricOut>;
+  createRubricAction?: (input: CreateRubricIn) => Promise<CreateRubricOut>;
+  updateRubricAction?: (input: UpdateRubricIn) => Promise<UpdateRubricOut>;
   patchRubricDraftAction?: (
     input: PatchRubricDraftIn,
   ) => Promise<PatchRubricDraftOut>;
@@ -168,7 +173,8 @@ export interface RubricProps {
 function RubricComponent({
   rubricId,
   rubricData,
-  saveRubricAction,
+  createRubricAction,
+  updateRubricAction,
   patchRubricDraftAction,
   createNamesAction,
   createDescriptionsAction,
@@ -180,7 +186,9 @@ function RubricComponent({
   const s = rubricData;
 
   const [formState, setFormState] = useState<RubricFormState>({
+    name: null,
     name_id: null,
+    description: null,
     description_id: null,
     active_flag_id: null,
     department_ids: [],
@@ -203,7 +211,9 @@ function RubricComponent({
   const getInitialFormState = useCallback((): RubricFormState => {
     if (!s) {
       return {
+        name: null,
         name_id: null,
+        description: null,
         description_id: null,
         active_flag_id: null,
         department_ids: [],
@@ -215,7 +225,9 @@ function RubricComponent({
     }
 
     return {
+      name: null,
       name_id: s.names?.resource?.id ?? null,
+      description: null,
       description_id: s.descriptions?.resource?.id ?? null,
       active_flag_id: s.flags?.current?.[0]?.flag_option_id ?? null,
       department_ids:
@@ -248,7 +260,11 @@ function RubricComponent({
     });
   }, [getInitialFormState]);
 
-  const formStateKey = useMemo(() => JSON.stringify(formState), [formState]);
+  const serverSyncPendingRef = React.useRef(false);
+  const formStateKey = useMemo(() => {
+    if (serverSyncPendingRef.current) return undefined;
+    return JSON.stringify(formState);
+  }, [formState]);
   const draftVersion = s?.draft_version ?? null;
 
   const patchActionRef = React.useRef<
@@ -259,8 +275,23 @@ function RubricComponent({
       patchActionRef.current = undefined;
       return;
     }
-    patchActionRef.current = async (payload: Record<string, unknown>) =>
-      patchRubricDraftAction({ body: payload } as PatchRubricDraftIn);
+    patchActionRef.current = async (payload: Record<string, unknown>) => {
+      const res = await patchRubricDraftAction({ body: payload } as PatchRubricDraftIn);
+      if (res.form_state) {
+        serverSyncPendingRef.current = true;
+        setFormState((prev) => ({
+          ...prev,
+          name: null,
+          name_id: (res.form_state!.name_id as string) ?? prev.name_id,
+          description: null,
+          description_id: (res.form_state!.description_id as string) ?? prev.description_id,
+        }));
+        requestAnimationFrame(() => {
+          serverSyncPendingRef.current = false;
+        });
+      }
+      return res;
+    };
   }, [patchRubricDraftAction]);
 
   const lastPatchedFormStateRef = React.useRef<Record<string, unknown> | null>(
@@ -276,16 +307,28 @@ function RubricComponent({
       inputDraftId: string | null,
       expectedVersion: number,
       flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => ({
-      input_draft_id: inputDraftId || null,
-      group_id: s?.group_id ?? null,
-      ...buildDraftPayload(RUBRIC_RESOURCES, {
-        formState: formStateRef.current,
-        referenceState: lastPatchedFormStateRef.current,
-        flushResults: flushResults ?? {},
-      }),
-      expected_version: expectedVersion,
-    }),
+    ): Record<string, unknown> => {
+      const payload: Record<string, unknown> = {
+        input_draft_id: inputDraftId || null,
+        group_id: s?.group_id ?? null,
+        ...buildDraftPayload(RUBRIC_RESOURCES, {
+          formState: formStateRef.current,
+          referenceState: lastPatchedFormStateRef.current,
+          flushResults: flushResults ?? {},
+        }),
+        expected_version: expectedVersion,
+      };
+      const fs = formStateRef.current as unknown as RubricFormState;
+      if (fs.name) {
+        payload["name"] = fs.name;
+        delete payload["name_id"];
+      }
+      if (fs.description) {
+        payload["description"] = fs.description;
+        delete payload["description_id"];
+      }
+      return payload;
+    },
     [s],
   );
 
@@ -417,29 +460,62 @@ function RubricComponent({
       if (!s?.group_id) {
         throw new Error("Missing group_id");
       }
-      if (!saveRubricAction) {
-        throw new Error("Save action not available");
-      }
 
-      await saveRubricAction({
-        body: {
-          input_rubric_id: isEditMode ? rubricId ?? null : null,
-          name_id: effectiveFormState.name_id!,
-          description_id: effectiveFormState.description_id ?? null,
-          flag_id: effectiveFormState.active_flag_id ?? null,
-          department_ids: effectiveFormState.department_ids?.length
-            ? effectiveFormState.department_ids
-            : null,
-          total_points_id: effectiveFormState.total_points_id ?? null,
-          pass_points_id: effectiveFormState.pass_points_id ?? null,
-          standard_group_ids: effectiveFormState.standard_group_ids?.length
-            ? effectiveFormState.standard_group_ids
-            : null,
-          standard_ids: effectiveFormState.standard_ids?.length
-            ? effectiveFormState.standard_ids
-            : null,
-        },
-      });
+      const pointIds = [
+        effectiveFormState.total_points_id,
+        effectiveFormState.pass_points_id,
+      ].filter((x): x is string => !!x);
+
+      if (isEditMode) {
+        if (!updateRubricAction) throw new Error("Update action not available");
+        await updateRubricAction({
+          body: {
+            rubrics: [
+              {
+                rubric_id: rubricId!,
+                name_id: effectiveFormState.name_id ?? undefined,
+                description_id: effectiveFormState.description_id ?? undefined,
+                active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+                department_ids: effectiveFormState.department_ids?.length
+                  ? effectiveFormState.department_ids
+                  : undefined,
+                point_ids: pointIds.length ? pointIds : undefined,
+                standard_group_ids: effectiveFormState.standard_group_ids?.length
+                  ? effectiveFormState.standard_group_ids
+                  : undefined,
+                standard_ids: effectiveFormState.standard_ids?.length
+                  ? effectiveFormState.standard_ids
+                  : undefined,
+              },
+            ],
+            group_id: s.group_id,
+          },
+        } as UpdateRubricIn);
+      } else {
+        if (!createRubricAction) throw new Error("Create action not available");
+        await createRubricAction({
+          body: {
+            rubrics: [
+              {
+                name_id: effectiveFormState.name_id!,
+                description_id: effectiveFormState.description_id ?? undefined,
+                active_flag_id: effectiveFormState.active_flag_id ?? undefined,
+                department_ids: effectiveFormState.department_ids?.length
+                  ? effectiveFormState.department_ids
+                  : undefined,
+                point_ids: pointIds.length ? pointIds : undefined,
+                standard_group_ids: effectiveFormState.standard_group_ids?.length
+                  ? effectiveFormState.standard_group_ids
+                  : undefined,
+                standard_ids: effectiveFormState.standard_ids?.length
+                  ? effectiveFormState.standard_ids
+                  : undefined,
+              },
+            ],
+            group_id: s.group_id,
+          },
+        } as CreateRubricIn);
+      }
 
       toast.success(`Rubric ${isEditMode ? "updated" : "created"} successfully!`);
       router.push("/system/rubrics");
@@ -449,7 +525,8 @@ function RubricComponent({
       flushRegistryRef,
       s,
       profile?.id,
-      saveRubricAction,
+      createRubricAction,
+      updateRubricAction,
       isEditMode,
       rubricId,
       router,
@@ -557,13 +634,15 @@ function RubricComponent({
                 names={s?.names?.resources ?? []}
                 disabled={disabled}
                 onNameIdChange={(nameId) =>
-                  setFormState((prev) => ({ ...prev, name_id: nameId }))
+                  setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
+                }
+                onNameChange={(name) =>
+                  setFormState((prev) => ({ ...prev, name }))
                 }
                 onGenerate={() => handleGenerateResources(["names"])}
                 required={s?.names?.required ?? false}
                 hideDescription={true}
                 showAiGenerate={s?.names?.show_ai_generate ?? false}
-                create_tool_id={s?.names?.create_tool_id ?? null}
                 createNamesAction={createNamesAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["names"]}
@@ -602,12 +681,14 @@ function RubricComponent({
                 descriptions={s?.descriptions?.resources ?? []}
                 disabled={disabled}
                 onDescriptionIdChange={(descriptionId) =>
-                  setFormState((prev) => ({ ...prev, description_id: descriptionId }))
+                  setFormState((prev) => ({ ...prev, description_id: descriptionId, description: null }))
+                }
+                onDescriptionChange={(description) =>
+                  setFormState((prev) => ({ ...prev, description }))
                 }
                 onGenerate={() => handleGenerateResources(["descriptions"])}
                 required={s?.descriptions?.required ?? false}
                 showAiGenerate={s?.descriptions?.show_ai_generate ?? false}
-                create_tool_id={s?.descriptions?.create_tool_id ?? null}
                 createDescriptionsAction={createDescriptionsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["descriptions"]}
@@ -702,7 +783,6 @@ function RubricComponent({
                 label="Total Points"
                 required={s?.points?.required ?? false}
                 showAiGenerate={s?.points?.show_ai_generate ?? false}
-                create_tool_id={s?.points?.create_tool_id ?? null}
                 createPointsAction={createPointsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["points"]}
@@ -734,7 +814,6 @@ function RubricComponent({
                 label="Pass Points"
                 required={s?.pass_points?.required ?? false}
                 showAiGenerate={s?.pass_points?.show_ai_generate ?? false}
-                create_tool_id={s?.pass_points?.create_tool_id ?? null}
                 createPointsAction={createPointsAction}
                 isAutosaveEnabled={isAutosaveEnabled}
                 registerFlush={registerFlushCallbacks["pass_points"]}
@@ -785,7 +864,6 @@ function RubricComponent({
               onGenerate={() => handleGenerateResources(["standard_groups"])}
               required={s?.standard_groups?.required ?? false}
               showAiGenerate={s?.standard_groups?.show_ai_generate ?? false}
-              create_tool_id={s?.standard_groups?.create_tool_id ?? null}
               createStandardGroupsAction={createStandardGroupsAction}
               isAutosaveEnabled={isAutosaveEnabled}
               registerFlush={registerFlushCallbacks["standard_groups"]}
@@ -888,7 +966,9 @@ function RubricComponent({
             if (stepId === "basic") {
               setFormState((prev) => ({
                 ...prev,
+                name: null,
                 name_id: null,
+                description: null,
                 description_id: null,
                 active_flag_id: null,
                 department_ids: [],

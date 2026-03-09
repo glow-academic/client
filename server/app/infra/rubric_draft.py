@@ -22,6 +22,7 @@ from app.infra.rubric_permissions import compute_can_draft
 from app.routes.v5.api.main.rubric.types import (
     PatchRubricDraftApiRequest,
     PatchRubricDraftApiResponse,
+    RubricDraftFormState,
     SaveRubricFieldError,
 )
 from app.routes.v5.tools.entries.rubric_drafts.create import create_rubric_draft
@@ -85,7 +86,9 @@ async def patch_rubric_draft_client(
     # ── Step 1: Profile context ────────────────────────────────────────
 
     profile = await resolve_profile_identity_context(
-        pool, profile_id, redis,
+        pool,
+        profile_id,
+        redis,
         session_id=session_id,
     )
 
@@ -136,12 +139,24 @@ async def patch_rubric_draft_client(
                 standard_ids=request.standard_ids,
             )
 
-    # ── Step 5: Refresh MV ─────────────────────────────────────────────
+    # ── Step 5: Build form state (server is source of truth) ────────────
+
+    form_state = RubricDraftFormState(
+        name_id=request.name_id,
+        description_id=request.description_id,
+        flag_id=request.flag_id,
+        department_ids=request.department_ids or [],
+        point_ids=request.point_ids or [],
+        standard_group_ids=request.standard_group_ids or [],
+        standard_ids=request.standard_ids or [],
+    )
+
+    # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
     async with pool.acquire() as conn:
         await refresh_rubric_drafts(conn)
 
-    # ── Step 6: Invalidate cache ───────────────────────────────────────
+    # ── Step 7: Invalidate cache ───────────────────────────────────────
 
     await invalidate_tags(["rubrics", "drafts"], redis=redis)
 
@@ -150,4 +165,5 @@ async def patch_rubric_draft_client(
         draft_id=result.id,
         new_version=new_version,
         message="Draft created successfully",
+        form_state=form_state,
     )

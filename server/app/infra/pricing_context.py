@@ -31,7 +31,7 @@ from app.routes.v5.tools.resources.pricing.get import get_pricing
 
 
 async def resolve_pricing_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     date_from: datetime | None = None,
@@ -46,13 +46,15 @@ async def resolve_pricing_context(
     Resources (hydrated from IDs derived from runs):
       - agents, models, pricing (for cost computation + filter options)
     """
+
     # Step 1: Fetch all runs for date range
-    all_runs, _total_count = await search_runs(
-        conn,
-        date_from=date_from,
-        date_to=date_to,
-        limit=100000,
-    )
+    async with pool.acquire() as conn:
+        all_runs, _total_count = await search_runs(
+            conn,
+            date_from=date_from,
+            date_to=date_to,
+            limit=100000,
+        )
 
     # Step 2: Collect resource IDs
     agent_ids_set: set[UUID] = set()
@@ -69,16 +71,28 @@ async def resolve_pricing_context(
                 pricing_ids_set.add(p.pricing_id)
 
     # Step 3: Parallel hydrate resources
+    async def _get_agents() -> list:
+        if not agent_ids_set:
+            return []
+        async with pool.acquire() as conn:
+            return await get_agents(conn, list(agent_ids_set), redis, bypass_cache)
+
+    async def _get_models() -> list:
+        if not model_ids_set:
+            return []
+        async with pool.acquire() as conn:
+            return await get_models(conn, list(model_ids_set), redis, bypass_cache)
+
+    async def _get_pricing() -> list:
+        if not pricing_ids_set:
+            return []
+        async with pool.acquire() as conn:
+            return await get_pricing(conn, list(pricing_ids_set), redis, bypass_cache)
+
     agents_selected, models_selected, pricing_selected = await asyncio.gather(
-        get_agents(conn, list(agent_ids_set), redis, bypass_cache)
-        if agent_ids_set
-        else _empty_list(),
-        get_models(conn, list(model_ids_set), redis, bypass_cache)
-        if model_ids_set
-        else _empty_list(),
-        get_pricing(conn, list(pricing_ids_set), redis, bypass_cache)
-        if pricing_ids_set
-        else _empty_list(),
+        _get_agents(),
+        _get_models(),
+        _get_pricing(),
     )
 
     return ArtifactContext(
@@ -98,7 +112,7 @@ async def resolve_pricing_context(
 
 
 async def resolve_pricing_search_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     session_ids: list[UUID] | None = None,
@@ -122,32 +136,40 @@ async def resolve_pricing_search_context(
     page_offset = page * page_size
 
     # Step 1: Paginated groups + total count
+    async def _fetch_groups_page() -> list:
+        async with pool.acquire() as conn:
+            return await search_groups(
+                conn,
+                session_ids=session_ids,
+                date_from=date_from,
+                date_to=date_to,
+                limit=page_size,
+                offset=page_offset,
+            )
+
+    async def _fetch_groups_total() -> list:
+        async with pool.acquire() as conn:
+            return await search_groups(
+                conn,
+                session_ids=session_ids,
+                date_from=date_from,
+                date_to=date_to,
+                limit=100000,
+                offset=0,
+            )
+
     all_groups, total_groups = await asyncio.gather(
-        search_groups(
-            conn,
-            session_ids=session_ids,
-            date_from=date_from,
-            date_to=date_to,
-            limit=page_size,
-            offset=page_offset,
-        ),
-        search_groups(
-            conn,
-            session_ids=session_ids,
-            date_from=date_from,
-            date_to=date_to,
-            limit=100000,
-            offset=0,
-        ),
+        _fetch_groups_page(),
+        _fetch_groups_total(),
     )
 
     # Step 2: Fetch runs for groups on current page
     group_ids = [g.id for g in all_groups]
-    all_runs = (
-        (await search_runs(conn, group_ids=group_ids, limit=100000))[0]
-        if group_ids
-        else []
-    )
+    if group_ids:
+        async with pool.acquire() as conn:
+            all_runs = (await search_runs(conn, group_ids=group_ids, limit=100000))[0]
+    else:
+        all_runs = []
 
     # Step 3: Collect resource IDs
     agent_ids_set: set[UUID] = set()
@@ -167,24 +189,42 @@ async def resolve_pricing_search_context(
     all_name_ids = list(agent_ids_set | model_ids_set)
 
     # Step 4: Parallel hydrate resources
+    async def _get_agents() -> list:
+        if not agent_ids_set:
+            return []
+        async with pool.acquire() as conn:
+            return await get_agents(conn, list(agent_ids_set), redis, bypass_cache)
+
+    async def _get_models() -> list:
+        if not model_ids_set:
+            return []
+        async with pool.acquire() as conn:
+            return await get_models(conn, list(model_ids_set), redis, bypass_cache)
+
+    async def _get_pricing() -> list:
+        if not pricing_ids_set:
+            return []
+        async with pool.acquire() as conn:
+            return await get_pricing(conn, list(pricing_ids_set), redis, bypass_cache)
+
+    async def _get_names() -> list:
+        if not all_name_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_names(
+                conn, all_name_ids, redis, bypass_cache=bypass_cache
+            )
+
     (
         agents_selected,
         models_selected,
         pricing_selected,
         names_selected,
     ) = await asyncio.gather(
-        get_agents(conn, list(agent_ids_set), redis, bypass_cache)
-        if agent_ids_set
-        else _empty_list(),
-        get_models(conn, list(model_ids_set), redis, bypass_cache)
-        if model_ids_set
-        else _empty_list(),
-        get_pricing(conn, list(pricing_ids_set), redis, bypass_cache)
-        if pricing_ids_set
-        else _empty_list(),
-        get_names(conn, all_name_ids, redis, bypass_cache=bypass_cache)
-        if all_name_ids
-        else _empty_list(),
+        _get_agents(),
+        _get_models(),
+        _get_pricing(),
+        _get_names(),
     )
 
     return ArtifactContext(
@@ -204,7 +244,3 @@ async def resolve_pricing_search_context(
             "runs": all_runs,
         },
     )
-
-
-async def _empty_list() -> list:
-    return []

@@ -49,11 +49,30 @@ function getRefreshPageFromPathname(pathname: string): string {
   return "training";
 }
 
-export interface AnalyticsFiltersProps {
-  refreshPage: RefreshPageFn;
+/** Inline analytics facets from the artifact endpoint response */
+export interface AnalyticsFacetsData {
+  fields?: {
+    date_range?: { visible?: boolean } | null;
+    departments?: { visible?: boolean } | null;
+    cohorts?: { visible?: boolean } | null;
+    roles?: { visible?: boolean } | null;
+    attempts?: { visible?: boolean } | null;
+  } | null;
+  department_options?: Array<{ value: string; label?: string | null }>;
+  cohort_options?: Array<{ value: string; label?: string | null }>;
+  role_options?: string[];
+  attempt_options?: string[];
+  date_range_earliest?: string | null;
+  date_range_latest?: string | null;
 }
 
-export function AnalyticsFilters({ refreshPage }: AnalyticsFiltersProps) {
+export interface AnalyticsFiltersProps {
+  refreshPage: RefreshPageFn;
+  /** Inline facets from the page's artifact endpoint */
+  analyticsFilters: AnalyticsFacetsData | null | undefined;
+}
+
+export function AnalyticsFilters({ refreshPage, analyticsFilters }: AnalyticsFiltersProps) {
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const router = useRouter();
@@ -71,9 +90,11 @@ export function AnalyticsFilters({ refreshPage }: AnalyticsFiltersProps) {
     setSelectedRoles,
     simulationFilters,
     setSimulationFilters,
-  } = useAnalyticsParams();
+  } = useAnalyticsParams({
+    dateRangeEarliest: analyticsFilters?.date_range_earliest,
+  });
 
-  const { analyticsFilters, scopedRoles } = useProfile();
+  const { scopedRoles } = useProfile();
 
   // Server-driven field visibility
   const filterFields = analyticsFilters?.fields;

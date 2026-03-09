@@ -13,7 +13,6 @@ from app.infra.persona_save import resolve_persona_values, save_persona_client
 from app.routes.v5.api.main.persona.types import SavePersonaItem
 
 from .conftest import (
-    ADMIN_PROFILE_ID,
     GUEST_PROFILE_ID,
     SUPERADMIN_PROFILE_ID,
 )
@@ -55,7 +54,9 @@ async def _create_instruction_id(pool, redis_client) -> UUID:
     from app.routes.v5.tools.resources.instructions.create import create_instruction
 
     async with pool.acquire() as conn:
-        result = await create_instruction(conn, "Test instruction template", redis_client)
+        result = await create_instruction(
+            conn, "Test instruction template", redis_client
+        )
     return result.id
 
 
@@ -296,7 +297,9 @@ class TestSavePersonaClientUpdate:
 
 
 class TestSavePersonaClientValidation:
-    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+    async def test_validation_errors_returned_without_mutation(
+        self, pool, redis_client
+    ):
         """Items with missing required fields -> errors returned, no artifact created."""
         item = SavePersonaItem()  # Missing required fields
 

@@ -14,8 +14,6 @@ from app.routes.v5.api.main.rubric.types import SaveRubricItem
 
 from .conftest import (
     ADMIN_PROFILE_ID,
-    GUEST_PROFILE_ID,
-    MEMBER_PROFILE_ID,
     SUPERADMIN_PROFILE_ID,
 )
 
@@ -155,9 +153,7 @@ class TestSaveRubricClientUpdate:
             pool,
             redis_client,
             profile_id=SUPERADMIN_PROFILE_ID,
-            items=[
-                SaveRubricItem(input_rubric_id=rubric_id, name="Updated Name")
-            ],
+            items=[SaveRubricItem(input_rubric_id=rubric_id, name="Updated Name")],
         )
 
         assert len(result.results) == 1
@@ -174,9 +170,7 @@ class TestSaveRubricClientUpdate:
                 pool,
                 redis_client,
                 profile_id=SUPERADMIN_PROFILE_ID,
-                items=[
-                    SaveRubricItem(input_rubric_id=fake_id, name="Wont Work")
-                ],
+                items=[SaveRubricItem(input_rubric_id=fake_id, name="Wont Work")],
             )
 
         assert exc_info.value.status_code == 404
@@ -186,7 +180,9 @@ class TestSaveRubricClientUpdate:
 
 
 class TestSaveRubricClientValidation:
-    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+    async def test_validation_errors_returned_without_mutation(
+        self, pool, redis_client
+    ):
         """Items with missing required fields -> errors returned, no artifact created."""
         item = SaveRubricItem()  # Missing required name
 

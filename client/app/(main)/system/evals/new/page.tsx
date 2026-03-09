@@ -20,8 +20,8 @@ import {
 /** ---- Strong types from OpenAPI ---- */
 type GetEvalIn = InputOf<"/api/v5/artifacts/evals/get", "post">;
 type GetEvalOut = OutputOf<"/api/v5/artifacts/evals/get", "post">;
-type SaveEvalIn = InputOf<"/api/v5/artifacts/evals/save", "post">;
-type SaveEvalOut = OutputOf<"/api/v5/artifacts/evals/save", "post">;
+type CreateEvalIn = InputOf<"/api/v5/artifacts/evals/create", "post">;
+type CreateEvalOut = OutputOf<"/api/v5/artifacts/evals/create", "post">;
 type PatchEvalDraftIn = InputOf<"/api/v5/artifacts/evals/draft", "patch">;
 type PatchEvalDraftOut = OutputOf<"/api/v5/artifacts/evals/draft", "patch">;
 
@@ -50,10 +50,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 /** ---- Strongly-typed server actions ---- */
-async function saveEval(input: SaveEvalIn): Promise<SaveEvalOut> {
+async function createEval(input: CreateEvalIn): Promise<CreateEvalOut> {
   "use server";
-  // profileId comes from X-Profile-Id header automatically
-  return api.post("/artifacts/evals/save", input);
+  return api.post("/artifacts/evals/create", input);
 }
 
 async function patchEvalDraft(
@@ -132,7 +131,7 @@ export default async function NewEvalPage({
       >
         <Eval
           evalDetailDefault={evalDetailDefault}
-          createEvalAction={saveEval}
+          createEvalAction={createEval}
           patchEvalDraftAction={patchEvalDraft}
         />
       </div>
@@ -144,8 +143,8 @@ export default async function NewEvalPage({
 export type {
   GetEvalIn as EvalNewIn,
   GetEvalOut as EvalNewOut,
-  SaveEvalIn as CreateEvalIn,
-  SaveEvalOut as CreateEvalOut,
+  CreateEvalIn,
+  CreateEvalOut,
   PatchEvalDraftIn,
   PatchEvalDraftOut,
 };

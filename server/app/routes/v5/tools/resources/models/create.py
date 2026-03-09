@@ -16,6 +16,13 @@ async def create_model(
     name: str = "",
     description: str = "",
     redis: Redis = None,
+    department_ids: list[UUID] | None = None,
+    provider_id: UUID | None = None,
+    temperature_level_ids: list[UUID] | None = None,
+    reasoning_level_ids: list[UUID] | None = None,
+    quality_ids: list[UUID] | None = None,
+    voice_ids: list[UUID] | None = None,
+    modality_ids: list[UUID] | None = None,
     id: UUID | None = None,
     mcp: bool = False,
     soft: bool = False,
@@ -25,13 +32,50 @@ async def create_model(
     """Create a model resource (plain INSERT — no unique constraint)."""
     model_id = await conn.fetchval(
         """
-        INSERT INTO models_resource (id, value, name, description, active, mcp, generated)
-        VALUES (COALESCE($6, uuidv7()), $1, $2, $3, $4, $5, $5)
+        INSERT INTO models_resource (
+            id,
+            value,
+            name,
+            description,
+            department_ids,
+            provider_id,
+            temperature_level_ids,
+            reasoning_level_ids,
+            quality_ids,
+            voice_ids,
+            modality_ids,
+            active,
+            mcp,
+            generated
+        )
+        VALUES (
+            COALESCE($13, uuidv7()),
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9,
+            $10,
+            $11,
+            $12,
+            $12
+        )
         RETURNING id
         """,
         value,
         name,
         description,
+        department_ids or [],
+        provider_id,
+        temperature_level_ids or [],
+        reasoning_level_ids or [],
+        quality_ids or [],
+        voice_ids or [],
+        modality_ids or [],
         not soft,
         mcp,
         id,

@@ -26,7 +26,7 @@ _VIEWS = ["groups_mv"]
 
 
 async def refresh_group_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis | None,
     *,
     profile_id: UUID,
@@ -42,7 +42,7 @@ async def refresh_group_client(
 
     # -- Step 1: Permission check ------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -52,8 +52,12 @@ async def refresh_group_client(
 
     # -- Step 2: Parallel refresh of dependent entry MVs -------------------
 
+    async def _refresh_groups() -> None:
+        async with pool.acquire() as conn:
+            await refresh_groups(conn)
+
     await asyncio.gather(
-        refresh_groups(conn),
+        _refresh_groups(),
     )
 
     # -- Step 3: Invalidate cache tags -------------------------------------

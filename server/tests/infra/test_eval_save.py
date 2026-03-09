@@ -14,7 +14,6 @@ from app.routes.v5.api.main.eval.types import SaveEvalItem
 
 from .conftest import (
     ADMIN_PROFILE_ID,
-    GUEST_PROFILE_ID,
     SUPERADMIN_PROFILE_ID,
 )
 
@@ -35,7 +34,9 @@ class TestResolveValues:
         item = SaveEvalItem(name_id=name.id)
 
         async with pool.acquire() as conn:
-            errors = await resolve_eval_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_eval_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.name_id == name.id
@@ -45,7 +46,9 @@ class TestResolveValues:
         item = SaveEvalItem(name="Brand New Eval")
 
         async with pool.acquire() as conn:
-            errors = await resolve_eval_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_eval_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.name_id is not None
@@ -55,7 +58,9 @@ class TestResolveValues:
         item = SaveEvalItem(name_id=name_id, description="A useful eval")
 
         async with pool.acquire() as conn:
-            errors = await resolve_eval_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_eval_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.description_id is not None
@@ -65,7 +70,9 @@ class TestResolveValues:
         item = SaveEvalItem()
 
         async with pool.acquire() as conn:
-            errors = await resolve_eval_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_eval_values(
+                conn, redis_client, item, is_update=False
+            )
 
         field_names = {e.field for e in errors}
         assert "name" in field_names
@@ -173,7 +180,9 @@ class TestSaveEvalClientUpdate:
 
 
 class TestSaveEvalClientValidation:
-    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+    async def test_validation_errors_returned_without_mutation(
+        self, pool, redis_client
+    ):
         """Items with missing required fields -> errors returned, no artifact created."""
         item = SaveEvalItem()  # Missing required name
 

@@ -20,6 +20,7 @@ from redis.asyncio import Redis
 from app.infra.eval_permissions import compute_can_draft
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.eval.types import (
+    EvalDraftFormState,
     PatchEvalDraftApiRequest,
     PatchEvalDraftApiResponse,
     SaveEvalFieldError,
@@ -85,7 +86,9 @@ async def patch_eval_draft_client(
     # ── Step 1: Profile context ────────────────────────────────────────
 
     profile = await resolve_profile_identity_context(
-        pool, profile_id, redis,
+        pool,
+        profile_id,
+        redis,
         session_id=session_id,
     )
 
@@ -135,12 +138,23 @@ async def patch_eval_draft_client(
                 rubric_ids=request.rubric_ids,
             )
 
-    # ── Step 5: Refresh MV ─────────────────────────────────────────────
+    # ── Step 5: Build form state (server is source of truth) ────────────
+
+    form_state = EvalDraftFormState(
+        name_id=request.name_id,
+        description_id=request.description_id,
+        flag_ids=request.flag_ids or [],
+        department_ids=request.department_ids or [],
+        model_ids=request.model_ids or [],
+        rubric_ids=request.rubric_ids or [],
+    )
+
+    # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
     async with pool.acquire() as conn:
         await refresh_eval_drafts(conn)
 
-    # ── Step 6: Invalidate cache ───────────────────────────────────────
+    # ── Step 7: Invalidate cache ───────────────────────────────────────
 
     await invalidate_tags(["evals", "drafts"], redis=redis)
 
@@ -149,4 +163,5 @@ async def patch_eval_draft_client(
         draft_id=result.id,
         new_version=new_version,
         message="Draft created successfully",
+        form_state=form_state,
     )

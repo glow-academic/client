@@ -20195,6 +20195,24 @@ export interface components {
             resources?: unknown[] | null;
         };
         /**
+         * EvalDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        EvalDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Model Ids */
+            model_ids: string[];
+            /** Rubric Ids */
+            rubric_ids: string[];
+        };
+        /**
          * EvalFieldError
          * @description Per-field error from value resolution.
          */
@@ -27957,6 +27975,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["EvalDraftFormState"] | null;
         };
         /**
          * PatchFieldDraftApiRequest
@@ -28375,6 +28394,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["RubricDraftFormState"] | null;
         };
         /**
          * PatchScenarioDraftApiRequest
@@ -28526,6 +28546,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["SettingDraftFormState"] | null;
         };
         /**
          * PatchSimulationDraftApiRequest
@@ -31784,6 +31805,26 @@ export interface components {
             resource?: unknown | null;
             /** Resources */
             resources?: unknown[] | null;
+        };
+        /**
+         * RubricDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        RubricDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids: string[];
+            /** Point Ids */
+            point_ids: string[];
+            /** Standard Group Ids */
+            standard_group_ids: string[];
+            /** Standard Ids */
+            standard_ids: string[];
         };
         /**
          * RubricEntry
@@ -35593,6 +35634,32 @@ export interface components {
             } | null;
             /** Resources */
             resources?: unknown[] | null;
+        };
+        /**
+         * SettingDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        SettingDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Id */
+            flag_id?: string | null;
+            /** Department Ids */
+            department_ids: string[];
+            /** Color Ids */
+            color_ids: string[];
+            /** Profile Ids */
+            profile_ids: string[];
+            /** Auth Ids */
+            auth_ids: string[];
+            /** Provider Key Ids */
+            provider_key_ids: string[];
+            /** Auth Item Key Ids */
+            auth_item_key_ids: string[];
+            /** Threshold Ids */
+            threshold_ids: string[];
         };
         /**
          * SettingFieldError

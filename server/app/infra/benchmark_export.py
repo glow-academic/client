@@ -78,7 +78,7 @@ async def _empty_list() -> list:  # type: ignore[type-arg]
 
 
 async def export_benchmark_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,  # type: ignore[type-arg]
     *,
     profile_id: UUID,
@@ -95,7 +95,7 @@ async def export_benchmark_client(
     """
 
     # -- Step 1: Profile context --
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
     if profile is None:
         raise HTTPException(
             status_code=401,
@@ -103,12 +103,14 @@ async def export_benchmark_client(
         )
 
     # -- Step 2: Search all benchmarks (full dump) --
-    benchmarks = await search_benchmarks(conn, limit=100000)
+    async with pool.acquire() as conn:
+        benchmarks = await search_benchmarks(conn, limit=100000)
 
     # -- Step 3: Search all test invocations (full dump) --
-    invocations, _total_count = await search_test_invocation_entries_internal(
-        conn, limit=100000, offset=0
-    )
+    async with pool.acquire() as conn:
+        invocations, _total_count = await search_test_invocation_entries_internal(
+            conn, limit=100000, offset=0
+        )
 
     if not benchmarks and not invocations:
         return ExportBenchmarkApiResponse(
@@ -128,13 +130,21 @@ async def export_benchmark_client(
     for inv in invocations:
         all_department_ids.update(inv.department_ids or [])
 
+    async def _get_departments() -> list:
+        if not all_department_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_departments(conn, list(all_department_ids), redis)
+
+    async def _get_profiles() -> list:
+        if not all_profile_ids:
+            return []
+        async with pool.acquire() as conn:
+            return await get_profiles(conn, list(all_profile_ids), redis)
+
     departments_data, profiles_data = await asyncio.gather(
-        get_departments(conn, list(all_department_ids), redis)
-        if all_department_ids
-        else _empty_list(),
-        get_profiles(conn, list(all_profile_ids), redis)
-        if all_profile_ids
-        else _empty_list(),
+        _get_departments(),
+        _get_profiles(),
     )
 
     department_map: dict[UUID, str] = {d.id: d.name or "" for d in departments_data}
@@ -229,13 +239,14 @@ async def export_benchmark_client(
         f.write(zip_content)
 
     file_size = len(zip_content)
-    upload_result = await create_upload(
-        conn,
-        session_id=session_id,
-        file_path=file_name,
-        mime_type="application/zip",
-        size=file_size,
-    )
+    async with pool.acquire() as conn:
+        upload_result = await create_upload(
+            conn,
+            session_id=session_id,
+            file_path=file_name,
+            mime_type="application/zip",
+            size=file_size,
+        )
 
     return ExportBenchmarkApiResponse(
         upload_id=upload_result.id,

@@ -4,6 +4,7 @@ import pytest
 
 from app.routes.v5.tools.resources.models.create import create_model
 from app.routes.v5.tools.resources.models.get import get_models
+from app.routes.v5.tools.resources.providers.create import create_provider
 
 pytestmark = pytest.mark.asyncio
 
@@ -43,3 +44,18 @@ async def test_sets_mcp_flag(conn, redis_client):
 
     assert result.mcp is True
     assert result.generated is True
+
+
+async def test_round_trips_provider_link(conn, redis_client):
+    provider = await create_provider(conn, "model-provider", redis=redis_client)
+
+    result = await create_model(
+        conn,
+        "gpt-4-provider",
+        redis=redis_client,
+        provider_id=provider.id,
+    )
+
+    items = await get_models(conn, [result.id], redis_client, bypass_cache=True)
+
+    assert items[0].provider_id == provider.id

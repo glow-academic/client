@@ -1,5 +1,9 @@
 /**
- * Client component for main layout (uses hooks)
+ * Client component for main layout.
+ *
+ * Global concerns only: sidebar, profile, settings, socket, theme.
+ * Page-level concerns (drafts, group, analytics filters, toolbars)
+ * are owned by each page's own client component.
  */
 "use client";
 import {
@@ -11,14 +15,11 @@ import React, { useEffect, useMemo } from "react";
 
 import { UnifiedSidebar } from "@/components/common/layout/UnifiedSidebar";
 import { ThemeHydrator } from "@/components/theme/ThemeHydrator";
-import { DraftProviderClient, type DraftItem } from "@/contexts/draft-context";
-import { GroupProviderClient } from "@/contexts/group-context";
 import { ProfileProviderClient } from "@/contexts/profile-context";
 import { SettingsProviderClient } from "@/contexts/settings-context";
 import { SocketProviderClient } from "@/contexts/socket-context";
 import { SIDEBAR_SECTIONS } from "@/lib/sidebar-config";
 import type {
-  AnalyticsFiltersResponse,
   AuthProfileResponse,
   AuthSettingsResponse,
   CreateFeedbackIn,
@@ -109,25 +110,17 @@ export function MainLayoutClient({
   profileData,
   settingsData,
   sessionSnapshot,
-  drafts,
-  analyticsFilters,
   initialSidebarOpen,
-  initialAutosave,
   switchEffectiveProfileAction,
   createFeedbackAction,
   searchSimulatableProfilesAction,
-  groupId,
 }: {
   children: React.ReactNode;
   profileData: AuthProfileResponse | null;
   settingsData: AuthSettingsResponse | null;
   sessionSnapshot: SafeSessionSnapshot;
-  drafts: DraftItem[];
-  analyticsFilters: AnalyticsFiltersResponse | null;
   /** Initial sidebar open state from SSR cookie */
   initialSidebarOpen?: boolean;
-  /** Initial autosave preference from SSR cookie */
-  initialAutosave?: boolean;
   switchEffectiveProfileAction: (
     input: SwitchEffectiveProfileParams
   ) => Promise<SwitchEffectiveProfileResult>;
@@ -135,8 +128,6 @@ export function MainLayoutClient({
   searchSimulatableProfilesAction: (
     input: SearchSimulatableProfilesIn
   ) => Promise<SearchSimulatableProfilesOut>;
-  /** Resolved group_id from layout (null for non-artifact pages) */
-  groupId: string | null;
 }) {
   const pathname = usePathname();
 
@@ -174,28 +165,23 @@ export function MainLayoutClient({
         profileId={profileData?.id ?? null}
         idToken={sessionSnapshot?.idToken ?? null}
       >
-        <DraftProviderClient drafts={drafts} initialAutosave={initialAutosave}>
-          <GroupProviderClient initialGroupId={groupId}>
-            <ProfileProviderClient
-              initial={profileData}
-              sessionSnapshot={sessionSnapshot}
-              analyticsFilters={analyticsFilters}
+        <ProfileProviderClient
+          initial={profileData}
+          sessionSnapshot={sessionSnapshot}
+        >
+          <SettingsProviderClient settings={settingsData}>
+            <MainLayoutContent
+              initialSidebarOpen={initialSidebarOpen}
+              switchEffectiveProfileAction={switchEffectiveProfileAction}
+              createFeedbackAction={createFeedbackAction}
+              searchSimulatableProfilesAction={
+                searchSimulatableProfilesAction
+              }
             >
-              <SettingsProviderClient settings={settingsData}>
-                <MainLayoutContent
-                  initialSidebarOpen={initialSidebarOpen}
-                  switchEffectiveProfileAction={switchEffectiveProfileAction}
-                  createFeedbackAction={createFeedbackAction}
-                  searchSimulatableProfilesAction={
-                    searchSimulatableProfilesAction
-                  }
-                >
-                  {children}
-                </MainLayoutContent>
-              </SettingsProviderClient>
-            </ProfileProviderClient>
-          </GroupProviderClient>
-        </DraftProviderClient>
+              {children}
+            </MainLayoutContent>
+          </SettingsProviderClient>
+        </ProfileProviderClient>
       </SocketProviderClient>
     </>
   );

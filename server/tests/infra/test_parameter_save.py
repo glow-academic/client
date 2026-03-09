@@ -13,7 +13,6 @@ from app.infra.parameter_save import resolve_parameter_values, save_parameter_cl
 from app.routes.v5.api.main.parameter.types import SaveParameterItem
 
 from .conftest import (
-    GUEST_PROFILE_ID,
     MEMBER_PROFILE_ID,
     SUPERADMIN_PROFILE_ID,
 )
@@ -155,9 +154,7 @@ class TestSaveParameterClientUpdate:
             redis_client,
             profile_id=SUPERADMIN_PROFILE_ID,
             items=[
-                SaveParameterItem(
-                    input_parameter_id=parameter_id, name="Updated Name"
-                )
+                SaveParameterItem(input_parameter_id=parameter_id, name="Updated Name")
             ],
         )
 
@@ -175,11 +172,7 @@ class TestSaveParameterClientUpdate:
                 pool,
                 redis_client,
                 profile_id=SUPERADMIN_PROFILE_ID,
-                items=[
-                    SaveParameterItem(
-                        input_parameter_id=fake_id, name="Wont Work"
-                    )
-                ],
+                items=[SaveParameterItem(input_parameter_id=fake_id, name="Wont Work")],
             )
 
         assert exc_info.value.status_code == 404
@@ -189,7 +182,9 @@ class TestSaveParameterClientUpdate:
 
 
 class TestSaveParameterClientValidation:
-    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+    async def test_validation_errors_returned_without_mutation(
+        self, pool, redis_client
+    ):
         """Items with missing required fields -> errors returned, no artifact created."""
         item = SaveParameterItem()  # Missing required name
 

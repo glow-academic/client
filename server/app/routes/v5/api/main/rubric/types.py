@@ -275,6 +275,18 @@ class PatchRubricDraftApiRequest(BaseModel):
     standard_ids: list[UUID] | None = None
 
 
+class RubricDraftFormState(BaseModel):
+    """Server-authoritative form state returned after draft save."""
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_id: UUID | None = None
+    department_ids: list[UUID]
+    point_ids: list[UUID]
+    standard_group_ids: list[UUID]
+    standard_ids: list[UUID]
+
+
 class PatchRubricDraftApiResponse(BaseModel):
     """Response model for new-style rubric draft endpoint."""
 
@@ -282,6 +294,7 @@ class PatchRubricDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+    form_state: RubricDraftFormState | None = None
 
 
 # ========== Export Endpoint Types ==========

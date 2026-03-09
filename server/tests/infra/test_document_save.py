@@ -13,7 +13,6 @@ from app.infra.document_save import resolve_document_values, save_document_clien
 from app.routes.v5.api.main.document.types import SaveDocumentItem
 
 from .conftest import (
-    ADMIN_PROFILE_ID,
     GUEST_PROFILE_ID,
     SUPERADMIN_PROFILE_ID,
 )
@@ -37,7 +36,9 @@ class TestResolveValues:
         item = SaveDocumentItem(name_id=name.id)
 
         async with pool.acquire() as conn:
-            errors = await resolve_document_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_document_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.name_id == name.id
@@ -47,7 +48,9 @@ class TestResolveValues:
         item = SaveDocumentItem(name="Brand New Doc")
 
         async with pool.acquire() as conn:
-            errors = await resolve_document_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_document_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.name_id is not None
@@ -57,7 +60,9 @@ class TestResolveValues:
         item = SaveDocumentItem(name_id=name_id, description="A test document")
 
         async with pool.acquire() as conn:
-            errors = await resolve_document_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_document_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.description_id is not None
@@ -67,7 +72,9 @@ class TestResolveValues:
         item = SaveDocumentItem()
 
         async with pool.acquire() as conn:
-            errors = await resolve_document_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_document_values(
+                conn, redis_client, item, is_update=False
+            )
 
         field_names = {e.field for e in errors}
         assert "name" in field_names
@@ -190,7 +197,9 @@ class TestSaveDocumentClientUpdate:
 
 
 class TestSaveDocumentClientValidation:
-    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+    async def test_validation_errors_returned_without_mutation(
+        self, pool, redis_client
+    ):
         """Items with missing required fields -> errors returned, no artifact created."""
         item = SaveDocumentItem()  # Missing required name
 

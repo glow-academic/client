@@ -5,6 +5,7 @@
  * 06/09/2025
  */
 import Personas from "@/components/artifacts/persona/Personas";
+import { NewArtifactButton } from "@/components/common/layout/NewArtifactButton";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
@@ -182,6 +183,7 @@ export default async function PersonasPage({ searchParams }: PersonasPageProps) 
           { title: "Training", section: "training", url: "/training" },
           { title: "Personas" },
         ]}
+        toolbar={<NewArtifactButton label="New Persona" href="/training/personas/new" />}
       />
       <div className="space-y-6 px-4" data-page="personas-index">
         <Personas

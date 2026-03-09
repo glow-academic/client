@@ -67843,6 +67843,75 @@
         "type": "object",
         "title": "EvalDescriptionSection"
       },
+      "EvalDraftFormState": {
+        "properties": {
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "model_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Model Ids"
+          },
+          "rubric_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Rubric Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "flag_ids",
+          "department_ids",
+          "model_ids",
+          "rubric_ids"
+        ],
+        "title": "EvalDraftFormState",
+        "description": "Server-authoritative form state returned after draft save."
+      },
       "EvalFieldError": {
         "properties": {
           "field": {
@@ -95916,6 +95985,16 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "form_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvalDraftFormState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -97339,6 +97418,16 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "form_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RubricDraftFormState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -97927,6 +98016,16 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "form_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SettingDraftFormState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -108941,6 +109040,87 @@
         },
         "type": "object",
         "title": "RubricDescriptionSection"
+      },
+      "RubricDraftFormState": {
+        "properties": {
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "point_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Point Ids"
+          },
+          "standard_group_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Standard Group Ids"
+          },
+          "standard_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Standard Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_ids",
+          "point_ids",
+          "standard_group_ids",
+          "standard_ids"
+        ],
+        "title": "RubricDraftFormState",
+        "description": "Server-authoritative form state returned after draft save."
       },
       "RubricEntry": {
         "properties": {
@@ -122861,6 +123041,114 @@
         },
         "type": "object",
         "title": "SettingDescriptionSection"
+      },
+      "SettingDraftFormState": {
+        "properties": {
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "flag_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Flag Id"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "color_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Color Ids"
+          },
+          "profile_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Profile Ids"
+          },
+          "auth_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Auth Ids"
+          },
+          "provider_key_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Provider Key Ids"
+          },
+          "auth_item_key_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Auth Item Key Ids"
+          },
+          "threshold_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Threshold Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "department_ids",
+          "color_ids",
+          "profile_ids",
+          "auth_ids",
+          "provider_key_ids",
+          "auth_item_key_ids",
+          "threshold_ids"
+        ],
+        "title": "SettingDraftFormState",
+        "description": "Server-authoritative form state returned after draft save."
       },
       "SettingFieldError": {
         "properties": {

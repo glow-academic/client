@@ -54,7 +54,9 @@ async def delete_field_client(
     # -- Step 1: Profile context -----------------------------------------------
 
     profile = await resolve_profile_identity_context(
-        pool, profile_id, redis,
+        pool,
+        profile_id,
+        redis,
         session_id=session_id,
     )
 

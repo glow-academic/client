@@ -69,7 +69,7 @@ INVOCATION_FLAG_NAMES = {"invocation_active"}
 
 
 async def resolve_invocation_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     group_id: UUID,
@@ -90,7 +90,8 @@ async def resolve_invocation_context(
     user_dept_ids = user_department_ids or []
 
     # Step 1: fetch draft
-    drafts = await get_invocation_drafts(conn, [draft_id]) if draft_id else []
+    async with pool.acquire() as conn:
+        drafts = await get_invocation_drafts(conn, [draft_id]) if draft_id else []
     draft = drafts[0] if drafts else None
     draft_version = draft.version if draft else None
 
@@ -110,6 +111,218 @@ async def resolve_invocation_context(
     voice_ids = list(draft.voice_ids or []) if draft else []
 
     # Step 3: parallel hydrate — selected + suggestions for each resource
+
+    async def _get_names() -> list:
+        async with pool.acquire() as conn:
+            return await get_names(conn, name_ids, redis, bypass_cache)
+
+    async def _search_names() -> list:
+        async with pool.acquire() as conn:
+            return await search_names(
+                conn,
+                redis,
+                draft_id=group_id,
+                exclude_ids=name_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await get_descriptions(conn, description_ids, redis, bypass_cache)
+
+    async def _search_descriptions() -> list:
+        async with pool.acquire() as conn:
+            return await search_descriptions(
+                conn,
+                redis,
+                search=descriptions_search,
+                draft_id=group_id,
+                exclude_ids=description_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_flags() -> list:
+        async with pool.acquire() as conn:
+            return await get_flags(conn, flag_ids, redis, bypass_cache)
+
+    async def _search_flags() -> list:
+        async with pool.acquire() as conn:
+            return await search_flags(
+                conn,
+                redis,
+                search=None,
+                limit_count=50,
+                offset_count=0,
+                exclude_ids=flag_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_departments() -> list:
+        async with pool.acquire() as conn:
+            return await get_departments(conn, department_ids, redis, bypass_cache)
+
+    async def _search_departments() -> list:
+        async with pool.acquire() as conn:
+            return await search_departments(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                department_ids=user_dept_ids,
+                suggest_source="recent",
+                exclude_ids=department_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_values() -> list:
+        async with pool.acquire() as conn:
+            return await get_values(conn, value_ids, redis, bypass_cache)
+
+    async def _search_values() -> list:
+        async with pool.acquire() as conn:
+            return await search_values(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=value_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_keys() -> list:
+        async with pool.acquire() as conn:
+            return await get_keys(conn, key_ids, redis, bypass_cache)
+
+    async def _search_keys() -> list:
+        async with pool.acquire() as conn:
+            return await search_keys(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=key_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_endpoints() -> list:
+        async with pool.acquire() as conn:
+            return await get_endpoints(conn, endpoint_ids, redis, bypass_cache)
+
+    async def _search_endpoints() -> list:
+        async with pool.acquire() as conn:
+            return await search_endpoints(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=endpoint_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_modalities() -> list:
+        async with pool.acquire() as conn:
+            return await get_modalities(conn, modality_ids, redis, bypass_cache)
+
+    async def _search_modalities() -> list:
+        async with pool.acquire() as conn:
+            return await search_modalities(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=modality_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_temperature_levels() -> list:
+        async with pool.acquire() as conn:
+            return await get_temperature_levels(
+                conn, temperature_level_ids, redis, bypass_cache
+            )
+
+    async def _search_temperature_levels() -> list:
+        async with pool.acquire() as conn:
+            return await search_temperature_levels(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=temperature_level_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_pricing() -> list:
+        async with pool.acquire() as conn:
+            return await get_pricing(conn, pricing_ids, redis, bypass_cache)
+
+    async def _search_pricing() -> list:
+        async with pool.acquire() as conn:
+            return await search_pricing(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=pricing_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_reasoning_levels() -> list:
+        async with pool.acquire() as conn:
+            return await get_reasoning_levels(
+                conn, reasoning_level_ids, redis, bypass_cache
+            )
+
+    async def _search_reasoning_levels() -> list:
+        async with pool.acquire() as conn:
+            return await search_reasoning_levels(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=reasoning_level_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_qualities() -> list:
+        async with pool.acquire() as conn:
+            return await get_qualities(conn, quality_ids, redis, bypass_cache)
+
+    async def _search_qualities() -> list:
+        async with pool.acquire() as conn:
+            return await search_qualities(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=quality_ids,
+                bypass_cache=bypass_cache,
+            )
+
+    async def _get_voices() -> list:
+        async with pool.acquire() as conn:
+            return await get_voices(conn, voice_ids, redis, bypass_cache)
+
+    async def _search_voices() -> list:
+        async with pool.acquire() as conn:
+            return await search_voices(
+                conn,
+                redis,
+                search=None,
+                limit_count=20,
+                offset_count=0,
+                exclude_ids=voice_ids,
+                bypass_cache=bypass_cache,
+            )
+
     (
         names_selected,
         names_suggestions,
@@ -138,148 +351,32 @@ async def resolve_invocation_context(
         voices_selected,
         voices_suggestions,
     ) = await asyncio.gather(
-        # Names
-        get_names(conn, name_ids, redis, bypass_cache),
-        search_names(
-            conn,
-            redis,
-            draft_id=group_id,
-            exclude_ids=name_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Descriptions
-        get_descriptions(conn, description_ids, redis, bypass_cache),
-        search_descriptions(
-            conn,
-            redis,
-            search=descriptions_search,
-            draft_id=group_id,
-            exclude_ids=description_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Flags
-        get_flags(conn, flag_ids, redis, bypass_cache),
-        search_flags(
-            conn,
-            redis,
-            search=None,
-            limit_count=50,
-            offset_count=0,
-            exclude_ids=flag_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Departments
-        get_departments(conn, department_ids, redis, bypass_cache),
-        search_departments(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            department_ids=user_dept_ids,
-            suggest_source="recent",
-            exclude_ids=department_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Values
-        get_values(conn, value_ids, redis, bypass_cache),
-        search_values(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=value_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Keys
-        get_keys(conn, key_ids, redis, bypass_cache),
-        search_keys(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=key_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Endpoints
-        get_endpoints(conn, endpoint_ids, redis, bypass_cache),
-        search_endpoints(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=endpoint_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Modalities
-        get_modalities(conn, modality_ids, redis, bypass_cache),
-        search_modalities(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=modality_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Temperature levels
-        get_temperature_levels(conn, temperature_level_ids, redis, bypass_cache),
-        search_temperature_levels(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=temperature_level_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Pricing
-        get_pricing(conn, pricing_ids, redis, bypass_cache),
-        search_pricing(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=pricing_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Reasoning levels
-        get_reasoning_levels(conn, reasoning_level_ids, redis, bypass_cache),
-        search_reasoning_levels(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=reasoning_level_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Qualities
-        get_qualities(conn, quality_ids, redis, bypass_cache),
-        search_qualities(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=quality_ids,
-            bypass_cache=bypass_cache,
-        ),
-        # Voices
-        get_voices(conn, voice_ids, redis, bypass_cache),
-        search_voices(
-            conn,
-            redis,
-            search=None,
-            limit_count=20,
-            offset_count=0,
-            exclude_ids=voice_ids,
-            bypass_cache=bypass_cache,
-        ),
+        _get_names(),
+        _search_names(),
+        _get_descriptions(),
+        _search_descriptions(),
+        _get_flags(),
+        _search_flags(),
+        _get_departments(),
+        _search_departments(),
+        _get_values(),
+        _search_values(),
+        _get_keys(),
+        _search_keys(),
+        _get_endpoints(),
+        _search_endpoints(),
+        _get_modalities(),
+        _search_modalities(),
+        _get_temperature_levels(),
+        _search_temperature_levels(),
+        _get_pricing(),
+        _search_pricing(),
+        _get_reasoning_levels(),
+        _search_reasoning_levels(),
+        _get_qualities(),
+        _search_qualities(),
+        _get_voices(),
+        _search_voices(),
     )
 
     # Filter flags to invocation-specific types

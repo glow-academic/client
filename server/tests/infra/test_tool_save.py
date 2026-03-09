@@ -35,7 +35,9 @@ class TestResolveValues:
         item = SaveToolItem(name_id=name.id)
 
         async with pool.acquire() as conn:
-            errors = await resolve_tool_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_tool_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.name_id == name.id
@@ -45,7 +47,9 @@ class TestResolveValues:
         item = SaveToolItem(name="Brand New Tool")
 
         async with pool.acquire() as conn:
-            errors = await resolve_tool_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_tool_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.name_id is not None
@@ -55,7 +59,9 @@ class TestResolveValues:
         item = SaveToolItem(name_id=name_id, description="A useful tool")
 
         async with pool.acquire() as conn:
-            errors = await resolve_tool_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_tool_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.description_id is not None
@@ -65,7 +71,9 @@ class TestResolveValues:
         item = SaveToolItem()
 
         async with pool.acquire() as conn:
-            errors = await resolve_tool_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_tool_values(
+                conn, redis_client, item, is_update=False
+            )
 
         field_names = {e.field for e in errors}
         assert "name" in field_names
@@ -189,7 +197,9 @@ class TestSaveToolClientUpdate:
 
 
 class TestSaveToolClientValidation:
-    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+    async def test_validation_errors_returned_without_mutation(
+        self, pool, redis_client
+    ):
         """Items with missing required fields -> errors returned, no artifact created."""
         item = SaveToolItem()  # Missing required name
 

@@ -1,6 +1,7 @@
 /**
  * Client-side hook for analytics URL state management.
- * Replaces AnalyticsContext with nuqs useQueryStates.
+ * Pure URL state — no profile context dependency for analytics data.
+ * Callers pass dateRangeEarliest from their page's inline facets.
  */
 
 "use client";
@@ -46,31 +47,31 @@ const analyticsParamsClient = {
   simulationFilters: parseAsCommaSeparatedArray,
 } as const;
 
-export function useAnalyticsParams() {
+export interface UseAnalyticsParamsOptions {
+  /** Earliest date from inline facets (MV-backed). Falls back to 30 days ago. */
+  dateRangeEarliest?: string | null;
+}
+
+export function useAnalyticsParams(options: UseAnalyticsParamsOptions = {}) {
   const pathname = usePathname();
-  const {
-    profile,
-    analyticsFilters,
-    cohortIds: profileCohortIds,
-    departmentIds: profileDepartmentIds,
-  } = useProfile();
+  const { profile } = useProfile();
 
   const [params, setParams] = useQueryStates(analyticsParamsClient, {
     shallow: false,
     history: "replace",
   });
 
-  // Compute default start date from analytics filters (MV-backed), then 30-day fallback
+  // Compute default start date from inline facets, then 30-day fallback
   const earliestDate = useMemo(() => {
-    if (analyticsFilters?.date_range_earliest) {
-      const date = new Date(analyticsFilters.date_range_earliest);
+    if (options.dateRangeEarliest) {
+      const date = new Date(options.dateRangeEarliest);
       date.setHours(0, 0, 0, 0);
       return date;
     }
     const fallback = subDays(new Date(), 30);
     fallback.setHours(0, 0, 0, 0);
     return fallback;
-  }, [analyticsFilters?.date_range_earliest]);
+  }, [options.dateRangeEarliest]);
 
   // Parse URL dates or use defaults
   const startDate = useMemo(() => {
@@ -98,20 +99,9 @@ export function useAnalyticsParams() {
   const isHomePage = pathname === "/home";
   const isLeaderboardPage = pathname === "/leaderboard";
 
-  // Effective values (empty = all from profile context)
-  const effectiveCohortIds = useMemo(
-    () =>
-      selectedCohortIds.length > 0 ? selectedCohortIds : profileCohortIds,
-    [selectedCohortIds, profileCohortIds],
-  );
-
-  const effectiveDepartmentIds = useMemo(
-    () =>
-      selectedDepartmentIds.length > 0
-        ? selectedDepartmentIds
-        : profileDepartmentIds,
-    [selectedDepartmentIds, profileDepartmentIds],
-  );
+  // Effective values (empty = all, backend treats empty as unfiltered)
+  const effectiveCohortIds = selectedCohortIds;
+  const effectiveDepartmentIds = selectedDepartmentIds;
 
   const effectiveRoles = useMemo<ProfileRole[]>(() => {
     if (profile?.role === "member") return ["member"];

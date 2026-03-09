@@ -2,8 +2,10 @@
 
 import pytest
 
+from app.routes.v5.tools.resources.departments.create import create_department
 from app.routes.v5.tools.resources.settings.create import create_setting
 from app.routes.v5.tools.resources.settings.get import get_settings
+from app.routes.v5.tools.resources.systems.create import create_system
 
 pytestmark = pytest.mark.asyncio
 
@@ -39,3 +41,21 @@ async def test_sets_mcp_flag(conn, redis_client):
 
     assert result.mcp is True
     assert result.generated is True
+
+
+async def test_round_trips_department_and_system_links(conn, redis_client):
+    department = await create_department(conn, "settings-dept", redis=redis_client)
+    system = await create_system(conn, "settings-system", redis=redis_client)
+
+    result = await create_setting(
+        conn,
+        "linked-setting",
+        redis=redis_client,
+        department_ids=[department.id],
+        system_ids=[system.id],
+    )
+
+    items = await get_settings(conn, [result.id], redis_client, bypass_cache=True)
+
+    assert items[0].department_ids == [department.id]
+    assert items[0].system_ids == [system.id]

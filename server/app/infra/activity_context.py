@@ -35,7 +35,7 @@ from app.routes.v5.tools.resources.pricing.get import get_pricing
 
 
 async def _resolve_profile_ids(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     department_ids: list[str] | None = None,
     roles: list[str] | None = None,
 ) -> list[UUID] | None:
@@ -59,14 +59,15 @@ async def _resolve_profile_ids(
         params.append(roles)
         idx += 1
     where = " AND ".join(conditions)
-    rows = await conn.fetch(
-        f"SELECT p.id FROM profiles_resource p WHERE {where}", *params
-    )
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            f"SELECT p.id FROM profiles_resource p WHERE {where}", *params
+        )
     return [row["id"] for row in rows]
 
 
 async def resolve_activity_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     department_ids: list[str] | None = None,
@@ -85,12 +86,60 @@ async def resolve_activity_context(
       - names (for profile display)
     """
     # Step 1: Resolve department/role filters to profile_ids
-    filter_profile_ids = await _resolve_profile_ids(conn, department_ids, roles)
+    filter_profile_ids = await _resolve_profile_ids(pool, department_ids, roles)
 
     # Merge with direct profile_ids filter
     effective_profile_ids = profile_ids or filter_profile_ids
 
     # Step 2: Parallel fetch all entry grains
+    async def _fetch_sessions() -> list:
+        async with pool.acquire() as c:
+            return await search_sessions(
+                c,
+                profile_ids=effective_profile_ids,
+                date_from=date_from,
+                date_to=date_to,
+                limit=100000,
+            )
+
+    async def _fetch_activity() -> list:
+        async with pool.acquire() as c:
+            return await search_activity(
+                c,
+                profile_ids=effective_profile_ids,
+                date_from=date_from,
+                date_to=date_to,
+                limit=100000,
+            )
+
+    async def _fetch_logins() -> list:
+        async with pool.acquire() as c:
+            return await search_logins(
+                c,
+                profile_ids=effective_profile_ids,
+                date_from=date_from,
+                date_to=date_to,
+                limit=100000,
+            )
+
+    async def _fetch_problems() -> list:
+        async with pool.acquire() as c:
+            return await search_problems(
+                c,
+                profile_ids=effective_profile_ids,
+                date_from=date_from,
+                date_to=date_to,
+                limit=100000,
+            )
+
+    async def _fetch_grants() -> list:
+        async with pool.acquire() as c:
+            return await search_grants(c, limit=100000)
+
+    async def _fetch_emulations() -> list:
+        async with pool.acquire() as c:
+            return await search_emulations(c, limit=100000)
+
     (
         sessions,
         activity,
@@ -99,36 +148,12 @@ async def resolve_activity_context(
         grants,
         emulations,
     ) = await asyncio.gather(
-        search_sessions(
-            conn,
-            profile_ids=effective_profile_ids,
-            date_from=date_from,
-            date_to=date_to,
-            limit=100000,
-        ),
-        search_activity(
-            conn,
-            profile_ids=effective_profile_ids,
-            date_from=date_from,
-            date_to=date_to,
-            limit=100000,
-        ),
-        search_logins(
-            conn,
-            profile_ids=effective_profile_ids,
-            date_from=date_from,
-            date_to=date_to,
-            limit=100000,
-        ),
-        search_problems(
-            conn,
-            profile_ids=effective_profile_ids,
-            date_from=date_from,
-            date_to=date_to,
-            limit=100000,
-        ),
-        search_grants(conn, limit=100000),
-        search_emulations(conn, limit=100000),
+        _fetch_sessions(),
+        _fetch_activity(),
+        _fetch_logins(),
+        _fetch_problems(),
+        _fetch_grants(),
+        _fetch_emulations(),
     )
 
     # Step 3: Collect profile IDs for name resolution
@@ -147,11 +172,13 @@ async def resolve_activity_context(
             all_profile_ids.add(p.profile_id)
 
     # Step 4: Hydrate resources
-    names_selected = (
-        await get_names(conn, list(all_profile_ids), redis, bypass_cache=bypass_cache)
-        if all_profile_ids
-        else []
-    )
+    async def _fetch_names() -> list:
+        if not all_profile_ids:
+            return []
+        async with pool.acquire() as c:
+            return await get_names(c, list(all_profile_ids), redis, bypass_cache=bypass_cache)
+
+    names_selected = await _fetch_names()
 
     return ArtifactContext(
         artifact_id=None,
@@ -173,7 +200,7 @@ async def resolve_activity_context(
 
 
 async def resolve_activity_search_context(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     department_ids: list[str] | None = None,
@@ -199,48 +226,56 @@ async def resolve_activity_search_context(
       - names (profile display), pricing (cost computation)
     """
     # Step 1: Resolve department/role filters
-    filter_profile_ids = await _resolve_profile_ids(conn, department_ids, roles)
+    filter_profile_ids = await _resolve_profile_ids(pool, department_ids, roles)
     effective_profile_ids = profile_ids or filter_profile_ids
 
     page_offset = page * page_size
 
     # Step 2: Paginated sessions + total count
+    async def _fetch_sessions_page() -> list:
+        async with pool.acquire() as c:
+            return await search_sessions(
+                c,
+                profile_ids=effective_profile_ids,
+                date_from=date_from,
+                date_to=date_to,
+                active=active,
+                limit=page_size,
+                offset=page_offset,
+            )
+
+    async def _fetch_sessions_total() -> list:
+        async with pool.acquire() as c:
+            return await search_sessions(
+                c,
+                profile_ids=effective_profile_ids,
+                date_from=date_from,
+                date_to=date_to,
+                active=active,
+                limit=100000,
+                offset=0,
+            )
+
     sessions, total_sessions = await asyncio.gather(
-        search_sessions(
-            conn,
-            profile_ids=effective_profile_ids,
-            date_from=date_from,
-            date_to=date_to,
-            active=active,
-            limit=page_size,
-            offset=page_offset,
-        ),
-        search_sessions(
-            conn,
-            profile_ids=effective_profile_ids,
-            date_from=date_from,
-            date_to=date_to,
-            active=active,
-            limit=100000,
-            offset=0,
-        ),
+        _fetch_sessions_page(),
+        _fetch_sessions_total(),
     )
 
     # Step 3: Groups for current page sessions
     session_ids = [s.id for s in sessions]
-    groups = (
-        await search_groups(conn, session_ids=session_ids, limit=100000)
-        if session_ids
-        else []
-    )
+    if session_ids:
+        async with pool.acquire() as c:
+            groups = await search_groups(c, session_ids=session_ids, limit=100000)
+    else:
+        groups = []
 
     # Step 4: Runs for those groups
     group_ids = [g.id for g in groups]
-    runs = (
-        (await search_runs(conn, group_ids=group_ids, limit=100000))[0]
-        if group_ids
-        else []
-    )
+    if group_ids:
+        async with pool.acquire() as c:
+            runs = (await search_runs(c, group_ids=group_ids, limit=100000))[0]
+    else:
+        runs = []
 
     # Step 5: Collect resource IDs
     profile_ids_set: set[UUID] = set()

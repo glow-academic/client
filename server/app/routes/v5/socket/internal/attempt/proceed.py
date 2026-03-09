@@ -35,7 +35,11 @@ async def attempt_proceed_handler(data: dict[str, Any]) -> None:
     async with get_db_connection() as conn:
         redis = get_redis_client()
         identity = await resolve_profile_identity_context(
-            conn, UUID(profile_id), redis, bypass_cache=True, session_id=UUID(session_id)
+            conn,
+            UUID(profile_id),
+            redis,
+            bypass_cache=True,
+            session_id=UUID(session_id),
         )
         profiles_id = identity.profiles_id if identity else None
 

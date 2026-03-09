@@ -47,8 +47,10 @@ import { parseAsBoolean, parseAsString, type Parser } from "nuqs";
 
 // Types defined inline using InputOf/OutputOf
 // Eval endpoints
-type SaveEvalIn = InputOf<"/api/v5/artifacts/evals/save", "post">;
-type SaveEvalOut = OutputOf<"/api/v5/artifacts/evals/save", "post">;
+type CreateEvalIn = InputOf<"/api/v5/artifacts/evals/create", "post">;
+type CreateEvalOut = OutputOf<"/api/v5/artifacts/evals/create", "post">;
+type UpdateEvalIn = InputOf<"/api/v5/artifacts/evals/update", "post">;
+type UpdateEvalOut = OutputOf<"/api/v5/artifacts/evals/update", "post">;
 type PatchEvalDraftIn = InputOf<"/api/v5/artifacts/evals/draft", "patch">;
 type PatchEvalDraftOut = OutputOf<"/api/v5/artifacts/evals/draft", "patch">;
 type EvalData = OutputOf<"/api/v5/artifacts/evals/get", "post">;
@@ -79,8 +81,8 @@ export interface EvalProps {
   evalDetail?: EvalData;
   evalDetailDefault?: EvalData;
   // Server actions
-  createEvalAction?: (input: SaveEvalIn) => Promise<SaveEvalOut>;
-  updateEvalAction?: (input: SaveEvalIn) => Promise<SaveEvalOut>;
+  createEvalAction?: (input: CreateEvalIn) => Promise<CreateEvalOut>;
+  updateEvalAction?: (input: UpdateEvalIn) => Promise<UpdateEvalOut>;
   patchEvalDraftAction?: (
     input: PatchEvalDraftIn
   ) => Promise<PatchEvalDraftOut>;
@@ -113,7 +115,9 @@ type EvalResourceType =
   | "group_rubrics";
 
 interface EvalFormState {
+  name: string | null;
   name_id: string | null;
+  description: string | null;
   description_id: string | null;
   active_flag_id: string | null;
   dynamic_flag_id: string | null;
@@ -150,25 +154,6 @@ function serializeRubricLinks(links: Record<string, string[]>) {
       .map(([key, ids]) => [key, [...ids].sort()])
       .sort(([a], [b]) => a.localeCompare(b))
   );
-}
-
-function buildRunRubricPayload(
-  links: Record<string, string[]>
-): Array<{ run_id: string; rubric_ids: string[] }> {
-  return Object.entries(links)
-    .filter(([, rubricIds]) => rubricIds.length > 0)
-    .map(([runId, rubricIds]) => ({ run_id: runId, rubric_ids: rubricIds }));
-}
-
-function buildGroupRubricPayload(
-  links: Record<string, string[]>
-): Array<{ group_id: string; rubric_ids: string[] }> {
-  return Object.entries(links)
-    .filter(([, rubricIds]) => rubricIds.length > 0)
-    .map(([groupId, rubricIds]) => ({
-      group_id: groupId,
-      rubric_ids: rubricIds,
-    }));
 }
 
 function EvalComponent({
@@ -249,7 +234,9 @@ function EvalComponent({
   const getInitialFormState = useCallback((): EvalFormState => {
     const data = evalDataRef.current;
     return {
+      name: null,
       name_id: data?.names?.resource?.id ?? null,
+      description: null,
       description_id: data?.descriptions?.resource?.id ?? null,
       active_flag_id: data?.active_flags?.resource?.flag_option_id ?? null,
       dynamic_flag_id: data?.dynamic_flags?.resource?.flag_option_id ?? null,
@@ -429,9 +416,14 @@ function EvalComponent({
     patchEvalDraftActionRef.current = patchEvalDraftAction;
   }, [patchEvalDraftAction]);
 
+  const serverSyncPendingRef = useRef(false);
+
   const draftPatchKey = useMemo(() => {
+    if (serverSyncPendingRef.current) return null;
     return JSON.stringify({
+      name: formState.name,
       name_id: formState.name_id,
+      description: formState.description,
       description_id: formState.description_id,
       active_flag_id: formState.active_flag_id,
       dynamic_flag_id: formState.dynamic_flag_id,
@@ -473,23 +465,45 @@ function EvalComponent({
           formState.dynamic_flag_id,
           formState.groups_flag_id,
         ].filter(Boolean) as string[];
+
+        // Build payload with value field overlay
+        const payload: Record<string, unknown> = {
+          input_draft_id: draftId || null,
+          flag_ids: flagIds.length > 0 ? flagIds : null,
+          department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
+          expected_version: lastSavedVersionRef.current,
+        };
+        if (formState.name) {
+          payload["name"] = formState.name;
+        } else {
+          payload["name_id"] = formState.name_id;
+        }
+        if (formState.description) {
+          payload["description"] = formState.description;
+        } else {
+          payload["description_id"] = formState.description_id;
+        }
+
         const result = await patchEvalDraftActionRef.current({
-          body: {
-            input_draft_id: draftId || null,
-            name_id: formState.name_id,
-            description_id: formState.description_id,
-            flag_ids: flagIds.length > 0 ? flagIds : null,
-            department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
-            agent_ids: formState.agent_ids.length > 0 ? formState.agent_ids : null,
-            model_run_ids: formState.model_run_ids.length > 0 ? formState.model_run_ids : null,
-            group_ids: formState.group_ids.length > 0 ? formState.group_ids : null,
-            run_position_ids: null,
-            group_position_ids: null,
-            expected_version: lastSavedVersionRef.current,
-          },
-        });
+          body: payload,
+        } as PatchEvalDraftIn);
 
         lastPatchedKeyRef.current = draftPatchKey;
+
+        // Sync form_state from server response
+        if (result.form_state) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name: null,
+            name_id: (result.form_state!.name_id as string) ?? prev.name_id,
+            description: null,
+            description_id: (result.form_state!.description_id as string) ?? prev.description_id,
+          }));
+          requestAnimationFrame(() => {
+            serverSyncPendingRef.current = false;
+          });
+        }
 
         if (!draftId && result.draft_id) {
           setUrlFormDataRef.current?.({ draftId: result.draft_id });
@@ -794,41 +808,54 @@ function EvalComponent({
         throw new Error("Profile not loaded");
       }
 
-      const saveAction = isEditMode ? updateEvalAction : createEvalAction;
-      if (!saveAction) {
-        toast.error("Save action not available");
-        throw new Error("Save action not available");
+      if (!formState.name_id) {
+        toast.error("Name is required");
+        throw new Error("Name is required");
       }
 
-      try {
-        if (!formState.name_id) {
-          toast.error("Name is required");
-          throw new Error("Name is required");
-        }
+      const saveFlagIds = [
+        formState.active_flag_id,
+        formState.dynamic_flag_id,
+        formState.groups_flag_id,
+      ].filter(Boolean) as string[];
 
-        const saveFlagIds = [
-          formState.active_flag_id,
-          formState.dynamic_flag_id,
-          formState.groups_flag_id,
-        ].filter(Boolean) as string[];
-        await saveAction({
-          body: {
-            input_eval_id: isEditMode && evalId ? evalId : null,
-            name_id: formState.name_id!,
-            description_id: formState.description_id,
-            flag_ids: saveFlagIds.length > 0 ? saveFlagIds : null,
-            department_ids: formState.department_ids.length > 0 ? formState.department_ids : null,
-            agent_ids: formState.agent_ids.length > 0 ? formState.agent_ids : null,
-            model_run_ids: formState.model_run_ids.length > 0 ? formState.model_run_ids : null,
-            group_ids: formState.group_ids.length > 0 ? formState.group_ids : null,
-            run_position_ids: null,
-            group_position_ids: null,
-            run_rubrics: buildRunRubricPayload(formState.run_rubric_links),
-            group_rubrics: buildGroupRubricPayload(
-              formState.group_rubric_links
-            ),
-          },
-        });
+      try {
+        if (isEditMode) {
+          if (!updateEvalAction) throw new Error("Update action not available");
+          await updateEvalAction({
+            body: {
+              evals: [
+                {
+                  eval_id: evalId!,
+                  name_id: formState.name_id ?? undefined,
+                  description_id: formState.description_id ?? undefined,
+                  flag_ids: saveFlagIds.length > 0 ? saveFlagIds : undefined,
+                  department_ids: formState.department_ids.length > 0 ? formState.department_ids : undefined,
+                  model_ids: formState.agent_ids.length > 0 ? formState.agent_ids : undefined,
+                  model_position_ids: formState.model_run_ids.length > 0 ? formState.model_run_ids : undefined,
+                },
+              ],
+              group_id: s?.group_id,
+            },
+          } as UpdateEvalIn);
+        } else {
+          if (!createEvalAction) throw new Error("Create action not available");
+          await createEvalAction({
+            body: {
+              evals: [
+                {
+                  name_id: formState.name_id!,
+                  description_id: formState.description_id ?? undefined,
+                  flag_ids: saveFlagIds.length > 0 ? saveFlagIds : undefined,
+                  department_ids: formState.department_ids.length > 0 ? formState.department_ids : undefined,
+                  model_ids: formState.agent_ids.length > 0 ? formState.agent_ids : undefined,
+                  model_position_ids: formState.model_run_ids.length > 0 ? formState.model_run_ids : undefined,
+                },
+              ],
+              group_id: s?.group_id,
+            },
+          } as CreateEvalIn);
+        }
         toast.success(
           `Eval ${isEditMode ? "updated" : "created"} successfully!`
         );
@@ -967,7 +994,9 @@ function EvalComponent({
         case "basic":
           return {
             ...prev,
+            name: null,
             name_id: null,
+            description: null,
             description_id: null,
             active_flag_id: null,
             dynamic_flag_id: null,
@@ -1104,7 +1133,10 @@ function EvalComponent({
                   names={s?.names?.resources ?? []}
                   disabled={disabled}
                   onNameIdChange={(nameId) =>
-                    setFormState((prev) => ({ ...prev, name_id: nameId }))
+                    setFormState((prev) => ({ ...prev, name_id: nameId, name: null }))
+                  }
+                  onNameChange={(name) =>
+                    setFormState((prev) => ({ ...prev, name }))
                   }
                   onGenerate={handleGenerateNames}
 
@@ -1128,7 +1160,11 @@ function EvalComponent({
                     setFormState((prev) => ({
                       ...prev,
                       description_id: descriptionId,
+                      description: null,
                     }))
+                  }
+                  onDescriptionChange={(description) =>
+                    setFormState((prev) => ({ ...prev, description }))
                   }
                   onGenerate={handleGenerateDescriptions}
                   required={s?.descriptions?.required ?? false}

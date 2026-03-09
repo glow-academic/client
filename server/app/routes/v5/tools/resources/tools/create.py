@@ -16,6 +16,8 @@ async def create_tool(
     description: str = "",
     redis: Redis = None,
     department_ids: list[UUID] | None = None,
+    args_ids: list[UUID] | None = None,
+    args_output_ids: list[UUID] | None = None,
     operation: str | None = None,
     resources: list[str] | None = None,
     entries: list[str] | None = None,
@@ -30,14 +32,42 @@ async def create_tool(
     new_tool_id = await conn.fetchval(
         """
         INSERT INTO tools_resource (
-            id, name, description, department_ids, operation, resources, entries, artifacts, active, mcp, generated
+            id,
+            name,
+            description,
+            department_ids,
+            args_ids,
+            args_output_ids,
+            operation,
+            resources,
+            entries,
+            artifacts,
+            active,
+            mcp,
+            generated
         )
-        VALUES (COALESCE($11, uuidv7()), $1, $2, $3, $4, $5, $6, $7, $8, $9, $9)
+        VALUES (
+            COALESCE($12, uuidv7()),
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            $8,
+            $9,
+            $10,
+            $11,
+            $11
+        )
         RETURNING id
         """,
         name,
         description,
         department_ids or [],
+        args_ids or [],
+        args_output_ids or [],
         operation,
         resources or [],
         entries or [],

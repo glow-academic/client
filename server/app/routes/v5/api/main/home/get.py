@@ -24,7 +24,6 @@ from app.infra.analytics_facets import (
     resolve_analytics_facets,
 )
 from app.infra.common_context import resolve_common_context
-from app.infra.types import ArtifactContext
 from app.infra.globals import get_db, get_pool, get_redis_client
 from app.infra.home_context import resolve_home_context
 from app.infra.home_permissions import (
@@ -35,6 +34,7 @@ from app.infra.home_permissions import (
     compute_status_instructional,
     format_cohort_names,
 )
+from app.infra.types import ArtifactContext
 from app.routes.auth.types import AnalyticsFilterFields
 from app.routes.v5.api.main.chat.types import (
     ChatSimulationOperational,

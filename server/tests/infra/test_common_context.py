@@ -92,3 +92,32 @@ class TestResolveCommonContext:
         assert result.profile is profile
         assert isinstance(result.tool_graph.tools, list)
         assert result.runs.total_count >= 0
+
+    async def test_profile_with_setting_graph_resolves_real_tool_graph(
+        self, pool, redis_client, setting_graph_factory
+    ):
+        fixture = await setting_graph_factory()
+
+        result = await resolve_common_context(
+            pool,
+            redis_client,
+            profile_id=fixture.profile_artifact_id,
+        )
+
+        assert result is not None
+        assert result.profile.profiles_id == fixture.profile_resource_id
+        assert result.profile.primary_department_id == fixture.department_id
+        assert result.profile.settings_id == fixture.setting_id
+        assert {tool.system_id for tool in result.tool_graph.tools} == {
+            fixture.system_id
+        }
+        assert {tool.agent_id for tool in result.tool_graph.tools} == {fixture.agent_id}
+        assert {tool.tool_id for tool in result.tool_graph.tools} == {fixture.tool_id}
+        assert {
+            (tool.target_type, tool.target, tool.operation)
+            for tool in result.tool_graph.tools
+        } == {
+            ("resource", target, fixture.operation) for target in fixture.resources
+        } | {("entry", target, fixture.operation) for target in fixture.entries} | {
+            ("artifact", target, fixture.operation) for target in fixture.artifacts
+        }

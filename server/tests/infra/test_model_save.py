@@ -13,7 +13,6 @@ from app.infra.model_save import resolve_model_values, save_model_client
 from app.routes.v5.api.main.model.types import SaveModelItem
 
 from .conftest import (
-    ADMIN_PROFILE_ID,
     GUEST_PROFILE_ID,
     SUPERADMIN_PROFILE_ID,
 )
@@ -187,7 +186,9 @@ class TestSaveModelClientUpdate:
 
 
 class TestSaveModelClientValidation:
-    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+    async def test_validation_errors_returned_without_mutation(
+        self, pool, redis_client
+    ):
         """Items with missing required fields -> errors returned, no artifact created."""
         item = SaveModelItem()  # Missing required name
 

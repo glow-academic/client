@@ -18,7 +18,6 @@ from app.routes.v5.api.main.department.types import SaveDepartmentItem
 
 from .conftest import (
     ADMIN_PROFILE_ID,
-    GUEST_PROFILE_ID,
     SUPERADMIN_PROFILE_ID,
 )
 
@@ -49,7 +48,9 @@ class TestResolveValues:
 
         item = SaveDepartmentItem(name_id=name.id)
 
-        errors = await resolve_department_values(pool, redis_client, item, is_update=False)
+        errors = await resolve_department_values(
+            pool, redis_client, item, is_update=False
+        )
 
         assert errors == []
         assert item.name_id == name.id
@@ -58,7 +59,9 @@ class TestResolveValues:
         """Raw name value -> create_name -> sets name_id."""
         item = SaveDepartmentItem(name="Brand New Dept")
 
-        errors = await resolve_department_values(pool, redis_client, item, is_update=False)
+        errors = await resolve_department_values(
+            pool, redis_client, item, is_update=False
+        )
 
         assert errors == []
         assert item.name_id is not None
@@ -67,7 +70,9 @@ class TestResolveValues:
         """Raw description value -> create_description -> sets description_id."""
         item = SaveDepartmentItem(name_id=name_id, description="A test department")
 
-        errors = await resolve_department_values(pool, redis_client, item, is_update=False)
+        errors = await resolve_department_values(
+            pool, redis_client, item, is_update=False
+        )
 
         assert errors == []
         assert item.description_id is not None
@@ -76,7 +81,9 @@ class TestResolveValues:
         """Missing required fields on create -> errors."""
         item = SaveDepartmentItem()
 
-        errors = await resolve_department_values(pool, redis_client, item, is_update=False)
+        errors = await resolve_department_values(
+            pool, redis_client, item, is_update=False
+        )
 
         field_names = {e.field for e in errors}
         assert "name" in field_names
@@ -85,7 +92,9 @@ class TestResolveValues:
         """Update mode skips required field validation."""
         item = SaveDepartmentItem()
 
-        errors = await resolve_department_values(pool, redis_client, item, is_update=True)
+        errors = await resolve_department_values(
+            pool, redis_client, item, is_update=True
+        )
 
         assert errors == []
 
@@ -196,7 +205,9 @@ class TestSaveDepartmentClientUpdate:
 
 
 class TestSaveDepartmentClientValidation:
-    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+    async def test_validation_errors_returned_without_mutation(
+        self, pool, redis_client
+    ):
         """Items with missing required fields -> errors returned, no artifact created."""
         item = SaveDepartmentItem()  # Missing required name
 

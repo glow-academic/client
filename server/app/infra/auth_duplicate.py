@@ -56,7 +56,9 @@ async def duplicate_auth_client(
     # ── Step 1: Profile context ────────────────────────────────────────
 
     profile = await resolve_profile_identity_context(
-        conn, profile_id, redis,
+        conn,
+        profile_id,
+        redis,
         session_id=session_id,
     )
 

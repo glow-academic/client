@@ -1,12 +1,13 @@
 /**
  * Profile Context for managing the active user profile across the application.
- * Provides identity, permissions, department filters, and analytics filter state.
- * Uses SSR + Server Actions pattern (no React Query).
+ * Provides identity, permissions, and role data.
+ *
+ * Note: Analytics filters, drafts, and group state are now per-page concerns,
+ * not layout-level. Each page fetches its own facets from its endpoint.
  */
 "use client";
 
 import type {
-  AnalyticsFiltersResponse,
   AuthProfileResponse,
   ProfileItem,
   SafeSessionSnapshot,
@@ -15,7 +16,6 @@ import React, {
   createContext,
   useContext,
   useMemo,
-  useState,
 } from "react";
 
 // ============================================================================
@@ -26,24 +26,10 @@ export type RoleResourceItem = NonNullable<
   AuthProfileResponse["role_resources"]
 >[number];
 
-// Note: With server-side access control, users without valid sessions won't reach pages
-// (they see UnifiedAccessDenied). However, we handle null profiles gracefully for
-// edge cases, loading states, and WebSocket connections that may legitimately use null profileId.
-
 interface ProfileContextType {
   // Profile data
   profile: ProfileItem | null;
   isAuthenticated: boolean; // true if user has real NextAuth session
-
-  // Layout data
-  departmentIds: string[];
-  selectedDepartmentIds: string[];
-  setSelectedDepartmentIds: (ids: string[]) => void;
-  effectiveDepartmentIds: string[];
-  cohortIds: string[];
-
-  // Analytics filters (from server — per-page filter config + options)
-  analyticsFilters: AnalyticsFiltersResponse | null;
 
   // Permissions data (from server)
   availableSections: string[];
@@ -65,23 +51,13 @@ interface ProfileProviderClientProps {
   children: React.ReactNode;
   initial: AuthProfileResponse | null;
   sessionSnapshot: SafeSessionSnapshot;
-  analyticsFilters: AnalyticsFiltersResponse | null;
 }
 
 export function ProfileProviderClient({
   children,
   initial,
   sessionSnapshot,
-  analyticsFilters,
 }: ProfileProviderClientProps) {
-  // Department filter state
-  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState<string[]>(
-    []
-  );
-
-  // Handle null initial (access denied case) - with server-side access control,
-  // users without valid sessions won't reach pages (they see UnifiedAccessDenied).
-  // However, we handle null gracefully for edge cases and loading states.
   // Construct profile from AuthProfileResponse
   const profile = useMemo<ProfileItem | null>(() => {
     if (!initial) return null;
@@ -93,31 +69,10 @@ export function ProfileProviderClient({
     };
   }, [initial]);
 
-  // Compute effective department IDs from analytics filters
-  const allDepartmentIds = useMemo(
-    () => analyticsFilters?.department_options?.map((o) => o.value) ?? [],
-    [analyticsFilters]
-  );
-  const effectiveDepartmentIds = useMemo(() => {
-    return selectedDepartmentIds.length > 0
-      ? selectedDepartmentIds
-      : allDepartmentIds;
-  }, [selectedDepartmentIds, allDepartmentIds]);
-
   const value: ProfileContextType = {
     // Profile data
     profile,
     isAuthenticated: sessionSnapshot.isAuthenticated,
-
-    // Layout data (from server) - handle null initial gracefully
-    departmentIds: allDepartmentIds,
-    selectedDepartmentIds,
-    setSelectedDepartmentIds,
-    effectiveDepartmentIds,
-    cohortIds: analyticsFilters?.cohort_options?.map((o) => o.value) ?? [],
-
-    // Analytics filters (from server — per-page filter config + options)
-    analyticsFilters: analyticsFilters ?? null,
 
     // Permissions data (from server)
     availableSections: initial?.available_sections ?? [],

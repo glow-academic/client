@@ -33,7 +33,7 @@ _PAGE_METADATA = PageMetadataConfig(
 
 
 async def docs_invocation_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -50,7 +50,8 @@ async def docs_invocation_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    async with pool.acquire() as conn:
+        profile = await resolve_profile_identity_context(conn, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -60,8 +61,12 @@ async def docs_invocation_client(
 
     # ── Step 2: Parallel docs fetches ──────────────────────────────────
 
+    async def _get_invocation_docs() -> object:
+        async with pool.acquire() as conn:
+            return await get_invocation_docs(conn)
+
     (invocation,) = await asyncio.gather(
-        get_invocation_docs(conn),
+        _get_invocation_docs(),
     )
 
     # ── Page metadata ───────────────────────────────────────────────────

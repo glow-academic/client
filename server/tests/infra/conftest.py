@@ -9,7 +9,12 @@ from uuid import UUID
 import pytest
 import pytest_asyncio
 
-from .factories import create_profile_identity_fixture
+from .factories import (
+    create_persona_context_fixture,
+    create_profile_identity_fixture,
+    create_setting_graph_fixture,
+    create_system_graph_fixture,
+)
 
 # Seeded profile IDs (from test-seed.sql)
 SUPERADMIN_PROFILE_ID = UUID("019b3be4-36f0-788c-9df2-481eb5917940")
@@ -46,6 +51,39 @@ async def profile_identity_factory(pool, redis_client):
     """Create real profile artifacts plus linked resources for context tests."""
 
     return lambda **kwargs: create_profile_identity_fixture(
+        pool,
+        redis_client,
+        **kwargs,
+    )
+
+
+@pytest_asyncio.fixture
+async def setting_graph_factory(pool, redis_client):
+    """Create a real profile -> setting -> system -> agent -> tool graph."""
+
+    return lambda **kwargs: create_setting_graph_fixture(
+        pool,
+        redis_client,
+        **kwargs,
+    )
+
+
+@pytest_asyncio.fixture
+async def system_graph_factory(pool, redis_client):
+    """Create a real system -> agent -> model/provider/tool graph."""
+
+    return lambda **kwargs: create_system_graph_fixture(
+        pool,
+        redis_client,
+        **kwargs,
+    )
+
+
+@pytest_asyncio.fixture
+async def persona_context_factory(pool, redis_client):
+    """Create a real persona artifact plus draft and suggestion resources."""
+
+    return lambda **kwargs: create_persona_context_fixture(
         pool,
         redis_client,
         **kwargs,

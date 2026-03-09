@@ -23,6 +23,7 @@ from app.routes.v5.api.main.setting.types import (
     PatchSettingDraftApiRequest,
     PatchSettingDraftApiResponse,
     SaveSettingFieldError,
+    SettingDraftFormState,
 )
 from app.routes.v5.tools.entries.setting_drafts.create import create_setting_draft
 from app.routes.v5.tools.entries.setting_drafts.refresh import refresh_setting_drafts
@@ -86,7 +87,9 @@ async def patch_setting_draft_client(
     # ── Step 1: Profile context ────────────────────────────────────────
 
     profile = await resolve_profile_identity_context(
-        pool, profile_id, redis,
+        pool,
+        profile_id,
+        redis,
         session_id=session_id,
     )
 
@@ -139,12 +142,27 @@ async def patch_setting_draft_client(
                 threshold_ids=request.threshold_ids,
             )
 
-    # ── Step 5: Refresh MV ─────────────────────────────────────────────
+    # ── Step 5: Build form state (server is source of truth) ────────────
+
+    form_state = SettingDraftFormState(
+        name_id=request.name_id,
+        description_id=request.description_id,
+        flag_id=request.flag_id,
+        department_ids=request.department_ids or [],
+        color_ids=request.color_ids or [],
+        profile_ids=request.profile_ids or [],
+        auth_ids=request.auth_ids or [],
+        provider_key_ids=request.provider_key_ids or [],
+        auth_item_key_ids=request.auth_item_key_ids or [],
+        threshold_ids=request.threshold_ids or [],
+    )
+
+    # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
     async with pool.acquire() as conn:
         await refresh_setting_drafts(conn)
 
-    # ── Step 6: Invalidate cache ───────────────────────────────────────
+    # ── Step 7: Invalidate cache ───────────────────────────────────────
 
     await invalidate_tags(["settings", "drafts"], redis=redis)
 
@@ -153,4 +171,5 @@ async def patch_setting_draft_client(
         draft_id=result.id,
         new_version=new_version,
         message="Draft created successfully",
+        form_state=form_state,
     )

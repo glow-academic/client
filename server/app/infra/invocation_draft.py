@@ -40,7 +40,7 @@ from app.utils.cache.invalidate_tags import invalidate_tags
 
 
 async def _resolve_creatable_values(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     request: PatchInvocationDraftApiRequest,
 ) -> list[SaveInvocationFieldError]:
@@ -56,11 +56,13 @@ async def _resolve_creatable_values(
     # ── Single-select creatables ──────────────────────────────────────
 
     if request.name is not None:
-        result = await create_name(conn, request.name, redis)
+        async with pool.acquire() as conn:
+            result = await create_name(conn, request.name, redis)
         request.name_ids = [result.id]
 
     if request.description is not None:
-        result = await create_description(conn, request.description, redis)
+        async with pool.acquire() as conn:
+            result = await create_description(conn, request.description, redis)
         request.description_ids = [result.id]
 
     return errors
@@ -72,7 +74,7 @@ async def _resolve_creatable_values(
 
 
 async def patch_invocation_draft_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -92,10 +94,13 @@ async def patch_invocation_draft_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(
-        conn, profile_id, redis,
-        session_id=session_id,
-    )
+    async with pool.acquire() as conn:
+        profile = await resolve_profile_identity_context(
+            conn,
+            profile_id,
+            redis,
+            session_id=session_id,
+        )
 
     if profile is None:
         raise HTTPException(
@@ -105,7 +110,7 @@ async def patch_invocation_draft_client(
 
     # ── Step 2: Value resolution (creatable only) ──────────────────────
 
-    errors = await _resolve_creatable_values(conn, redis, request)
+    errors = await _resolve_creatable_values(pool, redis, request)
     if errors:
         raise HTTPException(
             status_code=400,
@@ -117,24 +122,25 @@ async def patch_invocation_draft_client(
     # Compute new version
     new_version = request.expected_version + 1
 
-    async with conn.transaction():
-        result = await create_invocation_draft(
-            conn,
-            group_id=profile.group_id or request.group_id,
-            session_id=session_id,
-            version=new_version,
-            name_ids=request.name_ids,
-            description_ids=request.description_ids,
-            value_ids=request.value_ids,
-            flag_ids=request.flag_ids,
-            department_ids=request.department_ids,
-            key_ids=request.key_ids,
-            endpoint_ids=request.endpoint_ids,
-            temperature_level_ids=request.temperature_level_ids,
-            pricing_ids=request.pricing_ids,
-            reasoning_level_ids=request.reasoning_level_ids,
-            voice_ids=request.voice_ids,
-        )
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            result = await create_invocation_draft(
+                conn,
+                group_id=profile.group_id or request.group_id,
+                session_id=session_id,
+                version=new_version,
+                name_ids=request.name_ids,
+                description_ids=request.description_ids,
+                value_ids=request.value_ids,
+                flag_ids=request.flag_ids,
+                department_ids=request.department_ids,
+                key_ids=request.key_ids,
+                endpoint_ids=request.endpoint_ids,
+                temperature_level_ids=request.temperature_level_ids,
+                pricing_ids=request.pricing_ids,
+                reasoning_level_ids=request.reasoning_level_ids,
+                voice_ids=request.voice_ids,
+            )
 
     # ── Step 4: Build form state (server is source of truth) ──────────
 
@@ -154,7 +160,8 @@ async def patch_invocation_draft_client(
 
     # ── Step 5: Refresh MV ─────────────────────────────────────────────
 
-    await refresh_invocation_drafts(conn)
+    async with pool.acquire() as conn:
+        await refresh_invocation_drafts(conn)
 
     # ── Step 6: Invalidate cache ───────────────────────────────────────
 

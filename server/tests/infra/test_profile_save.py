@@ -13,8 +13,6 @@ from app.infra.profile_save import resolve_profile_values, save_profile_client
 from app.routes.v5.api.main.profile.types import SaveProfileItem
 
 from .conftest import (
-    ADMIN_PROFILE_ID,
-    GUEST_PROFILE_ID,
     MEMBER_PROFILE_ID,
     SUPERADMIN_PROFILE_ID,
 )
@@ -38,7 +36,9 @@ class TestResolveValues:
         item = SaveProfileItem(name_id=name.id)
 
         async with pool.acquire() as conn:
-            errors = await resolve_profile_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_profile_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.name_id == name.id
@@ -48,7 +48,9 @@ class TestResolveValues:
         item = SaveProfileItem(name="Brand New Profile")
 
         async with pool.acquire() as conn:
-            errors = await resolve_profile_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_profile_values(
+                conn, redis_client, item, is_update=False
+            )
 
         assert errors == []
         assert item.name_id is not None
@@ -58,7 +60,9 @@ class TestResolveValues:
         item = SaveProfileItem()
 
         async with pool.acquire() as conn:
-            errors = await resolve_profile_values(conn, redis_client, item, is_update=False)
+            errors = await resolve_profile_values(
+                conn, redis_client, item, is_update=False
+            )
 
         field_names = {e.field for e in errors}
         assert "name" in field_names
@@ -68,7 +72,9 @@ class TestResolveValues:
         item = SaveProfileItem()
 
         async with pool.acquire() as conn:
-            errors = await resolve_profile_values(conn, redis_client, item, is_update=True)
+            errors = await resolve_profile_values(
+                conn, redis_client, item, is_update=True
+            )
 
         assert errors == []
 
@@ -142,9 +148,7 @@ class TestSaveProfileClientUpdate:
             redis_client,
             profile_id=SUPERADMIN_PROFILE_ID,
             items=[
-                SaveProfileItem(
-                    input_profile_id=target_profile_id, name="Updated Name"
-                )
+                SaveProfileItem(input_profile_id=target_profile_id, name="Updated Name")
             ],
         )
 
@@ -174,7 +178,9 @@ class TestSaveProfileClientUpdate:
 
 
 class TestSaveProfileClientValidation:
-    async def test_validation_errors_returned_without_mutation(self, pool, redis_client):
+    async def test_validation_errors_returned_without_mutation(
+        self, pool, redis_client
+    ):
         """Items with missing required fields -> errors returned, no artifact created."""
         item = SaveProfileItem()  # Missing required name
 
