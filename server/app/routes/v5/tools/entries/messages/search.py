@@ -26,22 +26,24 @@ async def search_messages(
     Returns (items, total_count).
     """
     source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
+    source_alias = "mv" if bypass_mv else "m"
+    from_source = source if bypass_mv else f"{source} {source_alias}"
 
     order = "ASC" if sort_order.lower() == "asc" else "DESC"
 
     rows = await conn.fetch(
         f"""
-        SELECT DISTINCT m.message_id, m.run_id, m.role, m.message_created_at,
-               m.text_upload_ids, m.audio_upload_ids, m.image_upload_ids,
-               m.video_upload_ids, m.file_upload_ids, m.call_upload_ids,
+        SELECT DISTINCT {source_alias}.message_id, {source_alias}.run_id, {source_alias}.role, {source_alias}.message_created_at,
+               {source_alias}.text_upload_ids, {source_alias}.audio_upload_ids, {source_alias}.image_upload_ids,
+               {source_alias}.video_upload_ids, {source_alias}.file_upload_ids, {source_alias}.call_upload_ids,
                COUNT(*) OVER() AS total_count
-        FROM {source} m
-        LEFT JOIN messages_agents_connection mac ON mac.message_id = m.message_id
-        WHERE ($1::uuid[] IS NULL OR m.run_id = ANY($1))
-          AND ($2::text IS NULL OR m.role = $2)
+        FROM {from_source}
+        LEFT JOIN messages_agents_connection mac ON mac.message_id = {source_alias}.message_id
+        WHERE ($1::uuid[] IS NULL OR {source_alias}.run_id = ANY($1))
+          AND ($2::text IS NULL OR {source_alias}.role = $2)
           AND ($3::uuid[] IS NULL OR mac.agents_id = ANY($3))
-          AND ($4::text[] IS NULL OR m.role = ANY($4))
-        ORDER BY m.message_created_at {order}
+          AND ($4::text[] IS NULL OR {source_alias}.role = ANY($4))
+        ORDER BY {source_alias}.message_created_at {order}
         LIMIT $5 OFFSET $6
         """,
         run_ids,
