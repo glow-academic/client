@@ -515,6 +515,23 @@ class PatchModelDraftApiRequest(BaseModel):
     voice_ids: list[UUID] | None = None
 
 
+class ModelDraftFormState(BaseModel):
+    """Server-authoritative form state returned after draft save."""
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_ids: list[UUID]
+    department_ids: list[UUID]
+    modality_ids: list[UUID]
+    pricing_ids: list[UUID]
+    provider_ids: list[UUID]
+    quality_ids: list[UUID]
+    reasoning_level_ids: list[UUID]
+    temperature_level_ids: list[UUID]
+    value_ids: list[UUID]
+    voice_ids: list[UUID]
+
+
 class PatchModelDraftApiResponse(BaseModel):
     """Response model for new-style model draft endpoint."""
 
@@ -522,6 +539,7 @@ class PatchModelDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+    form_state: ModelDraftFormState | None = None
 
 
 # ========== Export Endpoint Types ==========

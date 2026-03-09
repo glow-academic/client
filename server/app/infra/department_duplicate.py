@@ -39,6 +39,7 @@ async def duplicate_department_client(
     *,
     profile_id: UUID,
     department_id: UUID,
+    session_id: UUID | None = None,
 ) -> DuplicateDepartmentApiResponse:
     """Department duplicate using composable infra functions.
 
@@ -54,7 +55,10 @@ async def duplicate_department_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(pool, profile_id, redis)
+    profile = await resolve_profile_identity_context(
+        pool, profile_id, redis,
+        session_id=session_id,
+    )
 
     if profile is None:
         raise HTTPException(

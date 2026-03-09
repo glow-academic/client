@@ -63,8 +63,10 @@ import type {
   GetAgentOut,
   PatchAgentDraftIn,
   PatchAgentDraftOut,
-  SaveAgentIn,
-  SaveAgentOut,
+  CreateAgentIn,
+  CreateAgentOut,
+  UpdateAgentIn,
+  UpdateAgentOut,
 } from "@/app/(main)/intelligence/agents/[agentId]/page";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 
@@ -130,9 +132,8 @@ export interface AgentProps {
   // Optional server-provided data and actions (for server-side rendering)
   agentDetail?: GetAgentOut; // For edit mode (agent_id provided)
   agentDetailDefault?: GetAgentOut; // For new mode (agent_id = null)
-  saveAgentAction?: (input: SaveAgentIn) => Promise<SaveAgentOut>;
-  // Draft action: Resource-specific prop name is acceptable since types are resource-specific
-  // See Z-DOCS.md "Draft Autosave Pattern" section for migration guide
+  createAgentAction?: (input: CreateAgentIn) => Promise<CreateAgentOut>;
+  updateAgentAction?: (input: UpdateAgentIn) => Promise<UpdateAgentOut>;
   patchAgentDraftAction?: (
     input: PatchAgentDraftIn,
   ) => Promise<PatchAgentDraftOut>;
@@ -149,7 +150,8 @@ export default function Agent({
   agentId,
   agentDetail: serverAgentDetail,
   agentDetailDefault: serverAgentDetailDefault,
-  saveAgentAction,
+  createAgentAction,
+  updateAgentAction,
   patchAgentDraftAction,
   createVoicesAction,
   createPromptsAction,
@@ -306,7 +308,9 @@ export default function Agent({
   // Store resource IDs only, not text or resource objects (canonical pattern - matches Persona.tsx)
   type DraftState = {
     name_id: string | null;
+    name: string | null;
     description_id: string | null;
+    description: string | null;
     prompt_id: string | null;
     modelId: string;
     active_flag_id: string | null;
@@ -334,7 +338,9 @@ export default function Agent({
     if (!data) {
       return {
         name_id: null,
+        name: null,
         description_id: null,
+        description: null,
         prompt_id: null,
         modelId: "",
         active_flag_id: null,
@@ -363,7 +369,9 @@ export default function Agent({
 
     return {
       name_id: data.names?.resource?.id ?? null,
+      name: null,
       description_id: data.descriptions?.resource?.id ?? null,
+      description: null,
       prompt_id: data.prompts?.resource?.id ?? null,
       modelId: data.models?.resource?.id ?? "",
       active_flag_id: currentFlag?.flag_option_id ?? null,
@@ -418,6 +426,8 @@ export default function Agent({
     draftState as Record<string, unknown>,
   );
 
+  const serverSyncPendingRef = useRef(false);
+
   const patchActionRef = useRef<
     | ((
         payload: Record<string, unknown>,
@@ -430,8 +440,31 @@ export default function Agent({
       patchActionRef.current = undefined;
       return;
     }
-    patchActionRef.current = async (payload: Record<string, unknown>) =>
-      patchAgentDraftAction({ body: payload } as PatchAgentDraftIn);
+    patchActionRef.current = async (payload: Record<string, unknown>) => {
+      const result = await patchAgentDraftAction({ body: payload } as PatchAgentDraftIn);
+      const fs = result?.form_state;
+      if (fs) {
+        serverSyncPendingRef.current = true;
+        setDraftState((prev) => ({
+          ...prev,
+          name_id: fs.name_id ?? prev.name_id,
+          name: fs.name_id ? null : prev.name,
+          description_id: fs.description_id ?? prev.description_id,
+          description: fs.description_id ? null : prev.description,
+          active_flag_id: fs.flag_ids?.[0] ?? prev.active_flag_id,
+          departmentIds: fs.department_ids ?? prev.departmentIds,
+          modelId: fs.model_ids?.[0] ?? prev.modelId,
+          tool_ids: fs.tool_ids ?? prev.tool_ids,
+          reasoning_level_id: fs.reasoning_level_ids?.[0] ?? prev.reasoning_level_id,
+          temperature_level_id: fs.temperature_level_ids?.[0] ?? prev.temperature_level_id,
+          voice_ids: fs.voice_ids ?? prev.voice_ids,
+        }));
+        requestAnimationFrame(() => {
+          serverSyncPendingRef.current = false;
+        });
+      }
+      return result;
+    };
   }, [patchAgentDraftAction]);
 
   const buildPatchPayload = useCallback(
@@ -440,7 +473,8 @@ export default function Agent({
       expectedVersion: number,
       flushResults: Record<string, unknown> = {},
     ) => {
-      return {
+      const currentDraftState = formStateRef.current as unknown as DraftState;
+      const base: Record<string, unknown> = {
         input_draft_id: nextDraftId,
         group_id: sectionData?.group_id ?? null,
         ...buildDraftPayload(AGENT_RESOURCES, {
@@ -454,6 +488,18 @@ export default function Agent({
         }),
         expected_version: expectedVersion,
       };
+
+      // Overlay value fields (single-select values clear the corresponding ID)
+      if (currentDraftState.name != null) {
+        base.name = currentDraftState.name;
+        delete base.name_id;
+      }
+      if (currentDraftState.description != null) {
+        base.description = currentDraftState.description;
+        delete base.description_id;
+      }
+
+      return base;
     },
     [sectionData, draftState],
   );
@@ -464,7 +510,7 @@ export default function Agent({
     flushAllAndSave,
     formDataRef,
   } = useDraftLifecycle({
-    formStateKey: JSON.stringify(draftState),
+    formStateKey: serverSyncPendingRef.current ? undefined : JSON.stringify(draftState),
     patchActionRef,
     isAutosaveEnabled,
     buildPatchPayload,
@@ -478,16 +524,7 @@ export default function Agent({
     },
   });
 
-  // Use server actions directly (no mutations needed)
-  const handleSaveAgent = useCallback(
-    async (body: Record<string, unknown>) => {
-      if (!saveAgentAction) {
-        throw new Error("saveAgentAction is required");
-      }
-      await saveAgentAction({ body } as SaveAgentIn);
-    },
-    [saveAgentAction],
-  );
+  // No handleSaveAgent needed — Create/Update actions used directly in handleSubmit
 
   // Get selected model capabilities
   const selectedModelCapabilities = useMemo(() => {
@@ -705,33 +742,80 @@ export default function Agent({
           departmentIds: finalDepartmentIds,
         } as Record<string, unknown>;
 
-        // Save agent using unified v4 API (handles both create and update)
         if (!profile?.id) {
           toast.error("Profile not loaded. Please refresh the page.");
           throw new Error("Profile not loaded");
         }
 
-        const savePayload = {
-          input_agent_id: isEditMode ? agentId : null,
-          name_id: efs["name_id"] as string,
-          model_id: efs["modelId"] as string,
-          description_id: (efs["description_id"] as string) ?? null,
-          prompt_id: (efs["prompt_id"] as string) ?? null,
-          instructions_id: (efs["instructions_id"] as string) ?? null,
-          active_flag_id: (efs["active_flag_id"] as string) ?? null,
-          temperature_level_id: (efs["temperature_level_id"] as string) ?? null,
-          reasoning_level_id: (efs["reasoning_level_id"] as string) ?? null,
-          department_ids: (efs["departmentIds"] as string[])?.length
-            ? (efs["departmentIds"] as string[])
-            : null,
-          tool_ids: (efs["tool_ids"] as string[])?.length
-            ? (efs["tool_ids"] as string[])
-            : null,
-          voice_ids: (efs["voice_ids"] as string[])?.length
-            ? (efs["voice_ids"] as string[])
-            : null,
-        };
-        await handleSaveAgent(savePayload);
+        const efsTyped = efs as unknown as DraftState;
+        const flagId = efsTyped.active_flag_id;
+        const deptIds = (efs["departmentIds"] as string[])?.length
+          ? (efs["departmentIds"] as string[])
+          : undefined;
+        const tIds = (efs["tool_ids"] as string[])?.length
+          ? (efs["tool_ids"] as string[])
+          : undefined;
+        const vIds = (efs["voice_ids"] as string[])?.length
+          ? (efs["voice_ids"] as string[])
+          : undefined;
+
+        if (isEditMode && agentId) {
+          if (!updateAgentAction) {
+            throw new Error("Update action unavailable");
+          }
+          await updateAgentAction({
+            body: {
+              agents: [
+                {
+                  agent_id: agentId,
+                  name_id: efsTyped.name_id ?? undefined,
+                  name: efsTyped.name ?? undefined,
+                  description_id: efsTyped.description_id ?? undefined,
+                  description: efsTyped.description ?? undefined,
+                  flag_ids: flagId ? [flagId] : undefined,
+                  model_ids: efsTyped.modelId ? [efsTyped.modelId] : undefined,
+                  department_ids: deptIds,
+                  tool_ids: tIds,
+                  voice_ids: vIds,
+                  reasoning_level_ids: efsTyped.reasoning_level_id
+                    ? [efsTyped.reasoning_level_id]
+                    : undefined,
+                  temperature_level_ids: efsTyped.temperature_level_id
+                    ? [efsTyped.temperature_level_id]
+                    : undefined,
+                },
+              ],
+            },
+          });
+        } else {
+          if (!createAgentAction) {
+            throw new Error("Create action unavailable");
+          }
+          await createAgentAction({
+            body: {
+              agents: [
+                {
+                  name_id: efsTyped.name_id ?? undefined,
+                  name: efsTyped.name ?? undefined,
+                  description_id: efsTyped.description_id ?? undefined,
+                  description: efsTyped.description ?? undefined,
+                  flag_ids: flagId ? [flagId] : undefined,
+                  model_ids: efsTyped.modelId ? [efsTyped.modelId] : undefined,
+                  department_ids: deptIds,
+                  tool_ids: tIds,
+                  voice_ids: vIds,
+                  reasoning_level_ids: efsTyped.reasoning_level_id
+                    ? [efsTyped.reasoning_level_id]
+                    : undefined,
+                  temperature_level_ids: efsTyped.temperature_level_id
+                    ? [efsTyped.temperature_level_id]
+                    : undefined,
+                },
+              ],
+            },
+          });
+        }
+
         toast.success(
           `Agent ${isEditMode ? "updated" : "created"} successfully!`,
         );
@@ -742,7 +826,7 @@ export default function Agent({
         toast.error(
           `Failed to ${isEditMode ? "update" : "create"} agent: ${msg}`,
         );
-        throw error; // Re-throw for GenericForm to handle
+        throw error;
       }
     },
     [
@@ -753,7 +837,8 @@ export default function Agent({
       departmentsSection?.resources,
       isSuperadmin,
       profile,
-      handleSaveAgent,
+      createAgentAction,
+      updateAgentAction,
       flushAllResources,
       resetFormAndState,
       router,
@@ -1092,10 +1177,17 @@ export default function Agent({
                           names={mergedNames}
                           disabled={isReadonly}
                           onNameIdChange={(nameId) => {
-                            // Update draftState with name_id (canonical pattern - IDs are source of truth)
                             setDraftState((prev) => ({
                               ...prev,
                               name_id: nameId,
+                              name: null,
+                            }));
+                          }}
+                          onNameChange={(name) => {
+                            setDraftState((prev) => ({
+                              ...prev,
+                              name,
+                              name_id: null,
                             }));
                           }}
                           onGenerate={handleGenerateName}
@@ -1147,10 +1239,17 @@ export default function Agent({
                           descriptions={mergedDescriptions}
                           disabled={isReadonly}
                           onDescriptionIdChange={(descriptionId) => {
-                            // Update draftState with description_id (canonical pattern - IDs are source of truth)
                             setDraftState((prev) => ({
                               ...prev,
                               description_id: descriptionId,
+                              description: null,
+                            }));
+                          }}
+                          onDescriptionChange={(description) => {
+                            setDraftState((prev) => ({
+                              ...prev,
+                              description,
+                              description_id: null,
                             }));
                           }}
                           searchTerm={descriptionSearch}
@@ -1540,7 +1639,6 @@ export default function Agent({
                           setDraftState((prev) => ({ ...prev, voice_ids: ids }))
                         }
 
-                        create_tool_id={voicesSection?.create_tool_id ?? null}
                         createVoicesAction={createVoicesAction}
                         registerFlush={registerFlushCallbacks["voices"]}
                         isAutosaveEnabled={isAutosaveEnabled}
@@ -1595,7 +1693,6 @@ export default function Agent({
                           setStepFormData({ promptSearch: term || null })
                         }
 
-                        create_tool_id={promptsSection?.create_tool_id ?? null}
                         createPromptsAction={createPromptsAction}
                         registerFlush={registerFlushCallbacks["prompts"]}
                         isAutosaveEnabled={isAutosaveEnabled}

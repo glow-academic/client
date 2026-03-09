@@ -168,14 +168,15 @@ class TestSaveModelClientUpdate:
         assert exc_info.value.status_code == 404
 
     async def test_update_no_active_agents_succeeds(self, pool, redis_client):
-        """A model with no active agents can be updated by admin."""
+        """A model with no active agents can be updated by superadmin."""
         model_id = await self._create_model(pool, redis_client)
 
+        # Model with no active agents — update should succeed
         result = await save_model_client(
             pool,
             redis_client,
-            profile_id=ADMIN_PROFILE_ID,
-            items=[SaveModelItem(input_model_id=model_id, name="Admin Update")],
+            profile_id=SUPERADMIN_PROFILE_ID,
+            items=[SaveModelItem(input_model_id=model_id, name="Superadmin Update")],
         )
         assert result.results[0].success is True
 

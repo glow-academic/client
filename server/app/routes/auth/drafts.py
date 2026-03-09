@@ -9,7 +9,6 @@ import asyncpg
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.infra.globals import get_db, get_pool
-from app.routes.auth.route_permissions import compute_page_metadata
 from app.routes.auth.types import GetDraftsApiResponse, QGetProfileContextV4Draft
 from app.routes.v5.tools.entries.agent_drafts.get import (
     get_agent_drafts as get_agent_drafts_entries_internal,
@@ -72,6 +71,42 @@ from app.utils.error.handle_route_error import handle_route_error
 
 router = APIRouter()
 
+
+def _resolve_artifact_type(pathname: str) -> str | None:
+    """Derive artifact type from a pathname for draft lookup.
+
+    Maps URL patterns to their artifact type:
+    - /training/personas → persona, /training/scenarios → scenario, etc.
+    - /home/[id]/[id] → chat, /practice/[id]/[id] → chat
+    - /benchmark/[id]/[id] → eval
+    """
+    segments = [s for s in pathname.split("/") if s]
+    if not segments:
+        return None
+
+    section = segments[0]
+
+    # Bundle sections with nested UUIDs
+    _BUNDLE_MAP = {"home": "chat", "practice": "chat", "benchmark": "eval"}
+    if section in _BUNDLE_MAP and len(segments) >= 3:
+        return _BUNDLE_MAP[section]
+
+    # Core artifact sections: /section/subsection → singular form
+    _SINGULAR_OVERRIDES = {"profiles": "profile"}
+    if len(segments) >= 2:
+        # For /section/subsection/new or /section/subsection/[id], use subsection
+        subsection = segments[1] if segments[1] != "new" else segments[1]
+        if segments[-1] == "new" and len(segments) >= 3:
+            subsection = segments[-2]
+        singular = _SINGULAR_OVERRIDES.get(
+            subsection,
+            subsection.rstrip("s") if subsection.endswith("s") else subsection,
+        )
+        return singular
+
+    return None
+
+
 # Artifact type → per-artifact draft internal function
 _ARTIFACT_INTERNAL_FN = {
     "agent": get_agent_drafts_entries_internal,
@@ -128,8 +163,7 @@ async def get_drafts(
         profile_id = UUID(profile_id_str)
 
         pathname = http_request.headers.get("X-Pathname", "")
-        metadata = compute_page_metadata(pathname, [])
-        artifact_type = metadata.artifact_type
+        artifact_type = _resolve_artifact_type(pathname)
         if not artifact_type:
             return GetDraftsApiResponse(drafts=[])
 

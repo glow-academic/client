@@ -8,8 +8,6 @@ from app.routes.auth.route_permissions import (  # noqa: F401
     ProfileRole,
     RoutePermission,
     SectionPermission,
-    get_available_subsections_for_role,
-    get_redirect_path_for_role,
 )
 
 __all__ = [
@@ -17,6 +15,4 @@ __all__ = [
     "ProfileRole",
     "RoutePermission",
     "SectionPermission",
-    "get_available_subsections_for_role",
-    "get_redirect_path_for_role",
 ]

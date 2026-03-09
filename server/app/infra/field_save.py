@@ -169,6 +169,8 @@ async def save_field_client(
     *,
     profile_id: UUID,
     items: list[SaveFieldItem],
+    session_id: UUID | None = None,
+    draft_id: UUID | None = None,
     group_id: UUID | None = None,
 ) -> SaveFieldApiResponse:
     """Field save using composable infra functions.

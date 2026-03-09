@@ -18,8 +18,10 @@ import { createLoader, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type GetAgentIn = InputOf<"/api/v5/artifacts/agents/get", "post">;
 type GetAgentOut = OutputOf<"/api/v5/artifacts/agents/get", "post">;
-type SaveAgentIn = InputOf<"/api/v5/artifacts/agents/save", "post">;
-type SaveAgentOut = OutputOf<"/api/v5/artifacts/agents/save", "post">;
+type CreateAgentIn = InputOf<"/api/v5/artifacts/agents/create", "post">;
+type CreateAgentOut = OutputOf<"/api/v5/artifacts/agents/create", "post">;
+type UpdateAgentIn = InputOf<"/api/v5/artifacts/agents/update", "post">;
+type UpdateAgentOut = OutputOf<"/api/v5/artifacts/agents/update", "post">;
 // Prompts delete removed - no prompts delete functionality needed
 type PatchAgentDraftIn = InputOf<"/api/v5/artifacts/agents/draft", "patch">;
 type PatchAgentDraftOut = OutputOf<"/api/v5/artifacts/agents/draft", "patch">;
@@ -59,14 +61,15 @@ export async function generateMetadata({
 }
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveAgent(input: SaveAgentIn): Promise<SaveAgentOut> {
+async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/agents/save", input);
+  return api.post("/artifacts/agents/create", input);
 }
 
-// Prompts delete removed - no prompts delete functionality needed
+async function updateAgent(input: UpdateAgentIn): Promise<UpdateAgentOut> {
+  "use server";
+  return api.post("/artifacts/agents/update", input);
+}
 
 async function patchAgentDraft(
   input: PatchAgentDraftIn
@@ -155,7 +158,8 @@ export default async function AgentEditPage({
           <Agent
             agentId={agentId}
             {...(agentDetail && { agentDetail })}
-            saveAgentAction={saveAgent}
+            createAgentAction={createAgent}
+            updateAgentAction={updateAgent}
             patchAgentDraftAction={patchAgentDraft}
             createVoicesAction={createDraftVoices}
             createPromptsAction={createDraftPrompts}
@@ -190,6 +194,8 @@ export type {
   GetAgentOut,
   PatchAgentDraftIn,
   PatchAgentDraftOut,
-  SaveAgentIn,
-  SaveAgentOut,
+  CreateAgentIn,
+  CreateAgentOut,
+  UpdateAgentIn,
+  UpdateAgentOut,
 };

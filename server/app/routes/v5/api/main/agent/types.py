@@ -95,7 +95,7 @@ class GetAgentApiRequest(BaseModel):
 
     agent_id: UUID | None = None
     draft_id: UUID | None = None
-    group_id: UUID
+    group_id: UUID | None = None
 
 
 class GetAgentApiResponse(BaseModel):
@@ -402,7 +402,7 @@ class PatchAgentDraftApiRequest(BaseModel):
     Client always sends full state (append-only — each write is a new version snapshot).
     """
 
-    group_id: UUID
+    group_id: UUID | None = None
     input_draft_id: UUID | None = None
     expected_version: int = 0
 
@@ -423,6 +423,21 @@ class PatchAgentDraftApiRequest(BaseModel):
     rubric_ids: list[UUID] | None = None
 
 
+class AgentDraftFormState(BaseModel):
+    """Server-authoritative form state returned after draft save."""
+
+    name_id: UUID | None = None
+    description_id: UUID | None = None
+    flag_ids: list[UUID]
+    department_ids: list[UUID]
+    model_ids: list[UUID]
+    tool_ids: list[UUID]
+    reasoning_level_ids: list[UUID]
+    temperature_level_ids: list[UUID]
+    voice_ids: list[UUID]
+    rubric_ids: list[UUID]
+
+
 class PatchAgentDraftApiResponse(BaseModel):
     """Response model for new-style agent draft endpoint."""
 
@@ -430,6 +445,7 @@ class PatchAgentDraftApiResponse(BaseModel):
     draft_id: UUID
     new_version: int
     message: str
+    form_state: AgentDraftFormState | None = None
 
 
 # ========== List Endpoint Types ==========

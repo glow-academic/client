@@ -12534,26 +12534,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/page": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Auth Page
-         * @description Server-driven routing metadata endpoint.
-         */
-        post: operations["get_auth_page_auth_page_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/auth/analytics": {
         parameters: {
             query?: never;
@@ -12708,26 +12688,6 @@ export interface paths {
          * @description Create emulation grant and return default-idp redirect URL.
          */
         post: operations["authorize_emulation_auth_emulate_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/auth/callback": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Get Auth Callback
-         * @description Lightweight redirect resolution — returns only redirect_path.
-         */
-        post: operations["get_auth_callback_auth_callback_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -13300,6 +13260,32 @@ export interface components {
             resource?: unknown | null;
             /** Resources */
             resources?: unknown[] | null;
+        };
+        /**
+         * AgentDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        AgentDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** Model Ids */
+            model_ids: string[];
+            /** Tool Ids */
+            tool_ids: string[];
+            /** Reasoning Level Ids */
+            reasoning_level_ids: string[];
+            /** Temperature Level Ids */
+            temperature_level_ids: string[];
+            /** Voice Ids */
+            voice_ids: string[];
+            /** Rubric Ids */
+            rubric_ids: string[];
         };
         /**
          * AgentFieldError
@@ -15339,15 +15325,6 @@ export interface components {
             client_id: string;
             /** Client Secret */
             client_secret?: string;
-        };
-        /** BreadcrumbItem */
-        BreadcrumbItem: {
-            /** Title */
-            title: string;
-            /** Section */
-            section?: string | null;
-            /** Url */
-            url: string;
         };
         /**
          * ChatData
@@ -22033,11 +22010,6 @@ export interface components {
             slugs?: components["schemas"]["AuthSlugSection"] | null;
             items?: components["schemas"]["AuthItemSection"] | null;
         };
-        /** GetAuthCallbackApiResponse */
-        GetAuthCallbackApiResponse: {
-            /** Redirect Path */
-            redirect_path: string;
-        };
         /** GetAuthConfigApiResponse */
         GetAuthConfigApiResponse: {
             /** Issuer */
@@ -22062,18 +22034,6 @@ export interface components {
             code_challenge_methods_supported: string[];
         };
         /**
-         * GetAuthPageApiResponse
-         * @description Response for POST /auth/page — server-driven routing metadata.
-         */
-        GetAuthPageApiResponse: {
-            /** Sidebar Routes */
-            sidebar_routes?: components["schemas"]["SidebarSection"][] | null;
-            /** Breadcrumbs */
-            breadcrumbs?: components["schemas"]["BreadcrumbItem"][] | null;
-            page_access?: components["schemas"]["PageAccess"] | null;
-            page_metadata?: components["schemas"]["PageMetadata"] | null;
-        };
-        /**
          * GetAuthProfileApiResponse
          * @description Response for POST /auth/profile — identity + permissions.
          */
@@ -22092,10 +22052,6 @@ export interface components {
             scoped_roles?: string[] | null;
             /** Available Sections */
             available_sections?: string[] | null;
-            /** Available Routes */
-            available_routes?: string[] | null;
-            /** Redirect Path */
-            redirect_path?: string | null;
             /** Role Resources */
             role_resources?: components["schemas"]["QGetProfileContextV4RoleResource"][] | null;
             /** Session Id */
@@ -27099,74 +27055,12 @@ export interface components {
             /** Question Id */
             question_id?: string | null;
         };
-        /** PageAccess */
-        PageAccess: {
-            /**
-             * Authorized
-             * @default true
-             */
-            authorized: boolean;
-            /** Redirect */
-            redirect?: string | null;
-            /** Reason */
-            reason?: string | null;
-        };
         /** PageMetaItem */
         PageMetaItem: {
             /** Title */
             title: string;
             /** Description */
             description: string;
-        };
-        /** PageMetadata */
-        PageMetadata: {
-            /**
-             * Is List Page
-             * @default false
-             */
-            is_list_page: boolean;
-            /**
-             * Is Detail Page
-             * @default false
-             */
-            is_detail_page: boolean;
-            /**
-             * Is Create Page
-             * @default false
-             */
-            is_create_page: boolean;
-            /**
-             * Is Analytics Page
-             * @default false
-             */
-            is_analytics_page: boolean;
-            /**
-             * Show Analytics Filters
-             * @default false
-             */
-            show_analytics_filters: boolean;
-            /**
-             * Show Save Toolbar
-             * @default false
-             */
-            show_save_toolbar: boolean;
-            /**
-             * Show Drafts
-             * @default false
-             */
-            show_drafts: boolean;
-            /** Artifact Type */
-            artifact_type?: string | null;
-            /** Create Url */
-            create_url?: string | null;
-            /** Create Label */
-            create_label?: string | null;
-            /** Valid Artifact Types */
-            valid_artifact_types?: components["schemas"]["TypeItem"][];
-            /** Valid Resource Types */
-            valid_resource_types?: components["schemas"]["TypeItem"][];
-            /** Valid Entry Types */
-            valid_entry_types?: components["schemas"]["TypeItem"][];
         };
         /** ParamInfo */
         ParamInfo: {
@@ -27626,6 +27520,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["AgentDraftFormState"] | null;
         };
         /**
          * PatchAuthDraftApiRequest
@@ -35921,28 +35816,6 @@ export interface components {
             /** Auth Ids */
             auth_ids?: unknown[] | null;
         };
-        /** SidebarMenuItem */
-        SidebarMenuItem: {
-            /** Title */
-            title: string;
-            /** Section */
-            section: string;
-            /** Url */
-            url: string;
-        };
-        /** SidebarSection */
-        SidebarSection: {
-            /** Title */
-            title: string;
-            /** Section */
-            section: string;
-            /** Icon */
-            icon: string;
-            /** Url */
-            url: string;
-            /** Items */
-            items?: components["schemas"]["SidebarMenuItem"][] | null;
-        };
         /** SimulationAvailabilityGenerationEvent */
         SimulationAvailabilityGenerationEvent: {
             /**
@@ -37754,16 +37627,6 @@ export interface components {
             entries?: unknown[] | null;
             /** Artifacts */
             artifacts?: unknown[] | null;
-        };
-        /**
-         * TypeItem
-         * @description Generic typed operation reference for artifact/resource/entry types.
-         */
-        TypeItem: {
-            /** Name */
-            name: string;
-            /** Operation */
-            operation: string;
         };
         /**
          * UpdateAgentApiRequest
@@ -62994,43 +62857,6 @@ export interface operations {
             };
         };
     };
-    get_auth_page_auth_page_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetProfileContextApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAuthPageApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_analytics_filters_auth_analytics_post: {
         parameters: {
             query?: never;
@@ -63306,43 +63132,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CreateEmulationGrantApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_auth_callback_auth_callback_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["GetProfileContextApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GetAuthCallbackApiResponse"];
                 };
             };
             /** @description Validation Error */

@@ -36,6 +36,7 @@ async def delete_auth_client(
     *,
     profile_id: UUID,
     auth_ids: list[UUID],
+    session_id: UUID | None = None,
 ) -> DeleteAuthApiResponse:
     """Auth bulk delete using composable infra functions.
 
@@ -52,7 +53,10 @@ async def delete_auth_client(
 
     # -- Step 1: Profile context ------------------------------------------------
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(
+        conn, profile_id, redis,
+        session_id=session_id,
+    )
 
     if profile is None:
         raise HTTPException(

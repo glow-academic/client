@@ -99,7 +99,10 @@ async def patch_persona_draft_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(pool, profile_id, redis)
+    profile = await resolve_profile_identity_context(
+        pool, profile_id, redis,
+        session_id=session_id,
+    )
 
     if profile is None:
         raise HTTPException(
@@ -133,7 +136,7 @@ async def patch_persona_draft_client(
         async with conn.transaction():
             result = await create_persona_draft(
                 conn,
-                group_id=request.group_id,
+                group_id=profile.group_id or request.group_id,
                 session_id=session_id,
                 version=new_version,
                 name_ids=[request.name_id] if request.name_id else None,

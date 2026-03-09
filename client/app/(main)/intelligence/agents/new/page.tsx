@@ -17,8 +17,8 @@ import { createLoader, parseAsString } from "nuqs/server";
 /** ---- Strong types from OpenAPI ---- */
 type GetAgentIn = InputOf<"/api/v5/artifacts/agents/get", "post">;
 type GetAgentOut = OutputOf<"/api/v5/artifacts/agents/get", "post">;
-type SaveAgentIn = InputOf<"/api/v5/artifacts/agents/save", "post">;
-type SaveAgentOut = OutputOf<"/api/v5/artifacts/agents/save", "post">;
+type CreateAgentIn = InputOf<"/api/v5/artifacts/agents/create", "post">;
+type CreateAgentOut = OutputOf<"/api/v5/artifacts/agents/create", "post">;
 type PatchAgentDraftIn = InputOf<"/api/v5/artifacts/agents/draft", "patch">;
 type PatchAgentDraftOut = OutputOf<"/api/v5/artifacts/agents/draft", "patch">;
 type CreateDraftVoicesIn = InputOf<"/api/v5/resources/voices", "post">;
@@ -37,11 +37,9 @@ const getAgent = async (input: GetAgentIn): Promise<GetAgentOut> => {
 };
 
 /** ---- Strongly-typed server actions (single source of truth) ---- */
-async function saveAgent(input: SaveAgentIn): Promise<SaveAgentOut> {
+async function createAgent(input: CreateAgentIn): Promise<CreateAgentOut> {
   "use server";
-  // profileId comes from X-Profile-Id header (auto-injected by request-core.ts)
-  // No revalidateTag needed - Redis cache handles invalidation
-  return api.post("/artifacts/agents/save", input);
+  return api.post("/artifacts/agents/create", input);
 }
 
 async function patchAgentDraft(input: PatchAgentDraftIn): Promise<PatchAgentDraftOut> {
@@ -127,7 +125,7 @@ export default async function NewAgentPage({
         <Agent
           key={q.draftId || "no-draft"} // Force remount when draftId changes to ensure clean state reset
           agentDetailDefault={agentDetailDefault}
-          saveAgentAction={saveAgent}
+          createAgentAction={createAgent}
           patchAgentDraftAction={patchAgentDraft}
           createVoicesAction={createDraftVoices}
         />
@@ -137,4 +135,4 @@ export default async function NewAgentPage({
 }
 
 /** ---- Export types for client component (type-only imports) ---- */
-export type { GetAgentIn, GetAgentOut, SaveAgentIn, SaveAgentOut };
+export type { GetAgentIn, GetAgentOut, CreateAgentIn, CreateAgentOut };

@@ -44346,98 +44346,6 @@
         }
       }
     },
-    "/auth/page": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Get Auth Page",
-        "description": "Server-driven routing metadata endpoint.",
-        "operationId": "get_auth_page_auth_page_post",
-        "parameters": [
-          {
-            "name": "X-Api-Key",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Api-Key"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetProfileContextApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetAuthPageApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/auth/analytics": {
       "post": {
         "tags": [
@@ -45145,98 +45053,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CreateEmulationGrantApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/auth/callback": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Get Auth Callback",
-        "description": "Lightweight redirect resolution \u2014 returns only redirect_path.",
-        "operationId": "get_auth_callback_auth_callback_post",
-        "parameters": [
-          {
-            "name": "X-Api-Key",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Api-Key"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GetProfileContextApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GetAuthCallbackApiResponse"
                 }
               }
             }
@@ -46384,6 +46200,111 @@
         },
         "type": "object",
         "title": "AgentDescriptionSection"
+      },
+      "AgentDraftFormState": {
+        "properties": {
+          "name_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name Id"
+          },
+          "description_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Id"
+          },
+          "flag_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Flag Ids"
+          },
+          "department_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Department Ids"
+          },
+          "model_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Model Ids"
+          },
+          "tool_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Tool Ids"
+          },
+          "reasoning_level_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Reasoning Level Ids"
+          },
+          "temperature_level_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Temperature Level Ids"
+          },
+          "voice_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Voice Ids"
+          },
+          "rubric_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Rubric Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "flag_ids",
+          "department_ids",
+          "model_ids",
+          "tool_ids",
+          "reasoning_level_ids",
+          "temperature_level_ids",
+          "voice_ids",
+          "rubric_ids"
+        ],
+        "title": "AgentDraftFormState",
+        "description": "Server-authoritative form state returned after draft save."
       },
       "AgentFieldError": {
         "properties": {
@@ -52236,35 +52157,6 @@
           "client_id"
         ],
         "title": "Body_token_default_idp_token_post"
-      },
-      "BreadcrumbItem": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "section": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Section"
-          },
-          "url": {
-            "type": "string",
-            "title": "Url"
-          }
-        },
-        "type": "object",
-        "required": [
-          "title",
-          "url"
-        ],
-        "title": "BreadcrumbItem"
       },
       "ChatData": {
         "properties": {
@@ -73274,19 +73166,6 @@
         "title": "GetAuthApiResponse",
         "description": "Response model for get auth endpoint."
       },
-      "GetAuthCallbackApiResponse": {
-        "properties": {
-          "redirect_path": {
-            "type": "string",
-            "title": "Redirect Path"
-          }
-        },
-        "type": "object",
-        "required": [
-          "redirect_path"
-        ],
-        "title": "GetAuthCallbackApiResponse"
-      },
       "GetAuthConfigApiResponse": {
         "properties": {
           "issuer": {
@@ -73348,61 +73227,6 @@
           "code_challenge_methods_supported"
         ],
         "title": "GetAuthConfigApiResponse"
-      },
-      "GetAuthPageApiResponse": {
-        "properties": {
-          "sidebar_routes": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/SidebarSection"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Sidebar Routes"
-          },
-          "breadcrumbs": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/BreadcrumbItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Breadcrumbs"
-          },
-          "page_access": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PageAccess"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          },
-          "page_metadata": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/PageMetadata"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "title": "GetAuthPageApiResponse",
-        "description": "Response for POST /auth/page \u2014 server-driven routing metadata."
       },
       "GetAuthProfileApiResponse": {
         "properties": {
@@ -73489,31 +73313,6 @@
               }
             ],
             "title": "Available Sections"
-          },
-          "available_routes": {
-            "anyOf": [
-              {
-                "items": {
-                  "type": "string"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Available Routes"
-          },
-          "redirect_path": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Redirect Path"
           },
           "role_resources": {
             "anyOf": [
@@ -92665,39 +92464,6 @@
         "type": "object",
         "title": "OptionsGenerationEvent"
       },
-      "PageAccess": {
-        "properties": {
-          "authorized": {
-            "type": "boolean",
-            "title": "Authorized",
-            "default": true
-          },
-          "redirect": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Redirect"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason"
-          }
-        },
-        "type": "object",
-        "title": "PageAccess"
-      },
       "PageMetaItem": {
         "properties": {
           "title": {
@@ -92715,101 +92481,6 @@
           "description"
         ],
         "title": "PageMetaItem"
-      },
-      "PageMetadata": {
-        "properties": {
-          "is_list_page": {
-            "type": "boolean",
-            "title": "Is List Page",
-            "default": false
-          },
-          "is_detail_page": {
-            "type": "boolean",
-            "title": "Is Detail Page",
-            "default": false
-          },
-          "is_create_page": {
-            "type": "boolean",
-            "title": "Is Create Page",
-            "default": false
-          },
-          "is_analytics_page": {
-            "type": "boolean",
-            "title": "Is Analytics Page",
-            "default": false
-          },
-          "show_analytics_filters": {
-            "type": "boolean",
-            "title": "Show Analytics Filters",
-            "default": false
-          },
-          "show_save_toolbar": {
-            "type": "boolean",
-            "title": "Show Save Toolbar",
-            "default": false
-          },
-          "show_drafts": {
-            "type": "boolean",
-            "title": "Show Drafts",
-            "default": false
-          },
-          "artifact_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Artifact Type"
-          },
-          "create_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Create Url"
-          },
-          "create_label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Create Label"
-          },
-          "valid_artifact_types": {
-            "items": {
-              "$ref": "#/components/schemas/TypeItem"
-            },
-            "type": "array",
-            "title": "Valid Artifact Types"
-          },
-          "valid_resource_types": {
-            "items": {
-              "$ref": "#/components/schemas/TypeItem"
-            },
-            "type": "array",
-            "title": "Valid Resource Types"
-          },
-          "valid_entry_types": {
-            "items": {
-              "$ref": "#/components/schemas/TypeItem"
-            },
-            "type": "array",
-            "title": "Valid Entry Types"
-          }
-        },
-        "type": "object",
-        "title": "PageMetadata"
       },
       "ParamInfo": {
         "properties": {
@@ -94367,6 +94038,16 @@
           "message": {
             "type": "string",
             "title": "Message"
+          },
+          "form_state": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentDraftFormState"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -123334,71 +123015,6 @@
         "type": "object",
         "title": "SettingsGenerationEvent"
       },
-      "SidebarMenuItem": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "section": {
-            "type": "string",
-            "title": "Section"
-          },
-          "url": {
-            "type": "string",
-            "title": "Url"
-          }
-        },
-        "type": "object",
-        "required": [
-          "title",
-          "section",
-          "url"
-        ],
-        "title": "SidebarMenuItem"
-      },
-      "SidebarSection": {
-        "properties": {
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "section": {
-            "type": "string",
-            "title": "Section"
-          },
-          "icon": {
-            "type": "string",
-            "title": "Icon"
-          },
-          "url": {
-            "type": "string",
-            "title": "Url"
-          },
-          "items": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/SidebarMenuItem"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Items"
-          }
-        },
-        "type": "object",
-        "required": [
-          "title",
-          "section",
-          "icon",
-          "url"
-        ],
-        "title": "SidebarSection"
-      },
       "SimulationAvailabilityGenerationEvent": {
         "properties": {
           "artifact_type": {
@@ -129352,25 +128968,6 @@
         },
         "type": "object",
         "title": "ToolsGenerationEvent"
-      },
-      "TypeItem": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "operation": {
-            "type": "string",
-            "title": "Operation"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "operation"
-        ],
-        "title": "TypeItem",
-        "description": "Generic typed operation reference for artifact/resource/entry types."
       },
       "UpdateAgentApiRequest": {
         "properties": {

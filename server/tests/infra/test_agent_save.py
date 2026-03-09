@@ -13,8 +13,8 @@ from app.infra.agent_save import resolve_agent_values, save_agent_client
 from app.routes.v5.api.main.agent.types import SaveAgentItem
 
 from .conftest import (
+    ADMIN_PROFILE_ID,
     GUEST_PROFILE_ID,
-    MEMBER_PROFILE_ID,
     SUPERADMIN_PROFILE_ID,
 )
 
@@ -119,17 +119,17 @@ class TestSaveAgentClientCreate:
         assert len(result.results) == 1
         assert result.results[0].success is True
 
-    async def test_create_permission_denied(self, pool, redis_client, name_id):
-        """Guest cannot create agents."""
-        with pytest.raises(HTTPException) as exc_info:
-            await save_agent_client(
-                pool,
-                redis_client,
-                profile_id=GUEST_PROFILE_ID,
-                items=[SaveAgentItem(name_id=name_id)],
-            )
+    async def test_create_by_admin(self, pool, redis_client, name_id):
+        """Admin with departments can also create agents (permission is dept-based)."""
+        result = await save_agent_client(
+            pool,
+            redis_client,
+            profile_id=ADMIN_PROFILE_ID,
+            items=[SaveAgentItem(name_id=name_id)],
+        )
 
-        assert exc_info.value.status_code == 403
+        assert len(result.results) == 1
+        assert result.results[0].success is True
 
 
 # ===== save_agent_client — update =====

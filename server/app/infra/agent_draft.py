@@ -20,6 +20,7 @@ from redis.asyncio import Redis
 from app.infra.agent_permissions import compute_can_draft
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.agent.types import (
+    AgentDraftFormState,
     PatchAgentDraftApiRequest,
     PatchAgentDraftApiResponse,
     SaveAgentFieldError,
@@ -85,7 +86,10 @@ async def patch_agent_draft_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(pool, profile_id, redis)
+    profile = await resolve_profile_identity_context(
+        pool, profile_id, redis,
+        session_id=session_id,
+    )
 
     if profile is None:
         raise HTTPException(
@@ -119,7 +123,7 @@ async def patch_agent_draft_client(
         async with conn.transaction():
             result = await create_agent_draft(
                 conn,
-                group_id=request.group_id,
+                group_id=profile.group_id or request.group_id,
                 session_id=session_id,
                 version=new_version,
                 name_ids=[request.name_id] if request.name_id else None,
@@ -136,12 +140,27 @@ async def patch_agent_draft_client(
                 rubric_ids=request.rubric_ids,
             )
 
-    # ── Step 5: Refresh MV ─────────────────────────────────────────────
+    # ── Step 5: Build form state (server is source of truth) ────────────
+
+    form_state = AgentDraftFormState(
+        name_id=request.name_id,
+        description_id=request.description_id,
+        flag_ids=request.flag_ids or [],
+        department_ids=request.department_ids or [],
+        model_ids=request.model_ids or [],
+        tool_ids=request.tool_ids or [],
+        reasoning_level_ids=request.reasoning_level_ids or [],
+        temperature_level_ids=request.temperature_level_ids or [],
+        voice_ids=request.voice_ids or [],
+        rubric_ids=request.rubric_ids or [],
+    )
+
+    # ── Step 6: Refresh MV ─────────────────────────────────────────────
 
     async with pool.acquire() as conn:
         await refresh_agent_drafts(conn)
 
-    # ── Step 6: Invalidate cache ───────────────────────────────────────
+    # ── Step 7: Invalidate cache ───────────────────────────────────────
 
     await invalidate_tags(["agents", "drafts"], redis=redis)
 
@@ -150,4 +169,5 @@ async def patch_agent_draft_client(
         draft_id=result.id,
         new_version=new_version,
         message="Draft created successfully",
+        form_state=form_state,
     )

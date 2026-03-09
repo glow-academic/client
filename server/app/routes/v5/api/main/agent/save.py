@@ -27,6 +27,7 @@ async def save_agent(
     """Save agents using composable infra architecture."""
     try:
         profile_id = http_request.state.profile_id
+        session_id = http_request.state.session_id
         if not profile_id:
             raise HTTPException(
                 status_code=401,
