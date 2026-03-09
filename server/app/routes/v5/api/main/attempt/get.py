@@ -8,11 +8,10 @@ Uses composable context resolver with black-box tools.
 """
 
 from collections import defaultdict as _defaultdict
-from typing import Annotated, Any
+from typing import Any
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.infra.attempt_context import resolve_attempt_context
 from app.infra.attempt_permissions import (
@@ -26,7 +25,7 @@ from app.infra.attempt_permissions import (
     compute_percentage,
     compute_total_possible_points,
 )
-from app.infra.globals import get_db, get_pool, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.routes.v5.api.main.attempt.types import (
     AggregatedResults,
@@ -114,7 +113,6 @@ def _format_timer(
 
 
 async def get_attempt_internal(
-    conn: asyncpg.Connection,
     profile_id: UUID,
     attempt_id: UUID,
     bypass_cache: bool = False,
@@ -133,9 +131,10 @@ async def get_attempt_internal(
         redis = get_redis_client()
 
         # Resolve profile identity (canonical pattern — no inline SQL)
-        requester = await resolve_profile_identity_context(
-            conn, profile_id, redis, bypass_cache
-        )
+        async with pool.acquire() as conn:
+            requester = await resolve_profile_identity_context(
+                conn, profile_id, redis, bypass_cache
+            )
         profiles_id = requester.profiles_id if requester else None
         requester_role: str | None = requester.role if requester else None
 
@@ -994,7 +993,6 @@ async def get_attempt_internal(
 
 
 async def get_attempt_client(
-    conn: asyncpg.Connection,
     profile_id: UUID,
     attempt_id: UUID,
     bypass_cache: bool = False,
@@ -1016,7 +1014,6 @@ async def get_attempt_client(
             return GetAttemptDetailResponse.model_validate(cached["data"]), True
 
     data = await get_attempt_internal(
-        conn=conn,
         profile_id=profile_id,
         attempt_id=attempt_id,
         bypass_cache=bypass_cache,
@@ -1084,7 +1081,6 @@ async def attempt_get(
     request: GetAttemptDetailRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetAttemptDetailResponse:
     """Get attempt detail with parallel MV fetching."""
     tags = ["attempt"]
@@ -1102,7 +1098,6 @@ async def attempt_get(
         attempt_id = request.attempt_id
 
         response_data, cache_hit = await get_attempt_client(
-            conn=conn,
             profile_id=profile_id,
             attempt_id=attempt_id,
             bypass_cache=bypass_cache,

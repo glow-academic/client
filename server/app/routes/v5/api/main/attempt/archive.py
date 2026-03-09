@@ -1,14 +1,12 @@
 """Attempts bulk archive endpoint."""
 
 from datetime import datetime
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg  # type: ignore
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.tools.entries.attempt.search import search_attempts
 from app.routes.v5.tools.entries.attempt_archive.create import create_attempt_archive
 from app.routes.v5.tools.entries.calls.create import create_call
@@ -46,7 +44,6 @@ async def archive_attempts(
     request: ArchiveAttemptsRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> ArchiveAttemptsResponse:
     """Bulk archive or unarchive attempts (simulation or benchmark)."""
     tags = ["attempts"]
@@ -79,47 +76,49 @@ async def archive_attempts(
         )
         date_to = datetime.fromisoformat(request.end_date) if request.end_date else None
 
-        attempts, _ = await search_attempts(
-            conn,
-            attempt_ids=request.attempt_ids or None,
-            simulation_ids=request.simulation_ids or None,
-            profile_ids=request.profile_ids_filter or None,
-            cohort_ids=request.cohort_ids or None,
-            department_ids=request.department_ids or None,
-            scenario_ids=request.scenario_ids or None,
-            infinite_mode=request.infinite_mode,
-            date_from=date_from,
-            date_to=date_to,
-            limit=10000,
-            offset=0,
-        )
-
-        if not attempts:
-            return ArchiveAttemptsResponse(
-                updated_count=0, profile_ids_to_invalidate=[]
-            )
-
-        # 2. Create run + call for traceability
-        run = await create_run(
-            conn,
-            group_id=request.group_id,
-            session_id=session_id,
-            profiles_id=profile_id,
-        )
-        call = await create_call(
-            conn,
-            run_id=run.id,
-            session_id=session_id,
-        )
-
-        # 3. Create archive entries
-        for attempt in attempts:
-            await create_attempt_archive(
+        pool = get_pool()
+        async with pool.acquire() as conn:
+            attempts, _ = await search_attempts(
                 conn,
-                attempt_id=attempt.attempt_id,
-                call_id=call.id,
-                archived=request.archived,
+                attempt_ids=request.attempt_ids or None,
+                simulation_ids=request.simulation_ids or None,
+                profile_ids=request.profile_ids_filter or None,
+                cohort_ids=request.cohort_ids or None,
+                department_ids=request.department_ids or None,
+                scenario_ids=request.scenario_ids or None,
+                infinite_mode=request.infinite_mode,
+                date_from=date_from,
+                date_to=date_to,
+                limit=10000,
+                offset=0,
             )
+
+            if not attempts:
+                return ArchiveAttemptsResponse(
+                    updated_count=0, profile_ids_to_invalidate=[]
+                )
+
+            # 2. Create run + call for traceability
+            run = await create_run(
+                conn,
+                group_id=request.group_id,
+                session_id=session_id,
+                profiles_id=profile_id,
+            )
+            call = await create_call(
+                conn,
+                run_id=run.id,
+                session_id=session_id,
+            )
+
+            # 3. Create archive entries
+            for attempt in attempts:
+                await create_attempt_archive(
+                    conn,
+                    attempt_id=attempt.attempt_id,
+                    call_id=call.id,
+                    archived=request.archived,
+                )
 
         # 4. Collect profile IDs to invalidate (from search results)
         profile_ids_to_invalidate = list(

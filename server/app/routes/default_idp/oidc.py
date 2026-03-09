@@ -3,15 +3,14 @@
 import secrets
 import time
 from datetime import UTC, datetime
-from typing import Annotated, Any
+from typing import Any
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, Form, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Form, Header, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 from jose import jwt
 
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.v5.tools.artifacts.profile.get import (
     get_profiles as get_profile_artifacts,
 )
@@ -97,7 +96,6 @@ async def authorize(
     profile_id: UUID | None = Query(None),
     emulation_grant: UUID | None = Query(None),
     login_hint: str | None = Query(None),
-    conn: Annotated[asyncpg.Connection, Depends(get_db)] = None,
 ) -> RedirectResponse:
     """Authorization endpoint - handles Keycloak broker redirects."""
     try:
@@ -126,44 +124,47 @@ async def authorize(
 
         actor_profile_id: UUID | None = None
 
+        pool = get_pool()
+
         if emulation_grant is not None:
-            # 1. Check grant exists and is valid
-            grants = await get_grants(conn, ids=[emulation_grant])
-            if not grants:
-                raise HTTPException(
-                    status_code=404,
-                    detail="Emulation grant not found.",
+            async with pool.acquire() as conn:
+                # 1. Check grant exists and is valid
+                grants = await get_grants(conn, ids=[emulation_grant])
+                if not grants:
+                    raise HTTPException(
+                        status_code=404,
+                        detail="Emulation grant not found.",
+                    )
+
+                grant = grants[0]
+                if grant.expires_at <= datetime.now(UTC):
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Grant expired.",
+                    )
+
+                # 2. Check not already consumed
+                consumptions = await search_grant_consumptions(
+                    conn, grant_ids=[emulation_grant], limit=1
                 )
+                if consumptions:
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Grant already used.",
+                    )
 
-            grant = grants[0]
-            if grant.expires_at <= datetime.now(UTC):
-                raise HTTPException(
-                    status_code=403,
-                    detail="Grant expired.",
+                # 3. Consume the grant
+                await create_grant_consumption(conn, grant_id=emulation_grant)
+
+                # 4. Actor profile from grant connection
+                actor_profile_id = grant.profiles_id
+
+                # 5. Target profile from emulation connection
+                emulations = await search_emulations(
+                    conn, grant_ids=[emulation_grant], limit=1
                 )
-
-            # 2. Check not already consumed
-            consumptions = await search_grant_consumptions(
-                conn, grant_ids=[emulation_grant], limit=1
-            )
-            if consumptions:
-                raise HTTPException(
-                    status_code=403,
-                    detail="Grant already used.",
-                )
-
-            # 3. Consume the grant
-            await create_grant_consumption(conn, grant_id=emulation_grant)
-
-            # 4. Actor profile from grant connection
-            actor_profile_id = grant.profiles_id
-
-            # 5. Target profile from emulation connection
-            emulations = await search_emulations(
-                conn, grant_ids=[emulation_grant], limit=1
-            )
-            if emulations:
-                resolved_profile_id = emulations[0].profile_id
+                if emulations:
+                    resolved_profile_id = emulations[0].profile_id
 
         if resolved_profile_id is None:
             raise HTTPException(
@@ -172,26 +173,27 @@ async def authorize(
             )
 
         # Resolve profile details via black-box artifact + resource functions
-        # Step 1: Get artifact → profiles_resource IDs
-        artifacts = await get_profile_artifacts(
-            conn, ids=[resolved_profile_id], profiles=True
-        )
-        if not artifacts or not artifacts[0].profile_ids:
-            raise HTTPException(
-                status_code=404,
-                detail="Profile not found for this default IdP login.",
+        async with pool.acquire() as conn:
+            # Step 1: Get artifact → profiles_resource IDs
+            artifacts = await get_profile_artifacts(
+                conn, ids=[resolved_profile_id], profiles=True
             )
+            if not artifacts or not artifacts[0].profile_ids:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Profile not found for this default IdP login.",
+                )
 
-        # Step 2: Get resource → name, email, role
-        redis = get_redis_client()
-        resources = await get_profile_resources(
-            conn, ids=artifacts[0].profile_ids, redis=redis, bypass_cache=True
-        )
-        if not resources or not resources[0].primary_email:
-            raise HTTPException(
-                status_code=404,
-                detail="Profile or email not found for this default IdP login.",
+            # Step 2: Get resource → name, email, role
+            redis = get_redis_client()
+            resources = await get_profile_resources(
+                conn, ids=artifacts[0].profile_ids, redis=redis, bypass_cache=True
             )
+            if not resources or not resources[0].primary_email:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Profile or email not found for this default IdP login.",
+                )
 
         profile = resources[0]
 

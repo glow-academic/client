@@ -2,12 +2,10 @@
 
 import os
 import uuid as uuid_mod
-from typing import Annotated
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
+from app.infra.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_pool
 from app.routes.v5.tools.entries.uploads.get import get_upload
 from app.utils.document.pdf_first_page_to_image_bytes import (
     pdf_first_page_to_image_bytes,
@@ -22,13 +20,14 @@ router = APIRouter()
 async def preview_upload(
     upload_id: str,
     http_request: Request,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> Response:
     """Return a PNG preview of the first page of a PDF upload."""
     try:
         upload_id_uuid = uuid_mod.UUID(upload_id)
 
-        result = await get_upload(conn, upload_id_uuid)
+        pool = get_pool()
+        async with pool.acquire() as conn:
+            result = await get_upload(conn, upload_id_uuid)
 
         if result is None:
             raise HTTPException(status_code=404, detail="Upload not found")

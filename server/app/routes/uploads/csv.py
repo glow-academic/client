@@ -5,11 +5,10 @@ import io
 import os
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
-from app.infra.globals import UPLOAD_FOLDER, get_db
+from app.infra.globals import UPLOAD_FOLDER, get_pool
 from app.routes.v5.tools.entries.uploads.get import get_upload
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -34,11 +33,12 @@ class ParseCsvApiResponse(BaseModel):
 async def parse_csv(
     body: ParseCsvApiRequest,
     http_request: Request,
-    db: asyncpg.Pool = Depends(get_db),
 ) -> ParseCsvApiResponse:
     """Parse a previously uploaded CSV file and return headers + rows."""
     try:
-        result = await get_upload(db, body.upload_id)
+        pool = get_pool()
+        async with pool.acquire() as conn:
+            result = await get_upload(conn, body.upload_id)
 
         if result is None:
             raise HTTPException(status_code=404, detail="Upload not found")

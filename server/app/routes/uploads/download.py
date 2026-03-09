@@ -3,13 +3,11 @@
 import os
 import urllib.parse
 import uuid as uuid_mod
-from typing import Annotated
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import FileResponse, StreamingResponse
 
-from app.infra.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
+from app.infra.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_pool
 from app.routes.v5.tools.entries.uploads.get import get_upload
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.mime.get_content_type import get_content_type
@@ -78,13 +76,14 @@ def _create_range_streaming_response(
 async def download_upload(
     upload_id: str,
     http_request: Request,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> FileResponse | Response:
     """Download an upload file by ID."""
     try:
         upload_id_uuid = uuid_mod.UUID(upload_id)
 
-        result = await get_upload(conn, upload_id_uuid)
+        pool = get_pool()
+        async with pool.acquire() as conn:
+            result = await get_upload(conn, upload_id_uuid)
 
         if result is None:
             raise HTTPException(status_code=404, detail="Upload not found")

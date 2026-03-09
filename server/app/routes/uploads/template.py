@@ -2,12 +2,11 @@
 
 import os
 import uuid as uuid_mod
-from typing import Annotated, Any
+from typing import Any
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 
-from app.infra.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_db
+from app.infra.globals import AUDIO_FOLDER, IMAGE_FOLDER, UPLOAD_FOLDER, get_pool
 from app.routes.v5.tools.entries.uploads.get import get_upload
 from app.utils.error.handle_route_error import handle_route_error
 from app.utils.mime.get_content_type import get_content_type
@@ -21,13 +20,14 @@ router = APIRouter()
 async def render_upload_template(
     upload_id: str,
     http_request: Request,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> Response:
     """Render an HTML upload as a template with placeholder defaults."""
     try:
         upload_id_uuid = uuid_mod.UUID(upload_id)
 
-        result = await get_upload(conn, upload_id_uuid)
+        pool = get_pool()
+        async with pool.acquire() as conn:
+            result = await get_upload(conn, upload_id_uuid)
 
         if result is None:
             raise HTTPException(status_code=404, detail="Upload not found")

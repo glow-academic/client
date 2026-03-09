@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Annotated, Any
+from typing import Any
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 
-from app.infra.globals import get_db, get_pool
+from app.infra.globals import get_pool
 from app.routes.auth.types import GetDraftsApiResponse, QGetProfileContextV4Draft
 from app.routes.v5.tools.entries.agent_drafts.get import (
     get_agent_drafts as get_agent_drafts_entries_internal,
@@ -148,7 +147,6 @@ def _convert_draft(item: Any, artifact_type: str) -> QGetProfileContextV4Draft:
 @router.post("/drafts", response_model=GetDraftsApiResponse)
 async def get_drafts(
     http_request: Request,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetDraftsApiResponse:
     """Return drafts for the current page's artifact type."""
     try:

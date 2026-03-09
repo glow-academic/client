@@ -4,10 +4,8 @@ import json
 import os
 import shutil
 import uuid
-from typing import Annotated
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel
 
 from app.infra.globals import (
@@ -15,7 +13,7 @@ from app.infra.globals import (
     TUS_UPLOADS_DIR,
     UPLOAD_FOLDER,
     VIDEO_FOLDER,
-    get_db,
+    get_pool,
     get_redis_client,
 )
 from app.routes.v5.tools.entries.uploads.create import create_upload
@@ -38,7 +36,6 @@ async def finalize_upload(
     upload_id: str,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> FinalizeUploadResponse:
     """Finalize a TUS upload and create upload record."""
     tags = ["uploads"]
@@ -105,13 +102,15 @@ async def finalize_upload(
                 detail="Session ID is required.",
             )
 
-        result = await create_upload(
-            conn,
-            session_id=uuid.UUID(session_id),
-            file_path=final_file_path,
-            mime_type=content_type,
-            size=file_size,
-        )
+        pool = get_pool()
+        async with pool.acquire() as conn:
+            result = await create_upload(
+                conn,
+                session_id=uuid.UUID(session_id),
+                file_path=final_file_path,
+                mime_type=content_type,
+                size=file_size,
+            )
 
         try:
             shutil.rmtree(str(upload_dir))

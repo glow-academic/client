@@ -2,15 +2,13 @@
 
 from __future__ import annotations
 
-from typing import Annotated
 from uuid import UUID
 
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 
 from app.infra.auth.generate import resolve_group_messages
-from app.infra.globals import get_db
+from app.infra.globals import get_pool
 from app.routes.auth.types import GetGroupMessagesApiResponse, GroupMessageItem
 from app.utils.error.handle_route_error import handle_route_error
 
@@ -29,16 +27,17 @@ class GetGroupMessagesApiRequest(BaseModel):
 async def get_group_messages(
     request: GetGroupMessagesApiRequest,
     http_request: Request,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetGroupMessagesApiResponse:
     """Return paginated messages for a specific group."""
     try:
-        result = await resolve_group_messages(
-            conn,
-            group_id=request.group_id,
-            page_limit=request.page_limit,
-            page_offset=request.page_offset,
-        )
+        pool = get_pool()
+        async with pool.acquire() as conn:
+            result = await resolve_group_messages(
+                conn,
+                group_id=request.group_id,
+                page_limit=request.page_limit,
+                page_offset=request.page_offset,
+            )
 
         if not result:
             return GetGroupMessagesApiResponse()

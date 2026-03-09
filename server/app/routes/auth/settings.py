@@ -192,7 +192,6 @@ async def get_auth_settings(
     request: GetProfileContextApiRequest,
     http_request: Request,
     response: Response,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetAuthSettingsApiResponse:
     """Department-level settings + theme endpoint."""
     try:
@@ -204,7 +203,7 @@ async def get_auth_settings(
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
 
         pass1_start = time.time()
-        data = await get_auth_settings_internal(conn, profile_id, bypass_cache)
+        data = await get_auth_settings_internal(profile_id, bypass_cache)
         pass1_time = (time.time() - pass1_start) * 1000
 
         response.headers["X-Two-Pass"] = "1"

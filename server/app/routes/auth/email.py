@@ -1,12 +1,9 @@
 """Profile by email endpoint — thin route, delegates to infra."""
 
-from typing import Annotated
-
-import asyncpg
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request
 
 from app.infra.auth.email import resolve_profile_by_email
-from app.infra.globals import get_db, get_redis_client
+from app.infra.globals import get_pool, get_redis_client
 from app.routes.shared_types import (
     GetProfileByEmailApiRequest,
     GetProfileByEmailApiResponse,
@@ -20,7 +17,6 @@ router = APIRouter()
 async def get_profile_by_email(
     request: GetProfileByEmailApiRequest,
     http_request: Request,
-    conn: Annotated[asyncpg.Connection, Depends(get_db)],
 ) -> GetProfileByEmailApiResponse:
     """Get profile by email (for auth operations)."""
     try:
@@ -28,13 +24,15 @@ async def get_profile_by_email(
         bypass_cache = http_request.headers.get("X-Bypass-Cache") == "1"
         redis = get_redis_client()
 
-        result = await resolve_profile_by_email(
-            conn,
-            redis,
-            email=request.email,
-            actor_profile_id=profile_id,
-            bypass_cache=bypass_cache,
-        )
+        pool = get_pool()
+        async with pool.acquire() as conn:
+            result = await resolve_profile_by_email(
+                conn,
+                redis,
+                email=request.email,
+                actor_profile_id=profile_id,
+                bypass_cache=bypass_cache,
+            )
 
         if not result:
             raise HTTPException(status_code=404, detail="Profile not found")
