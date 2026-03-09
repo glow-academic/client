@@ -52,7 +52,7 @@ class CreateFieldItem(BaseModel):
 
 
 async def create_field_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -76,7 +76,7 @@ async def create_field_client(
 
     # ── Step 1: Profile context ────────────────────────────────────────
 
-    profile = await resolve_profile_identity_context(conn, profile_id, redis)
+    profile = await resolve_profile_identity_context(pool, profile_id, redis)
 
     if profile is None:
         raise HTTPException(
@@ -97,19 +97,20 @@ async def create_field_client(
     has_errors = False
     error_results: list[FieldResultItem] = []
 
-    for idx, item in enumerate(items):
-        item_errors = await resolve_field_values(conn, redis, item, is_create=True)
-        if item_errors:
-            has_errors = True
-            error_results.append(
-                FieldResultItem(
-                    success=False,
-                    message=f"Item {idx}: Validation errors",
-                    errors=item_errors,
+    async with pool.acquire() as conn:
+        for idx, item in enumerate(items):
+            item_errors = await resolve_field_values(conn, redis, item, is_create=True)
+            if item_errors:
+                has_errors = True
+                error_results.append(
+                    FieldResultItem(
+                        success=False,
+                        message=f"Item {idx}: Validation errors",
+                        errors=item_errors,
+                    )
                 )
-            )
-        else:
-            error_results.append(FieldResultItem(success=True, message="Validated"))
+            else:
+                error_results.append(FieldResultItem(success=True, message="Validated"))
 
     if has_errors:
         return CreateFieldApiResponse(results=error_results)
@@ -118,35 +119,36 @@ async def create_field_client(
 
     results: list[FieldResultItem] = []
 
-    async with conn.transaction():
-        for item in items:
-            # Create denormalized snapshot
-            fields_resource_id = await create_denormalized_snapshot(
-                conn,
-                redis,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-            )
-
-            result = await create_field_artifact(
-                conn,
-                id=item.id,
-                name_id=item.name_id,
-                description_id=item.description_id,
-                department_ids=item.department_ids,
-                flag_ids=[item.flag_id] if item.flag_id else None,
-                conditional_parameter_ids=item.conditional_parameter_ids,
-                field_ids=[fields_resource_id],
-            )
-
-            results.append(
-                FieldResultItem(
-                    success=True,
-                    field_id=result.id,
-                    message="Field created successfully",
+    async with pool.acquire() as conn:
+        async with conn.transaction():
+            for item in items:
+                # Create denormalized snapshot
+                fields_resource_id = await create_denormalized_snapshot(
+                    conn,
+                    redis,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
                 )
-            )
+
+                result = await create_field_artifact(
+                    conn,
+                    id=item.id,
+                    name_id=item.name_id,
+                    description_id=item.description_id,
+                    department_ids=item.department_ids,
+                    flag_ids=[item.flag_id] if item.flag_id else None,
+                    conditional_parameter_ids=item.conditional_parameter_ids,
+                    field_ids=[fields_resource_id],
+                )
+
+                results.append(
+                    FieldResultItem(
+                        success=True,
+                        field_id=result.id,
+                        message="Field created successfully",
+                    )
+                )
 
     # ── Step 5: Invalidate cache ───────────────────────────────────────
 
