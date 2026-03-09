@@ -309,6 +309,9 @@ async def user_start_impl(
         return
 
     try:
+        from app.routes.v5.tools.entries.attempt_message.create import (
+            create_attempt_message,
+        )
         from app.routes.v5.tools.entries.messages.create import create_message
 
         async with pool.acquire() as conn:
@@ -317,13 +320,12 @@ async def user_start_impl(
                 run_id=uuid.UUID(run_id),
                 role="user",
             )
-            await conn.execute(
-                """
-                INSERT INTO attempt_message_entry (id, chat_id)
-                VALUES ($1, $2)
-            """,
-                result.id,
-                uuid.UUID(chat_id),
+            # TODO: wire up real call_id from generation context
+            await create_attempt_message(
+                conn,
+                chat_id=uuid.UUID(chat_id),
+                message_id=result.id,
+                call_id=uuid.uuid4(),
             )
 
         await emit(

@@ -90,7 +90,7 @@ async def get_model_client(
     profile_id: UUID,
     model_id: UUID | None,
     draft_id: UUID | None = None,
-    group_id: UUID,
+    group_id: UUID | None = None,
     bypass_cache: bool = False,
 ) -> GetModelApiResponse:
     """Model GET using composable infra functions.
@@ -110,6 +110,8 @@ async def get_model_client(
         redis,
         profile_id=profile_id,
         group_id=group_id,
+        draft_id=draft_id,
+        artifact_type="model",
         bypass_cache=bypass_cache,
     )
 
@@ -119,6 +121,7 @@ async def get_model_client(
             detail="Profile not found. Please sign in again.",
         )
 
+    group_id = group_id or common.profile.group_id
     profile = common.profile
 
     # ── Step 2: Permissions check (fail fast before full hydration) ──────

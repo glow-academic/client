@@ -92,33 +92,6 @@ export const getAnalyticsFilters = cache(
   }
 );
 
-/** ---- Resolve group_id (cached per request) ---- */
-type ResolveGroupIn = InputOf<"/auth/group", "post">;
-type ResolveGroupOut = OutputOf<"/auth/group", "post">;
-
-export const resolveGroupId = cache(
-  async (params: {
-    draft_id?: string | null;
-    artifact_type?: string | null;
-    attempt_id?: string | null;
-    test_id?: string | null;
-  }): Promise<ResolveGroupOut> => {
-    const extraHeaders = await buildAuthHeaders();
-    return api.post(
-      "/auth/group",
-      {
-        body: {
-          draft_id: params.draft_id ?? null,
-          artifact_type: params.artifact_type ?? null,
-          attempt_id: params.attempt_id ?? null,
-          test_id: params.test_id ?? null,
-        },
-      } as ResolveGroupIn,
-      { headers: extraHeaders },
-    );
-  },
-);
-
 /** ---- Generate messages server action ---- */
 type GenerateMessagesIn = InputOf<"/auth/generate", "post">;
 type GenerateMessagesOut = OutputOf<"/auth/generate", "post">;

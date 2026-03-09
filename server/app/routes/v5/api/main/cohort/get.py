@@ -83,7 +83,7 @@ async def get_cohort_client(
     profile_id: UUID,
     cohort_id: UUID | None,
     draft_id: UUID | None = None,
-    group_id: UUID,
+    group_id: UUID | None = None,
     descriptions_search: str | None = None,
     simulation_search: str | None = None,
     simulation_show_selected: bool | None = None,
@@ -108,6 +108,8 @@ async def get_cohort_client(
         redis,
         profile_id=profile_id,
         group_id=group_id,
+        draft_id=draft_id,
+        artifact_type="cohort",
         bypass_cache=bypass_cache,
     )
 
@@ -117,6 +119,7 @@ async def get_cohort_client(
             detail="Profile not found. Please sign in again.",
         )
 
+    group_id = group_id or common.profile.group_id
     profile = common.profile
 
     # ── Step 2: Permissions check (fail fast before full hydration) ────────

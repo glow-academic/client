@@ -8,7 +8,7 @@ from app.routes.auth.drafts import router as drafts_router
 from app.routes.auth.email import router as email_router
 from app.routes.auth.emulate import router as emulate_router
 from app.routes.auth.generate import router as generate_router
-from app.routes.auth.group import router as group_router
+
 from app.routes.auth.profile import router as profile_router
 from app.routes.auth.settings import router as settings_router
 from app.routes.auth.simulatable import router as simulatable_router
@@ -23,7 +23,7 @@ router.include_router(analytics_router)
 router.include_router(drafts_router)
 router.include_router(email_router)
 router.include_router(generate_router)
-router.include_router(group_router)
+
 router.include_router(upsert_router)
 router.include_router(simulatable_router)
 router.include_router(emulate_router)

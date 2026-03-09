@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Document from "@/components/artifacts/document/Document";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -132,10 +132,9 @@ async function createDraftTexts(
 const getDocument = async (
   documentId: string,
   draftId: string | null,
-  groupId?: string,
 ): Promise<GetDocumentOut> => {
   return getDocumentDefault({
-    body: { document_id: documentId, draft_id: draftId, group_id: groupId ?? null },
+    body: { document_id: documentId, draft_id: draftId },
   });
 };
 
@@ -170,13 +169,10 @@ export default async function DocumentEditPage({
   const loadDocumentSearchParams = createLoader(documentSearchParams);
   const q = loadDocumentSearchParams(searchParamsObj);
 
-  // Resolve group_id from layout context (cached per request)
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "document" })).group_id;
-
   // Fetch document detail (always fresh - source of truth) with draft_id
   try {
     const [documentDetail, docs, draftsResult] = await Promise.all([
-      getDocument(documentId, q.draftId ?? null, groupId),
+      getDocument(documentId, q.draftId ?? null),
       getDocs({ body: { entity_id: documentId } }),
       getDrafts(), // TODO: fetch only document drafts (e.g. getDrafts({ artifact_type: "document" }))
     ]);

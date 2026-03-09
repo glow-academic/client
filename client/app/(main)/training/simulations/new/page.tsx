@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Simulation from "@/components/artifacts/simulation/Simulation";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -202,15 +202,11 @@ export default async function NewSimulationPage({
   const loadSimulationSearchParams = createLoader(simulationSearchParams);
   const q = loadSimulationSearchParams(searchParamsObj);
 
-  // Resolve group_id from layout context (cached per request)
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "simulation" })).group_id;
-
   // Fetch default simulation detail server-side with filter params and draft_id
   const input: GetSimulationIn = {
     body: {
       simulation_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
-      group_id: groupId,
       scenario_search: q.scenarioSearch ?? null,
       scenario_show_selected: q.scenarioShowSelected ?? null,
       filter_scenario_ids: null, // Not used in new mode

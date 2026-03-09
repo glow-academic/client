@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Rubric from "@/components/artifacts/rubric/Rubric";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -54,7 +54,6 @@ const getRubric = async (
   draftId: string | null,
   descriptionSearch: string | null,
   standardGroupSearch: string | null,
-  groupId: string | null = null,
 ): Promise<GetRubricOut> => {
   return api.post(
     "/artifacts/rubrics/get",
@@ -62,7 +61,6 @@ const getRubric = async (
       body: {
         rubric_id: rubricId,
         draft_id: draftId || null,
-        group_id: groupId,
         description_search: descriptionSearch || null,
         standard_group_search: standardGroupSearch || null,
       },
@@ -127,9 +125,6 @@ export default async function EditRubricPage({
   const loadRubricSearchParams = createLoader(rubricSearchParams);
   const q = loadRubricSearchParams(searchParamsObj);
 
-  // Resolve group_id from layout context (cached per request)
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "rubric" })).group_id;
-
   // Fetch data using unified get endpoint
   try {
     const [rubricData, docs, draftsResult] = await Promise.all([
@@ -138,7 +133,6 @@ export default async function EditRubricPage({
         q.draftId ?? null,
         q.descriptionSearch ?? null,
         q.standardGroupSearch ?? null,
-        groupId,
       ),
       getDocs({ body: { entity_id: rubricId } }),
       getDrafts(), // TODO: fetch only rubric drafts (e.g. getDrafts({ artifact_type: "rubric" }))

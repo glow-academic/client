@@ -7,8 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.infra.globals import get_internal_sio, get_redis_client
-from app.infra.websocket.get_db_connection import get_db_connection
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.websocket.run_complete_impl import run_complete_impl
 from app.infra.websocket.socket_event import make_emit
 
@@ -21,5 +20,4 @@ async def handle_run_complete_new(data: dict[str, Any]) -> None:
     redis = get_redis_client()
     if not redis:
         return
-    async with get_db_connection() as conn:
-        await run_complete_impl(data, emit=make_emit(), conn=conn, redis=redis)
+    await run_complete_impl(data, emit=make_emit(), pool=get_pool(), redis=redis)

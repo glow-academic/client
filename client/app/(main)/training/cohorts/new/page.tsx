@@ -9,7 +9,7 @@ import Cohort from "@/components/artifacts/cohort/Cohort";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -155,15 +155,12 @@ export default async function NewCohortPage({
   const loadCohortSearchParams = createLoader(cohortSearchParams);
   const q = loadCohortSearchParams(searchParamsObj);
 
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "cohort" })).group_id;
-
   // Fetch default cohort detail server-side with filter params and draft_id
   // Note: cohort_id is null for new mode
   const input: GetCohortIn = {
     body: {
       cohort_id: null,
       draft_id: q.draftId ?? null,
-      group_id: groupId,
       descriptions_search: q.descriptionSearch ?? null,
       simulation_search: q.simulationSearch ?? null,
       simulation_show_selected: q.simulationShowSelected ?? null,

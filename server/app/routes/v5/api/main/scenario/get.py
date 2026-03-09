@@ -150,6 +150,7 @@ async def get_scenario_client(
             detail="Profile not found. Please sign in again.",
         )
 
+    group_id = group_id or common.profile.group_id
     profile = common.profile
 
     # ── Step 2: Permissions check (fail fast before full hydration) ────────
@@ -691,21 +692,13 @@ async def get_scenario(
         pool = get_pool()
         redis = get_redis_client()
 
-        # Resolve group_id server-side from draft or create fresh
-        group_id = await resolve_group_for_artifact(
-            pool,
-            draft_id=request.draft_id,
-            artifact_type="scenario",
-            profiles_id=profile_id,
-        )
-
         response_data = await get_scenario_client(
             pool,
             redis,
             profile_id=profile_id,
             scenario_id=request.scenario_id,
             draft_id=request.draft_id,
-            group_id=group_id,
+            group_id=request.group_id,
             parameter_ids=[UUID(str(pid)) for pid in request.parameter_ids]
             if request.parameter_ids
             else None,

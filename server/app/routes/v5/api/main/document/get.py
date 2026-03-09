@@ -79,7 +79,7 @@ async def get_document_client(
     profile_id: UUID,
     document_id: UUID | None,
     draft_id: UUID | None = None,
-    group_id: UUID,
+    group_id: UUID | None = None,
     parameter_ids: list[UUID] | None = None,
     # Search filters
     descriptions_search: str | None = None,
@@ -102,6 +102,8 @@ async def get_document_client(
         redis,
         profile_id=profile_id,
         group_id=group_id,
+        draft_id=draft_id,
+        artifact_type="document",
         bypass_cache=bypass_cache,
     )
 
@@ -111,6 +113,7 @@ async def get_document_client(
             detail="Profile not found. Please sign in again.",
         )
 
+    group_id = group_id or common.profile.group_id
     profile = common.profile
 
     # ── Step 2: Permissions check (fail fast before full hydration) ──────

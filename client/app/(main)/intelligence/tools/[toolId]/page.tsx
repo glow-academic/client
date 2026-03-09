@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Tool from "@/components/artifacts/tool/Tool";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -145,16 +145,12 @@ export default async function ToolDetailPage({
   const loadToolSearchParams = createLoader(toolSearchParams);
   const q = loadToolSearchParams(searchParamsObj);
 
-  // Resolve group_id from layout context (cached per request)
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "tool" })).group_id;
-
   // Fetch tool detail with draft_id
   try {
     const input: GetToolIn = {
       body: {
         tool_id: toolId,
         draft_id: q.draftId ?? null,
-        group_id: groupId,
       } as GetToolIn["body"],
     };
     const [toolDetail, docs, draftsResult] = await Promise.all([

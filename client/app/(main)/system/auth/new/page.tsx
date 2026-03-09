@@ -6,7 +6,7 @@ import Auth from "@/components/artifacts/auth/Auth";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -133,14 +133,11 @@ export default async function AuthCreatePage({
   const loadAuthSearchParams = createLoader(authSearchParams);
   const q = loadAuthSearchParams(searchParamsObj);
 
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "auth" })).group_id;
-
   // Fetch default auth detail with draft_id (auth_id = NULL for new mode)
   const input: GetAuthIn = {
     body: {
       auth_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
-      group_id: groupId,
     } as GetAuthIn["body"],
   };
   const [authData, draftsResult] = await Promise.all([

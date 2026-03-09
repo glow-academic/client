@@ -9,7 +9,7 @@ import Model from "@/components/artifacts/model/Model";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -152,14 +152,10 @@ export default async function ModelEditPage({
   const loadModelSearchParams = createLoader(modelSearchParams);
   const q = loadModelSearchParams(searchParamsObj);
 
-  // Resolve group_id from layout context (cached per request)
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "model" })).group_id;
-
   const input: GetModelIn = {
     body: {
       model_id: modelId,
       draft_id: q.draftId ?? null,
-      group_id: groupId,
     },
   };
   const [model, docs, draftsResult] = await Promise.all([

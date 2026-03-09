@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Field from "@/components/artifacts/field/Field";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -141,16 +141,12 @@ export default async function FieldEditPage({
   const loadFieldSearchParams = createLoader(fieldSearchParams);
   const q = loadFieldSearchParams(searchParamsObj);
 
-  // Resolve group_id from layout context (cached per request)
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "field" })).group_id;
-
   // Fetch field data (always fresh - source of truth) with draft_id
   try {
     const input: GetFieldIn = {
       body: {
         field_id: fieldId,
         draft_id: q.draftId ?? null,
-        group_id: groupId,
         description_search: q.descriptionSearch ?? null,
         conditional_parameter_search: q.conditionalParameterSearch ?? null,
         conditional_parameter_show_selected:

@@ -17,7 +17,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from app.infra.globals import get_internal_sio, get_pool, get_redis_client
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client, sio
 from app.infra.profile_identity_context import resolve_profile_identity_context
 from app.infra.websocket.find_profile_by_socket import find_profile_by_socket
 from app.infra.websocket.find_session_by_socket import find_session_by_socket
@@ -44,9 +44,8 @@ async def _emit_error(sid: str, message: str, artifact_type: str) -> None:
     )
 
 
-# NOTE: Not registered as @sio.event yet — use side-by-side with generate.py
-# To activate: import this module in __init__.py and swap the registration.
-async def generate_new(sid: str, data: dict[str, Any]) -> None:
+@sio.event  # type: ignore
+async def generate(sid: str, data: dict[str, Any]) -> None:
     """Handle unified ``generate`` event — new version.
 
     Resolves identity context from sid at the client boundary:

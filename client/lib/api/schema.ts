@@ -12274,26 +12274,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/auth/group": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Resolve Group
-         * @description Resolve a group_id from attempt, test, draft, or create fresh.
-         */
-        post: operations["resolve_group_auth_group_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/auth/upsert": {
         parameters: {
             query?: never;
@@ -12621,6 +12601,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/uploads/upload": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Raw Upload
+         * @description Upload a file via raw binary body.
+         *
+         *     Send the file bytes directly as the request body with Content-Type: application/octet-stream.
+         *
+         *     Query params:
+         *         filename: Original filename with extension (e.g., "photo.png").
+         *         subfolder: Optional — "audio" or "video". Defaults to general uploads folder.
+         */
+        put: operations["raw_upload_uploads_upload_put"];
+        /**
+         * Multipart Upload
+         * @description Upload a file via multipart form-data.
+         *
+         *     Form fields:
+         *         file: The file to upload.
+         *         subfolder: Optional — "audio" or "video". Defaults to general uploads folder.
+         */
+        post: operations["multipart_upload_uploads_upload_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/uploads/{upload_id}/download": {
         parameters: {
             query?: never;
@@ -12864,6 +12878,7 @@ export interface components {
             /** Profile Summary */
             profile_summary?: components["schemas"]["ProfileSummaryItem"][];
             resources?: components["schemas"]["ActivityResources"];
+            analytics?: components["schemas"]["AnalyticsFacets"] | null;
         };
         /** AgentDepartmentSection */
         AgentDepartmentSection: {
@@ -15028,6 +15043,14 @@ export interface components {
             date_range_latest?: string | null;
             history?: components["schemas"]["BenchmarkHistoryResponse"] | null;
             analytics?: components["schemas"]["AnalyticsFacets"] | null;
+        };
+        /** Body_multipart_upload_uploads_upload_post */
+        Body_multipart_upload_uploads_upload_post: {
+            /**
+             * File
+             * Format: binary
+             */
+            file: string;
         };
         /** Body_token_default_idp_token_post */
         Body_token_default_idp_token_post: {
@@ -17406,6 +17429,7 @@ export interface components {
             profile_primary_email?: string | null;
             /** Profile Role */
             profile_role?: string | null;
+            analytics?: components["schemas"]["AnalyticsFacets"] | null;
             history?: components["schemas"]["HistoryResponse"] | null;
         };
         /** DashboardFieldMeta */
@@ -26601,6 +26625,14 @@ export interface components {
             /** Modality Ids */
             modality_ids?: unknown[] | null;
         };
+        /** MultipartUploadResponse */
+        MultipartUploadResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+        };
         /** MvInfo */
         MvInfo: {
             /** Name */
@@ -30470,6 +30502,14 @@ export interface components {
             /** Created At */
             created_at?: string | null;
         };
+        /** RawUploadResponse */
+        RawUploadResponse: {
+            /**
+             * Upload Id
+             * Format: uuid
+             */
+            upload_id: string;
+        };
         /** ReasoningLevelsGenerationEvent */
         ReasoningLevelsGenerationEvent: {
             /**
@@ -31121,6 +31161,7 @@ export interface components {
             profile_options?: components["schemas"]["FilterOption"][];
             /** Scenario Options */
             scenario_options?: components["schemas"]["FilterOption"][];
+            analytics?: components["schemas"]["AnalyticsFacets"] | null;
         };
         /** ReportsRubricResource */
         ReportsRubricResource: {
@@ -31266,51 +31307,6 @@ export interface components {
             generated?: boolean | null;
             /** Requests Per Day */
             requests_per_day?: number | null;
-        };
-        /**
-         * ResolveGroupApiRequest
-         * @description Request body for POST /auth/group — resolve or create a group_id.
-         */
-        ResolveGroupApiRequest: {
-            /** Draft Id */
-            draft_id?: string | null;
-            /** Artifact Type */
-            artifact_type?: string | null;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Test Id */
-            test_id?: string | null;
-        };
-        /**
-         * ResolveGroupApiResponse
-         * @description Response for POST /auth/group — resolved group_id + optional attempt controls.
-         */
-        ResolveGroupApiResponse: {
-            /** Group Id */
-            group_id: string;
-            /**
-             * Show Controls
-             * @default false
-             */
-            show_controls: boolean;
-            /** Attempt Id */
-            attempt_id?: string | null;
-            /** Current Chat Id */
-            current_chat_id?: string | null;
-            /**
-             * Has Messages
-             * @default false
-             */
-            has_messages: boolean;
-            /** Test Id */
-            test_id?: string | null;
-            /** Current Invocation Id */
-            current_invocation_id?: string | null;
-            /**
-             * Has Runs Or Groups
-             * @default false
-             */
-            has_runs_or_groups: boolean;
         };
         /** ResolveProblemRequest */
         ResolveProblemRequest: {
@@ -60809,43 +60805,6 @@ export interface operations {
             };
         };
     };
-    resolve_group_auth_group_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Api-Key"?: string | null;
-                authorization?: string | null;
-                "X-MCP"?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResolveGroupApiRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ResolveGroupApiResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     create_or_update_profile_auth_upsert_post: {
         parameters: {
             query?: never;
@@ -61314,6 +61273,73 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FinalizeUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    raw_upload_uploads_upload_put: {
+        parameters: {
+            query?: {
+                filename?: string;
+                subfolder?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RawUploadResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    multipart_upload_uploads_upload_post: {
+        parameters: {
+            query?: {
+                subfolder?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_multipart_upload_uploads_upload_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MultipartUploadResponse"];
                 };
             };
             /** @description Validation Error */

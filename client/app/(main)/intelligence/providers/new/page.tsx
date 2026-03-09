@@ -7,7 +7,7 @@ import Provider from "@/components/artifacts/provider/Provider";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -134,15 +134,11 @@ export default async function NewProviderPage({
   const loadProviderSearchParams = createLoader(providerSearchParams);
   const q = loadProviderSearchParams(searchParamsObj);
 
-  // Resolve group_id from layout context (cached per request)
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "provider" })).group_id;
-
   // Fetch default provider detail server-side with draft_id (provider_id = NULL for new mode)
   const input: GetProviderIn = {
     body: {
       provider_id: null,
       draft_id: q.draftId ?? null,
-      group_id: groupId,
     } as GetProviderIn["body"],
   };
   const [providerDetailDefault, draftsResult] = await Promise.all([

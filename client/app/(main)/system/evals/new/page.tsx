@@ -8,7 +8,7 @@ import Eval from "@/components/artifacts/eval/Eval";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -98,15 +98,11 @@ export default async function NewEvalPage({
   const loadEvalSearchParams = createLoader(evalSearchParams);
   const q = loadEvalSearchParams(searchParamsObj);
 
-  // Resolve group_id from layout context (cached per request)
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "eval" })).group_id;
-
   // Fetch eval default data (for dropdowns and defaults) with draft_id and search params
   const input: GetEvalIn = {
     body: {
       eval_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
-      group_id: groupId,
       agent_search: q.agentSearch ?? null,
       group_search: q.groupSearch ?? null,
       // Note: available_model_runs_search uses modelRunSearch from URL

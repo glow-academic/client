@@ -2,9 +2,8 @@
 
 from typing import Any
 
-from app.infra.globals import get_internal_sio, get_redis_client
+from app.infra.globals import get_internal_sio, get_pool, get_redis_client
 from app.infra.websocket.generate_prepare_impl import generate_prepare_impl
-from app.infra.websocket.get_db_connection import get_db_connection
 from app.infra.websocket.socket_event import make_emit
 from app.routes.v5.socket.client.registry import REGISTRY
 
@@ -22,11 +21,10 @@ async def generate_prepare_handler_new(data: dict[str, Any]) -> None:
     artifact_config = REGISTRY.get(artifact_type)
     redis = get_redis_client()
 
-    async with get_db_connection() as conn:
-        await generate_prepare_impl(
-            data,
-            emit=make_emit(),
-            conn=conn,
-            redis=redis,
-            artifact_config=artifact_config,
-        )
+    await generate_prepare_impl(
+        data,
+        emit=make_emit(),
+        pool=get_pool(),
+        redis=redis,
+        artifact_config=artifact_config,
+    )

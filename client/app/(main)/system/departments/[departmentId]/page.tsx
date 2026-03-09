@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Department from "@/components/artifacts/department/Department";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -138,16 +138,12 @@ export default async function DepartmentEditPage({
   const loadDepartmentSearchParams = createLoader(departmentSearchParams);
   const q = loadDepartmentSearchParams(searchParamsObj);
 
-  // Resolve group_id from layout context (cached per request)
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "department" })).group_id;
-
   // Fetch department detail (always fresh - source of truth) with draft_id (unified get endpoint)
   try {
     const input: GetDepartmentIn = {
       body: {
         department_id: departmentId,
         draft_id: q.draftId ?? null,
-        group_id: groupId,
       } as GetDepartmentIn["body"],
     };
     const [departmentDetail, docs, draftsResult] = await Promise.all([

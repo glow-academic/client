@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import Profile from "@/components/artifacts/profile/Profile";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -142,15 +142,12 @@ export default async function ProfileEditPage({
   const loadProfileSearchParams = createLoader(profileSearchParams);
   const q = loadProfileSearchParams(searchParamsObj);
 
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "profile" })).group_id;
-
   // Fetch profile detail (always fresh - source of truth) with draft_id
   try {
     const input: GetProfileIn = {
       body: {
         target_profile_id: profileId,
         draft_id: q.draftId ?? null,
-        group_id: groupId,
       } as GetProfileIn["body"],
     };
     const [profileDetail, docs, draftsResult] = await Promise.all([

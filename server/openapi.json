@@ -43104,98 +43104,6 @@
         }
       }
     },
-    "/auth/group": {
-      "post": {
-        "tags": [
-          "auth"
-        ],
-        "summary": "Resolve Group",
-        "description": "Resolve a group_id from attempt, test, draft, or create fresh.",
-        "operationId": "resolve_group_auth_group_post",
-        "parameters": [
-          {
-            "name": "X-Api-Key",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Api-Key"
-            }
-          },
-          {
-            "name": "authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          },
-          {
-            "name": "X-MCP",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Mcp"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResolveGroupApiRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ResolveGroupApiResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/auth/upsert": {
       "post": {
         "tags": [
@@ -44076,6 +43984,124 @@
         }
       }
     },
+    "/uploads/upload": {
+      "post": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Multipart Upload",
+        "description": "Upload a file via multipart form-data.\n\nForm fields:\n    file: The file to upload.\n    subfolder: Optional \u2014 \"audio\" or \"video\". Defaults to general uploads folder.",
+        "operationId": "multipart_upload_uploads_upload_post",
+        "parameters": [
+          {
+            "name": "subfolder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subfolder"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_multipart_upload_uploads_upload_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MultipartUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "uploads"
+        ],
+        "summary": "Raw Upload",
+        "description": "Upload a file via raw binary body.\n\nSend the file bytes directly as the request body with Content-Type: application/octet-stream.\n\nQuery params:\n    filename: Original filename with extension (e.g., \"photo.png\").\n    subfolder: Optional \u2014 \"audio\" or \"video\". Defaults to general uploads folder.",
+        "operationId": "raw_upload_uploads_upload_put",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "upload.bin",
+              "title": "Filename"
+            }
+          },
+          {
+            "name": "subfolder",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Subfolder"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RawUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/uploads/{upload_id}/download": {
       "get": {
         "tags": [
@@ -44432,6 +44458,16 @@
           },
           "resources": {
             "$ref": "#/components/schemas/ActivityResources"
+          },
+          "analytics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsFacets"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -50685,6 +50721,20 @@
         "type": "object",
         "title": "BenchmarkResponse",
         "description": "Response with benchmark data."
+      },
+      "Body_multipart_upload_uploads_upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "format": "binary",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_multipart_upload_uploads_upload_post"
       },
       "Body_token_default_idp_token_post": {
         "properties": {
@@ -59627,6 +59677,16 @@
               }
             ],
             "title": "Profile Role"
+          },
+          "analytics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsFacets"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "history": {
             "anyOf": [
@@ -90677,6 +90737,20 @@
         "type": "object",
         "title": "ModelsGenerationEvent"
       },
+      "MultipartUploadResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "MultipartUploadResponse"
+      },
       "MvInfo": {
         "properties": {
           "name": {
@@ -104567,6 +104641,20 @@
         "title": "QuizResponse",
         "description": "Quiz response entry."
       },
+      "RawUploadResponse": {
+        "properties": {
+          "upload_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Upload Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "upload_id"
+        ],
+        "title": "RawUploadResponse"
+      },
       "ReasoningLevelsGenerationEvent": {
         "properties": {
           "artifact_type": {
@@ -106402,6 +106490,16 @@
             },
             "type": "array",
             "title": "Scenario Options"
+          },
+          "analytics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AnalyticsFacets"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -106832,133 +106930,6 @@
         },
         "type": "object",
         "title": "RequestLimitsGenerationEvent"
-      },
-      "ResolveGroupApiRequest": {
-        "properties": {
-          "draft_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Draft Id"
-          },
-          "artifact_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Artifact Type"
-          },
-          "attempt_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Id"
-          },
-          "test_id": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "uuid"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Test Id"
-          }
-        },
-        "type": "object",
-        "title": "ResolveGroupApiRequest",
-        "description": "Request body for POST /auth/group \u2014 resolve or create a group_id."
-      },
-      "ResolveGroupApiResponse": {
-        "properties": {
-          "group_id": {
-            "type": "string",
-            "title": "Group Id"
-          },
-          "show_controls": {
-            "type": "boolean",
-            "title": "Show Controls",
-            "default": false
-          },
-          "attempt_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Attempt Id"
-          },
-          "current_chat_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Current Chat Id"
-          },
-          "has_messages": {
-            "type": "boolean",
-            "title": "Has Messages",
-            "default": false
-          },
-          "test_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Test Id"
-          },
-          "current_invocation_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Current Invocation Id"
-          },
-          "has_runs_or_groups": {
-            "type": "boolean",
-            "title": "Has Runs Or Groups",
-            "default": false
-          }
-        },
-        "type": "object",
-        "required": [
-          "group_id"
-        ],
-        "title": "ResolveGroupApiResponse",
-        "description": "Response for POST /auth/group \u2014 resolved group_id + optional attempt controls."
       },
       "ResolveProblemRequest": {
         "properties": {

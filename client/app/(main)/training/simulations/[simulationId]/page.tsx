@@ -11,7 +11,7 @@ import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import type { ScenarioFlagsProps } from "@/components/resources/ScenarioFlags";
 import Simulation from "@/components/artifacts/simulation/Simulation";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -221,9 +221,6 @@ export default async function EditSimulationPage({
   const loadSimulationSearchParams = createLoader(simulationSearchParams);
   const q = loadSimulationSearchParams(searchParamsObj);
 
-  // Resolve group_id from layout context (cached per request)
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "simulation" })).group_id;
-
   // Fetch simulation detail (always fresh - source of truth) with draft_id and filters
   // filter_scenario_ids will come from draft payload if draft_id is provided
   try {
@@ -231,7 +228,6 @@ export default async function EditSimulationPage({
       body: {
         simulation_id: simulationId,
         draft_id: q.draftId ?? null,
-        group_id: groupId,
         scenario_search: q.scenarioSearch ?? null,
         // filter_scenario_ids comes from draft payload, not URL params
         filter_scenario_ids: null,

@@ -9,7 +9,7 @@ import Profile from "@/components/artifacts/profile/Profile";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -128,14 +128,11 @@ export default async function NewProfilePage({
   const loadProfileSearchParams = createLoader(profileSearchParams);
   const q = loadProfileSearchParams(searchParamsObj);
 
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "profile" })).group_id;
-
   // Fetch default profile detail server-side with draft_id
   const input: GetProfileIn = {
     body: {
       target_profile_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
-      group_id: groupId,
     } as GetProfileIn["body"],
   };
   const [profileDetailDefault, draftsResult] = await Promise.all([

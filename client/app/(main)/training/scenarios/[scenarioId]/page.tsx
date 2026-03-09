@@ -37,7 +37,6 @@ const getScenario = async (
   scenarioId: string,
   filterParams?: {
     draftId?: string | null;
-    groupId?: string;
     departmentIds?: string[];
     personaIds?: string[];
     documentIds?: string[];
@@ -228,7 +227,6 @@ export default async function EditScenarioPage({
       objectiveIds?: string[];
       problemStatementIds?: string[];
       urlParameterIds?: string[];
-      groupId?: string;
     };
     const filterParams: FilterParams = {};
     if (q.draftId) filterParams.draftId = q.draftId;
@@ -296,10 +294,6 @@ export default async function EditScenarioPage({
     // URL render filter: which parameters are expanded
     const urlParameterIds = csvToArray(q.parameterIds);
     if (urlParameterIds) filterParams.urlParameterIds = urlParameterIds;
-
-    // Resolve group_id from layout context (cached per request)
-    const groupId = (await resolveGroupId({ draft_id: filterParams.draftId ?? null, artifact_type: "scenario" })).group_id;
-    filterParams.groupId = groupId;
 
     const [scenarioDetail, docs, draftsResult] = await Promise.all([
       getScenario(

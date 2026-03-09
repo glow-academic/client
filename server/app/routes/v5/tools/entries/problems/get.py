@@ -20,12 +20,16 @@ async def get_problems(
         return []
 
     source = await resolve_mv_source(conn, MV_NAME, bypass_mv)
+    source_alias = "mv" if bypass_mv else "p"
+    from_source = source if bypass_mv else f"{source} {source_alias}"
 
     rows = await conn.fetch(
         f"""
-        SELECT problem_id, profile_id, session_id, type, message, resolved, created_at, active, mcp, generated
-        FROM {source}
-        WHERE problem_id = ANY($1)
+        SELECT {source_alias}.problem_id, {source_alias}.profile_id, c.session_id, {source_alias}.type, {source_alias}.message, {source_alias}.resolved, {source_alias}.created_at, {source_alias}.active, {source_alias}.mcp, {source_alias}.generated
+        FROM {from_source}
+        JOIN problems_entry pe ON pe.id = {source_alias}.problem_id
+        LEFT JOIN calls_entry c ON c.id = pe.call_id
+        WHERE {source_alias}.problem_id = ANY($1)
         """,
         ids,
     )

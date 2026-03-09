@@ -9,7 +9,7 @@ import Parameter from "@/components/artifacts/parameter/Parameter";
 import { PageHeader } from "@/components/common/layout/PageHeader";
 import { SaveToolbar } from "@/components/common/drafts/SaveToolbar";
 import { DraftProviderClient } from "@/contexts/draft-context";
-import { getDrafts, resolveGroupId } from "@/app/(main)/layout-server";
+import { getDrafts } from "@/app/(main)/layout-server";
 import { api } from "@/lib/api/client";
 import type { InputOf, OutputOf } from "@/lib/api/types";
 import type { Metadata } from "next";
@@ -111,14 +111,11 @@ export default async function NewParameterPage({
   const loadParameterSearchParams = createLoader(parameterSearchParams);
   const q = loadParameterSearchParams(searchParamsObj);
 
-  const groupId = (await resolveGroupId({ draft_id: q.draftId ?? null, artifact_type: "parameter" })).group_id;
-
   // Fetch default parameter detail server-side with filter params and draft_id (parameter_id = null for new mode)
   const input: ParameterGetIn = {
     body: {
       parameter_id: null, // NULL for new mode
       draft_id: q.draftId ?? null,
-      group_id: groupId,
     } as ParameterGetIn["body"],
   };
   const [parameterDetailDefault, draftsResult] = await Promise.all([
