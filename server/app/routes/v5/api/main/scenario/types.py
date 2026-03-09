@@ -733,7 +733,9 @@ class DraftImageValue(BaseModel):
 
     name: str
     description: str
-    upload_id: UUID | None = None  # TODO: wire upload_id through create_image + create_image_upload
+    upload_id: UUID | None = (
+        None  # TODO: wire upload_id through create_image + create_image_upload
+    )
 
 
 class DraftVideoValue(BaseModel):
@@ -741,7 +743,9 @@ class DraftVideoValue(BaseModel):
 
     name: str
     description: str
-    upload_id: UUID | None = None  # TODO: wire upload_id through create_video + create_video_upload
+    upload_id: UUID | None = (
+        None  # TODO: wire upload_id through create_video + create_video_upload
+    )
     length_seconds: int = 0
 
 

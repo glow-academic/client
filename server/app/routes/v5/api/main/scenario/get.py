@@ -12,7 +12,9 @@ from __future__ import annotations
 
 from uuid import UUID
 
+import asyncpg
 from fastapi import APIRouter, HTTPException, Request, Response
+from redis.asyncio import Redis
 
 from app.infra.common_context import resolve_common_context
 from app.infra.globals import get_pool, get_redis_client
@@ -97,7 +99,7 @@ router = APIRouter()
 
 
 async def get_scenario_client(
-    conn: asyncpg.Connection,
+    pool: asyncpg.Pool,
     redis: Redis,
     *,
     profile_id: UUID,
@@ -133,7 +135,7 @@ async def get_scenario_client(
     # ── Step 1: Common context (profile → tool_graph + runs) ──────────────
 
     common = await resolve_common_context(
-        conn,
+        pool,
         redis,
         profile_id=profile_id,
         group_id=group_id,
@@ -152,7 +154,7 @@ async def get_scenario_client(
 
     perms = None
     if scenario_id is not None:
-        perms = await resolve_scenario_permissions_context(conn, scenario_id)
+        perms = await resolve_scenario_permissions_context(pool, scenario_id)
 
         if not perms.exists:
             raise HTTPException(
@@ -170,7 +172,7 @@ async def get_scenario_client(
     # ── Step 3: Scenario artifact context ─────────────────────────────────
 
     scenario = await resolve_scenario_context(
-        conn,
+        pool,
         redis,
         scenario_id=scenario_id,
         group_id=group_id,

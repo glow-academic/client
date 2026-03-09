@@ -18946,6 +18946,30 @@ export interface components {
             resources?: components["schemas"]["DocumentDescriptionResource"][] | null;
         };
         /**
+         * DocumentDraftFormState
+         * @description Server-authoritative form state returned after draft save.
+         */
+        DocumentDraftFormState: {
+            /** Name Id */
+            name_id?: string | null;
+            /** Description Id */
+            description_id?: string | null;
+            /** Flag Ids */
+            flag_ids: string[];
+            /** Department Ids */
+            department_ids: string[];
+            /** File Ids */
+            file_ids: string[];
+            /** Image Ids */
+            image_ids: string[];
+            /** Text Ids */
+            text_ids: string[];
+            /** Parameter Field Ids */
+            parameter_field_ids: string[];
+            /** Parameter Ids */
+            parameter_ids: string[];
+        };
+        /**
          * DocumentEntry
          * @description Document entry with resource metadata.
          */
@@ -27962,6 +27986,7 @@ export interface components {
             new_version: number;
             /** Message */
             message: string;
+            form_state?: components["schemas"]["DocumentDraftFormState"] | null;
         };
         /**
          * PatchEvalDraftApiRequest

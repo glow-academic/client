@@ -194,6 +194,8 @@ function DocumentComponent({
   const getInitialFormState = useCallback(() => {
     if (!documentDetail) {
       return {
+        name: null as string | null,
+        description: null as string | null,
         name_id: null as string | null,
         description_id: null as string | null,
         active_flag_id: null as string | null,
@@ -206,6 +208,8 @@ function DocumentComponent({
     }
     // Extract resource IDs from section-first response
     return {
+      name: null as string | null,
+      description: null as string | null,
       name_id: documentDetail.names?.resource?.id ?? null,
       description_id: documentDetail.descriptions?.resource?.id ?? null,
       active_flag_id: documentDetail.flags?.current?.[0]?.flag_option_id ?? null,
@@ -299,9 +303,42 @@ function DocumentComponent({
   React.useEffect(() => {
     if (patchDocumentDraftAction) {
       patchActionRef.current = async (payload: Record<string, unknown>) => {
-        return await patchDocumentDraftAction({
+        const result = await patchDocumentDraftAction({
           body: payload,
         } as PatchDocumentDraftIn);
+
+        // Sync form_state from server response (server is source of truth)
+        const fs = (result as any).form_state as
+          | {
+              name_id: string | null;
+              description_id: string | null;
+              flag_ids: string[];
+              department_ids: string[];
+              file_ids: string[];
+              image_ids: string[];
+              text_ids: string[];
+              parameter_field_ids: string[];
+              parameter_ids: string[];
+            }
+          | undefined;
+        if (fs) {
+          serverSyncPendingRef.current = true;
+          setFormState((prev) => ({
+            ...prev,
+            name: null,
+            description: null,
+            name_id: fs.name_id ?? prev.name_id,
+            description_id: fs.description_id ?? prev.description_id,
+            flag_ids: fs.flag_ids ?? prev.flag_ids,
+            department_ids: fs.department_ids ?? prev.department_ids,
+            upload_ids: fs.file_ids ?? prev.upload_ids,
+            image_ids: fs.image_ids ?? prev.image_ids,
+            text_ids: fs.text_ids ?? prev.text_ids,
+            field_ids: fs.parameter_field_ids ?? prev.field_ids,
+          }));
+        }
+
+        return result;
       };
     } else {
       patchActionRef.current = undefined;
@@ -311,6 +348,8 @@ function DocumentComponent({
   const formStateKey = React.useMemo(
     () =>
       JSON.stringify({
+        name: formState.name,
+        description: formState.description,
         name_id: formState.name_id,
         description_id: formState.description_id,
         active_flag_id: formState.active_flag_id,
@@ -333,20 +372,31 @@ function DocumentComponent({
       inputDraftId: string | null,
       expectedVersion: number,
       flushResults?: Record<string, unknown>,
-    ): Record<string, unknown> => ({
-      input_draft_id: inputDraftId || null,
-      group_id: documentDetail?.group_id ?? null,
-      ...buildDraftPayload(DOCUMENT_RESOURCES, {
-        formState: formStateRef.current,
-        referenceState:
-          lastPatchedFormStateRef.current as unknown as Record<
-            string,
-            unknown
-          > | null,
-        flushResults: (flushResults ?? {}) as Record<string, unknown>,
-      }),
-      expected_version: expectedVersion,
-    }),
+    ): Record<string, unknown> => {
+      const payload: Record<string, unknown> = {
+        input_draft_id: inputDraftId || null,
+        group_id: documentDetail?.group_id ?? null,
+        ...buildDraftPayload(DOCUMENT_RESOURCES, {
+          formState: formStateRef.current,
+          referenceState:
+            lastPatchedFormStateRef.current as unknown as Record<
+              string,
+              unknown
+            > | null,
+          flushResults: (flushResults ?? {}) as Record<string, unknown>,
+        }),
+        expected_version: expectedVersion,
+      };
+      // Overlay value fields (name/description) if set
+      const currentFormState = formStateRef.current;
+      if (currentFormState["name"] !== null && currentFormState["name"] !== undefined) {
+        payload["name"] = currentFormState["name"];
+      }
+      if (currentFormState["description"] !== null && currentFormState["description"] !== undefined) {
+        payload["description"] = currentFormState["description"];
+      }
+      return payload;
+    },
     [documentDetail],
   );
 
@@ -354,6 +404,7 @@ function DocumentComponent({
     setUrlFormDataRef,
     onFormDataChange,
     flushAllAndSave,
+    serverSyncPendingRef,
     formDataRef,
   } = useDraftLifecycle({
     formStateKey,
@@ -811,12 +862,15 @@ function DocumentComponent({
                   onNameIdChange={(nameId) =>
                     setFormState((prev) => ({ ...prev, name_id: nameId }))
                   }
+                  onNameChange={(name) =>
+                    setFormState((prev) => ({ ...prev, name }))
+                  }
                   onGenerate={handleGenerateName}
                   placeholder="e.g., Course Syllabus"
                   defaultName="New Document"
                   required={documentDetail?.names?.required ?? false}
                   hideDescription={true}
-      
+
                   showAiGenerate={
                     documentDetail?.names?.show_ai_generate ?? false
                   }
@@ -871,6 +925,9 @@ function DocumentComponent({
                       description_id: descriptionId,
                     }))
                   }
+                  onDescriptionChange={(description) =>
+                    setFormState((prev) => ({ ...prev, description }))
+                  }
                   searchTerm={descriptionSearchTerm}
                   onSearchChange={(term) =>
                     setStepFormData({ descriptionSearch: term || null })
@@ -881,7 +938,7 @@ function DocumentComponent({
                   required={documentDetail?.descriptions?.required ?? false}
                   rows={4}
                   data-testid="input-document-description"
-      
+
                   showAiGenerate={
                     documentDetail?.descriptions?.show_ai_generate ?? false
                   }
